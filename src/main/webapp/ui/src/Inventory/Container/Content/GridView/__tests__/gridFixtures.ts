@@ -1,4 +1,9 @@
+import { runInAction } from "mobx";
 import { containerAttrs, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
+import type { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
+import type ContainerModel from "@/stores/models/ContainerModel";
+import type Search from "@/stores/models/Search";
+import getRootStore from "@/stores/stores/getRootStore";
 
 /** A 2x2 grid box with A1 holding a rack. */
 export const boxWithA1Taken = () =>
@@ -32,3 +37,28 @@ export const emptyBox = () =>
     contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
     locations: [],
   });
+
+/** Configures the grid as MoveStore.setIsMoving does for the Move dialog's destination panel. */
+export function stageMove(box: ContainerModel, items: ReadonlyArray<ReturnType<typeof makeMockSubSample>>): void {
+  const { moveStore } = getRootStore();
+  runInAction(() => {
+    moveStore.isMoving = true;
+    moveStore.search = { activeResult: box } as unknown as Search;
+    moveStore.selectedResults = [...items];
+    Object.assign(box.contentSearch.uiConfig, {
+      selectionMode: "MULTIPLE",
+      selectionLimit: items.length,
+      onlyAllowSelectingEmptyLocations: true,
+      dragAndDropDisabled: true,
+    });
+  });
+}
+
+export function resetMove(): void {
+  runInAction(() => {
+    const { moveStore } = getRootStore();
+    moveStore.isMoving = false;
+    moveStore.search = null;
+    moveStore.selectedResults = [];
+  });
+}

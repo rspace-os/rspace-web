@@ -1,15 +1,12 @@
 import "@/stores/stores/RootStore";
 import { ThemeProvider } from "@mui/material/styles";
-import { runInAction } from "mobx";
 import React from "react";
 import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type ContainerModel from "@/stores/models/ContainerModel";
-import type Search from "@/stores/models/Search";
-import getRootStore from "@/stores/stores/getRootStore";
 import materialTheme from "@/theme";
-import { emptyBox } from "./__tests__/gridFixtures";
+import { emptyBox, resetMove, stageMove } from "./__tests__/gridFixtures";
 import ContentGrid from "./ContentGrid";
 
 function Grid({ box }: { box: ContainerModel }): React.ReactNode {
@@ -44,30 +41,9 @@ export function ContainerPageGrid(): React.ReactNode {
 export function MoveDestinationGrid(): React.ReactNode {
   const [box] = React.useState(() => {
     const b = emptyBox();
-    const { moveStore } = getRootStore();
-    runInAction(() => {
-      moveStore.isMoving = true;
-      moveStore.search = { activeResult: b } as unknown as Search;
-      moveStore.selectedResults = [makeMockSubSample({ id: 1, globalId: "SS1" })];
-      Object.assign(b.contentSearch.uiConfig, {
-        selectionMode: "MULTIPLE",
-        selectionLimit: 1,
-        onlyAllowSelectingEmptyLocations: true,
-        dragAndDropDisabled: true,
-      });
-    });
+    stageMove(b, [makeMockSubSample({ id: 1, globalId: "SS1" })]);
     return b;
   });
-  React.useEffect(
-    () => () => {
-      runInAction(() => {
-        const { moveStore } = getRootStore();
-        moveStore.isMoving = false;
-        moveStore.search = null;
-        moveStore.selectedResults = [];
-      });
-    },
-    [],
-  );
+  React.useEffect(() => resetMove, []);
   return <Grid box={box} />;
 }

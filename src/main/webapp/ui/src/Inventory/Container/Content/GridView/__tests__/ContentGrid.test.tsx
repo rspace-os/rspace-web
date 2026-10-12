@@ -11,11 +11,9 @@ import { prepareContainer } from "@/Inventory/components/Operations/placement";
 import SearchContext from "@/stores/contexts/Search";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import type ContainerModel from "@/stores/models/ContainerModel";
-import type Search from "@/stores/models/Search";
-import getRootStore from "@/stores/stores/getRootStore";
 import materialTheme from "@/theme";
 import ContentGrid from "../ContentGrid";
-import { boxWithA1Taken, emptyBox } from "./gridFixtures";
+import { boxWithA1Taken, emptyBox, resetMove, stageMove } from "./gridFixtures";
 
 function renderGrid(box: ContainerModel, { inDialogClosedBy }: { inDialogClosedBy?: () => void } = {}) {
   const grid = (
@@ -134,35 +132,12 @@ describe("ContentGrid", () => {
     });
 
     describe("in the Move dialog", () => {
-      /** Configures the grid as MoveStore.setIsMoving does for its destination panel. */
-      function startMoving(box: ContainerModel, items: ReadonlyArray<ReturnType<typeof makeMockSubSample>>) {
-        const { moveStore } = getRootStore();
-        runInAction(() => {
-          moveStore.isMoving = true;
-          moveStore.search = { activeResult: box } as unknown as Search;
-          moveStore.selectedResults = [...items];
-          Object.assign(box.contentSearch.uiConfig, {
-            selectionMode: "MULTIPLE",
-            selectionLimit: items.length,
-            onlyAllowSelectingEmptyLocations: true,
-            dragAndDropDisabled: true,
-          });
-        });
-      }
-
-      afterEach(() => {
-        runInAction(() => {
-          const { moveStore } = getRootStore();
-          moveStore.isMoving = false;
-          moveStore.search = null;
-          moveStore.selectedResults = [];
-        });
-      });
+      afterEach(resetMove);
 
       it("keeps the first location's staged item when Shift+Arrow extends the selection", async () => {
         const user = userEvent.setup();
         const box = emptyBox();
-        startMoving(box, [
+        stageMove(box, [
           makeMockSubSample({ id: 101, globalId: "SS101" }),
           makeMockSubSample({ id: 102, globalId: "SS102" }),
         ]);
@@ -179,10 +154,7 @@ describe("ContentGrid", () => {
       it("places each item being moved where Space selects", async () => {
         const user = userEvent.setup();
         const box = emptyBox();
-        startMoving(box, [
-          makeMockSubSample({ id: 1, globalId: "SS1" }),
-          makeMockSubSample({ id: 2, globalId: "SS2" }),
-        ]);
+        stageMove(box, [makeMockSubSample({ id: 1, globalId: "SS1" }), makeMockSubSample({ id: 2, globalId: "SS2" })]);
         renderGrid(box);
         await user.tab();
         await user.keyboard(" {ArrowRight}{ArrowDown} ");
