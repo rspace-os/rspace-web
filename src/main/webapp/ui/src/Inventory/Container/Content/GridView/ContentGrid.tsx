@@ -357,12 +357,11 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
         >
           <TableHead>
             <TableRow>
-              <TableCell
-                component="td"
-                align="center"
-                ref={topLeftCellRef}
-                onMouseDown={preventEventBubbling()}
-              ></TableCell>
+              <TableCell align="center" ref={topLeftCellRef} onMouseDown={preventEventBubbling()}>
+                <Box component="span" sx={visuallyHidden}>
+                  {t("container.content.rowHeaderLabel")}
+                </Box>
+              </TableCell>
               {container.columns.map((column, columnIndex) => (
                 <TableCell
                   key={column.label}

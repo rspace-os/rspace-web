@@ -23,9 +23,9 @@ export class ContentGridPage {
     return tips ? getComputedStyle(tips).opacity : "0";
   }
 
-  /** The nth (0-based, row-major) location cell, skipping the header row's empty corner cell. */
+  /** The nth (0-based, row-major) location cell. */
   cell(n: number): Locator {
-    return page.getByRole("gridcell").nth(n + 1);
+    return page.getByRole("gridcell").nth(n);
   }
 
   /** The nth cell's painted focus ring, "none" when it has none. */

@@ -44,8 +44,8 @@ function renderGrid(box: ContainerModel, { inDialogClosedBy }: { inDialogClosedB
 
 const draggableIn = (cell: HTMLElement) => within(cell).getByRole("button");
 
-/** The location cells, row by row; the header row's corner cell is not one. */
-const cells = () => screen.getAllByRole("cell").filter((c) => c.hasAttribute("aria-selected"));
+/** The location cells, row by row. */
+const cells = () => screen.getAllByRole("cell");
 
 describe("ContentGrid", () => {
   describe("drag-and-drop", () => {
@@ -61,6 +61,15 @@ describe("ContentGrid", () => {
       renderGrid(box);
       expect(draggableIn(cells()[0])).toHaveAttribute("aria-disabled", "true");
     });
+  });
+
+  it("names the header row's corner cell for the row headers, so it is a column header and not a location", () => {
+    renderGrid(boxWithA1Taken());
+    expect(
+      screen.getByRole("columnheader", { name: "inventory:container.content.rowHeaderLabel" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("columnheader")).toHaveLength(3);
+    expect(cells()).toHaveLength(4);
   });
 
   describe("keyboard selection", () => {

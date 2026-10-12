@@ -2448,6 +2448,7 @@ export default interface Resources {
           "emptyLocationHelper": "This location can be chosen as the destination in a move operation."
         },
         "previewAlt": "Preview of {name}",
+        "rowHeaderLabel": "Row",
         "zoom": {
           "ctrlTip": "Tip: Use <kbd>Ctrl</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
           "macTip": "Tip: Use <kbd>Command</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
