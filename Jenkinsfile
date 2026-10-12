@@ -107,12 +107,17 @@ pipeline {
                     expression { return params.AWS_DEPLOY }
                     expression { return params.ONLY_BUILD_WAR }
                     expression { return params.STORYBOOK }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
+                    allOf {
+                        branch 'main'
+                        anyOf {
+                            changeset '**/*.js'
+                            changeset '**/*.ts'
+                            changeset '**/*.tsx'
+                            changeset '**/*.jsp'
+                            changeset '**/*.css'
+                            changeset '**/*.json'
+                        }
+                    }
                 }
                 not {
                     anyOf {
