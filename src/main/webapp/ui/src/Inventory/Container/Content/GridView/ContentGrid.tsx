@@ -239,6 +239,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             if (!focusCoord) throw new Error("A cell must have focus for key events to be handled");
             const { onlyAllowSelectingEmptyLocations: emptyOnly, selectionLimit } = search.uiConfig;
             if (e.key === "Escape") {
+              setShiftOrigin(null);
               container.toggleAllLocations(false);
               const focused = container.findLocation(focusCoord.x, focusCoord.y);
               const clearOnly = search.uiConfig.dragAndDropDisabled;
@@ -342,7 +343,10 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       parentRef={tableRef}
                       columnsUnderHover={columnsUnderHover}
                       columnIndex={index}
-                      onPointerFocus={setTabIndexCoord}
+                      onPointerFocus={(coord) => {
+                        setTabIndexCoord(coord);
+                        setShiftOrigin(null);
+                      }}
                     >
                       <LocationContent
                         location={findLocation(col, row)}

@@ -137,6 +137,23 @@ describe("ContentGrid", () => {
         expect(selectedCount()).toBe(0);
       });
 
+      it("starts the next Shift+Arrow range from the focused location after Escape", async () => {
+        const user = userEvent.setup();
+        const box = makeMockContainer({
+          cType: "GRID",
+          gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+          locationsCount: 4,
+          contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
+        });
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard("{Shift>}{ArrowRight}{/Shift}{Escape}{Shift>}{ArrowDown}{/Shift}");
+        expect(cells()[0]).toHaveAttribute("aria-selected", "false");
+        expect(cells()[1]).toHaveAttribute("aria-selected", "true");
+        expect(cells()[3]).toHaveAttribute("aria-selected", "true");
+      });
+
       describe("after a mouse click on a location", () => {
         const emptyBox = () =>
           makeMockContainer({
@@ -167,6 +184,20 @@ describe("ContentGrid", () => {
           expect(screen.getByRole("grid")).toContainElement(document.activeElement as HTMLElement);
           await user.keyboard("{Escape}");
           expect(parentKeys).not.toHaveBeenCalledWith("Escape");
+        });
+
+        it("starts the next Shift+Arrow range from the clicked location", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 2);
+          renderGrid(box);
+          await user.tab();
+          await user.keyboard("{Shift>}{ArrowRight}{/Shift}");
+          await user.click(cells()[3]);
+          await user.keyboard("{Shift>}{ArrowLeft}{/Shift}");
+          expect(cells()[0]).toHaveAttribute("aria-selected", "false");
+          expect(cells()[2]).toHaveAttribute("aria-selected", "true");
+          expect(cells()[3]).toHaveAttribute("aria-selected", "true");
         });
       });
 
