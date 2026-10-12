@@ -614,6 +614,31 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void updateStatus_ownerRejectsAnApprovedRequestWithAReason() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiRuntimeException noReason =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                sampleRequestApiMgr.updateStatus(
+                    raised.getId(), statusPost(SampleRequestStatus.REJECTED, null), owner));
+    assertEquals("errors.inventory.sampleRequest.reasonRequired", noReason.getMessage());
+
+    ApiSampleRequest rejected =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(),
+            statusPost(SampleRequestStatus.REJECTED, "The aliquot was contaminated"),
+            owner);
+
+    assertEquals(SampleRequestStatus.REJECTED, rejected.getStatus());
+    assertEquals(3, rejected.getStatusChanges().size());
+    assertEquals("The aliquot was contaminated", rejected.getStatusChanges().get(2).getReason());
+  }
+
+  @Test
   public void updateStatus_rejectionWithoutAReasonIsRefused() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
 
