@@ -240,6 +240,8 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
               const focused = container.findLocation(focusCoord.x, focusCoord.y);
               if (focused && (!emptyOnly || focused.isSelectable(search))) focused.toggleSelected(true);
               e.preventDefault();
+              // Grids used only to choose locations sit in dialogs, which would otherwise close on Escape.
+              if (emptyOnly) e.stopPropagation();
             }
 
             const newCoord: {
