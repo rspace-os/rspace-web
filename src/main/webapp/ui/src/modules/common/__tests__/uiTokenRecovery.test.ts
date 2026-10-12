@@ -304,3 +304,33 @@ test("a transient token issuance failure allows a later recovery retry", async (
   expect(reload).toHaveBeenCalledOnce();
   expect(getStoredToken()).toBe("fresh-token");
 });
+
+const jwt = (refreshTokenHash: string, issuedAt: number) =>
+  ["{}", JSON.stringify({ refreshTokenHash, iat: issuedAt })]
+    .map((part) => btoa(part).replace(/=+$/, ""))
+    .concat("signature")
+    .join(".");
+
+test.each([
+  ["the same user only replaces the expired token", "user-hash", false],
+  ["a different user reloads the tab", "other-user-hash", true],
+])("recovering a stale JWT for %s", async (_label, freshHash, shouldReload) => {
+  const { reload } = stubLocation();
+  const staleToken = jwt("user-hash", 1);
+  const freshToken = jwt(freshHash, 2);
+  saveStoredToken(staleToken);
+  server.use(
+    http.get("/api/v1/test-read", () => HttpResponse.json({}, { status: 401 })),
+    http.get("/api/v1/userDetails/whoami", ({ request }) =>
+      request.headers.get("Authorization") === `Bearer ${staleToken}`
+        ? HttpResponse.json({}, { status: 401 })
+        : HttpResponse.json({ username: "current-user" }),
+    ),
+    http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: freshToken })),
+  );
+
+  await fetchWithUiToken("/api/v1/test-read", { headers: { Authorization: `Bearer ${staleToken}` } });
+
+  expect(getStoredToken()).toBe(freshToken);
+  expect(reload).toHaveBeenCalledTimes(shouldReload ? 1 : 0);
+});

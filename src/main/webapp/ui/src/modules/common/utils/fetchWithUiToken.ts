@@ -1,6 +1,15 @@
+import { jwtDecode } from "jwt-decode";
 import { clearStoredToken, saveStoredToken } from "./auth";
 
 const recoveries = new Map<string, Promise<void>>();
+
+function refreshTokenHash(token: string): unknown {
+  try {
+    return jwtDecode<{ refreshTokenHash?: unknown }>(token).refreshTokenHash;
+  } catch {
+    return undefined;
+  }
+}
 
 async function recoverSession(authorization: string): Promise<void> {
   // Resource permission failures also use 401. Only recover an invalid token.
@@ -36,6 +45,10 @@ async function recoverSession(authorization: string): Promise<void> {
   if (!response.ok) return;
   clearStoredToken();
   saveStoredToken(token);
+  // The server keeps one refresh token per user, so a matching hash means the old token
+  // merely expired and the page state still belongs to the current user.
+  const previousHash = refreshTokenHash(authorization.slice("Bearer ".length));
+  if (previousHash !== undefined && previousHash === refreshTokenHash(token)) return;
   // A session identity change invalidates every query cache and the surrounding UI.
   // Reload instead of replaying a pending mutation as the new user.
   globalThis.location.reload();
