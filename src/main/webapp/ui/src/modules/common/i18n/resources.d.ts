@@ -4142,9 +4142,10 @@ export default interface Resources {
         "name": "Name",
         "owners": "Owner",
         "pid": "PID",
+        "provider": "Registry",
         "state": "Registry state"
       },
-      "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+      "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
       "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
       "helpTitle": "PIDINST help",
       "importError": "Could not import the instrument.",
@@ -4161,6 +4162,7 @@ export default interface Resources {
         "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
         "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "alternateIdentifier": "Alternate identifier",
+        "calibration": "Calibration",
         "commissioned": "Commissioned",
         "decommissioned": "Decommissioned",
         "description": "Description",
@@ -4168,6 +4170,7 @@ export default interface Resources {
         "landingPage": "Landing page",
         "manufacturers": "Manufacturers",
         "measuredVariables": "Measured variables",
+        "measurementTechnique": "Measurement technique",
         "model": "Model",
         "owners": "Owners",
         "pid": "PID",
@@ -4178,22 +4181,37 @@ export default interface Resources {
         "b2inst": "B2INST",
         "datacite": "DataCite"
       },
+      "registries": {
+        "label": "Registries to search",
+        "validation": {
+          "none": "Tick at least one registry to search."
+        }
+      },
       "results": {
         "none": "No published instrument records match this search.",
+        "pageSummary": "Showing {from} to {to} of {total, plural, one {# record} other {# records}} ({breakdown}).",
         "prompt": "Search to list published instrument records.",
-        "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
-        "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+        "registryTotal": "{provider}: {total}"
       },
       "search": {
-        "label": "Search the registry",
+        "label": "Search the registries",
         "placeholder": "Name, manufacturer, owner, DOI or Handle",
-        "searching": "Searching the PID registry…",
+        "searching": "Searching the registries…",
         "validation": {
           "tooShort": "Enter at least {min} characters to search."
         }
       },
       "searchError": "Could not search the PID registry.",
       "selectRadioLabel": "Select record: {name}",
+      "skipped": {
+        "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+        "reasons": {
+          "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+          "notAvailable": "The item it points at is not available to you: <address/>",
+          "otherServer": "It points at another server ({host}): <address/>"
+        },
+        "title": "Some registry entries were not imported"
+      },
       "title": "Import Instrument from PIDINST",
       "validation": {
         "alreadyLinked": "This PID is already linked to instrument {globalId}.",
@@ -7214,9 +7232,13 @@ export default interface Resources {
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
           "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
           "pidinstImportPidRequired": "A PID is required to import an instrument.",
+          "pidinstImportProviderRequired": "The registry the PID belongs to is required to import an instrument: PIDINST_DATACITE or PIDINST_B2INST.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
-          "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
-          "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
+          "pidinstNotFound": "No published instrument record was found for \"{0}\" in the public registry.",
+          "pidinstPageOutOfRange": "Only the first {0} pages of results can be shown. Narrow the search to see more.",
+          "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registries.",
+          "pidinstRegistryRequired": "Choose at least one registry to search: PIDINST_DATACITE or PIDINST_B2INST.",
+          "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
@@ -7305,7 +7327,6 @@ export default interface Resources {
           "passageNumberUnreadable": "The parent sample''s passage number ''{0}'' is not a whole number from 0 to 9999. Correct it on the parent sample, then try again.",
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
-          "storageTempNotWhole": "The storage temperature must be whole degrees.",
           "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples."
@@ -7635,13 +7656,16 @@ export default interface Resources {
         },
         "word": {
           "allImported": "All documents imported, reloading page...",
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "chooseFiles": "Please choose some {0} files to upload.",
           "converted": "These documents were converted: {0}",
           "folderChooserPrompt": "{0} to put the imported documents. Otherwise, they will be put in the current folder.",
           "importAction": "Importing Word Documents",
           "importTitle": "Import",
           "importing": "Importing files...",
-          "notConverted": "<br>These documents were not converted: {0}"
+          "notConverted": "<br>These documents were not converted: {0}",
+          "oneFileRequired": "Choose exactly one file to update a document.",
+          "selectOneTarget": "Select exactly one target document, or open a notebook entry, to update from Word."
         }
       },
       "directory": {
@@ -9546,7 +9570,12 @@ export default interface Resources {
         "optionalLinkText": "Optionally, choose a folder or notebook"
       },
       "importFromWord": {
-        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:"
+        "afterImport": "After importing:",
+        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:",
+        "newDocuments": "Save as new documents",
+        "newEntries": "Save as new entries",
+        "replaceDocument": "Update selected document",
+        "replaceEntry": "Update current entry"
       },
       "moveRecord": {
         "dialogTitle": "Select move target",
@@ -10444,12 +10473,17 @@ export default interface Resources {
       },
       "word": {
         "import": {
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "createFailed": "Could not create document from {0}",
           "createFailedWithReason": "Could not create document from {0} - {1}",
           "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
           "noImporterForFileType": "No importer for file type {0}",
+          "notAuthorized": "You do not have permission to update this document.",
+          "oneFileRequired": "Choose exactly one file to update a document.",
           "progressDescription": "Processed file ''{0}''. Import is {1}% complete.",
-          "progressStarted": "Importing files..."
+          "progressStarted": "Importing files...",
+          "targetNotEditable": "This document cannot be updated because it is signed, deleted, or not editable.",
+          "updateAction": "update document from Word"
         }
       }
     },

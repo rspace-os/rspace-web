@@ -16,6 +16,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -92,14 +93,17 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   }
 
   /**
-   * Headers applied to the webhook POST. The default sends no explicit headers (the body is then
-   * posted as {@code text/plain}); subclasses can override to set a content type the webhook
-   * requires.
+   * Creates the headers for the webhook POST.
    *
-   * @return headers to attach to the outgoing request
+   * <p>Declares {@code application/json} so the body is sent as UTF-8. Without it, a String body is
+   * sent as ISO-8859-1 and non-Latin-1 characters become {@code ?}.
+   *
+   * @return headers with an {@code application/json} content type
    */
   protected HttpHeaders createPostHeaders() {
-    return new HttpHeaders();
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
   }
 
   /**

@@ -1,17 +1,10 @@
 import { storageStatePath } from "./authState";
 import { env } from "./env";
 import { test as setup } from "./fixtures/flows";
+import { selectBrowserProjects } from "./projects";
 import { SYSADMIN, USERS } from "./users";
 
-const projectAccounts = {
-  chromium: USERS.user1a,
-  firefox: USERS.user3c,
-  webkit: USERS.user4d,
-  mobile: USERS.user7g,
-};
-const selectedProjectAccounts = env.browser
-  ? [projectAccounts[env.browser as keyof typeof projectAccounts]].filter((account) => account !== undefined)
-  : Object.values(projectAccounts);
+const selectedProjectAccounts = selectBrowserProjects(env.browser, { cloud: env.cloud }).map(({ appUser }) => appUser);
 const accounts = [
   ...new Map([...selectedProjectAccounts, USERS.user3c, USERS.user6f, SYSADMIN].map((a) => [a.username, a])).values(),
 ];

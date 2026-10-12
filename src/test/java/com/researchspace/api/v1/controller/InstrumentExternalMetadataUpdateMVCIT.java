@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -262,11 +263,10 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
   }
 
   /**
-   * An owner transfer pushes, because it changes what the provider holds: {@code
-   * RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerContact} from the record owner's
-   * email unconditionally, and {@code ownerName} from the same owner unless the Owner field
-   * overrides it. Unpushed, the registered record kept naming the previous owner - one of the three
-   * drifts RSDEV-1251 exists to stop.
+   * An owner transfer pushes, because it can change what the provider holds: {@code
+   * RspaceToExternalProviderAdapterImpl.ownerOf} maps {@code ownerName} from the record owner's
+   * full name unless the Owner field overrides it. Unpushed, the registered record kept naming the
+   * previous owner - one of the three drifts RSDEV-1251 exists to stop.
    *
    * <p>This case is also why the push takes its candidates from the record rather than from the
    * response it decorates. A transfer leaves the departing owner with {@code LIMITED_READ}, and
@@ -289,7 +289,13 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
         1,
         identifierCountOf(ownerKey, owner, instrument.getId()),
         "precondition: the instrument starts with a registered identifier");
-    User newOwner = createInitAndLoginAnyUser();
+    User newOwner = createAndSaveUser(getRandomName(10));
+    // test users all share one full name, which would let a push naming the old owner pass; the
+    // rename comes before initUser, whose own write to this row would make a later save stale
+    newOwner.setLastName("Successor");
+    newOwner = userMgr.save(newOwner);
+    initUser(newOwner);
+    logoutAndLoginAs(newOwner);
     String newOwnerKey = createNewApiKeyForUser(newOwner);
     logoutAndLoginAs(owner);
 
@@ -311,10 +317,11 @@ public class InstrumentExternalMetadataUpdateMVCIT extends API_MVC_InventoryTest
         transferred.path("owner").path("username").asText(),
         "precondition: the transfer itself must have happened");
 
-    // the new owner's contact address reached the provider
+    // the new owner's name reached the provider, and no contact address did (RSDEV-1540)
     B2instDoi pushed = b2instDummy.getDoiUpdateSentToB2inst();
     assertNotNull(pushed, "an owner transfer must reach the provider");
-    assertEquals(newOwner.getEmail(), pushed.getMetadata().getOwner().get(0).getOwnerContact());
+    assertEquals(newOwner.getFullName(), pushed.getMetadata().getOwner().get(0).getOwnerName());
+    assertNull(pushed.getMetadata().getOwner().get(0).getOwnerContact());
 
     // the identifier was never lost, it simply left the departing owner's view
     assertEquals(

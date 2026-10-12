@@ -55,7 +55,7 @@ public class BioPortalOntologiesClient {
   @Value("${bioportal.api.base.url}")
   private String bioportalApiBaseUrl;
 
-  @Value("${bioportal.api.key:}")
+  @Value("${bioportal.api.key}")
   private String bioportalApiKey;
 
   private RestTemplate restTemplate = new RestTemplate(timeoutBoundedRequestFactory());

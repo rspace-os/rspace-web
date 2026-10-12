@@ -2,24 +2,34 @@ package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import lombok.AllArgsConstructor;
+import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** One page of PID lookup hits from the enabled provider (RSDEV-1326). */
+/** One page of PID lookup hits, merged across the registries the caller asked for (ADR 0011). */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class ApiPidinstSearchResult {
 
-  @JsonProperty("provider")
-  private String provider;
+  /** The registries searched, as asked: {@code PIDINST_DATACITE} and/or {@code PIDINST_B2INST}. */
+  @JsonProperty("providers")
+  private List<String> providers = new ArrayList<>();
 
-  /** The provider's total for the query; may exceed {@code hits.size()}, which is capped. */
-  @JsonProperty("total")
-  private int total;
+  /** 0-based. */
+  @JsonProperty("pageNumber")
+  private int pageNumber;
 
+  /** The sum of the registries' own totals for the query. */
+  @JsonProperty("totalHits")
+  private int totalHits;
+
+  /** Each registry's own total, keyed as in {@code providers}. */
+  @JsonProperty("totalsByProvider")
+  private Map<String, Integer> totalsByProvider = new LinkedHashMap<>();
+
+  /** This page, newest update first; equal update times keep each registry's own order. */
   @JsonProperty("hits")
   private List<ApiPidinstRecord> hits = new ArrayList<>();
 }

@@ -26,6 +26,7 @@ async function connectToNextcloudViaLogin(popup: Page): Promise<void> {
 }
 
 test.describe(`Nextcloud integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
+  test.skip(INTEGRATION_MODE === "real", "PRT-1151: known Nextcloud issue breaks real mode");
   test.skip(
     INTEGRATION_MODE === "real" && !(env.nextcloudUsername && env.nextcloudPassword),
     "real mode needs NEXTCLOUD_USERNAME/NEXTCLOUD_PASS in .env / CI secrets",

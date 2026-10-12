@@ -144,7 +144,6 @@ class RspaceToExternalProviderAdapterImplTest {
     assertEquals("An automatic weather station.", md.getDescription());
     assertThat(md.getOwner()).hasSize(1);
     assertEquals("Arctic Research Institute", md.getOwner().get(0).getOwnerName());
-    assertEquals("jane@example.org", md.getOwner().get(0).getOwnerContact());
     assertEquals("Acme Instruments", md.getManufacturer().get(0).getManufacturerName());
     assertEquals("AWS-42", md.getModel().getModelName());
     assertEquals("Weather station", md.getInstrumentType().get(0).getInstrumentTypeName());
@@ -168,7 +167,7 @@ class RspaceToExternalProviderAdapterImplTest {
     B2instInstrumentMetadata md = adapter.buildB2instDoi(instrument, null).getMetadata();
 
     assertEquals("Jane Doe", md.getOwner().get(0).getOwnerName());
-    assertEquals("jane@example.org", md.getOwner().get(0).getOwnerContact());
+    assertNull(md.getOwner().get(0).getOwnerContact(), "the owner's email must not reach B2INST");
   }
 
   @Test
@@ -596,7 +595,7 @@ class RspaceToExternalProviderAdapterImplTest {
 
     assertEquals("An automatic weather station.", md.at("/Description").asText());
     assertEquals("Arctic Research Institute", md.at("/Owner/0/ownerName").asText());
-    assertEquals("jane@example.org", md.at("/Owner/0/ownerContact").asText());
+    assertFalse(md.at("/Owner/0").has("ownerContact"), "no contact key on the wire");
     assertEquals("Acme Instruments", md.at("/Manufacturer/0/manufacturerName").asText());
     assertEquals("AWS-42", md.at("/Model/modelName").asText());
     assertEquals("Weather station", md.at("/InstrumentType/0/instrumentTypeName").asText());

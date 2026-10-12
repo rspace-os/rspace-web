@@ -47,6 +47,10 @@ and API field names were ported instead.
    settings, with its configured server URL and credentials, through the existing
    connectors. No cross-registry search, no separate lookup hosts, no provider filter
    in the UI. A PID of the other registry yields no hit.
+   *Superseded 2026-10-05 by ADR 0011 (RSDEV-1518):* lookup and import now go to the public
+   registries named in the deployment properties, anonymously and whether or not a provider is
+   enabled, the user may search both registries at once, and the import names its registry. A
+   PID still yields no hit at the registry it does not belong to.
 4. Import is one shot: `POST /api/inventory/v1/instruments/importPidinst {pid}`
    re-fetches the record server-side, fills the locked default template "Instrument
    (PIDINST 1.0)" by the inverse of the PIDINST mapping (multi-valued properties joined
@@ -72,6 +76,8 @@ and API field names were ported instead.
    read: a viewer with only limited read, through a container they can read or a document whose
    List of Materials lists the Instrument, is named it here because both of those contexts
    already show its Global ID.
+   *Amended 2026-10-05 (ADR 0011):* the body is `{pid, provider}`, and the record is fetched from
+   the public registry `provider` names.
 5. **Only public records may be looked up or imported**: B2INST `accepted` (a published
    record) and DataCite `findable`. A PID that exists at the provider but is not public -
    a B2INST draft, a record submitted for community review or declined, a DataCite `draft`
@@ -130,6 +136,9 @@ and API field names were ported instead.
    retry: InvenioRDM tokenises its Handle field, so a bare suffix fragment already matches
    (verified 2026-09-22, `twwkx` finds `21.T11975/twwkx-1zd85`). Its *escaping* was a separate
    gap, filed as RSDEV-1524 and closed by decision 8 on 2026-09-25.
+   *Amended 2026-10-05 (ADR 0011):* with paged results the retry runs page by page, and only while
+   the free text matched nothing at all, so an exhausted later page of a query that did match is
+   never filled from the `doi:` clause.
 
 8. **B2INST gets a substring search; DataCite gets the query as typed** (RSDEV-1522).
 
@@ -206,6 +215,79 @@ and API field names were ported instead.
    clauses, and `*Instr1<U+3000>OR<U+3000>**` matched all 810 records. For the same reason the
    minimum strips Unicode whitespace rather than trimming ASCII only, so padding cannot pass it.
 
+9. **The record's Measurement Technique and Calibration related identifiers become links only
+   when they name an item in this RSpace; every other one is skipped and reported** (RSDEV-1528,
+   decided with Nico on 2026-09-25).
+
+   RSpace registers the two link fields as related identifiers whose value is
+   `<serverUrl>/globalId/<id>` (ADR 0007), so the inverse mapping of decision 4 now covers them,
+   under the one constraint that an RSpace link can only name an item stored in the same
+   deployment. The import used to leave both fields empty and report plain success.
+
+   - An entry is *this RSpace's* when its address is the deployment's own globalId page: an http or
+     https address (either scheme) with the same host (case-insensitive) and port (a scheme's
+     default port counts the same written or left out, `https://h:443` being `https://h`), the same
+     path before `/globalId/` and that segment spelled exactly as the route maps it, trailing
+     slashes and query ignored (`InventoryUrls.globalIdOfOwnPage`, the inverse of the builder next
+     to it). The allowances are the ones the route itself honours: checked on 2026-09-29,
+     `/GLOBALID/` answers 404 while a trailing slash or a query still opens the item. A server
+     address that has changed since registration is deliberately not recognised: those entries
+     count as another server's (the ticket's out-of-scope item). The CSV link import (RSDEV-1354)
+     uses the same rule, so the two importers agree about which addresses are ours.
+   - Such an entry becomes a link exactly when the importing user could have made it by hand,
+     decided by the write path's own checks (`InventoryLinkManager.canCreateLink`, which is
+     `createLink` without the write), so the pre-check and the create can never disagree and a
+     rejected entry is dropped instead of failing the whole import with the 422 that create would
+     answer. That only holds while every lookup behind the check answers false without throwing
+     across a transactional manager: an ELN target once failed the import at commit that way,
+     because the throw marked the import's transaction rollback-only even though it was caught. A
+     trashed Inventory item, document or Gallery file the user can still see is linked and shows as
+     deleted, as by hand; a trashed notebook cannot be linked by hand either, so it is skipped. The
+     CSV link import (RSDEV-1354) is deliberately more lenient and stores a link whatever state its
+     target is in, because a file imports all or nothing and one unreachable target would fail it;
+     this import can skip one entry and report it instead.
+   - The link gets the field's own relation, `IsDocumentedBy` for Measurement technique and
+     `IsCalibratedBy` for Calibration, both in the locked template's whitelist: the registry's
+     `IsDescribedBy` is the constant ADR 0007 writes whatever the link stored, so it carries no
+     information. A version suffix in the address (`SA32768v3`) is passed through unchanged, so
+     the new link pins the version the registered address named.
+   - Every other entry with one of the two labels is a **skipped entry** (CONTEXT.md), with one
+     of two reasons: `OTHER_SERVER`, carrying the address's host unless that host is this RSpace's
+     own, or `NOT_AVAILABLE` for an address of this RSpace whose item the user cannot link. The
+     second is one reason for an item that is unreadable, missing, or of a kind links cannot
+     target, so the import never confirms that an item exists (ADR 0002). The first is deliberately
+     "other server", not "other RSpace": a registrar that reuses our labels with a manual's URL or a
+     DOI is reported truthfully. An address with no host at all, or on this RSpace's own host but
+     not an item's page, is reported as not the address of an item in this RSpace, never as another
+     server (Nico, 2026-09-30).
+   - The skipped entries travel on the created Instrument (`skippedRelatedIdentifiers`, serialised
+     only when non-empty and set only by the import endpoint), so an API caller gets the same list
+     with the same reasons. The dialog keeps its success toast and adds a second, persistent
+     warning toast, one row per entry with the field, the reason in words and the address: a link
+     when it is an absolute http(s) address, plain text otherwise, because a bare DOI as an href
+     would open a page of this RSpace that does not exist (Nico, 2026-09-28). Nothing about a
+     skipped entry is stored on the instrument; the registry record, reachable through the linked
+     identifier, still lists it.
+   - Several entries with one label: the first that can be linked fills the field and the rest are
+     ignored quietly; if none can, each one is reported. Entries with any other label, or none, are
+     ignored quietly, like any registry detail the template has no field for. A DataCite registrar
+     on Metadata Schema 4.6 or earlier drops `relationTypeInformation` (ADR 0007), so on such a DOI
+     both entries are ignored without a warning.
+   - The search lists each hit's entries for the two labels (`measurementTechniques`,
+     `calibrations`), matched by the same rule as the import, so the dialog's preview shows them
+     before the import (Nico's request, 2026-09-29). It shows them as the registry holds them, a
+     link only for an http(s) address, and does not say which will be linked: that verdict needs
+     the checks the import runs for the importing user, and the warning after the import gives it.
+
+   Rejected along the way: keeping skipped entries on the instrument as extra fields (Nico,
+   2026-09-25: the warning at import time is what the user gets, and the registry record keeps the
+   entries); warning inside the dialog before the import rather than after it (the preview lists the
+   entries since 2026-09-29, but not which will be linked); a wrapper response
+   `{instrument, skipped}` (changes the 201 body of an endpoint still in Release Prep, for no gain);
+   a third reason code for a non-RSpace address; re-implementing the link checks inside the lookup
+   manager (a smaller diff, but any check later added to the write path would turn into a 422
+   failing the whole import); one merged warning toast in place of the success toast.
+
 ## Considered options
 
 - **Fields only** (Alternate Identifier and Landing page, no identifier row): no link
@@ -216,6 +298,8 @@ and API field names were ported instead.
   the cross-registry search first asked for on RSDEV-1325, but ignores the configured
   provider and the linked identifier's type would not match the deployment's own
   provider. Nico and Tilo agreed on single-provider routing on 2026-09-07.
+  *Adopted on 2026-10-05 by ADR 0011 (RSDEV-1518), reversing this:* the linked identifier's
+  type is the registry's, and no longer has to match a configured provider.
 - **Two-step import** (the server returns a prefilled instrument the client posts
   back): the create endpoint would have to re-fetch the PID to verify client-sent
   metadata, and `identifiers` are ignored on create today.
@@ -260,7 +344,9 @@ and API field names were ported instead.
   /identifiers/{id}`, which the server allows in every state). RSDEV-1325 shipped the import UI
   without an unlink action, so this stands; revisit if users ask to unlink from the page.
   Half-superseded by ADR 0010: there is still no unlink action on the page, but trashing the
-  Instrument now unlinks whatever it carried (RSDEV-1504).
+  Instrument now unlinks whatever it carried (RSDEV-1504). Since ADR 0011 a linked identifier can
+  also exist where no PIDINST provider is enabled, and there that DELETE is refused, so trashing
+  the Instrument is the only way to release it.
   - The disabling is now explicit rather than incidental. It used to hold only for B2INST, where
     the review-state rule happened to disable the button; a linked DataCite PID is `findable`, so
     nothing caught it and the row offered an enabled Retract that the server answers with 422.
@@ -272,13 +358,16 @@ and API field names were ported instead.
 - Registration credentials are used for read-only searches; verified on
   b2inst-test.gwdg.de and api.test.datacite.org (September 2026) that an authenticated
   search still returns the global published registry, not the account's own drafts.
+  *No longer since ADR 0011:* the lookup reads the public registries anonymously, and the
+  credentials serve registration only.
 - `identifier` has no unique key (soft-deleted rows keep their value and MariaDB has no
   partial indexes), so two concurrent imports of one PID can both succeed; accepted. There is a
   non-unique index on `(type, identifier(190))` for the lookup itself, which is about speed, not
   uniqueness: without it every hit on a page of search results scanned the whole table.
 - The lookup shares the provider's availability: a provider outage disables lookup as
   well as registration, and the 10-minute result cache is evicted whenever the
-  provider settings are reloaded.
+  provider settings are reloaded. *No longer since ADR 0011:* the lookup goes to the public
+  registries and depends on no provider setting; the eviction on reload is harmless and stays.
 - A registry failure during a lookup stays an error (decided 2026-09-25, closing RSDEV-1524,
   which had asked whether a 400 should read as "no results"). Since decision 8 nothing the user
   types can make B2INST answer 400, so a 400 there can only be a request RSpace built wrongly or
@@ -288,3 +377,7 @@ and API field names were ported instead.
   502 would be a separate, small change and was not asked for.
 - DataCite's `searchDois` and typed `contributors`/`identifiers` live in
   datacite-java-client, so the change rides a client release and a pin bump.
+- The positive path of decision 9 is reachable only on the RSpace that registered the PID, and only
+  once its original instrument has been trashed, because trashing is what unlinks the PID (ADR 0010);
+  until then the import is refused with the 409 of decision 4. Anywhere else the two entries name
+  another server and are reported, never linked.

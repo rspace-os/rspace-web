@@ -62,15 +62,13 @@ public class DataCiteConnectorDummy implements DataCiteConnector {
   }
 
   @Override
-  public Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType) {
-    lastSettingTypeUsed = settingType;
+  public Optional<DataCiteDoi> findPublicDoi(String doiId) {
     return Optional.empty();
   }
 
   @Override
-  public DataCiteDoiSearchResult searchInstrumentDois(
-      String query, int pageSize, InventorySettingType settingType) {
-    lastSettingTypeUsed = settingType;
+  public DataCiteDoiSearchResult searchPublicInstrumentDois(
+      String query, int pageNumber, int pageSize) {
     return new DataCiteDoiSearchResult();
   }
 

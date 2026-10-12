@@ -1,15 +1,18 @@
 package com.researchspace.webapp.integrations.datacite;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.datacite.client.DataCiteClient;
+import com.researchspace.datacite.client.DataCiteClientImpl;
+import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.datacite.model.DataCiteDoiSearchResult;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -18,78 +21,98 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
 
 /**
- * The connector only routes to the PIDINST client and turns DataCite's 404 into an empty answer.
+ * The connector routes lookups to the anonymous public-registry client and turns 404 into empty.
  */
 class DataCiteConnectorImplLookupTest {
 
   private final DataCiteConnectorImpl connector = new DataCiteConnectorImpl();
-  private final DataCiteClient pidinstClient = mock(DataCiteClient.class);
+  private final DataCiteClient lookupClient = mock(DataCiteClient.class);
 
   @BeforeEach
-  @SuppressWarnings("unchecked")
   void setUp() {
-    Map<InventorySettingType, DataCiteClient> clients =
-        (Map<InventorySettingType, DataCiteClient>)
-            ReflectionTestUtils.getField(connector, "dataCiteClients");
-    clients.put(InventorySettingType.PIDINST, pidinstClient);
+    ReflectionTestUtils.setField(connector, "lookupClient", lookupClient);
   }
 
   @Test
-  void findDoiReturnsTheDoiOrEmptyOn404() {
+  void findPublicDoiReturnsTheDoiOrEmptyOn404() {
     DataCiteDoi found = new DataCiteDoi();
     found.setId("10.15151/esrf-instr-gco8");
-    when(pidinstClient.retrieveDoi("10.15151/esrf-instr-gco8")).thenReturn(found);
-    when(pidinstClient.retrieveDoi("10.15151/nope"))
+    when(lookupClient.retrieveDoi("10.15151/esrf-instr-gco8")).thenReturn(found);
+    when(lookupClient.retrieveDoi("10.15151/nope"))
         .thenThrow(
             HttpClientErrorException.create(
                 HttpStatus.NOT_FOUND, "Not Found", HttpHeaders.EMPTY, new byte[0], null));
 
     assertEquals(
         "10.15151/esrf-instr-gco8",
-        connector.findDoi("10.15151/esrf-instr-gco8", InventorySettingType.PIDINST).get().getId());
-    assertTrue(connector.findDoi("10.15151/nope", InventorySettingType.PIDINST).isEmpty());
+        connector.findPublicDoi("10.15151/esrf-instr-gco8").get().getId());
+    assertTrue(connector.findPublicDoi("10.15151/nope").isEmpty());
   }
 
   @Test
-  void findDoiReturnsEmptyForSomethingThatIsNotADoi() {
-    when(pidinstClient.retrieveDoi("not-a-doi"))
+  void findPublicDoiReturnsEmptyForSomethingThatIsNotADoi() {
+    when(lookupClient.retrieveDoi("not-a-doi"))
         .thenThrow(
             new IllegalArgumentException("Not a DOI, so it will not be put in a request path"));
 
-    assertTrue(connector.findDoi("not-a-doi", InventorySettingType.PIDINST).isEmpty());
+    assertTrue(connector.findPublicDoi("not-a-doi").isEmpty());
   }
 
   @Test
-  void searchInstrumentDoisRestrictsToFindableInstrumentsOnly() {
-    // only publicly resolvable DOIs may be imported, and DataCite filters by state itself so the
-    // total matches the page (RSDEV-1326); the Lucene form "state:findable" matches nothing
+  void searchPublicInstrumentDoisAsksForFindableInstrumentsNewestUpdateFirstOnTheOneBasedPage() {
     DataCiteDoiSearchResult page = new DataCiteDoiSearchResult();
     page.getMeta().setTotal(41);
-    when(pidinstClient.searchDois("Zeiss", "instrument", "findable", 50)).thenReturn(page);
+    when(lookupClient.searchDois("Zeiss", "instrument", "findable", 50, 3, "-updated"))
+        .thenReturn(page);
 
-    assertEquals(
-        41,
-        connector
-            .searchInstrumentDois("Zeiss", 50, InventorySettingType.PIDINST)
-            .getMeta()
-            .getTotal());
+    assertEquals(41, connector.searchPublicInstrumentDois("Zeiss", 2, 50).getMeta().getTotal());
   }
 
   @Test
-  void findDoiStillReturnsWhateverStateTheProviderHolds() {
-    // the connector reports the state; refusing a non-findable DOI is the lookup manager's job,
-    // because a DOI is also retrieved for reasons other than import
+  void findPublicDoiStillReturnsWhateverStateTheRegistryHolds() {
+    // the connector reports the state; refusing a non-findable DOI is the lookup manager's job
     DataCiteDoi draft = new DataCiteDoi();
     draft.setId("10.82316/dhhr-4396");
     draft.getAttributes().setState("draft");
-    when(pidinstClient.retrieveDoi("10.82316/dhhr-4396")).thenReturn(draft);
+    when(lookupClient.retrieveDoi("10.82316/dhhr-4396")).thenReturn(draft);
 
     assertEquals(
-        "draft",
-        connector
-            .findDoi("10.82316/dhhr-4396", InventorySettingType.PIDINST)
-            .get()
-            .getAttributes()
-            .getState());
+        "draft", connector.findPublicDoi("10.82316/dhhr-4396").get().getAttributes().getState());
+  }
+
+  @Test
+  void aBlankLookupUrlLeavesNoClientAndFailsTheSearchWithAClearMessage() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", " ");
+    connector.initLookupClient();
+
+    DataCiteConnectionException thrown =
+        assertThrows(
+            DataCiteConnectionException.class,
+            () -> connector.searchPublicInstrumentDois("Zeiss", 0, 50));
+
+    assertTrue(thrown.getMessage().contains("pidinst.lookup.datacite.url"), thrown.getMessage());
+  }
+
+  @Test
+  void anUnparsableLookupUrlLeavesNoClientAndFailsTheSearch() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", "https://api.datacite.org/a b");
+    connector.initLookupClient();
+
+    assertThrows(
+        DataCiteConnectionException.class,
+        () -> connector.searchPublicInstrumentDois("Zeiss", 0, 50));
+  }
+
+  @Test
+  void theLookupClientIsBuiltFromTheDeploymentPropertyAndTheSupportEmail() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", "https://api.datacite.org");
+    ReflectionTestUtils.setField(connector, "supportEmail", "support@example.org");
+    connector.initLookupClient();
+
+    Object built = ReflectionTestUtils.getField(connector, "lookupClient");
+    assertInstanceOf(DataCiteClientImpl.class, built);
+    assertEquals(
+        "RSpace (mailto:support@example.org)", ReflectionTestUtils.getField(built, "userAgent"));
+    assertNull(ReflectionTestUtils.getField(built, "basicAuthenticationHeader"));
   }
 }

@@ -134,21 +134,22 @@ describe("IGSN Table", () => {
     // can export a partial CSV.
     await table.waitForRowCount(4);
     const csv = await table.exportToCsv();
-    const lines = csv.split("\n");
-    // 4 data rows + 1 header row
-    expect(lines.length).toBe(4 + 1);
+    const [header, ...rows] = csv.trim().split(/\r?\n/);
+    expect(header).toBe("DOI,State,Linked Item");
+    expect(rows.sort()).toEqual(
+      IDENTIFIERS_PAYLOAD.map(({ doi, associatedGlobalId }) => `${doi},draft,${associatedGlobalId}`).sort(),
+    );
   });
 
   test("When some IGSNs are selected, CSV exports should include just those rows", async () => {
     render(<SimpleIgsnTable />);
     await table.waitForLoad();
     await table.waitForRowCount(4);
-    // Select 2 rows
-    await table.selectRowByIndex(0);
-    await table.selectRowByIndex(1);
+    await table.selectRowByDoi("10.82316/khma-em96");
+    await table.selectRowByDoi("10.82316/jy8j-ts43");
     const csv = await table.exportToCsv();
-    const lines = csv.split("\n");
-    // 2 selected rows + 1 header row
-    expect(lines.length).toBe(2 + 1);
+    const [header, ...rows] = csv.trim().split(/\r?\n/);
+    expect(header).toBe("DOI,State,Linked Item");
+    expect(rows.sort()).toEqual(["10.82316/jy8j-ts43,draft,SA32769", "10.82316/khma-em96,draft,SA32768"]);
   });
 });

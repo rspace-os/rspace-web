@@ -2,17 +2,25 @@ import { defineConfig, devices, type ReporterDescription } from "@playwright/tes
 import { storageStatePath } from "./src/__tests__/e2e/authState";
 import { env } from "./src/__tests__/e2e/env";
 import type { E2EOptions } from "./src/__tests__/e2e/fixtures/ui";
+import { selectBrowserProjects } from "./src/__tests__/e2e/projects";
 import { tags } from "./src/__tests__/e2e/tags";
 import { USERS } from "./src/__tests__/e2e/users";
 import { MOBILE_DEVICE } from "./src/__tests__/e2e/viewports";
 
 const E2E_BROWSER = env.browser;
-const SETUP_BROWSER: "chromium" | "firefox" | "webkit" =
-  E2E_BROWSER === "firefox" || E2E_BROWSER === "webkit" ? E2E_BROWSER : "chromium";
+const browserProjects = selectBrowserProjects(E2E_BROWSER, { cloud: env.cloud });
+const SETUP_BROWSER = browserProjects[0]?.browserName ?? "chromium";
+const desktopDevices = {
+  chromium: devices["Desktop Chrome"],
+  firefox: devices["Desktop Firefox"],
+  webkit: devices["Desktop Safari"],
+};
 
 const MOCK_PORT = env.mockPort;
 const MOCK_PROBE_URL = `http://localhost:${MOCK_PORT}/e2e-health`;
 const HEADLESS = env.headless;
+
+const CLOUD_SPECS = "**/specs/cloud/**/*.e2e.ts";
 
 const PW_LOG = env.playwrightLog;
 if (PW_LOG === "trace") {
@@ -80,55 +88,24 @@ export default defineConfig<E2EOptions>({
       use: { appUser: USERS.user2b },
     },
 
-    {
-      name: "chromium",
-      testMatch: "**/*.e2e.ts",
+    ...browserProjects.map(({ name, browserName, appUser }) => ({
+      name,
+      testMatch: env.cloud ? CLOUD_SPECS : "**/*.e2e.ts",
+      testIgnore: env.cloud ? undefined : CLOUD_SPECS,
       dependencies: ["setup"],
+      grep: name === "mobile" ? new RegExp(tags.MOBILE) : undefined,
       use: {
-        ...devices["Desktop Chrome"],
+        ...(name === "mobile" ? MOBILE_DEVICE : desktopDevices[browserName]),
+        browserName,
         headless: HEADLESS,
-        appUser: USERS.user1a,
-        storageState: storageStatePath(USERS.user1a.username),
+        appUser,
+        storageState: storageStatePath(appUser.username),
+        ignoreHTTPSErrors: browserName === "webkit" || name === "mobile",
       },
-    },
-    {
-      name: "firefox",
-      testMatch: "**/*.e2e.ts",
-      dependencies: ["setup"],
-      use: {
-        ...devices["Desktop Firefox"],
-        headless: HEADLESS,
-        appUser: USERS.user3c,
-        storageState: storageStatePath(USERS.user3c.username),
-      },
-    },
-    {
-      name: "webkit",
-      testMatch: "**/*.e2e.ts",
-      dependencies: ["setup"],
-
-      use: {
-        ...devices["Desktop Safari"],
-        headless: HEADLESS,
-        appUser: USERS.user4d,
-        storageState: storageStatePath(USERS.user4d.username),
-        ignoreHTTPSErrors: true,
-      },
-    },
-
-    {
-      name: "mobile",
-      testMatch: "**/*.e2e.ts",
-      dependencies: ["setup"],
-      grep: new RegExp(tags.MOBILE),
-      use: {
-        ...MOBILE_DEVICE,
-        headless: HEADLESS,
-        appUser: USERS.user7g,
-        storageState: storageStatePath(USERS.user7g.username),
-        ignoreHTTPSErrors: true,
-      },
-    },
-    // Browser projects require setup; API-only runs do not.
-  ].filter(({ name }) => !E2E_BROWSER || name === E2E_BROWSER || (name === "setup" && E2E_BROWSER !== "api")),
+    })),
+  ].filter(({ name }) => {
+    if (name === "setup") return E2E_BROWSER !== "api";
+    if (name === "api") return (!E2E_BROWSER && !env.cloud) || E2E_BROWSER === "api";
+    return true;
+  }),
 });

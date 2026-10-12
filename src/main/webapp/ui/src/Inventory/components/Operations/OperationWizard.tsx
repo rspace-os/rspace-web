@@ -3,10 +3,13 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
 import Step from "@mui/material/Step";
 import StepContent from "@mui/material/StepContent";
 import StepLabel from "@mui/material/StepLabel";
 import Stepper from "@mui/material/Stepper";
+import Decimal from "decimal.js";
 import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
@@ -15,7 +18,7 @@ import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import useUiPreference from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
-import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
+import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
@@ -40,11 +43,17 @@ import {
   resolveProcessName,
   usesAmountModes,
 } from "./operations";
-import { describeOperationError, type OperationResult, performOperation, sampleNameAvailable } from "./operationsApi";
+import {
+  type OperationResult,
+  performOperation,
+  sampleNameAvailable,
+  useDescribeOperationError,
+} from "./operationsApi";
 import {
   amountIsStorable,
   amountTakenExceedsOrigin,
   amountTooLarge,
+  commonAmount,
   detailsValid,
   originBlockedReason,
   quantityExceedsOrigin,
@@ -124,15 +133,13 @@ function toOrigin(origin: SubSampleModel): OperationOrigin {
 }
 
 /**
- * toCommonUnit throws for any unit outside volume/mass/dimensionless, and molarity/concentration
- * units are real, server-supported units a subsample can hold - so gate with categoryOfUnit first.
- * 0 is the safe fallback: an unconvertible origin sorts as smallest, and allSameCategory is already
- * false for those units, so Pool stays disabled either way.
+ * Molarity and concentration units are real, server-supported units a subsample can hold, but have
+ * no common unit. 0 is the safe fallback: an unconvertible origin sorts as smallest, and
+ * allSameCategory is already false for those units, so Pool stays disabled either way.
  */
-function commonQuantity(origin: SubSampleModel): number {
-  if (!origin.quantity) return 0;
-  const unitId = getUnitId(origin.quantity);
-  return categoryOfUnit(unitId) === null ? 0 : toCommonUnit(getValue(origin.quantity), unitId);
+function commonQuantity(origin: SubSampleModel): Decimal {
+  const quantity = toOrigin(origin).quantity;
+  return (quantity && commonAmount(quantity)) ?? new Decimal(0);
 }
 
 /**
@@ -140,7 +147,7 @@ function commonQuantity(origin: SubSampleModel): number {
  * constraint, so checking against it is equivalent to checking every origin.
  */
 function representativeOrigin(origins: Array<SubSampleModel>): SubSampleModel {
-  return origins.reduce((smallest, o) => (commonQuantity(o) < commonQuantity(smallest) ? o : smallest));
+  return origins.reduce((smallest, o) => (commonQuantity(o).lessThan(commonQuantity(smallest)) ? o : smallest));
 }
 
 function OperationWizard({
@@ -163,6 +170,7 @@ function OperationWizard({
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const resolveLabel = resolveLabelFrom(t);
+  const describeOperationError = useDescribeOperationError();
   const origin = representativeOrigin(origins);
   // Derived via categoryOfUnit rather than SubSampleModel.quantityCategory: that getter throws when
   // the (localStorage-backed) unit store has no entry for the id, which is every id before GET
@@ -545,7 +553,7 @@ function OperationWizard({
 
   // Shown inside the dialog as well as in the toast: the toast sits outside the modal, where
   // assistive technology cannot reach it while the wizard is open.
-  const [performError, setPerformError] = React.useState<string | null>(null);
+  const [performError, setPerformError] = React.useState<Array<string> | null>(null);
   React.useEffect(() => {
     setPerformError(null);
   }, [activeStep, operation, reviewing]);
@@ -591,11 +599,11 @@ function OperationWizard({
     if (!operation) return false;
     // An operation that empties its origin (Destroy) skips the details step, where other operations
     // gate this, so enforce it for every step here instead.
-    if (operation.effect.emptiesOrigin && origins.some((o) => commonQuantity(o) <= 0)) return false;
+    if (operation.effect.emptiesOrigin && origins.some((o) => commonQuantity(o).lessThanOrEqualTo(0))) return false;
     // Checked on EVERY origin explicitly, not just the representative: the two are equivalent today
     // (representative is the smallest), but the backend rule is per-origin, so the gate matches it.
     if (key === "details")
-      return detailsValid(operation, values, detailKeys) && origins.every((o) => commonQuantity(o) > 0);
+      return detailsValid(operation, values, detailKeys) && origins.every((o) => commonQuantity(o).greaterThan(0));
     if (key === "template") return templateStepValid(templateSelection);
     if (key === "amounts") return amountsStepValid();
     return true;
@@ -648,9 +656,11 @@ function OperationWizard({
     } catch (error) {
       // The error's `message` for a rejected request is just "Errors detected: 1"; the actual reason
       // lives in the field-scoped errors array, which describeOperationError reads instead.
-      const message = describeOperationError(error, operation, resolveLabel, t("operations.wizard.failed"));
-      setPerformError(message);
-      getRootStore().uiStore.addAlert(mkAlert({ title: t("operations.wizard.failed"), message, variant: "error" }));
+      const reasons = describeOperationError(error, operation);
+      setPerformError(reasons);
+      getRootStore().uiStore.addAlert(
+        mkAlert({ title: t("operations.wizard.failed"), message: reasons.join("\n"), variant: "error" }),
+      );
       // Re-read the origins: the usual rejection is "you asked for more than it holds", and the
       // amounts step validates against origin.quantity, so without a refresh the user could only
       // fail the same way again.
@@ -795,8 +805,18 @@ function OperationWizard({
     return (
       <>
         {performError ? (
-          <Alert severity="error" sx={{ mb: 1, whiteSpace: "pre-line" }}>
-            {performError}
+          <Alert severity="error" sx={{ mb: 1 }}>
+            {performError.length === 1 ? (
+              performError[0]
+            ) : (
+              <List dense disablePadding>
+                {performError.map((reason) => (
+                  <ListItem key={reason} disableGutters>
+                    {reason}
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Alert>
         ) : null}
         {trashedDocumentationWarning()}

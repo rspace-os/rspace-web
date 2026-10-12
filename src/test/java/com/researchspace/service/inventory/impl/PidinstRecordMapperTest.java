@@ -10,7 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryDOI;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiPidinstRecord;
+import com.researchspace.b2inst.model.metadata.B2instRelatedIdentifier;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
@@ -22,6 +24,7 @@ import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.inventory.field.InventoryStringField;
 import com.researchspace.model.inventory.field.InventoryUriField;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -32,6 +35,10 @@ import org.junit.jupiter.api.Test;
 class PidinstRecordMapperTest {
 
   private static final ObjectMapper JSON = new ObjectMapper();
+
+  /** The server that registered the live record 21.T11975/zax2y-0a638 (RSDEV-1528). */
+  private static final String OTHER_SERVER =
+      "https://rsdev-1253-map-clibration-and-measurement-f50c365a-11.researchspace.com";
 
   private static final String B2INST_RECORD =
       "{\"id\":\"tpqdy-6zd98\",\"created\":\"2024-02-07T18:19:24.443130+00:00\","
@@ -49,7 +56,13 @@ class PidinstRecordMapperTest {
           + "\"Date\":[{\"Date\":\"2011-09-30T04:00:00.000Z\",\"dateType\":\"Commissioned\"},"
           + "{\"Date\":\"2025-01-15\",\"dateType\":\"DeCommissioned\"}],"
           + "\"LandingPage\":\"https://trello.com/b/BQ8zCcQC/tirf-microscope\","
-          + "\"AlternateIdentifier\":[{\"alternateIdentifierType\":\"Other\",\"alternateIdentifierValue\":\"UMMS-TESM-01\"}]}}";
+          + "\"AlternateIdentifier\":[{\"alternateIdentifierType\":\"Other\",\"alternateIdentifierValue\":\"UMMS-TESM-01\"}],"
+          + "\"RelatedIdentifier\":[{\"relatedIdentifierType\":\"URL\",\"relatedIdentifierValue\":\""
+          + OTHER_SERVER
+          + "/globalId/IC65536\",\"relationType\":\"IsDescribedBy\",\"relatedIdentifierName\":\"Measurement"
+          + " Technique\"},{\"relatedIdentifierType\":\"URL\",\"relatedIdentifierValue\":\""
+          + OTHER_SERVER
+          + "/globalId/SA32768\",\"relationType\":\"IsDescribedBy\",\"relatedIdentifierName\":\"Calibration\"}]}}";
 
   private static final String DATACITE_DOI =
       "{\"id\":\"10.15151/esrf-instr-gco8\",\"type\":\"dois\",\"attributes\":{\"doi\":\"10.15151/esrf-instr-gco8\",\"state\":\"findable\",\"publisher\":\"European"
@@ -63,6 +76,9 @@ class PidinstRecordMapperTest {
           + " 2.1-10.5 keV\",\"descriptionType\":\"TechnicalInfo\"}],"
           + "\"identifiers\":[{\"identifier\":\"ID21\",\"identifierType\":\"alias\"}],"
           + "\"types\":{\"resourceType\":\"Beamline\",\"resourceTypeGeneral\":\"Instrument\"},"
+          + "\"relatedIdentifiers\":[{\"relationType\":\"IsDescribedBy\",\"relatedIdentifier\":\"https://rspace.example.com/globalId/IC65536\",\"relatedIdentifierType\":\"URL\",\"relationTypeInformation\":\"Measurement"
+          + " Technique\"},{\"relationType\":\"References\",\"relatedIdentifier\":\"10.1000/manual\",\"relatedIdentifierType\":\"DOI\"},{\"relationType\":\"IsDescribedBy\",\"relatedIdentifier\":\""
+          + "  \",\"relatedIdentifierType\":\"URL\",\"relationTypeInformation\":\"Calibration\"}],"
           + "\"url\":\"https://doi.esrf.fr/10.15151/ESRF-INSTR-GCO8/\"}}";
 
   private static B2instDraftRecord b2instRecord() throws Exception {
@@ -192,11 +208,72 @@ class PidinstRecordMapperTest {
     assertTrue(record.getInstrumentTypes().isEmpty());
   }
 
+  /** RSDEV-1528: what the import reads back is exactly what registration writes (ADR 0007). */
+  @Test
+  void b2instRelatedIdentifiersAreCarriedAsLabelAndValueInRegistryOrder() throws Exception {
+    ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
+
+    assertEquals(
+        List.of(
+            new ApiPidinstRecord.RelatedIdentifier(
+                "Measurement Technique", OTHER_SERVER + "/globalId/IC65536"),
+            new ApiPidinstRecord.RelatedIdentifier(
+                "Calibration", OTHER_SERVER + "/globalId/SA32768")),
+        record.getRelatedIdentifiers());
+  }
+
+  /** The import matches labels and parses addresses exactly as the mapper leaves them. */
+  @Test
+  void relatedIdentifierLabelsAndValuesAreTrimmed() throws Exception {
+    B2instDraftRecord raw = b2instRecord();
+    raw.getMetadata()
+        .setRelatedIdentifier(
+            List.of(
+                new B2instRelatedIdentifier(
+                    "URL",
+                    "  " + OTHER_SERVER + "/globalId/SA1 ",
+                    "IsDescribedBy",
+                    " Calibration ")));
+
+    assertEquals(
+        List.of(
+            new ApiPidinstRecord.RelatedIdentifier("Calibration", OTHER_SERVER + "/globalId/SA1")),
+        PidinstRecordMapper.fromB2inst(raw).getRelatedIdentifiers());
+  }
+
+  /** What the search preview shows for the two link fields. */
+  @Test
+  void theEntriesOfTheTwoImportedLabelsAreListedForThePreview() throws Exception {
+    ApiPidinstRecord b2inst = PidinstRecordMapper.fromB2inst(b2instRecord());
+    ApiPidinstRecord dataCite = PidinstRecordMapper.fromDataCite(dataCiteDoi(DATACITE_DOI));
+
+    assertEquals(List.of(OTHER_SERVER + "/globalId/IC65536"), b2inst.getMeasurementTechniques());
+    assertEquals(List.of(OTHER_SERVER + "/globalId/SA32768"), b2inst.getCalibrations());
+    assertEquals(
+        List.of("https://rspace.example.com/globalId/IC65536"),
+        dataCite.getMeasurementTechniques());
+    assertTrue(dataCite.getCalibrations().isEmpty(), "an entry without a label names no field");
+  }
+
+  @Test
+  void dataCiteRelatedIdentifiersKeepALabellessEntryAndDropAValuelessOne() throws Exception {
+    ApiPidinstRecord record = PidinstRecordMapper.fromDataCite(dataCiteDoi(DATACITE_DOI));
+
+    assertEquals(
+        List.of(
+            new ApiPidinstRecord.RelatedIdentifier(
+                "Measurement Technique", "https://rspace.example.com/globalId/IC65536"),
+            new ApiPidinstRecord.RelatedIdentifier(null, "10.1000/manual")),
+        record.getRelatedIdentifiers(),
+        "relationTypeInformation is the label; an entry with a blank value is nothing to import");
+  }
+
   @Test
   void templateFieldsAreFilledByCanonicalNameAndTypeWithMultiValuesJoined() throws Exception {
     ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
 
-    ApiInstrument instrument = PidinstRecordMapper.toApiInstrument(record, defaultTemplate());
+    ApiInstrument instrument =
+        PidinstRecordMapper.toApiInstrument(record, defaultTemplate(), Map.of());
 
     assertEquals(7L, instrument.getTemplateId());
     assertEquals("Olympus IX71 TIRF Structured Light Microscope", instrument.getName());
@@ -225,7 +302,8 @@ class PidinstRecordMapperTest {
     record.setLandingPage("lab.example.org/no-scheme");
     record.setCommissioned(PidinstRecordMapper.isoDate("September 2011"));
 
-    ApiInstrument instrument = PidinstRecordMapper.toApiInstrument(record, defaultTemplate());
+    ApiInstrument instrument =
+        PidinstRecordMapper.toApiInstrument(record, defaultTemplate(), Map.of());
 
     assertEquals(255, instrument.getName().length());
     assertEquals(250, instrument.getDescription().length());
@@ -242,7 +320,28 @@ class PidinstRecordMapperTest {
 
     assertThrows(
         ApiRuntimeException.class,
-        () -> PidinstRecordMapper.toApiInstrument(record, defaultTemplate()));
+        () -> PidinstRecordMapper.toApiInstrument(record, defaultTemplate(), Map.of()));
+  }
+
+  @Test
+  void aResolvedLinkGoesOnItsFieldAndAnUnresolvedLinkFieldStaysEmpty() throws Exception {
+    ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
+    InstrumentTemplate template = defaultTemplate();
+    // matched as PidinstFields matches: case-insensitively, whitespace ignored
+    template.getActiveFields().get(8).setName(" calibration ");
+    ApiInventoryLink calibration = new ApiInventoryLink();
+    calibration.setRelationType("IsCalibratedBy");
+    calibration.setTargetGlobalId("SA32768v3");
+
+    ApiInstrument instrument =
+        PidinstRecordMapper.toApiInstrument(
+            record, template, Map.of(PidinstFields.CALIBRATION, calibration));
+
+    assertEquals(calibration, instrument.getFields().get(8).getLink());
+    assertEquals(
+        "", content(instrument, 8), "a link field's value lives in its link, not its content");
+    assertNull(instrument.getFields().get(6).getLink(), "Measurement technique resolved nothing");
+    assertEquals(12, instrument.getFields().size());
   }
 
   @Test

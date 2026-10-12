@@ -95,8 +95,10 @@ export class IgsnTablePage {
     return blob.text();
   }
 
-  async selectRowByIndex(index: number): Promise<void> {
-    const checkboxes = page.getByRole("checkbox", { name: /Select row/ });
-    await checkboxes.nth(index).click();
+  async selectRowByDoi(doi: string): Promise<void> {
+    await this.dataRows()
+      .filter({ has: page.getByRole("gridcell", { name: doi, exact: true }) })
+      .getByRole("checkbox")
+      .click();
   }
 }

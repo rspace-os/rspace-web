@@ -12,11 +12,12 @@ test.describe(`Inventory IGSN Identifiers`, { tag: [tags.INVENTORY, tags.MOBILE]
     "real mode needs IGSN_ACCOUNT_ID, IGSN_PASSWORD, and IGSN_REPO_PREFIX",
   );
 
-  test(`As a user, I can mint, preview, and publish a Draft identifier`, async ({
+  test(`As a user, I can mint, preview, and publish a Draft identifier, credited to my institution's ROR record`, async ({
     pageInventory,
     componentToasts,
     flowIgsnConfig,
-    page,
+    flowLinkedRor,
+    clientDataCite,
   }) => {
     void flowIgsnConfig;
     const sampleName = uniqueName("e2e-igsn-sample");
@@ -50,14 +51,42 @@ test.describe(`Inventory IGSN Identifiers`, { tag: [tags.INVENTORY, tags.MOBILE]
 
     await identifiers.waitForState("Draft");
 
-    await identifiers.clickPreview();
+    const draftPreview = await identifiers.clickPreview();
     await expect(identifiers.subjects).toBeVisible();
-    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(draftPreview.creatorAffiliation(flowLinkedRor.name)).toBeVisible();
+    await draftPreview.close();
 
     await identifiers.clickPublish();
     await expect(componentToasts.byText("published")).toBeVisible();
 
     await identifiers.waitForState("Findable");
+
+    // The preview reads RSpace's public API; check DataCite separately for the published metadata.
+    const publishedPreview = await identifiers.clickPreview();
+    await expect(publishedPreview.creatorAffiliation(flowLinkedRor.name)).toBeVisible();
+    await expect(publishedPreview.creatorAffiliationIdentifier(flowLinkedRor.id)).toHaveAttribute(
+      "href",
+      flowLinkedRor.id,
+    );
+    const doi = await publishedPreview.getDoi();
+    await publishedPreview.close();
+    expect(await clientDataCite.getDoi(doi)).toMatchObject({
+      id: doi,
+      attributes: {
+        state: "findable",
+        creators: [
+          {
+            affiliation: [
+              {
+                name: flowLinkedRor.name,
+                affiliationIdentifier: flowLinkedRor.id,
+                affiliationIdentifierScheme: "ROR",
+              },
+            ],
+          },
+        ],
+      },
+    });
   });
 
   test(`As a user, I can retract a published identifier`, async ({

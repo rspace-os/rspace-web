@@ -5,19 +5,18 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import jakarta.ws.rs.NotFoundException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Component;
 
 /**
@@ -137,23 +136,34 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
     return readableElnRecord(target, user).filter(record -> !record.isDeleted());
   }
 
+  /**
+   * Looked up with {@code getSafeNull}, never the permission-checking getters: those throw from a
+   * transactional FolderManager for a missing, unreadable or trashed folder, which marks the
+   * caller's transaction rollback-only even though the exception is caught, and callers carry on
+   * after a false inside a write transaction (a skipped PIDINST import entry, RSDEV-1528).
+   */
   private Optional<BaseRecord> readableElnRecord(GlobalIdentifier target, User user) {
-    try {
-      List<BaseRecord> readable =
-          baseRecordManager.getByGlobalIdsAndReadPermission(
-              Collections.singletonList(target), user);
-      // the loader resolves by numeric id alone, so a typed id can load a
-      // different record kind sharing the number (e.g. "GL150" loads folder
-      // FL150): only a record whose own oid prefix matches the requested one
-      // counts as the link target
-      for (BaseRecord record : readable) {
-        if (record.getOid() != null && record.getOid().getPrefix() == target.getPrefix()) {
-          return Optional.of(record);
-        }
-      }
-      return Optional.empty();
-    } catch (ObjectRetrievalFailureException | AuthorizationException e) {
-      return Optional.empty();
-    }
+    return baseRecordManager
+        .getSafeNull(target.getDbId())
+        // the loader resolves by numeric id alone, so a typed id can load a different record kind
+        // sharing the number (e.g. "GL150" loads folder FL150): only a record whose own oid prefix
+        // matches the requested one counts as the link target
+        .filter(
+            record -> record.getOid() != null && record.getOid().getPrefix() == target.getPrefix())
+        // the rule FolderManager.getFolder applies: a trashed folder or notebook is no target
+        .filter(record -> !record.isFolder() || !isDeletedFolder(record, user))
+        // filter, not isPermitted: isPermitted lets anyone READ a published record, which never
+        // made it a link target for them
+        .filter(
+            record ->
+                !permissionUtils
+                    .filter(new ArrayList<>(List.of(record)), PermissionType.READ, user)
+                    .isEmpty());
+  }
+
+  private static boolean isDeletedFolder(BaseRecord folder, User user) {
+    return folder.isDeleted()
+        || folder.isDeletedForUser(folder.getOwner())
+        || folder.isDeletedForUser(user);
   }
 }
