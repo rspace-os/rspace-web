@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class DigitalObjectIdentifierTest {
 
@@ -114,16 +115,18 @@ public class DigitalObjectIdentifierTest {
     assertThat(twoArg.getPublicLink()).hasSize(22);
   }
 
-  @Test
-  public void b2instPublicUrlIsTheStoredHandleAndNeverBuiltFromTheRecordId() {
-    DigitalObjectIdentifier accepted = new DigitalObjectIdentifier("d4mwx-bfd89", "a title");
-    accepted.setType(IdentifierType.PIDINST_B2INST);
-    accepted.setState("accepted");
-    assertNull(accepted.getPublicUrl());
+  /* the fallback must not depend on B2INST never using DataCite's state names */
+  @ParameterizedTest
+  @ValueSource(strings = {"accepted", "findable", "registered"})
+  public void b2instPublicUrlIsTheStoredHandleAndNeverBuiltFromTheRecordId(String state) {
+    DigitalObjectIdentifier b2inst = new DigitalObjectIdentifier("d4mwx-bfd89", "a title");
+    b2inst.setType(IdentifierType.PIDINST_B2INST);
+    b2inst.setState(state);
+    assertNull(b2inst.getPublicUrl());
 
-    accepted.addOtherData(
+    b2inst.addOtherData(
         IdentifierOtherProperty.PUBLIC_URL, "http://hdl.handle.net/21.T11975/d4mwx-bfd89");
-    assertEquals("http://hdl.handle.net/21.T11975/d4mwx-bfd89", accepted.getPublicUrl());
+    assertEquals("http://hdl.handle.net/21.T11975/d4mwx-bfd89", b2inst.getPublicUrl());
   }
 
   /*

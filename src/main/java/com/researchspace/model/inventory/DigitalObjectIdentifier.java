@@ -242,8 +242,9 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
   /**
    * This identifier's public URL (CONTEXT.md): the stored one, or, for a DataCite DOI that resolves
    * (findable, or registered after a retract) but was stored without one, its doi.org address.
-   * Deliberately not {@link #isPublishedState}: that admits B2INST's {@code accepted}, and a B2INST
-   * PID RSpace registered stores the provider's record id, not the Handle (ADR 0009).
+   * Never built for B2INST, whatever its state: a B2INST PID RSpace registered stores the
+   * provider's record id, not the Handle (ADR 0009). Deliberately not {@link #isPublishedState}
+   * either: that admits B2INST's {@code accepted} and leaves out a retracted DataCite DOI.
    *
    * @return the address, or null while the PID does not resolve
    */
@@ -254,7 +255,9 @@ public class DigitalObjectIdentifier extends InventoryRecordConnectedEntity
       return stored;
     }
     boolean doiResolves =
-        "findable".equalsIgnoreCase(getState()) || "registered".equalsIgnoreCase(getState());
+        getType() != IdentifierType.PIDINST_B2INST
+            && ("findable".equalsIgnoreCase(getState())
+                || "registered".equalsIgnoreCase(getState()));
     return doiResolves ? InventoryIdentifierField.DOI_URL_PREFIX + getIdentifier() : null;
   }
 
