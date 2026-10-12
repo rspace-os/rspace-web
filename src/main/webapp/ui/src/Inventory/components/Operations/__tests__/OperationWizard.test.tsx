@@ -1727,6 +1727,23 @@ describe("OperationWizard remembered placement", () => {
     expect(bulkBodies).toHaveLength(1);
   });
 
+  it("keeps a remembered workbench rather than offering the origin's own container", async () => {
+    rememberBoil(null);
+    const served = serveContainer({ id: 2, globalId: "IC2", name: "Rack", cType: "LIST" });
+    const bulkBodies = createTwoAndRecordBulk();
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const origin = makeMockSubSampleWithParentContainer();
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.click(await screen.findByRole("button", { name: /wizard\.perform/i }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(served).not.toHaveBeenCalled();
+    expect(bulkBodies).toHaveLength(0);
+  });
+
   const currentStep = () => document.querySelector('[aria-current="step"]');
   const gridBox = { id: 6, globalId: "IC6", name: "Box", cType: "GRID", gridLayout: grid, locationsCount: 4 } as const;
 

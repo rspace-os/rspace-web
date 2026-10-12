@@ -279,6 +279,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             }
             setAnnouncement(null);
             if (e.key === "Escape") {
+              setShiftOrigin(null);
               container.toggleAllLocations(false);
               e.preventDefault();
               if (selectionOnly) {
@@ -398,7 +399,10 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       parentRef={tableRef}
                       columnsUnderHover={columnsUnderHover}
                       columnIndex={index}
-                      onPointerFocus={setTabIndexCoord}
+                      onPointerFocus={(coord) => {
+                        setTabIndexCoord(coord);
+                        setShiftOrigin(null);
+                      }}
                     >
                       <LocationContent
                         location={findLocation(col, row)}

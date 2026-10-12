@@ -228,7 +228,7 @@ describe("PlacementStep", () => {
     prepareContainer(box, 2);
     box.locations?.[0].toggleSelected(true);
     renderStep({ mode: "container", container: box }, 2);
-    expect(screen.getByRole("status")).toHaveTextContent("Select 1 more location.");
+    expect(screen.getByRole("status")).toHaveTextContent("Select 1 more location in Box.");
     expect(screen.getByTestId("container-content")).toBeInTheDocument();
   });
 

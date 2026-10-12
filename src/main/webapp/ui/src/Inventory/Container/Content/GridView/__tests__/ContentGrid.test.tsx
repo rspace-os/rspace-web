@@ -122,6 +122,15 @@ describe("ContentGrid", () => {
       expect(onClose).toHaveBeenCalled();
     });
 
+    it("leaves only the focused location selected after Escape on a container's own grid", async () => {
+      const user = userEvent.setup();
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      await user.keyboard("{Shift>}{ArrowDown}{/Shift}{Escape}");
+      expect(selectedCount()).toBe(1);
+      expect(cells()[2]).toHaveAttribute("aria-selected", "true");
+    });
+
     describe("when choosing empty locations for new records", () => {
       it("is accessible", async () => {
         const box = boxWithA1Taken();
@@ -207,6 +216,16 @@ describe("ContentGrid", () => {
         await user.tab();
         await user.keyboard(" {ArrowDown}{ArrowRight}{Shift>}{ArrowUp}{/Shift}");
         expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "true", "false", "true"]);
+      });
+
+      it("starts the next Shift+Arrow range from the focused location after Escape", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 2);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard("{Shift>}{ArrowRight}{/Shift}{Escape}{Shift>}{ArrowDown}{/Shift}");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "true"]);
       });
 
       it("deselects only the range's own locations when Shift+Arrow shrinks it", async () => {
@@ -349,6 +368,18 @@ describe("ContentGrid", () => {
           await user.click(cells()[3]);
           await user.keyboard("{ArrowLeft} ");
           expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "false", "true", "false"]);
+        });
+
+        it("starts the next Shift+Arrow range from the clicked location", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 4);
+          renderGrid(box);
+          await user.tab();
+          await user.keyboard("{Shift>}{ArrowRight}{/Shift}");
+          await user.click(cells()[3]);
+          await user.keyboard("{Shift>}{ArrowLeft}{/Shift}");
+          expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "false", "true", "true"]);
         });
 
         it("keeps Escape inside the grid", async () => {
