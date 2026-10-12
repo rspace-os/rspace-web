@@ -2,7 +2,7 @@ import "@/stores/stores/RootStore";
 import "@/__tests__/__mocks__/resizeObserver";
 import Dialog from "@mui/material/Dialog";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { runInAction } from "mobx";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -73,6 +73,25 @@ describe("ContentGrid", () => {
       expect(cells()[0]).toHaveAttribute("aria-selected", "true");
       await user.keyboard("{Shift>}{ArrowDown}{/Shift}");
       expect(selectedCount()).toBe(2);
+    });
+
+    it("on the container page, a location emptied while it has focus is not selected", async () => {
+      const user = userEvent.setup();
+      const box = boxWithA1Taken();
+      renderGrid(box);
+      await user.tab();
+      expect(cells()[0]).toHaveAttribute("aria-selected", "true");
+      const a1 = box.findLocation(1, 1);
+      if (!a1) throw new Error("A1 missing");
+      // The item is dragged away with the keyboard: its location empties and is no longer selected.
+      act(() => {
+        runInAction(() => {
+          a1.toggleSelected(false);
+          a1.content = null;
+        });
+      });
+      expect(cells()[0]).toHaveAttribute("aria-selected", "false");
+      expect(selectedCount()).toBe(0);
     });
 
     it("on the container page, the arrow keys move the selection, and Space enters the grid's keyboard drag mode, after which the arrows stop moving it", async () => {

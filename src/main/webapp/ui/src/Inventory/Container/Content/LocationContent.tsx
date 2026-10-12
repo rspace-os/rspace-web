@@ -98,8 +98,17 @@ function LocationContent({ location, container, tabIndex, hasFocus }: LocationCo
   const emptyGridLocationRef = React.useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
     if (hasFocus) emptyGridLocationRef.current?.focus();
-    // location.content: deselecting a Move dialog preview swaps the focused item for this empty box.
-  }, [hasFocus, location.content]);
+  }, [hasFocus]);
+  /*
+   * Deselecting a Move dialog preview swaps the focused item for this empty
+   * box, which must take the focus over. Only in selection-only grids: on the
+   * container page focusing a location selects it, and an item dragged away
+   * with the keyboard would leave its emptied location selected, which
+   * disables drag-and-drop.
+   */
+  React.useEffect(() => {
+    if (hasFocus && search.uiConfig.dragAndDropDisabled) emptyGridLocationRef.current?.focus();
+  }, [hasFocus, location.content, search]);
 
   return (
     <Box
