@@ -163,6 +163,8 @@ describe("useDescribeOperationError", () => {
 });
 
 describe("placeSubSamples", () => {
+  beforeEach(() => bulk.mockClear());
+
   const records = [{ id: 11, type: "SUBSAMPLE" as const, globalId: "SS11", parentContainers: [{ id: 5 }] }];
 
   it("moves the records in one all-or-nothing bulk request", async () => {
