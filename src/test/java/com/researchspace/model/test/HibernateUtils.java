@@ -35,8 +35,8 @@ public class HibernateUtils {
     Configuration configuration = new Configuration();
     // Hibernate settings equivalent to hibernate.cfg.xml's properties
     Properties settings = new Properties();
-    settings.put(Environment.DRIVER, "com.mysql.cj.jdbc.Driver");
-    settings.put(Environment.URL, "jdbc:mysql://localhost:3306/" + dbName + "?useSSL=false");
+    settings.put(Environment.DRIVER, "org.mariadb.jdbc.Driver");
+    settings.put(Environment.URL, "jdbc:mariadb://localhost:3306/" + dbName);
     settings.put(Environment.USER, "rspacedbuser");
     settings.put(Environment.PASS, "rspacedbpwd");
     settings.put("hibernate.search.backend.type", "lucene");
@@ -49,7 +49,7 @@ public class HibernateUtils {
         "hibernate.search.backend.analysis.configurer",
         RSpaceLuceneAnalysisConfigurer.class.getName());
 
-    settings.put(Environment.DIALECT, "org.hibernate.dialect.MySQLDialect");
+    settings.put(Environment.DIALECT, "org.hibernate.dialect.MariaDBDialect");
     settings.put(Environment.SHOW_SQL, "true");
     settings.put(Environment.CURRENT_SESSION_CONTEXT_CLASS, "thread");
     settings.put(Environment.HBM2DDL_AUTO, "create-drop");

@@ -176,12 +176,6 @@
         <artifactId>junrar</artifactId>
         <version>7.6.1</version>
       </dependency>
-      <!-- mysql-connector-j brings in 3.25.1 -->
-      <dependency>
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
-        <version>3.25.8</version>
-      </dependency>
       <!-- box-java-sdk brings in 0.4.4 -->
       <dependency>
         <groupId>org.bitbucket.b_c</groupId>
@@ -418,7 +412,7 @@
           <usedDependencies>
             <!-- these dependencies show up as false positives in the unused dependency list -->
             <dependency>org.tuckey:urlrewritefilter</dependency> <!-- used but not referenced in code -->
-            <dependency>com.mysql:mysql-connector-j</dependency> <!-- used at runtime but also needed during compilation as used by another plugin -->
+            <dependency>org.mariadb.jdbc:mariadb-java-client</dependency> <!-- used at runtime but also needed during compilation as used by another plugin -->
             <dependency>jaxen:jaxen</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>com.fasterxml:classmate</dependency> <!-- used to fix specific version for transitive dependencies to satisfy enforcer plugin-->
             <dependency>org.hibernate.orm:hibernate-jcache</dependency> <!-- used but not referenced in code -->
@@ -623,8 +617,8 @@
     </dependency>
     <dependency>
       <!-- used at runtime but also needed during compilation as used by another plugin -->
-      <groupId>com.mysql</groupId>
-      <artifactId>mysql-connector-j</artifactId>
+      <groupId>org.mariadb.jdbc</groupId>
+      <artifactId>mariadb-java-client</artifactId>
       <version>${jdbc.version}</version>
     </dependency>
     <dependency>
@@ -2294,8 +2288,8 @@
             <dependencies>
               <!-- specify the dependent jdbc driver here -->
               <dependency>
-                <groupId>com.mysql</groupId>
-                <artifactId>mysql-connector-j</artifactId>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
                 <version>${jdbc.version}</version>
               </dependency>
             </dependencies>
@@ -2304,7 +2298,7 @@
             <!-- common configuration shared by all executions -->
             <configuration>
               <driver>${jdbc.driverClassName.maven}</driver>
-              <url>${jdbc.url.maven}?useSSL=false</url>
+              <url>${jdbc.url.maven}</url>
               <username>${jdbc.username.maven}</username>
               <password>${jdbc.password.maven}</password>
               <!-- You can comment out username/password configurations and have
@@ -2381,7 +2375,7 @@
       <properties>
         <context.path>/</context.path>
         <ssl.enabled>false</ssl.enabled>
-        <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?${ssl.enabled}=false</jdbc.url>
+        <jdbc.url>jdbc:mariadb://localhost:3306/${jdbc.db.maven}</jdbc.url>
       </properties>
 
     </profile>
@@ -2406,8 +2400,8 @@
             <dependencies>
               <!-- specify the dependent jdbc driver here -->
               <dependency>
-                <groupId>com.mysql</groupId>
-                <artifactId>mysql-connector-j</artifactId>
+                <groupId>org.mariadb.jdbc</groupId>
+                <artifactId>mariadb-java-client</artifactId>
                 <version>${jdbc.version}</version>
               </dependency>
             </dependencies>
@@ -2416,7 +2410,7 @@
             <!-- common configuration shared by all executions -->
             <configuration>
               <driver>${jdbc.driverClassName.maven}</driver>
-              <url>${jdbc.url.maven}?useSSL=false</url>
+              <url>${jdbc.url.maven}</url>
               <username>${jdbc.username.maven}</username>
               <password>${jdbc.password.maven}</password>
               <!-- You can comment out username/password configurations and have
@@ -2487,7 +2481,7 @@
         <jdbc.db.maven>rspace_hib</jdbc.db.maven>
         <context.path>/</context.path>
         <ssl.enabled>false</ssl.enabled>
-        <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?useSSL=false</jdbc.url>
+        <jdbc.url>jdbc:mariadb://localhost:3306/${jdbc.db.maven}</jdbc.url>
       </properties>
     </profile>
 
@@ -2758,11 +2752,11 @@
 
 
     <!-- Database settings -->
-    <jdbc.version>8.4.0</jdbc.version>
-    <jdbc.driverClassName.maven>com.mysql.cj.jdbc.Driver</jdbc.driverClassName.maven>
+    <jdbc.version>3.5.11</jdbc.version>
+    <jdbc.driverClassName.maven>org.mariadb.jdbc.Driver</jdbc.driverClassName.maven>
     <jdbc.username.maven>rspacedbuser</jdbc.username.maven>
     <jdbc.password.maven>rspacedbpwd</jdbc.password.maven>
-    <jdbc.url.maven>jdbc:mysql://localhost:3306</jdbc.url.maven>
+    <jdbc.url.maven>jdbc:mariadb://localhost:3306</jdbc.url.maven>
     <!-- this is the name of the test db to drop/recreate -->
     <jdbc.db.maven>rspace</jdbc.db.maven>
 

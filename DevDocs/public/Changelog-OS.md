@@ -4,6 +4,14 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.29.0 (unreleased)
+
+### Server
+
+RSpace now bundles the MariaDB Connector/J JDBC driver instead of MySQL Connector/J. `jdbc:mysql:` URLs and
+`com.mysql` driver class names in `deployment.properties` still work but are deprecated. See the
+[Migrating-RSpace-to-MariaDB-Connector-J.md](Migrating-RSpace-to-MariaDB-Connector-J.md) guide.
+
 # 2.28.0 2026-11-06
 
 ### Server
