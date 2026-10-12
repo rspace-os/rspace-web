@@ -7,9 +7,14 @@ import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -21,11 +26,15 @@ import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dmps.DMPUser;
 import com.researchspace.model.dmps.DmpDto;
 import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.repository.RepoUIConfigInfo;
+import com.researchspace.repository.spi.RepositoryOperationResult;
 import com.researchspace.repository.spi.properties.RepoProperty;
 import com.researchspace.repository.spi.properties.StringRepoProperty;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserManager;
@@ -35,9 +44,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -50,6 +62,8 @@ class RepositoryConfigurationControllerTest {
   @Mock private IntegrationsHandler integrationsHandler;
   @Mock private UserManager userManager;
   @Mock private DMPManager dmpManager;
+  @Mock private IPermissionUtils permissionUtils;
+  @Mock private MessageSourceUtils messages;
 
   @InjectMocks private RepositoryConfigurationController repositoryConfigurationController;
 
@@ -59,6 +73,45 @@ class RepositoryConfigurationControllerTest {
   public void setUp() throws Exception {
     exporter = TestFactory.createAnyUser("anyUser");
     when(userManager.getAuthenticatedUserInSession()).thenReturn(exporter);
+  }
+
+  @Test
+  void testRepositoryRejectsUnreadableConfigurationBeforeConnecting() {
+    UserAppConfig appConfig = createValidDataverseApp();
+    appConfig.setUser(TestFactory.createAnyUser("otherUser"));
+    AppConfigElementSet configSet = appConfig.getAppConfigElementSets().iterator().next();
+    when(appCfgMgr.findByAppConfigElementSetId(1L)).thenReturn(Optional.of(configSet));
+    AuthorizationException denied = new AuthorizationException("No read permission");
+    doThrow(denied)
+        .when(permissionUtils)
+        .assertIsPermitted(eq(appConfig), eq(PermissionType.READ), eq(exporter), anyString());
+
+    AuthorizationException thrown =
+        assertThrows(
+            AuthorizationException.class,
+            () -> repositoryConfigurationController.testRepository(1L));
+
+    assertSame(denied, thrown);
+    verifyNoInteractions(repositoryDepositHandler);
+  }
+
+  @Test
+  void testRepositoryChecksReadPermissionBeforeConnecting() throws MalformedURLException {
+    UserAppConfig appConfig = createValidDataverseApp();
+    AppConfigElementSet configSet = appConfig.getAppConfigElementSets().iterator().next();
+    when(appCfgMgr.findByAppConfigElementSetId(1L)).thenReturn(Optional.of(configSet));
+    when(repositoryDepositHandler.testDataverseConnection(configSet))
+        .thenReturn(new RepositoryOperationResult(true, "connected", null, null));
+    when(messages.getMessage(eq("repository.connection.success"), any(Object[].class)))
+        .thenReturn("Connection succeeded");
+
+    assertEquals("Connection succeeded", repositoryConfigurationController.testRepository(1L));
+
+    InOrder authorizationFirst = inOrder(permissionUtils, repositoryDepositHandler);
+    authorizationFirst
+        .verify(permissionUtils)
+        .assertIsPermitted(eq(appConfig), eq(PermissionType.READ), eq(exporter), anyString());
+    authorizationFirst.verify(repositoryDepositHandler).testDataverseConnection(configSet);
   }
 
   @Test

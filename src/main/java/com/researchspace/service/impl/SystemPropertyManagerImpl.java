@@ -12,6 +12,8 @@ import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.GroupType;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.system.SystemProperty;
@@ -47,6 +49,8 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
   }
 
   @Autowired private CommunityServiceManager communityMgr;
+
+  @Autowired private IPermissionUtils permissionUtils;
 
   public void setCommunityMgr(CommunityServiceManager communityMgr) {
     this.communityMgr = communityMgr;
@@ -121,6 +125,10 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
     boolean global = spv == null || spv.getCommunity() == null;
     if (global && subject != null && !subject.hasSysadminRole()) {
       throw new AuthorizationException("Only a sysadmin can change a global system setting");
+    }
+    if (!global
+        && !permissionUtils.isPermitted(spv.getCommunity(), PermissionType.WRITE, subject)) {
+      throw new AuthorizationException("Cannot change settings without community write permission");
     }
   }
 

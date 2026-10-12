@@ -43,6 +43,9 @@ public interface SystemPropertyManager extends GenericManager<SystemPropertyValu
   SystemPropertyValue save(String propertyUniqueName, String newValue, User subject);
 
   /**
+   * Requires community write permission for community settings, or a sysadmin for global settings.
+   * A null subject is permitted for internal changes to global settings.
+   *
    * @param value the value to update
    * @param subject
    * @return the updated SystemPropertyValue
