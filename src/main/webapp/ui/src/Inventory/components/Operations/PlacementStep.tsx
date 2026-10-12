@@ -167,7 +167,9 @@ function PlacementStep({
       </RadioGroup>
       {picked ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-          <Typography variant="body2">{t("operations.placement.chosen", { container: container.name })}</Typography>
+          <Typography variant="body2">
+            {t("operations.placement.chosen", { container: container.name, globalId: container.globalId ?? "" })}
+          </Typography>
           <Button
             ref={changeButtonRef}
             size="small"
