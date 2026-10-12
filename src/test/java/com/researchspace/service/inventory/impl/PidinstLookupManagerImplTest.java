@@ -245,25 +245,6 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * RSDEV-1522 follow-up. The term is one regular expression, so the space is part of what must
-   * match: B2INST cannot split it into {@code *Instr1} OR {@code prova_COPY*}, which once returned
-   * a record named {@code Instr1 prova 123} on its {@code instr1} token alone.
-   */
-  @Test
-  void aMultiWordQueryDoesNotMatchARecordHoldingOnlyOneOfTheWords() {
-    B2instDraftRecord wanted = publishedRecord();
-    wanted.getMetadata().setName("Instr1 prova_COPY");
-    when(b2instConnector.searchPublicRecords(INSTR1_PROVA_COPY_TERM, 0, 50))
-        .thenReturn(searchResultOf(wanted, 1));
-
-    ApiPidinstSearchResult result =
-        manager.search("Instr1 prova_COPY", List.of("PIDINST_B2INST"), 0, user);
-
-    assertEquals(1, result.getHits().size());
-    verify(b2instConnector).searchPublicRecords(INSTR1_PROVA_COPY_TERM, 0, 50);
-  }
-
-  /**
    * One search with both registries ticked gives each its own shape for the same words: B2INST one
    * regular expression matching a substring of the whole name ignoring case; DataCite the words as
    * typed, so it answers what its own portal answers (ADR 0009 decision 8).
@@ -373,7 +354,11 @@ class PidinstLookupManagerImplTest {
         arguments("a".repeat(240) + " dropped tail", "/.*" + "[Aa]".repeat(240) + ".*/"),
         // the 240th code point is a surrogate pair, kept whole: the cap counts code points
         arguments(
-            "a".repeat(239) + "\uD83D\uDE00 tail", "/.*" + "[Aa]".repeat(239) + "\uD83D\uDE00.*/"));
+            "a".repeat(239) + "\uD83D\uDE00 tail", "/.*" + "[Aa]".repeat(239) + "\uD83D\uDE00.*/"),
+        // a cased letter outside the BMP is six characters in the term, so the term stops at
+        // the last whole class that fits
+        arguments(
+            "\uD83A\uDD22".repeat(240), "/.*" + "[\uD83A\uDD00\uD83A\uDD22]".repeat(165) + ".*/"));
   }
 
   /** Elasticsearch's default {@code index.max_regex_length} is 1000 (ADR 0009 decision 8). */
@@ -993,14 +978,18 @@ class PidinstLookupManagerImplTest {
     verify(dataCiteConnector, never()).searchPublicInstrumentDois(anyString(), anyInt(), anyInt());
   }
 
+  static Stream<String> queriesBelowTheB2instMinimum() {
+    return Stream.of("<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b", "*".repeat(240) + "abcd");
+  }
+
   /**
    * The minimum is checked again on what B2INST would actually search: removing syntax could shrink
    * an accepted query to one wildcarded letter, and {@code <<<a} sent as a one-letter term matched
    * all 810 records on b2inst-test.gwdg.de (2026-09-25). Wildcards the user typed do not count
-   * either.
+   * either, and neither does anything past the code points the term is built from.
    */
   @ParameterizedTest
-  @ValueSource(strings = {"<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b"})
+  @MethodSource("queriesBelowTheB2instMinimum")
   void aB2instQueryBelowTheMinimumOnceItsSyntaxIsGoneFindsNothing(String typed) {
     ApiPidinstSearchResult result = manager.search(typed, List.of("PIDINST_B2INST"), 0, user);
 

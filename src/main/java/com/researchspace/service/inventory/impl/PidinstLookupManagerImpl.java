@@ -127,24 +127,32 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   private static final String B2INST_REGEX_RESERVED = ".+|{}[]()\"\\#@&<>~/";
 
   /**
-   * Elasticsearch refuses a regular expression longer than {@code index.max_regex_length}, 1000 by
-   * default, and a letter is four characters in the term, so only this many code points of the
-   * query are matched (ADR 0009 decision 8).
+   * How many code points of a B2INST query the term is built from, and the minimum is checked on. A
+   * letter is four characters in the term, so this many stay within {@link
+   * #B2INST_REGEX_MAX_LENGTH} (ADR 0009 decision 8).
    */
   private static final int B2INST_REGEX_INPUT_LIMIT = 240;
 
   /**
+   * Elasticsearch refuses a regular expression longer than {@code index.max_regex_length}, 1000 by
+   * default. A cased letter outside the Basic Multilingual Plane is six characters in the term, so
+   * enough of them reach it within {@link #B2INST_REGEX_INPUT_LIMIT} code points; the term then
+   * ends at the last whole piece that fits.
+   */
+  private static final int B2INST_REGEX_MAX_LENGTH = 1000;
+
+  /**
    * Removed from a B2INST query rather than escaped, so that {@code Instr"1} finds {@code Instr1}:
-   * a quote because the whole query is already one phrase, and {@code <} and {@code >} because the
-   * query parser cannot escape them
+   * a quote because the whole query is already one phrase, and {@code <} and {@code >} as before
+   * the term became a regular expression, when the query parser could not escape them
    * (https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-query-string-query#reserved-characters).
    */
   private static final Pattern B2INST_REMOVED = Pattern.compile("[\"<>]");
 
   /**
    * What Lucene's classic query parser treats as whitespace: Java's {@code \s} misses U+3000, which
-   * QueryParser.jj lists in {@code _WHITESPACE}. Every run of it is one space in the B2INST term,
-   * so a query matches a name whatever the spacing.
+   * QueryParser.jj lists in {@code _WHITESPACE}. Every run of it in the query is one space in the
+   * B2INST term, so extra spacing in what the user typed still matches a name spaced once.
    */
   private static final Pattern LUCENE_WHITESPACE = Pattern.compile("[\\s\\u3000]+");
 
@@ -336,7 +344,14 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private RegistryPage b2instPage(String query, int page) {
     // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
-    String searchable = B2INST_REMOVED.matcher(query).replaceAll("").strip();
+    String stripped = B2INST_REMOVED.matcher(query).replaceAll("").strip();
+    // capped before the minimum, so the minimum judges exactly what the term is built from
+    String searchable =
+        stripped.substring(
+            0,
+            stripped.offsetByCodePoints(
+                0,
+                Math.min(B2INST_REGEX_INPUT_LIMIT, stripped.codePointCount(0, stripped.length()))));
     // the minimum again, on what is left to match: <<<a would otherwise go out as a one-letter
     // term, which matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match
     // nothing specific
@@ -399,31 +414,31 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * shapes are in ADR 0009 decision 8 (RSDEV-1522, amended for RSDEV-1542).
    */
   private static String containsForB2inst(String searchable) {
+    String end = ".*/";
     StringBuilder regex = new StringBuilder("/.*");
-    LUCENE_WHITESPACE
-        .matcher(searchable)
-        .replaceAll(" ")
-        .codePoints()
-        .limit(B2INST_REGEX_INPUT_LIMIT)
-        .forEach(
-            cp -> {
-              if (cp == '*') {
-                regex.append(".*");
-              } else if (cp == '?') {
-                regex.append('.');
-              } else if (B2INST_REGEX_RESERVED.indexOf(cp) >= 0) {
-                regex.append('\\').appendCodePoint(cp);
-              } else if (Character.toUpperCase(cp) != Character.toLowerCase(cp)) {
-                regex
-                    .append('[')
-                    .appendCodePoint(Character.toUpperCase(cp))
-                    .appendCodePoint(Character.toLowerCase(cp))
-                    .append(']');
-              } else {
-                regex.appendCodePoint(cp);
-              }
-            });
-    return regex.append(".*/").toString();
+    for (int cp : LUCENE_WHITESPACE.matcher(searchable).replaceAll(" ").codePoints().toArray()) {
+      String piece;
+      if (cp == '*') {
+        piece = ".*";
+      } else if (cp == '?') {
+        piece = ".";
+      } else if (B2INST_REGEX_RESERVED.indexOf(cp) >= 0) {
+        piece = "\\" + Character.toString(cp);
+      } else if (Character.toUpperCase(cp) != Character.toLowerCase(cp)) {
+        piece =
+            "["
+                + Character.toString(Character.toUpperCase(cp))
+                + Character.toString(Character.toLowerCase(cp))
+                + "]";
+      } else {
+        piece = Character.toString(cp);
+      }
+      if (regex.length() + piece.length() + end.length() > B2INST_REGEX_MAX_LENGTH) {
+        break;
+      }
+      regex.append(piece);
+    }
+    return regex.append(end).toString();
   }
 
   /**
