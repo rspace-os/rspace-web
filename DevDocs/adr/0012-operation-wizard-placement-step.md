@@ -58,7 +58,10 @@ empty in the wizard, so they report that anything fits. `placementBlocker` reads
 container's own fields (`availableLocations`, `canStoreSamples`, `canEdit`, `deleted`,
 `cType`) instead.
 
-The step also configures `container.contentSearch`, the same observable instance the
-container's own page renders, and turns its drag-and-drop off (`dragAndDropDisabled`) so an
-existing item cannot be moved before Perform. The wizard restores its defaults and clears the
-location selection when the container changes or the wizard closes (`releaseContainer`).
+The step configures the picked container's `contentSearch` and turns its drag-and-drop off
+(`dragAndDropDisabled`) so an existing item cannot be moved before Perform. That container is
+never the one the container's own page shows: the picker and `fetchContainer` each build records
+through a new `MemoisedFactory`, which is also why Perform reloads the on-screen container by id.
+The wizard still restores the defaults and clears the location selection when the container
+changes or the wizard closes (`releaseContainer`), because the picker hands back the same
+memoised instance when that container is picked again.
