@@ -6,6 +6,14 @@ You can find our official changelog at https://documentation.researchspace.com/a
 
 # Unreleased
 
+### Server
+
+- RSpace now bundles the MariaDB Connector/J JDBC driver instead of MySQL Connector/J. `jdbc:mysql:` URLs and
+  `com.mysql` driver class names in `deployment.properties` still work but are deprecated. See the
+  [Migrating-RSpace-to-MariaDB-Connector-J.md](Migrating-RSpace-to-MariaDB-Connector-J.md) guide.
+
+### ELN
+
 - RSDEV-1734 removes the ELN String field password option. Existing fields and older archive imports retain their values and defaults and display them as ordinary text.
 
 ## 2.28.1 2026-11-24

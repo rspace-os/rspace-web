@@ -65,8 +65,8 @@ services:
       # first boot (and on `reset-db`) so the schema + sample data are created.
       RSPACE_DB_MODE: ${RSPACE_DB_MODE:-keepdbintact}
       RS_FILE_BASE: /var/rspace/filestore
-      JDBC_URL: jdbc:mysql://db:3306/rspace
-      JDBC_URL_MAVEN: jdbc:mysql://db:3306
+      JDBC_URL: jdbc:mariadb://db:3306/rspace
+      JDBC_URL_MAVEN: jdbc:mariadb://db:3306
       # The app shares the frontend's network namespace (see network_mode below),
       # so Vite is reachable at localhost — a host its dev-server host check
       # trusts by default, unlike the service name "frontend".
