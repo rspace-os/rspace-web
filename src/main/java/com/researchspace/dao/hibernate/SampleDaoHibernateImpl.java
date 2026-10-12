@@ -1,5 +1,7 @@
 package com.researchspace.dao.hibernate;
 
+import static com.axiope.search.IFullTextSearchConfig.MAX_SYSADMIN_RESULTS;
+
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -15,6 +17,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.search.mapper.orm.Search;
@@ -54,6 +57,25 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       String ownedBy,
       InventorySearchDeletedOption deletedItemsOption,
       User user) {
+    return getSamplesForUser(
+        pgCrit, parentTemplateId, ownedBy, deletedItemsOption, null, null, user);
+  }
+
+  @Override
+  public ISearchResults<Sample> getSamplesForUser(
+      PaginationCriteria<Sample> pgCrit,
+      Long parentTemplateId,
+      String ownedBy,
+      InventorySearchDeletedOption deletedItemsOption,
+      Boolean requestable,
+      String query,
+      User user) {
+
+    // requestable=true is an instance-wide search: permission scoping is skipped, so every
+    // requestable sample is visible, but an explicit ownedBy still narrows it. The name
+    // filter below is independent of that and still applies on top of it.
+    boolean unscopedRequestableSearch = Boolean.TRUE.equals(requestable);
+    boolean unscopedOwnedBy = unscopedRequestableSearch && ownedBy != null && !ownedBy.isEmpty();
 
     List<String> userGroupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
@@ -61,8 +83,14 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
         user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
     List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
     String ownedByAndPermittedItemsQueryFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+        unscopedRequestableSearch
+            ? (unscopedOwnedBy ? "and owner.username=:ownedBy " : "")
+            : getOwnedByAndPermittedItemsSqlQueryFragment(
+                ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
+    String requestableQueryFragment =
+        requestable == null ? "" : "and requestable=" + requestable + " ";
+    boolean limitByNameQuery = StringUtils.isNotBlank(query);
+    String nameQueryFragment = limitByNameQuery ? "and lower(editInfo.name) like :nameQuery " : "";
 
     if (pgCrit == null) {
       pgCrit = PaginationCriteria.createDefaultForClass(Sample.class);
@@ -71,6 +99,11 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     String deletedFragment = getDeletedSqlFragmentForInventoryRecord(deletedItemsOption);
     int startPosition = pgCrit.getFirstResultIndex();
     int maxResult = pgCrit.getResultsPerPage();
+    if (unscopedRequestableSearch) {
+      // guard against a very large unscoped, instance-wide result set, matching the cap already
+      // applied to sysadmin's own unscoped Lucene search (MAX_SYSADMIN_RESULTS)
+      maxResult = Math.min(maxResult, MAX_SYSADMIN_RESULTS);
+    }
 
     boolean limitByParentTemplate = parentTemplateId != null;
     // property name is STemplate: JavaBeans decapitalize keeps the leading double-uppercase of
@@ -88,17 +121,35 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                 "select count(s) from Sample s where "
                     + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
+                    + requestableQueryFragment
+                    + nameQueryFragment
                     + ownedByAndPermittedItemsQueryFragment,
                 Long.class);
     if (limitByParentTemplate) {
       countQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
     }
+    if (unscopedOwnedBy) {
+      countQueryBase.setParameter("ownedBy", ownedBy);
+    }
+    if (limitByNameQuery) {
+      countQueryBase.setParameter("nameQuery", "%" + query.toLowerCase() + "%");
+    }
     Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQueryBase, visibleOwners, userGroupMembers, userGroupsUniqueNames);
+        unscopedRequestableSearch
+            ? countQueryBase
+            : addQueryParams(
+                ownedBy,
+                user,
+                countQueryBase,
+                visibleOwners,
+                userGroupMembers,
+                userGroupsUniqueNames);
     long allSamplesCount = countQueryWithParams.getSingleResult();
     if (allSamplesCount == 0) {
       return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
+    }
+    if (unscopedRequestableSearch) {
+      allSamplesCount = Math.min(allSamplesCount, MAX_SYSADMIN_RESULTS);
     }
 
     Query<Sample> samplePageQueryBase =
@@ -108,6 +159,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                 FROM_SAMPLE_WHERE
                     + connectSqlConditionsWithAnd(deletedFragment, " type(s) = Sample ")
                     + parentTemplateQueryFragment
+                    + requestableQueryFragment
+                    + nameQueryFragment
                     + ownedByAndPermittedItemsQueryFragment
                     + orderByFragment,
                 Sample.class)
@@ -116,14 +169,22 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     if (limitByParentTemplate) {
       samplePageQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
     }
+    if (unscopedOwnedBy) {
+      samplePageQueryBase.setParameter("ownedBy", ownedBy);
+    }
+    if (limitByNameQuery) {
+      samplePageQueryBase.setParameter("nameQuery", "%" + query.toLowerCase() + "%");
+    }
     Query<Sample> samplePageQueryWithParams =
-        addQueryParams(
-            ownedBy,
-            user,
-            samplePageQueryBase,
-            visibleOwners,
-            userGroupMembers,
-            userGroupsUniqueNames);
+        unscopedRequestableSearch
+            ? samplePageQueryBase
+            : addQueryParams(
+                ownedBy,
+                user,
+                samplePageQueryBase,
+                visibleOwners,
+                userGroupMembers,
+                userGroupsUniqueNames);
     List<Sample> pageOfSamples = samplePageQueryWithParams.list();
     return new SearchResultsImpl<>(pageOfSamples, pgCrit, allSamplesCount);
   }

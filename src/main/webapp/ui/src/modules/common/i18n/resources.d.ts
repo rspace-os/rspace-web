@@ -5718,6 +5718,7 @@ export default interface Resources {
         "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''",
         "missing": "No id to retrieve"
       },
+      "concurrentChange": "This was changed by someone else at the same time. Reload and try again.",
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
@@ -7188,6 +7189,23 @@ export default interface Resources {
           "tooManySubSamples": "A sample can be created with at most {max} subsamples",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
+        "sampleRequest": {
+          "illegalTransition": "A sample request cannot move from {0} to {1}.",
+          "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+          "notRequestable": "Sample {0} is not available to request.",
+          "ownSample": "You cannot request material from a sample that you own.",
+          "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
+          "reasonRequired": "A reason is required when rejecting a request.",
+          "role": {
+            "invalid": "Requested role must be one of: REQUESTER or OWNER"
+          },
+          "status": {
+            "invalid": "Requested status must be one of: PENDING, APPROVED, REJECTED, FULFILLED or CANCELLED"
+          },
+          "statusNotSettable": "A sample request cannot be set to {0}.",
+          "transferredSampleNotAllowed": "A transferred sample can only be given when fulfilling a request, not when setting it to {0}.",
+          "wrongActor": "You are not permitted to make this change to the request."
+        },
         "search": {
           "deletedItems": {
             "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
@@ -7281,6 +7299,9 @@ export default interface Resources {
       },
       "listOfMaterials": {
         "label": "List of materials"
+      },
+      "sampleRequest": {
+        "autoRejectedReason": "This request was rejected because the sample was transferred to {0}. If you still need it, make a new request to the new owner."
       }
     }
   },
@@ -9100,6 +9121,7 @@ export default interface Resources {
           "pyratAvailable": "Makes PyRAT integration available. After enabling the integration, users can link to animals in the PyRAT database.",
           "raidAvailable": "Enables RAiD integration. After enabling the integration, users can set up their RAiD accounts through the 'Apps' page",
           "repoAvailable": "Makes {0} repository integration available. After enabling, users can submit exports to a {0} repository.",
+          "sampleRequestsAvailable": "Enables the ability for users to request and transfer samples.",
           "selfServiceLabgroups": "When true, a user with permissions (e.g. a PI) can create a LabGroup.",
           "slackAvailable": "Makes Slack integration available to the users. After enabling the integration, user can connect to their Slack channels to send messages or forward notifications",
           "snapgeneAvailable": "Enables Snapgene viewer for DNA sequence files. This must only be enabled if the deployment property'snapgene.web.url' is configured to point at an RSpace-Snapgene web-service.",

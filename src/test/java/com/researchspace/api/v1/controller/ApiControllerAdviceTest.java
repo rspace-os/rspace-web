@@ -15,14 +15,19 @@ import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.inventory.InventoryEditLockHeldException;
 import com.researchspace.service.inventory.InventoryOperationInProgressException;
 import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
+import java.sql.SQLException;
 import java.util.List;
+import org.hibernate.exception.GenericJDBCException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.orm.hibernate5.HibernateJdbcException;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
+import org.springframework.web.context.request.ServletWebRequest;
 
 class ApiControllerAdviceTest {
 
@@ -189,5 +194,40 @@ class ApiControllerAdviceTest {
 
     ApiError error = (ApiError) response.getBody();
     assertEquals("Invalid user credentials.", error.getMessage());
+  }
+
+  @Test
+  void snapshotConflictMapsTo409() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleDataAccess(
+            jdbcFailure(1020), new ServletWebRequest(new MockHttpServletRequest()));
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(ApiErrorCodes.EDIT_CONFLICT.getCode(), error.getInternalCode());
+    assertEquals(
+        "This was changed by someone else at the same time. Reload and try again.",
+        error.getMessage());
+  }
+
+  @Test
+  void otherDataAccessFailuresStayServerErrors() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleDataAccess(
+            jdbcFailure(1146), new ServletWebRequest(new MockHttpServletRequest()));
+
+    assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+  }
+
+  /** As Hibernate and Spring wrap a MariaDB error. */
+  private static HibernateJdbcException jdbcFailure(int errorCode) {
+    return new HibernateJdbcException(
+        new GenericJDBCException("failed", new SQLException("failed", "HY000", errorCode)));
   }
 }
