@@ -296,7 +296,10 @@ function OperationWizard({
       try {
         container = usableContainer(await fetchContainer(containerId), createdCountRef.current);
       } catch (error) {
-        console.warn("Could not fetch the container to place the new subsamples in", error);
+        console.warn(
+          "Could not fetch the container to place the new subsamples in",
+          getErrorMessage(error, "unknown error"),
+        );
       }
       if (checkId !== placementCheckId.current) return;
       setPendingPlacement(null);
