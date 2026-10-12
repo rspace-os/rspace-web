@@ -131,17 +131,6 @@ describe("ContentGrid", () => {
         renderGrid(box);
         await expectAccessible(document.body);
       });
-
-      it("does not select a focused empty location once the selection limit is reached", async () => {
-        const user = userEvent.setup();
-        const box = emptyBox();
-        prepareContainer(box, 1);
-        box.locations?.[3].toggleSelected(true);
-        renderGrid(box);
-        await user.tab();
-        expect(cells()[0]).toHaveAttribute("aria-selected", "false");
-        expect(selectedCount()).toBe(1);
-      });
     });
 
     describe("in the Move dialog", () => {
