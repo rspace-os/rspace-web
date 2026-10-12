@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -253,7 +254,15 @@ public class DeploymentPropertiesController extends BaseController {
             String name =
                 StringUtils.substringBefore(
                     StringUtils.substringBetween(value.value(), "${", "}"), ":");
-            properties.put(name, (String) ReflectionUtils.getField(field, target));
+            if (StringUtils.isNotBlank(name)) {
+              properties.put(name, (String) ReflectionUtils.getField(field, target));
+            } else {
+              LoggerFactory.getLogger(DeploymentPropertiesController.class)
+                  .warn(
+                      "Skipping client-readable field {}.{}: @Value has no property name",
+                      type.getSimpleName(),
+                      field.getName());
+            }
           }
         });
     return properties;
