@@ -272,13 +272,14 @@ public class ApiInventoryDOI extends LinkableApiObject {
   }
 
   /**
-   * The citable, publicly resolvable address of the identifier, set when it is published.
+   * The identifier's public URL (CONTEXT.md), read through {@link
+   * DigitalObjectIdentifier#getPublicUrl()}: null while the PID does not resolve.
    *
    * <p>Server-owned for the same reason as {@link #providerUrl}, and more importantly so: this one
    * is rendered on the unauthenticated public identifier page, so a client-supplied value would
-   * reach readers who never signed in. It is only ever written from the DOI at publish time, so
-   * {@link JsonProperty.Access#READ_ONLY} costs nothing; a client that still sends it is ignored
-   * rather than rejected, and the stored value stands.
+   * reach readers who never signed in. Only the server writes it, on publish, on a B2INST refresh
+   * and on import, so {@link JsonProperty.Access#READ_ONLY} costs nothing; a client that still
+   * sends it is ignored rather than rejected, and the stored value stands.
    */
   @JsonProperty(value = "publicUrl", access = JsonProperty.Access.READ_ONLY)
   private String publicUrl;
@@ -369,7 +370,7 @@ public class ApiInventoryDOI extends LinkableApiObject {
     // already-persisted publicLink here would let a second row claim an existing identifier's
     // public page, which UNIQUE KEY isPublicLink rejects at flush - after the provider call in the
     // same transaction has already created a draft. rsPublicId above carries the value for reads.
-    setPublicUrl(identifier.getOtherData(IdentifierOtherProperty.PUBLIC_URL));
+    setPublicUrl(identifier.getPublicUrl());
     setProviderUrl(identifier.getOtherData(IdentifierOtherProperty.PROVIDER_URL));
     setLinked(identifier.isLinked());
     setCustomFieldsOnPublicPage(identifier.isCustomFieldsOnPublicPage());
