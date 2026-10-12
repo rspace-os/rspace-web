@@ -106,6 +106,15 @@ describe("ContentGrid", () => {
       expect(parentKeys).toHaveBeenCalledWith("Escape");
     });
 
+    it("leaves only the focused location selected after Escape on a container's own grid", async () => {
+      const user = userEvent.setup();
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      await user.keyboard("{Shift>}{ArrowDown}{/Shift}{Escape}");
+      expect(selectedCount()).toBe(1);
+      expect(cells()[2]).toHaveAttribute("aria-selected", "true");
+    });
+
     describe("when choosing empty locations for new records", () => {
       it("is accessible", async () => {
         const box = boxWithA1Taken();
