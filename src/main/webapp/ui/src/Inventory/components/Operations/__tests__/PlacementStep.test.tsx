@@ -269,4 +269,71 @@ describe("PlacementStep", () => {
     renderStep({ mode: "container", container: makeMockContainer({ cType: "IMAGE" }) });
     expect(screen.getByRole("alert")).toHaveTextContent(/Image containers are not supported/);
   });
+
+  describe("once a container is picked", () => {
+    function Harness({ onChange }: { onChange: (next: PlacementSelection) => void }) {
+      const [value, setValue] = React.useState<PlacementSelection>({ mode: "container", container: null });
+      return (
+        <PlacementStep
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+          count={1}
+        />
+      );
+    }
+
+    async function pick(container: ContainerModel) {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      picked.container = container;
+      picked.loaded = Promise.resolve();
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <InEnglish>
+            <Harness onChange={onChange} />
+          </InEnglish>
+        </ThemeProvider>,
+      );
+      await user.click(screen.getByTestId("picker-pick"));
+      return { user, onChange };
+    }
+
+    it("replaces the search with the container's name and a way to change it, so the grid follows directly", async () => {
+      await pick(gridBox());
+      expect(await screen.findByText("Placing in Box")).toBeInTheDocument();
+      expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Change container" })).toBeInTheDocument();
+      expect(screen.getByTestId("container-content")).toBeInTheDocument();
+    });
+
+    it("reopens the search with nothing picked when the user changes the container", async () => {
+      const { user, onChange } = await pick(gridBox());
+      await user.click(await screen.findByRole("button", { name: "Change container" }));
+      expect(onChange).toHaveBeenLastCalledWith({ mode: "container", container: null });
+      expect(screen.getByRole("searchbox")).toBeInTheDocument();
+      expect(screen.getByTestId("picker-pick")).toHaveAttribute("data-active", "");
+    });
+
+    it("keeps the search open when the container cannot be used, so the user can pick another", async () => {
+      await pick(makeMockContainer({ name: "Gel", cType: "IMAGE" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(/Image containers are not supported/);
+      expect(screen.getByRole("searchbox")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Change container" })).not.toBeInTheDocument();
+    });
+
+    it("moves focus from the closed search to the button that reopens it", async () => {
+      await pick(gridBox());
+      expect(await screen.findByRole("button", { name: "Change container" })).toHaveFocus();
+    });
+
+    it("leaves focus alone when the step opens with a container already picked", () => {
+      const box = gridBox();
+      prepareContainer(box, 1);
+      renderStep({ mode: "container", container: box });
+      expect(screen.getByRole("button", { name: "Change container" })).not.toHaveFocus();
+    });
+  });
 });
