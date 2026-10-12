@@ -1,5 +1,6 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -22,6 +23,12 @@ import InnerSearchNavigationContext from "../InnerSearchNavigationContext";
 import { type PlacementBlocker, type PlacementSelection, placementBlocker } from "./placement";
 
 const RESULT_VIEWS: Array<SearchViewType> = ["LIST", "TREE"];
+const STAYS_PICKED: ReadonlySet<PlacementBlocker["reason"]> = new Set([
+  "loading",
+  "selectSlots",
+  "occupiedSlot",
+  "tooManySlots",
+]);
 
 function PlacementStep({
   value,
@@ -45,6 +52,11 @@ function PlacementStep({
     };
   }, []);
 
+  const pickerRef = React.useRef<HTMLDivElement>(null);
+  const changeButtonRef = React.useRef<HTMLButtonElement>(null);
+  // The picker unmounts when a pick lands, which would drop focus to the page.
+  const pickedFromPicker = React.useRef(false);
+
   // Step-local, not the global moveStore: ContainerModel's move checks read moveStore's selection.
   const [search] = React.useState(() => {
     const s: Search = new Search({
@@ -58,6 +70,7 @@ function PlacementStep({
         setActiveResult: (record) => {
           if (!(record instanceof ContainerModel) || !mounted.current || record !== s.activeResult) return;
           record.refreshAssociatedSearch();
+          pickedFromPicker.current = pickerRef.current?.contains(document.activeElement) ?? false;
           onChangeRef.current({ mode: "container", container: record });
         },
       },
@@ -71,6 +84,14 @@ function PlacementStep({
 
   const container = value.mode === "container" ? value.container : null;
   const blocker = container ? placementBlocker(container, count) : null;
+  // Once the picked container can be used, the picker gives way to its name, so the grid follows it
+  // directly on a short screen. A container that cannot be used leaves the picker open for another.
+  const picked = container !== null && (blocker === null || STAYS_PICKED.has(blocker.reason));
+  React.useEffect(() => {
+    if (!picked || !pickedFromPicker.current) return;
+    pickedFromPicker.current = false;
+    changeButtonRef.current?.focus();
+  }, [picked]);
 
   const blockerMessage = (b: PlacementBlocker, containerName: string): string => {
     switch (b.reason) {
@@ -144,12 +165,33 @@ function PlacementStep({
         <FormControlLabel value="workbench" control={<Radio />} label={t("operations.placement.workbench")} />
         <FormControlLabel value="container" control={<Radio />} label={t("operations.placement.container")} />
       </RadioGroup>
-      {value.mode === "container" ? (
+      {picked ? (
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Typography variant="body2">{t("operations.placement.chosen", { container: container.name })}</Typography>
+          <Button
+            ref={changeButtonRef}
+            size="small"
+            onClick={() => {
+              runInAction(() => {
+                search.activeResult = null;
+              });
+              onChange({ mode: "container", container: null });
+            }}
+          >
+            {t("operations.placement.changeContainer")}
+          </Button>
+        </Stack>
+      ) : value.mode === "container" ? (
         // The search box and the results only: the shared picker's type, status, owner and basket
         // controls and its parameter chips have nothing to offer when choosing one container.
         <SearchContext.Provider value={{ search, differentSearchForSettingActiveResult: search, isChild: false }}>
           <InnerSearchNavigationContext>
-            <Stack spacing={1} sx={{ maxHeight: 320, overflowY: "auto" }} data-test-id="placementPicker">
+            <Stack
+              ref={pickerRef}
+              spacing={1}
+              sx={{ maxHeight: 320, overflowY: "auto" }}
+              data-test-id="placementPicker"
+            >
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                 <Box sx={{ flexGrow: 1 }}>
                   <Searchbar
