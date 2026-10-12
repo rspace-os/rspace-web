@@ -46,6 +46,12 @@ export type GridCellArgs = {
   columnsUnderHover: Set<number>;
   columnIndex: number;
   hoverEffect: boolean;
+
+  /**
+   * In a selection-only grid, called when the cell is pressed with the mouse, before it takes
+   * keyboard focus, so the arrow keys and Escape act from the clicked cell.
+   */
+  onPointerFocus: (coord: { x: number; y: number }) => void;
 };
 
 function GridCell({
@@ -56,6 +62,7 @@ function GridCell({
   columnsUnderHover,
   columnIndex,
   hoverEffect,
+  onPointerFocus,
 }: GridCellArgs): ReactNode {
   const cellRef = useRef<HTMLTableCellElement>(null);
   const { search } = useContext(SearchContext);
@@ -86,6 +93,9 @@ function GridCell({
       align="center"
       onMouseDown={(e: React.MouseEvent) => {
         e.preventDefault();
+        if (!search.uiConfig.dragAndDropDisabled) return;
+        onPointerFocus({ x: location.coordX, y: location.coordY });
+        cellRef.current?.querySelector<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
       }}
       onFocus={() => {
         if (location.selected || search.uiConfig.dragAndDropDisabled) return;

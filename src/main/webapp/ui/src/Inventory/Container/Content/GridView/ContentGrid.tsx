@@ -202,7 +202,10 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           sx={tableSx}
           padding="normal"
           size="small"
-          onFocus={() => setKeyboardTips(true)}
+          onFocus={() => {
+            setKeyboardTips(true);
+            setFocusCoord((current) => current ?? tabIndexCoord);
+          }}
           onBlur={() => setKeyboardTips(false)}
           onMouseDown={(e) => {
             if (e.currentTarget === tableRef.current) return; // ignore taps to scrollbar
@@ -396,6 +399,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       parentRef={tableRef}
                       columnsUnderHover={columnsUnderHover}
                       columnIndex={index}
+                      onPointerFocus={setTabIndexCoord}
                     >
                       <LocationContent
                         location={findLocation(col, row)}

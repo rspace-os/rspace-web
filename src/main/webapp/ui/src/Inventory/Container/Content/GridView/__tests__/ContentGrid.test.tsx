@@ -106,6 +106,15 @@ describe("ContentGrid", () => {
       expect(screen.getByText("inventory:container.content.keyboard.dragTips")).toBeVisible();
     });
 
+    it("lets Escape reach the dialog around a container's own grid", async () => {
+      const user = userEvent.setup();
+      const onClose = vi.fn();
+      renderGrid(boxWithA1Taken(), { inDialogClosedBy: onClose });
+      await user.tab();
+      await user.keyboard("{Escape}");
+      expect(onClose).toHaveBeenCalled();
+    });
+
     describe("when choosing empty locations for new records", () => {
       it("is accessible", async () => {
         const box = boxWithA1Taken();
@@ -258,15 +267,26 @@ describe("ContentGrid", () => {
       it("does not let Space select more locations than the limit, and says why", async () => {
         const user = userEvent.setup();
         const box = emptyBox();
-        prepareContainer(box, 1);
+        prepareContainer(box, 2);
         renderGrid(box);
         await user.tab();
-        await user.keyboard(" {ArrowRight}{ArrowDown} ");
-        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "false"]);
+        await user.keyboard(" {ArrowRight} {ArrowDown} ");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "true", "false", "false"]);
         expect(screen.getByText("inventory:container.content.keyboard.limitReached").parentElement).toHaveAttribute(
           "role",
           "status",
         );
+      });
+
+      it("moves the only pick to the focused location when the limit is one", async () => {
+        const user = userEvent.setup();
+        const box = emptyBox();
+        prepareContainer(box, 1);
+        renderGrid(box);
+        await user.tab();
+        await user.keyboard(" {ArrowRight} ");
+        expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
+        expect(screen.queryByText("inventory:container.content.keyboard.limitReached")).toBeNull();
       });
 
       it("repeats the explanation on consecutive refused Shift+Arrow presses", async () => {
@@ -338,6 +358,31 @@ describe("ContentGrid", () => {
         await user.keyboard(" {Escape}");
         expect(selectedCount()).toBe(0);
         expect(onClose).not.toHaveBeenCalled();
+      });
+
+      describe("after a mouse click on a location", () => {
+        it("acts on the arrow keys and Space from the clicked location", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 1);
+          renderGrid(box);
+          await user.click(cells()[3]);
+          await user.keyboard("{ArrowLeft} ");
+          expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "false", "true", "false"]);
+        });
+
+        it("keeps Escape inside the grid", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 1);
+          const onClose = vi.fn();
+          renderGrid(box, { inDialogClosedBy: onClose });
+          await user.click(cells()[2]);
+          expect(screen.getByRole("grid")).toContainElement(document.activeElement as HTMLElement);
+          await user.keyboard("{Escape}");
+          expect(onClose).not.toHaveBeenCalled();
+          expect(selectedCount()).toBe(0);
+        });
       });
     });
   });
