@@ -127,9 +127,10 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   private static final String B2INST_REGEX_RESERVED = ".+|{}[]()\"\\#@&<>~/";
 
   /**
-   * How many code points of a B2INST query the term is built from, and the minimum is checked on. A
-   * letter is four characters in the term, so this many stay within {@link
-   * #B2INST_REGEX_MAX_LENGTH} (ADR 0009 decision 8).
+   * How many code points of a B2INST query the term is built from, and the minimum is checked on.
+   * Sized so that letters of the Basic Multilingual Plane, four characters each in the term, stay
+   * within {@link #B2INST_REGEX_MAX_LENGTH}; that length is the hard limit, enforced while the term
+   * is built (ADR 0009 decision 8).
    */
   private static final int B2INST_REGEX_INPUT_LIMIT = 240;
 
