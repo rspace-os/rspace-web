@@ -99,7 +99,6 @@ public final class ApiV2InstrumentResource {
                 .documented(
                     OpenApiSchemaDocumentation.of(
                         "Deleted", "True when the instrument is in the trash.", "false"))),
-        List.of(),
         "id",
         List.of(new Sort("name", true), new Sort("id", true)),
         AccessPolicy.readOnly(readAccess),
