@@ -47,7 +47,7 @@ export default function ElnRecordPicker(props: ElnRecordPickerProps): React.Reac
     >
       <DialogTitle>{t("fields.link.elnPicker.title")}</DialogTitle>
       <DialogContent dividers sx={{ minHeight: "40vh" }}>
-        <React.Suspense fallback={<CircularProgress />}>
+        <React.Suspense fallback={<CircularProgress aria-label={t("common:loading")} />}>
           <ElnFolderBrowser onSelectionChange={setSelection} />
         </React.Suspense>
       </DialogContent>

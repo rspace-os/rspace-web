@@ -63,7 +63,7 @@ describe("ElnRecordPicker", () => {
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeDisabled();
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "common:loading" })).toBeInTheDocument();
   });
 
   it("drops straight into the folder browser with no search/browse mode choice", () => {
