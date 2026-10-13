@@ -284,7 +284,13 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react(), legacyI18n(), legacyMessages()];
+  // Entries mount React at module load. Fast Refresh's footer imports its own module, and after a hot update Vite
+  // adds ?t= to that import while the JSP <script> keeps the bare URL, so the entry ran twice (createRoot warning).
+  const plugins: PluginOption[] = [
+    react({ exclude: [/\/node_modules\//, ...Object.values(resolvedBundleEntries)] }),
+    legacyI18n(),
+    legacyMessages(),
+  ];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));
