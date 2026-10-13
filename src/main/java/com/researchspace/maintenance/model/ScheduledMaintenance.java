@@ -118,9 +118,12 @@ public class ScheduledMaintenance {
     return stopUserLoginDate == null ? null : new Date(stopUserLoginDate);
   }
 
+  /** Formats the effective login cutoff, which is the start date when no stop date is set. */
   @Transient
   public String getFormattedStopUserLoginDate() {
-    return getFormattedDate(getStopUserLoginDate());
+    // The formatter renders a null date as the current time, so never pass it one.
+    Date cutoff = getStopUserLoginDate();
+    return getFormattedDate(cutoff == null ? getStartDate() : cutoff);
   }
 
   public void setStopUserLoginDate(Date stopUserLoginDate) {
