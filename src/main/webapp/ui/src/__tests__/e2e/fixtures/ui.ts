@@ -5,7 +5,7 @@ import { MsTeamsShareDialogComponent } from "@/modules/msteams/__tests__/pageObj
 import { OrcidProfilePage } from "@/modules/orcid/__tests__/pageObjects/OrcidProfilePage";
 import { SlackDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackDialogComponent";
 import { SlackShareDialogComponent } from "@/modules/slack/__tests__/pageObjects/SlackShareDialogComponent";
-import { storageStatePath } from "../authState";
+import { CustomDocumentFields } from "../components/document/CustomDocumentFields";
 import { ExportWizardComponent } from "../components/shared/ExportWizardComponent";
 import { NotificationsDialogComponent } from "../components/shared/NotificationsDialogComponent";
 import { ToastsComponent } from "../components/shared/ToastsComponent";
@@ -18,7 +18,9 @@ import { ResetPasswordPage } from "../pageObjects/auth/ResetPasswordPage";
 import { SignupPage } from "../pageObjects/auth/SignupPage";
 import { DocumentEditorPage } from "../pageObjects/document/DocumentEditorPage";
 import { DocumentPage } from "../pageObjects/document/DocumentPage";
+import { DocumentRevisionsPage } from "../pageObjects/document/DocumentRevisionsPage";
 import { GalleryPage } from "../pageObjects/gallery/GalleryPage";
+import { GroupViewPage } from "../pageObjects/groups/GroupViewPage";
 import { IdentifiersPage } from "../pageObjects/inventory/IdentifiersPage";
 import { InventoryImportPage } from "../pageObjects/inventory/InventoryImportPage";
 import { InventoryPage } from "../pageObjects/inventory/InventoryPage";
@@ -27,11 +29,13 @@ import { CreateFormPage } from "../pageObjects/myrspace/CreateFormPage";
 import { DeletedItemsPage } from "../pageObjects/myrspace/DeletedItemsPage";
 import { DirectoryPage } from "../pageObjects/myrspace/DirectoryPage";
 import { ExportImportPage } from "../pageObjects/myrspace/ExportImportPage";
+import { ExportReportPage } from "../pageObjects/myrspace/ExportReportPage";
 import { ManageFormsPage } from "../pageObjects/myrspace/ManageFormsPage";
 import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
 import { UserProfilePage } from "../pageObjects/myrspace/UserProfilePage";
 import { NotebookPage } from "../pageObjects/notebook/NotebookPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
+import { freshStorageState, savedLoginAccount } from "../savedSessions";
 import { type AppUser, USERS } from "../users";
 
 export type E2EOptions = { appUser: AppUser };
@@ -46,8 +50,11 @@ type UiFixtures = {
   pageApps: AppsPage;
   pageWorkspace: WorkspacePage;
   pageDocument: DocumentPage;
+  pageDocumentRevisions: DocumentRevisionsPage;
+  componentDocumentFields: CustomDocumentFields;
   pageDocumentEditor: DocumentEditorPage;
   pageGallery: GalleryPage;
+  pageGroupView: GroupViewPage;
   pageInventory: InventoryPage;
   pageInventoryForUser: (user: AppUser) => Promise<InventoryPage>;
   pageInventoryImport: InventoryImportPage;
@@ -59,6 +66,7 @@ type UiFixtures = {
   pageManageForms: ManageFormsPage;
   pageDirectory: DirectoryPage;
   pageExportImport: ExportImportPage;
+  pageExportReport: ExportReportPage;
   pageUserProfile: UserProfilePage;
   pageNotebook: NotebookPage;
   pageGitHubAppsCard: GitHubAppsCardComponent;
@@ -83,6 +91,11 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   browserContextOptions: async ({ browserName }, use) => {
     await use({ baseURL: env.baseURL, ignoreHTTPSErrors: browserName === "webkit" });
   },
+  // Projects load a login saved once by auth.setup.ts; renew it if the session has since expired.
+  storageState: async ({ storageState }, use) => {
+    const account = typeof storageState === "string" ? savedLoginAccount(storageState) : undefined;
+    await use(account ? await freshStorageState(account) : storageState);
+  },
   pageLogin: pageFixture(LoginPage),
   pageRequestPasswordReset: pageFixture(RequestPasswordResetPage),
   pageResetPassword: pageFixture(ResetPasswordPage),
@@ -91,8 +104,11 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageApps: pageFixture(AppsPage),
   pageWorkspace: pageFixture(WorkspacePage),
   pageDocument: pageFixture(DocumentPage),
+  pageDocumentRevisions: pageFixture(DocumentRevisionsPage),
+  componentDocumentFields: pageFixture(CustomDocumentFields),
   pageDocumentEditor: pageFixture(DocumentEditorPage),
   pageGallery: pageFixture(GalleryPage),
+  pageGroupView: pageFixture(GroupViewPage),
   pageInventory: pageFixture(InventoryPage),
   pageInventoryForUser: async ({ browser, browserContextOptions }, use) => {
     const contexts: BrowserContext[] = [];
@@ -100,7 +116,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
       await use(async (user) => {
         const context = await browser.newContext({
           ...browserContextOptions,
-          storageState: storageStatePath(user.username),
+          storageState: await freshStorageState(user),
         });
         contexts.push(context);
         return new InventoryPage(await context.newPage());
@@ -118,6 +134,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageManageForms: pageFixture(ManageFormsPage),
   pageDirectory: pageFixture(DirectoryPage),
   pageExportImport: pageFixture(ExportImportPage),
+  pageExportReport: pageFixture(ExportReportPage),
   pageUserProfile: pageFixture(UserProfilePage),
   pageNotebook: pageFixture(NotebookPage),
   pageGitHubAppsCard: pageFixture(GitHubAppsCardComponent),

@@ -60,7 +60,7 @@ export class MyRSpacePage extends BasePage {
   }
 
   async openSharedDocuments(): Promise<SharedDocumentsPage> {
-    await this.page.getByRole("link", { name: "Shared Documents" }).click();
+    await this.page.getByRole("link", { name: "Shared Documents", exact: true }).click();
     const shared = new SharedDocumentsPage(this.page);
     await shared.waitUntilLoaded();
     return shared;

@@ -12,11 +12,23 @@
 	<form id="wordImportForm" data-parentid="${parentId}">
 		<p>
 			<div id="wordImportFormFileLabel"><spring:message code="dialogs.importFromWord.instruction"/></div>
-            <span style="display: block;" class="formfield_highlighted"> 
+            <span style="display: block;" class="formfield_highlighted">
                 <input id="wordImportFormFileInput" aria-labelledby="wordImportFormFileLabel" name="wordXfile" type="file" multiple>
 			</span>
         </p>
 	</form>
+
+    <div id="wordDocImportOptions">
+        <label id="wordDocImportSelectLabel"><spring:message code="dialogs.importFromWord.afterImport"/></label>
+        <select id="wordDocImportRecordSelect" aria-labelledby="wordDocImportSelectLabel" class="wordDocImportSelect">
+            <option value="NEW"><spring:message code="dialogs.importFromWord.newDocuments"/></option>
+            <option value="REPLACE"><spring:message code="dialogs.importFromWord.replaceDocument"/></option>
+        </select>
+        <select id="wordDocImportEntrySelect" aria-labelledby="wordDocImportSelectLabel" class="wordDocImportSelect">
+            <option value="NEW"><spring:message code="dialogs.importFromWord.newEntries"/></option>
+            <option value="REPLACE"><spring:message code="dialogs.importFromWord.replaceEntry"/></option>
+        </select>
+    </div>
 
     <c:if test="${isNotebook == false}">
 		<axt:folderChooser folderChooserId="-wordimport"></axt:folderChooser>

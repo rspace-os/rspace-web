@@ -164,7 +164,7 @@ public class CsvInstrumentExporter extends InventoryItemCsvExporter {
 
     if (CsvExportMode.FULL.equals(exportMode) && instrument.getActiveFields() != null) {
       for (InventoryEntityField sf : instrument.getActiveFields()) {
-        String valueForProp = sf.getData();
+        String valueForProp = csvValueForField(sf);
         int columnIndexForValue = csvColumnNames.indexOf(getColumnNameForInstrumentField(sf));
         if (columnIndexForValue >= 0) {
           itemProperties.set(columnIndexForValue, valueForProp != null ? valueForProp : "");

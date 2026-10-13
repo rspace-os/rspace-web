@@ -350,3 +350,51 @@ describe("setFile", () => {
     expect(model.instrumentTemplateName).not.toBe(initialName);
   });
 });
+
+describe("link-typed columns", () => {
+  test("a link column submits as type link when creating a new template", () => {
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentTemplateInfo = {
+        name: "template",
+        fields: [{ name: "Calibrated by", type: "link" }],
+      };
+      model.instrumentTemplateName = "Links";
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Calibrated by",
+          columnName: "Calibrated by",
+          fieldType: FieldTypes.link,
+        }),
+      ];
+    });
+
+    const result = model.transformInstrumentTemplateInfoForSubmission();
+
+    expect((result.fields[0] as { type: string }).type).toBe("link");
+  });
+
+  test("a link column maps onto an existing template's link field", () => {
+    // the compatibility gate is allValidTypes vs the template's own field type:
+    // a link column has to be accepted by a template field declared "link"
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplate = makeMockInstrumentTemplate({
+        fields: [instrumentFieldAttrs("Calibrated by", { type: "link" as FieldModelType })],
+      });
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Calibrated by",
+          columnName: "Calibrated by",
+          fieldType: FieldTypes.link,
+          columnsWithoutBlankValue: ["Calibrated by"],
+        }),
+      ];
+    });
+
+    expect(model.importInstrumentMatchesExistingTemplate).toEqual({ matches: true });
+  });
+});

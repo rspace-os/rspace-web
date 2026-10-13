@@ -149,6 +149,7 @@ credentials in `.env`:
 |---|---|---|
 | `FIELDMARK_API_KEY` | Fieldmark real-mode spec | `dashboard.fieldmark.app` → Profile → **Long-Lived API Tokens** → generate new token |
 | `ZENODO_API_KEY` | Zenodo real-mode spec | `zenodo.org` → Applications → Personal access tokens (`deposit:write` + `deposit:actions` scopes) |
+| `BIOPORTAL_API_KEY` | BioPortal ontology real-mode spec | `bioportal.bioontology.org` → Account → API Key. The backend reads it as `bioportal.api.key` (`-Dbioportal.api.key` or `deployments/dev/deployment.properties`); set the same key here so the spec runs instead of skipping |
 | `GALAXY_EU_APIKEY` | Galaxy real-mode spec | `usegalaxy.eu` → user menu → Preferences → Manage API key |
 | `DATAVERSE_API_TOKEN` | Dataverse real-mode spec | Target Dataverse server → account settings → API Token |
 | `DATAVERSE_SERVER_URL` | Dataverse real-mode spec | e.g. `https://demo.dataverse.org` |

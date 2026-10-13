@@ -1,6 +1,7 @@
 /** RSpace Inventory API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -55,6 +56,7 @@ import lombok.ToString;
   "lastNonWorkbenchParent",
   "lastMoveDate",
   "storedInContainer",
+  "skippedRelatedIdentifiers",
   "_links"
 })
 public class ApiInstrument extends ApiInstrumentEntity {
@@ -80,6 +82,16 @@ public class ApiInstrument extends ApiInstrumentEntity {
   /* location fields */
   @JsonProperty(value = "storedInContainer", access = Access.READ_ONLY)
   private boolean storedInContainer;
+
+  /**
+   * Set only by the PIDINST import (RSDEV-1528): the record's Measurement Technique and Calibration
+   * related identifiers that could not become links, each with the reason. Absent from every other
+   * response, ignored in any request; nothing about them is stored. Not READ_ONLY: that would stop
+   * a Java client binding it from the response.
+   */
+  @JsonInclude(JsonInclude.Include.NON_EMPTY)
+  @JsonProperty("skippedRelatedIdentifiers")
+  private List<ApiPidinstSkippedRelatedIdentifier> skippedRelatedIdentifiers = new ArrayList<>();
 
   /** default constructor used by jackson deserializer */
   public ApiInstrument() {

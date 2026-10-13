@@ -25,6 +25,10 @@ export class MessagesAndRequestsDialogComponent {
     await this.root.waitFor({ state: "hidden" });
   }
 
+  messagesWithSubject(subject: string): Locator {
+    return this.root.getByText(subject);
+  }
+
   async openLinkedRecord(recordName: string): Promise<void> {
     await this.root.getByRole("link", { name: recordName, exact: true }).click();
   }

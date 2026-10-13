@@ -37,7 +37,9 @@
 
 <%-- Reusable tag for incorporating a messages listing dialog into a page. --%>
 
-<axt:paginate paginationList="${paginationList}" />
+<div class="bootstrap-custom-flat">
+  <axt:paginate paginationList="${paginationList}" />
+</div>
 <input type="hidden" id="timeOfListing" value="${timeOfListing}" />
 <div id="messageListContents">
   <c:choose>

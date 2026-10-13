@@ -32,7 +32,6 @@ class B2instDoiSerializationTest {
     md.setSchemaVersion("1.0");
     B2instOwner owner = new B2instOwner();
     owner.setOwnerName("Jane Doe");
-    owner.setOwnerContact("jane@example.com");
     md.setOwner(List.of(owner));
 
     B2instDoi doi = new B2instDoi();

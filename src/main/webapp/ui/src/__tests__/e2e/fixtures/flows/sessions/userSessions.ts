@@ -1,5 +1,5 @@
-import type { Browser, BrowserContextOptions, Page } from "@playwright/test";
-import { GroupInvitationBanner } from "@/__tests__/e2e/components/system/groups/GroupInvitationBanner";
+import type { Browser, BrowserContext, BrowserContextOptions, Page } from "@playwright/test";
+import { GroupRequestToastComponent } from "@/__tests__/e2e/components/groups/GroupRequestToastComponent";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { test as sysadminSessionTest } from "@/__tests__/e2e/fixtures/flows/sessions/sysadminSessions";
 import { LoginPage } from "@/__tests__/e2e/pageObjects/auth/LoginPage";
@@ -12,6 +12,7 @@ import { SelfServiceLabGroupPage } from "@/__tests__/e2e/pageObjects/system/grou
 import { SystemUsersPage } from "@/__tests__/e2e/pageObjects/system/users/SystemUsersPage";
 import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
 import { alphaNumericUnique, DYNAMIC_USER_PASSWORD } from "@/__tests__/e2e/testData";
+import type { AppUser } from "@/__tests__/e2e/users";
 
 export type SelfServicePiActor = {
   username: string;
@@ -25,7 +26,7 @@ export type SelfServicePiActor = {
 
 export type UserSession = {
   groupDetails: GroupDetailsPage;
-  groupInvitation: GroupInvitationBanner;
+  groupRequest: (groupName: string) => GroupRequestToastComponent;
   workspace: WorkspacePage;
   users: SystemUsersPage;
   createAccount: CreateAccountPage;
@@ -50,11 +51,36 @@ export async function loginInNewContext(
   browserContextOptions: BrowserContextOptions,
   username: string,
   password: string,
-): Promise<{ page: Page; close: () => Promise<void> }> {
-  const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
-  const page = await ctx.newPage();
-  await performLogin(page, username, password);
-  return { page, close: () => ctx.close() };
+): Promise<{ page: Page; context: BrowserContext; close: () => Promise<void> }> {
+  const context = await browser.newContext({ ...browserContextOptions, storageState: undefined });
+  try {
+    const page = await context.newPage();
+    await performLogin(page, username, password);
+    return { page, context, close: () => context.close() };
+  } catch (error) {
+    try {
+      await context.close();
+    } catch (cleanupError) {
+      console.error("Failed to close the browser context after authentication failed:", cleanupError);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Logs the user out and back in so Shiro reloads permissions granted after an earlier login,
+ * such as a group membership just created. Shiro caches authorization per principal, not per
+ * session, and clears that cache only on logout; a new browser context alone can still see the
+ * cached, pre-change permissions.
+ */
+export async function refreshOwnSessionAfterGroupChange(
+  page: Page,
+  pageWorkspace: WorkspacePage,
+  appUser: Pick<AppUser, "username" | "password">,
+): Promise<void> {
+  await pageWorkspace.open();
+  await pageWorkspace.header.logOut();
+  await performLogin(page, appUser.username, appUser.password);
 }
 
 export const test = sysadminSessionTest.extend<UserSessionFixtures>({
@@ -97,7 +123,7 @@ export const test = sysadminSessionTest.extend<UserSessionFixtures>({
         closers.push(close);
         return {
           groupDetails: new GroupDetailsPage(page),
-          groupInvitation: new GroupInvitationBanner(page),
+          groupRequest: (groupName) => new GroupRequestToastComponent(page, groupName),
           workspace: new WorkspacePage(page),
           users: new SystemUsersPage(page),
           createAccount: new CreateAccountPage(page),

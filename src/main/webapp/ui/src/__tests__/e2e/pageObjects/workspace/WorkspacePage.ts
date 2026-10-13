@@ -3,12 +3,17 @@ import type { PublicationKind } from "@/__tests__/e2e/components/myrspace/Publis
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
 import { MessagesAndRequestsDialogComponent } from "@/__tests__/e2e/components/shared/MessagesAndRequestsDialogComponent";
 import type { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import type { SharePermission } from "@/__tests__/e2e/components/shared/ShareDialog";
 import { CreateFolderDialog } from "@/__tests__/e2e/components/workspace/CreateFolderDialog";
 import { CreateNotebookDialog } from "@/__tests__/e2e/components/workspace/CreateNotebookDialog";
 import { WorkspacePagination } from "@/__tests__/e2e/components/workspace/WorkspacePagination";
 import { WorkspaceSearchBar } from "@/__tests__/e2e/components/workspace/WorkspaceSearchBar";
 import { WorkspaceSelectionBar } from "@/__tests__/e2e/components/workspace/WorkspaceSelectionBar";
-import { WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
+import {
+  awaitTableRefresh,
+  WorkspaceTable,
+  waitForWorkspaceAnimations,
+} from "@/__tests__/e2e/components/workspace/WorkspaceTable";
 import { WorkspaceTemplatePickerDialog } from "@/__tests__/e2e/components/workspace/WorkspaceTemplatePickerDialog";
 import { WorkspaceToolbar } from "@/__tests__/e2e/components/workspace/WorkspaceToolbar";
 import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTree";
@@ -42,6 +47,30 @@ export class WorkspacePage extends BasePage {
 
   override async open(folderId?: number): Promise<void> {
     await this.page.goto(folderId !== undefined ? `${this.path}/${folderId}` : this.path);
+    await waitForWorkspaceAnimations(this.page);
+  }
+
+  async searchFor(name: string): Promise<void> {
+    await this.open();
+    await this.searchBar.search(name);
+  }
+
+  async shareRecord(
+    name: string,
+    share: { recipient: string; permission: SharePermission; location?: string[] },
+  ): Promise<void> {
+    await this.searchFor(name);
+    await this.table.selectRecord(name);
+    const dialog = await this.selectionBar.share();
+    await dialog.addRecipient(share.recipient);
+    await dialog.setPermission(share.recipient, share.permission);
+    if (share.location) await dialog.chooseLocation(share.recipient, share.location);
+    await dialog.save();
+  }
+
+  async openSharedFolder(group: { sharedFolderId: number; name: string }): Promise<void> {
+    await this.open(group.sharedFolderId);
+    await this.waitUntilBreadcrumbShows(`${group.name}_SHARED`);
   }
 
   async isLoaded(): Promise<boolean> {
@@ -86,6 +115,33 @@ export class WorkspacePage extends BasePage {
     await this.breadcrumbFolderName.filter({ hasText: folderName }).waitFor({ state: "visible" });
   }
 
+  private async browseInto(folderName: string): Promise<void> {
+    await this.table.openRecord(folderName);
+    await this.waitUntilBreadcrumbShows(folderName);
+  }
+
+  /** Browses Shared > LabGroups > "<group>_SHARED" via the toolbar shortcut, so the paginated root listing isn't paged. */
+  async browseToLabGroupSharedFolder(groupName: string): Promise<void> {
+    await this.open();
+    await this.toolbar.clickLabGroupShortcut();
+    await this.browseInto(`${groupName}_SHARED`);
+  }
+
+  /**
+   * Browses Shared > IndividualShareItems > RSpace's per-pair folder for individual shares. The backend
+   * (DefaultGroupNamingStrategy.getIndividualSharedFolderName) names it "<lower>-<higher>" by username order.
+   */
+  async browseToIndividualShareFolder(ownerUsername: string, recipientUsername: string): Promise<void> {
+    await this.open();
+    await this.toolbar.clickLabGroupShortcut();
+    await awaitTableRefresh(this.page, () =>
+      this.page.locator("#breadcrumbTag_workspaceBcrumb").getByRole("link", { name: "Shared", exact: true }).click(),
+    );
+    await this.waitUntilBreadcrumbShows("Shared");
+    await this.browseInto("IndividualShareItems");
+    await this.browseInto([ownerUsername, recipientUsername].sort().join("-"));
+  }
+
   async findRecord(name: string, { maxPages = 50 }: { maxPages?: number } = {}): Promise<void> {
     if (await this.isTreeView()) {
       throw new Error("findRecord: pagination is list-view only — switch to list view first.");
@@ -112,6 +168,7 @@ export class WorkspacePage extends BasePage {
     return this.createDocumentFromCustomForm("Basic Document");
   }
 
+  /** Basic Document only: it is the one form that opens in edit mode. Otherwise use createDocumentFromForm(). */
   async createDocumentFromCustomForm(formName: string): Promise<DocumentEditorPage> {
     await this.toolbar.createMenu.createFromCustomForm(formName);
     await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
@@ -125,6 +182,15 @@ export class WorkspacePage extends BasePage {
     const document = new DocumentPage(this.page);
     await document.isLoaded();
     return document;
+  }
+
+  /** Any non-Basic form; opens in view mode. */
+  async createDocumentFromForm(formName: string): Promise<DocumentPage> {
+    await this.toolbar.createMenu.createFromCustomForm(formName);
+    const doc = new DocumentPage(this.page);
+    await doc.isLoaded();
+    await this.page.waitForLoadState("networkidle");
+    return doc;
   }
 
   async createNotebook(name: string): Promise<NotebookPage> {
@@ -164,6 +230,13 @@ export class WorkspacePage extends BasePage {
     const picker = new WorkspaceTemplatePickerDialog(this.page);
     await picker.waitUntilVisible();
     await picker.createFromTemplate(templateName, newDocName);
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
+  async createDocumentFromSelectedTemplate(newDocName: string): Promise<DocumentEditorPage> {
+    await this.selectionBar.createDocumentFromTemplate(newDocName);
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
     return editor;

@@ -471,4 +471,39 @@ class SampleApiManagerImplLinkFieldTest {
 
     verifyNoInteractions(inventoryLinkManager);
   }
+
+  @Test
+  void selfLinkIsRejectedAfterSaveEvenThoughItPassedTheLenientImportPath() {
+    // CSV import skips the target check, so a crafted cell can name the Global ID the record is
+    // about to be given. rejectSelfLink cannot see it: link fields are applied before the record
+    // has an id. This backstop runs once it does.
+    com.researchspace.model.inventory.Sample saved = TestFactory.createBasicSampleInContainer(user);
+    saved.setId(200L);
+    InventoryLink selfLink = new InventoryLink();
+    selfLink.setRelationType("IsDerivedFrom");
+    selfLink.setTargetGlobalId("SA200");
+    selfLink.setTargetPrefix(GlobalIdPrefix.SA);
+    selfLink.setTargetDbId(200L);
+    InventoryLinkField field = new InventoryLinkField();
+    field.setName("Derived from");
+    field.setLink(selfLink);
+
+    ApiRuntimeException ex =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> manager.assertNoSelfLinkAfterSave(saved, List.of(field)));
+
+    assertEquals("errors.inventory.field.link.selfLinkForbidden", ex.getErrorCode());
+  }
+
+  @Test
+  void aLinkToAnotherRecordPassesTheAfterSaveCheck() {
+    com.researchspace.model.inventory.Sample saved = TestFactory.createBasicSampleInContainer(user);
+    saved.setId(200L);
+    InventoryLinkField field = new InventoryLinkField();
+    field.setName("Derived from");
+    field.setLink(dbLink); // targets SA2, not SA200
+
+    manager.assertNoSelfLinkAfterSave(saved, List.of(field));
+  }
 }
