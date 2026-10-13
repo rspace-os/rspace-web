@@ -9,7 +9,7 @@ import java.util.function.Function;
 import lombok.Getter;
 
 /** One typed scalar attribute exposed by a collection. */
-public final class Field<T, V> {
+public final class Field<T, V> implements ResourceMember<T> {
 
   private final String name;
   private final String property;
