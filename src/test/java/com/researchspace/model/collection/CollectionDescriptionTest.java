@@ -230,9 +230,9 @@ class CollectionDescriptionTest {
     assertTrue(schemaFields.get("serverManaged").filterOperators().isEmpty());
     assertEquals("value", description.findField("value").orElseThrow().name());
     assertTrue(description.findField("unknown").isEmpty());
-    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("value"));
-    assertThrows(
-        CollectionQueryException.class, () -> description.requireFilterSelector("serverManaged"));
+    assertInstanceOf(
+        FilterSelector.Property.class, description.findFilterSelector("value").orElseThrow());
+    assertTrue(description.findFilterSelector("serverManaged").isEmpty());
     assertEquals(
         description.schema().access().readAccess(), schemaFields.get("value").readAccess());
     Map<String, Object> expected = new LinkedHashMap<>();
@@ -242,8 +242,10 @@ class CollectionDescriptionTest {
     expected.put("createdAt", "2026-08-01T10:15:30Z");
     expected.put("updatedAt", "2026-08-02T11:16:31Z");
     assertEquals(expected, description.toDocument(entity));
-    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("createdAt"));
-    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("updatedAt"));
+    assertInstanceOf(
+        FilterSelector.Property.class, description.findFilterSelector("createdAt").orElseThrow());
+    assertInstanceOf(
+        FilterSelector.Property.class, description.findFilterSelector("updatedAt").orElseThrow());
 
     description.apply(entity, Map.of("value", "changed"), WriteOperation.UPDATE);
 
@@ -303,8 +305,7 @@ class CollectionDescriptionTest {
         new CollectionDescription<>(
             "testEntities",
             TestEntity.class,
-            List.of(idField()),
-            List.of(relationship),
+            List.<ResourceMember<TestEntity>>of(idField(), relationship),
             "id",
             List.of(new Sort("id", true)));
     RelationshipSchema schema = description.schema().relationships().get(0);
@@ -313,9 +314,8 @@ class CollectionDescriptionTest {
     assertFalse(schema.selfReferenceAllowed());
     assertInstanceOf(
         FilterSelector.RelationshipPart.class,
-        description.requireFilterSelector("target.relationTo"));
-    assertThrows(
-        CollectionQueryException.class, () -> description.requireFilterSelector("target.globalId"));
+        description.findFilterSelector("target.relationTo").orElseThrow());
+    assertTrue(description.findFilterSelector("target.globalId").isEmpty());
   }
 
   @Test
@@ -344,8 +344,12 @@ class CollectionDescriptionTest {
   }
 
   private static Relationship<TestEntity> relationship() {
+    return relationship("target");
+  }
+
+  private static Relationship<TestEntity> relationship(String name) {
     return Relationship.polymorphicToOne(
-            "target",
+            name,
             CollectionFieldTypes.longNumber(),
             List.of(
                 new RelationshipTarget<>(
@@ -361,7 +365,7 @@ class CollectionDescriptionTest {
 
     assertInstanceOf(
         FilterSelector.Property.class,
-        described.requireFilterSelector("sharingAcl"),
+        described.findFilterSelector("sharingAcl").orElseThrow(),
         "the query compiler resolves it, so an access constraint can name it");
     assertThrows(
         CollectionQueryException.class,
@@ -382,11 +386,63 @@ class CollectionDescriptionTest {
                 "testEntities",
                 TestEntity.class,
                 List.of(idField()),
-                List.of(),
                 "id",
                 List.of(new Sort("id", true)),
                 AccessPolicy.authenticated(),
                 List.of(new InternalFilter("id", "id", CollectionFieldTypes.longNumber()))));
+  }
+
+  @Test
+  void refusesAnInternalFilterThatShadowsARelationshipSelector() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new CollectionDescription<>(
+                "testEntities",
+                TestEntity.class,
+                List.<ResourceMember<TestEntity>>of(idField(), relationship()),
+                "id",
+                List.of(new Sort("id", true)),
+                AccessPolicy.authenticated(),
+                List.of(
+                    new InternalFilter(
+                        "target.relationTo", "targetType", CollectionFieldTypes.text()))));
+  }
+
+  @Test
+  void rejectsFieldAndRelationshipWithTheSameName() {
+    Field<TestEntity, String> targetField =
+        Field.readOnly("target", "value", CollectionFieldTypes.text(), TestEntity::value);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new CollectionDescription<>(
+                "testEntities",
+                TestEntity.class,
+                List.<ResourceMember<TestEntity>>of(idField(), targetField, relationship()),
+                "id",
+                List.of(new Sort("id", true))));
+  }
+
+  @Test
+  void preservesEachMemberKindOrderWhenDeclarationsAreInterleaved() {
+    CollectionDescription<TestEntity> description =
+        new CollectionDescription<>(
+            "testEntities",
+            TestEntity.class,
+            List.<ResourceMember<TestEntity>>of(
+                idField(),
+                relationship("first"),
+                Field.readOnly("value", "value", CollectionFieldTypes.text(), TestEntity::value),
+                relationship("second")),
+            "id",
+            List.of(new Sort("id", true)));
+
+    assertEquals(List.of("id", "value"), description.fields().stream().map(Field::name).toList());
+    assertEquals(
+        List.of("first", "second"),
+        description.relationships().stream().map(Relationship::name).toList());
   }
 
   @Test
@@ -404,7 +460,6 @@ class CollectionDescriptionTest {
         "testEntities",
         TestEntity.class,
         List.of(idField()),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.authenticated(),
@@ -417,8 +472,7 @@ class CollectionDescriptionTest {
 
   private static CollectionDescription<TestEntity> description(
       List<Field<TestEntity, ?>> fields, List<Sort> defaultSort) {
-    return new CollectionDescription<>(
-        "testEntities", TestEntity.class, fields, List.of(), "id", defaultSort);
+    return new CollectionDescription<>("testEntities", TestEntity.class, fields, "id", defaultSort);
   }
 
   private static CollectionFieldType<String> unsortableText() {

@@ -27,7 +27,6 @@ class CollectionFieldTypesTest {
             List.of(
                 Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Item::id),
                 Field.readOnly("name", "name", constrained, Item::name)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
 

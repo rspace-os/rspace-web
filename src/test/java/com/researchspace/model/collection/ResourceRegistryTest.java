@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +22,6 @@ class ResourceRegistryTest {
           List.of(
               Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Child::id),
               Field.readOnly("name", "name", CollectionFieldTypes.text(20), Child::name)),
-          List.of(),
           "id",
           List.of(new Sort("id", true)));
 
@@ -29,8 +29,8 @@ class ResourceRegistryTest {
       new CollectionDescription<>(
           "parents",
           Parent.class,
-          List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Parent::id)),
-          List.of(
+          List.<ResourceMember<Parent>>of(
+              Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Parent::id),
               Relationship.referenceToOne(
                   "primaryChild",
                   "children",
@@ -118,15 +118,16 @@ class ResourceRegistryTest {
                 Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Child::id),
                 Field.readOnly("name", "name", CollectionFieldTypes.text(20), Child::name)
                     .readableBy(AccessFunction.never())),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
+    List<ResourceMember<Parent>> hiddenRelationshipMembers = new ArrayList<>(PARENTS.fields());
+    hiddenRelationshipMembers.add(
+        PARENTS.requireRelationship("primaryChild").readableBy(AccessFunction.never()));
     CollectionDescription<Parent> hiddenRelationship =
         new CollectionDescription<>(
             "parents",
             Parent.class,
-            PARENTS.fields(),
-            List.of(PARENTS.requireRelationship("primaryChild").readableBy(AccessFunction.never())),
+            hiddenRelationshipMembers,
             "id",
             List.of(new Sort("id", true)));
     AccessContext context =
@@ -154,7 +155,6 @@ class ResourceRegistryTest {
             "relationship-children",
             Child.class,
             List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Child::id)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
 
@@ -270,19 +270,16 @@ class ResourceRegistryTest {
   @Test
   void validatesPolymorphicTargetEntityAndIdTypes() {
     CollectionDescription<Node> nodes = nodes();
+    List<ResourceMember<Node>> wrongEntityTargetMembers = new ArrayList<>(nodes.fields());
+    wrongEntityTargetMembers.add(
+        Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            List.of(new RelationshipTarget<>("nodes", NodeKind.NODE, "IN", String.class)),
+            new SplitReferenceBinding<>(Node::target, "targetType", "targetId")));
     CollectionDescription<Node> wrongEntityTarget =
         new CollectionDescription<>(
-            "nodes",
-            Node.class,
-            nodes.fields(),
-            List.of(
-                Relationship.polymorphicToOne(
-                    "target",
-                    CollectionFieldTypes.longNumber(),
-                    List.of(new RelationshipTarget<>("nodes", NodeKind.NODE, "IN", String.class)),
-                    new SplitReferenceBinding<>(Node::target, "targetType", "targetId"))),
-            "id",
-            List.of(new Sort("id", true)));
+            "nodes", Node.class, wrongEntityTargetMembers, "id", List.of(new Sort("id", true)));
     assertThrows(
         IllegalArgumentException.class, () -> new ResourceRegistry(List.of(wrongEntityTarget)));
 
@@ -291,24 +288,20 @@ class ResourceRegistryTest {
             "stringTargets",
             StringIdTarget.class,
             List.of(Field.readOnly("id", "id", CollectionFieldTypes.text(20), StringIdTarget::id)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
+    List<ResourceMember<Node>> wrongIdSourceMembers = new ArrayList<>(nodes.fields());
+    wrongIdSourceMembers.add(
+        Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            List.of(
+                new RelationshipTarget<>(
+                    "stringTargets", NodeKind.NODE, null, StringIdTarget.class)),
+            new SplitReferenceBinding<>(Node::target, "targetType", "targetId")));
     CollectionDescription<Node> wrongIdSource =
         new CollectionDescription<>(
-            "nodes",
-            Node.class,
-            nodes.fields(),
-            List.of(
-                Relationship.polymorphicToOne(
-                    "target",
-                    CollectionFieldTypes.longNumber(),
-                    List.of(
-                        new RelationshipTarget<>(
-                            "stringTargets", NodeKind.NODE, null, StringIdTarget.class)),
-                    new SplitReferenceBinding<>(Node::target, "targetType", "targetId"))),
-            "id",
-            List.of(new Sort("id", true)));
+            "nodes", Node.class, wrongIdSourceMembers, "id", List.of(new Sort("id", true)));
     assertThrows(
         IllegalArgumentException.class,
         () -> new ResourceRegistry(List.of(wrongIdSource, stringTargets)));
@@ -324,25 +317,21 @@ class ResourceRegistryTest {
                 Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), NumericTarget::id),
                 Field.readOnly(
                     "name", "name", CollectionFieldTypes.longNumber(), NumericTarget::name)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
+    List<ResourceMember<Node>> sourceMembers = new ArrayList<>(nodes().fields());
+    sourceMembers.add(
+        Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            List.of(
+                new RelationshipTarget<>("children", NodeKind.NODE, null, Child.class),
+                new RelationshipTarget<>(
+                    "numericTargets", NodeKind.NUMERIC, null, NumericTarget.class)),
+            new SplitReferenceBinding<>(Node::target, "targetType", "targetId")));
     CollectionDescription<Node> source =
         new CollectionDescription<>(
-            "nodes",
-            Node.class,
-            nodes().fields(),
-            List.of(
-                Relationship.polymorphicToOne(
-                    "target",
-                    CollectionFieldTypes.longNumber(),
-                    List.of(
-                        new RelationshipTarget<>("children", NodeKind.NODE, null, Child.class),
-                        new RelationshipTarget<>(
-                            "numericTargets", NodeKind.NUMERIC, null, NumericTarget.class)),
-                    new SplitReferenceBinding<>(Node::target, "targetType", "targetId"))),
-            "id",
-            List.of(new Sort("id", true)));
+            "nodes", Node.class, sourceMembers, "id", List.of(new Sort("id", true)));
 
     assertThrows(
         IllegalArgumentException.class,
@@ -358,7 +347,6 @@ class ResourceRegistryTest {
             List.of(
                 Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), NamedTarget::id),
                 Field.readOnly("name", "name", CollectionFieldTypes.text(20), NamedTarget::name)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
     CollectionDescription<Node> source =
@@ -384,8 +372,8 @@ class ResourceRegistryTest {
         new CollectionDescription<>(
             "lefts",
             Left.class,
-            List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Left::id)),
-            List.of(
+            List.<ResourceMember<Left>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Left::id),
                 Relationship.polymorphicToOne(
                     "right",
                     CollectionFieldTypes.longNumber(),
@@ -398,8 +386,8 @@ class ResourceRegistryTest {
         new CollectionDescription<>(
             "rights",
             Right.class,
-            List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Right::id)),
-            List.of(
+            List.<ResourceMember<Right>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Right::id),
                 Relationship.polymorphicToOne(
                     "left",
                     CollectionFieldTypes.longNumber(),
@@ -433,7 +421,6 @@ class ResourceRegistryTest {
             "children",
             Child.class,
             CHILDREN.fields(),
-            List.of(),
             "id",
             List.of(new Sort("id", true)),
             AccessPolicy.readOnly(countedRead));
@@ -441,8 +428,8 @@ class ResourceRegistryTest {
         new CollectionDescription<>(
             "twoChildren",
             TwoChildren.class,
-            List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TwoChildren::id)),
-            List.of(
+            List.<ResourceMember<TwoChildren>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TwoChildren::id),
                 Relationship.referenceToOne(
                     "first",
                     "children",
@@ -472,18 +459,15 @@ class ResourceRegistryTest {
 
   private static CollectionDescription<Node> polymorphicNodes(
       List<RelationshipTarget<NodeKind>> targets) {
+    List<ResourceMember<Node>> members = new ArrayList<>(nodes().fields());
+    members.add(
+        Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            targets,
+            new SplitReferenceBinding<>(Node::target, "targetType", "targetId")));
     return new CollectionDescription<>(
-        "nodes",
-        Node.class,
-        nodes().fields(),
-        List.of(
-            Relationship.polymorphicToOne(
-                "target",
-                CollectionFieldTypes.longNumber(),
-                targets,
-                new SplitReferenceBinding<>(Node::target, "targetType", "targetId"))),
-        "id",
-        List.of(new Sort("id", true)));
+        "nodes", Node.class, members, "id", List.of(new Sort("id", true)));
   }
 
   private static List<String> targetResourceNames(ResourceRegistry.RelationshipQueryPath path) {
@@ -494,8 +478,8 @@ class ResourceRegistryTest {
     return new CollectionDescription<>(
         "nodes",
         Node.class,
-        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id)),
-        List.of(
+        List.<ResourceMember<Node>>of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id),
             Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
