@@ -75,7 +75,6 @@ class ReadOnlyCollectionOpenApiTest {
                         CollectionFieldTypes.text(),
                         new Constraints(null, null, 2, Pattern.compile("^[A-Z]"), null)),
                     Gadget::code)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
     @SuppressWarnings("unchecked")
