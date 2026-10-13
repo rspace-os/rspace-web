@@ -588,10 +588,13 @@ field that clients cannot query.
 | `property` | Component name | Selects the entity JavaBean property. |
 | `maxLength` | Unset | Sets the maximum input string length. |
 | `title`, `description` | Empty | Adds OpenAPI text. |
-| `example`, `additionalExamples` | Empty | Adds OpenAPI wire examples. |
-| `format`, `pattern` | Empty | Adds OpenAPI string metadata. |
-| `defaultValue` | Empty | Documents the wire default. |
-| `minLength`, `minimum`, `maximum`, `enumValues` | Unset | Adds OpenAPI constraints. |
+| `example`, `additionalExamples` | Empty | Adds OpenAPI wire examples. Each must be a valid value. |
+| `format` | Empty | Adds OpenAPI string metadata. |
+| `minLength` | Unset | Sets the minimum input string length. |
+| `pattern` | Empty | Requires the input string to contain a match. |
+| `minimum`, `maximum` | Unset | Sets inclusive bounds for a number. |
+| `enumValues` | Empty | Restricts a `String` field to these values. |
+| `defaultValue` | Empty | Supplies a wire value when a create body omits the field. |
 | `deprecated` | `false` | Marks the OpenAPI field as deprecated. |
 
 The annotation builder supports these Java types:
@@ -599,9 +602,11 @@ The annotation builder supports these Java types:
 | Java type | JSON/OpenAPI type |
 | --- | --- |
 | `String` | string |
+| `int`, `Integer` | integer, `int32` |
 | `long`, `Long` | integer, `int64` |
 | `boolean`, `Boolean` | boolean |
 | `java.util.Date` | string, `date-time` |
+| A Java enum | string, with an `enum` of the constant names |
 
 The entity property must have a getter. The framework makes the ID read-only. It also makes a
 property read-only when that property has no setter. For other server-managed properties, set both
@@ -613,13 +618,43 @@ This setting prevents the query layer from sending the property to Hibernate.
 Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
 writer or row-specific field access.
 
-A programmatic writable field can call `defaultValue(value)` to supply a fixed value when a create
-document omits that field. An explicit client value, including an allowed `null`, takes precedence.
-The framework applies this default only on create and publishes it in the create schema. Dynamic
-defaults are not supported yet. Apply contextual values in the create operation.
+A writable field can supply a fixed value when a create document omits it: use the annotation's
+`defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
+including an allowed `null`, takes precedence. The framework applies this default only on create and
+publishes it in the create schema. The default must pass the field's own rules, and a required
+field cannot have one. Dynamic defaults are not supported yet. Apply contextual values in the create
+operation.
 
-Most annotation options only change OpenAPI. They do not add domain validation. The runtime options
-in the table are exceptions. The manager must enforce all domain rules.
+### Field constraints
+
+The framework enforces `maxLength`, `minLength`, `pattern`, `minimum`, `maximum` and `enumValues`
+when a client writes a value. A value that breaks one returns `INVALID_VALUE`. OpenAPI publishes
+each rule only where the server checks it:
+
+| Rule | Checked on writes | Checked in `where` | Published on |
+| --- | --- | --- | --- |
+| Java enum constants | Yes | Yes | Every schema |
+| `maxLength` | Yes | Yes | Every schema |
+| `minLength`, `pattern`, `minimum`, `maximum`, `enumValues` | Yes | No | Request and response bodies |
+
+A nullable enum lists `null` among its values. A `pattern` is unanchored, like a JSON Schema
+`pattern`: the value must contain a match. Write `^...$` to match the whole value. Use only syntax
+that JavaScript and Java read the same way: no lookbehind, possessive quantifiers, inline flag groups
+such as `(?i)`, or `\p{...}` classes.
+
+Startup fails in these cases:
+
+- `minimum` or `maximum` is set on a field that is not a number.
+- `minLength`, `pattern` or `enumValues` is set on a field that is not a `String`. A Java enum
+  field lists its constants automatically.
+- A `pattern` does not compile.
+- An example or a default breaks the field's own rules.
+
+A programmatic field uses `CollectionFieldTypes.constrained(type, constraints)`. One decorator holds
+all of a field's rules, so it cannot wrap another constrained type or a read-only opaque type. Its
+`Pattern` must have no flags, because the published pattern cannot carry them.
+
+These are wire rules for one field. The manager must still enforce all domain rules.
 
 ## Request and response payloads
 
