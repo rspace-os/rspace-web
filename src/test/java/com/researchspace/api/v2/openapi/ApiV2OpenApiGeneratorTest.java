@@ -598,8 +598,7 @@ class ApiV2OpenApiGeneratorTest {
                         CollectionFieldTypes.enumeration(Phase.class),
                         Widget::phase,
                         (widget, value) -> {})
-                    .allowNull()),
-            List.of(
+                    .allowNull(),
                 Relationship.polymorphicToOne(
                     "gadget",
                     positiveId(),
@@ -612,7 +611,6 @@ class ApiV2OpenApiGeneratorTest {
             "gadgets",
             Gadget.class,
             List.of(Field.readOnly("id", "id", positiveId(), Gadget::id)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
     ResourceOperations<Widget, Long> widgetOperations = operationsMock();

@@ -13,6 +13,7 @@ import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.ResourceMember;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
@@ -160,11 +161,12 @@ public record ApiV2BookingConfigurationResource(
                 BookingConfiguration::getOwnerHealth)
             .readableBy(AccessFunction.sysadmin())
             .withQueryCapabilities(false, false));
+    List<ResourceMember<BookingConfiguration>> members = new ArrayList<>(fields);
+    members.addAll(base.relationships());
     return new CollectionDescription<>(
         base.resourceName(),
         BookingConfiguration.class,
-        fields,
-        base.relationships(),
+        members,
         base.idField(),
         base.defaultSort(),
         access,
