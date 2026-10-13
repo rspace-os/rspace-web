@@ -81,6 +81,12 @@ describe("Booking display preferences", () => {
     await expect.element(page.getByRole("heading", { name: "All Bookable Items" })).toBeVisible();
     await expect.element(page.getByLabelText("Time zone: America/New_York")).not.toBeInTheDocument();
     const itemNames = ["Confocal microscope", "Electron microscope", "Mass spectrometer", "Flow cytometer"];
+    // The heading renders before the availability bars, and expect.poll gives up after 1 s.
+    for (const name of itemNames) {
+      await expect
+        .element(page.getByRole("img", { name: `${name} availability` }).getByTitle(/Current time/))
+        .toBeInTheDocument();
+    }
     await expect
       .poll(
         () =>
