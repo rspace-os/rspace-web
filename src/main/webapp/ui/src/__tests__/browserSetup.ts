@@ -36,7 +36,12 @@ await i18n.loadNamespaces([
  * worker registration is shared at the origin. Tests add handlers with
  * worker.use(); resetHandlers() restores the defaults after each test.
  */
-export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler(), ...galleryAppShellHandlers());
+export const worker = setupWorker(
+  ...appShellHandlers(),
+  oauthTokenHandler(),
+  oauthTokenHandler(true),
+  ...galleryAppShellHandlers(),
+);
 
 type AxiosLikeRejection = {
   isAxiosError?: boolean;
