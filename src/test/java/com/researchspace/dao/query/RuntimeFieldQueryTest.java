@@ -20,6 +20,7 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResolvedRuntimeField;
+import com.researchspace.model.collection.ResourceMember;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RuntimeFieldBinding;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
@@ -30,6 +31,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -77,8 +79,10 @@ class RuntimeFieldQueryTest {
                 new CollectionDescription<>(
                     ApiV2BookingInstrumentResource.RESOURCE_NAME,
                     ApiV2BookingInstrumentResource.DESCRIPTION.entityType(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.fields(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.relationships(),
+                    Stream.<ResourceMember<Instrument>>concat(
+                            ApiV2BookingInstrumentResource.DESCRIPTION.fields().stream(),
+                            ApiV2BookingInstrumentResource.DESCRIPTION.relationships().stream())
+                        .toList(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
                     AccessPolicy.readOnly(readAccess)))),

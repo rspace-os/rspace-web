@@ -22,7 +22,6 @@ import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
-import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceReference;
@@ -145,11 +144,10 @@ class TimeSlotBookingResourceOperationsTest {
             .operators()
             .iterator()
             .hasNext());
-    assertThrows(
-        CollectionQueryException.class,
-        () ->
-            ApiV2TimeSlotBookingResource.DESCRIPTION.requireWritableField(
-                "state", WriteOperation.CREATE));
+    assertFalse(
+        ApiV2TimeSlotBookingResource.DESCRIPTION
+            .requireField("state")
+            .writableOn(WriteOperation.CREATE));
     assertFalse(
         ApiV2TimeSlotBookingResource.DESCRIPTION
             .requireRelationship("target")

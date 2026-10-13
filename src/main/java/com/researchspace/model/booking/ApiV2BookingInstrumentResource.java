@@ -41,7 +41,6 @@ public final class ApiV2BookingInstrumentResource {
                   .documented(
                       documentation(
                           "Deleted", "True when the instrument is in the trash.", "false"))),
-          List.of(),
           "id",
           List.of(new Sort("name", true), new Sort("id", true)),
           AccessPolicy.readOnly(AccessFunction.authenticated()));
