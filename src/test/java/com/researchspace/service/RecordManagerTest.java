@@ -23,6 +23,7 @@ import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.archive.ArchivalDocument;
+import com.researchspace.archive.elninventory.ArchivalMaterialUsage;
 import com.researchspace.archive.model.ArchiveModelFactory;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.IPagination;
@@ -646,14 +647,13 @@ public class RecordManagerTest extends SpringTransactionalTest {
 
     ApiInventoryRecordInfo sampleRecord =
         inventoryIdentifierApiMgr.registerNewIdentifier(basicSample.getOid(), user);
+    inventoryIdentifierApiMgr.publishIdentifier(basicSample.getOid(), user);
     String expectedSampleDoi = "https://doi.org/" + sampleRecord.getIdentifiers().get(0).getDoi();
 
     ApiSubSample basicApiSubSample =
         (ApiSubSample)
             inventoryIdentifierApiMgr.registerNewIdentifier(
                 basicSample.getSubSamples().get(0).getOid(), user);
-    String expectedSubSampleDoi =
-        "https://doi.org/" + basicApiSubSample.getIdentifiers().get(0).getDoi();
 
     ApiMaterialUsage subSampleUsage = new ApiMaterialUsage(basicApiSubSample, null);
     ApiMaterialUsage sampleUsage = new ApiMaterialUsage(sampleRecord, null);
@@ -663,26 +663,11 @@ public class RecordManagerTest extends SpringTransactionalTest {
     basicDoc = recordMgr.getRecordWithFields(basicDoc.getId(), user).asStrucDoc();
     ArchiveModelFactory factory = new ArchiveModelFactory();
     ArchivalDocument archivalDocument = factory.createArchivalDocument(basicDoc);
-    assertEquals(
-        expectedSubSampleDoi,
-        archivalDocument
-            .getListFields()
-            .get(0)
-            .getListsOfMaterials()
-            .get(0)
-            .getMaterials()
-            .get(0)
-            .getIgsn());
-    assertEquals(
-        expectedSampleDoi,
-        archivalDocument
-            .getListFields()
-            .get(0)
-            .getListsOfMaterials()
-            .get(0)
-            .getMaterials()
-            .get(1)
-            .getIgsn());
+    List<ArchivalMaterialUsage> materials =
+        archivalDocument.getListFields().get(0).getListsOfMaterials().get(0).getMaterials();
+    // a draft DOI does not resolve, so the subsample's draft is exported without a link
+    assertNull(materials.get(0).getIgsn());
+    assertEquals(expectedSampleDoi, materials.get(1).getIgsn());
   }
 
   @Test
