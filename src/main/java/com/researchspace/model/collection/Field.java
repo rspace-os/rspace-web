@@ -170,10 +170,11 @@ public final class Field<T, V> {
 
   /**
    * Supplies this fixed value when the field is omitted from a create document. Dynamic defaults
-   * are intentionally not supported yet.
+   * are intentionally not supported yet. The value must pass the type's own validation.
    */
   public Field<T, V> defaultValue(V value) {
     V checked = type.javaType().cast(Objects.requireNonNull(value, "Field default value"));
+    type.validate(checked);
     return copy(writeOperations, requiredOnCreate, nullable, filterable, sortable, checked);
   }
 
@@ -212,6 +213,7 @@ public final class Field<T, V> {
         name,
         property,
         type.schema(),
+        type.writeConstraints(),
         requiredOnCreate,
         nullable,
         writeOperations.isEmpty(),
@@ -274,14 +276,21 @@ public final class Field<T, V> {
     writer.accept(entity, validateValue(value));
   }
 
-  V validateValue(Object value) {
+  /**
+   * Checks a parsed value before it is written: nullability, then the type's write-only rules.
+   *
+   * @throws IllegalArgumentException if the value breaks a rule
+   */
+  public V validateValue(Object value) {
     if (value == null) {
       if (!nullable) {
         throw new IllegalArgumentException("Field " + name + " does not accept null");
       }
       return null;
     }
-    return type.javaType().cast(value);
+    V cast = type.javaType().cast(value);
+    type.validate(cast);
+    return cast;
   }
 
   private Field<T, V> copy(
@@ -362,6 +371,9 @@ public final class Field<T, V> {
     }
     if (defaultValue != null && !writeOperations.contains(WriteOperation.CREATE)) {
       throw new IllegalArgumentException("Default value requires a create-writable field");
+    }
+    if (defaultValue != null && requiredOnCreate) {
+      throw new IllegalArgumentException("Required field must not have a default value");
     }
   }
 

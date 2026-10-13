@@ -7,6 +7,7 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -16,6 +17,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import org.hibernate.proxy.HibernateProxy;
 
 /** Maps an annotated API record and its entity bean properties to a collection description. */
@@ -202,8 +205,7 @@ final class AnnotatedCollectionDescriptionFactory {
   }
 
   private static OpenApiSchemaDocumentation auditDocumentation(String description) {
-    return new OpenApiSchemaDocumentation(
-        null, description, null, null, null, null, List.of(), false);
+    return OpenApiSchemaDocumentation.of(null, description, null);
   }
 
   private static <T, V> Optional<AuditProperty<T, V>> auditProperty(
@@ -265,7 +267,8 @@ final class AnnotatedCollectionDescriptionFactory {
     }
     requireCompatibleType(component, reader.getReturnType(), "reader");
 
-    CollectionFieldType<?> type = fieldType(component.getType(), definition.maxLength());
+    CollectionFieldType<?> type =
+        constrained(fieldType(component.getType(), definition.maxLength()), definition);
     return fieldFromTyped(component, definition, property, reader, descriptor, type, idField);
   }
 
@@ -306,20 +309,22 @@ final class AnnotatedCollectionDescriptionFactory {
     if (definition.nullable()) {
       field = field.allowNull();
     }
+    Stream.concat(Stream.of(definition.example()), Stream.of(definition.additionalExamples()))
+        .filter(example -> !example.isBlank())
+        .forEach(example -> wireValue(component, type, example, "example"));
+    if (!definition.defaultValue().isBlank()) {
+      field =
+          field.defaultValue(
+              wireValue(component, type, definition.defaultValue(), "default value"));
+    }
     field =
         field.documented(
             new OpenApiSchemaDocumentation(
                 definition.title(),
                 definition.description(),
                 definition.example(),
-                definition.pattern(),
-                definition.minimum(),
-                definition.maximum(),
-                List.of(definition.enumValues()),
                 definition.deprecated(),
                 definition.format(),
-                definition.defaultValue(),
-                definition.minLength() < 0 ? null : definition.minLength(),
                 List.of(definition.additionalExamples()),
                 Map.of()));
     return field
@@ -327,6 +332,31 @@ final class AnnotatedCollectionDescriptionFactory {
         .creatableBy(definition.createAccess().resolve())
         .updatableBy(definition.updateAccess().resolve())
         .withQueryCapabilities(definition.filterable(), definition.sortable());
+  }
+
+  /** Parses and validates a wire value from the annotation, so a bad one fails at startup. */
+  private static <V> V wireValue(
+      RecordComponent component, CollectionFieldType<V> type, String value, String label) {
+    try {
+      V parsed = type.parse(value);
+      type.validate(parsed);
+      return parsed;
+    } catch (RuntimeException ex) {
+      throw new IllegalArgumentException(
+          "Resource field " + component.getName() + " has an invalid " + label + ": " + value, ex);
+    }
+  }
+
+  private static <V> CollectionFieldType<V> constrained(
+      CollectionFieldType<V> type, ApiV2ResourceField definition) {
+    CollectionFieldTypes.Constraints constraints =
+        new CollectionFieldTypes.Constraints(
+            definition.minimum().isBlank() ? null : new BigDecimal(definition.minimum()),
+            definition.maximum().isBlank() ? null : new BigDecimal(definition.maximum()),
+            definition.minLength() < 0 ? null : definition.minLength(),
+            definition.pattern().isBlank() ? null : Pattern.compile(definition.pattern()),
+            definition.enumValues().length == 0 ? null : List.of(definition.enumValues()));
+    return constraints.isEmpty() ? type : CollectionFieldTypes.constrained(type, constraints);
   }
 
   private static CollectionFieldType<?> fieldType(Class<?> type, int maxLength) {
@@ -341,6 +371,9 @@ final class AnnotatedCollectionDescriptionFactory {
     }
     if (type == Long.class || type == long.class) {
       return CollectionFieldTypes.longNumber();
+    }
+    if (type == Integer.class || type == int.class) {
+      return CollectionFieldTypes.integer();
     }
     if (type == Date.class) {
       return CollectionFieldTypes.instant();
@@ -375,6 +408,9 @@ final class AnnotatedCollectionDescriptionFactory {
   private static Class<?> boxed(Class<?> type) {
     if (type == long.class) {
       return Long.class;
+    }
+    if (type == int.class) {
+      return Integer.class;
     }
     if (type == boolean.class) {
       return Boolean.class;

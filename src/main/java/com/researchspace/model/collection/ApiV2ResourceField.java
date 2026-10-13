@@ -6,7 +6,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Defines one field of an annotated resource record. */
+/**
+ * Defines one field of an annotated resource record.
+ *
+ * <p>{@link #minimum}, {@link #maximum}, {@link #minLength}, {@link #pattern} and {@link
+ * #enumValues} are enforced on writes and defaults and published on body properties only, because
+ * {@code where} literals are not checked against them. A rule that does not fit the field's type,
+ * or an example or default that breaks the field's rules, fails at startup.
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.RECORD_COMPONENT)
@@ -80,20 +87,35 @@ public @interface ApiV2ResourceField {
   /** OpenAPI string format, such as {@code email}, {@code uri}, or {@code date-time}. */
   String format() default "";
 
-  /** A wire-format default value. It is converted to the field's scalar type in the schema. */
+  /**
+   * A wire-format value applied when a create document omits the field. It is parsed and validated
+   * like a written value, and cannot be combined with {@link #requiredOnCreate}.
+   */
   String defaultValue() default "";
 
+  /** Minimum text length. Text fields only. */
   int minLength() default -1;
 
   /** Additional wire-format examples beyond {@link #example()}. */
   String[] additionalExamples() default {};
 
+  /**
+   * A regular expression the text must contain, unanchored like a JSON Schema {@code pattern}. Use
+   * only syntax that ECMA-262 and Java read the same way: no lookbehind, possessive quantifiers,
+   * inline flag groups such as {@code (?i)}, or {@code \p{...}} classes. Text fields only.
+   */
   String pattern() default "";
 
+  /** Inclusive lower bound, as a decimal literal. Number fields only. */
   String minimum() default "";
 
+  /** Inclusive upper bound, as a decimal literal. Number fields only. */
   String maximum() default "";
 
+  /**
+   * The values a {@code String} field accepts. Java enum fields derive theirs from the constants
+   * and reject this attribute.
+   */
   String[] enumValues() default {};
 
   boolean deprecated() default false;

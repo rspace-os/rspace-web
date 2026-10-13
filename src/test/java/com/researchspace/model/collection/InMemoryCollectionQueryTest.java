@@ -147,6 +147,42 @@ class InMemoryCollectionQueryTest {
   }
 
   @Test
+  void comparesIntegerFields() {
+    CollectionDescription<Ranked> description =
+        new CollectionDescription<>(
+            "ranked",
+            Ranked.class,
+            List.of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Ranked::id),
+                Field.readOnly("rank", "rank", CollectionFieldTypes.integer(), Ranked::rank)),
+            List.of(),
+            "id",
+            List.of(new Sort("id", true)));
+    InMemoryCollectionQuery<Ranked> ranks = new InMemoryCollectionQuery<>(description);
+    RsqlFilterParser parser = new RsqlFilterParser(description);
+    List<Ranked> rows = List.of(new Ranked(1L, 3), new Ranked(2L, 10), new Ranked(3L, 7));
+
+    assertEquals(
+        List.of(rows.get(2)),
+        ranks
+            .page(rows, request(parser.parse("rank==7"), description.defaultSort(), 1, 20))
+            .resources());
+    assertEquals(
+        List.of(rows.get(0), rows.get(2)),
+        ranks
+            .page(rows, request(parser.parse("rank=in=(3,7)"), description.defaultSort(), 1, 20))
+            .resources());
+    assertEquals(
+        List.of(rows.get(1), rows.get(2)),
+        ranks
+            .page(rows, request(parser.parse("rank>=7"), description.defaultSort(), 1, 20))
+            .resources());
+    assertEquals(
+        List.of(rows.get(0), rows.get(2), rows.get(1)),
+        ranks.page(rows, request(null, List.of(new Sort("rank", true)), 1, 20)).resources());
+  }
+
+  @Test
   void returnsAnEmptyPagePastTheEnd() {
     assertEquals(
         new ResourcePage<>(List.of(), 3),
@@ -183,4 +219,6 @@ class InMemoryCollectionQueryTest {
   }
 
   private record Widget(Long id, String name, Boolean enabled) {}
+
+  private record Ranked(Long id, Integer rank) {}
 }
