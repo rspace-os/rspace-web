@@ -1,0 +1,266 @@
+name: ZAP PR Security Scan
+
+# Shift-left security scan: builds THIS PR's WAR, boots it, and runs the ZAP
+# quick-release plan against it before merge.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # --- target (throwaway instance) ---
+  RSPACE_BASE_URL: http://localhost:8080
+  TARGET_URL: http://localhost:8080
+  PENTEST_REF: "56efd38e1344fb5c550b632b7eb7647cd4315ab6"
+  PLAN: quick-release
+  REPORT_DIR: reports
+
+jobs:
+  scan:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      RS_FILE_BASE: /tmp/zap-pr-filestore
+      HAS_SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+
+      ZAP_USERNAME: sysadmin1
+      ZAP_PASSWORD: sysWisc23!
+      # sysadmin1's seeded API key.
+      ZAP_APIKEY: abcdefghijklmnop12
+      # ROLE_USER account for the non-admin active-scan pass
+      ZAP_USER2_USERNAME: user2b
+      ZAP_USER2_PASSWORD: user1234
+
+    services:
+      db:
+        image: mariadb:12.3
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+
+    steps:
+      - name: Checkout rspace-web (PR head)
+        uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Checkout rspace-pentest (pinned SHA)
+        uses: actions/checkout@v7.0.0
+        with:
+          repository: rspace-os/rspace-pentest
+          ref: ${{ env.PENTEST_REF }}
+          ssh-key: ${{ secrets.PENTEST_DEPLOY_KEY }}
+          path: pentest
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Set up Node + pnpm
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+      - run: corepack enable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pentest Python deps
+        run: pip install -r pentest/requirements.txt
+
+      - name: Seed dev deployment.properties
+        run: |
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
+      - name: Package WAR
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=17 -Djava-vendor=temurin -Dtimestamp=${{ github.run_id }}
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup filestore
+        run: |
+          rm -rf "$RS_FILE_BASE"
+          mkdir -p "$RS_FILE_BASE"
+
+      - name: Start RSpace (jetty:run-war)
+        run: |
+          set -euo pipefail
+          nohup ./mvnw jetty:run-war \
+            -DskipTests=true -Dmaven.war.skip=true \
+            -Dtimestamp=${{ github.run_id }} \
+            -Djava-version=17 -Djava-vendor=temurin \
+            -Denvironment=drop-recreate-db \
+            -Dspring.profiles.active=run \
+            -DreactDevMode=false \
+            -Demail.enabled=false \
+            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Djdbc.db.maven=rspace \
+            -DRS_FILE_BASE="$RS_FILE_BASE" \
+            -DRS.devlogLevel=INFO \
+            > /tmp/jetty.log 2>&1 &
+
+      - name: Build ZAP image
+        working-directory: pentest
+        run: |
+          echo "ZAP_IMAGE=rspace-pentest:pr-${{ github.run_id }}" >> "$GITHUB_ENV"
+          echo "MERGED_PLAN=plans/${PLAN}-merged.yaml" >> "$GITHUB_ENV"
+          docker build -t "rspace-pentest:pr-${{ github.run_id }}" .
+
+      - name: Wait for RSpace readiness
+        run: |
+          set -euo pipefail
+          echo "Waiting for RSpace at ${TARGET_URL}/login ..."
+          for i in $(seq 1 180); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' "${TARGET_URL}/login" || true)" = "200" ]; then
+              echo "Ready after ~$((i*5))s"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::RSpace did not become ready in time"; tail -100 /tmp/jetty.log; exit 1
+
+      - name: Prepare reports and merge plan
+        id: prepare
+        working-directory: pentest
+        run: |
+          mkdir -p "$REPORT_DIR"; chmod 777 "$REPORT_DIR"
+          python3 scripts/spec_versions.py > spec_versions.env
+          # Exactly the two spec-version lines, and nothing else, may reach GITHUB_ENV.
+          keys="$(cut -d= -f1 spec_versions.env | sort | tr '\n' ' ')"
+          if grep -vqxE '(API|INVENTORY_API)_SPEC_VERSION=[A-Za-z0-9._-]+' spec_versions.env \
+            || [ "$keys" != "API_SPEC_VERSION INVENTORY_API_SPEC_VERSION " ]; then
+            echo "::error::Unexpected spec_versions.py output"; exit 1
+          fi
+          cat spec_versions.env >> "$GITHUB_ENV"
+          set -a; . ./spec_versions.env; set +a
+          python3 scripts/validate_plans.py
+          python3 scripts/merge_plan.py "$PLAN"
+
+      - name: Run ZAP automation plan (quick-release)
+        id: zap
+        continue-on-error: true
+        working-directory: pentest
+        run: |
+          docker run --rm --user zap --network host \
+            -v "$PWD:/zap/wrk" -w /zap/wrk \
+            -e ZAP_USERNAME -e ZAP_PASSWORD -e ZAP_APIKEY -e TARGET_URL \
+            -e API_SPEC_VERSION -e INVENTORY_API_SPEC_VERSION \
+            -e ZAP_USER2_USERNAME -e ZAP_USER2_PASSWORD \
+            "$ZAP_IMAGE" zap.sh -cmd -autorun "/zap/wrk/${MERGED_PLAN}" -port 8090 \
+            > "$REPORT_DIR/zap-console.log" 2>&1 || rc=$?
+          # The automation framework exits 1 on plan errors and 2 on warnings only.
+          if [ "${rc:-0}" -eq 2 ]; then
+            echo "::warning::ZAP plan finished with warnings"; exit 0
+          fi
+          exit "${rc:-0}"
+
+      # Process reports on this runner; do not publish downloadable artifacts.
+      - name: Security gate (informational)
+        id: gate
+        if: always() && steps.prepare.outcome == 'success'
+        continue-on-error: true
+        working-directory: pentest
+        run: |
+          set +e
+          python3 scripts/post_process.py > security_gate.out 2>&1
+          rc=$?
+          echo "post_process exit: $rc"
+          grep -E '^\[Post\] Alert counts|^\[Gate\]' security_gate.out || echo "(no gate output)"
+          exit "$rc"
+
+      - name: Job summary (counts only)
+        if: always()
+        env:
+          ZAP_OUTCOME: ${{ steps.zap.outcome || 'skipped' }}
+          GATE_OUTCOME: ${{ steps.gate.outcome || 'skipped' }}
+        run: |
+          zap_counts="$(grep -oE 'Alert counts: .*' pentest/security_gate.out 2>/dev/null || echo 'unavailable (scan may not have completed)')"
+          {
+            echo "### ZAP PR security scan (informational)"
+            echo ""
+            echo "- Scan execution: ${ZAP_OUTCOME}"
+            echo "- Gate: ${GATE_OUTCOME} (informational)"
+            echo "- ZAP ${zap_counts}"
+            echo ""
+            echo "_Counts only. Finding detail is sent to the security team's Slack; no names or URLs are published here._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # PR runs post to Slack ONLY when actionable (High/Medium alert, any
+      # FINDING, or failure).
+      - name: Notify Slack (findings only)
+        if: ${{ always() && env.HAS_SLACK_WEBHOOK == 'true' }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SCAN_STATUS: ${{ (steps.zap.outcome == 'failure' || steps.gate.outcome == 'failure' || job.status == 'failure') && 'failure' || 'success' }}
+          # Preparation makes the reporter available; earlier failures use the fallback.
+          REPORTER_READY: ${{ steps.prepare.outcome == 'success' }}
+          SCAN_TITLE: "rspace-web PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+          SCAN_LINK: ${{ github.event.pull_request.html_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "$REPORTER_READY" = "true" ]; then
+            cd pentest
+            exec python3 scripts/slack_summary.py --only-on-findings
+          fi
+          # No checkout or Python dependencies are needed for this fallback notice.
+          cd "$RUNNER_TEMP"
+          python3 -I - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          reason = "Scan setup did not complete; no security result is available."
+          text = (
+              f"{os.environ['SCAN_TITLE']} ({os.environ['SCAN_STATUS']})\n"
+              f"{reason}\n"
+              f"{os.environ['RUN_URL']}"
+          )
+          payload = {"attachments": [{"color": "danger", "text": text}]}
+          try:
+              request = urllib.request.Request(
+                  os.environ['SLACK_WEBHOOK_URL'],
+                  data=json.dumps(payload).encode('utf-8'),
+                  headers={'Content-Type': 'application/json'},
+                  method='POST',
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  print(f"[Slack] Posted fallback notice: HTTP {response.status}")
+          except (OSError, ValueError):
+              # Transport errors can contain the secret webhook URL.
+              print("[Slack] Could not post fallback notice: request failed.")
+              raise SystemExit(1)
+          PY
