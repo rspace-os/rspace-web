@@ -290,7 +290,8 @@ resolved during design. This file is a glossary only — no implementation detai
   cannot be linked by hand either. Every other such entry is a skipped entry. Nothing about
   a skipped entry is stored on the instrument (RSDEV-1528).
   _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
-  lookup (that is the search that precedes it), sync
+  lookup (that is the search that precedes it), sync, instrument CSV import (that is a
+  CSV import)
 
 - **Related identifier** — a registry record's pointer to another resource (a manual, a
   dataset, a paper), of which a PIDINST record may carry any number. RSpace writes exactly
@@ -494,3 +495,11 @@ resolved during design. This file is a glossary only — no implementation detai
   Operation, the wizard offers to perform it immediately from step one. Replaces the older
   per-item remembered defaults.
 
+## Inventory CSV import
+
+- **CSV import** — creating Inventory items in bulk from CSV files, one file per item type
+  (Containers, Samples, Subsamples, Instruments), where each row becomes a new item and each
+  column becomes either one of the item's own properties (name, description, tags) or a
+  template field. Each imported item lands in the parent container its row names, or else in
+  a new "imported items" container on the Bench, and keeps everything its row gave it.
+  _Avoid_: bulk upload, Instrument import (that is the PID registry path)
