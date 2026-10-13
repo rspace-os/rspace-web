@@ -34,7 +34,13 @@ export class SearchableResultsTable {
 
   async open(name: string, options: { exact?: boolean } = {}): Promise<void> {
     const row = await this.findRow(name, options);
-    await row.getByRole("cell", { name, exact: options.exact }).click();
+    const page = this.root.page();
+    // The selection cell's control is labelled "Select <name>", so skip it to reach the name cell.
+    await row
+      .getByRole("cell", { name, exact: options.exact })
+      .filter({ hasNot: page.getByRole("checkbox") })
+      .filter({ hasNot: page.getByRole("radio") })
+      .click();
   }
 
   async select(name: string): Promise<void> {

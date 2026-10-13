@@ -35,6 +35,7 @@ import LoaderCircular from "@/components/LoadingCircular";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
 import PIDINSTlogo from "../../assets/graphics/PIDINST.svg";
 import { decodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
@@ -663,10 +664,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
         spacing={1}
       >
         <Grid>
-          {t("footer.contactInfo", { institution: institutionName })}
-          <br />
-          <br />
-          {t("footer.generatedBy", { institution: institutionName })}
+          <TransRichText i18nKey="public:footer.identifierPageInfo" values={{ institution: institutionName }} />
         </Grid>
       </Grid>
     </Grid>
