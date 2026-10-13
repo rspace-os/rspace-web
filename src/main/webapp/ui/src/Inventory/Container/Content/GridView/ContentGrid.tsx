@@ -153,6 +153,8 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const { disabled } = useContext(SearchContext);
 
   const [keyboardTips, setKeyboardTips] = useState(false);
+  // A click focuses the cell too, but the tips are for keyboard users and would cover a dialog's buttons.
+  const focusFromPointer = useRef(false);
 
   /*
    * When DndKit's keyboard-driven drag-and-drop mode is active, we don't want
@@ -203,10 +205,13 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           padding="normal"
           size="small"
           onFocus={() => {
-            setKeyboardTips(true);
+            if (!focusFromPointer.current) setKeyboardTips(true);
             setFocusCoord((current) => current ?? tabIndexCoord);
           }}
-          onBlur={() => setKeyboardTips(false)}
+          onBlur={(e) => {
+            setKeyboardTips(false);
+            if (!e.currentTarget.contains(e.relatedTarget)) focusFromPointer.current = false;
+          }}
           onMouseDown={(e) => {
             if (e.currentTarget === tableRef.current) return; // ignore taps to scrollbar
             if (!disabled) {
@@ -244,6 +249,8 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
             }
           }}
           onKeyDown={(e: KeyboardEvent) => {
+            focusFromPointer.current = false;
+            setKeyboardTips(true);
             /*
              * A grid without drag-and-drop is used only to choose locations, so
              * it follows the WAI-ARIA grid multi-select model: arrows move focus,
@@ -400,6 +407,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       columnsUnderHover={columnsUnderHover}
                       columnIndex={index}
                       onPointerFocus={(coord) => {
+                        focusFromPointer.current = true;
                         setTabIndexCoord(coord);
                         setShiftOrigin(null);
                       }}

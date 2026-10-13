@@ -296,10 +296,10 @@ test.describe("Grid keyboard selection", { tag: tags.INVENTORY }, () => {
       expect(contents.locations?.filter((l) => l.content?.name === newName).map(label)).toEqual(["A3"]);
     });
 
-    test("As a mouse user, I can click Create while the location grid has focus", {
-      annotation: { type: "issue", description: "Keyboard tips cover the dialog buttons (e2e report F1)" },
-    }, async ({ pageInventory, clientInventory }) => {
-      test.fail();
+    test("As a mouse user, I can click Create straight after picking a location", async ({
+      pageInventory,
+      clientInventory,
+    }) => {
       const box = await gridContainer(clientInventory, 3);
       await pageInventory.openRecord("CONTAINER", box.name);
       const dialog = await pageInventory.detailsPanel.openCreateItemDialog();
@@ -307,6 +307,7 @@ test.describe("Grid keyboard selection", { tag: tags.INVENTORY }, () => {
 
       await grid.click("A1");
 
+      await expect(grid.tips()).toBeHidden();
       await dialog.createButton.click({ timeout: 5_000 });
     });
 

@@ -692,17 +692,23 @@ test.describe("Inventory operation placement", { tag: tags.INVENTORY }, () => {
         "Use the arrow keys to move. Press Space to select or deselect a location. Hold Shift to select a range. Press Escape to clear selection.",
       );
     });
+  });
 
-    test("As a mouse user, I can click Next while the grid has focus", {
-      annotation: { type: "issue", description: "Keyboard tips cover the dialog buttons (e2e report F1)" },
-    }, async ({ flowOperationsEnabled: _, pageInventory, clientInventory }) => {
-      test.fail();
-      const { wizard, grid } = await pickedGrid(pageInventory, clientInventory, { count: 1 });
+  test("As a mouse user, I can click Next straight after picking a location", async ({
+    flowOperationsEnabled: _,
+    pageInventory,
+    clientInventory,
+  }) => {
+    const sample = await origin(clientInventory);
+    const box = await gridContainer(clientInventory, 2, 2);
+    const wizard = await aliquotToLocation(pageInventory, sample, 1);
+    await wizard.location.pick(box.name);
 
-      await grid.click("A1");
+    await wizard.location.grid.click("A1");
 
-      await wizard.nextButton.click({ timeout: 5_000 });
-    });
+    await expect(wizard.location.grid.tips()).toBeHidden();
+    await wizard.nextButton.click({ timeout: 5_000 });
+    await wizard.expectStep("Confirm");
   });
 
   test("As a user, the new subsamples stay on my workbench by default", async ({

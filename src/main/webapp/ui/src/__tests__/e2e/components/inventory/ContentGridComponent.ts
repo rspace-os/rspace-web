@@ -90,8 +90,8 @@ export class ContentGridComponent {
   }
 
   /**
-   * Tabs out of the grid. While a cell has focus the keyboard tips Snackbar covers the buttons at
-   * the foot of a dialog at desktop sizes, so a click on them lands on the Snackbar instead.
+   * Tabs out of the grid. Once a key has been pressed in the grid, the keyboard tips Snackbar covers
+   * the buttons at the foot of a dialog until focus leaves it, so a click on them lands on the Snackbar.
    */
   async leave(): Promise<void> {
     if ((await this.root.count()) === 0) return;

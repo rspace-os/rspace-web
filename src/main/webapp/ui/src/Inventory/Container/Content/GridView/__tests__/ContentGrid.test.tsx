@@ -382,6 +382,25 @@ describe("ContentGrid", () => {
           expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "false", "true", "true"]);
         });
 
+        it("does not show the keyboard tips, which would cover the dialog's buttons", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 1);
+          renderGrid(box);
+          await user.click(cells()[3]);
+          expect(screen.queryByText("inventory:container.content.keyboard.selectionTips")).not.toBeInTheDocument();
+        });
+
+        it("shows the keyboard tips once a key is pressed", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 1);
+          renderGrid(box);
+          await user.click(cells()[3]);
+          await user.keyboard("{ArrowLeft}");
+          expect(screen.getByText("inventory:container.content.keyboard.selectionTips")).toBeVisible();
+        });
+
         it("keeps Escape inside the grid", async () => {
           const user = userEvent.setup();
           const box = emptyBox();
