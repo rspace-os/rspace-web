@@ -1,4 +1,3 @@
-import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Link } from "@tanstack/react-router";
 import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
@@ -105,7 +104,7 @@ function SlicePopover({
         type="button"
         openOnHover
         delay={0}
-        closeDelay={200}
+        closeDelay={500}
         aria-label={label}
         onFocus={() => {
           if (suppressRestoredFocusRef.current) {
@@ -428,9 +427,8 @@ export function AvailabilityBar({
                   sideOffset={8}
                   collisionPadding={8}
                   sticky
-                  className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3"
+                  className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3 duration-0 data-closed:animate-none data-open:animate-none"
                 >
-                  <PopoverPrimitive.Arrow className="size-2.5 rotate-45 border border-border bg-popover" />
                   <div className="min-w-0">
                     <PopoverTitle className="text-base font-semibold leading-tight">
                       {formatTimeRange(slice)}
