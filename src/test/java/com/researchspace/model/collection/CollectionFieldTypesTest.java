@@ -138,6 +138,17 @@ class CollectionFieldTypesTest {
         IllegalArgumentException.class,
         () ->
             CollectionFieldTypes.constrained(
+                CollectionFieldTypes.structured(
+                    String.class,
+                    CollectionFieldType.InputKind.ARRAY,
+                    Map.of(),
+                    JsonNode::toString,
+                    value -> value),
+                minLength(1)));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            CollectionFieldTypes.constrained(
                 CollectionFieldTypes.text(),
                 new Constraints(BigDecimal.ONE, null, null, null, null)));
     assertThrows(
