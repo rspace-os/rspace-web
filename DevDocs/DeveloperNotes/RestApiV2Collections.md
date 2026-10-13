@@ -568,6 +568,11 @@ field's OpenAPI schema. Structured fields are never filterable or sortable. Book
 use this for `openDays` and `openingExceptions`; rules that span fields, such as an exception day
 having to be open, stay in the manager's validation of the merged settings.
 
+`BigDecimal`, `Instant`, typed lists and typed objects are not field types yet. Each waits for its
+first consumer because it needs more than a parser: decimal equality must ignore scale, `Instant`
+needs explicit serialization, and lists need generic type checks and JSON examples and defaults.
+Until then, use `structured(...)` or a programmatic description.
+
 A writable field can supply a fixed value when a create document omits it: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
 including an allowed `null`, takes precedence. The framework applies this default only on create and
@@ -601,8 +606,9 @@ Startup fails in these cases:
 - An example or a default breaks the field's own rules.
 
 A programmatic field uses `CollectionFieldTypes.constrained(type, constraints)`. One decorator holds
-all of a field's rules, so it cannot wrap another constrained type or a read-only opaque type. Its
-`Pattern` must have no flags, because the published pattern cannot carry them.
+all of a field's rules, so it cannot wrap another constrained type, a structured type or a read-only
+opaque type. A structured type's decoder validates the whole value itself. A constraint `Pattern`
+must have no flags, because the published pattern cannot carry them.
 
 These are wire rules for one field. The manager must still enforce all domain rules.
 
