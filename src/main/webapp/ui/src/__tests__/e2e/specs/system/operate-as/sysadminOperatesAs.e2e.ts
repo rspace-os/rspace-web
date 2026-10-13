@@ -41,11 +41,11 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
     await workspace.waitUntilLoaded();
     await expect(workspace.operateAsBanner).toContainText(user.username);
 
-    await workspace.toolbar.toggleFilter("templates");
     const page2 = await page1.context().newPage();
     try {
-      await page2.goto(page1.url());
-      await page2.getByRole("button", { name: "Templates", exact: true }).waitFor();
+      await page2.goto("/inventory/search?resultType=SAMPLE");
+      const inventorySearch = page2.getByRole("navigation", { name: "Search and Navigation" });
+      await inventorySearch.getByRole("searchbox", { name: "Search" }).waitFor();
       const staleToken = await page2.evaluate(() => sessionStorage.getItem("id_token"));
       expect(staleToken).toBeTruthy();
 
@@ -57,10 +57,12 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
       );
       const page2Reloaded = page2.waitForEvent("load");
       await workspace.releaseOperateAs();
+      // Searching in the stale tab sends an Inventory API request with the old token.
+      await inventorySearch.getByRole("searchbox", { name: "Search" }).fill("stale token");
+      await inventorySearch.getByRole("button", { name: "Search", exact: true }).first().click();
       await staleTokenRejected;
       await page2Reloaded;
-      await page2.getByRole("button", { name: "Templates", exact: true }).waitFor();
-      await expect(page2.locator("span.header-info--right")).toBeHidden();
+      await inventorySearch.getByRole("searchbox", { name: "Search" }).waitFor();
       const page2WhoAmI = await page2.evaluate(async () => {
         const token = sessionStorage.getItem("id_token");
         const response = await fetch("/api/v1/userDetails/whoami", {
