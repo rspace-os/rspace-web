@@ -67,7 +67,6 @@ class ApiV2ResourceAccessTest {
             ID,
             Field.readOnly("secret", "secret", CollectionFieldTypes.text(), Widget::secret)
                 .readableBy(secretAccess)),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         policy);
@@ -314,7 +313,6 @@ class ApiV2ResourceAccessTest {
                         Widget::secret,
                         (widget, value) -> {})
                     .readableBy(AccessFunction.never())),
-            List.of(),
             "id",
             List.of(new Sort("id", true)),
             AccessPolicy.authenticated());
@@ -402,7 +400,6 @@ class ApiV2ResourceAccessTest {
                     Widget::secret,
                     (widget, value) -> {})
                 .writableBy(writeAccess)),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.authenticated());
@@ -436,7 +433,6 @@ class ApiV2ResourceAccessTest {
                     CollectionFieldTypes.text(),
                     Widget::secret,
                     (widget, value) -> {})),
-            List.of(),
             "id",
             List.of(new Sort("id", true)),
             policy);
@@ -480,7 +476,6 @@ class ApiV2ResourceAccessTest {
                     CollectionFieldTypes.text(),
                     Widget::secret,
                     (widget, value) -> {})),
-            List.of(),
             "id",
             List.of(new Sort("id", true)),
             policy);
@@ -521,7 +516,6 @@ class ApiV2ResourceAccessTest {
                         Widget::secret,
                         (widget, value) -> {})
                     .creatableBy(allowedSecret)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)),
             AccessPolicy.authenticated());

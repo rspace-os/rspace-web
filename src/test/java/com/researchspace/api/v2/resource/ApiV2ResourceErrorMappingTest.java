@@ -35,7 +35,6 @@ class ApiV2ResourceErrorMappingTest {
           "widgets",
           Widget.class,
           List.of(ID),
-          List.of(),
           "id",
           List.of(new Sort("id", true)),
           AccessPolicy.readOnly(AccessFunction.anyone()));
