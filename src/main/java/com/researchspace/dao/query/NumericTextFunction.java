@@ -36,8 +36,7 @@ public final class NumericTextFunction implements JpqlFunction {
     return BigDecimal.class;
   }
 
-  private static final String NUMERIC_PATTERN =
-      "'^[+-]?([0-9]+[.]?[0-9]*|[.][0-9]+)([eE][+-]?[0-9]+)?$'";
+  private static final String NUMERIC_PATTERN = "'^" + RuntimeFieldValueType.NUMBER_PATTERN + "$'";
 
   private static final String MIN_BIG_DECIMAL_SCALE = "-2147483648";
   private static final String MAX_BIG_DECIMAL_SCALE = "2147483647";
