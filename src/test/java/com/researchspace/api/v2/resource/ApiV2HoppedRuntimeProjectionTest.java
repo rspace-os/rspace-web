@@ -93,8 +93,8 @@ class ApiV2HoppedRuntimeProjectionTest {
     return new CollectionDescription<>(
         "nodes",
         Node.class,
-        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id)),
         List.of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id),
             Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
@@ -111,7 +111,6 @@ class ApiV2HoppedRuntimeProjectionTest {
         "targets",
         Target.class,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Target::id)),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.authenticated());

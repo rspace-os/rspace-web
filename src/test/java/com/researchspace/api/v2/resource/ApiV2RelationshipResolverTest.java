@@ -234,8 +234,7 @@ class ApiV2RelationshipResolverTest {
     return new CollectionDescription<>(
         "nodes",
         Node.class,
-        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id)),
-        List.of(target),
+        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id), target),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.authenticated());
@@ -249,7 +248,6 @@ class ApiV2RelationshipResolverTest {
             Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Target::id),
             Field.readOnly("secret", "secret", CollectionFieldTypes.text(), Target::secret)
                 .readableBy(AccessFunction.never())),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.authenticated());
@@ -259,8 +257,8 @@ class ApiV2RelationshipResolverTest {
     return new CollectionDescription<>(
         "nodes",
         Node.class,
-        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id)),
         List.of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Node::id),
             Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
