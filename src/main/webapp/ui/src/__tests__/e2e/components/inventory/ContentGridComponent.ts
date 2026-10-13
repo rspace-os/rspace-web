@@ -89,6 +89,18 @@ export class ContentGridComponent {
     throw new Error("Tabbing from the preceding control did not reach a grid cell.");
   }
 
+  /**
+   * Tabs out of the grid. While a cell has focus the keyboard tips Snackbar covers the buttons at
+   * the foot of a dialog at desktop sizes, so a click on them lands on the Snackbar instead.
+   */
+  async leave(): Promise<void> {
+    if ((await this.root.count()) === 0) return;
+    for (let i = 0; i < 10 && (await this.focusedLabel()) !== null; i++) {
+      await this.page.keyboard.press("Tab");
+    }
+    await expect(this.tips()).toBeHidden();
+  }
+
   /** Presses each key in turn, e.g. press("Space", "ArrowRight", "Shift+ArrowDown"). */
   async press(...keys: string[]): Promise<void> {
     for (const key of keys) {

@@ -272,6 +272,83 @@ test.describe("Grid keyboard selection", { tag: tags.INVENTORY }, () => {
     });
   });
 
+  test.describe("in the Create dialog's location picker", () => {
+    test("As a keyboard user, I can choose where a new container goes", async ({
+      pageInventory,
+      clientInventory,
+      componentToasts,
+    }) => {
+      const box = await gridContainer(clientInventory, 3);
+      const newName = uniqueName("e2e-grid-keys-new");
+      await pageInventory.openRecord("CONTAINER", box.name);
+      const dialog = await pageInventory.detailsPanel.openCreateItemDialog();
+      const grid = await dialog.startContainer();
+
+      await grid.tabIn(dialog.changeTypeButton);
+      await grid.press("ArrowRight", "ArrowRight", "Space");
+      await grid.expectSelected(["A3"]);
+      const form = await dialog.openNewContainerForm();
+      await form.fillName(newName);
+      await form.save();
+
+      await expect(componentToasts.byVariant("success", "successfully created")).toBeVisible();
+      const contents = await clientInventory.getContainer(box.id);
+      expect(contents.locations?.filter((l) => l.content?.name === newName).map(label)).toEqual(["A3"]);
+    });
+
+    test("As a mouse user, I can click Create while the location grid has focus", {
+      annotation: { type: "issue", description: "Keyboard tips cover the dialog buttons (e2e report F1)" },
+    }, async ({ pageInventory, clientInventory }) => {
+      test.fail();
+      const box = await gridContainer(clientInventory, 3);
+      await pageInventory.openRecord("CONTAINER", box.name);
+      const dialog = await pageInventory.detailsPanel.openCreateItemDialog();
+      const grid = await dialog.startContainer();
+
+      await grid.click("A1");
+
+      await dialog.createButton.click({ timeout: 5_000 });
+    });
+
+    test("As a user, a second pick replaces the first, by mouse or by keyboard", async ({
+      pageInventory,
+      clientInventory,
+    }) => {
+      const box = await gridContainer(clientInventory, 3);
+      await pageInventory.openRecord("CONTAINER", box.name);
+      const dialog = await pageInventory.detailsPanel.openCreateItemDialog();
+      const grid = await dialog.startContainer();
+
+      await grid.click("A1", "B1");
+      await grid.expectSelected(["B1"]);
+
+      await grid.tabIn(dialog.changeTypeButton);
+      await grid.press("Space", "ArrowRight", "Space");
+      await grid.expectSelected(["B2"]);
+      await expect(grid.announcement()).toHaveCount(0);
+      await dialog.cancel();
+    });
+
+    test("As a user, dragging an existing item inside the picker does not move it", async ({
+      pageInventory,
+      clientInventory,
+      page,
+    }) => {
+      const box = await gridContainer(clientInventory, 3, ["A1"]);
+      const bulkRequests = countBulkRequests(page);
+      await pageInventory.openRecord("CONTAINER", box.name);
+      const dialog = await pageInventory.detailsPanel.openCreateItemDialog();
+      const grid = await dialog.startContainer();
+
+      await grid.cell("A1").dragTo(grid.cell("B1"));
+      await dialog.cancel();
+
+      expect(bulkRequests()).toBe(0);
+      const contents = await clientInventory.getContainer(box.id);
+      expect(contents.locations?.filter((l) => l.content).map(label)).toEqual(["A1"]);
+    });
+  });
+
   test.describe("on the container page", () => {
     async function openGrid(pageInventory: InventoryPage, containerName: string) {
       await pageInventory.openRecord("CONTAINER", containerName);
