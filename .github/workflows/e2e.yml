@@ -252,6 +252,8 @@ jobs:
               "-Dslack.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/slack/oauth/authorize"
               "-Dslack.api.base.url=http://localhost:$E2E_MOCK_PORT/slack-api"
               "-Dror.api.url=http://localhost:$E2E_MOCK_PORT/ror"
+              "-Dpidinst.lookup.datacite.url=http://localhost:$E2E_MOCK_PORT"
+              "-Dpidinst.lookup.b2inst.url=http://localhost:$E2E_MOCK_PORT"
               # S3 credentials are global; these are the MinIO container's throwaway login.
               "-Dnetfilestores.s3.global.credentials.accessKey=rspacetest"
               "-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret"
@@ -281,6 +283,9 @@ jobs:
               "-Dnetfilestores.s3.global.credentials.accessKey=$R2_ACCESS_KEY"
               "-Dnetfilestores.s3.global.credentials.secretKey=$R2_SECRET_KEY"
               "-Dbioportal.api.key=$BIOPORTAL_API_KEY"
+              # PIDINST import searches these; the DOIs the specs mint live on the sandboxes
+              "-Dpidinst.lookup.datacite.url=https://api.test.datacite.org"
+              "-Dpidinst.lookup.b2inst.url=https://b2inst-test.gwdg.de"
             )
           fi
           nohup ./mvnw jetty:run-war \

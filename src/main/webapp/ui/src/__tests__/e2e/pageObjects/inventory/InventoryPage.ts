@@ -13,8 +13,6 @@ import { InventoryImportPage, type InventoryImportRecordType } from "./Inventory
 
 type InventoryResultType = "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
 
-const PIDINST_ENABLED_PATH = "/api/inventory/v1/identifiers/pidinstEnabled/";
-
 export class InventoryPage extends BasePage {
   readonly path = "/inventory";
 
@@ -38,20 +36,6 @@ export class InventoryPage extends BasePage {
   override async open(): Promise<void> {
     await super.open();
     await this.isLoaded();
-  }
-
-  // The create menu hides PIDINST import until the app's separate flag request resolves,
-  // so absence of the menu item is only meaningful once that response has arrived.
-  async openAndReadPidinstEnabled(): Promise<boolean> {
-    const flagResponse = this.page.waitForResponse(
-      (r) => r.request().method() === "GET" && new URL(r.url()).pathname === PIDINST_ENABLED_PATH,
-    );
-    await this.open();
-    const response = await flagResponse;
-    if (!response.ok()) {
-      throw new Error(`pidinstEnabled flag request failed: ${response.status()} ${response.statusText()}`);
-    }
-    return (await response.json()) as boolean;
   }
 
   async openSearch(resultType: InventoryResultType, parentGlobalId?: string): Promise<void> {

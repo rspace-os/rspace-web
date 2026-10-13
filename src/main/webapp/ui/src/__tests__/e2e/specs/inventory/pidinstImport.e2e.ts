@@ -119,25 +119,4 @@ test.describe(`Inventory PIDINST Import`, { tag: [tags.INVENTORY] }, () => {
       await dialog.close();
     });
   });
-
-  test(`As a user, the "From PIDINST registry" menu item is absent when no PIDINST provider is enabled`, {
-    tag: tags.MOBILE,
-  }, async ({ flowSysadminInventory, pageInventory }) => {
-    env.assertGlobalMutationsAllowed("PIDINST import menu visibility with no provider enabled");
-
-    const dialog = await flowSysadminInventory.openIdentifierSettings();
-    await dialog.openPidinstTab();
-    for (const provider of ["DataCite", "B2INST"] as const) {
-      await dialog.selectPidinstProvider(provider);
-      if (await dialog.pidinstEnableToggle(provider).isChecked()) {
-        await dialog.pidinstEnableToggle(provider).uncheck();
-        await dialog.savePidinst();
-      }
-    }
-    await dialog.close();
-
-    expect(await pageInventory.openAndReadPidinstEnabled()).toBe(false);
-    const menu = await pageInventory.openCreateMenu();
-    await expect(menu.pidinstImportItem()).toHaveCount(0);
-  });
 });

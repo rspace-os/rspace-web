@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { responseTo } from "@/__tests__/e2e/responses";
 import { clickAndWaitDetached, dismissMobileDatePickerIfPresent } from "./DialogHelpers";
 
 export type IdentifierDescriptionType = "Abstract" | "Methods";
@@ -177,10 +178,16 @@ export class IdentifierPanel {
     await this.confirm("You are about to retract this Identifier");
   }
 
+  // The provider delete can outlast the toast's expect timeout (26s seen on the B2INST sandbox).
   async clickDelete(): Promise<void> {
     await this.ensureExpanded();
     await this.delete.click();
-    await this.confirm("You are about to delete this Identifier");
+    await responseTo(
+      this.page,
+      "DELETE",
+      ({ pathname }) => pathname.startsWith("/api/inventory/v1/identifiers/"),
+      () => this.confirm("You are about to delete this Identifier"),
+    );
   }
 
   // IdentifierModel.refresh only reports a failure as a toast, so check the response to fail at the cause.

@@ -161,9 +161,9 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
-  async importPidinst(pid: string): Promise<ApiInventoryInstrument> {
+  async importPidinst(pid: string, provider: "PIDINST_DATACITE" | "PIDINST_B2INST"): Promise<ApiInventoryInstrument> {
     return this.requestJson("post", "/api/inventory/v1/instruments/importPidinst", {
-      data: { pid },
+      data: { pid, provider },
       action: "importPidinstInstrument",
     });
   }

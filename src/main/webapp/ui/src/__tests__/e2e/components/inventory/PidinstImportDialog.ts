@@ -9,7 +9,7 @@ export class PidinstImportDialog {
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Import Instrument from PIDINST", exact: true });
-    this.searchInput = this.root.getByRole("textbox", { name: "Search the registry" });
+    this.searchInput = this.root.getByRole("textbox", { name: "Search the registries" });
     this.searchButton = this.root.getByRole("button", { name: "Search", exact: true });
     this.importButton = this.root.getByRole("button", { name: "Import", exact: true });
     this.closeButton = this.root.getByRole("button", { name: "Close", exact: true });

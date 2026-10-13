@@ -26,7 +26,7 @@ test.describe(`Inventory PIDINST unlink on delete`, { tag: [tags.INVENTORY] }, (
     );
 
     const original = await test.step("Given the PID is already imported as an Instrument", async () => {
-      return clientInventory.importPidinst(doi);
+      return clientInventory.importPidinst(doi, "PIDINST_DATACITE");
     });
 
     await pageInventory.open();
