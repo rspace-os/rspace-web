@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.resource;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,6 +15,7 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
@@ -23,14 +25,17 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.CollectionMutationException;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 class ApiV2DocumentParserTest {
@@ -126,6 +131,16 @@ class ApiV2DocumentParserTest {
             writeContext(Operation.CREATE));
 
     assertEquals(Map.of("name", "document", "label", "default", "active", true), document.values());
+    assertEquals(
+        Map.of("name", "renamed"),
+        ApiV2DocumentParser.parse(
+                mapper.readTree("{\"name\":\"renamed\"}"),
+                description,
+                WriteOperation.UPDATE,
+                "error",
+                writeContext(Operation.UPDATE))
+            .values(),
+        "defaults apply only on create");
     assertThrows(
         DocumentValidationException.class,
         () ->
@@ -159,6 +174,76 @@ class ApiV2DocumentParserTest {
             new Violation("name", Reason.WRONG_TYPE),
             new Violation("unknown", Reason.UNKNOWN_FIELD)),
         multipleFailures.getViolations());
+  }
+
+  @Test
+  void reportsWriteConstraintViolationsAsInvalidValues() throws Exception {
+    CollectionDescription<Scored> description =
+        new CollectionDescription<>(
+            "scored",
+            Scored.class,
+            List.of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Scored::id),
+                Field.writable(
+                    "code",
+                    "code",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.text(),
+                        new Constraints(null, null, 2, Pattern.compile("^[A-Z]"), null)),
+                    Scored::code,
+                    (scored, value) -> {}),
+                Field.writable(
+                    "kind",
+                    "kind",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.text(),
+                        new Constraints(null, null, null, null, List.of("A1", "B2"))),
+                    Scored::kind,
+                    (scored, value) -> {}),
+                Field.writable(
+                    "score",
+                    "score",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.integer(),
+                        new Constraints(BigDecimal.ONE, BigDecimal.valueOf(7), null, null, null)),
+                    Scored::score,
+                    (scored, value) -> {})),
+            List.of(),
+            "id",
+            List.of(new Sort("id", true)));
+
+    for (String invalid :
+        List.of(
+            "{\"score\":0}",
+            "{\"score\":8}",
+            "{\"code\":\"A\"}",
+            "{\"code\":\"ab\"}",
+            "{\"kind\":\"C3\"}")) {
+      DocumentValidationException failure =
+          assertThrows(
+              DocumentValidationException.class,
+              () ->
+                  ApiV2DocumentParser.parse(
+                      mapper.readTree(invalid),
+                      description,
+                      WriteOperation.UPDATE,
+                      "error",
+                      writeContext(Operation.UPDATE)),
+              invalid);
+      assertEquals(Reason.INVALID_VALUE, failure.getViolations().get(0).reason(), invalid);
+    }
+    assertEquals(
+        Map.of("code", "AB", "kind", "A1", "score", 7),
+        ApiV2DocumentParser.parse(
+                mapper.readTree("{\"code\":\"AB\",\"kind\":\"A1\",\"score\":7}"),
+                description,
+                WriteOperation.UPDATE,
+                "error",
+                writeContext(Operation.UPDATE))
+            .values());
+    assertDoesNotThrow(
+        () -> new RsqlFilterParser(description).parse("score==0;code==ab;kind==C3"),
+        "where literals are not checked against write constraints");
   }
 
   @Test
@@ -335,6 +420,8 @@ class ApiV2DocumentParserTest {
       this.active = active;
     }
   }
+
+  private record Scored(Long id, String code, String kind, Integer score) {}
 
   private record RelatedDocument(Long id, ResourceReference<String, Long> target) {}
 
