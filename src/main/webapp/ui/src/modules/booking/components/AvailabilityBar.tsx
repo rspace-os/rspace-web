@@ -108,7 +108,7 @@ function SlicePopover({
         type="button"
         openOnHover
         delay={0}
-        closeDelay={200}
+        closeDelay={500}
         aria-label={label}
         onFocus={() => {
           if (suppressRestoredFocusRef.current) {
@@ -433,8 +433,7 @@ export function AvailabilityBar({
                   sideOffset={8}
                   collisionPadding={8}
                   sticky
-                  showArrow
-                  className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3"
+                  className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3 duration-0 data-closed:animate-none data-open:animate-none"
                 >
                   <div className="min-w-0">
                     <PopoverTitle className="text-base font-semibold leading-tight">
