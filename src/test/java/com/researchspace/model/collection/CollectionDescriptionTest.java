@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -95,6 +96,86 @@ class CollectionDescriptionTest {
             .fields()
             .get(1)
             .defaultValue());
+  }
+
+  @Test
+  void validatesDefaultsWhenTheFieldIsDefined() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            Field.writable(
+                    "value",
+                    "value",
+                    CollectionFieldTypes.text(3),
+                    TestEntity::value,
+                    TestEntity::setValue)
+                .defaultValue("abcd"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            Field.writable(
+                    "value",
+                    "value",
+                    CollectionFieldTypes.text(10),
+                    TestEntity::value,
+                    TestEntity::setValue)
+                .defaultValue("fixed")
+                .required());
+  }
+
+  @Test
+  void enforcesAnnotatedConstraintsAndAppliesAnnotatedDefaults() {
+    CollectionDescription<ConstrainedEntity> description =
+        CollectionDescription.fromApiV2Resource(
+            ConstrainedResource.class,
+            ConstrainedEntity.class,
+            List.of(),
+            List.of(new Sort("id", true)));
+    Map<String, FieldSchema> fields =
+        description.schema().fields().stream()
+            .collect(Collectors.toMap(FieldSchema::name, Function.identity()));
+
+    assertEquals(
+        new CollectionFieldType.Schema("integer", "int32", null), fields.get("size").type());
+    assertEquals(
+        Map.of("minimum", BigDecimal.ONE, "maximum", BigDecimal.valueOf(7)),
+        fields.get("size").writeConstraints());
+    assertEquals(
+        Map.of("minLength", 2, "pattern", "^[A-Z]"), fields.get("code").writeConstraints());
+    assertEquals("AA", fields.get("code").defaultValue());
+    assertEquals(Map.of("enum", List.of("OPEN", "CLOSED")), fields.get("state").type().structure());
+
+    ConstrainedEntity entity = new ConstrainedEntity();
+    Map<String, Object> invalid = new LinkedHashMap<>();
+    invalid.put("code", "BC");
+    invalid.put("size", 8);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> description.apply(entity, invalid, WriteOperation.UPDATE));
+    assertEquals("ZZ", entity.getCode(), "no setter runs before every value is valid");
+
+    description.apply(entity, Map.of("code", "BC", "size", 7), WriteOperation.UPDATE);
+    assertEquals(7, entity.getSize());
+  }
+
+  @Test
+  void rejectsAnnotatedRulesThatDoNotFitAtStartup() {
+    for (Class<?> resource :
+        List.of(
+            MinimumOnText.class,
+            PatternOnNumber.class,
+            EnumValuesOnEnum.class,
+            InvalidPattern.class,
+            ExampleOutOfRange.class,
+            DefaultTooLong.class,
+            DefaultOnRequired.class)) {
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              CollectionDescription.fromApiV2Resource(
+                  resource, ConstrainedEntity.class, List.of(), List.of(new Sort("id", true))),
+          resource.getSimpleName());
+    }
   }
 
   @Test
@@ -447,6 +528,86 @@ class CollectionDescriptionTest {
 
     public String getModifiedBy() {
       return "editor";
+    }
+  }
+
+  private enum ConstrainedState {
+    OPEN,
+    CLOSED
+  }
+
+  @ApiV2ResourceDefinition(name = "constrained", entity = ConstrainedEntity.class, id = "id")
+  private record ConstrainedResource(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(minLength = 2, pattern = "^[A-Z]", example = "AB", defaultValue = "AA")
+          String code,
+      @ApiV2ResourceField(minimum = "1", maximum = "7", example = "3") Integer size,
+      @ApiV2ResourceField ConstrainedState state) {}
+
+  @ApiV2ResourceDefinition(name = "minimumOnText", entity = ConstrainedEntity.class, id = "id")
+  private record MinimumOnText(
+      @ApiV2ResourceField Long id, @ApiV2ResourceField(minimum = "1") String code) {}
+
+  @ApiV2ResourceDefinition(name = "patternOnNumber", entity = ConstrainedEntity.class, id = "id")
+  private record PatternOnNumber(
+      @ApiV2ResourceField Long id, @ApiV2ResourceField(pattern = "1") Integer size) {}
+
+  @ApiV2ResourceDefinition(name = "enumValuesOnEnum", entity = ConstrainedEntity.class, id = "id")
+  private record EnumValuesOnEnum(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(enumValues = "OPEN") ConstrainedState state) {}
+
+  @ApiV2ResourceDefinition(name = "invalidPattern", entity = ConstrainedEntity.class, id = "id")
+  private record InvalidPattern(
+      @ApiV2ResourceField Long id, @ApiV2ResourceField(pattern = "(") String code) {}
+
+  @ApiV2ResourceDefinition(name = "exampleOutOfRange", entity = ConstrainedEntity.class, id = "id")
+  private record ExampleOutOfRange(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(minimum = "1", example = "0") Integer size) {}
+
+  @ApiV2ResourceDefinition(name = "defaultTooLong", entity = ConstrainedEntity.class, id = "id")
+  private record DefaultTooLong(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(maxLength = 2, defaultValue = "ABC") String code) {}
+
+  @ApiV2ResourceDefinition(name = "defaultOnRequired", entity = ConstrainedEntity.class, id = "id")
+  private record DefaultOnRequired(
+      @ApiV2ResourceField Long id,
+      @ApiV2ResourceField(requiredOnCreate = true, defaultValue = "AB") String code) {}
+
+  public static final class ConstrainedEntity {
+
+    private String code = "ZZ";
+    private Integer size = 3;
+    private ConstrainedState state = ConstrainedState.OPEN;
+
+    public Long getId() {
+      return 1L;
+    }
+
+    public String getCode() {
+      return code;
+    }
+
+    public void setCode(String code) {
+      this.code = code;
+    }
+
+    public Integer getSize() {
+      return size;
+    }
+
+    public void setSize(Integer size) {
+      this.size = size;
+    }
+
+    public ConstrainedState getState() {
+      return state;
+    }
+
+    public void setState(ConstrainedState state) {
+      this.state = state;
     }
   }
 
