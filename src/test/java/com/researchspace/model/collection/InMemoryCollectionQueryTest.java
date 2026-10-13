@@ -17,7 +17,6 @@ class InMemoryCollectionQueryTest {
               Field.readOnly("name", "name", CollectionFieldTypes.text(), Widget::name),
               Field.readOnly("enabled", "enabled", CollectionFieldTypes.bool(), Widget::enabled)
                   .allowNull()),
-          List.of(),
           "id",
           List.of(new Sort("name", true), new Sort("id", true)));
 
@@ -155,7 +154,6 @@ class InMemoryCollectionQueryTest {
             List.of(
                 Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Ranked::id),
                 Field.readOnly("rank", "rank", CollectionFieldTypes.integer(), Ranked::rank)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
     InMemoryCollectionQuery<Ranked> ranks = new InMemoryCollectionQuery<>(description);
