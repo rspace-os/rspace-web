@@ -216,7 +216,7 @@ class CollectionDescriptionTest {
     AnnotatedEntity entity = new AnnotatedEntity();
 
     assertEquals(
-        List.of("id", "value", "serverManaged", "createdAt", "updatedAt", "createdBy", "updatedBy"),
+        List.of("id", "value", "serverManaged", "createdAt", "updatedAt"),
         description.fields().stream().map(Field::name).toList());
     Map<String, FieldSchema> schemaFields =
         description.schema().fields().stream()
@@ -241,13 +241,9 @@ class CollectionDescriptionTest {
     expected.put("serverManaged", "generated");
     expected.put("createdAt", "2026-08-01T10:15:30Z");
     expected.put("updatedAt", "2026-08-02T11:16:31Z");
-    expected.put("createdBy", "creator");
-    expected.put("updatedBy", "editor");
     assertEquals(expected, description.toDocument(entity));
     assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("createdAt"));
     assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("updatedAt"));
-    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("createdBy"));
-    assertInstanceOf(FilterSelector.Property.class, description.requireFilterSelector("updatedBy"));
 
     description.apply(entity, Map.of("value", "changed"), WriteOperation.UPDATE);
 
@@ -255,11 +251,11 @@ class CollectionDescriptionTest {
   }
 
   @Test
-  void mapsAutomaticAuditFieldsToLegacyBeanPropertiesAndOmitsUnavailableProperties() {
-    CollectionDescription<LegacyAuditedEntity> description =
+  void mapsAutomaticAuditFieldsToBeanPropertiesAndOmitsUnavailableProperties() {
+    CollectionDescription<DateAuditedEntity> description =
         CollectionDescription.fromApiV2Resource(
-            LegacyAuditedResource.class,
-            LegacyAuditedEntity.class,
+            DateAuditedResource.class,
+            DateAuditedEntity.class,
             List.of(),
             List.of(new Sort("id", true)));
 
@@ -268,7 +264,19 @@ class CollectionDescriptionTest {
     assertEquals("creationDate", description.requireField("createdAt").property());
     assertTrue(description.findRelationship("createdBy").isEmpty());
     assertEquals(
-        "2026-08-01T10:15:30Z", description.toDocument(new LegacyAuditedEntity()).get("createdAt"));
+        "2026-08-01T10:15:30Z", description.toDocument(new DateAuditedEntity()).get("createdAt"));
+  }
+
+  @Test
+  void rejectsAnAuditUserPropertyThatIsNotAUser() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            CollectionDescription.fromApiV2Resource(
+                UsernameAuditedResource.class,
+                UsernameAuditedEntity.class,
+                List.of(),
+                List.of(new Sort("id", true))));
   }
 
   @Test
@@ -521,14 +529,6 @@ class CollectionDescriptionTest {
     public Date getModificationDate() {
       return modificationDate;
     }
-
-    public String getCreatedBy() {
-      return "creator";
-    }
-
-    public String getModifiedBy() {
-      return "editor";
-    }
   }
 
   private enum ConstrainedState {
@@ -612,12 +612,12 @@ class CollectionDescriptionTest {
   }
 
   @ApiV2ResourceDefinition(
-      name = "legacyAuditedEntities",
-      entity = LegacyAuditedEntity.class,
+      name = "dateAuditedEntities",
+      entity = DateAuditedEntity.class,
       id = "id")
-  private record LegacyAuditedResource(@ApiV2ResourceField Long id) {}
+  private record DateAuditedResource(@ApiV2ResourceField Long id) {}
 
-  public static final class LegacyAuditedEntity {
+  public static final class DateAuditedEntity {
 
     public Long getId() {
       return 1L;
@@ -625,6 +625,23 @@ class CollectionDescriptionTest {
 
     public Date getCreationDate() {
       return Date.from(Instant.parse("2026-08-01T10:15:30Z"));
+    }
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "usernameAuditedEntities",
+      entity = UsernameAuditedEntity.class,
+      id = "id")
+  private record UsernameAuditedResource(@ApiV2ResourceField Long id) {}
+
+  public static final class UsernameAuditedEntity {
+
+    public Long getId() {
+      return 1L;
+    }
+
+    public String getCreatedBy() {
+      return "creator";
     }
   }
 }
