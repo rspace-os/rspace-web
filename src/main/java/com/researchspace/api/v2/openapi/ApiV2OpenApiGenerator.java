@@ -42,6 +42,7 @@ import io.swagger.v3.oas.models.tags.Tag;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -1200,6 +1201,9 @@ public final class ApiV2OpenApiGenerator {
     Map<String, Object> schema;
     if (field instanceof FieldSchema scalar) {
       schema = scalarSchema(scalar.type(), false);
+      // Only body properties carry write constraints: where literals are never checked against
+      // them, so the shared scalar schema must not publish them.
+      schema.putAll(scalar.writeConstraints());
     } else if (field instanceof RelationshipSchema relationship) {
       schema =
           new LinkedHashMap<>(
@@ -1322,6 +1326,12 @@ public final class ApiV2OpenApiGenerator {
     if (schema.get("type") instanceof String type) {
       Map<String, Object> result = new LinkedHashMap<>(schema);
       result.put("type", List.of(type, "null"));
+      if (result.get("enum") instanceof List<?> values) {
+        // The enum lists every accepted value, so a nullable one must accept null as well.
+        List<Object> withNull = new ArrayList<>(values);
+        withNull.add(null);
+        result.put("enum", Collections.unmodifiableList(withNull));
+      }
       return result;
     }
     return ordered("anyOf", List.of(schema, ordered("type", "null")));
@@ -1329,14 +1339,19 @@ public final class ApiV2OpenApiGenerator {
 
   private static Map<String, Object> scalarSchema(
       CollectionFieldType.Schema type, boolean nullable) {
+    return nullable(nonNullScalarSchema(type), nullable);
+  }
+
+  private static Map<String, Object> nonNullScalarSchema(CollectionFieldType.Schema type) {
     Map<String, Object> schema = new LinkedHashMap<>();
-    schema.put("type", nullable ? List.of(type.jsonType(), "null") : type.jsonType());
+    schema.put("type", type.jsonType());
     if (type.format() != null) {
       schema.put("format", type.format());
     }
     if (type.maxLength() != null) {
       schema.put("maxLength", type.maxLength());
     }
+    schema.putAll(type.structure());
     return schema;
   }
 
@@ -1354,23 +1369,7 @@ public final class ApiV2OpenApiGenerator {
               .map(value -> schemaLiteral(schema, value))
               .toList());
     }
-    if (documentation.defaultValue() != null) {
-      schema.put("default", schemaLiteral(schema, documentation.defaultValue()));
-    }
-    putIfNotNull(schema, "pattern", documentation.pattern());
     putIfNotNull(schema, "format", documentation.format());
-    putIfNotNull(schema, "minLength", documentation.minLength());
-    if (documentation.minimum() != null) {
-      schema.put("minimum", new BigDecimal(documentation.minimum()));
-    }
-    if (documentation.maximum() != null) {
-      schema.put("maximum", new BigDecimal(documentation.maximum()));
-    }
-    if (!documentation.enumValues().isEmpty()) {
-      schema.put(
-          "enum",
-          documentation.enumValues().stream().map(value -> schemaLiteral(schema, value)).toList());
-    }
     if (documentation.deprecated()) {
       schema.put("deprecated", true);
     }
