@@ -10,6 +10,7 @@ import java.time.format.ResolverStyle;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Wire behaviour of one runtime field, independent of where its values are stored.
@@ -71,6 +72,14 @@ public enum RuntimeFieldValueType {
   public static final int MAX_NUMBER_SCALE = 30;
 
   private static final int MAX_NUMBER_INTEGER_DIGITS = MAX_NUMBER_PRECISION - MAX_NUMBER_SCALE;
+
+  /**
+   * Unanchored number syntax shared with the SQL numeric conversion. ASCII digits only: {@link
+   * BigDecimal} also accepts other Unicode digits, which the SQL side cannot convert.
+   */
+  public static final String NUMBER_PATTERN = "[+-]?([0-9]+[.]?[0-9]*|[.][0-9]+)([eE][+-]?[0-9]+)?";
+
+  private static final Pattern NUMBER_SYNTAX = Pattern.compile(NUMBER_PATTERN);
 
   private static final DateTimeFormatter DATE_FORMAT =
       DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
@@ -154,6 +163,9 @@ public enum RuntimeFieldValueType {
 
   /** Parses a number using the same bounds as the SQL numeric conversion. */
   public static BigDecimal parseNumber(String value) {
+    if (!NUMBER_SYNTAX.matcher(value).matches()) {
+      throw new IllegalArgumentException("Runtime field value is not a number");
+    }
     final BigDecimal number;
     try {
       number = new BigDecimal(value);
