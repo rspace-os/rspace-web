@@ -16,6 +16,8 @@ import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.featureflags.ApiV2FeatureFlagResource;
+import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
@@ -28,16 +30,30 @@ import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingOwnerHealth;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
+import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import com.researchspace.model.collection.CollectionMutationLimits;
+import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.Relationship;
+import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.Sort;
+import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import io.swagger.v3.core.util.Json31;
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -57,6 +73,9 @@ class ApiV2OpenApiGeneratorTest {
     when(bookingOperations.ifMatchRequiredCode())
         .thenReturn(Optional.of("errors.api.v2.bookingConfiguration.ifMatchRequired"));
     ResourceOperations<TimeSlotBooking, Long> timeSlotBookingOperations = operationsMock();
+    @SuppressWarnings("unchecked")
+    ResourceOperations<FeatureFlagResource, String> featureFlagOperations =
+        mock(ResourceOperations.class);
     ApiV2ResourceSpec<ScheduledMaintenance, Long> maintenance =
         new ApiV2ResourceSpec<>(
             ApiV2MaintenanceResource.DESCRIPTION,
@@ -118,6 +137,16 @@ class ApiV2OpenApiGeneratorTest {
             Long::valueOf,
             "create-error",
             "update-error");
+    ApiV2ResourceSpec<FeatureFlagResource, String> featureFlags =
+        new ApiV2ResourceSpec<>(
+            ApiV2FeatureFlagResource.DESCRIPTION,
+            featureFlagOperations,
+            Function.identity(),
+            "create-error",
+            "update-error",
+            EnumSet.of(ResourceOperation.LIST, ResourceOperation.READ),
+            Map.of(),
+            Map.of());
     ApiV2RelationshipTargetSpec<Instrument, Long> instruments =
         new ApiV2RelationshipTargetSpec<>(
             ApiV2InstrumentResource.DESCRIPTION, Long.class, (ids, actor) -> Map.of());
@@ -127,7 +156,7 @@ class ApiV2OpenApiGeneratorTest {
     generator =
         new ApiV2OpenApiGenerator(
             new ApiV2ResourceCatalog(
-                List.of(maintenance, users, bookingConfigurations, timeSlotBookings),
+                List.of(maintenance, users, bookingConfigurations, timeSlotBookings, featureFlags),
                 List.of(instruments, bookingInstruments)),
             "Test API",
             "2.0.0");
@@ -514,6 +543,175 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(
         String.valueOf(objectMap(auditResponses.get("400")).get("description"))
             .contains("narrower date range"));
+  }
+
+  @Test
+  void publishesEnumsFromTheirEnforcingSource() {
+    Map<String, Object> document = document();
+    Map<String, Object> schemas = schemas(document);
+    List<String> states = List.of("ACTIVE", "ARCHIVED");
+    for (String variant : List.of("Read", "Update")) {
+      assertEquals(
+          states,
+          property(schemas, "BookingConfigurations" + variant, "state").get("enum"),
+          variant);
+    }
+    assertEquals(
+        states, whereSelector(document, "/api/v2/booking-configurations", "state").get("enum"));
+
+    assertEquals(
+        List.of("DEFAULT", "DATABASE", "USER_OVERRIDE", "PROPERTIES_FILE"),
+        property(schemas, "FeatureFlagsRead", "source").get("enum"));
+    assertFalse(
+        whereSelector(document, "/api/v2/feature-flags", "source").containsKey("enum"),
+        "allowed String values are not enforced on where literals");
+  }
+
+  @Test
+  void publishesWriteConstraintsOnBodiesButNotOnFilters() {
+    CollectionDescription<Widget> widgets =
+        new CollectionDescription<>(
+            "widgets",
+            Widget.class,
+            List.of(
+                Field.readOnly("id", "id", positiveId(), Widget::id),
+                Field.writable(
+                    "code",
+                    "code",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.text(),
+                        new Constraints(null, null, 2, Pattern.compile("^[A-Z]"), null)),
+                    Widget::code,
+                    (widget, value) -> {}),
+                Field.writable(
+                        "kind",
+                        "kind",
+                        CollectionFieldTypes.constrained(
+                            CollectionFieldTypes.text(),
+                            new Constraints(null, null, null, null, List.of("A1", "B2"))),
+                        Widget::kind,
+                        (widget, value) -> {})
+                    .allowNull(),
+                Field.writable(
+                        "phase",
+                        "phase",
+                        CollectionFieldTypes.enumeration(Phase.class),
+                        Widget::phase,
+                        (widget, value) -> {})
+                    .allowNull()),
+            List.of(
+                Relationship.polymorphicToOne(
+                    "gadget",
+                    positiveId(),
+                    List.of(new RelationshipTarget<>("gadgets", "GADGET", "GD", Gadget.class)),
+                    new SplitReferenceBinding<>(Widget::gadget, "gadgetType", "gadgetId"))),
+            "id",
+            List.of(new Sort("id", true)));
+    CollectionDescription<Gadget> gadgets =
+        new CollectionDescription<>(
+            "gadgets",
+            Gadget.class,
+            List.of(Field.readOnly("id", "id", positiveId(), Gadget::id)),
+            List.of(),
+            "id",
+            List.of(new Sort("id", true)));
+    ResourceOperations<Widget, Long> widgetOperations = operationsMock();
+    Map<String, Object> document =
+        Json31.mapper()
+            .convertValue(
+                new ApiV2OpenApiGenerator(
+                        new ApiV2ResourceCatalog(
+                            List.of(
+                                new ApiV2ResourceSpec<>(
+                                    widgets,
+                                    widgetOperations,
+                                    Long::valueOf,
+                                    "create-error",
+                                    "update-error")),
+                            List.of(
+                                new ApiV2RelationshipTargetSpec<>(
+                                    gadgets, Long.class, (ids, actor) -> Map.of()))),
+                        "Test API",
+                        "2.0.0")
+                    .generate(),
+                new TypeReference<LinkedHashMap<String, Object>>() {});
+    Map<String, Object> schemas = schemas(document);
+
+    for (String variant : List.of("Read", "Create", "Update")) {
+      assertEquals(2, property(schemas, "Widgets" + variant, "code").get("minLength"), variant);
+      assertEquals(
+          "^[A-Z]", property(schemas, "Widgets" + variant, "code").get("pattern"), variant);
+      assertEquals(
+          Arrays.asList("A1", "B2", null),
+          property(schemas, "Widgets" + variant, "kind").get("enum"),
+          variant);
+      assertEquals(
+          Arrays.asList("OPEN", "CLOSED", null),
+          property(schemas, "Widgets" + variant, "phase").get("enum"),
+          variant);
+    }
+    assertEquals(BigDecimal.ONE, property(schemas, "WidgetsRead", "id").get("minimum"));
+    assertEquals(BigDecimal.ONE, property(schemas, "GadgetsRead", "id").get("minimum"));
+    assertFalse(property(schemas, "GadgetsReference", "value").containsKey("minimum"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "code").containsKey("pattern"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "kind").containsKey("enum"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "id").containsKey("minimum"));
+    assertFalse(whereSelector(document, "/api/v2/widgets", "gadget.value").containsKey("minimum"));
+    Map<String, Object> idParameter =
+        objectMapList(
+                objectMap(
+                        objectMap(objectMap(document.get("paths")).get("/api/v2/widgets/{id}"))
+                            .get("get"))
+                    .get("parameters"))
+            .stream()
+            .filter(parameter -> parameter.get("name").equals("id"))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(objectMap(idParameter.get("schema")).containsKey("minimum"));
+    for (String variant : List.of("Read", "Create", "Update")) {
+      assertFalse(
+          String.valueOf(property(schemas, "Widgets" + variant, "gadget")).contains("minimum"),
+          "relationship values carry no write constraints");
+    }
+  }
+
+  private static CollectionFieldType<Long> positiveId() {
+    return CollectionFieldTypes.constrained(
+        CollectionFieldTypes.longNumber(), new Constraints(BigDecimal.ONE, null, null, null, null));
+  }
+
+  private enum Phase {
+    OPEN,
+    CLOSED
+  }
+
+  private record Widget(
+      Long id, String code, String kind, Phase phase, ResourceReference<String, Long> gadget) {}
+
+  private record Gadget(Long id) {}
+
+  private static Map<String, Object> property(
+      Map<String, Object> schemas, String component, String name) {
+    return objectMap(objectMap(objectMap(schemas.get(component)).get("properties")).get(name));
+  }
+
+  private static Map<String, Object> where(Map<String, Object> document, String path) {
+    return objectMapList(
+            objectMap(objectMap(objectMap(document.get("paths")).get(path)).get("get"))
+                .get("parameters"))
+        .stream()
+        .filter(parameter -> parameter.get("name").equals("where"))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private static Map<String, Object> whereSelector(
+      Map<String, Object> document, String path, String selector) {
+    return objectMap(
+        objectMap(
+                objectMap(objectMap(where(document, path).get("x-rspace-filter")).get("selectors"))
+                    .get(selector))
+            .get("schema"));
   }
 
   private static Map<String, Object> schemas(Map<String, Object> document) {
