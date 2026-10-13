@@ -10,7 +10,7 @@ export function mockOAuthAuthorize(
   mockCode: string,
   opts: { redirectParam?: string; echoState?: boolean } = {},
 ) {
-  const { redirectParam = "redirect_uri", echoState = false } = opts;
+  const { redirectParam = "redirect_uri", echoState = true } = opts;
   return http.get(path, ({ request }) => {
     const url = new URL(request.url);
     const redirectUri = url.searchParams.get(redirectParam);

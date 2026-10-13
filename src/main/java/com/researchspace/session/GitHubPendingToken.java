@@ -2,6 +2,8 @@ package com.researchspace.session;
 
 import java.io.Serializable;
 import java.time.Duration;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
 /** Session-bound GitHub authorization used while selecting repositories. */
 public final class GitHubPendingToken {
@@ -34,16 +36,11 @@ public final class GitHubPendingToken {
     SessionAttributeUtils.removeSessionAttribute(ATTRIBUTE);
   }
 
+  @AllArgsConstructor(access = AccessLevel.PRIVATE)
   private static final class Token implements Serializable {
     private static final long serialVersionUID = 1L;
     private final String username;
     private final String token;
     private final long expiresAt;
-
-    private Token(String username, String token, long expiresAt) {
-      this.username = username;
-      this.token = token;
-      this.expiresAt = expiresAt;
-    }
   }
 }
