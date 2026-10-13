@@ -223,9 +223,9 @@ public final class Field<T, V> {
         supportsWildcards(),
         sortable(),
         openApi,
-        CollectionDescription.documented(readAccess, inherited.readAccess()),
-        CollectionDescription.documented(createAccess, inherited.createAccess()),
-        CollectionDescription.documented(updateAccess, inherited.updateAccess()));
+        CollectionSchemaBuilder.documented(readAccess, inherited.readAccess()),
+        CollectionSchemaBuilder.documented(createAccess, inherited.createAccess()),
+        CollectionSchemaBuilder.documented(updateAccess, inherited.updateAccess()));
   }
 
   public Set<Operator> operators() {
