@@ -6,6 +6,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import materialTheme from "../../../../../theme";
 
+// When set, the stubbed browser suspends the way it does while a lazily loaded
+// i18n namespace is fetched.
+const browserState = vi.hoisted(() => ({ suspend: false }));
+
 // The folder browser has its own tests; stub it so we can drive selection changes
 // without the useFolders/API chain and assert the picker confirms via Choose.
 vi.mock("../ElnFolderBrowser", () => ({
@@ -13,25 +17,28 @@ vi.mock("../ElnFolderBrowser", () => ({
     onSelectionChange,
   }: {
     onSelectionChange: (s: { globalId: string; name: string; type: string } | null) => void;
-  }) => (
-    <div data-testid="eln-folder-browser">
-      <button
-        type="button"
-        onClick={() =>
-          onSelectionChange({
-            globalId: "SD9",
-            name: "Browsed doc",
-            type: "DOCUMENT",
-          })
-        }
-      >
-        {"select doc"}
-      </button>
-      <button type="button" onClick={() => onSelectionChange(null)}>
-        {"select folder"}
-      </button>
-    </div>
-  ),
+  }) => {
+    if (browserState.suspend) throw new Promise(() => {});
+    return (
+      <div data-testid="eln-folder-browser">
+        <button
+          type="button"
+          onClick={() =>
+            onSelectionChange({
+              globalId: "SD9",
+              name: "Browsed doc",
+              type: "DOCUMENT",
+            })
+          }
+        >
+          {"select doc"}
+        </button>
+        <button type="button" onClick={() => onSelectionChange(null)}>
+          {"select folder"}
+        </button>
+      </div>
+    );
+  },
 }));
 
 import ElnRecordPicker from "../ElnRecordPicker";
@@ -45,7 +52,19 @@ function renderPicker(props: Partial<React.ComponentProps<typeof ElnRecordPicker
 }
 
 describe("ElnRecordPicker", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    browserState.suspend = false;
+  });
+
+  it("keeps the dialog open with a spinner in place of a folder browser that is still loading", () => {
+    browserState.suspend = true;
+    renderPicker();
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeDisabled();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+  });
 
   it("drops straight into the folder browser with no search/browse mode choice", () => {
     renderPicker();
