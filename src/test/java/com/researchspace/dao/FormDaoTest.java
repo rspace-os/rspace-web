@@ -127,7 +127,9 @@ public class FormDaoTest extends BaseDaoTestCase {
     searchCrit.setPublishedOnly(true);
     searchCrit.setIncludeSystemForm(true);
 
-    formDao.getAllFormsByPermission(user, searchCrit, getAllPgCrit());
+    // Form stable IDs are only unique to the millisecond (AbstractForm), so the default forms
+    // created in setUp can share one; compare against the measured total, not a fixed offset.
+    int totalReadableCount = countReadableForms(user, searchCrit, getAllPgCrit());
 
     // only default forms are in create menu yet.
     searchCrit.setInUserMenu(true);
@@ -146,7 +148,7 @@ public class FormDaoTest extends BaseDaoTestCase {
     // we still get all results, setting this to false means we don't care if it's
     // in menu or not.
     searchCrit.setInUserMenu(false);
-    assertEquals(totalInMenuInitialCount + 6, countReadableForms(user, searchCrit, getAllPgCrit()));
+    assertEquals(totalReadableCount, countReadableForms(user, searchCrit, getAllPgCrit()));
   }
 
   private int countReadableForms(
