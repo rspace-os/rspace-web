@@ -252,8 +252,8 @@ resolved during design. This file is a glossary only — no implementation detai
   registry's update time, newest first, fifty to a page, each hit naming its registry; hits
   updated at the same moment keep the registry's own order. A lookup needs at least four
   characters, so a query shorter than that is refused rather than answered with most of a
-  registry. How free text matches depends on the registry: a
-  B2INST lookup matches a *substring*, so part of a name finds the record that carries it, while a
+  registry. How free text matches depends on the registry: a B2INST lookup matches a *substring*,
+  ignoring case, so part of a name finds the record that carries it however it was typed, while a
   DataCite lookup matches whole indexed words, exactly as a search in DataCite's own portal does.
   Only *public* records are found: a PID whose registration is still in progress, or has been
   declined, is not a lookup result and cannot be imported, because it has no resolvable landing
