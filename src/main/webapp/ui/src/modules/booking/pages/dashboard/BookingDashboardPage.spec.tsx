@@ -1,5 +1,5 @@
 import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
-import { cleanup, render } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
@@ -62,22 +62,44 @@ describe("Booking dashboard", () => {
   });
 
   test("updates today's links and calendar highlight after midnight", async () => {
-    vi.setSystemTime(new Date("2026-08-18T23:59:59.900Z"));
-    render(<BookingDashboardPageStory history={history} preferences={institutionBookingPreferences} />);
+    // expect.element advances the faked Date by its 50 ms interval on every retry, so start a full
+    // minute before midnight and fire the hook's minute timer explicitly instead of racing it.
+    vi.setSystemTime(new Date("2026-08-18T23:59:00.000Z"));
+    let triggerMinute: (() => void) | undefined;
+    const realSetTimeout = globalThis.setTimeout;
+    const heldMinuteTimeouts: ReturnType<typeof setTimeout>[] = [];
+    const timerSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation((handler, delay, ...args) => {
+      if (typeof handler === "function" && delay !== undefined && delay > 50_000 && delay <= 60_000) {
+        triggerMinute = () => handler(...args);
+        const heldTimeout = realSetTimeout(() => {}, 60 * 60 * 1000);
+        heldMinuteTimeouts.push(heldTimeout);
+        return heldTimeout;
+      }
+      return realSetTimeout(handler, delay, ...args);
+    });
+    try {
+      render(<BookingDashboardPageStory history={history} preferences={institutionBookingPreferences} />);
 
-    await expect
-      .element(dashboard.quickAction("Calendar"))
-      .toHaveAttribute("href", "/booking/calendar?date=2026-08-18");
-    await expect.element(dashboard.calendarDay("Tuesday, August 18, 2026")).toBeVisible();
-    expect(dashboard.calendarDay("Tuesday, August 18, 2026").element().closest("[data-today=true]")).not.toBeNull();
+      await expect
+        .element(dashboard.quickAction("Calendar"))
+        .toHaveAttribute("href", "/booking/calendar?date=2026-08-18");
+      await expect
+        .poll(() => dashboard.calendarDay("Tuesday, August 18, 2026").element().closest("[data-today=true]"))
+        .not.toBeNull();
 
-    vi.setSystemTime(new Date("2026-08-19T00:00:00.100Z"));
-    await expect
-      .element(dashboard.quickAction("Calendar"))
-      .toHaveAttribute("href", "/booking/calendar?date=2026-08-19");
-    await expect
-      .poll(() => dashboard.calendarDay("Wednesday, August 19, 2026").element().closest("[data-today=true]"))
-      .not.toBeNull();
+      expect(triggerMinute).toBeDefined();
+      vi.setSystemTime(new Date("2026-08-19T00:00:00.100Z"));
+      act(() => triggerMinute?.());
+      await expect
+        .element(dashboard.quickAction("Calendar"))
+        .toHaveAttribute("href", "/booking/calendar?date=2026-08-19");
+      await expect
+        .poll(() => dashboard.calendarDay("Wednesday, August 19, 2026").element().closest("[data-today=true]"))
+        .not.toBeNull();
+    } finally {
+      timerSpy.mockRestore();
+      heldMinuteTimeouts.forEach(clearTimeout);
+    }
   });
 
   test("provides localized calendar navigation and unbooked-day labels", async () => {
