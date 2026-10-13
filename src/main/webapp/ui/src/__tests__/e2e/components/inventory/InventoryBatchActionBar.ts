@@ -30,6 +30,12 @@ export class InventoryBatchActionBar {
     this.moreActions = new MoreActionsMenu(page, this.root.getByRole("button", { name: "More actions" }));
   }
 
+  /** Opens the More actions menu and returns one of its items, which may be absent. */
+  async moreActionItem(name: InventoryBatchAction): Promise<Locator> {
+    await this.moreActions.open();
+    return this.moreActions.item(name);
+  }
+
   async clickMoreAction(name: InventoryBatchAction): Promise<void> {
     await this.moreActions.click(name);
   }

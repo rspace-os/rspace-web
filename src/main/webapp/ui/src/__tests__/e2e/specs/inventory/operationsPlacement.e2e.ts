@@ -1,12 +1,16 @@
+import type { APIRequestContext } from "@playwright/test";
 import { expect } from "@playwright/test";
-import type { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClient";
+import { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClient";
+import type { SysadminClient } from "@/__tests__/e2e/api/clients/SysadminClient";
 import type { ApiInventoryGridLocation } from "@/__tests__/e2e/api/models/inventory";
 import type { ProcessWizardComponent } from "@/__tests__/e2e/components/inventory/ProcessWizardComponent";
 import { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
+import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
+import type { AppUser } from "@/__tests__/e2e/users";
 
 // Remembered process values are per account and change where the wizard opens, so every test here
 // runs as a fresh dynamic user.
@@ -469,6 +473,123 @@ test.describe("Inventory operation placement", { tag: tags.INVENTORY }, () => {
     } finally {
       await otherTab.close();
     }
+  });
+
+  test("As a user, Process is not offered while operations are not enabled", async ({
+    flowOperationsDisabled: _,
+    pageInventory,
+    clientInventory,
+  }) => {
+    const sample = await origin(clientInventory);
+    await pageInventory.openSearch("SUBSAMPLE");
+    await pageInventory.searchPanel.search(sample.name);
+    await pageInventory.searchPanel.selectItem(sample.subSamples[0].name);
+
+    await expect(await pageInventory.searchPanel.batchActions.moreActionItem("Duplicate")).toBeVisible();
+    await expect(await pageInventory.searchPanel.batchActions.moreActionItem("Process")).toHaveCount(0);
+  });
+
+  test("As a user, another user's unshared container is not offered", async ({
+    flowOperationsEnabled: _,
+    pageInventory,
+    clientInventory,
+    clientSysadmin,
+    apiContext,
+  }) => {
+    const stranger = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2ePlaceStranger");
+    const strangerBox = await gridContainer(new InventoryClient(apiContext, stranger.apiKey), 2, 2);
+    const sample = await origin(clientInventory);
+    const wizard = await aliquotToLocation(pageInventory, sample);
+
+    await wizard.location.chooseContainer();
+    await wizard.location.search(strangerBox.name);
+
+    await expect(wizard.root.getByRole("treeitem", { name: strangerBox.name })).toHaveCount(0);
+  });
+
+  test.describe("with a groupmate", () => {
+    /**
+     * A PI who runs a lab group the test user is an ordinary member of. Group membership is read at
+     * sign-in, so the test user's own pages are opened afterwards with a fresh session.
+     */
+    async function groupmate(clientSysadmin: SysadminClient, apiContext: APIRequestContext, appUser: AppUser) {
+      const pi = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2ePlacePi");
+      await clientSysadmin.createGroup({
+        displayName: uniqueName("e2ePlaceGroup"),
+        type: "LAB_GROUP",
+        users: [
+          { username: pi.username, roleInGroup: "PI" },
+          { username: appUser.username, roleInGroup: "DEFAULT" },
+        ],
+      });
+      const user: AppUser = {
+        username: pi.username,
+        password: pi.password,
+        apiKey: pi.apiKey,
+        roles: ["ROLE_PI", "ROLE_USER"],
+      };
+      return { user, client: new InventoryClient(apiContext, pi.apiKey) };
+    }
+
+    test("As a user, a groupmate's container kept to its owner is not offered", async ({
+      flowOperationsEnabled: _,
+      clientInventory,
+      clientSysadmin,
+      apiContext,
+      appUser,
+      pageInventoryForUser,
+    }) => {
+      const pi = await groupmate(clientSysadmin, apiContext, appUser);
+      const ownerOnly = await gridContainer(pi.client, 2, 2);
+      await pi.client.updateContainer(ownerOnly.id, { sharingMode: "OWNER_ONLY", sharedWith: [] });
+      const sample = await origin(clientInventory);
+      const inventory = await pageInventoryForUser(appUser);
+      const wizard = await aliquotToLocation(inventory, sample);
+
+      await wizard.location.chooseContainer();
+      await wizard.location.search(ownerOnly.name);
+
+      await expect(wizard.root.getByRole("treeitem", { name: ownerOnly.name })).toHaveCount(0);
+    });
+
+    test("As a user racing a groupmate for the last location, only one of us gets it", async ({
+      flowOperationsEnabled: _,
+      clientInventory,
+      clientSysadmin,
+      apiContext,
+      appUser,
+      pageInventoryForUser,
+    }) => {
+      const pi = await groupmate(clientSysadmin, apiContext, appUser);
+      const tube = await gridContainer(pi.client, 1, 1);
+      const mine = await origin(clientInventory);
+      const theirs = await pi.client.createSample({
+        name: uniqueName("e2e-place-theirs"),
+        newSampleSubSamplesCount: 1,
+      });
+
+      const openMove = async (user: AppUser, sampleName: string, subSampleName: string) => {
+        const inventory = await pageInventoryForUser(user);
+        await inventory.openSearch("SUBSAMPLE");
+        await inventory.searchPanel.search(sampleName);
+        await inventory.searchPanel.selectItem(subSampleName);
+        const move = await inventory.searchPanel.batchActions.openMoveDialog();
+        await move.selectGridDestination(tube.name);
+        await move.grid.click("A1");
+        return move;
+      };
+      const myMove = await openMove(appUser, mine.name, mine.subSamples[0].name);
+      const theirMove = await openMove(pi.user, theirs.name, theirs.subSamples[0].name);
+
+      await myMove.confirmMove();
+      await theirMove.moveButton.click();
+
+      await expect(theirMove.root).toBeVisible();
+      const occupants = (await pi.client.getContainer(tube.id)).locations?.flatMap((l) =>
+        l.content ? [l.content.globalId] : [],
+      );
+      expect(occupants).toEqual([mine.subSamples[0].globalId]);
+    });
   });
 
   test.describe("by keyboard", () => {
