@@ -1,10 +1,15 @@
+import type { APIResponse } from "@playwright/test";
 import type {
+  ApiInventoryAliquotRequest,
+  ApiInventoryBulkMoveRecord,
+  ApiInventoryBulkResult,
   ApiInventoryIdentifierCreateRequest,
   ApiInventoryIdentifierInfo,
   ApiInventorySample,
   ApiInventorySampleCreateRequest,
   ApiInventorySampleRevisions,
   ApiInventorySampleUpdateRequest,
+  ApiInventorySearchResult,
   ApiInventorySubSample,
   ApiInventorySubSampleMoveRequest,
 } from "../models/inventory";
@@ -64,6 +69,49 @@ export class InventoryClient extends BaseApiClient {
       data: update,
       action: "updateInventoryContainer",
     });
+  }
+
+  async getContainer(containerId: number): Promise<ApiInventoryContainer> {
+    return this.requestJson("get", `/api/inventory/v1/containers/${containerId}?includeContent=true`, {
+      action: "getInventoryContainer",
+    });
+  }
+
+  /** Sends the container to the trash. */
+  async deleteContainer(containerId: number): Promise<void> {
+    await this.requestVoid("delete", `/api/inventory/v1/containers/${containerId}`, {
+      action: "deleteInventoryContainer",
+    });
+  }
+
+  /** The bulk endpoint answers 200 with per-record errors, so callers assert on `errorCount`. */
+  async bulkMove(records: ApiInventoryBulkMoveRecord[], rollbackOnError: boolean): Promise<ApiInventoryBulkResult> {
+    return this.requestJson("post", "/api/inventory/v1/bulk", {
+      data: { operationType: "MOVE", records, rollbackOnError },
+      action: "bulkMoveInventoryRecords",
+    });
+  }
+
+  async searchByParent(
+    parentGlobalId: string,
+    resultType: "SUBSAMPLE" | "CONTAINER",
+  ): Promise<ApiInventorySearchResult> {
+    const query = new URLSearchParams({ parentGlobalId, resultType });
+    return this.requestJson("get", `/api/inventory/v1/search?${query}`, { action: "searchInventoryByParent" });
+  }
+
+  async searchByName(name: string, resultType: "SAMPLE" | "SUBSAMPLE"): Promise<ApiInventorySearchResult> {
+    const query = new URLSearchParams({ query: name, resultType });
+    return this.requestJson("get", `/api/inventory/v1/search?${query}`, { action: "searchInventoryByName" });
+  }
+
+  /** Returns the raw response, since callers assert on refusals as well as successes. */
+  async aliquot(request: ApiInventoryAliquotRequest): Promise<APIResponse> {
+    return this.request.post("/api/inventory/v1/operations/aliquot", { headers: this.headers(), data: request });
+  }
+
+  async getSample(sampleId: number): Promise<ApiInventorySample> {
+    return this.requestJson("get", `/api/inventory/v1/samples/${sampleId}`, { action: "getInventorySample" });
   }
 
   async getSubSample(subSampleId: number): Promise<ApiInventorySubSample> {

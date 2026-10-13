@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
+import { ContentGridComponent } from "./ContentGridComponent";
 import { clickAndWaitDetached } from "./DialogHelpers";
 import { waitForImageDecoded } from "./EditLocationsDialog";
 
@@ -7,10 +8,13 @@ export class MoveDialogComponent {
   private readonly destinationTree: Locator;
   private readonly selectedDestinationHeading: Locator;
   private readonly cancelButton: Locator;
-  private readonly moveButton: Locator;
+  readonly moveButton: Locator;
   private readonly makeTopLevelButton: Locator;
   private readonly searchInput: Locator;
   private readonly nextButton: Locator;
+  /** The "Select N locations. (n/N placed)" alert shown once a grid or image destination is picked. */
+  readonly progressAlert: Locator;
+  readonly grid: ContentGridComponent;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Moving " });
@@ -22,6 +26,8 @@ export class MoveDialogComponent {
     this.searchInput = this.root.getByRole("searchbox", { name: "Search" });
     // Avoid the tree's "Go to next page" button.
     this.nextButton = this.root.getByRole("button", { name: "Next", exact: true });
+    this.progressAlert = this.root.getByRole("alert").filter({ hasText: /placed\)|Selection complete\./ });
+    this.grid = new ContentGridComponent(page, this.root);
   }
 
   async waitForOpen(): Promise<void> {
@@ -44,6 +50,14 @@ export class MoveDialogComponent {
       await item.click({ timeout: 3_000 }).catch(() => {});
       await expect(item).toHaveAttribute("aria-checked", "true", { timeout: 3_000 });
     }).toPass({ timeout: 30_000 });
+  }
+
+  /** Picks a grid destination and waits for its grid of locations. */
+  async selectGridDestination(name: string): Promise<ContentGridComponent> {
+    await this.search(name);
+    await this.selectDestination(name);
+    await this.grid.waitForLoaded();
+    return this.grid;
   }
 
   async selectedDestinationName(): Promise<string> {
