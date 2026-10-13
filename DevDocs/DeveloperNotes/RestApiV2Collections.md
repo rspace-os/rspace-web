@@ -566,10 +566,10 @@ are nullable and read-only. Clients can read, filter, and sort the date fields. 
 normal relationship selectors for user fields, such as `createdBy.value`; see
 [Current user in relationship filters](#current-user-in-relationship-filters) for the `me` alias.
 
-A creator or updater property of type `User` becomes a relationship to the `users` resource. An
-old entity can return a username. In that case, the API keeps a scalar compatibility field. New
-writable entities must store `User` relationships and must publish the normal RSpace audit events.
-`BookingConfiguration` is an example.
+A creator or updater property becomes a relationship to the `users` resource, so it must return
+`User`. A property that returns anything else, such as a legacy username string, fails at startup;
+map it as a `User` association or set `auditFields = false`. Writable entities must also publish
+the normal RSpace audit events. `BookingConfiguration` is an example.
 
 The framework omits an audit field when the entity has no matching property. It does not publish a
 field that clients cannot query.
