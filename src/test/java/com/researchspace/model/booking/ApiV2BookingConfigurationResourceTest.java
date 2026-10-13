@@ -86,21 +86,31 @@ class ApiV2BookingConfigurationResourceTest {
             .toList());
     assertInstanceOf(
         FilterSelector.Property.class,
-        ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("createdAt"));
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .findFilterSelector("createdAt")
+            .orElseThrow());
     assertInstanceOf(
         FilterSelector.Property.class,
-        ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("updatedAt"));
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .findFilterSelector("updatedAt")
+            .orElseThrow());
     FilterSelector.Property timezone =
         assertInstanceOf(
             FilterSelector.Property.class,
-            ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("timezone"));
+            ApiV2BookingConfigurationResource.DESCRIPTION
+                .findFilterSelector("timezone")
+                .orElseThrow());
     assertEquals("timeZone", timezone.property());
     assertInstanceOf(
         FilterSelector.RelationshipPart.class,
-        ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("createdBy.value"));
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .findFilterSelector("createdBy.value")
+            .orElseThrow());
     assertInstanceOf(
         FilterSelector.RelationshipPart.class,
-        ApiV2BookingConfigurationResource.DESCRIPTION.requireFilterSelector("updatedBy.value"));
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .findFilterSelector("updatedBy.value")
+            .orElseThrow());
     assertFalse(
         ApiV2BookingConfigurationResource.DESCRIPTION
             .requireRelationship("target")

@@ -279,6 +279,10 @@ record derives the query property from a bean property name, so it cannot descri
 `editInfo.name`. `ApiV2InstrumentResource` is the example: it also declares `globalId` with
 `withQueryCapabilities(false, false)`, because a derived value has no column to filter or sort.
 
+Declare fields and relationships in one `List<? extends ResourceMember<T>>` passed to
+`CollectionDescription`. Member names must be unique across both kinds. Each kind retains its
+relative declaration order when exposed through `fields()` and `relationships()`.
+
 Express a read rule as a row constraint when the rule fits the described fields. A read access
 function returns `AccessResult.allowedWhere(...)`, and the registration folds that constraint into
 the list, the count, the single read, and relationship resolution. `ApiV2InstrumentResource` hides
