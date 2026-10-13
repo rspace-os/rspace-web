@@ -42,7 +42,6 @@ import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
-import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourceReference;
@@ -247,7 +246,9 @@ class TimeSlotBookingResourceOperationsTest {
             .operators()
             .contains(com.researchspace.model.collection.Operator.CONTAINS));
     assertFalse(
-        ApiV2TimeSlotBookingResource.DESCRIPTION.requireField("state").writableOn(WriteOperation.CREATE));
+        ApiV2TimeSlotBookingResource.DESCRIPTION
+            .requireField("state")
+            .writableOn(WriteOperation.CREATE));
     assertFalse(
         ApiV2TimeSlotBookingResource.DESCRIPTION
             .requireRelationship("target")
