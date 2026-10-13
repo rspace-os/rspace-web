@@ -154,6 +154,15 @@ export default function RequestsList({
     return requests.filter((request) => requestMatchesQuery(request, lowerCaseQuery));
   }, [requests, searchQuery]);
 
+  // Separately, clamp (rather than reset) whenever a refetch shrinks the result count out from
+  // under the current page - e.g. closing the sole request on the last page, triggered by a
+  // status mutation elsewhere invalidating this query - without yanking the user back to page one
+  // if their current page is still valid.
+  useEffect(() => {
+    const lastPageNumber = Math.max(0, Math.ceil(searchedRequests.length / pageSize) - 1);
+    setPageNumber((page) => Math.min(page, lastPageNumber));
+  }, [searchedRequests.length, pageSize]);
+
   const sortedRequests = useMemo(() => {
     const sorted = [...searchedRequests].sort((a, b) => {
       const aValue = getColumnValue(a, sortBy);

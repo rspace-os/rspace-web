@@ -9,8 +9,10 @@ import { server } from "@/__tests__/mswServer";
 import materialTheme from "@/theme";
 import RequestsList, { type ApiSampleRequestListItem } from "../RequestsList";
 
-function renderWithProviders(ui: React.ReactElement) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderWithProviders(
+  ui: React.ReactElement,
+  queryClient: QueryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
 }
 
@@ -155,6 +157,38 @@ describe("RequestsList pagination", () => {
     await user.click(within(screen.getByRole("navigation")).getByRole("combobox"));
 
     expect(screen.getByRole("option", { name: "60 (All)" })).toBeInTheDocument();
+  });
+
+  test("clamps the page back into range when a refetch shrinks the results out from under it", async () => {
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    // Mutable so the handler can serve 26 requests first, then 25 once "closed" below - the same
+    // shape of change a status mutation elsewhere invalidating this query would cause.
+    let requests = makeRequests(26);
+    server.use(http.get(SAMPLE_REQUESTS_URL, () => HttpResponse.json({ requests, totalHits: requests.length })));
+    renderWithProviders(
+      <ThemeProvider theme={materialTheme}>
+        <RequestsList selectedRequestId={null} onSelect={() => {}} />
+      </ThemeProvider>,
+      queryClient,
+    );
+    await waitForLoaded(26);
+
+    // Newest-first sort puts the 26 requests 25-per-page with only the oldest (id 1) spilling onto
+    // page two.
+    await user.click(screen.getByRole("button", { name: "Go to next page" }));
+    expect(screen.getByText("SA1")).toBeInTheDocument();
+
+    // The sole request on page two is closed elsewhere, shrinking the result set to 25 and
+    // triggering a refetch via the same query-invalidation path a status mutation uses - with the
+    // requests/status/search/sort/page-size controls all left untouched.
+    requests = makeRequests(25);
+    await queryClient.invalidateQueries({ queryKey: ["sampleRequests"] });
+
+    await waitFor(() => expect(within(screen.getByRole("navigation")).getByText("1–25 of 25")).toBeInTheDocument());
+    // Page one, not an empty slice of a page two that no longer exists.
+    expect(screen.getByText("SA25")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:requestsManagement.noResults")).not.toBeInTheDocument();
   });
 
   test("fetches every page from the backend rather than stopping at its 100-per-call cap", async () => {
