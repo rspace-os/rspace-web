@@ -55,8 +55,7 @@ class ApiV2RuntimeFieldParserTest {
           "holders",
           InstrumentHolder.class,
           List.of(
-              Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), InstrumentHolder::id)),
-          List.of(
+              Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), InstrumentHolder::id),
               Relationship.referenceToOne(
                   "target",
                   "instruments",

@@ -43,7 +43,7 @@ public final class ApiV2TimeSlotBookingResource {
     return new CollectionDescription<>(
         "bookings",
         TimeSlotBooking.class,
-        List.<Field<TimeSlotBooking, ?>>of(
+        List.of(
             Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
             Field.readOnly(
                     "version",
@@ -146,8 +146,8 @@ public final class ApiV2TimeSlotBookingResource {
                 "updatedAt",
                 "updatedAt",
                 CollectionFieldTypes.instant(),
-                TimeSlotBooking::getUpdatedAt)),
-        List.of(TARGET),
+                TimeSlotBooking::getUpdatedAt),
+            TARGET),
         "id",
         List.of(new Sort("start", true), new Sort("id", true)),
         new AccessPolicy(
