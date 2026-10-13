@@ -53,13 +53,20 @@ export class MoveDialog {
     await this.waitForTreeToSettle();
   }
 
-  // jqueryFileTree marks a folder `.wait` while its children load, then slides them open over 500ms;
-  // on webkit a click on a child mid-slide can miss it.
+  // The tree sorter re-attaches every node on each slide frame, so webkit drops a click landing mid-slide.
   private async waitForTreeToSettle(): Promise<void> {
-    await this.page.waitForFunction(() => {
-      const $ = (window as unknown as { jQuery: (s: string) => { length: number } }).jQuery;
-      return $("#movefolder-tree .wait").length === 0 && $("#movefolder-tree ul:animated").length === 0;
-    });
+    await this.page.waitForFunction(
+      () => {
+        const tree = document.querySelector("#movefolder-tree");
+        if (!tree || tree.querySelector(".wait")) return false;
+
+        // jQuery restores inline overflow when the slide finishes.
+        return Array.from(tree.querySelectorAll("ul")).every((list) => list.style.overflow !== "hidden");
+      },
+      undefined,
+      // waitForFunction never times out by default.
+      { timeout: 10_000 },
+    );
   }
 
   async setOrdering(field: MoveDialogSortField, order: MoveDialogSortOrder): Promise<void> {

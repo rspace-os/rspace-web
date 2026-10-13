@@ -52,21 +52,24 @@ export const test = userSessionTest.extend<MessagingFixtures>({
       storageState: storageStatePath(SYSADMIN.username),
     });
     const dashboard = new DashboardPage(await ctx.newPage());
-    const sent: Array<string> = [];
+    const attempted: Array<string> = [];
+    const sent = new Set<string>();
     try {
       await use(async (marker, markup = "") => {
-        sent.push(marker);
+        attempted.push(marker);
         await dashboard.open();
         const dialog = await dashboard.openCreateMessage();
         await dialog.send({ type: "Message to all users", text: `${marker} ${markup}`.trim() });
+        sent.add(marker);
       });
     } finally {
       try {
-        if (sent.length > 0) {
+        if (attempted.length > 0) {
           await dashboard.open();
           await dashboard.openSentRequests();
-          for (const marker of sent) {
-            if ((await dashboard.sentRequest(marker).count()) > 0) {
+          for (const marker of attempted) {
+            // A confirmed announcement must be cancelled; a failed send may or may not have reached the server.
+            if (sent.has(marker) || (await dashboard.sentRequest(marker).count()) > 0) {
               await dashboard.cancelSentRequestQuietly(marker);
             }
           }

@@ -34,14 +34,7 @@ export class SendMessageDialogComponent {
     await this.waitUntilLoaded();
   }
 
-  async sendTo(username: string): Promise<void> {
-    await this.toField.fill(username);
-    await this.root.getByRole("listitem").filter({ hasText: username }).first().click();
-    await this.root.getByRole("button", { name: "Send", exact: true }).click();
-    await this.root.waitFor({ state: "hidden" });
-  }
-
-  async send({ to, type, text }: { to?: string; type?: MessageTypeLabel; text: string }): Promise<void> {
+  async send({ to, type, text }: { to?: string; type?: MessageTypeLabel; text?: string }): Promise<void> {
     if (type) {
       await this.requestType.selectOption({ label: type });
     }
@@ -49,7 +42,9 @@ export class SendMessageDialogComponent {
       await this.toField.fill(to);
       await this.root.getByRole("listitem").filter({ hasText: to }).first().click();
     }
-    await this.messageField.fill(text);
+    if (text) {
+      await this.messageField.fill(text);
+    }
     const [res] = await Promise.all([
       this.page.waitForResponse(
         (res) => res.request().method() === "POST" && res.url().includes("/messaging/ajax/create"),
@@ -58,6 +53,12 @@ export class SendMessageDialogComponent {
     ]);
     if (!res.ok()) {
       throw new Error(`Sending message failed: ${res.status()}`);
+    }
+    // Validation failures return 200 with the form re-rendered; its <form:errors> spans have no role, only this class.
+    if ((await res.text()).includes("error")) {
+      const reasons = this.root.locator(".error");
+      await reasons.first().waitFor({ state: "visible" });
+      throw new Error(`Sending message was rejected: ${(await reasons.allInnerTexts()).join("; ")}`);
     }
     await this.root.waitFor({ state: "hidden" });
   }

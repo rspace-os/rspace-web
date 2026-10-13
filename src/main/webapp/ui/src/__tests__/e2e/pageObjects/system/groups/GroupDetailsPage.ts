@@ -88,14 +88,14 @@ export class GroupDetailsPage extends BasePage {
     await this.page.getByRole("button", { name: "Create Collaboration Group", exact: true }).click();
     const dialog = new SendMessageDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.sendTo(withUsername);
+    await dialog.send({ to: withUsername });
   }
 
   async inviteAnotherPiToCollaboration(withUsername: string): Promise<void> {
     await this.page.getByRole("button", { name: "Invite a New PI", exact: true }).click();
     const dialog = new SendMessageDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.sendTo(withUsername);
+    await dialog.send({ to: withUsername });
   }
 
   async inviteMember(username: string): Promise<void> {
@@ -172,6 +172,8 @@ export class GroupDetailsPage extends BasePage {
     // shows an alert instead of reloading, so it surfaces as the reload wait timing out.
     const res = await saved;
     if (!res.ok()) {
+      // No reload follows a failed save; settle the abandoned wait so it can't reject unhandled at teardown.
+      reloaded.catch(() => undefined);
       throw new Error(`Changing ${username}'s role failed: ${res.status()}`);
     }
     await reloaded;

@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { SendMessageDialogComponent } from "@/__tests__/e2e/components/shared/SendMessageDialogComponent";
 import { env } from "@/__tests__/e2e/env";
 import { BasePage } from "../BasePage";
@@ -42,7 +42,9 @@ export class DashboardPage extends BasePage {
   }
 
   async cancelSentRequestQuietly(text: string): Promise<void> {
-    const rowId = await this.sentRequest(text).first().getAttribute("id");
+    const row = this.sentRequest(text).first();
+    await expect(row, `No sent request listed for "${text}"`).toBeAttached();
+    const rowId = await row.getAttribute("id");
     const messageOrRequestId = rowId?.replace("myrequestID_", "");
     if (!messageOrRequestId) {
       throw new Error(`No sent request id found for "${text}"`);

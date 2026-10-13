@@ -8,7 +8,6 @@ import { test as repositoryIntegrationTest } from "@/__tests__/e2e/fixtures/flow
 import { test as rorRegistryTest } from "@/__tests__/e2e/fixtures/flows/environment/rorRegistry";
 import { test as messagingTest } from "@/__tests__/e2e/fixtures/flows/messaging";
 
-export type { MessagingSession } from "@/__tests__/e2e/fixtures/flows/messaging";
 export type { SelfServicePiActor, UserSession } from "@/__tests__/e2e/fixtures/flows/sessions/userSessions";
 export const test = mergeTests(
   repositoryIntegrationTest,
