@@ -48,9 +48,16 @@ export class InventoryBatchActionBar {
     );
   }
 
-  /** Shown only while inventory.operations.available is ALLOWED. */
+  /**
+   * Shown only while inventory.operations.available is ALLOWED: a button of its own on a phone, under
+   * More actions otherwise.
+   */
   async openProcessWizard(): Promise<ProcessWizardComponent> {
-    return openDialog(() => this.moreActions.click("Process"), new ProcessWizardComponent(this.page));
+    const direct = this.root.getByRole("button", { name: "Process", exact: true });
+    return openDialog(
+      async () => ((await direct.isVisible()) ? direct.click() : this.moreActions.click("Process")),
+      new ProcessWizardComponent(this.page),
+    );
   }
 
   async openBatchEdit(): Promise<BatchEditFormComponent> {

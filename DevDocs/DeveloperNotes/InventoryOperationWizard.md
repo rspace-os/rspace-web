@@ -419,6 +419,17 @@ fields in the wizard is deferred.
   them together: `FieldNameUniquenessParityTest` and `buildOperationRequest.test.ts` both
   assert it, so changing the rule on one side alone turns the other red.
 
+### End-to-end tests
+
+The Playwright suite drives the Location step in
+`src/main/webapp/ui/src/__tests__/e2e/specs/inventory/operationsPlacement.e2e.ts`, the
+selection-only grid in the Move and Create dialogs in `gridKeyboardSelection.e2e.ts`, and the
+placement API in `specs/api/inventoryPlacement.api.spec.ts`. Wizard tests request the
+`flowOperationsEnabled` fixture, which sets `inventory.operations.available` to `ALLOWED` for
+that test and restores it, and run as a fresh `dynamicUserTest` account because remembered
+process values change where the wizard opens. Run them from the repo root with
+`E2E_BROWSER=chromium RSPACE_BASE_URL=<stack URL> pnpm run test-e2e --reporter=list <spec>`.
+
 ### Placing the new subsamples
 
 Placement is a second request, made only after the operation has committed: the bulk

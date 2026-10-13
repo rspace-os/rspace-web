@@ -56,6 +56,8 @@ export class MoveDialogComponent {
   async selectGridDestination(name: string): Promise<ContentGridComponent> {
     await this.search(name);
     await this.selectDestination(name);
+    // On a phone the locations are a second page of the dialog.
+    if (await this.nextButton.isVisible()) await this.nextButton.click();
     await this.grid.waitForLoaded();
     return this.grid;
   }
@@ -133,6 +135,7 @@ export class MoveDialogComponent {
   }
 
   async confirmMove(): Promise<void> {
+    await this.grid.leave();
     if (await this.nextButton.isVisible().catch(() => false)) {
       await this.nextButton.click();
     }
@@ -143,6 +146,7 @@ export class MoveDialogComponent {
   }
 
   async cancel(): Promise<void> {
+    await this.grid.leave();
     await clickAndWaitDetached(this.cancelButton, this.root);
   }
 }
