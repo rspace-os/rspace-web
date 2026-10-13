@@ -118,7 +118,6 @@ class ApiV2DocumentParserTest {
                     CollectionFieldTypes.bool(),
                     TestDocument::active,
                     TestDocument::setActive)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
 
@@ -208,7 +207,6 @@ class ApiV2DocumentParserTest {
                         new Constraints(BigDecimal.ONE, BigDecimal.valueOf(7), null, null, null)),
                     Scored::score,
                     (scored, value) -> {})),
-            List.of(),
             "id",
             List.of(new Sort("id", true)));
 
@@ -431,8 +429,8 @@ class ApiV2DocumentParserTest {
     return new CollectionDescription<>(
         "relatedDocuments",
         RelatedDocument.class,
-        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), RelatedDocument::id)),
         List.of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), RelatedDocument::id),
             Relationship.polymorphicToOne(
                     "target",
                     CollectionFieldTypes.longNumber(),
