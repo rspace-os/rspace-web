@@ -66,11 +66,7 @@ export class ProcessWizardComponent {
   }
 
   async fillProcessName(name: string): Promise<void> {
-    await this.root
-      .getByRole("combobox", { name: "Process name" })
-      .or(this.root.getByLabel("Process name"))
-      .first()
-      .fill(name);
+    await this.root.getByRole("combobox", { name: "Process name" }).fill(name);
   }
 
   async setCount(count: number): Promise<void> {
@@ -93,13 +89,20 @@ export class ProcessWizardComponent {
 
   /** The Confirm step's Location value. */
   async confirmedLocation(): Promise<string> {
-    const term = this.root.locator("dt").filter({ hasText: /^Location$/ });
+    const term = this.root.getByRole("term").filter({ hasText: /^Location$/ });
     await term.waitFor({ state: "visible" });
     return term.evaluate((dt) => {
       let next = dt.nextElementSibling;
       while (next && next.tagName !== "DD") next = next.nextElementSibling;
       return next?.textContent?.trim() ?? "";
     });
+  }
+
+  /** The one-click run offered for remembered values: no stepper, only Review / edit and Perform. */
+  async expectFastPath(): Promise<void> {
+    await expect(this.performButton).toBeVisible();
+    await expect(this.reviewEditButton).toBeVisible();
+    await expect(this.currentStep).toHaveCount(0);
   }
 
   async perform(): Promise<void> {

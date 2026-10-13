@@ -2,8 +2,9 @@ import { expect } from "@playwright/test";
 import type { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClient";
 import type { ApiInventoryGridLocation } from "@/__tests__/e2e/api/models/inventory";
 import type { ProcessWizardComponent } from "@/__tests__/e2e/components/inventory/ProcessWizardComponent";
+import { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
-import type { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
+import { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
 
@@ -327,6 +328,147 @@ test.describe("Inventory operation placement", { tag: tags.INVENTORY }, () => {
         new RegExp(`^Placing in (${firstRack.name}|${secondRack.name}) `),
       );
     });
+  });
+
+  test.describe("remembered runs", () => {
+    type Origin = Awaited<ReturnType<typeof origin>>;
+
+    async function derive(pageInventory: InventoryPage, sample: Origin, index: number) {
+      const wizard = await openWizard(pageInventory, sample.name, [sample.subSamples[index].name]);
+      await wizard.chooseOperation("Derive");
+      return wizard;
+    }
+
+    /** A first Derive run that remembers its values, placed in `container` or left on the workbench. */
+    async function rememberDerive(
+      pageInventory: InventoryPage,
+      sample: Origin,
+      container?: { name: string; locations?: string[] },
+    ) {
+      const wizard = await derive(pageInventory, sample, 0);
+      await wizard.goToLocation({ processName: uniqueName("e2e-process") });
+      if (container) {
+        await wizard.location.pick(container.name);
+        if (container.locations) await wizard.location.grid.click(...container.locations);
+      }
+      await wizard.next();
+      await wizard.rememberCheckbox.check();
+      await wizard.perform();
+    }
+
+    test("As a user, a remembered list container gives a one-click run", async ({
+      flowOperationsEnabled: _,
+      pageInventory,
+      clientInventory,
+    }) => {
+      const sample = await origin(clientInventory, 2);
+      const shelf = await listContainer(clientInventory);
+      await rememberDerive(pageInventory, sample, { name: shelf.name });
+
+      const wizard = await derive(pageInventory, sample, 1);
+
+      await wizard.expectFastPath();
+      expect(await wizard.confirmedLocation()).toBe(shelf.name);
+      await wizard.perform();
+      await expect
+        .poll(async () => (await clientInventory.searchByParent(shelf.globalId, "SUBSAMPLE")).records.length)
+        .toBe(2);
+    });
+
+    test("As a user, a remembered grid container opens on the Location step", async ({
+      flowOperationsEnabled: _,
+      pageInventory,
+      clientInventory,
+    }) => {
+      const sample = await origin(clientInventory, 2);
+      const box = await gridContainer(clientInventory, 2, 2);
+      await rememberDerive(pageInventory, sample, { name: box.name, locations: ["A1"] });
+
+      const wizard = await derive(pageInventory, sample, 1);
+
+      await wizard.expectStep("Location");
+      await expect(wizard.location.placingIn).toContainText(box.name);
+      await expect(wizard.location.status).toHaveText(`Select 1 more location in ${box.name}.`);
+      await expect(wizard.nextButton).toBeDisabled();
+      await wizard.reviewEditButton.click();
+      await wizard.expectStep("Details");
+    });
+
+    test("As a user, I am told when the remembered container can no longer be used", async ({
+      flowOperationsEnabled: _,
+      pageInventory,
+      clientInventory,
+    }) => {
+      const sample = await origin(clientInventory, 2);
+      const box = await gridContainer(clientInventory, 1, 1);
+      await rememberDerive(pageInventory, sample, { name: box.name, locations: ["A1"] });
+
+      const wizard = await derive(pageInventory, sample, 1);
+
+      await wizard.expectStep("Location");
+      await expect(wizard.rememberedContainerNote).toHaveText(
+        `The remembered container "${box.name}" can no longer take the new subsamples. Choose another location, or leave them on your workbench.`,
+      );
+      await expect(wizard.location.searchInput).toBeVisible();
+      await expect(wizard.location.placingIn).toBeHidden();
+      await expect(wizard.nextButton).toBeDisabled();
+      await wizard.location.chooseWorkbench();
+      await expect(wizard.nextButton).toBeEnabled();
+    });
+
+    test("As a user, a remembered workbench wins over the origin's own container", async ({
+      flowOperationsEnabled: _,
+      pageInventory,
+      clientInventory,
+    }) => {
+      const sample = await origin(clientInventory, 2);
+      await rememberDerive(pageInventory, sample);
+      const rack = await listContainer(clientInventory, "e2e-rack");
+      await clientInventory.moveSubSample(sample.subSamples[1].id, { parentContainers: [{ id: rack.id }] });
+
+      const wizard = await derive(pageInventory, sample, 1);
+
+      await wizard.expectFastPath();
+      expect(await wizard.confirmedLocation()).toBe("Your workbench");
+    });
+  });
+
+  test("As a user, I cannot run the wizard on subsamples it is already open on elsewhere", async ({
+    flowOperationsEnabled: _,
+    pageInventory,
+    clientInventory,
+    browser,
+    browserContextOptions,
+    storageState,
+  }) => {
+    const sample = await origin(clientInventory);
+    const first = await aliquotToLocation(pageInventory, sample);
+
+    const otherTab = await browser.newContext({ ...browserContextOptions, storageState });
+    try {
+      // A second tab of the same signed-in user, which fixtures cannot provide.
+      const otherPage = await otherTab.newPage();
+      const otherInventory = new InventoryPage(otherPage);
+      await otherInventory.openSearch("SUBSAMPLE");
+      await otherInventory.searchPanel.search(sample.name);
+      await otherInventory.searchPanel.selectItem(sample.subSamples[0].name);
+      await otherInventory.searchPanel.batchActions.clickMoreAction("Process");
+      await expect(
+        new ToastsComponent(otherPage).byText(
+          "These subsamples are open for editing elsewhere, perhaps in another tab. Close that editor and try again.",
+        ),
+      ).toBeVisible();
+      await expect(otherPage.getByRole("dialog")).toHaveCount(0);
+      // The refused action leaves the More actions menu open.
+      await otherPage.keyboard.press("Escape");
+
+      await first.cancel();
+      const retried = await otherInventory.searchPanel.batchActions.openProcessWizard();
+      await retried.chooseOperation("Aliquot");
+      await retried.expectStep("Details");
+    } finally {
+      await otherTab.close();
+    }
   });
 
   test.describe("by keyboard", () => {
