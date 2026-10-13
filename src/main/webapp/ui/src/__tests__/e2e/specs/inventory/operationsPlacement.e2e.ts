@@ -204,6 +204,131 @@ test.describe("Inventory operation placement", { tag: tags.INVENTORY }, () => {
     expect(await wizard.confirmedLocation()).toBe(`${box.name}: B2`);
   });
 
+  test("As a user, I am told when the location I chose was taken before the subsamples were placed", async ({
+    flowOperationsEnabled: _,
+    pageInventory,
+    clientInventory,
+    componentToasts,
+  }) => {
+    const sample = await origin(clientInventory);
+    const box = await gridContainer(clientInventory, 2, 2);
+    const wizard = await aliquotToLocation(pageInventory, sample, 1);
+    await wizard.location.pick(box.name);
+    await wizard.location.grid.click("A1");
+    await wizard.next();
+    const other = await origin(clientInventory);
+    await clientInventory.moveSubSample(other.subSamples[0].id, {
+      parentContainers: [{ id: box.id }],
+      parentLocation: { coordX: 1, coordY: 1 },
+    });
+
+    await wizard.perform();
+
+    await expect(
+      componentToasts.byVariant(
+        "warning",
+        `The new subsamples were created on your workbench, but could not be placed in ${box.name}.`,
+      ),
+    ).toBeVisible();
+    const created = await clientInventory.searchByName(`${sample.name} aliquot`, "SUBSAMPLE");
+    expect(created.records).toHaveLength(1);
+    const placed = await clientInventory.getSubSample(created.records[0].id);
+    expect(placed.parentContainers?.[0].cType).toBe("WORKBENCH");
+    expect(await placedLabels(clientInventory, box.id)).toEqual(["A1"]);
+  });
+
+  test("As a user, an image container is refused", async ({
+    flowOperationsEnabled: _,
+    pageInventory,
+    clientInventory,
+  }) => {
+    const sample = await origin(clientInventory);
+    const visual = await clientInventory.createContainer({ name: uniqueName("e2e-visual"), cType: "IMAGE" });
+    const wizard = await aliquotToLocation(pageInventory, sample);
+
+    await wizard.location.pickContainer(visual.name);
+
+    await expect(wizard.location.deadEnd).toHaveText(
+      "Image containers are not supported yet. Choose a grid or list container.",
+    );
+    await expect(wizard.nextButton).toBeDisabled();
+  });
+
+  test("As a user, a container trashed after I picked it does not take the subsamples", async ({
+    flowOperationsEnabled: _,
+    pageInventory,
+    clientInventory,
+    componentToasts,
+  }) => {
+    const sample = await origin(clientInventory);
+    const box = await gridContainer(clientInventory, 2, 2);
+    const wizard = await aliquotToLocation(pageInventory, sample, 1);
+    await wizard.location.pick(box.name);
+    await wizard.location.grid.click("A1");
+    await wizard.next();
+
+    await clientInventory.deleteContainer(box.id);
+    await wizard.perform();
+
+    await expect(
+      componentToasts.byVariant(
+        "warning",
+        `The new subsamples were created on your workbench, but could not be placed in ${box.name}.`,
+      ),
+    ).toBeVisible();
+    expect(await placedLabels(clientInventory, box.id)).toEqual([]);
+  });
+
+  test.describe("pooling", () => {
+    async function pool(pageInventory: InventoryPage, sample: { name: string; subSamples: Array<{ name: string }> }) {
+      const wizard = await openWizard(
+        pageInventory,
+        sample.name,
+        sample.subSamples.map((s) => s.name),
+      );
+      await wizard.chooseOperation("Pool");
+      await wizard.goToLocation();
+      return wizard;
+    }
+
+    test("As a user, the container both origins share is offered first", async ({
+      flowOperationsEnabled: _,
+      pageInventory,
+      clientInventory,
+    }) => {
+      const sample = await origin(clientInventory, 2);
+      const rack = await listContainer(clientInventory, "e2e-rack");
+      for (const sub of sample.subSamples) {
+        await clientInventory.moveSubSample(sub.id, { parentContainers: [{ id: rack.id }] });
+      }
+
+      const wizard = await pool(pageInventory, sample);
+
+      await expect(wizard.location.placingIn).toContainText(rack.name);
+      await expect(wizard.location.status).toHaveText(`The new subsamples will be placed in ${rack.name}.`);
+    });
+
+    // Which origin counts as first follows the wizard's origin order, not the order they were ticked in.
+    test("As a user, origins in different containers offer one origin's container", async ({
+      flowOperationsEnabled: _,
+      pageInventory,
+      clientInventory,
+    }) => {
+      const sample = await origin(clientInventory, 2);
+      const [first, second] = sample.subSamples;
+      const firstRack = await listContainer(clientInventory, "e2e-rack");
+      const secondRack = await listContainer(clientInventory, "e2e-rack");
+      await clientInventory.moveSubSample(first.id, { parentContainers: [{ id: firstRack.id }] });
+      await clientInventory.moveSubSample(second.id, { parentContainers: [{ id: secondRack.id }] });
+
+      const wizard = await pool(pageInventory, sample);
+
+      await expect(wizard.location.placingIn).toHaveText(
+        new RegExp(`^Placing in (${firstRack.name}|${secondRack.name}) `),
+      );
+    });
+  });
+
   test.describe("by keyboard", () => {
     async function pickedGrid(
       pageInventory: InventoryPage,
