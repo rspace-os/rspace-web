@@ -1,6 +1,7 @@
 package com.researchspace.model.collection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigDecimal;
@@ -18,6 +19,9 @@ class RuntimeFieldValueTypeTest {
         RuntimeFieldValueType.NUMBER.parse("1.0000000000000000000000000000000"));
     assertThrows(IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1e-31"));
     assertThrows(IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1\n"));
+    assertThrows(
+        IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("\u0661\u0662"));
+    assertNull(RuntimeFieldValueType.NUMBER.serialize("\u0661\u0662"));
     assertThrows(
         IllegalArgumentException.class,
         () -> RuntimeFieldValueType.NUMBER.parse("0.0000000000000000000000000000001"));
