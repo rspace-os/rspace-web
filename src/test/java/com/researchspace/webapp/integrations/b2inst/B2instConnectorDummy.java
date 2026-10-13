@@ -68,14 +68,20 @@ public class B2instConnectorDummy implements B2instConnector {
   /** The one published record this double knows, answered by search and by id; null means none. */
   @Setter private B2instDraftRecord publishedRecord;
 
+  /** The one record this double knows is on page 0 only, so a paging test sees page 1 empty. */
   @Override
-  public B2instSearchResult searchRecords(String query, int size) {
+  public B2instSearchResult searchPublicRecords(String query, int pageNumber, int pageSize) {
     B2instSearchResult result = new B2instSearchResult();
-    if (publishedRecord != null) {
+    if (publishedRecord != null && pageNumber == 0) {
       result.getHits().getHits().add(publishedRecord);
     }
-    result.getHits().setTotal(result.getHits().getHits().size());
+    result.getHits().setTotal(publishedRecord == null ? 0 : 1);
     return result;
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getPublicRecordByHandle(String handle) {
+    return B2instConnector.handleSuffix(handle).flatMap(this::getPublishedRecord);
   }
 
   /**

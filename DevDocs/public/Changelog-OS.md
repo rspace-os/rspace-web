@@ -4,6 +4,30 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.27.0 2026-10-02
+
+### ELN Features
+
+- RSDEV-1514 legacy pagination controls now use Bootstrap styling, consistent with the rest of the UI
+- RSDEV-1268 'My RSpace' page now links to the relevant API tutorial
+
+### ELN Bugfix
+
+- ISSUE-1113 fix `PUT /api/v1/documents/{id}` rejecting field updates with 422 for documents whose form had been edited
+- ISSUE-1136 fix non-ASCII characters being replaced with '?' in messages sent to Slack and MS Teams
+- RSDEV-897 fix a scenario where a document could be moved out of Shared folder into a notebook, through filtered view
+- RSDEV-658 fix BioPortal ontologies lookup
+
+### Inventory Features
+
+- RSDEV-1033, RSDEV-1325, RSDEV-1528 instruments can now be created from existing PIDINSTs, through a new 'search and import' panel
+- RSDEV-1356, RSDEV-1504, RSDEV-1359 various improvements around PIDINST management, including failed-update notifications, unlinking on instrument deletion, and B2INST-specific form fields
+
+### Inventory Bugfix
+
+- RSDEV-1354 fix for links in Inventory items not being exported or imported correctly
+- RSDEV-1505, RSDEV-1522 fixes around PID registry search: permission checks on linked instruments and missing B2INST/DataCite results
+
 # 2.26.0 2026-09-08
 
 ### ELN Features

@@ -77,15 +77,13 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   // renders the card exactly as before the summary existed (no pill, Open on)
   const targetSummary = useLinkTargetSummary(props.link.targetGlobalId);
   const targetDeleted = targetSummary?.deleted === true;
-  // ELN targets the viewer cannot read get a "No access" pill; inventory
-  // targets ignore readability because every logged-in user keeps the
-  // limited-read view. A redacted summary always has deleted=false, so the
-  // two pills can never co-occur.
-  const noAccess = targetSummary?.readable === false && !targetIsInventory;
-  // deleted inventory items live on in the trash and their viewer works, so
-  // only deleted or unreadable ELN targets lose Open (their routes are just
-  // error pages)
-  const openBlocked = !targetIsInventory && (targetDeleted || noAccess);
+  // a target the viewer cannot resolve gets "No access", whatever its kind. The server
+  // redacts unreadable and nonexistent targets identically (ADR-0002), so this covers both
+  // and the card never claims a record is deleted when it cannot see whether it is.
+  const noAccess = targetSummary?.readable === false;
+  // deleted inventory items live on in the trash and their viewer works, so they keep Open;
+  // a deleted ELN target's route is just an error page, as is any unresolvable target's
+  const openBlocked = noAccess || (!targetIsInventory && targetDeleted);
 
   const openHref = openHrefForLink(props.link, targetIsInventory);
   return (
@@ -155,8 +153,9 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             />
           )}
           {noAccess && (
-            // no "no longer" in the tooltip: the pill also shows for
-            // viewers who never had access (ADR-0002)
+            // the tooltip names both causes without saying which applies, and avoids
+            // implying the viewer once had access: the pill also shows to viewers who
+            // never did, and to ones whose target never existed (ADR-0002)
             <Tooltip title={t("fields.link.linkField.noPermission")}>
               <Chip
                 size="small"

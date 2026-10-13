@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 /**
  * One instrument record as a PID registry describes it, normalised across providers for the PID
  * lookup (RSDEV-1326; CONTEXT.md "PID lookup"). Multi-valued PIDINST properties stay lists here;
- * the import joins them when it fills the single-valued template fields.
+ * the import joins them when it fills the single-valued template fields, except the two
+ * related-identifier lists, which it turns into links (RSDEV-1528).
  */
 @Data
 @NoArgsConstructor
@@ -72,6 +73,18 @@ public class ApiPidinstRecord {
   @JsonProperty("landingPage")
   private String landingPage;
 
+  /**
+   * The values of the related identifiers labelled Measurement Technique, in registry order: the
+   * entries the import tries for the Measurement technique link (RSDEV-1528), listed so the search
+   * preview shows them before the import.
+   */
+  @JsonProperty("measurementTechniques")
+  private List<String> measurementTechniques = new ArrayList<>();
+
+  /** The same for the entries labelled Calibration, which the import tries for Calibration. */
+  @JsonProperty("calibrations")
+  private List<String> calibrations = new ArrayList<>();
+
   @JsonProperty("alternateIdentifier")
   private String alternateIdentifier;
 
@@ -82,8 +95,18 @@ public class ApiPidinstRecord {
   private String updated;
 
   /**
-   * The globalId of the instrument in this deployment that already links this PID, or null. Set by
-   * the lookup manager, never by the mapper, so the UI can disable Import before the 409.
+   * Whether an instrument in this deployment already links this PID. Always present, so a client
+   * can refuse Import before the 409 whether or not the caller may see that instrument
+   * (RSDEV-1505). Set by the lookup manager, never by the mapper.
+   */
+  @JsonProperty("alreadyLinked")
+  private boolean alreadyLinked;
+
+  /**
+   * The globalId of the instrument that already links this PID, present only when the caller may
+   * read it, by read or limited read. Null both when nothing links the PID and when the linking
+   * instrument is one the caller may not read, so the search never names an instrument it would not
+   * show them (RSDEV-1505). Set by the lookup manager, never by the mapper.
    */
   @JsonProperty("linkedInstrumentGlobalId")
   private String linkedInstrumentGlobalId;
@@ -95,4 +118,14 @@ public class ApiPidinstRecord {
    * as well as the PID so a locally minted PID is still recognised. Internal, never serialized.
    */
   @JsonIgnore private String providerRecordId;
+
+  /**
+   * The record's related identifiers as label and value, in registry order: B2INST's
+   * relatedIdentifierName / relatedIdentifierValue, DataCite's relationTypeInformation /
+   * relatedIdentifier. Read by the import to fill the two link fields (RSDEV-1528). Internal, never
+   * serialized: the search sends only the two lists above. A label may be null; a value never is.
+   */
+  @JsonIgnore private List<RelatedIdentifier> relatedIdentifiers = new ArrayList<>();
+
+  public record RelatedIdentifier(String label, String value) {}
 }

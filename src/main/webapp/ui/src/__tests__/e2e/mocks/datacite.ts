@@ -98,7 +98,9 @@ export const dataciteHandlers = [
       return HttpResponse.json({ data: importableDoiRecord(`${prefix}/${suffix}`, suffix) });
     }
     const stored = storedDois.get(`${prefix}/${suffix}`);
-    return stored ? HttpResponse.json({ data: stored }) : new HttpResponse(null, { status: 404 });
+    return stored
+      ? HttpResponse.json({ data: stored })
+      : HttpResponse.json({ errors: [{ status: "404", title: "DOI not found" }] }, { status: 404 });
   }),
   // DOI paths contain separate prefix and suffix segments.
   http.put("/dois/:prefix/:suffix", async ({ request, params }) => {

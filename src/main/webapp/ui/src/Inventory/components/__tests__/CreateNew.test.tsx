@@ -41,9 +41,9 @@ vi.mock("../../../hooks/api/integrationHelpers", () => ({
 
 const IMPORT_PIDINST = "inventory:createNew.importPidinst";
 
-function renderCreateNew({ pidinstEnabled, navigate = vi.fn() }: { pidinstEnabled: boolean; navigate?: () => void }) {
+function renderCreateNew({ navigate = vi.fn() }: { navigate?: () => void } = {}) {
   const stores = {
-    authStore: { pidinstEnabled },
+    authStore: { pidinstEnabled: false },
     uiStore: {
       sidebarOpen: true,
       confirmDiscardAnyChanges: () => Promise.resolve(true),
@@ -67,9 +67,9 @@ function renderCreateNew({ pidinstEnabled, navigate = vi.fn() }: { pidinstEnable
 }
 
 describe("CreateNew", () => {
-  test("offers the PIDINST import when a PIDINST provider is enabled", async () => {
+  test("offers the PIDINST import even when no PIDINST provider is enabled", async () => {
     const user = userEvent.setup();
-    renderCreateNew({ pidinstEnabled: true });
+    renderCreateNew();
 
     await user.click(screen.getByRole("button", { name: "common:actions.create" }));
 
@@ -77,21 +77,10 @@ describe("CreateNew", () => {
     expect(screen.getByRole("menuitem", { name: IMPORT_PIDINST })).toHaveAttribute("aria-haspopup", "dialog");
   });
 
-  test("hides the PIDINST import when no PIDINST provider is enabled", async () => {
-    const user = userEvent.setup();
-    renderCreateNew({ pidinstEnabled: false });
-
-    await user.click(screen.getByRole("button", { name: "common:actions.create" }));
-
-    expect(screen.getByRole("menu")).toBeVisible();
-    expect(screen.getByRole("menuitem", { name: "inventory:createNew.newInstrument" })).toBeVisible();
-    expect(screen.queryByRole("menuitem", { name: IMPORT_PIDINST })).not.toBeInTheDocument();
-  });
-
   test("opens the import dialog from the menu item and navigates to what it imports", async () => {
     const user = userEvent.setup();
     const navigate = vi.fn();
-    renderCreateNew({ pidinstEnabled: true, navigate });
+    renderCreateNew({ navigate });
 
     await user.click(screen.getByRole("button", { name: "common:actions.create" }));
     expect(screen.queryByTestId("pidinst-dialog")).toBeNull();

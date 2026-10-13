@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -61,8 +64,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 })
 public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
 
+  @Valid
+  @Size(max = 100, message = "{errors.inventory.sample.tooManySubSamples}")
   @JsonProperty("subSamples")
-  private List<ApiSubSample> subSamples = new ArrayList<>();
+  private List<@NotNull ApiSubSample> subSamples = new ArrayList<>();
 
   @JsonProperty(value = "canBeDeleted")
   private Boolean canBeDeleted;

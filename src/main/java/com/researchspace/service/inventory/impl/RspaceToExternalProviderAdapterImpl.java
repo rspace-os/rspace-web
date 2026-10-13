@@ -65,11 +65,9 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   private static final String DATE_TYPE_DECOMMISSIONED = "DeCommissioned";
   private static final String ALTERNATE_ID_TYPE_OTHER = "Other";
 
-  // Wire values fixed by RSDEV-1253 (see ADR 0007). The labels are the ticket's spelling, capital
-  // T, not the template field name's. IsDescribedBy is sent whatever relation the link stores,
-  // because PIDINST's RelatedIdentifier vocabulary has no IsDocumentedBy/IsCalibratedBy.
-  private static final String RELATED_ID_NAME_MEASUREMENT_TECHNIQUE = "Measurement Technique";
-  private static final String RELATED_ID_NAME_CALIBRATION = "Calibration";
+  // Wire values fixed by RSDEV-1253 (see ADR 0007). The labels live in PidinstFields, shared with
+  // the import that reads them back (RSDEV-1528). IsDescribedBy is sent whatever relation the link
+  // stores, because PIDINST's RelatedIdentifier vocabulary has no IsDocumentedBy/IsCalibratedBy.
   private static final String RELATION_TYPE_IS_DESCRIBED_BY = "IsDescribedBy";
   private static final String RELATED_ID_TYPE_URL = "URL";
 
@@ -196,9 +194,13 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
   }
 
   /**
-   * Exactly one Owner entry: ownerName from the "Owner" field when non-blank, else the record
-   * owner's full name; ownerContact is always the record owner's email. Owner is the only
-   * PIDINST-mandatory property given an unconditional fallback, hence the fallback here.
+   * Exactly one Owner entry, carrying ownerName only: the "Owner" field when non-blank, else the
+   * record owner's full name.
+   *
+   * <p>No ownerContact, deliberately (RSDEV-1540): the record owner's account email would become
+   * part of a permanent public record once a curator accepts it. PIDINST 1.0 lists ownerContact as
+   * optional and B2INST publishes records without it. A future contact must be a value someone
+   * chose, never an account attribute (ADR 0008, decision 4).
    *
    * <p>PIDINST 1.0 marks six properties mandatory: Identifier, SchemaVersion, LandingPage, Name,
    * Owner and Manufacturer (see the RDA schema table). RSpace sets the first two itself, and the
@@ -211,7 +213,6 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     User owner = instrument.getOwner();
     if (owner != null) {
       b2instOwner.setOwnerName(owner.getFullName());
-      b2instOwner.setOwnerContact(owner.getEmail());
     }
     mappedFieldData(instrument, FIELD_OWNER, FieldType.STRING).ifPresent(b2instOwner::setOwnerName);
     return b2instOwner;
@@ -255,9 +256,11 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
       InstrumentEntity instrument, BiFunction<String, String, T> entry) {
     List<T> related = new ArrayList<>();
     pidinstLinkUrl(instrument, FIELD_MEASUREMENT_TECHNIQUE)
-        .ifPresent(url -> related.add(entry.apply(url, RELATED_ID_NAME_MEASUREMENT_TECHNIQUE)));
+        .ifPresent(
+            url ->
+                related.add(entry.apply(url, PidinstFields.RELATED_ID_NAME_MEASUREMENT_TECHNIQUE)));
     pidinstLinkUrl(instrument, FIELD_CALIBRATION)
-        .ifPresent(url -> related.add(entry.apply(url, RELATED_ID_NAME_CALIBRATION)));
+        .ifPresent(url -> related.add(entry.apply(url, PidinstFields.RELATED_ID_NAME_CALIBRATION)));
     return related;
   }
 

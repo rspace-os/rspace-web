@@ -37,13 +37,13 @@ public class DataCiteConnectorDummyError implements DataCiteConnector {
   }
 
   @Override
-  public Optional<DataCiteDoi> findDoi(String doiId, InventorySettingType settingType) {
+  public Optional<DataCiteDoi> findPublicDoi(String doiId) {
     throw new DataCiteConnectionException("Error when contacting DataCite", null);
   }
 
   @Override
-  public DataCiteDoiSearchResult searchInstrumentDois(
-      String query, int pageSize, InventorySettingType settingType) {
+  public DataCiteDoiSearchResult searchPublicInstrumentDois(
+      String query, int pageNumber, int pageSize) {
     throw new DataCiteConnectionException("Error when contacting DataCite", null);
   }
 

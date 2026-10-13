@@ -24,22 +24,27 @@ type UnitSelectArgs = {
 
   handleChange: (event: SelectChangeEvent<number>) => void;
   disabled?: boolean;
+
+  /** Names the select after its field; defaults to the generic "Quantity units". */
+  ariaLabel?: string;
 };
 
-function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArgs): React.ReactNode {
+function UnitSelect({ disabled, handleChange, value, categories, ariaLabel }: UnitSelectArgs): React.ReactNode {
   const { t } = useTranslation("common");
   const { unitStore } = useStores();
 
   return (
     <InputAdornment position="end">
       <FormControl>
-        <Select
+        <Select<number>
           disabled={disabled}
           onChange={handleChange}
           inputProps={{
-            "aria-label": t("inputs.unitSelect.quantityUnits"),
+            "aria-label": ariaLabel ?? t("inputs.unitSelect.quantityUnits"),
           }}
-          value={value}
+          // A non-positive id means "no unit chosen" (e.g. after amounts are cleared for a new
+          // process); render the dropdown empty rather than as an out-of-range value.
+          value={value > 0 ? value : ""}
           size="small"
           sx={{
             [`& .${selectClasses.select}`]: {

@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -158,6 +159,18 @@ class ApiAvailabilityHandlerImplTest {
     setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
 
     assertTrue(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST));
+  }
+
+  @Test
+  void assertInventoryAvailableThrowsOnlyWhenInventoryIsOff() {
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.FALSE);
+    UnsupportedOperationException thrown =
+        assertThrows(
+            UnsupportedOperationException.class, () -> handler.assertInventoryAvailable(anyUser));
+    assertEquals("Inventory is not enabled on this RSpace instance.", thrown.getMessage());
+
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+    assertDoesNotThrow(() -> handler.assertInventoryAvailable(anyUser));
   }
 
   @Test

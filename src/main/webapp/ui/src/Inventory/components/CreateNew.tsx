@@ -41,7 +41,7 @@ type CreateNewArgs = {
  */
 function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
-  const { searchStore, trackingStore, uiStore, importStore, authStore } = useStores();
+  const { searchStore, trackingStore, uiStore, importStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
@@ -245,20 +245,18 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
             void handleImport("SAMPLES");
           }}
         />
-        {authStore.pidinstEnabled && (
-          <AccentMenuItem
-            compact
-            title={t("createNew.importPidinst")}
-            avatarBackgroundColor="white"
-            avatar={<CardMedia image={PidinstIcon} />}
-            onClick={() => {
-              setPidinstOpen(true);
-              // closed for the same reason as the Fieldmark item: the menu would float over the dialog
-              setAnchorEl(null);
-            }}
-            aria-haspopup="dialog"
-          />
-        )}
+        <AccentMenuItem
+          compact
+          title={t("createNew.importPidinst")}
+          avatarBackgroundColor="white"
+          avatar={<CardMedia image={PidinstIcon} />}
+          onClick={() => {
+            setPidinstOpen(true);
+            // closed for the same reason as the Fieldmark item: the menu would float over the dialog
+            setAnchorEl(null);
+          }}
+          aria-haspopup="dialog"
+        />
         {showFieldmark && (
           <>
             <Divider textAlign="left" aria-label={t("createNew.thirdPartyImport")}>

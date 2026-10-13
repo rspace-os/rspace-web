@@ -1,4 +1,5 @@
 import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -46,7 +47,9 @@ export default function ElnRecordPicker(props: ElnRecordPickerProps): React.Reac
     >
       <DialogTitle>{t("fields.link.elnPicker.title")}</DialogTitle>
       <DialogContent dividers sx={{ minHeight: "40vh" }}>
-        <ElnFolderBrowser onSelectionChange={setSelection} />
+        <React.Suspense fallback={<CircularProgress aria-label={t("common:loading")} />}>
+          <ElnFolderBrowser onSelectionChange={setSelection} />
+        </React.Suspense>
       </DialogContent>
       <DialogActions>
         <Button

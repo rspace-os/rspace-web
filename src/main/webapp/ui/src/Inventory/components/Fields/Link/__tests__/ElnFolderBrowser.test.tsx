@@ -104,7 +104,6 @@ describe("ElnFolderBrowser", () => {
     renderBrowser(onSelectionChange);
     const user = userEvent.setup();
 
-    // clicking the notebook selects it and expands it to reveal its entries
     await user.click(await screen.findByText("Lab NB"));
     const entry = await screen.findByText("NB entry");
 
@@ -126,6 +125,43 @@ describe("ElnFolderBrowser", () => {
       name: "lemmings.gif",
       type: "MEDIA",
     });
+  });
+
+  it("labels the Gallery exports system folder as it is named in the Gallery", async () => {
+    mockGetFolderTree.mockResolvedValue({
+      totalHits: 1,
+      pageNumber: 0,
+      records: [{ id: 500, globalId: "GF500", name: "PdfDocuments", type: "FOLDER", systemFolder: true }],
+    });
+    renderBrowser(vi.fn());
+    expect(await screen.findByRole("treeitem", { name: "gallery:sections.pdfDocuments" })).toBeInTheDocument();
+    expect(screen.queryByText("PdfDocuments")).not.toBeInTheDocument();
+  });
+
+  it("keeps the name of a user's own folder that matches a Gallery section name", async () => {
+    mockGetFolderTree.mockResolvedValue({
+      totalHits: 1,
+      pageNumber: 0,
+      records: [{ id: 501, globalId: "FL501", name: "PdfDocuments", type: "FOLDER", systemFolder: false }],
+    });
+    renderBrowser(vi.fn());
+    expect(await screen.findByRole("treeitem", { name: "PdfDocuments" })).toBeInTheDocument();
+  });
+
+  it("offers exactly the global-id prefixes the server accepts as a documentation target", async () => {
+    const onSelectionChange = vi.fn();
+    renderBrowser(onSelectionChange);
+    const user = userEvent.setup();
+    await screen.findByText("Protocol doc");
+    for (const node of ROOTS) await user.click(screen.getByText(node.name));
+
+    const prefixes = new Set(
+      onSelectionChange.mock.calls
+        .map(([selection]) => selection as { globalId: string } | null)
+        .filter((selection) => selection !== null)
+        .map((selection) => selection.globalId.replace(/\d+$/, "")),
+    );
+    expect([...prefixes].sort()).toEqual(["GL", "NB", "SD"]);
   });
 
   it("reports no selection for a folder (navigate-only)", async () => {
@@ -164,13 +200,11 @@ describe("ElnFolderBrowser pagination", () => {
     renderBrowser(vi.fn());
     const user = userEvent.setup();
 
-    // only the first page is shown, with a way to fetch the rest
     await screen.findByRole("treeitem", { name: "Doc two" });
     expect(screen.queryByRole("treeitem", { name: "Doc three" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: LOAD_MORE }));
 
-    // the next page is appended after the first, and no more pages remain
     expect(await screen.findByRole("treeitem", { name: "Doc three" })).toBeInTheDocument();
     expect(screen.getByRole("treeitem", { name: "Doc one" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: LOAD_MORE })).not.toBeInTheDocument();
@@ -289,8 +323,6 @@ describe("ElnFolderBrowser selection highlight", () => {
     const content = item.querySelector(`.${treeItemClasses.content}`);
     expect(content).toHaveAttribute("data-selected");
 
-    // the highlight styling must target that data attribute and use the solid
-    // theme primary colour so the selection is unmistakable
     const css = Array.from(document.head.querySelectorAll("style"))
       .map((tag) => tag.textContent ?? "")
       .join("\n");

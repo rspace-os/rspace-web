@@ -35,26 +35,7 @@ test.describe("Password reset", () => {
     });
 
     const resetLink = await test.step("read the reset link from the email", async () => {
-      await expect
-        .poll(
-          async () => {
-            const messages = await clientMailpit.listMessages(`to:${email}`);
-            return messages.some((m) => m.Subject === RESET_EMAIL_SUBJECT);
-          },
-          { timeout: 15_000 },
-        )
-        .toBe(true);
-      const messages = await clientMailpit.listMessages(`to:${email}`);
-      const summary = messages.find((m) => m.Subject === RESET_EMAIL_SUBJECT);
-      if (!summary) {
-        throw new Error(`no "${RESET_EMAIL_SUBJECT}" email found for ${email}`);
-      }
-      const message = await clientMailpit.getMessage(summary.ID);
-      const links = clientMailpit.extractLinks(message.HTML);
-      const link = links.find((href) => href.includes("/signup/passwordResetReply?token="));
-      if (!link) {
-        throw new Error(`no password-reset link found in email body: ${message.HTML}`);
-      }
+      const link = await clientMailpit.waitForLink(email, RESET_EMAIL_SUBJECT, "/signup/passwordResetReply?token=");
       const token = new URL(link).searchParams.get("token");
       expect(token).toBeTruthy();
       return link;

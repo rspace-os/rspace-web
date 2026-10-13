@@ -12,10 +12,10 @@ export type LinkTargetSummary = {
   type: string | null;
   deleted: boolean;
   /**
-   * False when the viewer cannot read the target. Deliberately conflates
-   * unshared, never-shared, nonexistent, and hard-deleted-by-another-owner:
-   * all are redacted identically (ADR-0002), so false never discloses
-   * whether the record exists.
+   * False when the viewer cannot resolve the target. Deliberately conflates
+   * unshared, never-shared, nonexistent, and hard-deleted-by-another-owner,
+   * for every record kind: all are redacted identically (ADR-0002), so false
+   * never discloses whether the record exists. The card shows "No access".
    */
   readable: boolean;
 };
