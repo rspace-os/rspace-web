@@ -97,17 +97,6 @@ final class AnnotatedCollectionDescriptionFactory {
             source ->
                 auditDateField("updatedAt", "Time at which the resource was last updated.", source))
         .ifPresent(fields::add);
-    AnnotatedCollectionDescriptionFactory.<T>legacyAuditUserField(
-            properties, "createdBy", "Username of the user who created the resource.", "createdBy")
-        .ifPresent(fields::add);
-    AnnotatedCollectionDescriptionFactory.<T>legacyAuditUserField(
-            properties,
-            "updatedBy",
-            "Username of the user who last updated the resource.",
-            "updatedBy",
-            "lastUpdatedBy",
-            "modifiedBy")
-        .ifPresent(fields::add);
     return List.copyOf(fields);
   }
 
@@ -130,32 +119,15 @@ final class AnnotatedCollectionDescriptionFactory {
         .documented(auditDocumentation(description));
   }
 
-  private static <T> Optional<Field<T, ?>> legacyAuditUserField(
-      Map<String, PropertyDescriptor> properties,
-      String name,
-      String description,
-      String... candidates) {
-    Method reader = auditReadMethod(properties, candidates);
-    if (reader == null || User.class.isAssignableFrom(reader.getReturnType())) {
-      return Optional.empty();
-    }
-    if (reader.getReturnType() != String.class) {
-      throw new IllegalArgumentException(
-          "Audit property " + reader.getName() + " must return a username or User");
-    }
-    Function<T, String> valueReader = entity -> (String) invoke(reader, entity);
-    return Optional.of(
-        Field.readOnly(
-                name, readerProperty(properties, reader), CollectionFieldTypes.text(), valueReader)
-            .allowNull()
-            .documented(auditDocumentation(description)));
-  }
-
   private static <T> Optional<Relationship<T>> auditUserRelationship(
       Map<String, PropertyDescriptor> properties, String name, String... candidates) {
     Method reader = auditReadMethod(properties, candidates);
-    if (reader == null || !User.class.isAssignableFrom(reader.getReturnType())) {
+    if (reader == null) {
       return Optional.empty();
+    }
+    if (!User.class.isAssignableFrom(reader.getReturnType())) {
+      throw new IllegalArgumentException(
+          "Audit property " + reader.getName() + " must return " + User.class.getName());
     }
     String property = readerProperty(properties, reader);
     Function<T, User> userReader = entity -> (User) invoke(reader, entity);
