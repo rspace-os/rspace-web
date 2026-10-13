@@ -1,8 +1,6 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   fetchOauthToken,
-  getStoredToken,
-  isExpiringSoon,
   saveStoredToken,
   secondsToExpiry,
   TOKEN_EXPIRY_BUFFER_SECONDS,
@@ -22,16 +20,27 @@ const API_BASE_URL = "/api/v1";
  * This is used internally by the useOauthTokenQuery hook.
  */
 async function fetchToken(): Promise<string> {
-  const response = await fetch("/userform/ajax/inventoryOauthToken", {
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
+  // Authenticated pages mint a session-bound REST API v2 token, which (unlike the legacy route)
+  // is issued while operating as another user. Public document pages keep the legacy route.
+  const publicView = document.getElementById("public_document_view") !== null;
+  const response = await fetch(
+    publicView ? "/public/publicView/userform/ajax/inventoryOauthToken" : "/api/v2/oauth/tokens",
+    {
+      method: publicView ? "GET" : "POST",
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
     },
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Failed to fetch token: ${response.statusText}`);
   }
 
+  if (!publicView) {
+    // Session-bound tokens stay in query memory rather than shared session storage.
+    return ((await response.json()) as { accessToken: string }).accessToken;
+  }
   const json = (await response.json()) as { data: string };
   const newToken = json.data;
   saveStoredToken(newToken);
@@ -74,15 +83,9 @@ async function fetchToken(): Promise<string> {
 export function useOauthTokenQuery() {
   return useSuspenseQuery({
     queryKey: queryKeys.oauthToken(),
-    queryFn: async () => {
-      // First, check if we have a valid token in session storage
-      const savedToken = getStoredToken();
-      if (savedToken && !isExpiringSoon(savedToken)) {
-        return savedToken;
-      }
-      // If no valid token exists, fetch a new one
-      return fetchOauthToken(fetchToken);
-    },
+    // Mint once per page load: the shared storage key may hold a token from another session
+    // context (for example, from before an operate-as start or release).
+    queryFn: () => fetchOauthToken(fetchToken),
     // Calculate stale time based on token expiry
     // We'll consider the token stale 5 minutes before it actually expires
     staleTime: (query) => {
