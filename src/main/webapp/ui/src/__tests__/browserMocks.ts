@@ -8,7 +8,12 @@ import { appShellHandlers } from "./mswAppShellHandlers";
  * and specs import it from here to add handlers with worker.use(). MSW 3 throws
  * when a second setupWorker starts in the same iframe, so never create another.
  */
-export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler(), ...galleryAppShellHandlers());
+export const worker = setupWorker(
+  ...appShellHandlers(),
+  oauthTokenHandler(),
+  oauthTokenHandler(true),
+  ...galleryAppShellHandlers(),
+);
 
 type AxiosLikeRejection = {
   isAxiosError?: boolean;
