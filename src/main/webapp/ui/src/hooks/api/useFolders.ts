@@ -10,6 +10,7 @@ export type FolderTreeNode = {
   globalId: string;
   name: string;
   type: string;
+  systemFolder?: boolean;
 };
 
 export type FolderTreeResponse = {
