@@ -1064,7 +1064,9 @@ paths:
 
 
         Any sample request against the sample that is still PENDING or APPROVED
-        is rejected, with a reason naming the new owner.
+        is closed: a request raised by the new owner is fulfilled, recording the
+        sample as the transferred sample; any other is rejected, with a reason
+        naming the new owner.
 
 
         ## Examples of the request body
@@ -1248,8 +1250,9 @@ paths:
         raised, returned as `originalOwner`, so it stays with the person who was
         asked even after the sample changes hands. Approving, rejecting and
         fulfilling remain reserved for the sample's current owner. Transferring a
-        sample rejects every request against it that is still PENDING or
-        APPROVED. Requests against a deleted sample are excluded.
+        sample closes every request against it that is still PENDING or
+        APPROVED: the new owner's own requests are fulfilled, all others are
+        rejected. Requests against a deleted sample are excluded.
 
         | Request | Explanation |
 
@@ -1350,8 +1353,9 @@ paths:
 
         REJECTED, CANCELLED and FULFILLED are terminal. PENDING is written only
         when the request is raised and cannot be set here. Transferring the
-        requested sample to a new owner also rejects the request if it is still
-        PENDING or APPROVED, recording a reason that names the new owner.
+        requested sample to a new owner also closes the request if it is still
+        PENDING or APPROVED: it is fulfilled if the new owner is the requester,
+        and rejected otherwise, with a reason that names the new owner.
 
         `transferredSampleGlobalId` optionally gives the global id of the sample
         the request was fulfilled with: the requested sample itself, or a new

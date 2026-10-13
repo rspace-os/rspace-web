@@ -64,8 +64,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
    * Every transition a user can make. PENDING is absent: it is written only when a request is
    * raised. FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a
    * separate approval step), or after already approving the request. REJECTED likewise: an owner
-   * can withdraw an approval, and a sample transfer rejects PENDING and APPROVED requests through
-   * the same entries, see autoRejectActiveRequestsForTransferredSample.
+   * can withdraw an approval. A sample transfer closes PENDING and APPROVED requests through the
+   * same entries, see autoRejectActiveRequestsForTransferredSample.
    */
   private static final List<Transition> TRANSITIONS =
       List.of(
@@ -294,10 +294,18 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
         messages.getMessage(
             "inventory.sampleRequest.autoRejectedReason",
             new Object[] {newOwner.getFirstName() + " " + newOwner.getLastName()});
+    String fulfilledReason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
     for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
+      boolean toRequester = request.getRequesterUsername().equals(newOwner.getUsername());
+      SampleRequestStatus target =
+          toRequester ? SampleRequestStatus.FULFILLED : SampleRequestStatus.REJECTED;
       // a PI or admin of the owner's group may transfer too, so only legality is checked
-      legalFrom(transitionsTo(SampleRequestStatus.REJECTED), request.getStatus());
-      request.recordStatus(actor, SampleRequestStatus.REJECTED, reason);
+      legalFrom(transitionsTo(target), request.getStatus());
+      if (toRequester) {
+        request.recordStatus(actor, target, fulfilledReason, request.getSample());
+      } else {
+        request.recordStatus(actor, target, reason);
+      }
       SampleRequest saved = sampleRequestDao.save(request);
       publisher.publishEvent(new SampleRequestStatusEvent(saved, actor));
     }

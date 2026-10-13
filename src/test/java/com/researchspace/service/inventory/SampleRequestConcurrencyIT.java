@@ -89,18 +89,19 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void concurrentApproveAndRejectLeaveExactlyOneWinner() throws Exception {
+  public void concurrentRejectAndFulfilLeaveExactlyOneWinner() throws Exception {
     CountDownLatch startLine = new CountDownLatch(1);
     ExecutorService pool = Executors.newFixedThreadPool(2);
     try {
-      Future<String> approve =
-          pool.submit(transition(startLine, SampleRequestStatus.APPROVED, null));
+      // both are terminal, so whichever commits first makes the other illegal
+      Future<String> fulfil =
+          pool.submit(transition(startLine, SampleRequestStatus.FULFILLED, null));
       Future<String> reject =
           pool.submit(transition(startLine, SampleRequestStatus.REJECTED, "no material left"));
 
       startLine.countDown();
       List<String> outcomes =
-          List.of(approve.get(30, TimeUnit.SECONDS), reject.get(30, TimeUnit.SECONDS));
+          List.of(fulfil.get(30, TimeUnit.SECONDS), reject.get(30, TimeUnit.SECONDS));
 
       assertEquals(
           1,

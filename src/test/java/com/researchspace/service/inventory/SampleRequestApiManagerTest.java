@@ -31,6 +31,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -121,6 +122,25 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     Mockito.verify(mockPublisher).publishEvent(published.capture());
     assertEquals(raised.getId(), published.getValue().getRequest().getId());
     assertEquals(SampleRequestStatus.REJECTED, published.getValue().getRequest().getStatus());
+    assertEquals(owner, published.getValue().getActor());
+  }
+
+  @Test
+  public void transferAutoFulfilment_publishesStatusEventForAuditing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(raised.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.FULFILLED, published.getValue().getRequest().getStatus());
     assertEquals(owner, published.getValue().getActor());
   }
 
@@ -234,6 +254,48 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
       assertTrue(
           latest.getReason().contains(newOwner.getFirstName() + " " + newOwner.getLastName()),
           "reason missing new owner's name: " + latest.getReason());
+    }
+  }
+
+  @Test
+  public void changeApiSampleOwner_toTheRequesterFulfilsTheirRequestAndRejectsOthers() {
+    ApiSampleRequest recipients = raiseRequest("Need 2ml for the binding assay");
+    User otherRequester = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    ApiSampleRequest others = raiseRequestAs(otherRequester);
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    ApiSampleRequest fulfilled = sampleRequestApiMgr.getRequestById(recipients.getId(), owner);
+    assertEquals(SampleRequestStatus.FULFILLED, fulfilled.getStatus());
+    ApiSampleRequestStatusChange latest = fulfilled.getStatusChanges().get(1);
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+    assertEquals(sample.getGlobalId(), latest.getTransferredSample().getGlobalId());
+    assertTrue(StringUtils.isNotBlank(latest.getReason()), "auto-fulfilment should say why");
+
+    assertEquals(
+        SampleRequestStatus.REJECTED,
+        sampleRequestApiMgr.getRequestById(others.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void changeApiSampleOwner_toTheRequesterFulfilsEachOfTheirOpenRequests() {
+    ApiSampleRequest first = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleRequest second = raiseRequest("And 1ml for the control");
+    sampleRequestApiMgr.updateStatus(
+        second.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    for (ApiSampleRequest raised : List.of(first, second)) {
+      assertEquals(
+          SampleRequestStatus.FULFILLED,
+          sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
     }
   }
 
