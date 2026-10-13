@@ -143,7 +143,6 @@ class ApiV2RuntimeNamespaceRenderingTest {
             List.of(
                 Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Widget::id),
                 Field.readOnly("name", "name", CollectionFieldTypes.text(), Widget::name)),
-            List.of(),
             "id",
             List.of(new Sort("id", true)),
             AccessPolicy.readOnly(AccessFunction.anyone()));
