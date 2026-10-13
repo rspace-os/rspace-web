@@ -21,6 +21,7 @@ import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.ResourceMember;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RsqlFilterParser;
@@ -324,8 +325,8 @@ class RsqlCollectionQueryTest {
         new CollectionDescription<>(
             "assigned",
             Assigned.class,
-            List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Assigned::id)),
-            List.of(
+            List.<ResourceMember<Assigned>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Assigned::id),
                 Relationship.polymorphicToOne(
                         "instrument",
                         CollectionFieldTypes.longNumber(),
@@ -362,8 +363,8 @@ class RsqlCollectionQueryTest {
     return new CollectionDescription<>(
         "related",
         Related.class,
-        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Related::id)),
-        List.of(
+        List.<ResourceMember<Related>>of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Related::id),
             Relationship.polymorphicToOne(
                 "target",
                 CollectionFieldTypes.longNumber(),
@@ -383,7 +384,6 @@ class RsqlCollectionQueryTest {
         name,
         entityType,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), idAccessor)),
-        List.of(),
         "id",
         List.of(new Sort("id", true)));
   }
@@ -397,7 +397,6 @@ class RsqlCollectionQueryTest {
         name,
         entityType,
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), idAccessor)),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(readAccess));

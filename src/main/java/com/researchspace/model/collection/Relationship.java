@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 import lombok.Getter;
 
 /** One relationship to another registered resource. */
-public final class Relationship<T> {
+public final class Relationship<T> implements ResourceMember<T> {
 
   /**
    * An unversioned global ID. Unlike {@link GlobalIdentifier} it allows a negative ID, which seeded

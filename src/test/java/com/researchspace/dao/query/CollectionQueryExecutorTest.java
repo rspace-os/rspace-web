@@ -33,7 +33,6 @@ class CollectionQueryExecutorTest {
           List.of(
               Field.readOnly("id", "entityId", CollectionFieldTypes.longNumber(), Widget::entityId),
               Field.readOnly("displayName", "name", CollectionFieldTypes.text(), Widget::name)),
-          List.of(),
           "id",
           List.of(new Sort("id", true)));
 

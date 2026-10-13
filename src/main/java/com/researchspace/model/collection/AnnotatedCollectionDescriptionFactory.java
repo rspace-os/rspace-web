@@ -52,15 +52,16 @@ final class AnnotatedCollectionDescriptionFactory {
           "Resource definition entity must be " + entityType.getName());
     }
     Map<String, PropertyDescriptor> properties = properties(entityType);
-    List<Relationship<T>> describedRelationships = new ArrayList<>(relationships);
+    List<ResourceMember<T>> members =
+        new ArrayList<>(fieldsFrom(resourceType, definition, properties));
+    members.addAll(relationships);
     if (definition.auditFields()) {
-      describedRelationships.addAll(auditRelationships(properties));
+      members.addAll(auditRelationships(properties));
     }
     return new CollectionDescription<>(
         definition.name(),
         entityType,
-        fieldsFrom(resourceType, definition, properties),
-        describedRelationships,
+        members,
         definition.id(),
         defaultSort,
         accessPolicy,

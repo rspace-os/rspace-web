@@ -11,12 +11,13 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Immutable description of the fields and default ordering shared by a collection's adapters.
+ * Immutable description of a collection's public members and default ordering shared by its
+ * adapters.
  *
- * <p>This is the single server-owned allowlist for a collection. It maps public field names to
- * fixed model properties and carries, per field, everything the HTTP and persistence adapters need:
- * a typed field definition, write rules, and entity access. Fields are held in declaration order so
- * generated documents and writes have a stable order.
+ * <p>This is the single server-owned allowlist for a collection. Its ordered member list contains
+ * scalar fields and relationships, each mapped to fixed model properties and carrying the
+ * capabilities its HTTP and persistence adapters need. Fields and relationships retain their
+ * type-specific behavior and order within their kinds.
  *
  * <p>Property names are server-owned model properties, never values supplied by a request. The
  * allowlist is deliberately explicit rather than derived from the entity, so a newly persisted
@@ -28,6 +29,7 @@ public final class CollectionDescription<T> {
 
   private final String resourceName;
   private final Class<T> entityType;
+  private final Map<String, ResourceMember<T>> members;
   private final Map<String, Field<T, ?>> fields;
   private final Map<String, Relationship<T>> relationships;
   private final Map<String, FilterSelector<T>> filterSelectors;
@@ -49,37 +51,20 @@ public final class CollectionDescription<T> {
   public CollectionDescription(
       String resourceName,
       Class<T> entityType,
-      List<? extends Field<T, ?>> fields,
-      List<Relationship<T>> relationships,
+      List<? extends ResourceMember<T>> members,
       String idField,
       List<Sort> defaultSort) {
-    this(
-        resourceName,
-        entityType,
-        fields,
-        relationships,
-        idField,
-        defaultSort,
-        AccessPolicy.authenticated());
+    this(resourceName, entityType, members, idField, defaultSort, AccessPolicy.authenticated());
   }
 
   public CollectionDescription(
       String resourceName,
       Class<T> entityType,
-      List<? extends Field<T, ?>> fields,
-      List<Relationship<T>> relationships,
+      List<? extends ResourceMember<T>> members,
       String idField,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
-    this(
-        resourceName,
-        entityType,
-        fields,
-        relationships,
-        idField,
-        defaultSort,
-        accessPolicy,
-        List.of());
+    this(resourceName, entityType, members, idField, defaultSort, accessPolicy, List.of());
   }
 
   /**
@@ -93,8 +78,7 @@ public final class CollectionDescription<T> {
   public CollectionDescription(
       String resourceName,
       Class<T> entityType,
-      List<? extends Field<T, ?>> fields,
-      List<Relationship<T>> relationships,
+      List<? extends ResourceMember<T>> members,
       String idField,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy,
@@ -102,30 +86,27 @@ public final class CollectionDescription<T> {
     this.accessPolicy = Objects.requireNonNull(accessPolicy, "Access policy");
     this.resourceName = requireText(resourceName, "Resource name");
     this.entityType = Objects.requireNonNull(entityType, "Entity type");
-    Objects.requireNonNull(fields, "Fields");
-    Objects.requireNonNull(relationships, "Relationships");
+    Objects.requireNonNull(members, "Members");
     this.idField = requireText(idField, "ID field");
     this.defaultSort = List.copyOf(Objects.requireNonNull(defaultSort, "Default sort"));
 
-    Map<String, Field<T, ?>> byName = new LinkedHashMap<>();
-    fields.forEach(
-        field -> {
-          Objects.requireNonNull(field, "Field");
-          if (byName.putIfAbsent(field.name(), field) != null) {
-            throw new IllegalArgumentException("Duplicate collection field " + field.name());
-          }
-        });
-    this.fields = Collections.unmodifiableMap(byName);
-
+    Map<String, ResourceMember<T>> membersByName = new LinkedHashMap<>();
+    Map<String, Field<T, ?>> fieldsByName = new LinkedHashMap<>();
     Map<String, Relationship<T>> relationshipsByName = new LinkedHashMap<>();
-    relationships.forEach(
-        relationship -> {
-          Objects.requireNonNull(relationship, "Relationship");
-          if (byName.containsKey(relationship.name())
-              || relationshipsByName.putIfAbsent(relationship.name(), relationship) != null) {
-            throw new IllegalArgumentException("Duplicate resource field " + relationship.name());
+    members.forEach(
+        member -> {
+          Objects.requireNonNull(member, "Member");
+          if (membersByName.putIfAbsent(member.name(), member) != null) {
+            throw new IllegalArgumentException("Duplicate resource member " + member.name());
+          }
+          if (member instanceof Field<T, ?> field) {
+            fieldsByName.put(field.name(), field);
+          } else if (member instanceof Relationship<T> relationship) {
+            relationshipsByName.put(relationship.name(), relationship);
           }
         });
+    this.members = Collections.unmodifiableMap(membersByName);
+    this.fields = Collections.unmodifiableMap(fieldsByName);
     this.relationships = Collections.unmodifiableMap(relationshipsByName);
 
     Map<String, FilterSelector<T>> selectors = new LinkedHashMap<>();
@@ -184,7 +165,8 @@ public final class CollectionDescription<T> {
       throw new IllegalArgumentException("Default sort must include the ID field");
     }
 
-    this.entityMapper = new CollectionEntityMapper<>(fields, this.idField);
+    this.entityMapper =
+        new CollectionEntityMapper<>(List.copyOf(this.fields.values()), this.idField);
     this.accessEvaluator =
         new CollectionAccessEvaluator<>(
             this.fields, this.relationships, filterSelectors, this.idField);
@@ -251,22 +233,9 @@ public final class CollectionDescription<T> {
   }
 
   public void requireSelectableField(String name) {
-    if (!fields.containsKey(name) && !relationships.containsKey(name)) {
+    if (!members.containsKey(name)) {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
-  }
-
-  /**
-   * Returns the field accepting writes under this name.
-   *
-   * @throws CollectionQueryException if the name is unknown or the field is read-only
-   */
-  public Field<T, ?> requireWritableField(String name, WriteOperation operation) {
-    Field<T, ?> field = requireField(name);
-    if (!field.writableOn(operation)) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
-    }
-    return field;
   }
 
   public String idField() {
@@ -288,12 +257,6 @@ public final class CollectionDescription<T> {
 
   public Optional<Relationship<T>> findRelationship(String name) {
     return Optional.ofNullable(relationships.get(name));
-  }
-
-  /** Resolves a selector for compilation, including internal selectors. */
-  public FilterSelector<T> requireFilterSelector(String name) {
-    return findFilterSelector(name)
-        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.FIELD));
   }
 
   /**
