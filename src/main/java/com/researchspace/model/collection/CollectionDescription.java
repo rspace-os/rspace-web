@@ -31,7 +31,7 @@ public final class CollectionDescription<T> {
   private final Map<String, Field<T, ?>> fields;
   private final Map<String, Relationship<T>> relationships;
   private final Map<String, FilterSelector<T>> filterSelectors;
-  private final Map<String, FilterSelector<T>> internalFilterSelectors;
+  private final Map<String, FilterSelector<T>> compilableSelectors;
   private final String idField;
   private final List<Sort> defaultSort;
   private final AccessPolicy accessPolicy;
@@ -157,7 +157,9 @@ public final class CollectionDescription<T> {
                 throw new IllegalArgumentException("Duplicate filter selector " + filter.name());
               }
             });
-    internalFilterSelectors = Collections.unmodifiableMap(internal);
+    Map<String, FilterSelector<T>> compilable = new LinkedHashMap<>(filterSelectors);
+    compilable.putAll(internal);
+    compilableSelectors = Collections.unmodifiableMap(compilable);
 
     Field<T, ?> id = this.fields.get(this.idField);
     if (id == null) {
@@ -182,8 +184,6 @@ public final class CollectionDescription<T> {
       throw new IllegalArgumentException("Default sort must include the ID field");
     }
 
-    Map<String, FilterSelector<T>> allSelectors = new LinkedHashMap<>(filterSelectors);
-    allSelectors.putAll(internalFilterSelectors);
     this.entityMapper = new CollectionEntityMapper<>(fields, this.idField);
     this.accessEvaluator =
         new CollectionAccessEvaluator<>(
@@ -198,7 +198,7 @@ public final class CollectionDescription<T> {
             this.idField,
             this.defaultSort,
             this.accessPolicy);
-    this.valueReader = new CollectionValueReader<>(this.fields, allSelectors);
+    this.valueReader = new CollectionValueReader<>(this.fields, compilableSelectors);
   }
 
   /** Describes an annotated resource whose every operation requires an authenticated caller. */
@@ -242,11 +242,8 @@ public final class CollectionDescription<T> {
   }
 
   public Field<T, ?> requireField(String name) {
-    Field<T, ?> field = fields.get(name);
-    if (field == null) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
-    }
-    return field;
+    return findField(name)
+        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.FIELD));
   }
 
   public Optional<Field<T, ?>> findField(String name) {
@@ -285,40 +282,30 @@ public final class CollectionDescription<T> {
   }
 
   public Relationship<T> requireRelationship(String name) {
-    Relationship<T> relationship = relationships.get(name);
-    if (relationship == null) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
-    }
-    return relationship;
+    return findRelationship(name)
+        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.FIELD));
   }
 
   public Optional<Relationship<T>> findRelationship(String name) {
     return Optional.ofNullable(relationships.get(name));
   }
 
+  /** Resolves a selector for compilation, including internal selectors. */
+  public FilterSelector<T> requireFilterSelector(String name) {
+    return findFilterSelector(name)
+        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.FIELD));
+  }
+
   /**
-   * Resolves a selector for compilation, including the internal ones.
+   * Resolves a selector for compilation, or empty when this collection has no such selector.
    *
    * <p>Safe to be permissive because a caller cannot reach an internal selector: the only path from
    * request text to a filter is {@link RsqlFilterParser}, which resolves through {@link
    * #requirePublicFilterSelector}. An internal selector therefore only ever arrives in a
    * server-built access constraint.
    */
-  public FilterSelector<T> requireFilterSelector(String name) {
-    FilterSelector<T> selector = filterSelectors.get(name);
-    if (selector == null) {
-      selector = internalFilterSelectors.get(name);
-    }
-    if (selector == null) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
-    }
-    return selector;
-  }
-
-  /** Resolves a selector for compilation, or empty when this collection has no such selector. */
   public Optional<FilterSelector<T>> findFilterSelector(String name) {
-    FilterSelector<T> selector = filterSelectors.get(name);
-    return Optional.ofNullable(selector != null ? selector : internalFilterSelectors.get(name));
+    return Optional.ofNullable(compilableSelectors.get(name));
   }
 
   /** Resolves a selector a caller may name, or empty when there is none. */
@@ -333,11 +320,8 @@ public final class CollectionDescription<T> {
 
   /** Resolves a selector a caller may name. Refuses an internal filter as an unknown field. */
   public FilterSelector<T> requirePublicFilterSelector(String name) {
-    FilterSelector<T> selector = filterSelectors.get(name);
-    if (selector == null) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
-    }
-    return selector;
+    return findPublicFilterSelector(name)
+        .orElseThrow(() -> new CollectionQueryException(CollectionQueryException.Reason.FIELD));
   }
 
   /** Names of the fields that accept the requested write operation, in declaration order. */
@@ -390,14 +374,6 @@ public final class CollectionDescription<T> {
 
   public AccessPolicy accessPolicy() {
     return accessPolicy;
-  }
-
-  static AccessDocumentation documented(AccessFunction function) {
-    return CollectionSchemaBuilder.documented(function);
-  }
-
-  static AccessDocumentation documented(AccessFunction function, AccessFunction inheritedFunction) {
-    return CollectionSchemaBuilder.documented(function, inheritedFunction);
   }
 
   /**
