@@ -236,7 +236,6 @@ class ApiV2ResourceConfigTest {
               "maintenances",
               Widget.class,
               List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Widget::id)),
-              List.of(),
               "id",
               List.of(new Sort("id", true)));
       return new ApiV2ResourceSpec<>(
@@ -253,7 +252,6 @@ class ApiV2ResourceConfigTest {
           "widgets",
           Widget.class,
           List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Widget::id)),
-          List.of(),
           "id",
           List.of(new Sort("id", true)));
 

@@ -22,10 +22,12 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourceMember;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -33,6 +35,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -162,8 +165,10 @@ class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
                 new CollectionDescription<>(
                     ApiV2BookingInstrumentResource.RESOURCE_NAME,
                     ApiV2BookingInstrumentResource.DESCRIPTION.entityType(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.fields(),
-                    ApiV2BookingInstrumentResource.DESCRIPTION.relationships(),
+                    Stream.<ResourceMember<Instrument>>concat(
+                            ApiV2BookingInstrumentResource.DESCRIPTION.fields().stream(),
+                            ApiV2BookingInstrumentResource.DESCRIPTION.relationships().stream())
+                        .toList(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
                     AccessPolicy.readOnly(access))));

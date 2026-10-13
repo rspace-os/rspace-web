@@ -81,7 +81,6 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             ApiV2BookingInstrumentResource.RESOURCE_NAME,
             Instrument.class,
             ApiV2BookingInstrumentResource.DESCRIPTION.fields(),
-            List.of(),
             ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
             ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
             AccessPolicy.readOnly(readAccess));
