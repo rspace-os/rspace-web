@@ -77,5 +77,6 @@ export interface ApiInventoryAliquotRequest {
 
 export interface ApiInventorySubSampleMoveRequest {
   parentContainers: [{ id: number }];
-  parentLocation: { coordX: number; coordY: number };
+  /** Required for a grid container, omitted for a list container. */
+  parentLocation?: { coordX: number; coordY: number };
 }

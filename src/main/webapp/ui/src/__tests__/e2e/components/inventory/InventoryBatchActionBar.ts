@@ -5,8 +5,10 @@ import { openDialog } from "./DialogHelpers";
 import { MoreActionsMenu } from "./MoreActionsMenu";
 import { MoveDialogComponent } from "./MoveDialogComponent";
 import { PrintOptionsDialogComponent } from "./PrintOptionsDialogComponent";
+import { ProcessWizardComponent } from "./ProcessWizardComponent";
 
 export type InventoryBatchAction =
+  | "Process"
   | "Duplicate"
   | "Move"
   | "Transfer"
@@ -38,6 +40,11 @@ export class InventoryBatchActionBar {
         this.moreActions.clickDirectOrFallback(this.root.getByRole("button", { name: "Move", exact: true }), "Move"),
       new MoveDialogComponent(this.page),
     );
+  }
+
+  /** Shown only while inventory.operations.available is ALLOWED. */
+  async openProcessWizard(): Promise<ProcessWizardComponent> {
+    return openDialog(() => this.moreActions.click("Process"), new ProcessWizardComponent(this.page));
   }
 
   async openBatchEdit(): Promise<BatchEditFormComponent> {

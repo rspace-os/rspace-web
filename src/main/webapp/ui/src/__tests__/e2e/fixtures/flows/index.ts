@@ -2,6 +2,7 @@ import { mergeTests } from "@playwright/test";
 import { test as documentSessionTest } from "@/__tests__/e2e/fixtures/flows/documentSessions";
 import { test as fileSystemsTest } from "@/__tests__/e2e/fixtures/flows/environment/fileSystems";
 import { test as filestoreBackendsTest } from "@/__tests__/e2e/fixtures/flows/environment/filestoreBackends";
+import { test as inventoryOperationsTest } from "@/__tests__/e2e/fixtures/flows/environment/inventoryOperations";
 import { test as ipWhitelistTest } from "@/__tests__/e2e/fixtures/flows/environment/ipWhitelist";
 import { test as publicSharingTest } from "@/__tests__/e2e/fixtures/flows/environment/publicSharing";
 import { test as repositoryIntegrationTest } from "@/__tests__/e2e/fixtures/flows/environment/repositoryIntegrations";
@@ -16,4 +17,5 @@ export const test = mergeTests(
   fileSystemsTest,
   filestoreBackendsTest,
   rorRegistryTest,
+  inventoryOperationsTest,
 );
