@@ -120,7 +120,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   /**
    * Lucene regular-expression syntax, escaped to a literal inside the B2INST term, plus {@code /},
    * which closes the term itself. {@code *} and {@code ?} are absent: a typed one stays a live
-   * wildcard, as {@code .*} and {@code .}. Nothing else is syntax inside a regular expression,
+   * wildcard, as {@code .*} and {@code .}. {@code "}, {@code <} and {@code >} never reach it, being
+   * removed first ({@link #B2INST_REMOVED}); they stay so that the set is Lucene's documented list
+   * and still holds if that removal goes. Nothing else is syntax inside a regular expression,
    * whatever the query parser would have made of it outside one (ADR 0009 decision 8, amended
    * 2026-10-12).
    */
