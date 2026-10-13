@@ -1,11 +1,13 @@
 package com.researchspace.model.collection;
 
+import java.util.Map;
 import java.util.Set;
 
 public record FieldSchema(
     String name,
     String property,
     CollectionFieldType.Schema type,
+    Map<String, Object> writeConstraints,
     boolean requiredOnCreate,
     boolean nullable,
     boolean readOnly,
