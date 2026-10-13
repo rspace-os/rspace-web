@@ -276,10 +276,9 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * RSDEV-1542. The escaped-space term matched the record's case only: holding a space, it could
-   * only hit the unanalysed copy of a field, which keeps the case, where a one-word term hits the
-   * analysed, lowercased copy. Every cased letter now goes out as a class of both its cases, so the
-   * term is the same whatever the user typed (ADR 0009 decision 8, amended 2026-10-12).
+   * RSDEV-1542. A term holding a space can only match the unanalysed copy of a field, which keeps
+   * the record's case, so every cased letter goes out as a class of both its cases (ADR 0009
+   * decision 8).
    */
   @ParameterizedTest
   @ValueSource(strings = {"Nicos first", "nicos first", "NICOS FIRST", "nIcOs FiRsT"})
@@ -295,7 +294,7 @@ class PidinstLookupManagerImplTest {
 
   static Stream<Arguments> b2instQueriesCarryingSyntax() {
     return Stream.of(
-        // quotes, < and > are removed before the term is built, as before
+        // quotes, < and > are removed before the term is built
         arguments("\"Instr1 prova_COPY\"", INSTR1_PROVA_COPY_TERM),
         arguments("\"Instr1", "/.*[Ii][Nn][Ss][Tt][Rr]1.*/"),
         arguments("Instr\"1", "/.*[Ii][Nn][Ss][Tt][Rr]1.*/"),
@@ -334,9 +333,9 @@ class PidinstLookupManagerImplTest {
   /**
    * Inside the term only regular-expression syntax is syntax, and a {@code /} would close it, so
    * those are escaped to literals; what the query parser reserves outside a term is plain text
-   * here. Quotes, {@code <} and {@code >} are removed first, as before: {@code Instr"1} must find
-   * {@code Instr1}. {@code *} and {@code ?} stay live. Nothing the user types can make B2INST
-   * answer 400 (ADR 0009 decision 8, amended 2026-10-12).
+   * here. Quotes, {@code <} and {@code >} are removed first: {@code Instr"1} must find {@code
+   * Instr1}. {@code *} and {@code ?} stay live. Nothing the user types can make B2INST answer 400
+   * (ADR 0009 decision 8, amended 2026-10-12).
    */
   @ParameterizedTest
   @MethodSource("b2instQueriesCarryingSyntax")

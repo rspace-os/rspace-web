@@ -242,15 +242,15 @@ and API field names were ported instead.
    operator, CJK, an emoji, a trailing backslash, 150 characters) all answer 200.
 
    Cost, measured side by side on b2inst.gwdg.de at 50 hits a page, median of three runs: a query
-   of one to five words answers within 0.1 s of today's term (`umms pmm` 0.20 s against 0.22 s,
-   `structured light microscope tesm` 0.33 s against 0.44 s); a full page of 56 hits is 0.80 s
+   of one to five words answers within 0.1 s of the escaped-space term (`umms pmm` 0.20 s against
+   0.22 s, `structured light microscope tesm` 0.33 s against 0.44 s); a full page of 56 hits is 0.80 s
    against 0.97 s, the 275 KB page being most of it (0.29 s against 0.31 s at 3 hits a page); a
    100-character query 0.71 s against 0.89 s, and a 240-character one 0.93 s against 2.29 s, the
    cap's worst case. Both terms start with a wildcard and scan every field's term dictionary
    alike; what grows with the length of the query is the registry compiling the regular
    expression into an automaton, which the cap bounds. The registry's own load varies: a single
-   240-letter run on b2inst-test.gwdg.de took 6 s earlier the same day. The extra latency is spent
-   inside the manager's transaction, so it holds a pooled connection for that much longer.
+   240-letter run on b2inst-test.gwdg.de took 6 s earlier the same day. The registry call runs
+   inside the manager's transaction, so a pooled connection is held for as long as B2INST takes.
 
    Elasticsearch refuses a regular expression longer than `index.max_regex_length`, 1000 by
    default (963 characters answered 200 and 1043 answered 400 on both registries), and a class

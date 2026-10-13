@@ -143,10 +143,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   private static final int B2INST_REGEX_MAX_LENGTH = 1000;
 
   /**
-   * Removed from a B2INST query rather than escaped, so that {@code Instr"1} finds {@code Instr1}:
-   * a quote because the whole query is already one phrase, and {@code <} and {@code >} as before
-   * the term became a regular expression, when the query parser could not escape them
-   * (https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-query-string-query#reserved-characters).
+   * Removed from a B2INST query rather than escaped, so that {@code Instr"1} finds {@code Instr1};
+   * a quote also because the whole query is already one phrase (ADR 0009 decision 8).
    */
   private static final Pattern B2INST_REMOVED = Pattern.compile("[\"<>]");
 
