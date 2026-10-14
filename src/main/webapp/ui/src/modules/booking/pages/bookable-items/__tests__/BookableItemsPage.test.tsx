@@ -103,6 +103,15 @@ const openApi = {
   paths: {
     "/api/v2/booking-configurations": {
       get: {
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: { properties: { docs: { items: { properties: {} } } } },
+              },
+            },
+          },
+        },
         parameters: [
           {
             name: "sort",
