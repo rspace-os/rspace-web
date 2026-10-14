@@ -2,7 +2,6 @@ package com.researchspace.api.v2.throttling;
 
 import com.researchspace.core.util.throttling.ThrottleInterval;
 import com.researchspace.core.util.throttling.Throttler;
-import com.researchspace.core.util.throttling.TooManyRequestsException;
 import java.util.Optional;
 
 /** Determines if a request should proceed, based on usage limits. */
@@ -42,42 +41,6 @@ public interface APIRequestThrottler extends Throttler {
 
         public String getName() {
           return "passthru";
-        }
-
-        public String toString() {
-          return getName();
-        }
-      };
-
-  /** Rejects all requests, always throwing a {@link TooManyRequestsException} */
-  APIRequestThrottler ALWAYS_BLOCK =
-      new APIRequestThrottler() {
-
-        @Override
-        public boolean proceed(String identifier) {
-          throw new TooManyRequestsException("This implementation always throws this exception");
-        }
-
-        @Override
-        public boolean proceed(String identifier, Double requestedUnits) {
-          throw new TooManyRequestsException("This implementation always throws this exception");
-        }
-
-        @Override
-        public Optional<APIUsageStats> getStats(
-            String identifier, ThrottleInterval throttleInterval) {
-          APIUsageStats allUsed =
-              APIUsageStats.builder()
-                  .periodSeconds(10)
-                  .minDelayTillNextRequestMillis(100)
-                  .totalRequestsPerPeriod(10)
-                  .remainingRequestsInPeriod(0.0f)
-                  .build();
-          return Optional.of(allUsed);
-        }
-
-        public String getName() {
-          return "alwaysBlock";
         }
 
         public String toString() {

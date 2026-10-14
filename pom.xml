@@ -792,7 +792,7 @@
     <dependency>
       <groupId>io.swagger.core.v3</groupId>
       <artifactId>swagger-core-jakarta</artifactId>
-      <version>2.2.48</version>
+      <version>${swagger-core.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.yaml</groupId>
@@ -2708,6 +2708,7 @@
     <!-- jetty -->
     <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>
+    <swagger-core.version>2.2.55</swagger-core.version>
 
     <!-- Application settings -->
     <artifactName>${project.artifactId}-${project.version}</artifactName>

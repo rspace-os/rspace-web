@@ -7,11 +7,12 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 /** A readable relationship target that does not expose generic CRUD routes. */
 public record ApiV2RelationshipTargetSpec<T, ID>(
@@ -28,7 +29,7 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
 
   @Override
   public Map<Object, ResolvedTarget> resolveReadable(Set<Object> rawIds, User actor) {
-    Set<ID> ids = rawIds.stream().map(this::castId).collect(java.util.stream.Collectors.toSet());
+    Set<ID> ids = rawIds.stream().map(this::castId).collect(Collectors.toSet());
     AccessContext context = new AccessContext(actor, Operation.READ, description.resourceName());
     AccessResult access = description.accessPolicy().readAccess().check(context);
     if (access.isDenied()) {
@@ -40,28 +41,25 @@ public record ApiV2RelationshipTargetSpec<T, ID>(
               + description.resourceName());
     }
     return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
-            actor,
-            description.resourceName(),
-            () ->
-                Optional.of(
-                    findReadableByIds.apply(ids, actor).entrySet().stream()
-                        .filter(entry -> ids.contains(entry.getKey()))
-                        .collect(
-                            java.util.stream.Collectors.toMap(
-                                Map.Entry::getKey,
-                                entry ->
-                                    new ResolvedTarget(
-                                        entry.getValue(),
-                                        readableFields(
-                                            new AccessContext(
-                                                actor,
-                                                Operation.READ,
-                                                description.resourceName(),
-                                                entry.getKey()))),
-                                (left, right) -> left,
-                                java.util.LinkedHashMap::new))))
-        .<Map<Object, ResolvedTarget>>map(map -> new java.util.LinkedHashMap<>(map))
-        .orElseGet(Map::of);
+        actor,
+        description.resourceName(),
+        () ->
+            findReadableByIds.apply(ids, actor).entrySet().stream()
+                .filter(entry -> ids.contains(entry.getKey()))
+                .collect(
+                    Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry ->
+                            new ResolvedTarget(
+                                entry.getValue(),
+                                readableFields(
+                                    new AccessContext(
+                                        actor,
+                                        Operation.READ,
+                                        description.resourceName(),
+                                        entry.getKey()))),
+                        (left, right) -> left,
+                        LinkedHashMap::new)));
   }
 
   private FieldSelection readableFields(AccessContext context) {

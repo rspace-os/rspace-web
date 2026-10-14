@@ -1,8 +1,9 @@
 package com.researchspace.api.v2.resource;
 
 import com.researchspace.model.User;
+import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.model.permissions.SecurityLogger;
-import java.util.Optional;
+import java.util.Map;
 import java.util.function.Supplier;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -15,8 +16,8 @@ final class ApiV2ReadableTargetSupport {
 
   private ApiV2ReadableTargetSupport() {}
 
-  static <T> Optional<T> hideAuthorizationFailure(
-      User actor, String resourceName, Supplier<Optional<T>> lookup) {
+  static Map<Object, ResolvedTarget> hideAuthorizationFailure(
+      User actor, String resourceName, Supplier<Map<Object, ResolvedTarget>> lookup) {
     try {
       return lookup.get();
     } catch (AuthorizationException ex) {
@@ -25,7 +26,7 @@ final class ApiV2ReadableTargetSupport {
           actor == null ? "(anonymous)" : actor.getUsername(),
           resourceName,
           ex);
-      return Optional.empty();
+      return Map.of();
     }
   }
 }

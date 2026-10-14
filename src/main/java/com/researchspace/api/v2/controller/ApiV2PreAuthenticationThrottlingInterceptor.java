@@ -18,6 +18,6 @@ public final class ApiV2PreAuthenticationThrottlingInterceptor
   @Override
   public boolean preHandle(
       HttpServletRequest request, HttpServletResponse response, Object handler) {
-    return throttler.proceed(assertApiAccess(request));
+    return throttler.proceed(throttleKey(request));
   }
 }
