@@ -356,7 +356,7 @@ public class StructuredDocumentController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName());
     Notebook notebook = folderManager.getNotebook(notebookId);
     if (StringUtils.isBlank(entryName)) {
-      entryName = StructuredDocument.DEFAULT_NAME;
+      entryName = messages.getMessage("document.create.defaultName");
     }
     StructuredDocument newEntry = workspaceHandler.createEntry(notebook, entryName, user);
     publisher.publishEvent(createGenericEvent(user, newEntry, AuditAction.CREATE));
@@ -396,7 +396,7 @@ public class StructuredDocumentController extends BaseController {
       }
 
       if (StringUtils.isBlank(newname) || newname.contains("/")) {
-        newname = StructuredDocument.DEFAULT_NAME;
+        newname = messages.getMessage("document.create.defaultName");
       }
 
       RecordCopyResult fromTemplate =

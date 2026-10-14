@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedNullPointerException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,31 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.servlet.ModelAndView;
 
 class ControllerExceptionHandlerTest {
+
+  @Test
+  void resolvesLocalizedNullInputAndKeepsOrdinaryNullPointerMessageGeneric() {
+    ControllerExceptionHandler handler = new ControllerExceptionHandler();
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
+    ReflectionTestUtils.setField(handler, "messages", messages);
+
+    ModelAndView localizedResult =
+        handler.handleExceptions(
+            new MockHttpServletRequest(),
+            new MockHttpServletResponse(),
+            new LocalizedNullPointerException("validation.imageData.required"));
+    assertEquals(
+        messages.getMessage("validation.imageData.required") + "\n\n",
+        localizedResult.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME));
+
+    ModelAndView ordinaryResult =
+        handler.handleExceptions(
+            new MockHttpServletRequest(),
+            new MockHttpServletResponse(),
+            new NullPointerException("developer-only detail"));
+    assertEquals(
+        messages.getMessage("errors.page.unavailableResource"),
+        ordinaryResult.getModel().get(ControllerExceptionHandler.EXCEPTION_MESSAGE_ATTR_NAME));
+  }
 
   @Test
   void resolvesLocalizedModelExceptionForMvcResponse() {

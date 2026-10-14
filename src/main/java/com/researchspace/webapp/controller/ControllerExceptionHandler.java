@@ -392,7 +392,7 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
       return messages.getMessage("errors.page.databaseUnavailable");
       // this is just to prevent bad-looking 'null' messages passed to
       // user
-    } else if (e instanceof NullPointerException) {
+    } else if (e instanceof NullPointerException && !(e instanceof LocalizedException)) {
       return messages.getMessage("errors.page.unavailableResource");
     } else if (e instanceof ConstraintViolationException) {
       return getConstraintViolationMessage(((ConstraintViolationException) e));
