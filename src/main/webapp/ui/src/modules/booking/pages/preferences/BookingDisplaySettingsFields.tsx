@@ -1,4 +1,4 @@
-import { useId, useMemo } from "react";
+import { useId, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
@@ -49,6 +49,16 @@ export function BookingDisplaySettingsFields({
     [browserTimezone, institutionTimezone, value.customTimezone],
   );
   const patch = (next: Partial<BookingDisplayPreferencesInput>) => onChange({ ...value, ...next });
+  // Outside Custom mode the submitted value must be null, so the last custom zone is kept here and
+  // restored if the user switches back to Custom before saving.
+  const rememberedCustomTimezone = useRef(value.customTimezone);
+  const selectMode = (mode: BookingTimezoneMode) => {
+    if (value.timezoneMode === "CUSTOM") rememberedCustomTimezone.current = value.customTimezone;
+    patch({
+      timezoneMode: mode,
+      customTimezone: mode === "CUSTOM" ? (value.customTimezone ?? rememberedCustomTimezone.current ?? "UTC") : null,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -107,35 +117,32 @@ export function BookingDisplaySettingsFields({
               name={`${id}-timezone-mode`}
               value={mode}
               checked={value.timezoneMode === mode}
-              onChange={() =>
-                patch({
-                  timezoneMode: mode as BookingTimezoneMode,
-                  customTimezone: mode === "CUSTOM" ? (value.customTimezone ?? "UTC") : null,
-                })
-              }
+              onChange={() => selectMode(mode)}
             />
             <span>{label}</span>
           </Label>
         ))}
-        <div className="space-y-2 pl-6">
-          <Label htmlFor={`${id}-custom-timezone`}>{t("preferences.timezone.customLabel")}</Label>
-          <Input
-            id={`${id}-custom-timezone`}
-            role="combobox"
-            aria-expanded="false"
-            aria-invalid={Boolean(errors?.customTimezone)}
-            aria-describedby={errors?.customTimezone ? errorId : undefined}
-            list={timezoneListId}
-            value={value.customTimezone ?? ""}
-            disabled={disabled || value.timezoneMode !== "CUSTOM"}
-            onChange={(event) => patch({ customTimezone: event.currentTarget.value })}
-          />
-          <datalist id={timezoneListId}>
-            {timezoneOptions.map((timeZone) => (
-              <option key={timeZone} value={timeZone} />
-            ))}
-          </datalist>
-        </div>
+        {value.timezoneMode === "CUSTOM" ? (
+          <div className="space-y-2 pl-6">
+            <Label htmlFor={`${id}-custom-timezone`}>{t("preferences.timezone.customLabel")}</Label>
+            <Input
+              id={`${id}-custom-timezone`}
+              role="combobox"
+              aria-expanded="false"
+              aria-invalid={Boolean(errors?.customTimezone)}
+              aria-describedby={errors?.customTimezone ? errorId : undefined}
+              list={timezoneListId}
+              value={value.customTimezone ?? ""}
+              disabled={disabled}
+              onChange={(event) => patch({ customTimezone: event.currentTarget.value })}
+            />
+            <datalist id={timezoneListId}>
+              {timezoneOptions.map((timeZone) => (
+                <option key={timeZone} value={timeZone} />
+              ))}
+            </datalist>
+          </div>
+        ) : null}
       </fieldset>
 
       <fieldset className="space-y-3" disabled={disabled} aria-describedby={timeFormatDescriptionId}>

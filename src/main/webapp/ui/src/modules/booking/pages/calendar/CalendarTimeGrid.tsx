@@ -1,9 +1,9 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { DayTimeline } from "@/modules/booking/components/DayTimeline";
+import { DayTimeline, type DayTimelineRange } from "@/modules/booking/components/DayTimeline";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
+import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
 import { CalendarEventCard } from "./CalendarEventCard";
@@ -31,6 +31,8 @@ export function CalendarTimeGrid({
   availabilityEndMinute,
   onShowDay,
   schedule,
+  creationDisabled = false,
+  onRangeSelect,
   isLoading = false,
 }: {
   date: string;
@@ -41,8 +43,13 @@ export function CalendarTimeGrid({
   availabilityStartMinute: number;
   availabilityEndMinute: number;
   onShowDay: (day: string) => void;
-  /** The one item in scope; the day view shades its closures. Several items have no single schedule. */
-  schedule?: OpeningSchedule & { globalId: string; timezone: string };
+  /**
+   * The one item in scope; the day view shades its closures and, when the viewer may book it, creates a booking for
+   * a clicked or dragged range. Several items have no single schedule, so neither happens.
+   */
+  schedule?: BookableItemOption;
+  creationDisabled?: boolean;
+  onRangeSelect?: (item: BookableItemOption, range: DayTimelineRange, trigger: HTMLElement) => void;
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
@@ -53,6 +60,7 @@ export function CalendarTimeGrid({
     () => (schedule && view === "day" ? closedDayRanges(schedule, date, timezone) : undefined),
     [schedule, date, timezone, view],
   );
+  const canCreateBooking = schedule?.capabilities?.canCreateBooking === true;
   return (
     <section aria-label={t("calendar.layout.time-grid")} className="py-3" aria-busy={isLoading}>
       {view === "day" ? (
@@ -68,6 +76,13 @@ export function CalendarTimeGrid({
               showZoomControls={false}
               renderEventActions={actionsFor(events, timezone, date)}
               renderBlockoutActions={blockoutActionsFor(events, timezone, date)}
+              snapIncrementMinutes={schedule?.slotGranularityMinutes}
+              creationDisabled={isLoading || creationDisabled || !canCreateBooking}
+              onRangeSelect={
+                canCreateBooking && schedule && onRangeSelect
+                  ? (range, trigger) => onRangeSelect(schedule, range, trigger)
+                  : undefined
+              }
             />
           </div>
           {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}

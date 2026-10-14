@@ -30,6 +30,25 @@ public class NotificationConfig {
         true,
         CommunicationNotifyPolicy.ALWAYS_NOTIFY,
         false,
+        false,
+        notificationTargetsOverride);
+  }
+
+  /** Backward-compatible constructor with the default event-preference behavior. */
+  public NotificationConfig(
+      NotificationType notificationType,
+      NotificationData notificationData,
+      boolean broadcast,
+      CommunicationNotifyPolicy policyOverride,
+      boolean recordAuthorisationRequired,
+      Set<User> notificationTargetsOverride) {
+    this(
+        notificationType,
+        notificationData,
+        broadcast,
+        policyOverride,
+        recordAuthorisationRequired,
+        false,
         notificationTargetsOverride);
   }
 
@@ -50,6 +69,13 @@ public class NotificationConfig {
    * Whether authorisation to view a document that is the subject of the notification is required.
    */
   private boolean recordAuthorisationRequired;
+
+  /**
+   * Whether the notification event preference should be bypassed for the configured recipients.
+   * This is a server-side override for narrowly defined notification flows; it does not affect
+   * email preferences.
+   */
+  @Builder.Default private boolean notificationEventPreferenceOverride = false;
 
   @Builder.Default private Set<User> notificationTargetsOverride = new HashSet<>();
 }
