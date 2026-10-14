@@ -147,8 +147,3 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
     </StyledEngineProvider>,
   );
 }
-
-window.addEventListener("load", () => {
-  window.RS ??= {};
-  window.RS.createConfirmationDialog = createConfirmationDialog;
-});

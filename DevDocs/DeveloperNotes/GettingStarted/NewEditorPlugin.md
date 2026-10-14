@@ -113,8 +113,11 @@ steps to take care of.
      We load the plugin through a separate entry point so that it is only downloaded
      when the plugin is enabled.
     ```json
-      "tinymceNewPlugin": "src/tinyMCE/newPlugin/index.js",
+      "tinymceNewPlugin": "src/tinyMCE/newPlugin/NewPluginEntrypoint.tsx",
     ```
+     Keep the entry file mount-only (plugin registration and `createRoot` calls)
+     and put the plugin's React components in separate modules; see
+     [the frontend README](/src/main/webapp/ui/README.md).
   2. In [/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js](/src/main/webapp/scripts/pages/workspace/editor/tinymce5_configuration.js),
      we need to add the following code:
      * Check whether the plugin is enabled with
