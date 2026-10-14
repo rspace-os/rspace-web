@@ -98,4 +98,10 @@ public interface SampleDao extends SampleEntityDao<Sample> {
    * @return {@code true} if at least one sample or template with that name is owned by the user
    */
   boolean entityNameExistsForUser(String name, User owner);
+
+  /**
+   * Loads a sample with a shared row lock held until the transaction ends, so a concurrent
+   * ownership change waits for this transaction instead of interleaving with it. Null if absent.
+   */
+  Sample getWithSharedLock(Long id);
 }

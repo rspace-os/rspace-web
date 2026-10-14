@@ -36,13 +36,20 @@ once real requests show what it should be.
 
 ### D3 Requestable is the gate, not read permission
 
-An owner marks a sample `requestable` as their opt-in to being asked by anyone, so
-requesting does not need read access to the sample. For the same reason the
-`requestable=true` sample search is instance-wide, and `requestable` survives the public and
-limited views of a sample. An explicit `ownedBy` still narrows that search.
+Marking a sample `requestable` opts it in to being asked for by anyone, so requesting does
+not need read access to the sample. For the same reason the `requestable=true` sample
+search is instance-wide, and `requestable` survives the public and limited views of a
+sample. An explicit `ownedBy` still narrows that search, and trashed samples never appear in
+it, whatever `deletedItems` says, since they cannot be requested. Its name filter (`query`)
+applies to requestable searches only; other sample searches go through Lucene as before.
 
-Only the owner may change the flag. It cannot be set on create, only by updating an
-existing sample.
+The flag may be changed by whoever may transfer the sample: its owner, or a PI or Lab Admin
+of the owner's group (`InventoryPermissionUtils.canUserTransferInventoryRecord`). Anyone
+else, including a group member who may edit the sample, is refused with 422. Requests still
+go to the owner, so a PI can put a member's sample up for requests: a lesser power than
+giving the whole sample away, which they can already do. The flag cannot be set on create,
+only by updating an existing sample, and it survives a transfer: the new owner, including a
+requester who has just received it, keeps it requestable until they switch it off.
 
 ### D4 Everything is behind `inventory.sampleRequests.available`
 
@@ -56,7 +63,9 @@ The setting is DENIED by default. While it is off for the caller:
   search filter.
 
 Requestable flags set before the feature was switched off stay in the database; with the
-gates above they are inert.
+gates above they are inert. Request validation (a malformed body or query parameter, 400)
+runs before the feature check, so a malformed call can tell that the endpoint exists; we
+accept that, as nothing about any request is disclosed.
 
 ### D5 Who is asked is fixed when the request is raised
 
@@ -75,7 +84,10 @@ original owner; anyone else gets 404, so its existence is not disclosed.
 usernames, not foreign keys, so a request and its history survive the deletion of either
 party. The API returns them as user objects; a deleted user keeps their username with a
 null id. Deleting a user deletes the requests against their own samples, with their
-history.
+history. Where usernames are reused (SSO deployments, see `User.getSid`), a
+new account with a deleted requester's username sees that user's old requests as its own,
+and could cancel a pending one; matching on that security identifier would close this, and
+is left until reuse is seen in practice.
 
 ### D7 A fixed transition table, enforced in one place
 
@@ -134,17 +146,24 @@ locking read must be the transaction's first read: MariaDB 11.6+ enables
 the same transaction then fails with error 1020 instead of waiting. A unique constraint on
 (request, status) backs up the lock, since no status is reachable twice.
 
+Raising a request takes a shared lock on the requested sample, so a transfer that runs at
+the same time waits for the new request to commit and then closes it (D9), instead of
+leaving it PENDING and addressed to the previous owner.
+
 Where 1020 still occurs, for example a transfer racing a fulfilment, the API returns
 409 `EDIT_CONFLICT` ("changed by someone else at the same time"), not 500. Only 1020 is
-mapped; deadlocks and lock timeouts stay 500 for now.
+mapped; deadlocks and lock timeouts stay 500 for now. The mapping is in
+`ApiControllerAdvice`, so it applies to every API endpoint, not only sample requests: for
+example, one user creating samples in parallel now gets 409 instead of 500.
 
 ### D11 The fulfilled-with sample, by global id, on FULFILLED only
 
 `transferredSampleGlobalId` on the status PUT optionally records which sample the request
 was fulfilled with: the requested sample itself, or a new one made from it. It is a global
 id, matching `sampleGlobalId` on create. It is only accepted with FULFILLED (422 otherwise),
-must name a sample (422) and must be readable by the fulfiller (404), so a request's history
-cannot be made to carry a stranger's sample. It is stored as a foreign key, not a global id
+must name a sample (422), and must be fully readable by the fulfiller and not in the trash
+(404), so a request's history cannot be made to carry a stranger's sample. Limited read, as
+granted by a shared container or a List of Materials, is not enough. It is stored as a foreign key, not a global id
 string, and nulled when that sample's owner is deleted. Responses show it limited to what
 the viewer may read.
 

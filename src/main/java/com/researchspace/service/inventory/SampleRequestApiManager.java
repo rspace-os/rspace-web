@@ -70,5 +70,5 @@ public interface SampleRequestApiManager {
    * @param actor attributed as who made the change; the person who performed the transfer
    * @param newOwner whose own requests are fulfilled, and who is named in the rejection reason
    */
-  void autoRejectActiveRequestsForTransferredSample(Long sampleId, User actor, User newOwner);
+  void closeActiveRequestsForTransferredSample(Long sampleId, User actor, User newOwner);
 }

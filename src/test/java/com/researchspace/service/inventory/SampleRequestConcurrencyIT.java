@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Two clients transitioning the same request at once must not both succeed. */
@@ -108,12 +110,12 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
           outcomes.stream().filter(WON::equals).count(),
           "exactly one of two concurrent transitions must be applied");
 
-      // the loser must be refused by the row lock and the normal transition rule, not by the
-      // unique constraint backstop, which would mean the lock is not doing its job
+      // the loser waited on the row lock, then was refused by the normal transition rule; without
+      // the lock it would also win, or fail with a deadlock instead
       assertEquals(
           ApiRuntimeException.class.getSimpleName(),
           outcomes.stream().filter(o -> !WON.equals(o)).findFirst().orElseThrow(),
-          "the loser should be refused by the transition rule, not by a constraint violation");
+          "the loser should be refused by the transition rule");
 
       // PENDING plus exactly one transition, never both
       ApiSampleRequest afterwards = sampleRequestApiMgr.getRequestById(requestId, owner);
@@ -151,7 +153,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
                             fulfilmentHeld.countDown();
                             awaitQuietly(releaseFulfilment);
                           }));
-      assertEquals(true, fulfilmentHeld.await(30, TimeUnit.SECONDS));
+      assertTrue(fulfilmentHeld.await(30, TimeUnit.SECONDS));
 
       Future<?> transfer =
           pool.submit(
@@ -171,6 +173,8 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
         // with innodb_snapshot_isolation (MariaDB 11.6+) the transfer is refused instead, which is
         // equally safe; any other failure is not
         assertTrue(isSnapshotConflict(e), () -> "unexpected transfer failure: " + e.getCause());
+        // the API maps a conflict to 409 only when it arrives as a DataAccessException
+        assertInstanceOf(DataAccessException.class, e.getCause());
       }
 
       ApiSampleRequest afterwards = sampleRequestApiMgr.getRequestById(requestId, owner);

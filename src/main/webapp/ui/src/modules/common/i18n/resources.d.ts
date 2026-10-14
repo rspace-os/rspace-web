@@ -7196,6 +7196,7 @@ export default interface Resources {
           "ownSample": "You cannot request material from a sample that you own.",
           "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
           "reasonRequired": "A reason is required when rejecting a request.",
+          "requestableNotPermitted": "Only the sample's owner, or a PI or Lab Admin of their group, can change whether it is requestable.",
           "role": {
             "invalid": "Requested role must be one of: REQUESTER or OWNER"
           },
@@ -9122,7 +9123,7 @@ export default interface Resources {
           "pyratAvailable": "Makes PyRAT integration available. After enabling the integration, users can link to animals in the PyRAT database.",
           "raidAvailable": "Enables RAiD integration. After enabling the integration, users can set up their RAiD accounts through the 'Apps' page",
           "repoAvailable": "Makes {0} repository integration available. After enabling, users can submit exports to a {0} repository.",
-          "sampleRequestsAvailable": "Enables the ability for users to request and transfer samples.",
+          "sampleRequestsAvailable": "Lets owners make samples requestable, and lets users request material from them.",
           "selfServiceLabgroups": "When true, a user with permissions (e.g. a PI) can create a LabGroup.",
           "slackAvailable": "Makes Slack integration available to the users. After enabling the integration, user can connect to their Slack channels to send messages or forward notifications",
           "snapgeneAvailable": "Enables Snapgene viewer for DNA sequence files. This must only be enabled if the deployment property'snapgene.web.url' is configured to point at an RSpace-Snapgene web-service.",

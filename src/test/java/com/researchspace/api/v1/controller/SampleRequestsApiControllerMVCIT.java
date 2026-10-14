@@ -17,6 +17,7 @@ import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyName;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MvcResult;
@@ -24,9 +25,22 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
+  // this test commits, so the setting it changes must be put back for the tests that follow
+  private String originalSampleRequestsAvailable;
+
   @BeforeEach
   public void setup() throws Exception {
     super.setUp();
+    originalSampleRequestsAvailable =
+        sysPropMgr.findByName(SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE).getValue();
+  }
+
+  @AfterEach
+  public void restoreSampleRequestsAvailable() {
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        originalSampleRequestsAvailable,
+        getSysAdminUser());
   }
 
   @Test
@@ -118,70 +132,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
   }
 
   @Test
-  public void approveOverHttpThenRefuseAnIllegalTransition() throws Exception {
-    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
-    User requester = createAndSaveUser(getRandomName(10));
-    initUsers(owner, requester);
-    createGroupForUsersWithDefaultPi(owner, requester);
-
-    String requesterApiKey = createNewApiKeyForUser(requester);
-    String ownerApiKey = createNewApiKeyForUser(owner);
-    sysPropMgr.save(
-        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
-        HierarchicalPermission.ALLOWED,
-        getSysAdminUser());
-
-    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
-    markRequestable(sample, owner);
-
-    MvcResult postResult =
-        this.mockMvc
-            .perform(
-                createBuilderForInventoryPostWithJSONBody(
-                    requesterApiKey,
-                    "/sampleRequests",
-                    requester,
-                    Map.of("sampleGlobalId", sample.getGlobalId(), "note", "for approval")))
-            .andReturn();
-    ApiSampleRequest created = mvcUtils.getFromJsonResponseBody(postResult, ApiSampleRequest.class);
-
-    MvcResult approveResult =
-        this.mockMvc
-            .perform(
-                createBuilderForInventoryPutWithJSONBody(
-                    ownerApiKey,
-                    "/sampleRequests/" + created.getId() + "/status",
-                    owner,
-                    Map.of("status", "APPROVED")))
-            .andReturn();
-    assertNull(approveResult.getResolvedException());
-    ApiSampleRequest approved =
-        mvcUtils.getFromJsonResponseBody(approveResult, ApiSampleRequest.class);
-    assertEquals(SampleRequestStatus.APPROVED, approved.getStatus());
-    assertEquals(2, approved.getStatusChanges().size());
-
-    // approving again is no longer a legal transition
-    this.mockMvc
-        .perform(
-            createBuilderForInventoryPutWithJSONBody(
-                ownerApiKey,
-                "/sampleRequests/" + created.getId() + "/status",
-                owner,
-                Map.of("status", "APPROVED")))
-        .andExpect(status().isUnprocessableEntity());
-
-    // and the requester may not approve at all
-    this.mockMvc
-        .perform(
-            createBuilderForInventoryPutWithJSONBody(
-                requesterApiKey,
-                "/sampleRequests/" + created.getId() + "/status",
-                requester,
-                Map.of("status", "APPROVED")))
-        .andExpect(status().isUnprocessableEntity());
-  }
-
-  @Test
   public void fullRequestLifecycleOverHttp() throws Exception {
     User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
     User requester = createAndSaveUser(getRandomName(10));
@@ -198,7 +148,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
     markRequestable(sample, owner);
 
-    // raise it
     MvcResult postResult =
         this.mockMvc
             .perform(
@@ -221,7 +170,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(
         1L, listRequests(ownerApiKey, owner, "OWNER", "PENDING").getTotalHits().longValue());
 
-    // the owner approves
     MvcResult approveResult =
         this.mockMvc
             .perform(
@@ -232,6 +180,26 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
                     Map.of("status", "APPROVED")))
             .andReturn();
     assertNull(approveResult.getResolvedException());
+
+    // approving again is no longer a legal transition
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryPutWithJSONBody(
+                ownerApiKey,
+                "/sampleRequests/" + created.getId() + "/status",
+                owner,
+                Map.of("status", "APPROVED")))
+        .andExpect(status().isUnprocessableEntity());
+
+    // and the requester may not approve at all
+    this.mockMvc
+        .perform(
+            createBuilderForInventoryPutWithJSONBody(
+                requesterApiKey,
+                "/sampleRequests/" + created.getId() + "/status",
+                requester,
+                Map.of("status", "APPROVED")))
+        .andExpect(status().isUnprocessableEntity());
 
     // fetching the single request returns the full history, actors resolved
     MvcResult detailResult =

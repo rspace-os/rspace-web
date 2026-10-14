@@ -9,14 +9,12 @@ import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
 import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SampleRequestStatusChange;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /** One entry in a sample request's status history. */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @JsonPropertyOrder({"id", "status", "created", "createdBy", "reason", "transferredSample"})
 public class ApiSampleRequestStatusChange {
 
@@ -34,7 +32,7 @@ public class ApiSampleRequestStatusChange {
   @JsonProperty("createdBy")
   private ApiUser createdBy;
 
-  /** Populated for a rejection, absent otherwise. */
+  /** Populated for a rejection and for a fulfilment made by a transfer, absent otherwise. */
   @JsonProperty("reason")
   private String reason;
 

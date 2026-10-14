@@ -229,6 +229,7 @@
         "notRequestable": "Sample {0} is not available to request.",
         "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
         "reasonRequired": "A reason is required when rejecting a request.",
+        "requestableNotPermitted": "Only the sample's owner, or a PI or Lab Admin of their group, can change whether it is requestable.",
         "statusNotSettable": "A sample request cannot be set to {0}.",
         "wrongActor": "You are not permitted to make this change to the request.",
         "ownSample": "You cannot request material from a sample that you own.",
