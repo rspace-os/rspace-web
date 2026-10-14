@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * How a provider's values are reached from a collection row, in persistence-neutral terms.
@@ -20,17 +21,21 @@ import java.util.Objects;
  * exist, how a value is loaded in bulk — stays behind {@link RuntimeCollectionFields}.
  *
  * @param valueEntityType the persistent entity holding one value
- * @param parentIdProperty property of that entity pointing at the collection row's ID
- * @param valueProperty property of that entity holding the stored value
- * @param match further equality conditions identifying this definition's rows, such as the
+ * @param parentIdProperty dotted ASCII property path pointing at the collection row's ID
+ * @param valueProperty dotted ASCII property path holding the stored value
+ * @param match further equality conditions keyed by dotted ASCII property paths, such as the
  *     definition ID and a not-deleted flag. String-valued conditions compare exact UTF-8 identity,
- *     independently of database collation; other values use their normal database equality.
+ *     independently of database collation; other values use their normal database equality. Values
+ *     must not be null.
  */
 public record RuntimeFieldBinding(
     Class<?> valueEntityType,
     String parentIdProperty,
     String valueProperty,
     Map<String, Object> match) {
+
+  private static final Pattern PROPERTY_PATH =
+      Pattern.compile("[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*");
 
   public RuntimeFieldBinding {
     Objects.requireNonNull(valueEntityType, "Runtime field value entity type");
@@ -39,21 +44,16 @@ public record RuntimeFieldBinding(
     Objects.requireNonNull(match, "Runtime field match conditions");
     Map<String, Object> copy = new LinkedHashMap<>();
     match.forEach(
-        (property, value) -> copy.put(requireProperty(property, "match property"), value));
+        (property, value) ->
+            copy.put(
+                requireProperty(property, "match property"),
+                Objects.requireNonNull(value, "Runtime field match value")));
     match = Collections.unmodifiableMap(copy);
   }
 
   private static String requireProperty(String value, String label) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException("Runtime field " + label + " must not be blank");
-    }
-    for (int index = 0; index < value.length(); index++) {
-      char character = value.charAt(index);
-      boolean permitted =
-          Character.isLetterOrDigit(character) || character == '_' || character == '.';
-      if (!permitted) {
-        throw new IllegalArgumentException("Runtime field " + label + " must be a property path");
-      }
+    if (value == null || !PROPERTY_PATH.matcher(value).matches()) {
+      throw new IllegalArgumentException("Runtime field " + label + " must be a property path");
     }
     return value;
   }
