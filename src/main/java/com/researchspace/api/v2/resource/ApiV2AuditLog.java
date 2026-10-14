@@ -15,6 +15,7 @@ import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
+import com.researchspace.model.collection.PageOffsets;
 import com.researchspace.model.collection.ResourceRenderer.ResolvedTarget;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
@@ -122,8 +123,12 @@ public final class ApiV2AuditLog {
       throw new ApiV2AuditSnapshotConflictException();
     }
 
-    int first = Math.min(ordered.size(), Math.max(0, (query.getPage() - 1) * query.getLimit()));
-    int last = Math.min(ordered.size(), first + query.getLimit());
+    int first =
+        (int)
+            Math.min(
+                ordered.size(),
+                Math.max(0L, PageOffsets.offset(query.getPage(), query.getLimit())));
+    int last = (int) Math.min((long) ordered.size(), (long) first + query.getLimit());
     return ApiV2AuditPage.of(
         ordered.subList(first, last),
         ordered.size(),
