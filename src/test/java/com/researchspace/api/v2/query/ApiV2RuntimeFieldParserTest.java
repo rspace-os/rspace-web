@@ -384,37 +384,6 @@ class ApiV2RuntimeFieldParserTest {
                 "customFields.SF1==BSL-2", ApiV2InstrumentResource.DESCRIPTION, REGISTRY));
   }
 
-  private static final class FilterOnlyFields implements RuntimeCollectionFields<Instrument> {
-
-    private final StubFields delegate = new StubFields();
-
-    @Override
-    public String namespace() {
-      return delegate.namespace();
-    }
-
-    @Override
-    public boolean projectsThroughRelationship() {
-      return false;
-    }
-
-    @Override
-    public RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query) {
-      return delegate.discover(actor, query);
-    }
-
-    @Override
-    public Optional<ResolvedRuntimeField> resolve(String selector, User actor) {
-      return delegate.resolve(selector, actor);
-    }
-
-    @Override
-    public Map<Object, Map<String, Object>> values(
-        List<Instrument> resources, Set<String> fieldIds, User actor) {
-      return delegate.values(resources, fieldIds, actor);
-    }
-  }
-
   private static final class AlwaysResolves implements RuntimeCollectionFields<Instrument> {
 
     private final String namespace;

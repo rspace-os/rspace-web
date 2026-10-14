@@ -12,7 +12,6 @@ import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
@@ -21,7 +20,6 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -82,7 +80,7 @@ public class ApiV2CrudController {
             fieldsets,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller), this::runtimeFieldsOf));
+            registration.runtimeFieldContext(subject(caller)));
     return registration.list(request, subject(caller));
   }
 
@@ -199,7 +197,7 @@ public class ApiV2CrudController {
             where,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller), this::runtimeFieldsOf)),
+            registration.runtimeFieldContext(subject(caller))),
         subject(caller));
   }
 
@@ -223,18 +221,11 @@ public class ApiV2CrudController {
                 fieldsets,
                 registration.description(),
                 registration.registry(),
-                registration.runtimeFieldContext(subject(caller), this::runtimeFieldsOf)),
+                registration.runtimeFieldContext(subject(caller))),
             subject(caller));
     ResponseEntity.BodyBuilder response = ResponseEntity.ok();
     registration.documentEtag(document).ifPresent(response::eTag);
     return response.body(document);
-  }
-
-  private List<RuntimeCollectionFields<?>> runtimeFieldsOf(String resourceName) {
-    return resources
-        .find(resourceName)
-        .map(ApiV2ResourceRegistration::providers)
-        .orElseGet(List::of);
   }
 
   private ApiV2ResourceRegistration<?, ?> requireResource(String name) {
