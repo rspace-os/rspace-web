@@ -149,15 +149,20 @@ public class RecordSigningManagerTest extends SpringTransactionalTest {
   @Test
   public void testHasPermissionStringString() throws Exception {
     logoutAndLoginAs(user);
-    assertFalse(signingMgr.hasPermission(user.getUsername(), TESTPASSWD + "???"));
-    assertTrue(signingMgr.hasPermission(user.getUsername(), TESTPASSWD));
+    assertEquals(
+        ReauthenticationResult.WRONG,
+        signingMgr.hasPermission(user.getUsername(), TESTPASSWD + "???"));
+    assertEquals(
+        ReauthenticationResult.OK, signingMgr.hasPermission(user.getUsername(), TESTPASSWD));
   }
 
   @Test
   public void testHasPermissionUserString() throws Exception {
     logoutAndLoginAs(user);
-    assertFalse(signingMgr.isReauthenticated(user, TESTPASSWD + "???"));
-    assertTrue(signingMgr.hasPermission(user.getUsername(), TESTPASSWD));
+    assertEquals(
+        ReauthenticationResult.WRONG, signingMgr.isReauthenticated(user, TESTPASSWD + "???"));
+    assertEquals(
+        ReauthenticationResult.OK, signingMgr.hasPermission(user.getUsername(), TESTPASSWD));
   }
 
   @Test

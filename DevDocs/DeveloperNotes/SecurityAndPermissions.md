@@ -62,7 +62,17 @@ The design and its trade-offs are in
   deadline (`login.passwordVerification.waitSeconds`, default 5) covers
   both waits. On timeout it throws `LoginVerificationBusyException`,
   which the login filter and `ReauthenticatorImpl` deliberately do not
-  count toward lockout. Encoding new passwords and the migration are not
+  count toward lockout. Callers are told the check was busy, never that
+  the password was wrong: `IReauthenticator` returns
+  `ReauthenticationResult.BUSY` and the prompts show
+  `errors.reauthentication.busy`; the login page and the SSO admin login
+  show `errors.login.busy`; `ApiControllerAdvice` answers the OAuth
+  password grant with 503 and `Retry-After: waitSeconds`, and the grant
+  gives back the counted guess (`PasswordGrantGuessLimiter.uncount`).
+  `SentinelPasswordCheck.pad` does not swallow the exception, so padded
+  unknown names, locked accounts and LDAP-source users get the same busy
+  answer as a real account; otherwise a flood would show which names
+  exist. Encoding new passwords and the migration are not
   bounded at the encoder. The anonymous routes into `encode()` are
   capped in front of it instead: `SignupController`,
   `ExternalAuthController` (Google sign-up on Community),

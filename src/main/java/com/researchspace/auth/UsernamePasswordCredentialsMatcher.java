@@ -42,10 +42,10 @@ public class UsernamePasswordCredentialsMatcher implements CredentialsMatcher {
     try {
       return verifier.verify(username, suppliedPassword, storedPassword);
     } catch (IllegalArgumentException e) {
-      sentinelCheck.pad(username, suppliedPassword);
       log.warn(
           "Stored password of [{}] has no recognised encoding; an administrator must reset it",
           username);
+      sentinelCheck.pad(username, suppliedPassword);
       return false;
     }
   }
