@@ -1,6 +1,7 @@
 package com.researchspace.dao.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -32,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
@@ -223,19 +225,11 @@ class RsqlCollectionQueryTest {
     CollectionDescription<Related> description = relationshipDescription();
     RsqlFilterParser relationshipParser = new RsqlFilterParser(description);
     RsqlCollectionQuery relationshipTranslator = new RsqlCollectionQuery(description, "item");
-    RelationshipReadAccess targets =
-        RelationshipReadAccess.unrestricted(
-            new ResourceRegistry(
-                List.of(
-                    description,
-                    relationshipTargetDescription(
-                        "instruments", RelatedTarget.class, RelatedTarget::id),
-                    relationshipTargetDescription(
-                        "samples", RelatedSample.class, RelatedSample::id))));
+    RelationshipReadAccess targets = unrestrictedTargets(description);
 
     Predicate pairs =
         relationshipTranslator.translate(
-            relationshipParser.parse("target=in=(IN1,SA2);target.value==3"), targets);
+            where(relationshipParser, "target=in=(IN1,SA2);target.value==3"), targets);
     assertEquals(4, pairs.subqueries().size());
     assertTrue(pairs.expression().contains("EXISTS"));
     assertTrue(pairs.expression().contains("item.targetId = :"));
@@ -243,33 +237,26 @@ class RsqlCollectionQueryTest {
 
     Predicate kind =
         relationshipTranslator.translate(
-            relationshipParser.parse("target.relationTo==instruments"), targets);
+            where(relationshipParser, "target.relationTo==instruments"), targets);
     assertEquals(2, kind.subqueries().size());
     assertTrue(kind.expression().contains("item.targetType = :"));
     assertTrue(kind.parameters().containsValue(TargetKind.INSTRUMENT));
 
     Predicate excluded =
-        relationshipTranslator.translate(relationshipParser.parse("target=out=(IN1,SA2)"), targets);
+        relationshipTranslator.translate(
+            where(relationshipParser, "target=out=(IN1,SA2)"), targets);
     assertEquals(2, excluded.subqueries().size());
     assertTrue(excluded.expression().contains(" AND NOT "));
     assertThrows(
-        CollectionQueryException.class, () -> relationshipParser.parse("target.globalId==IN1"));
-    assertThrows(CollectionQueryException.class, () -> relationshipParser.parse("target==XX1"));
+        CollectionQueryException.class, () -> where(relationshipParser, "target.globalId==IN1"));
+    assertThrows(CollectionQueryException.class, () -> where(relationshipParser, "target==XX1"));
   }
 
   @Test
   void compilesReadableRelationshipWithoutRequiringACallerFilter() {
     CollectionDescription<Related> description = relationshipDescription();
     RsqlCollectionQuery relationshipTranslator = new RsqlCollectionQuery(description, "item");
-    RelationshipReadAccess targets =
-        RelationshipReadAccess.unrestricted(
-            new ResourceRegistry(
-                List.of(
-                    description,
-                    relationshipTargetDescription(
-                        "instruments", RelatedTarget.class, RelatedTarget::id),
-                    relationshipTargetDescription(
-                        "samples", RelatedSample.class, RelatedSample::id))));
+    RelationshipReadAccess targets = unrestrictedTargets(description);
 
     Predicate allowed = relationshipTranslator.compileReadableRelationship("target", targets);
     Predicate denied =
@@ -337,24 +324,17 @@ class RsqlCollectionQueryTest {
                     .writeOnlyOn()),
             "id",
             List.of(new Sort("id", true)));
-    RelationshipReadAccess targets =
-        RelationshipReadAccess.unrestricted(
-            new ResourceRegistry(
-                List.of(
-                    assigned,
-                    relationshipTargetDescription(
-                        "instruments", RelatedTarget.class, RelatedTarget::id))));
+    RelationshipReadAccess targets = unrestrictedTargets(assigned);
 
     Predicate result =
         new RsqlCollectionQuery(assigned, "item")
             .translate(
-                new RsqlFilterParser(assigned).parse("instrument=in=(IN42,IN43);instrument!=IN44"),
+                where(new RsqlFilterParser(assigned), "instrument=in=(IN42,IN43);instrument!=IN44"),
                 targets);
 
     assertTrue(result.expression().contains("(item.instrumentId IN :"), result.expression());
     assertTrue(result.expression().contains("NOT (item.instrumentId IN :"), result.expression());
-    org.junit.jupiter.api.Assertions.assertFalse(
-        result.expression().contains(".null"), result.expression());
+    assertFalse(result.expression().contains(".null"), result.expression());
     assertTrue(result.parameters().containsValue(List.of(42L, 43L)));
     assertTrue(result.parameters().containsValue(List.of(44L)));
   }
@@ -379,20 +359,12 @@ class RsqlCollectionQueryTest {
   }
 
   private static <T> CollectionDescription<T> relationshipTargetDescription(
-      String name, Class<T> entityType, java.util.function.Function<T, Long> idAccessor) {
-    return new CollectionDescription<>(
-        name,
-        entityType,
-        List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), idAccessor)),
-        "id",
-        List.of(new Sort("id", true)));
+      String name, Class<T> entityType, Function<T, Long> idAccessor) {
+    return relationshipTargetDescription(name, entityType, idAccessor, AccessFunction.anyone());
   }
 
   private static <T> CollectionDescription<T> relationshipTargetDescription(
-      String name,
-      Class<T> entityType,
-      java.util.function.Function<T, Long> idAccessor,
-      AccessFunction readAccess) {
+      String name, Class<T> entityType, Function<T, Long> idAccessor, AccessFunction readAccess) {
     return new CollectionDescription<>(
         name,
         entityType,
@@ -400,6 +372,20 @@ class RsqlCollectionQueryTest {
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(readAccess));
+  }
+
+  private static RelationshipReadAccess unrestrictedTargets(CollectionDescription<?> description) {
+    return RelationshipReadAccess.unrestricted(
+        new ResourceRegistry(
+            List.of(
+                description,
+                relationshipTargetDescription(
+                    "instruments", RelatedTarget.class, RelatedTarget::id),
+                relationshipTargetDescription("samples", RelatedSample.class, RelatedSample::id))));
+  }
+
+  private static FilterExpression where(RsqlFilterParser parser, String expression) {
+    return parser.parse(expression);
   }
 
   private Predicate translate(String rsql) {

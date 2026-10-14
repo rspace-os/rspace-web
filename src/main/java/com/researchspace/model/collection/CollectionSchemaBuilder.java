@@ -6,17 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 /** Builds the public schema document for a collection description. */
-final class CollectionSchemaBuilder<T> {
-  private final String resourceName;
-  private final Class<T> entityType;
-  private final Map<String, Field<T, ?>> fields;
-  private final Map<String, Relationship<T>> relationships;
-  private final Map<String, FilterSelector<T>> filterSelectors;
-  private final String idField;
-  private final List<Sort> defaultSort;
-  private final AccessPolicy accessPolicy;
+final class CollectionSchemaBuilder {
 
-  CollectionSchemaBuilder(
+  static <T> ResourceSchema build(
       String resourceName,
       Class<T> entityType,
       Map<String, Field<T, ?>> fields,
@@ -25,23 +17,14 @@ final class CollectionSchemaBuilder<T> {
       String idField,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
-    this.resourceName = resourceName;
-    this.entityType = entityType;
-    this.fields = fields;
-    this.relationships = relationships;
-    this.filterSelectors = filterSelectors;
-    this.idField = idField;
-    this.defaultSort = defaultSort;
-    this.accessPolicy = accessPolicy;
-  }
-
-  ResourceSchema build() {
     return new ResourceSchema(
         resourceName,
         entityType,
         idField,
         fields.values().stream().map(field -> field.schema(accessPolicy)).toList(),
-        relationships.values().stream().map(this::relationshipSchema).toList(),
+        relationships.values().stream()
+            .map(relationship -> relationshipSchema(relationship, accessPolicy))
+            .toList(),
         filterSelectors.values().stream()
             .map(
                 selector ->
@@ -57,7 +40,8 @@ final class CollectionSchemaBuilder<T> {
             documented(accessPolicy.softDeleteAccess())));
   }
 
-  private RelationshipSchema relationshipSchema(Relationship<T> relationship) {
+  private static <T> RelationshipSchema relationshipSchema(
+      Relationship<T> relationship, AccessPolicy accessPolicy) {
     return new RelationshipSchema(
         relationship.name(),
         relationship.targets().stream().map(RelationshipTarget::resourceName).toList(),

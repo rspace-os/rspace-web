@@ -1,9 +1,10 @@
 package com.researchspace.dao;
 
+import com.researchspace.dao.query.LookAheadPagination.Result;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
-import java.util.List;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity.Definition;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -41,22 +42,6 @@ public interface ExtraFieldDao {
     }
   }
 
-  /** One published definition: every extra field with this name and this declared type. */
-  record ExtraFieldRow(String name, FieldType type) {
-
-    public ExtraFieldRow {
-      Objects.requireNonNull(name, "Extra field name");
-      Objects.requireNonNull(type, "Extra field type");
-    }
-  }
-
-  /**
-   * One page of definitions.
-   *
-   * @param total exact count, or null when the page stopped short of the end
-   */
-  record ExtraFieldPage(List<ExtraFieldRow> rows, Long total, boolean hasMore) {}
-
   /**
    * Definitions this caller may name, narrowed and bounded.
    *
@@ -65,11 +50,11 @@ public interface ExtraFieldDao {
    * @param wanted specific definitions to hydrate; when non-empty, search and paging are ignored
    * @param types the declared types this API publishes
    */
-  ExtraFieldPage readableDefinitions(
+  Result<Definition> readableDefinitions(
       ExtraFieldScope scope,
       QueryConstraint constraint,
       String search,
-      Set<ExtraFieldRow> wanted,
+      Set<Definition> wanted,
       Set<FieldType> types,
       int offset,
       int limit);
@@ -81,6 +66,6 @@ public interface ExtraFieldDao {
    * rather than null, which is the documented difference between "not applicable" and "applicable
    * but empty".
    */
-  Map<Long, Map<ExtraFieldRow, String>> valuesByParent(
-      ExtraFieldScope scope, Set<Long> parentIds, Set<ExtraFieldRow> definitions);
+  Map<Long, Map<Definition, String>> valuesByParent(
+      ExtraFieldScope scope, Set<Long> parentIds, Set<Definition> definitions);
 }

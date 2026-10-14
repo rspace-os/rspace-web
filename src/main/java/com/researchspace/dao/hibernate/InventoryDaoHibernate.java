@@ -5,6 +5,7 @@ import com.blazebit.persistence.CommonQueryBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessResult;
@@ -15,6 +16,7 @@ import com.researchspace.model.sort.InventorySort;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.io.Serializable;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
@@ -34,10 +36,13 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
   }
 
   protected InventoryReadQueryContext readQueryContext(User user) {
+    if (user.hasSysadminRole()) {
+      return new InventoryReadQueryContext(user, List.of(), List.of(), List.of());
+    }
     return new InventoryReadQueryContext(
         user,
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user),
-        user.getGroups().stream().map(group -> group.getUniqueName()).toList(),
+        user.getGroups().stream().map(Group::getUniqueName).toList(),
         invPermissionUtils.getOwnersVisibleWithUserRole(user));
   }
 
@@ -67,21 +72,14 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
     }
 
     void bind(CommonQueryBuilder<?> query, String ownedBy) {
-      if (StringUtils.isNotEmpty(ownedBy)) {
-        query.setParameter("ownedBy", ownedBy);
-      }
-      if (!user.hasSysadminRole()) {
-        query.setParameter("currentUser", user.getUsername());
-        if (CollectionUtils.isNotEmpty(visibleOwners)) {
-          query.setParameter("visibleOwners", visibleOwners);
-        }
-        if (CollectionUtils.isNotEmpty(groupMembers)) {
-          query.setParameter("userGroupMembers", groupMembers);
-        }
-        for (int i = 0; i < groupNames.size(); i++) {
-          query.setParameter("userGroupUniqueName" + i, "%" + groupNames.get(i) + "%");
-        }
-      }
+      bindQueryParams(
+          ownedBy,
+          user,
+          visibleOwners,
+          groupMembers,
+          groupNames,
+          (name, value) -> query.setParameter(name, value),
+          (name, values) -> query.setParameter(name, values));
     }
   }
 
@@ -196,6 +194,9 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
       List<String> groupNames,
       List<String> visibleOwners,
       String alias) {
+    if (caller.hasSysadminRole()) {
+      return "1=1";
+    }
     String direct =
         getInventoryReadPermissionSqlPredicate(
             caller, groupMembers, groupNames, visibleOwners, alias + ".");
@@ -276,21 +277,39 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
       List<String> visibleOwners,
       List<String> userGroupMembers,
       List<String> userGroupsUniqueNames) {
+    bindQueryParams(
+        ownedBy,
+        user,
+        visibleOwners,
+        userGroupMembers,
+        userGroupsUniqueNames,
+        (name, value) -> baseQuery.setParameter(name, value),
+        (name, values) -> baseQuery.setParameterList(name, values));
+    return baseQuery;
+  }
+
+  private static void bindQueryParams(
+      String ownedBy,
+      User user,
+      List<String> visibleOwners,
+      List<String> userGroupMembers,
+      List<String> userGroupsUniqueNames,
+      BiConsumer<String, Object> setParameter,
+      BiConsumer<String, List<String>> setParameterList) {
     if (StringUtils.isNotEmpty(ownedBy)) {
-      baseQuery.setParameter("ownedBy", ownedBy);
+      setParameter.accept("ownedBy", ownedBy);
     }
     if (!user.hasSysadminRole()) {
-      baseQuery.setParameter("currentUser", user.getUsername());
+      setParameter.accept("currentUser", user.getUsername());
       if (CollectionUtils.isNotEmpty(visibleOwners)) {
-        baseQuery.setParameterList("visibleOwners", visibleOwners);
+        setParameterList.accept("visibleOwners", visibleOwners);
       }
       if (CollectionUtils.isNotEmpty(userGroupMembers)) {
-        baseQuery.setParameterList("userGroupMembers", userGroupMembers);
+        setParameterList.accept("userGroupMembers", userGroupMembers);
       }
       for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
-        baseQuery.setParameter("userGroupUniqueName" + i, "%" + userGroupsUniqueNames.get(i) + "%");
+        setParameter.accept("userGroupUniqueName" + i, "%" + userGroupsUniqueNames.get(i) + "%");
       }
     }
-    return baseQuery;
   }
 }

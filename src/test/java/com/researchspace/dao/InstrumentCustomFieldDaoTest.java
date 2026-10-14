@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
-import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.dao.InstrumentCustomFieldDao.ValueRow;
@@ -15,24 +14,21 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.FieldSelection;
-import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResolvedRuntimeField;
-import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
-import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,7 +46,7 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
   @Autowired private InstrumentEntityApiManager instrumentApiManager;
 
   private List<RuntimeFieldDefinition> catalog(User actor) {
-    List<RuntimeFieldDefinition> all = new java.util.ArrayList<>();
+    List<RuntimeFieldDefinition> all = new ArrayList<>();
     for (int page = 1; ; page++) {
       var result =
           customFields.discover(
@@ -82,42 +78,21 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
 
   private Instrument instrumentFromTemplate(
       User owner, ApiInstrumentTemplate template, String name, String value) {
-    ApiInstrument request = new ApiInstrument();
-    request.setName(name);
-    request.setTemplateId(template.getId());
-    ApiInstrument created = instrumentApiManager.createNewApiInstrument(request, owner);
-    Instrument instrument = instrumentDao.get(created.getId());
-    for (InventoryEntityField field : instrument.getActiveFields()) {
-      field.setFieldData(value);
-    }
-    instrumentDao.save(instrument);
-    return instrument;
+    return InstrumentCustomFieldTestUtils.instrumentFromTemplate(
+        instrumentDao, instrumentApiManager, owner, template, name, value);
   }
 
   private ResolvedRuntimeField definitionOf(User actor, ApiInstrumentTemplate template) {
-    String templateId = String.valueOf(template.getId());
-    return catalog(actor).stream()
-        .filter(field -> field.sourceId().endsWith(templateId))
-        .findFirst()
-        .flatMap(field -> customFields.resolve(field.selector(), actor))
-        .orElseThrow(() -> new AssertionError("No readable definition for template " + templateId));
+    return InstrumentCustomFieldTestUtils.definitionOf(customFields, actor, template);
   }
 
   private ResourceRequest filter(ResolvedRuntimeField field, Operator operator, Object value) {
-    return new ResourceRequest(
-        new FilterExpression.Comparison(field.selector(), operator, List.of(value), false),
-        null,
-        List.of(new Sort("name", true), new Sort("id", true)),
-        new ResourceRequest.Page(1, 20),
-        ResourceFieldSelections.root(FieldSelection.all()),
-        IncludeTree.empty(),
-        new RuntimeFieldSelection(Map.of(field.selector(), field), Set.of()));
+    return InstrumentCustomFieldTestUtils.filter(field, operator, value);
   }
 
   private List<String> matches(ResourceRequest request, User actor) {
-    return instrumentDao.getReadableResources(request, readAccess(actor)).resources().stream()
-        .map(Instrument::getName)
-        .toList();
+    return InstrumentCustomFieldTestUtils.matches(
+        instrumentDao, instrumentReadAccess, request, actor);
   }
 
   private List<Instrument> allReadable(User actor) {
@@ -133,32 +108,22 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
         .resources();
   }
 
-  private ApiInstrumentTemplate percentNamedFieldTemplate(User owner) {
+  private ApiInstrumentTemplate numberTemplate(User owner, String name, String fieldName) {
     ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
-    post.setName("Assay");
-    post.getFields().add(createBasicApiSampleField("purity 50% (w/w)", ApiFieldType.NUMBER, "0"));
-    return instrumentApiMgr.createInstrumentTemplate(post, owner);
-  }
-
-  private ApiInstrumentTemplate numericTemplate(User owner) {
-    ApiInstrumentTemplatePost post = new ApiInstrumentTemplatePost();
-    post.setName("Freezer");
-    post.getFields().add(createBasicApiSampleField("temperature", ApiFieldType.NUMBER, "0"));
+    post.setName(name);
+    post.getFields().add(createBasicApiSampleField(fieldName, ApiFieldType.NUMBER, "0"));
     return instrumentApiMgr.createInstrumentTemplate(post, owner);
   }
 
   private void legacyValue(
       User owner, ApiInstrumentTemplate template, String name, String storedText) {
-    ApiInstrument request = new ApiInstrument();
-    request.setName(name);
-    request.setTemplateId(template.getId());
-    ApiInstrument created = instrumentApiManager.createNewApiInstrument(request, owner);
+    Instrument instrument = instrumentFromTemplate(owner, template, name, "");
     sessionFactory
         .getCurrentSession()
         .createMutationQuery(
             "update InventoryEntityField f set f.data = :data where f.instrumentEntity.id = :id")
         .setParameter("data", storedText)
-        .setParameter("id", created.getId())
+        .setParameter("id", instrument.getId())
         .executeUpdate();
     sessionFactory.getCurrentSession().clear();
   }
@@ -166,7 +131,7 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
   @Test
   public void comparesANumericFieldAsANumberAndIgnoresTextThatIsNotOne() {
     User owner = createInitAndLoginAnyUser();
-    ApiInstrumentTemplate template = numericTemplate(owner);
+    ApiInstrumentTemplate template = numberTemplate(owner, "Freezer", "temperature");
     instrumentFromTemplate(owner, template, "Cold store", "-80");
     instrumentFromTemplate(owner, template, "Zero store", "0");
     legacyValue(owner, template, "Legacy store", "n/a");
@@ -182,7 +147,7 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
   @Test
   public void numericFiltersDoNotRoundValuesThatRuntimeProjectionRejects() {
     User owner = createInitAndLoginAnyUser();
-    ApiInstrumentTemplate template = numericTemplate(owner);
+    ApiInstrumentTemplate template = numberTemplate(owner, "Freezer", "temperature");
     Instrument tooSmall = instrumentFromTemplate(owner, template, "Too small", "1e-31");
     Instrument minimumScale = instrumentFromTemplate(owner, template, "Minimum scale", "1e-30");
     Instrument trailingZeros =
@@ -241,24 +206,16 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
     instrumentFromTemplate(owner, first, "From cell line", "BSL-2");
     instrumentFromTemplate(owner, second, "From bacterial", "BSL-2");
 
-    List<RuntimeFieldDefinition> published = catalog(owner);
     ResolvedRuntimeField fromFirst = definitionOf(owner, first);
 
     assertEquals(
         List.of("From cell line"), matches(filter(fromFirst, Operator.EQUAL, "BSL-2"), owner));
-    assertTrue(
-        published.stream()
-                .filter(field -> field.label().equals(published.get(0).label()))
-                .map(RuntimeFieldDefinition::id)
-                .distinct()
-                .count()
-            >= 1);
   }
 
   @Test
   public void treatsAWildcardInACatalogueSearchAsALiteral() {
     User owner = createInitAndLoginAnyUser();
-    ApiInstrumentTemplate template = percentNamedFieldTemplate(owner);
+    ApiInstrumentTemplate template = numberTemplate(owner, "Assay", "purity 50% (w/w)");
     instrumentFromTemplate(owner, template, "Readable scope", "0.9");
 
     assertEquals(List.of("purity 50% (w/w)"), labels(search(owner, "50%")));

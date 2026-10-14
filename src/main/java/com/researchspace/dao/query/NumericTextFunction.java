@@ -40,8 +40,6 @@ public final class NumericTextFunction implements JpqlFunction {
 
   private static final String MIN_BIG_DECIMAL_SCALE = "-2147483648";
   private static final String MAX_BIG_DECIMAL_SCALE = "2147483647";
-  private static final int MAX_INTEGER_DIGITS =
-      RuntimeFieldValueType.MAX_NUMBER_PRECISION - RuntimeFieldValueType.MAX_NUMBER_SCALE;
 
   private static String validNumber(String value) {
     String lower = "lower(" + value + ")";
@@ -117,7 +115,7 @@ public final class NumericTextFunction implements JpqlFunction {
         + " and "
         + integerDigits
         + " <= "
-        + MAX_INTEGER_DIGITS
+        + RuntimeFieldValueType.MAX_NUMBER_INTEGER_DIGITS
         + "))";
   }
 

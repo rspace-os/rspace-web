@@ -2,10 +2,14 @@ package com.researchspace.model.collection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,14 +77,12 @@ class ResourceRegistryTest {
                 (resource, id) ->
                     Optional.of(
                         new ResourceRenderer.ResolvedTarget(
-                            child,
-                            FieldSelection.all(),
-                            java.util.Collections.singletonMap("name", null))));
+                            child, FieldSelection.all(), Collections.singletonMap("name", null))));
 
     Map<?, ?> relationship = (Map<?, ?>) document.get("primaryChild");
     Map<?, ?> expanded = (Map<?, ?>) relationship.get("value");
     assertTrue(expanded.containsKey("name"));
-    assertEquals(null, expanded.get("name"));
+    assertNull(expanded.get("name"));
   }
 
   @Test
@@ -235,11 +237,10 @@ class ResourceRegistryTest {
 
           @Override
           public Map<ResourceRenderer.TargetKey, Optional<ResourceRenderer.ResolvedTarget>>
-              resolveAll(java.util.Collection<ResourceRenderer.TargetKey> targets) {
+              resolveAll(Collection<ResourceRenderer.TargetKey> targets) {
             batches.incrementAndGet();
-            java.util.LinkedHashMap<
-                    ResourceRenderer.TargetKey, Optional<ResourceRenderer.ResolvedTarget>>
-                resolved = new java.util.LinkedHashMap<>();
+            LinkedHashMap<ResourceRenderer.TargetKey, Optional<ResourceRenderer.ResolvedTarget>>
+                resolved = new LinkedHashMap<>();
             targets.forEach(
                 key ->
                     resolved.put(
@@ -269,17 +270,9 @@ class ResourceRegistryTest {
 
   @Test
   void validatesPolymorphicTargetEntityAndIdTypes() {
-    CollectionDescription<Node> nodes = nodes();
-    List<ResourceMember<Node>> wrongEntityTargetMembers = new ArrayList<>(nodes.fields());
-    wrongEntityTargetMembers.add(
-        Relationship.polymorphicToOne(
-            "target",
-            CollectionFieldTypes.longNumber(),
-            List.of(new RelationshipTarget<>("nodes", NodeKind.NODE, "IN", String.class)),
-            new SplitReferenceBinding<>(Node::target, "targetType", "targetId")));
     CollectionDescription<Node> wrongEntityTarget =
-        new CollectionDescription<>(
-            "nodes", Node.class, wrongEntityTargetMembers, "id", List.of(new Sort("id", true)));
+        polymorphicNodes(
+            List.of(new RelationshipTarget<>("nodes", NodeKind.NODE, "IN", String.class)));
     assertThrows(
         IllegalArgumentException.class, () -> new ResourceRegistry(List.of(wrongEntityTarget)));
 
@@ -290,18 +283,11 @@ class ResourceRegistryTest {
             List.of(Field.readOnly("id", "id", CollectionFieldTypes.text(20), StringIdTarget::id)),
             "id",
             List.of(new Sort("id", true)));
-    List<ResourceMember<Node>> wrongIdSourceMembers = new ArrayList<>(nodes.fields());
-    wrongIdSourceMembers.add(
-        Relationship.polymorphicToOne(
-            "target",
-            CollectionFieldTypes.longNumber(),
+    CollectionDescription<Node> wrongIdSource =
+        polymorphicNodes(
             List.of(
                 new RelationshipTarget<>(
-                    "stringTargets", NodeKind.NODE, null, StringIdTarget.class)),
-            new SplitReferenceBinding<>(Node::target, "targetType", "targetId")));
-    CollectionDescription<Node> wrongIdSource =
-        new CollectionDescription<>(
-            "nodes", Node.class, wrongIdSourceMembers, "id", List.of(new Sort("id", true)));
+                    "stringTargets", NodeKind.NODE, null, StringIdTarget.class)));
     assertThrows(
         IllegalArgumentException.class,
         () -> new ResourceRegistry(List.of(wrongIdSource, stringTargets)));
@@ -319,19 +305,12 @@ class ResourceRegistryTest {
                     "name", "name", CollectionFieldTypes.longNumber(), NumericTarget::name)),
             "id",
             List.of(new Sort("id", true)));
-    List<ResourceMember<Node>> sourceMembers = new ArrayList<>(nodes().fields());
-    sourceMembers.add(
-        Relationship.polymorphicToOne(
-            "target",
-            CollectionFieldTypes.longNumber(),
+    CollectionDescription<Node> source =
+        polymorphicNodes(
             List.of(
                 new RelationshipTarget<>("children", NodeKind.NODE, null, Child.class),
                 new RelationshipTarget<>(
-                    "numericTargets", NodeKind.NUMERIC, null, NumericTarget.class)),
-            new SplitReferenceBinding<>(Node::target, "targetType", "targetId")));
-    CollectionDescription<Node> source =
-        new CollectionDescription<>(
-            "nodes", Node.class, sourceMembers, "id", List.of(new Sort("id", true)));
+                    "numericTargets", NodeKind.NUMERIC, null, NumericTarget.class)));
 
     assertThrows(
         IllegalArgumentException.class,

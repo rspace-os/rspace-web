@@ -39,7 +39,6 @@ public final class CollectionDescription<T> {
   private final AccessPolicy accessPolicy;
   private final CollectionEntityMapper<T> entityMapper;
   private final CollectionAccessEvaluator<T> accessEvaluator;
-  private final CollectionSchemaBuilder<T> schemaBuilder;
   private final CollectionValueReader<T> valueReader;
 
   /**
@@ -174,16 +173,6 @@ public final class CollectionDescription<T> {
     this.accessEvaluator =
         new CollectionAccessEvaluator<>(
             this.fields, this.relationships, filterSelectors, this.idField);
-    this.schemaBuilder =
-        new CollectionSchemaBuilder<>(
-            this.resourceName,
-            this.entityType,
-            this.fields,
-            this.relationships,
-            this.filterSelectors,
-            this.idField,
-            this.defaultSort,
-            this.accessPolicy);
     this.valueReader = new CollectionValueReader<>(this.fields, compilableSelectors);
   }
 
@@ -204,7 +193,7 @@ public final class CollectionDescription<T> {
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
     return AnnotatedCollectionDescriptionFactory.create(
-        resourceType, entityType, relationships, defaultSort, accessPolicy);
+        resourceType, entityType, relationships, defaultSort, accessPolicy, List.of());
   }
 
   /** Describes an annotated resource with filters reserved for server-side constraints. */
@@ -369,7 +358,15 @@ public final class CollectionDescription<T> {
   }
 
   public ResourceSchema schema() {
-    return schemaBuilder.build();
+    return CollectionSchemaBuilder.build(
+        resourceName,
+        entityType,
+        fields,
+        relationships,
+        filterSelectors,
+        idField,
+        defaultSort,
+        accessPolicy);
   }
 
   /**

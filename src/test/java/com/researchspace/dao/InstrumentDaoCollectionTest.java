@@ -37,15 +37,6 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));
   }
 
-  private static ResourceRequest request(FilterExpression filter) {
-    return new ResourceRequest(
-        filter,
-        List.of(new Sort("name", true), new Sort("id", true)),
-        new ResourceRequest.Page(1, 20),
-        FieldSelection.all(),
-        IncludeTree.empty());
-  }
-
   private static ResourceRequest page(FilterExpression filter, int number, int size) {
     return new ResourceRequest(
         filter,
@@ -73,7 +64,7 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     createBasicInstrumentForUser(owner, "Confocal microscope");
     createBasicInstrumentForUser(owner, "Centrifuge");
 
-    ResourceRequest request = request(nameContains("confocal"));
+    ResourceRequest request = page(nameContains("confocal"), 1, 20);
 
     assertEquals(
         List.of("Confocal microscope"),
@@ -89,7 +80,7 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
     List<Instrument> matches =
         instrumentDao
-            .getReadableResources(request(nameContains("Shared name")), readAccess(owner))
+            .getReadableResources(page(nameContains("Shared name"), 1, 20), readAccess(owner))
             .resources();
 
     assertEquals(1, matches.size());
@@ -120,7 +111,7 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     createBasicInstrumentForUser(owner, "Private scope");
     User other = createInitAndLoginAnyUser();
 
-    ResourceRequest request = request(nameContains("Private scope"));
+    ResourceRequest request = page(nameContains("Private scope"), 1, 20);
 
     assertTrue(
         instrumentDao.getReadableResources(request, readAccess(other)).resources().isEmpty());
@@ -137,7 +128,7 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
     instrumentDao.save(instrument);
 
     ResourceRequest request =
-        request(new FilterExpression.And(List.of(nameContains("Trashed scope"), notDeleted())));
+        page(new FilterExpression.And(List.of(nameContains("Trashed scope"), notDeleted())), 1, 20);
 
     assertTrue(
         instrumentDao.getReadableResources(request, readAccess(owner)).resources().isEmpty());

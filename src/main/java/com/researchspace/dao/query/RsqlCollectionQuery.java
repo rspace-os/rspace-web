@@ -7,6 +7,7 @@ import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import java.util.Map;
+import java.util.Objects;
 
 /** Compiles a typed collection filter into a parameterized Blaze-Persistence predicate. */
 public final class RsqlCollectionQuery {
@@ -47,12 +48,16 @@ public final class RsqlCollectionQuery {
   }
 
   public Predicate translate(FilterExpression filter, RelationshipReadAccess targets) {
-    return translate(filter, targets, RuntimeFieldSelection.empty(), true);
+    return translate(filter, targets, RuntimeFieldSelection.empty());
   }
 
   public Predicate translate(
       FilterExpression filter, RelationshipReadAccess targets, RuntimeFieldSelection runtime) {
-    return translate(filter, targets, runtime, true);
+    if (filter == null) {
+      return null;
+    }
+    RsqlCompilationState state = new RsqlCompilationState(parameterPrefix, targets, runtime, true);
+    return new Predicate(expressions.compile(filter, state), state.parameters, state.subqueries);
   }
 
   /** Compiles a server-built constraint without charging it to the caller complexity budget. */
@@ -77,26 +82,13 @@ public final class RsqlCollectionQuery {
     RsqlCompilationState state =
         new RsqlCompilationState(
             parameterPrefix,
-            java.util.Objects.requireNonNull(targets, "Target access"),
+            Objects.requireNonNull(targets, "Target access"),
             RuntimeFieldSelection.empty(),
             false);
     String expression =
         relationships.compileReadableRelationship(
             description.requireRelationship(relationshipName), state);
     return new Predicate(expression, state.parameters, state.subqueries);
-  }
-
-  private Predicate translate(
-      FilterExpression filter,
-      RelationshipReadAccess targets,
-      RuntimeFieldSelection runtime,
-      boolean enforceComplexityLimit) {
-    if (filter == null) {
-      return null;
-    }
-    RsqlCompilationState state =
-        new RsqlCompilationState(parameterPrefix, targets, runtime, enforceComplexityLimit);
-    return new Predicate(expressions.compile(filter, state), state.parameters, state.subqueries);
   }
 
   /**

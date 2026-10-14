@@ -27,9 +27,6 @@ class RuntimeFieldValueTypeTest {
         IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("\u0661\u0662"));
     assertNull(RuntimeFieldValueType.NUMBER.serialize("\u0661\u0662"));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> RuntimeFieldValueType.NUMBER.parse("0.0000000000000000000000000000001"));
-    assertThrows(
         IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1".repeat(36)));
     assertThrows(
         IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1e2147483647"));

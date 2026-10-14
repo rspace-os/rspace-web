@@ -66,9 +66,6 @@ final class RsqlExpressionCompiler {
 
   private String compileLogical(
       List<FilterExpression> children, String separator, RsqlCompilationState state) {
-    if (children.isEmpty()) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.SYNTAX);
-    }
     return "("
         + children.stream()
             .map(child -> compile(child, state))

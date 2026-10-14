@@ -180,9 +180,6 @@ final class RsqlRelationshipCompiler {
 
   private static String compileFixedTargetReference(
       FilterExpression.Comparison comparison, String idPath, RsqlCompilationState state) {
-    if (comparison.values().isEmpty()) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
-    }
     List<Object> ids = new ArrayList<>();
     for (Object value : comparison.values()) {
       if (!(value instanceof ResourceReference<?, ?> reference)) {
@@ -209,9 +206,6 @@ final class RsqlRelationshipCompiler {
       return exists
           ? "(" + kindPath + " IS NOT NULL AND " + idPath + " IS NOT NULL)"
           : "(" + kindPath + " IS NULL OR " + idPath + " IS NULL)";
-    }
-    if (comparison.values().isEmpty()) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
     }
     String pairs =
         "("

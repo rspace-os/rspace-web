@@ -1,8 +1,6 @@
 package com.researchspace.model.collection;
 
 import com.researchspace.model.User;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -20,20 +18,13 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.hibernate.proxy.HibernateProxy;
+import org.springframework.beans.BeanUtils;
+import org.springframework.util.ClassUtils;
 
 /** Maps an annotated API record and its entity bean properties to a collection description. */
 final class AnnotatedCollectionDescriptionFactory {
 
   private AnnotatedCollectionDescriptionFactory() {}
-
-  static <T> CollectionDescription<T> create(
-      Class<?> resourceType,
-      Class<T> entityType,
-      List<Relationship<T>> relationships,
-      List<Sort> defaultSort,
-      AccessPolicy accessPolicy) {
-    return create(resourceType, entityType, relationships, defaultSort, accessPolicy, List.of());
-  }
 
   static <T> CollectionDescription<T> create(
       Class<?> resourceType,
@@ -52,16 +43,22 @@ final class AnnotatedCollectionDescriptionFactory {
           "Resource definition entity must be " + entityType.getName());
     }
     Map<String, PropertyDescriptor> properties = properties(entityType);
-    List<ResourceMember<T>> members =
-        new ArrayList<>(fieldsFrom(resourceType, definition, properties));
-    members.addAll(relationships);
+    Stream<ResourceMember<T>> members =
+        Stream.<ResourceMember<T>>concat(
+            AnnotatedCollectionDescriptionFactory.<T>fieldsFrom(
+                resourceType, definition, properties)
+                .stream(),
+            relationships.stream());
     if (definition.auditFields()) {
-      members.addAll(auditRelationships(properties));
+      members =
+          Stream.concat(
+              members,
+              AnnotatedCollectionDescriptionFactory.<T>auditRelationships(properties).stream());
     }
     return new CollectionDescription<>(
         definition.name(),
         entityType,
-        members,
+        members.toList(),
         definition.id(),
         defaultSort,
         accessPolicy,
@@ -73,15 +70,16 @@ final class AnnotatedCollectionDescriptionFactory {
       ApiV2ResourceDefinition definition,
       Map<String, PropertyDescriptor> properties) {
     List<Field<T, ?>> fields =
-        new ArrayList<>(
-            Arrays.stream(resourceType.getRecordComponents())
-                .<Field<T, ?>>map(
-                    component -> fieldFrom(resourceType, component, properties, definition.id()))
-                .toList());
-    if (definition.auditFields()) {
-      fields.addAll(auditFields(properties));
-    }
-    return List.copyOf(fields);
+        Arrays.stream(resourceType.getRecordComponents())
+            .<Field<T, ?>>map(
+                component -> fieldFrom(resourceType, component, properties, definition.id()))
+            .toList();
+    return definition.auditFields()
+        ? Stream.concat(
+                fields.stream(),
+                AnnotatedCollectionDescriptionFactory.<T>auditFields(properties).stream())
+            .toList()
+        : fields;
   }
 
   private static <T> List<Field<T, ?>> auditFields(Map<String, PropertyDescriptor> properties) {
@@ -210,16 +208,11 @@ final class AnnotatedCollectionDescriptionFactory {
   }
 
   private static Map<String, PropertyDescriptor> properties(Class<?> entityType) {
-    try {
-      Map<String, PropertyDescriptor> properties = new LinkedHashMap<>();
-      for (PropertyDescriptor property :
-          Introspector.getBeanInfo(entityType).getPropertyDescriptors()) {
-        properties.put(property.getName(), property);
-      }
-      return properties;
-    } catch (IntrospectionException ex) {
-      throw new IllegalArgumentException("Cannot inspect entity " + entityType.getName(), ex);
+    Map<String, PropertyDescriptor> properties = new LinkedHashMap<>();
+    for (PropertyDescriptor property : BeanUtils.getPropertyDescriptors(entityType)) {
+      properties.put(property.getName(), property);
     }
+    return properties;
   }
 
   private static <T> Field<T, ?> fieldFrom(
@@ -384,16 +377,7 @@ final class AnnotatedCollectionDescriptionFactory {
   }
 
   private static Class<?> boxed(Class<?> type) {
-    if (type == long.class) {
-      return Long.class;
-    }
-    if (type == int.class) {
-      return Integer.class;
-    }
-    if (type == boolean.class) {
-      return Boolean.class;
-    }
-    return type;
+    return ClassUtils.resolvePrimitiveIfNecessary(type);
   }
 
   private static Object invoke(Method method, Object target, Object... arguments) {

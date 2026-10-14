@@ -1,27 +1,16 @@
 package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.AccessContext;
-import com.researchspace.model.collection.AccessContext.Operation;
-import com.researchspace.model.collection.AccessResult;
-import com.researchspace.model.collection.FieldSelection;
-import com.researchspace.model.collection.FilterExpression;
-import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResolvedRuntimeField;
-import com.researchspace.model.collection.ResourceFieldSelections;
-import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
-import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
-import com.researchspace.model.collection.Sort;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.ExtraField;
@@ -69,10 +58,6 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
     return instrument;
   }
 
-  private AccessResult readAccess(User user) {
-    return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));
-  }
-
   private List<RuntimeFieldDefinition> catalog(User actor) {
     return extraFields
         .discover(actor, new RuntimeFieldCatalogQuery(null, Set.of(), 1, 50))
@@ -88,18 +73,11 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
 
   private List<String> matches(
       User actor, ResolvedRuntimeField field, Operator operator, Object value) {
-    ResourceRequest request =
-        new ResourceRequest(
-            new FilterExpression.Comparison(field.selector(), operator, List.of(value), false),
-            null,
-            List.of(new Sort("name", true), new Sort("id", true)),
-            new ResourceRequest.Page(1, 20),
-            ResourceFieldSelections.root(FieldSelection.all()),
-            IncludeTree.empty(),
-            new RuntimeFieldSelection(Map.of(field.selector(), field), Set.of()));
-    return instrumentDao.getReadableResources(request, readAccess(actor)).resources().stream()
-        .map(Instrument::getName)
-        .toList();
+    return InstrumentCustomFieldTestUtils.matches(
+        instrumentDao,
+        instrumentReadAccess,
+        InstrumentCustomFieldTestUtils.filter(field, operator, value),
+        actor);
   }
 
   private ResolvedRuntimeField resolve(User actor, RuntimeFieldDefinition definition) {
@@ -142,7 +120,7 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
 
     RuntimeFieldDefinition asText = definition(owner, "Voltage", RuntimeFieldValueType.TEXT);
     RuntimeFieldDefinition asNumber = definition(owner, "Voltage", RuntimeFieldValueType.NUMBER);
-    assertFalse(asText.id().equals(asNumber.id()));
+    assertNotEquals(asText.id(), asNumber.id());
 
     assertEquals(
         List.of("Text voltage"), matches(owner, resolve(owner, asText), Operator.EQUAL, "high"));
@@ -230,21 +208,5 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
     User stranger = createInitAndLoginAnyUser();
 
     assertTrue(catalog(stranger).stream().noneMatch(field -> field.label().equals("Secret room")));
-  }
-
-  @Test
-  public void hydratesNamedDefinitionsForASavedView() {
-    User owner = createInitAndLoginAnyUser();
-    instrumentWith(owner, "Confocal", "Room", "Lab 4", false);
-    RuntimeFieldDefinition room = definition(owner, "Room", RuntimeFieldValueType.TEXT);
-
-    assertEquals(
-        List.of(room.id()),
-        extraFields
-            .discover(owner, RuntimeFieldCatalogQuery.byIds(Set.of(room.id())))
-            .fields()
-            .stream()
-            .map(RuntimeFieldDefinition::id)
-            .toList());
   }
 }

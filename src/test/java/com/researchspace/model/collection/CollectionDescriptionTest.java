@@ -47,48 +47,15 @@ class CollectionDescriptionTest {
 
   @Test
   void rejectsContradictoryWriteRules() {
+    assertThrows(IllegalArgumentException.class, () -> valueField(10).required().allowNull());
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            Field.writable(
-                    "value",
-                    "value",
-                    CollectionFieldTypes.text(10),
-                    TestEntity::value,
-                    TestEntity::setValue)
-                .required()
-                .allowNull());
+        () -> valueField(10).required().writeOnlyOn(WriteOperation.UPDATE));
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            Field.writable(
-                    "value",
-                    "value",
-                    CollectionFieldTypes.text(10),
-                    TestEntity::value,
-                    TestEntity::setValue)
-                .required()
-                .writeOnlyOn(WriteOperation.UPDATE));
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            Field.writable(
-                    "value",
-                    "value",
-                    CollectionFieldTypes.text(10),
-                    TestEntity::value,
-                    TestEntity::setValue)
-                .defaultValue("fixed")
-                .writeOnlyOn(WriteOperation.UPDATE));
+        () -> valueField(10).defaultValue("fixed").writeOnlyOn(WriteOperation.UPDATE));
 
-    Field<TestEntity, String> defaulted =
-        Field.writable(
-                "value",
-                "value",
-                CollectionFieldTypes.text(10),
-                TestEntity::value,
-                TestEntity::setValue)
-            .defaultValue("fixed");
+    Field<TestEntity, String> defaulted = valueField(10).defaultValue("fixed");
     assertEquals(
         "fixed",
         description(List.of(idField(), defaulted), List.of(new Sort("id", true)))
@@ -100,27 +67,9 @@ class CollectionDescriptionTest {
 
   @Test
   void validatesDefaultsWhenTheFieldIsDefined() {
+    assertThrows(IllegalArgumentException.class, () -> valueField(3).defaultValue("abcd"));
     assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            Field.writable(
-                    "value",
-                    "value",
-                    CollectionFieldTypes.text(3),
-                    TestEntity::value,
-                    TestEntity::setValue)
-                .defaultValue("abcd"));
-    assertThrows(
-        IllegalArgumentException.class,
-        () ->
-            Field.writable(
-                    "value",
-                    "value",
-                    CollectionFieldTypes.text(10),
-                    TestEntity::value,
-                    TestEntity::setValue)
-                .defaultValue("fixed")
-                .required());
+        IllegalArgumentException.class, () -> valueField(10).defaultValue("fixed").required());
   }
 
   @Test
@@ -131,9 +80,7 @@ class CollectionDescriptionTest {
             ConstrainedEntity.class,
             List.of(),
             List.of(new Sort("id", true)));
-    Map<String, FieldSchema> fields =
-        description.schema().fields().stream()
-            .collect(Collectors.toMap(FieldSchema::name, Function.identity()));
+    Map<String, FieldSchema> fields = schemaFields(description);
 
     assertEquals(
         new CollectionFieldType.Schema("integer", "int32", null), fields.get("size").type());
@@ -218,9 +165,7 @@ class CollectionDescriptionTest {
     assertEquals(
         List.of("id", "value", "serverManaged", "createdAt", "updatedAt"),
         description.fields().stream().map(Field::name).toList());
-    Map<String, FieldSchema> schemaFields =
-        description.schema().fields().stream()
-            .collect(Collectors.toMap(FieldSchema::name, Function.identity()));
+    Map<String, FieldSchema> schemaFields = schemaFields(description);
     assertEquals(10, schemaFields.get("value").type().maxLength());
     assertTrue(schemaFields.get("id").readOnly());
     assertTrue(schemaFields.get("serverManaged").readOnly());
@@ -302,11 +247,8 @@ class CollectionDescriptionTest {
     assertThrows(IllegalArgumentException.class, () -> relationship.parseGlobalReference("IN--3"));
 
     CollectionDescription<TestEntity> description =
-        new CollectionDescription<>(
-            "testEntities",
-            TestEntity.class,
+        description(
             List.<ResourceMember<TestEntity>>of(idField(), relationship),
-            "id",
             List.of(new Sort("id", true)));
     RelationshipSchema schema = description.schema().relationships().get(0);
     assertEquals(List.of("instruments"), schema.targetResources());
@@ -428,15 +370,12 @@ class CollectionDescriptionTest {
   @Test
   void preservesEachMemberKindOrderWhenDeclarationsAreInterleaved() {
     CollectionDescription<TestEntity> description =
-        new CollectionDescription<>(
-            "testEntities",
-            TestEntity.class,
+        description(
             List.<ResourceMember<TestEntity>>of(
                 idField(),
                 relationship("first"),
                 Field.readOnly("value", "value", CollectionFieldTypes.text(), TestEntity::value),
                 relationship("second")),
-            "id",
             List.of(new Sort("id", true)));
 
     assertEquals(List.of("id", "value"), description.fields().stream().map(Field::name).toList());
@@ -471,8 +410,23 @@ class CollectionDescriptionTest {
   }
 
   private static CollectionDescription<TestEntity> description(
-      List<Field<TestEntity, ?>> fields, List<Sort> defaultSort) {
-    return new CollectionDescription<>("testEntities", TestEntity.class, fields, "id", defaultSort);
+      List<? extends ResourceMember<TestEntity>> members, List<Sort> defaultSort) {
+    return new CollectionDescription<>(
+        "testEntities", TestEntity.class, members, "id", defaultSort);
+  }
+
+  private static Field<TestEntity, String> valueField(int maxLength) {
+    return Field.writable(
+        "value",
+        "value",
+        CollectionFieldTypes.text(maxLength),
+        TestEntity::value,
+        TestEntity::setValue);
+  }
+
+  private static Map<String, FieldSchema> schemaFields(CollectionDescription<?> description) {
+    return description.schema().fields().stream()
+        .collect(Collectors.toMap(FieldSchema::name, Function.identity()));
   }
 
   private static CollectionFieldType<String> unsortableText() {

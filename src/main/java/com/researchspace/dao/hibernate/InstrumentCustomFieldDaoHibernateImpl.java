@@ -27,7 +27,7 @@ import org.springframework.stereotype.Repository;
 /**
  * Reads instrument custom-field definitions and values against the caller's own read rule.
  *
- * <p>The read rule arrives as a {@link FilterExpression} and is recompiled here at this query's own
+ * <p>The read rule arrives as a {@link QueryConstraint} and is recompiled here at this query's own
  * instrument alias, which is the same rule the instrument list applies. That is what makes a custom
  * field a narrowing of an already-authorized row set rather than a second, weaker access path.
  */
@@ -45,7 +45,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
   @Autowired private SessionFactory sessionFactory;
 
   @Override
-  public DefinitionPage readableDefinitions(
+  public LookAheadPagination.Result<DefinitionRow> readableDefinitions(
       QueryConstraint constraint,
       String search,
       Set<Long> ids,
@@ -53,17 +53,10 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
       int offset,
       int limit) {
     if (types.isEmpty()) {
-      return new DefinitionPage(List.of(), 0L, false);
+      return new LookAheadPagination.Result<>(List.of(), 0L, false);
     }
     RsqlCollectionQuery.Predicate predicate =
-        new RsqlCollectionQuery(
-                ApiV2InstrumentResource.DESCRIPTION, INSTRUMENT_ALIAS, "customFieldAccess")
-            .translateTrusted(constraint);
-    if (predicate != null && !predicate.subqueries().isEmpty()) {
-      throw new IllegalStateException(
-          "Instrument read rule requires a subquery, which custom-field discovery cannot nest");
-    }
-    String source = SOURCE_ALIAS;
+        readablePredicate(constraint, "customFieldAccess", "custom-field discovery");
     CriteriaBuilder<DefinitionRow> query =
         criteriaBuilderFactory
             .create(sessionFactory.getCurrentSession(), DefinitionRow.class)
@@ -74,8 +67,8 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
             .with(DEFINITION_ALIAS + ".name")
             .with(DEFINITION_ALIAS + ".type")
             .with(DEFINITION_ALIAS + ".columnIndex")
-            .with(source + ".id")
-            .with(source + ".editInfo.name")
+            .with(SOURCE_ALIAS + ".id")
+            .with(SOURCE_ALIAS + ".editInfo.name")
             .end();
     restrict(query, predicate, search, ids, types);
     query.orderByAsc(DEFINITION_ALIAS + ".id");
@@ -84,9 +77,19 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
       query.setFirstResult(offset).setMaxResults(limit + 1);
     }
     List<DefinitionRow> rows = new ArrayList<>(query.getResultList());
-    LookAheadPagination.Result<DefinitionRow> page =
-        LookAheadPagination.apply(rows, offset, limit, hydrating);
-    return new DefinitionPage(page.rows(), page.total(), page.hasMore());
+    return LookAheadPagination.apply(rows, offset, limit, hydrating);
+  }
+
+  private RsqlCollectionQuery.Predicate readablePredicate(
+      QueryConstraint constraint, String queryName, String operation) {
+    RsqlCollectionQuery.Predicate predicate =
+        new RsqlCollectionQuery(ApiV2InstrumentResource.DESCRIPTION, INSTRUMENT_ALIAS, queryName)
+            .translateTrusted(constraint);
+    if (predicate != null && !predicate.subqueries().isEmpty()) {
+      throw new IllegalStateException(
+          "Instrument read rule requires a subquery, which " + operation + " cannot nest");
+    }
+    return predicate;
   }
 
   private void restrict(
@@ -137,13 +140,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
       return Set.of();
     }
     RsqlCollectionQuery.Predicate predicate =
-        new RsqlCollectionQuery(
-                ApiV2InstrumentResource.DESCRIPTION, INSTRUMENT_ALIAS, "customFieldRowAccess")
-            .translateTrusted(constraint);
-    if (predicate != null && !predicate.subqueries().isEmpty()) {
-      throw new IllegalStateException(
-          "Instrument read rule requires a subquery, which custom-field projection cannot nest");
-    }
+        readablePredicate(constraint, "customFieldRowAccess", "custom-field projection");
     CriteriaBuilder<Long> query =
         criteriaBuilderFactory
             .create(sessionFactory.getCurrentSession(), Long.class)
@@ -185,9 +182,8 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
             .whereExpression("field.id in :ids")
             .setParameter("ids", ids);
     for (OptionRow row : query.getResultList()) {
-      Object stored = row.storedOptions();
-      Object parsed =
-          stored == null ? null : RuntimeFieldValueType.CHOICE.serialize((String) stored);
+      String stored = row.storedOptions();
+      Object parsed = stored == null ? null : RuntimeFieldValueType.CHOICE.serialize(stored);
       options.put(row.fieldId(), asStrings(parsed));
     }
   }

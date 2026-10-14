@@ -1,16 +1,17 @@
 package com.researchspace.dao.hibernate;
 
-import com.blazebit.persistence.CommonQueryBuilder;
 import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.ExtraFieldDao;
 import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.dao.query.LookAheadPagination;
+import com.researchspace.dao.query.LookAheadPagination.Result;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity.Definition;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity.PublishedType;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -50,16 +51,16 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
   @Autowired private SessionFactory sessionFactory;
 
   @Override
-  public ExtraFieldPage readableDefinitions(
+  public Result<Definition> readableDefinitions(
       ExtraFieldScope scope,
       QueryConstraint constraint,
       String search,
-      Set<ExtraFieldRow> wanted,
+      Set<Definition> wanted,
       Set<FieldType> types,
       int offset,
       int limit) {
     if (types.isEmpty()) {
-      return new ExtraFieldPage(List.of(), 0L, false);
+      return new Result<>(List.of(), 0L, false);
     }
     RsqlCollectionQuery.Predicate access = access(scope, constraint);
     boolean hydrating = !wanted.isEmpty();
@@ -96,14 +97,16 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     }
     query.orderByAsc(NAME_IDENTITY);
     query.orderByAsc("TYPE(" + FIELD_ALIAS + ")");
-    bind(query, access);
+    if (access != null) {
+      access.parameters().forEach(query::setParameter);
+    }
     if (hydrating) {
       query.setParameter(
           "names", wanted.stream().map(Definition::name).collect(Collectors.toSet()));
       query.setParameter(
           "nameIdentities",
           wanted.stream()
-              .map(ExtraFieldRow::name)
+              .map(Definition::name)
               .map(ExtraFieldIdentity::encodeName)
               .collect(Collectors.toSet()));
     } else if (search != null) {
@@ -113,26 +116,24 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
       query.setFirstResult(offset);
       query.setMaxResults(limit + 1);
     }
-    List<ExtraFieldRow> rows = new ArrayList<>(limit + 1);
+    List<Definition> rows = new ArrayList<>(limit + 1);
     for (DefinitionProjection projection : query.getResultList()) {
-      FieldType type = typeOf(projection.entityType());
-      if (type == null || !types.contains(type)) {
+      PublishedType type = publishedType(projection.entityType());
+      if (type == null) {
         continue;
       }
-      ExtraFieldRow candidate = new ExtraFieldRow(projection.name(), type);
+      Definition candidate = new Definition(projection.name(), type.fieldType());
       if (!hydrating || wanted.contains(candidate)) {
         rows.add(candidate);
       }
     }
-    LookAheadPagination.Result<ExtraFieldRow> page =
-        LookAheadPagination.apply(rows, offset, limit, hydrating);
-    return new ExtraFieldPage(page.rows(), page.total(), page.hasMore());
+    return LookAheadPagination.apply(rows, offset, limit, hydrating);
   }
 
   @Override
-  public Map<Long, Map<ExtraFieldRow, String>> valuesByParent(
-      ExtraFieldScope scope, Set<Long> parentIds, Set<ExtraFieldRow> definitions) {
-    Map<Long, Map<ExtraFieldRow, String>> values = new LinkedHashMap<>();
+  public Map<Long, Map<Definition, String>> valuesByParent(
+      ExtraFieldScope scope, Set<Long> parentIds, Set<Definition> definitions) {
+    Map<Long, Map<Definition, String>> values = new LinkedHashMap<>();
     if (parentIds.isEmpty() || definitions.isEmpty()) {
       return values;
     }
@@ -154,15 +155,15 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     query.setParameter(
         "nameIdentities",
         definitions.stream()
-            .map(ExtraFieldRow::name)
+            .map(Definition::name)
             .map(ExtraFieldIdentity::encodeName)
             .collect(Collectors.toSet()));
     for (ValueProjection projection : query.getResultList()) {
-      FieldType type = typeOf(projection.entityType());
+      PublishedType type = publishedType(projection.entityType());
       if (type == null) {
         continue;
       }
-      ExtraFieldRow definition = new ExtraFieldRow(projection.name(), type);
+      Definition definition = new Definition(projection.name(), type.fieldType());
       if (definitions.contains(definition)) {
         values
             .computeIfAbsent(projection.parentId(), ignored -> new LinkedHashMap<>())
@@ -183,12 +184,6 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     return predicate;
   }
 
-  private static void bind(CommonQueryBuilder<?> query, RsqlCollectionQuery.Predicate access) {
-    if (access != null) {
-      access.parameters().forEach(query::setParameter);
-    }
-  }
-
   private static Class<?> subtype(FieldType type) {
     PublishedType published = PublishedType.fromFieldType(type);
     return published == null ? ExtraField.class : published.entityType();
@@ -201,12 +196,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
         .collect(Collectors.joining(" or ", "(", ")"));
   }
 
-  private static FieldType typeOf(Object entityType) {
-    for (PublishedType published : PublishedType.values()) {
-      if (entityType == published.entityType()) {
-        return published.fieldType();
-      }
-    }
-    return null;
+  private static PublishedType publishedType(Object entityType) {
+    return entityType instanceof Class<?> type ? PublishedType.fromEntityType(type) : null;
   }
 }
