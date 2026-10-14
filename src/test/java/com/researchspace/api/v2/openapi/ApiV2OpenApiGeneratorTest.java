@@ -244,16 +244,23 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/ResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
-    Map<String, Object> openDays = objectMap(readProperties.get("openDays"));
-    assertEquals("array", openDays.get("type"));
-    assertEquals("integer", objectMap(openDays.get("items")).get("type"));
-    assertEquals(true, openDays.get("uniqueItems"));
+    Map<String, Object> openingHours = objectMap(readProperties.get("openingHours"));
+    assertEquals("array", openingHours.get("type"));
     Map<String, Object> updateProperties =
         objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
-    Map<String, Object> exceptionItem =
-        objectMap(objectMap(updateProperties.get("openingExceptions")).get("items"));
-    assertEquals(false, exceptionItem.get("additionalProperties"));
-    assertTrue(objectMap(exceptionItem.get("properties")).containsKey("dayOfWeek"));
+    Map<String, Object> hours = objectMap(updateProperties.get("openingHours"));
+    assertEquals(1, hours.get("minItems"));
+    assertEquals(7, hours.get("maxItems"));
+    Map<String, Object> item = objectMap(hours.get("items"));
+    assertEquals(false, item.get("additionalProperties"));
+    assertEquals(
+        java.util.Set.of("dayOfWeek", "start", "end"),
+        java.util.Set.copyOf((List<?>) item.get("required")));
+    assertTrue(objectMap(item.get("properties")).containsKey("dayOfWeek"));
+    for (String legacy : List.of("openingStart", "openingEnd", "openDays", "openingExceptions")) {
+      assertFalse(readProperties.containsKey(legacy));
+      assertFalse(updateProperties.containsKey(legacy));
+    }
   }
 
   @Test
