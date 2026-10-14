@@ -48,6 +48,7 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
     canCreateBlockout: false,
     canSubscribeCalendar: false,
     canLeaveConfiguration: false,
+    canManageNotificationSubscription: false,
   },
 });
 
