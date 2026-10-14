@@ -127,6 +127,8 @@ export type TableListCardFieldLayout = {
 
 export type TableListFilterButtons = {
   legend: string;
+  /** Keep the toolbar controls on a row below Search at every breakpoint. */
+  controlsOnSeparateRow?: boolean;
   /** Page-owned filter controls rendered before the quick-filter buttons. */
   controls?: ReactNode;
   /** Whether page-owned controls differ from their defaults and should enable the shared reset. */
@@ -205,6 +207,8 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   createLabel?: string;
   /** Page-owned controls rendered directly below the collection heading. */
   headerContent?: ReactNode;
+  /** Override the collection heading's visual style without changing its h1 semantics. */
+  headingClassName?: string;
   uiColumns?: readonly TableListUiColumn<TDocument>[];
   rowActions?: TableListRowActions<TDocument>;
   selection?: TableListSelection<TDocument>;
@@ -223,6 +227,8 @@ export type TableListProps<TDocument extends Record<string, unknown>> = {
   hideHeader?: boolean;
   /** Hides the filter panel for a data source that only honours free-text search. */
   hideFilterPanel?: boolean;
+  /** Debounce client-side search when its value also drives remote work. */
+  debounceSearch?: boolean;
   /** Reserve the height of ten data rows for the empty state. Set this to `false` for a compact display. */
   reserveEmptyRows?: boolean;
   /** Persist filters, sorting, and visible columns in the URL and browser storage. Set this to `false` to disable both. */
