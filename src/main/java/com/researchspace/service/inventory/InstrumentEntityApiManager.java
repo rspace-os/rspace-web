@@ -187,6 +187,10 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
    */
   ResourcePage<Instrument> getReadableInstruments(ResourceRequest request, User user);
 
+  /** Returns an authorized REST API v2 page as scalars without hydrating Inventory aggregates. */
+  ResourcePage<InstrumentReadSummary> getReadableInstrumentSummaries(
+      ResourceRequest request, User user);
+
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableInstruments(ResourceRequest request, User user);
 

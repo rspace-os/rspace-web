@@ -1,4 +1,4 @@
 package com.researchspace.model.inventory;
 
-/** Scalar instrument data used for batched REST API relationship expansion. */
+/** Scalar instrument data for REST API read pages and batched relationship expansion. */
 public record InstrumentReadSummary(Long id, String name, boolean deleted) {}

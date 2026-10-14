@@ -8,7 +8,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
+import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
@@ -115,6 +117,69 @@ public final class ApiV2CrudDispatcher<T, ID> {
           decorator.decorate(page.resources(), documents);
           return ApiV2ListResult.of(
               documents, page.total(), request.page().size(), request.page().number());
+        });
+  }
+
+  /** Adds batched runtime values to an authorized page without constructing entity carriers. */
+  @FunctionalInterface
+  public interface ReadDocumentDecorator {
+
+    void decorate(List<Map<String, Object>> resources, List<Map<String, Object>> documents);
+
+    static ReadDocumentDecorator none() {
+      return (resources, documents) -> {};
+    }
+  }
+
+  /** Lists scalar documents with per-ID field access, preserving the ordinary page metadata. */
+  public ApiV2ListResult<Map<String, Object>> listReadDocuments(
+      ResourceRequest request,
+      User actor,
+      Function<Object, FieldSelection> fieldsForId,
+      ReadDocumentDecorator decorator) {
+    return invoke(
+        ResourceOperation.LIST,
+        () -> {
+          ResourcePage<Map<String, Object>> page = operations.findReadDocuments(request, actor);
+          List<Map<String, Object>> documents =
+              renderer.renderReadDocuments(
+                  page.resources(), description, fieldsForId, readContext(actor));
+          decorator.decorate(page.resources(), documents);
+          return ApiV2ListResult.of(
+              documents, page.total(), request.page().size(), request.page().number());
+        });
+  }
+
+  /** Reads one scalar document through the same filtered and constrained page query as a list. */
+  public Map<String, Object> getReadDocument(
+      ID id, ResourceRequest request, User actor, ReadDocumentDecorator decorator) {
+    FilterExpression target =
+        new FilterExpression.Comparison(description.idField(), Operator.EQUAL, List.of(id), false);
+    FilterExpression filter =
+        request.filter() == null
+            ? target
+            : new FilterExpression.And(List.of(request.filter(), target));
+    ResourceRequest matching =
+        new ResourceRequest(
+            filter,
+            request.serverConstraint(),
+            request.sort(),
+            new ResourceRequest.Page(1, 1),
+            request.fieldSelections(),
+            request.includes(),
+            request.runtime());
+    return invoke(
+        ResourceOperation.READ,
+        () -> {
+          Map<String, Object> resource =
+              operations.findReadDocuments(matching, actor).resources().stream()
+                  .findFirst()
+                  .orElseThrow(NotFoundException::new);
+          List<Map<String, Object>> documents =
+              renderer.renderReadDocuments(
+                  List.of(resource), description, ignored -> request.fields(), readContext(actor));
+          decorator.decorate(List.of(resource), documents);
+          return documents.get(0);
         });
   }
 

@@ -108,6 +108,41 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
   }
 
   @Override
+  public boolean usesReadDocuments() {
+    return true;
+  }
+
+  @Override
+  public ResourcePage<Map<String, Object>> findReadDocuments(ResourceRequest request, User actor) {
+    ResourcePage<InstrumentReadSummary> page =
+        instrumentManager.getReadableInstrumentSummaries(request, actor);
+    Set<Long> ids =
+        page.resources().stream()
+            .map(InstrumentReadSummary::id)
+            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+    boolean includeLocation =
+        LOCATION_FIELDS.stream().anyMatch(field -> request.fields().includes(field, "id"));
+    Map<Object, Map<String, Object>> locations =
+        includeLocation ? locationOverrides(ids, actor) : Map.of();
+    List<Map<String, Object>> documents =
+        page.resources().stream()
+            .map(
+                summary -> {
+                  Map<String, Object> document = new LinkedHashMap<>();
+                  document.put("id", summary.id());
+                  document.put("name", summary.name());
+                  document.put("globalId", "IN" + summary.id());
+                  document.put("deleted", summary.deleted());
+                  document.put("parentContainerName", null);
+                  document.put("parentContainerGlobalId", null);
+                  document.putAll(locations.getOrDefault(summary.id(), Map.of()));
+                  return document;
+                })
+            .toList();
+    return new ResourcePage<>(documents, page.total());
+  }
+
+  @Override
   public long count(ResourceRequest request, User actor) {
     return instrumentManager.countReadableInstruments(request, actor);
   }
@@ -126,6 +161,10 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
   public Map<Object, Map<String, Object>> readOverrides(List<Instrument> instruments, User actor) {
     Set<Long> instrumentIds =
         instruments.stream().map(Instrument::getId).collect(java.util.stream.Collectors.toSet());
+    return locationOverrides(instrumentIds, actor);
+  }
+
+  private Map<Object, Map<String, Object>> locationOverrides(Set<Long> instrumentIds, User actor) {
     Map<Long, InstrumentParentLocationSummary> locations =
         instrumentManager.getParentLocationSummaries(instrumentIds);
     Set<Long> parentIds =
@@ -134,15 +173,15 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
             .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     Set<Long> readable = instrumentManager.getReadableParentContainerIds(parentIds, actor);
     Map<Object, Map<String, Object>> overrides = new LinkedHashMap<>();
-    for (Instrument instrument : instruments) {
-      InstrumentParentLocationSummary location = locations.get(instrument.getId());
+    for (Long instrumentId : instrumentIds) {
+      InstrumentParentLocationSummary location = locations.get(instrumentId);
       boolean show = location != null && readable.contains(location.containerId());
       Map<String, Object> values = new LinkedHashMap<>();
       values.put("parentContainerName", show ? location.containerName() : null);
       values.put(
           "parentContainerGlobalId",
           show ? containerGlobalId(location.containerId(), location.containerType()) : null);
-      overrides.put(instrument.getId(), values);
+      overrides.put(instrumentId, values);
     }
     return overrides;
   }

@@ -37,6 +37,10 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
    */
   ResourcePage<Instrument> getReadableResources(ResourceRequest request, AccessResult access);
 
+  /** Returns the same authorized page as scalar rows, without Inventory aggregate hydration. */
+  ResourcePage<InstrumentReadSummary> getReadableResourceSummaries(
+      ResourceRequest request, AccessResult access);
+
   /** Counts the instruments the user may read that match a REST API v2 collection request. */
   long countReadableResources(ResourceRequest request, AccessResult access);
 
