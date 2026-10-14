@@ -94,28 +94,18 @@ function BaseUiExternalLink(props: BaseUiLinkProps) {
 }
 
 function BaseUiHelpDocsLink({ docLink, ...rest }: BaseUiLinkProps & { docLink?: HelpDocsArticle }) {
-  const { t } = useTranslation("common");
   if (!docLink) {
     throw new Error("<helpDocs> rich text links require a docLink attribute.");
   }
-  return (
-    <BaseUiLink {...rest} href={helpDocsArticleUrlFromSlug(t(`help.${docLink}`))} target="_blank" rel="noreferrer" />
-  );
+  return <BaseUiExternalLink {...rest} href={helpDocsArticleUrl(docLink)} />;
 }
 
 const baseUiRichTextComponents: RichTextComponents = {
+  ...muiRichTextComponents,
   externalLink: <BaseUiExternalLink />,
   helpDocs: <BaseUiHelpDocsLink />,
   internalLink: <BaseUiInternalLink />,
-  br: <br />,
-  cite: <cite />,
-  code: <code />,
   kbd: <BaseUiKbd />,
-  li: <li />,
-  ol: <ol />,
-  strong: <strong />,
-  sub: <sub />,
-  ul: <ul />,
 };
 
 export const RichTextComponentsContext = createContext<RichTextComponents>(muiRichTextComponents);

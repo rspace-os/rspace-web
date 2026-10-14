@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { callLighthouse, loadLighthouseSdk, showLighthouse } from "@/modules/common/app/lighthouse";
+import { callLighthouse, configureLighthouse, showLighthouse } from "@/modules/common/app/lighthouse";
 
 type PartialLighthouse = Partial<Record<"hide" | "show" | "showButton" | "hideButton", () => void>>;
 
@@ -43,13 +43,13 @@ describe("Lighthouse SDK manager", () => {
     const open = vi.fn();
     window.open = open;
 
-    loadLighthouseSdk(
-      {
+    configureLighthouse({
+      livechatProperties: {
         livechatEnabled: false,
         currentUser: "user1a",
       },
-      vi.fn(),
-    );
+      onReady: vi.fn(),
+    });
 
     window.hdlh.onNavigate?.({ page: "contact" });
 
