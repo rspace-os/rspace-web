@@ -332,7 +332,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
     } else {
       String exceptions =
           ListFormatUtils.formatList(
-              result.getExceptions().stream().map(Exception::getMessage).toList());
+              result.getExceptions().stream().map(messages::getExceptionMessage).toList());
       notificationMessage =
           messages.getMessage(
               targetAutoshareStatus

@@ -1660,6 +1660,9 @@ export default interface Resources {
       },
       "orderLabel": "Sort field"
     },
+    "units": {
+      "items": "items"
+    },
     "userDetails": {
       "accountDisabled": "Disabled",
       "accountEnabled": "Enabled",
@@ -5855,7 +5858,8 @@ export default interface Resources {
       "searchTermMinLength": "Search term must be at least {0} characters",
       "searchTermTooLong": "Search term at index {2} is too long ({0} chars) - max search string length is {1} chars.",
       "signing": {
-        "failed": "Signing failed"
+        "failed": "Signing failed",
+        "structuredDocumentRequired": "only structured documents can be signed"
       },
       "signupCode": {
         "failed": "Please supply the correct signup code (this is case sensitive)."
@@ -5928,6 +5932,17 @@ export default interface Resources {
       "property": "Property"
     },
     "validation": {
+      "barcode": {
+        "qrTextRequired": "QR code text cannot be empty",
+        "textRequired": "Barcode text cannot be empty"
+      },
+      "community": {
+        "adminRoleRequired": "A community admin must have  an admin role"
+      },
+      "dateRange": {
+        "fromAfterTo": "From must be earlier than to",
+        "invalidFormat": "could not parse [{0}]. Argument must match one or both of {1}, or {2}"
+      },
       "errors": {
         "allVersionsRequired": "allVersions is a required field.",
         "archiveTypeInvalid": "archiveType must be one of xml, html or eln.",
@@ -5981,6 +5996,22 @@ export default interface Resources {
         "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
         "inactiveFieldId": "Field ID [{0}] is not active on this form; active field IDs are [{1}]"
       },
+      "globalIdentifier": {
+        "invalidFormat": "OID {0} did not match pattern {1}",
+        "required": "oid cannot be null or empty"
+      },
+      "imageConversion": {
+        "conversionFailed": "Could not convert {0} to  a png format",
+        "destinationInvalid": "destinationFolder must be a readable directory{0}",
+        "filesRequired": "files can't be null",
+        "sourceNotTiff": "{0}isn't a tiff file?",
+        "sourceUnreadable": "Can't read file:{0}"
+      },
+      "imageData": {
+        "invalidEncoding": "Image string doesn't seem to be base64-encoded",
+        "required": "Expected base64 web image string but was null or empty.",
+        "separatorRequired": "Expected base64 web image string to contain a comma."
+      },
       "inventoryField": {
         "extraNumberInvalid": "''{0}'' cannot be parsed into number",
         "invalidData": "{0}",
@@ -5996,13 +6027,28 @@ export default interface Resources {
         "optionsNotAllowed": "Some supplied values are not allowed options",
         "radioSingleOptionOnly": "Only one option can be selected on a radio field"
       },
+      "netFile": {
+        "linkTypeInvalid": "unexpected link type: {0}"
+      },
+      "oauthApp": {
+        "nameRequired": "name must be non-empty"
+      },
+      "pagination": {
+        "negativePageNumber": "Page number cannot be -ve, was [{0}]",
+        "negativeResultsPerPage": "Results per page cannot be -ve, was [{0}]",
+        "sortOrderRequired": "sort order cannot be null!"
+      },
       "preference": {
         "unknownEnumValue": "Unknown value [{0}] for [{1}]; expected one of {2}"
       },
       "quantity": {
+        "incomparableUnits": "items to sum are not commensurate - they have different unit categories",
         "parseFailed": "Could not parse quantity [{0}]",
+        "subtractionCategoryMismatch": "items to subtract are not commensurate - they have different unit categories",
         "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero",
-        "unitUnrecognized": "Could not parse quantity because unit [{0}] is not recognized"
+        "unitIdInvalid": "invalid ID for unit",
+        "unitUnrecognized": "Could not parse quantity because unit [{0}] is not recognized",
+        "unsupportedUnitType": "Unsupported unit type: {0}"
       },
       "scheduledMaintenance": {
         "endDateRequired": "End date is required.",
@@ -7504,6 +7550,9 @@ export default interface Resources {
           "remove": "Remove",
           "rename": "Rename"
         },
+        "breadcrumb": {
+          "home": "Home"
+        },
         "document": {
           "creating": "Creating a document..."
         },
@@ -7577,6 +7626,25 @@ export default interface Resources {
         },
         "publicJournal": {
           "contactLabel": "contact: {0}"
+        },
+        "recordInfoPanel": {
+          "type": {
+            "audio": "Audio",
+            "chemistry": "Chemistry",
+            "dmps": "DMPs",
+            "document": "Document",
+            "exports": "Exports",
+            "folder": "Folder",
+            "form": "Form",
+            "image": "Image",
+            "miscellaneous": "Miscellaneous",
+            "notebook": "Notebook",
+            "snippet": "Snippet",
+            "structuredDocument": "Structured Document",
+            "systemFolder": "System Folder",
+            "template": "Template",
+            "video": "Video"
+          }
         },
         "renameForm": {
           "nameRequired": "Please enter a name!"
@@ -9598,6 +9666,7 @@ export default interface Resources {
         }
       },
       "create": {
+        "defaultName": "Untitled document",
         "errors": {
           "failed": "Could not create new document"
         }
@@ -9724,6 +9793,16 @@ export default interface Resources {
       }
     },
     "folder": {
+      "addChild": {
+        "errors": {
+          "cycle": "Addition of [{0}] to  folder[{1}]  would produce a cycle in the folder tree, which currently is not permitted.",
+          "policyRejected": "ChildAddPolicy [{0}] does not permit child addition of [{1}] to  folder[{2}]",
+          "self": "Cannot add this object [{0}] as a child of itself."
+        }
+      },
+      "create": {
+        "defaultName": "Untitled Folder"
+      },
       "delete": {
         "errors": {
           "failed": "Unknown server error deleting folder: {0}",
@@ -10072,6 +10151,9 @@ export default interface Resources {
       "singleDocHelp": "The message will include a link to the current document. Only RSpace users with access to the document will be able to use the link."
     },
     "notebook": {
+      "create": {
+        "defaultName": "Untitled Notebook"
+      },
       "errors": {
         "nestedNotebook": "Notebooks and folders cannot be created inside notebooks.",
         "noNotebookInGallery": "You can only create a Notebook in the Workspace, not the Gallery folder tree"

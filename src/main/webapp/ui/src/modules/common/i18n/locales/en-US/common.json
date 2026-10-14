@@ -915,6 +915,9 @@
     },
     "orderLabel": "Sort field"
   },
+  "units": {
+    "items": "items"
+  },
   "userDetails": {
     "accountDisabled": "Disabled",
     "accountEnabled": "Enabled",

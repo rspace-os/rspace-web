@@ -197,7 +197,7 @@ public class SharingHandlerImpl implements SharingHandler {
     ErrorList error = new ErrorList();
     ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result =
         this.shareRecords(shareConfig, sharer);
-    result.getExceptions().forEach(e -> error.addErrorMsg(e.getMessage()));
+    result.getExceptions().forEach(e -> error.addErrorMsg(messages.getExceptionMessage(e)));
     result.getFailures().forEach(rgs -> error.addErrorMsg(rgs.getShared().getName()));
     return new SharingResult(buildSharedIdList(result), buildPublicLinkList(result), error);
   }

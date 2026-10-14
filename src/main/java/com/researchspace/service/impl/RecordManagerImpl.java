@@ -372,7 +372,8 @@ public class RecordManagerImpl implements RecordManager {
       return null;
     }
 
-    String recordName = StringUtils.isNotBlank(name) ? name : StructuredDocument.DEFAULT_NAME;
+    String recordName =
+        StringUtils.isNotBlank(name) ? name : messages.getMessage("document.create.defaultName");
     StructuredDocument rc;
     if (override == null) {
       rc = recordFactory.createStructuredDocument(recordName, user, form);

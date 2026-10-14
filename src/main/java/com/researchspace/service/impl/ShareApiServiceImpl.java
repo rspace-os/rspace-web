@@ -237,7 +237,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     if (result.getExceptionCount() > 0 && result.getResultCount() == 0) {
       String exceptionMessages =
           ListFormatUtils.formatList(
-              result.getExceptions().stream().map(Throwable::getMessage).toList());
+              result.getExceptions().stream().map(messages::getExceptionMessage).toList());
       if (result.getExceptions().stream().anyMatch(e -> e instanceof IllegalAddChildOperation)) {
         throw new IllegalArgumentException(
             getMessage("sharing.errors.sharingFailed", new Object[] {exceptionMessages}));

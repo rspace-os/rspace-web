@@ -7,7 +7,6 @@ import static com.researchspace.model.core.RecordType.SHARED_FOLDER;
 import static com.researchspace.model.core.RecordType.SHARED_GROUP_FOLDER_ROOT;
 import static com.researchspace.model.core.RecordType.TEMPLATE;
 import static com.researchspace.model.record.StructuredDocument.MAX_TAG_LENGTH;
-import static java.lang.String.format;
 
 import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.MediaUtils;
@@ -209,22 +208,16 @@ public class Folder extends BaseRecord implements TaggableElnRecord {
       throws IllegalAddChildOperation {
     // no self edges
     if (this.equals(child)) {
-      throw new IllegalAddChildOperation(
-          "Cannot add this object [" + this + "] as a child of itself.");
+      throw new LocalizedIllegalAddChildOperation("folder.addChild.errors.self", this.toString());
     }
     if (!policy.canAdd(this, child)) {
-      throw new IllegalAddChildOperation(
-          format(
-              "ChildAddPolicy [%s] does not permit child addition of [" + "%s] to  folder[%s]",
-              policy, child, this));
+      throw new LocalizedIllegalAddChildOperation(
+          "folder.addChild.errors.policyRejected", policy, String.valueOf(child), this.toString());
     }
     // no cycles for cycles
     if (!checkParents(this, child)) {
-      throw new IllegalAddChildOperation(
-          format(
-              "Addition of [%s] to  folder[%s] "
-                  + " would produce a cycle in the folder tree, which currently is not permitted.",
-              child.getName(), this.getName()));
+      throw new LocalizedIllegalAddChildOperation(
+          "folder.addChild.errors.cycle", child.getName(), this.getName());
     }
 
     RecordToFolder newedge = doAdd(child, owner, skipAddingToChildren);

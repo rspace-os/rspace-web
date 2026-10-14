@@ -9,8 +9,11 @@ import com.researchspace.apiutils.BindError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.apiutils.RestControllerAdvice;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
+import com.researchspace.model.field.LocalizedIOException;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.LocalizedNullPointerException;
+import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.MediaContentMismatchException;
@@ -174,10 +177,15 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
-  @ExceptionHandler(LocalizedIllegalStateException.class)
+  @ExceptionHandler({
+    LocalizedIllegalStateException.class,
+    LocalizedIOException.class,
+    LocalizedNullPointerException.class,
+    LocalizedIllegalAddChildOperation.class
+  })
   public ResponseEntity<Object> handleLocalizedIllegalStateException(
-      LocalizedIllegalStateException ex, WebRequest request) {
-    String resolvedMessage = messages.getMessage(ex);
+      Exception ex, WebRequest request) {
+    String resolvedMessage = messages.getExceptionMessage(ex);
     ApiError apiError =
         new ApiError(
             HttpStatus.INTERNAL_SERVER_ERROR,

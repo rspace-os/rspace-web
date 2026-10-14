@@ -1,9 +1,9 @@
 package com.researchspace.model.units;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.apache.commons.lang3.Validate.isTrue;
 
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
@@ -168,7 +168,8 @@ public class QuantityUtils {
     } else if (def.isTemperature()) {
       return visitor.visitTemperature(q1);
     } else {
-      throw new IllegalStateException("Unsupported unit type: " + def.getDefinition());
+      throw new LocalizedIllegalStateException(
+          "validation.quantity.unsupportedUnitType", def.getDefinition());
     }
   }
 
@@ -201,9 +202,9 @@ public class QuantityUtils {
    * @throws IllegalStateException if there is a problem with converting units
    */
   public QuantityInfo sum(Collection<? extends Quantifiable> toSum) {
-    isTrue(
-        isComparableQuantities(toSum),
-        "items to sum are not commensurate - they have different unit categories");
+    if (!isComparableQuantities(toSum)) {
+      throw new LocalizedIllegalArgumentException("validation.quantity.incomparableUnits");
+    }
     return asQuantityInfo(getForQuantifiable(toSum, new QuantitySummingVisitor()));
   }
 
@@ -216,9 +217,10 @@ public class QuantityUtils {
    */
   public QuantityInfo subtract(QuantityInfo from, QuantityInfo amountTaken) {
     List<Quantifiable> operands = List.of(from, amountTaken.negate());
-    isTrue(
-        isComparableQuantities(operands),
-        "items to subtract are not commensurate - they have different unit categories");
+    if (!isComparableQuantities(operands)) {
+      throw new LocalizedIllegalArgumentException(
+          "validation.quantity.subtractionCategoryMismatch");
+    }
     return convertToStorableUnit(
         convertToMoreUsefulUnit(getForQuantifiable(operands, new QuantitySummingVisitor())));
   }

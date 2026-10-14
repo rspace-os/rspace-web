@@ -376,7 +376,7 @@ public class FolderManagerImpl implements FolderManager {
     assertUserHasCreatePermission(subject, parent);
 
     if (StringUtils.isBlank(fName)) {
-      fName = Folder.DEFAULT_FOLDER_NAME;
+      fName = messageSourceUtils.getMessage("folder.create.defaultName");
     }
     Folder rc =
         override == null
@@ -397,7 +397,7 @@ public class FolderManagerImpl implements FolderManager {
     Folder parent = folderDao.get(parentId);
     assertUserHasCreatePermission(subject, parent);
     if (StringUtils.isBlank(notebookName)) {
-      notebookName = Notebook.DEFAULT_NOTEBOOK_NAME;
+      notebookName = messageSourceUtils.getMessage("notebook.create.defaultName");
     }
     Notebook n =
         override == null
@@ -478,7 +478,8 @@ public class FolderManagerImpl implements FolderManager {
     } catch (IllegalAddChildOperation e) {
       if (suppressIllegalAddChild) {
         parentFolder = folderDao.get(folderId);
-        return new ServiceOperationResult<Folder>(parentFolder, false, e.getMessage());
+        return new ServiceOperationResult<Folder>(
+            parentFolder, false, messageSourceUtils.getExceptionMessage(e));
       } else {
         throw e;
       }

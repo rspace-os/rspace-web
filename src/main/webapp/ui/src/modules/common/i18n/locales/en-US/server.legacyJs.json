@@ -71,6 +71,9 @@
         "remove": "Remove",
         "rename": "Rename"
       },
+      "breadcrumb": {
+        "home": "Home"
+      },
       "document": {
         "creating": "Creating a document..."
       },
@@ -144,6 +147,25 @@
       },
       "publicJournal": {
         "contactLabel": "contact: {0}"
+      },
+      "recordInfoPanel": {
+        "type": {
+          "audio": "Audio",
+          "chemistry": "Chemistry",
+          "dmps": "DMPs",
+          "document": "Document",
+          "exports": "Exports",
+          "folder": "Folder",
+          "form": "Form",
+          "image": "Image",
+          "miscellaneous": "Miscellaneous",
+          "notebook": "Notebook",
+          "snippet": "Snippet",
+          "structuredDocument": "Structured Document",
+          "systemFolder": "System Folder",
+          "template": "Template",
+          "video": "Video"
+        }
       },
       "renameForm": {
         "nameRequired": "Please enter a name!"

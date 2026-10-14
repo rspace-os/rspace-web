@@ -19,12 +19,13 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.IllegalAddChildOperation;
+import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
@@ -50,7 +51,7 @@ class ShareApiServiceTest {
   @Mock private PermissionUtils permissionUtils;
 
   @Mock private IPropertyHolder properties;
-  @Mock private MessageSourceUtils messages;
+  private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   private ShareApiServiceImpl service;
 
@@ -131,11 +132,17 @@ class ShareApiServiceTest {
 
     ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> rc =
         new ServiceOperationResultCollection<>();
-    rc.addException(new IllegalAddChildOperation("error"));
+    rc.addException(
+        new LocalizedIllegalAddChildOperation("folder.addChild.errors.cycle", "A", "B"));
 
     when(sharingHandler.shareRecords(any(), eq(user))).thenReturn(rc);
 
-    assertThrows(IllegalArgumentException.class, () -> service.shareItems(post, user));
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> service.shareItems(post, user));
+    assertEquals(
+        "Problem sharing: Addition of [A] to  folder[B]  would produce a cycle in the folder tree,"
+            + " which currently is not permitted.",
+        exception.getMessage());
   }
 
   @Test
@@ -144,11 +151,13 @@ class ShareApiServiceTest {
 
     ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> rc =
         new ServiceOperationResultCollection<>();
-    rc.addException(new RuntimeException());
+    rc.addException(new RuntimeException("ordinary share failure"));
 
     when(sharingHandler.shareRecords(any(), eq(user))).thenReturn(rc);
 
-    assertThrows(RuntimeException.class, () -> service.shareItems(post, user));
+    RuntimeException exception =
+        assertThrows(RuntimeException.class, () -> service.shareItems(post, user));
+    assertEquals("Problem sharing: ordinary share failure", exception.getMessage());
   }
 
   @Test
