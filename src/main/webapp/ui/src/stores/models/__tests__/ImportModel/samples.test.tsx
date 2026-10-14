@@ -52,7 +52,7 @@ const matchWithBlankColumnFor = (type: FieldModelType, mandatory = false, blankC
 };
 
 describe("importMatchesExistingTemplate", () => {
-  test.each(["date", "uri", "number", "time", "reference", "attachment"] as const)(
+  test.each(["date", "uri", "number", "time", "reference"] as const)(
     "returns matches:true when a column with no value in any row fills a %s field",
     (type) => {
       expect(matchWithBlankColumnFor(type)).toEqual({ matches: true });
@@ -61,6 +61,13 @@ describe("importMatchesExistingTemplate", () => {
 
   test("returns matches:false when a column blank in only some rows holds text for a date field", () => {
     expect(matchWithBlankColumnFor("date", false, [])).toEqual({
+      matches: false,
+      reason: "inventory:import.columnMapping.templateColumnTypeMismatch",
+    });
+  });
+
+  test("still refuses a column with no value in any row for an attachment field", () => {
+    expect(matchWithBlankColumnFor("attachment")).toEqual({
       matches: false,
       reason: "inventory:import.columnMapping.templateColumnTypeMismatch",
     });

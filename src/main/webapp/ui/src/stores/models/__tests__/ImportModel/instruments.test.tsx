@@ -386,7 +386,7 @@ describe("importInstrumentMatchesExistingTemplate", () => {
     expect(model.importInstrumentMatchesExistingTemplate).toEqual({ matches: true });
   });
 
-  test.each(["date", "uri", "number", "time", "reference", "attachment"] as const)(
+  test.each(["date", "uri", "number", "time", "reference"] as const)(
     "returns matches:true when a column with no value in any row fills a %s field",
     (type) => {
       const model = new ImportModel("INSTRUMENTS");
@@ -425,6 +425,30 @@ describe("importInstrumentMatchesExistingTemplate", () => {
           fieldType: FieldTypes.plain_text,
           columnsWithoutBlankValue: [],
           blankColumns: [],
+        }),
+      ];
+    });
+    expect(model.importInstrumentMatchesExistingTemplate).toEqual({
+      matches: false,
+      reason: "inventory:import.columnMapping.templateColumnTypeMismatch",
+    });
+  });
+
+  test("still refuses a column with no value in any row for an attachment field", () => {
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplate = makeMockInstrumentTemplate({
+        fields: [instrumentFieldAttrs("Manual", { type: "attachment" })],
+      });
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Manual",
+          columnName: "Manual",
+          fieldType: FieldTypes.plain_text,
+          columnsWithoutBlankValue: [],
+          blankColumns: ["Manual"],
         }),
       ];
     });

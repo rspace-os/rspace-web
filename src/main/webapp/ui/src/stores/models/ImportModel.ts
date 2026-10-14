@@ -259,9 +259,13 @@ export class ColumnFieldMap {
     return this.typeIsCompatibleWithField(field);
   }
 
-  // a column with no value in any row leaves the field empty on every item, so it fits a template field of any type
+  // a column with no value in any row leaves the field empty on every item, so it fits a template field of any
+  // type but attachment: an item created from the template keeps the template field's file
   acceptsTemplateFieldType(fieldType: FieldType): boolean {
-    return this.blankColumns.includes(this.columnName) || this.allValidTypes.includes(fieldType);
+    return (
+      (fieldType !== FieldTypes.attachment && this.blankColumns.includes(this.columnName)) ||
+      this.allValidTypes.includes(fieldType)
+    );
   }
 
   get validFieldName(): boolean {
