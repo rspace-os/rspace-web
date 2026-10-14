@@ -29,17 +29,36 @@ export default function RequestsPage(): React.ReactNode {
   // query/cache entry for that id - rather than a second, separate GET sampleRequests/{id} - and,
   // via isError below, surfaces a bad or forbidden id as a visible message instead of only a
   // console.error that leaves the user looking at an unexplained "no selection" pane.
-  const deepLinkRequestId = selectedRequest
-    ? null
-    : (() => {
-        const raw = new URLSearchParams(location.search).get("requestId");
-        return raw === null ? null : Number(raw);
-      })();
+  //
+  // Derived from location.search on every render (not gated on whether a request is already
+  // selected), so navigating to a different ?requestId= while this page stays mounted is always
+  // picked up - gating on `selectedRequest` instead would permanently stop the query from ever
+  // tracking the URL again after the first id resolved.
+  const deepLinkRequestId = (() => {
+    const raw = new URLSearchParams(location.search).get("requestId");
+    return raw === null ? null : Number(raw);
+  })();
   const deepLinkQuery = useSampleRequestDetailQuery(deepLinkRequestId);
 
+  // Tracks the last URL id this page has actually acted on (promoted to selectedRequest, or
+  // shown an error for), separately from `selectedRequest` itself. Without this, an unrelated
+  // mutation elsewhere invalidating sampleRequestsQueryKeys.all would refetch this
+  // still-enabled query in the background, and promoting on every data-reference change would
+  // clobber a request the user had since picked from the list, even though the URL never changed.
+  const [lastHandledDeepLinkId, setLastHandledDeepLinkId] = useState<number | null>(null);
+
   useEffect(() => {
-    if (deepLinkQuery.data) setSelectedRequest(deepLinkQuery.data);
-  }, [deepLinkQuery.data]);
+    if (deepLinkRequestId === null) return;
+    if (lastHandledDeepLinkId === deepLinkRequestId) return;
+    if (!deepLinkQuery.data) return;
+    setLastHandledDeepLinkId(deepLinkRequestId);
+    setSelectedRequest(deepLinkQuery.data);
+  }, [deepLinkRequestId, deepLinkQuery.data, lastHandledDeepLinkId]);
+
+  // Same reasoning as the effect above: only treat the *current* URL id's error as worth
+  // displaying once, not a background refetch failure for an id the user has since navigated (or
+  // selected) away from.
+  const showDeepLinkError = deepLinkQuery.isError && lastHandledDeepLinkId !== deepLinkRequestId;
 
   return (
     <Main ref={mainContentRef} role="main" aria-label={t("requestsManagement.landmark")}>
@@ -56,7 +75,7 @@ export default function RequestsPage(): React.ReactNode {
           <RequestsList selectedRequestId={selectedRequest?.id ?? null} onSelect={setSelectedRequest} />
         </Box>
         <Box sx={{ display: "flex", flex: "1 1 60%", minWidth: 0 }}>
-          {deepLinkQuery.isError && !selectedRequest ? (
+          {showDeepLinkError ? (
             <Box
               sx={{
                 display: "flex",
