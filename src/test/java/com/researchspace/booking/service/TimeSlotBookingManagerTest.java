@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -230,8 +231,7 @@ class TimeSlotBookingManagerTest {
     ResolvedBookableTarget target = target(12L);
     BookingConfiguration configuration = configuration(4L, 12L, true);
     configuration.setTimeZone("UTC");
-    configuration.setOpeningStart("08:00");
-    configuration.setOpeningEnd("18:00");
+    configuration.setOpeningHours(hours("08:00", "18:00"));
     configuration.setMaxBookingDurationMinutes(30);
     when(configurationDao.lockActiveByTarget(target.reference()))
         .thenReturn(Optional.of(configuration));

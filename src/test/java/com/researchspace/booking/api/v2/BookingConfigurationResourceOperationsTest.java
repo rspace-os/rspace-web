@@ -139,7 +139,7 @@ class BookingConfigurationResourceOperationsTest {
   void translatesMaximumBookingDurationPatchesToSchedulingSettings() {
     BookingConfiguration configuration = new BookingConfiguration();
     BookingSchedulingSettings.Patch schedulingPatch =
-        new BookingSchedulingSettings.Patch(null, null, null, null, null, 60L, null);
+        new BookingSchedulingSettings.Patch(null, null, null, null, 60L, null);
     when(manager.updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor))
         .thenReturn(Optional.of(configuration));
 

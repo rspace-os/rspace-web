@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -18,10 +19,12 @@ import com.researchspace.model.audittrail.HistoryDAO;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.testutils.TestFactory;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import org.hibernate.bytecode.internal.bytebuddy.ByteBuddyState;
 import org.hibernate.proxy.HibernateProxy;
@@ -62,6 +65,31 @@ class BookingAuditTrailTest {
     assertEquals(
         TransactionPhase.AFTER_COMMIT,
         method.getAnnotation(TransactionalEventListener.class).phase());
+  }
+
+  @Test
+  void newConfigurationSnapshotsContainIndependentHours() {
+    HistoryDAO historyDao = mock(HistoryDAO.class);
+    AuditTrailImpl auditTrail = new AuditTrailImpl();
+    auditTrail.setHistoryDao(historyDao);
+    BookingAuditTrail listener = new BookingAuditTrail(auditTrail);
+    User actor = TestFactory.createAnyUser("sysadmin");
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setId(7L);
+    configuration.setOpeningHours(List.of(new BookingOpeningHoursEntry(1, "09:00", "17:00")));
+
+    listener.bookingConfigurationChanged(
+        new BookingConfigurationAuditEvent(actor, actor, configuration, AuditAction.WRITE));
+
+    ArgumentCaptor<Iterable<HistoricData>> records = ArgumentCaptor.forClass(Iterable.class);
+    verify(historyDao).save(records.capture());
+    AuditData parsed = AuditData.fromJson(records.getValue().iterator().next().getData().toJson());
+    String json = parsed.toJson();
+    assertTrue(
+        json.contains("\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\",\"end\":\"17:00\"}]"),
+        json);
+    assertFalse(parsed.getData().containsKey("openingStart"));
+    assertFalse(parsed.getData().containsKey("openingEnd"));
   }
 
   @Test
