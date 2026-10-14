@@ -46,7 +46,7 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
 }
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,alignToIncrement,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 export const bookingConfigurationTargetQueryKey = (globalId: string) =>
   ["api-v2", "booking-configurations", "target", globalId] as const;

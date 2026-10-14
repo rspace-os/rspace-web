@@ -1,9 +1,12 @@
 import { Temporal } from "@js-temporal/polyfill";
 import * as React from "react";
 import type { DayTimelineEvent } from "@/modules/booking/components/DayTimeline";
+import { proposeDayRange, type TimelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { incrementRule, isStartAligned } from "@/modules/booking/domain/bookingIncrement";
 import {
   addCalendarDays,
+  dayMinuteToZonedTime,
   sliceAcrossZonedDay,
   wallClockToDayMinute,
   zonedDayBounds,
@@ -52,33 +55,57 @@ export function periodDates(date: string, view: CalendarView): readonly string[]
   return datesFrom(firstOfMonth(date), monthDayCount(date));
 }
 
+/**
+ * The first free proposal in a wall-clock window: whole increments from the first start on the item's grid, or from
+ * the window start when the item is unaligned. Day increments, and elapsed increments longer than the day, start at
+ * the window start and may end on a later date; a single day's events cannot show those dates are free.
+ */
 export function nextFreeRange(
   events: readonly BookingListDocument[],
   date: string,
   timezone: string,
   startWindow: number,
   endWindow: number,
-  increment: number,
+  policy: TimelinePolicy,
   // Day-minute ranges, such as closed hours, that a proposal must also avoid.
   unavailable: readonly { startMinute: number; endMinute: number }[] = [],
 ): { startMinute: number; endMinute: number } | undefined {
   startWindow = wallClockToDayMinute(date, timezone, startWindow);
   endWindow = wallClockToDayMinute(date, timezone, endWindow);
   if (endWindow <= startWindow) return undefined;
-  if (!Number.isFinite(increment) || increment <= 0) return undefined;
-  const preferredDuration = Math.ceil(Math.min(60, endWindow - startWindow) / increment) * increment;
-  const firstStart = Math.ceil(startWindow / increment) * increment;
+  if (!Number.isFinite(policy.slotGranularityMinutes) || policy.slotGranularityMinutes <= 0) return undefined;
+  const rule = incrementRule(policy);
+  const dayMinutes = zonedDayBounds(date, timezone).elapsedMinutes;
+  if (rule.kind === "days" || rule.minutes > dayMinutes) {
+    const nominal = rule.kind === "days" ? rule.days * 1440 : rule.minutes;
+    return proposeDayRange({ startMinute: startWindow, endMinute: startWindow + nominal }, date, timezone, policy);
+  }
+  const preferredDuration = Math.ceil(Math.min(60, endWindow - startWindow) / rule.minutes) * rule.minutes;
+  const maximumDuration = policy.maxBookingDurationMinutes > 0 ? policy.maxBookingDurationMinutes : Infinity;
   const occupied = [
     ...events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone)),
     ...unavailable,
   ].toSorted((left, right) => left.startMinute - right.startMinute);
-  for (let startMinute = firstStart; startMinute < endWindow; startMinute += increment) {
-    if (occupied.some((event) => event.startMinute <= startMinute && event.endMinute > startMinute)) continue;
-    const nextOccupiedStart = occupied.find((event) => event.startMinute > startMinute)?.startMinute ?? endWindow;
-    const duration =
-      Math.floor(Math.min(preferredDuration, nextOccupiedStart - startMinute, endWindow - startMinute) / increment) *
-      increment;
-    if (duration > 0) return { startMinute, endMinute: startMinute + duration };
+  // The first aligned start in a gap leaves the most room for whole increments.
+  const gaps: Array<{ from: number; to: number }> = [];
+  let cursor = Math.ceil(startWindow);
+  for (const block of occupied) {
+    if (block.startMinute >= endWindow) break;
+    if (block.startMinute > cursor) gaps.push({ from: cursor, to: Math.min(block.startMinute, endWindow) });
+    cursor = Math.max(cursor, Math.ceil(block.endMinute));
+  }
+  if (cursor < endWindow) gaps.push({ from: cursor, to: endWindow });
+  for (const { from, to } of gaps) {
+    for (let minute = from; minute < to; minute++) {
+      const start = dayMinuteToZonedTime(date, timezone, minute).toInstant();
+      if (!isStartAligned(rule, start, policy.schedulingTimezone)) continue;
+      const duration =
+        Math.floor(Math.min(preferredDuration, to - minute, maximumDuration) / rule.minutes) * rule.minutes;
+      if (duration <= 0) break;
+      const proposal = proposeDayRange({ startMinute: minute, endMinute: minute + duration }, date, timezone, policy);
+      if (proposal && proposal.startMinute >= from && proposal.endMinute <= to) return proposal;
+      break;
+    }
   }
   return undefined;
 }

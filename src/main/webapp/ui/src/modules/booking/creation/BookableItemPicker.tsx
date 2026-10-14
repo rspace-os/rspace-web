@@ -46,6 +46,8 @@ export async function loadBookableItems(
         name: item.name,
         timezone: item.timezone,
         slotGranularityMinutes: item.slotGranularityMinutes,
+        incrementUnit: item.incrementUnit,
+        alignToIncrement: item.alignToIncrement,
         openingHours: item.openingHours,
         bufferBeforeMinutes: item.bufferBeforeMinutes,
         bufferAfterMinutes: item.bufferAfterMinutes,

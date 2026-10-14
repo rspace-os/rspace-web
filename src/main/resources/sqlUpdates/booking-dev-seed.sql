@@ -33,6 +33,12 @@ VALUES
    UNIX_TIMESTAMP() * 1000),
   (910100009, 'user1a', NOW(), NOW(), 'user1a', b'0', 'Dev booking instrument 09 (no configuration)',
    'Fresh dev booking seed', 1, 0, -1, 'Instrument', b'1', 0, UNIX_TIMESTAMP() * 1000,
+   UNIX_TIMESTAMP() * 1000),
+  (910100010, 'user1a', NOW(), NOW(), 'user1a', b'0', 'Dev booking instrument 10 (1-day increments)',
+   'Fresh dev booking seed', 1, 0, -1, 'Instrument', b'1', 0, UNIX_TIMESTAMP() * 1000,
+   UNIX_TIMESTAMP() * 1000),
+  (910100011, 'user1a', NOW(), NOW(), 'user1a', b'0', 'Dev booking instrument 11 (15 minutes, any start)',
+   'Fresh dev booking seed', 1, 0, -1, 'Instrument', b'1', 0, UNIX_TIMESTAMP() * 1000,
    UNIX_TIMESTAMP() * 1000);
 
 INSERT INTO ResourceAccess
@@ -45,22 +51,28 @@ VALUES
   (910100005, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
   (910100006, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
   (910100007, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
-  (910100008, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12);
+  (910100008, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
+  (910100010, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12),
+  (910100011, 'booking-configurations', 0, NOW(6), NOW(6), -12, -12);
 
+-- Items 10 (1-day increments) and 11 (15 minutes, starts not aligned) exercise the increment units.
+-- Day increments need opening 00:00-24:00 on all seven weekdays, which the column defaults give.
 INSERT INTO BookingConfiguration
   (id, enabled, timeZone, targetType, targetId, configurationVersion, createdAt, updatedAt,
-   createdBy_id, updatedBy_id, resourceAccess_id, slotGranularityMinutes, openingStart,
-   openingEnd, bufferBeforeMinutes, bufferAfterMinutes, allowDoubleBooking,
-   maxBookingDurationMinutes, state)
+   createdBy_id, updatedBy_id, resourceAccess_id, slotGranularityMinutes, incrementUnit,
+   alignToIncrement, openingStart, openingEnd, bufferBeforeMinutes, bufferAfterMinutes,
+   allowDoubleBooking, maxBookingDurationMinutes, state)
 VALUES
-  (910100001, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100001, 0, NOW(6), NOW(6), -12, -12, 910100001, 5, '00:00', '24:00', 0, 0, b'1', 0, 'ACTIVE'),
-  (910100002, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100002, 0, NOW(6), NOW(6), -12, -12, 910100002, 5, '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100003, b'1', 'UTC',            'INSTRUMENT', 910100003, 0, NOW(6), NOW(6), -12, -12, 910100003, 5, '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100004, b'1', 'UTC',            'INSTRUMENT', 910100004, 0, NOW(6), NOW(6), -12, -12, 910100004, 5, '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100005, b'1', 'America/New_York','INSTRUMENT', 910100005, 0, NOW(6), NOW(6), -12, -12, 910100005, 5, '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100006, b'1', 'America/New_York','INSTRUMENT', 910100006, 0, NOW(6), NOW(6), -12, -12, 910100006, 5, '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100007, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100007, 0, NOW(6), NOW(6), -12, -12, 910100007, 5, '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
-  (910100008, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100008, 0, NOW(6), NOW(6), -12, -12, 910100008, 5, '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE');
+  (910100001, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100001, 0, NOW(6), NOW(6), -12, -12, 910100001, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'1', 0, 'ACTIVE'),
+  (910100002, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100002, 0, NOW(6), NOW(6), -12, -12, 910100002, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100003, b'1', 'UTC',            'INSTRUMENT', 910100003, 0, NOW(6), NOW(6), -12, -12, 910100003, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100004, b'1', 'UTC',            'INSTRUMENT', 910100004, 0, NOW(6), NOW(6), -12, -12, 910100004, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100005, b'1', 'America/New_York','INSTRUMENT', 910100005, 0, NOW(6), NOW(6), -12, -12, 910100005, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100006, b'1', 'America/New_York','INSTRUMENT', 910100006, 0, NOW(6), NOW(6), -12, -12, 910100006, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100007, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100007, 0, NOW(6), NOW(6), -12, -12, 910100007, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100008, b'1', 'Asia/Singapore', 'INSTRUMENT', 910100008, 0, NOW(6), NOW(6), -12, -12, 910100008, 15, 'MINUTES', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100010, b'1', 'Europe/Berlin', 'INSTRUMENT', 910100010, 0, NOW(6), NOW(6), -12, -12, 910100010, 1440, 'DAYS', b'1', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE'),
+  (910100011, b'1', 'UTC',            'INSTRUMENT', 910100011, 0, NOW(6), NOW(6), -12, -12, 910100011, 15, 'MINUTES', b'0', '00:00', '24:00', 0, 0, b'0', 0, 'ACTIVE');
 
 INSERT INTO ResourceRoleAssignment
   (resourceAccess_id, roleKey, granteeKey, granteeKind, user_id, group_id, audienceKey,
@@ -74,6 +86,8 @@ VALUES
   (910100006, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
   (910100007, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
   (910100008, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
+  (910100010, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
+  (910100011, 'OWNER', 'user:-12', 'USER', -12, NULL, NULL, 'System Admin', 'sysadmin1'),
   (910100001, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
   (910100002, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
   (910100003, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
@@ -81,9 +95,12 @@ VALUES
   (910100005, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
   (910100006, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
   (910100007, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
-  (910100008, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL);
+  (910100008, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
+  (910100010, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL),
+  (910100011, 'BOOKER', 'audience:all-users', 'AUDIENCE', NULL, NULL, 'ALL_USERS', 'All users', NULL);
 
--- 8 configured instruments x 3 dates x 2 events = 48 events. The requesters cycle through
+-- 8 configured instruments x 3 dates x 2 events = 48 events. Items 10 and 11 have none: hour-long
+-- events would not fit item 10's day increments. The requesters cycle through
 -- sysadmin and users 1-3. The final two events overlap on the double-booking instrument.
 INSERT INTO TimeSlotBooking
   (bookingConfiguration_id, requester_id, startTime, endTime, state, purpose, deleted,

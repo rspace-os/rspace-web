@@ -730,7 +730,12 @@ describe("Calendar page", () => {
                 ...bookableItemOption(confocal),
                 configurationVersion: confocal.configurationVersion,
                 targetType: "INSTRUMENT",
-                openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+                openingHours: bookableItemOption(confocal).openingHours.map((entry) => ({
+                  ...entry,
+                  start: "00:00",
+                  end: "24:00",
+                })),
+
                 effectiveRole: confocal.effectiveRole,
                 capabilities: confocal.capabilities,
                 location: {
@@ -1031,6 +1036,47 @@ describe("Calendar page", () => {
     await expect.poll(() => history.location.search).toContain("date=2026-08-16");
   });
 
+  test("preserves the previous history entry when Back cancels a pending event focus", async () => {
+    const originalUrl = window.location.href;
+    const previousUrl = "/booking/calendar?date=2026-08-16&layout=agenda&calendar-resources.q=previous";
+    window.history.replaceState({}, "", previousUrl);
+    const browserHistory = createBrowserHistory();
+    let release = () => {};
+    let started = false;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("where")?.includes("IN123")) {
+          started = true;
+          await held;
+        }
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+    const rendered = render(<CalendarPageStory history={browserHistory} />);
+    try {
+      await expect.element(calendar.heading).toBeVisible();
+      browserHistory.push(
+        "/booking/calendar?date=2026-08-17&target=IN123&layout=agenda&focus=41&focusRequest=pending-back",
+      );
+      await expect.poll(() => started).toBe(true);
+      browserHistory.back();
+      await expect.poll(() => window.location.pathname + window.location.search).toBe(previousUrl);
+      release();
+      await expect.element(calendar.search).toHaveValue("previous");
+      expect(window.location.pathname + window.location.search).toBe(previousUrl);
+      browserHistory.forward();
+      await expect.poll(() => new URLSearchParams(window.location.search).get("date")).toBe("2026-08-17");
+    } finally {
+      release();
+      rendered.unmount();
+      browserHistory.destroy();
+      window.history.replaceState({}, "", originalUrl);
+    }
+  });
+
   test("keeps beforeunload protection after cancelling a dirty discard dialog", async () => {
     const originalUrl = window.location.href;
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
@@ -1188,6 +1234,8 @@ describe("Calendar page", () => {
     );
     const newBooking = page.getByRole("button", { name: "New Booking" });
     const moreCreationOptions = page.getByRole("button", { name: "More event creation options" });
+    await expect.element(newBooking).toBeVisible();
+    await expect.element(moreCreationOptions).toBeVisible();
     await expect
       .poll(() => {
         const bookingElement = newBooking.element();

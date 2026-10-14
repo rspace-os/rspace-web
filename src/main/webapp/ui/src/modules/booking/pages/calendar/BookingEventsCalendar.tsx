@@ -1,12 +1,15 @@
 import { CalendarCheck2Icon, PackageCheckIcon } from "lucide-react";
-import * as React from "react";
+import type * as React from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/adapters/apiV2/runtimeFieldCatalog";
-import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
+import { TableList, type TableListAlertsApi, type TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterExpression, FilterState } from "@/modules/common/table-list/tableListState";
 import { Button } from "@/modules/common/ui/button";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
@@ -49,11 +52,46 @@ function additionalEventResourceCount(
   return additionalResourceIds.size;
 }
 
+// This fallback keeps the presentational calendar usable from stories and small callers that do
+// not need the API metadata-backed filter panels. Production passes the enriched event config.
+const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>({
+  slug: "booking-events-calendar",
+  idField: "id",
+  useAsTitle: "purpose",
+  defaultColumns: ["purpose"],
+  listSearchableFields: ["target.name", "target.globalId", "purpose"],
+  labels: {
+    singularKey: "booking:calendar.event",
+    pluralKey: "booking:calendar.title",
+  },
+  fields: [
+    { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false, form: false },
+    {
+      name: "target",
+      type: "relationship",
+      relationTo: "booking-instruments",
+      hasMany: false,
+      labelKey: "booking:calendar.fields.target",
+      capabilities: { filterOperators: [] },
+    },
+    { name: "purpose", type: "text", maximumLength: 1_000, labelKey: "booking:calendar.fields.purpose" },
+    {
+      name: "bookedBy",
+      type: "text",
+      maximumLength: 255,
+      labelKey: "booking:calendar.fields.bookedBy",
+      capabilities: { filterOperators: [] },
+    },
+  ],
+});
+
 export function BookingEventsCalendar({
   date,
   view,
   layout,
   timezone,
+  focusUnavailable = false,
+  focusFallback = null,
   availabilityStartMinute = 7 * 60,
   availabilityEndMinute = 19 * 60,
   events,
@@ -93,6 +131,8 @@ export function BookingEventsCalendar({
   view: CalendarView;
   layout: CalendarLayout;
   timezone: string;
+  focusUnavailable?: boolean;
+  focusFallback?: "resources" | "overflow" | null;
   availabilityStartMinute?: number;
   availabilityEndMinute?: number;
   events: readonly BookingListDocument[];
@@ -113,7 +153,7 @@ export function BookingEventsCalendar({
   resourceConfigurations?: readonly BookableItemOption[];
   resourceTableProps?: TableListProps<BookingConfiguration>;
   searchControl?: { value: string; onChange: (search: string) => void };
-  eventFilterConfig: ResolvedCollectionConfig<BookingListDocument>;
+  eventFilterConfig?: ResolvedCollectionConfig<BookingListDocument>;
   itemFilterExpression?: FilterExpression<BookingConfiguration> | null;
   eventFilterExpression?: FilterExpression<BookingListDocument> | null;
   itemFilterIssue?: CalendarFilterIssueState;
@@ -140,20 +180,33 @@ export function BookingEventsCalendar({
   ) => void;
 }) {
   const { t } = useTranslation("booking");
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("calendar", deliverNotice, alertsReady);
   const todayValue = todayInTimeZone(timezone);
-  const [editors, setEditors] = React.useState(() => new Map<string, BookingListDocument>());
+  const [editors, setEditors] = useState(() => new Map<string, BookingListDocument>());
   // Pin open cards by booking id so reconciliation can show new times without unmounting their drafts.
-  const editorContext = React.useMemo(
+  const editorContext = useMemo(
     () => ({ setEditors, positions: new Map([...editors.values()].map((event) => [event.id, event])) }),
     [editors],
   );
-  const displayedEvents = React.useMemo(() => {
+  const displayedEvents = useMemo(() => {
     const byId = new Map(events.map((event) => [event.id, event]));
     for (const event of editors.values()) {
       if (!byId.has(event.id)) byId.set(event.id, event);
     }
     return [...byId.values()];
   }, [editors, events]);
+  const eventConfig = eventFilterConfig ?? calendarEventFallbackConfig;
   const eventFiltering:
     | false
     | { value: FilterState<BookingListDocument>; onChange: (value: FilterState<BookingListDocument>) => void } =
@@ -219,13 +272,31 @@ export function BookingEventsCalendar({
       {isError && (
         <div role="alert" className="flex items-center gap-3">
           <span>{t("calendar.unavailable")}</span>
-          <Button type="button" variant="outline" onClick={onRetry}>
+          <Button type="button" variant="outline" onClick={onRetry} data-calendar-focus-keep-pending>
             {t("calendar.retry")}
           </Button>
         </div>
       )}
+      <div role="status" className={focusUnavailable && !isError ? "flex items-center gap-3" : "sr-only"}>
+        {focusUnavailable && !isError ? (
+          <>
+            <span>{t("calendar.eventFocusUnavailable")}</span>
+            <Button type="button" variant="outline" onClick={onRetry} data-calendar-focus-keep-pending>
+              {t("calendar.retry")}
+            </Button>
+          </>
+        ) : null}
+      </div>
+      <div role="status" className="sr-only">
+        {focusFallback === "resources"
+          ? t("calendar.focusFallback.resources", {})
+          : focusFallback === "overflow"
+            ? t("calendar.focusFallback.overflow", {})
+            : null}
+      </div>
       <TableList
-        config={eventFilterConfig}
+        alertsRef={attachAlerts}
+        config={eventConfig}
         rows={displayedEvents}
         getRowId={(event) => String(event.id)}
         clientSide={false}

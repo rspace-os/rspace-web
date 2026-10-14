@@ -70,7 +70,10 @@ describe("BookableItemPage", () => {
     expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     expect(save).toBeEnabled();
     await user.click(save);
-    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(attempts).toBe(2);
   });
 
@@ -114,7 +117,7 @@ describe("BookableItemPage", () => {
     );
     const { queryClient } = renderPage("/booking/bookable-items/IN123/details?edit=true");
     const maximum = await screen.findByRole("spinbutton", {
-      name: "booking:bookableItemDetails.fields.maximumDuration",
+      name: "booking:settings.fields.maximumDuration",
     });
     expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
     await user.clear(maximum);
@@ -155,7 +158,7 @@ describe("BookableItemPage", () => {
     );
     renderPage("/booking/bookable-items/IN123/details?edit=true");
     const maximum = await screen.findByRole("spinbutton", {
-      name: "booking:bookableItemDetails.fields.maximumDuration",
+      name: "booking:settings.fields.maximumDuration",
     });
     await user.clear(maximum);
     await user.type(maximum, "60");
@@ -170,7 +173,7 @@ describe("BookableItemPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.discardDraft" }));
 
     const reloaded = await screen.findByRole("spinbutton", {
-      name: "booking:bookableItemDetails.fields.maximumDuration",
+      name: "booking:settings.fields.maximumDuration",
     });
     expect(reloaded).toHaveValue(120);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -198,7 +201,7 @@ describe("BookableItemPage", () => {
     );
     const { queryClient } = renderPage("/booking/bookable-items/IN123/details?edit=true");
     const maximum = await screen.findByRole("spinbutton", {
-      name: "booking:bookableItemDetails.fields.maximumDuration",
+      name: "booking:settings.fields.maximumDuration",
     });
     await user.clear(maximum);
     await user.type(maximum, "60");
@@ -210,9 +213,7 @@ describe("BookableItemPage", () => {
 
     await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] }));
 
-    expect(screen.getByRole("spinbutton", { name: "booking:bookableItemDetails.fields.maximumDuration" })).toHaveValue(
-      60,
-    );
+    expect(screen.getByRole("spinbutton", { name: "booking:settings.fields.maximumDuration" })).toHaveValue(60);
     const notice = await screen.findByRole("alert");
     expect(notice).toHaveTextContent("booking:bookableItemDetails.backgroundError");
     await expectAccessible(notice);
@@ -307,7 +308,7 @@ describe("BookableItemPage", () => {
     );
     const { router } = renderPage("/booking/bookable-items/IN123/details?edit=true");
     const duration = await screen.findByRole("spinbutton", {
-      name: "booking:bookableItemDetails.fields.maximumDuration",
+      name: "booking:settings.fields.maximumDuration",
     });
     await user.clear(duration);
     await user.type(duration, "60");
@@ -324,9 +325,7 @@ describe("BookableItemPage", () => {
     await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
     expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123");
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
-    expect(screen.getByRole("spinbutton", { name: "booking:bookableItemDetails.fields.maximumDuration" })).toHaveValue(
-      60,
-    );
+    expect(screen.getByRole("spinbutton", { name: "booking:settings.fields.maximumDuration" })).toHaveValue(60);
   });
 
   it("saves an owner notification choice and clears saved state after edits", async () => {
@@ -363,7 +362,7 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(notificationSubscriptionRequest).toEqual({ enabled: true, version: 0 }));
     expect(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
-    expect(savedButton).toBeDisabled();
+    expect(savedButton).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByText("booking:notificationSubscriptions.item.rspaceOnly")).not.toBeInTheDocument();
     expect(screen.queryByText("booking:notificationSubscriptions.item.emailDisabled")).not.toBeInTheDocument();
     expect(screen.queryByText("booking:notificationSubscriptions.item.newBookings")).not.toBeInTheDocument();

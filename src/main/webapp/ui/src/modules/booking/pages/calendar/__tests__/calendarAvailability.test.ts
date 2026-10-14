@@ -326,6 +326,7 @@ describe("calendar availability", () => {
           globalId: "IN1",
           timezone: "America/Los_Angeles",
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+
           bufferBeforeMinutes: 0,
           bufferAfterMinutes: 0,
           allowDoubleBooking: false,
@@ -354,7 +355,7 @@ describe("calendar availability", () => {
     ]);
   });
 
-  it("closes omitted weekdays even when the listed days are all day", async () => {
+  it("closes whole unselected weekdays even when the shared hours are all day", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))));
     const row = {
       ...schedule,
@@ -408,7 +409,7 @@ describe("calendar availability", () => {
     ).toBeUndefined();
   });
 
-  it("recomputes closures when only one weekday's hours change", async () => {
+  it("recomputes closures when only one exception changes", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
@@ -451,6 +452,7 @@ describe("calendar availability", () => {
       globalId: "IN1",
       timezone: "UTC",
       openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+
       bufferBeforeMinutes: 10,
       bufferAfterMinutes: 20,
       allowDoubleBooking: false,

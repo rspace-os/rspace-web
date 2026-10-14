@@ -97,7 +97,7 @@ public final class TimeSlotBookingResourceOperations
                 BookingDurationException.class,
                 HttpStatus.BAD_REQUEST,
                 "errors.api.v2.booking.duration",
-                "The booking interval exceeds 366 days."),
+                "The booking interval exceeds 527040 elapsed minutes."),
             ApiV2ErrorMapping.of(
                 BookingTargetUnavailableException.class,
                 HttpStatus.CONFLICT,
