@@ -21,9 +21,9 @@ public final class ApiV2BookingInstrumentResource {
   /** Builds the safe relationship projection with the caller's current Inventory read policy. */
   public static CollectionDescription<Instrument> description(AccessFunction readAccess) {
     return new CollectionDescription<>(
-    RESOURCE_NAME,
-    Instrument.class,
-    List.<Field<Instrument, ?>>of(
+        RESOURCE_NAME,
+        Instrument.class,
+        List.<Field<Instrument, ?>>of(
             Field.<Instrument, Long>readOnly(
                     "id", "id", CollectionFieldTypes.longNumber(), Instrument::getId)
                 .documented(documentation("Instrument ID", "Stable instrument identifier.", "123")),
@@ -42,10 +42,10 @@ public final class ApiV2BookingInstrumentResource {
                 .documented(
                     documentation(
                         "Deleted", "True when the instrument is in the trash.", "false"))),
-    "id",
-    List.of(new Sort("name", true), new Sort("id", true)),
-    AccessPolicy.readOnly(readAccess),
-    com.researchspace.inventory.model.InventoryReadFilters.ALL);
+        "id",
+        List.of(new Sort("name", true), new Sort("id", true)),
+        AccessPolicy.readOnly(readAccess),
+        com.researchspace.inventory.model.InventoryReadFilters.ALL);
   }
 
   private static OpenApiSchemaDocumentation documentation(
