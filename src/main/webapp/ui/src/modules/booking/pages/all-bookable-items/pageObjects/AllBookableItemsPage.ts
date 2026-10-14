@@ -69,6 +69,10 @@ export class AllBookableItemsPage {
     return page.getByRole("img", { name: "Confocal microscope availability" });
   }
 
+  get confocalAvailabilityText(): Locator {
+    return this.card("Confocal microscope").getByText("Available until 10:00", { exact: true });
+  }
+
   availabilitySlice(itemName: string, contributorCount: number, state = ".*", period = ".*"): Locator {
     return page.getByRole("button", {
       name: new RegExp(
@@ -82,7 +86,7 @@ export class AllBookableItemsPage {
   }
 
   get availabilityBookingRows(): Locator {
-    return this.availabilityDetails.getByText("Booking", { exact: true });
+    return this.availabilityDetails.getByRole("listitem");
   }
 
   focusAvailabilitySlice(itemName: string, contributorCount: number): void {
