@@ -16,9 +16,9 @@ import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.ManualLoginHelperImpl;
 import com.researchspace.auth.PasswordGrantGuessLimiter;
 import com.researchspace.auth.PostOAuthLoginHelperImpl;
-import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.WhiteListIPCheckerImpl;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.dataverse.api.v1.DataverseAPI;
 import com.researchspace.dataverse.http.DataverseAPIImpl;
@@ -852,14 +852,11 @@ public abstract class BaseConfig {
   PasswordGrantGuessLimiter passwordGrantGuessLimiter(
       @Value("${oauth.passwordGrant.maxFailures:5}") int maxFailures,
       @Value("${oauth.passwordGrant.failureWindowSeconds:600}") long failureWindowSeconds,
-      UsernamePasswordCredentialsMatcher credentialsMatcher) {
+      SentinelPasswordCheck sentinelCheck) {
     // Only real accounts get an entry, so this is a memory backstop far above any user count.
     final long maxTrackedAccounts = 1_000_000;
     return new PasswordGrantGuessLimiter(
-        maxFailures,
-        Duration.ofSeconds(failureWindowSeconds),
-        maxTrackedAccounts,
-        credentialsMatcher);
+        maxFailures, Duration.ofSeconds(failureWindowSeconds), maxTrackedAccounts, sentinelCheck);
   }
 
   /** For PDF export */
