@@ -625,20 +625,43 @@ This setting prevents the query layer from sending the property to Hibernate.
 Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
 writer or row-specific field access.
 
-Declare an ARRAY with `CollectionFieldTypes.array(rowType, fields, adapter)`. Its non-empty
-child `fields` list controls parsing, validation, output, metadata and OpenAPI. Children reuse the
-scalar types and constraints. A row adapter runs after child validation; row and array validators
-then enforce rules such as opening intervals and unique weekdays. Arrays are never filterable or
-sortable. Booking uses this declaration for `openingHours` and read-only `roleSources`.
+Every ARRAY field declares a non-empty list of uniquely named child fields directly. Use
+`CollectionFieldTypes.array(Row.class, fields, adapter)` and `Field.embedded(name, type, reader)`.
+The adapter constructs a row only after child parsing and validation. An overload accepts row and
+whole-array validators plus inclusive minimum/maximum row counts. Use
+`CollectionFieldTypes.object(Row.class, fields, adapter)` for nested groups. Neither embedded values
+nor their children are filterable or sortable. Relationship children and cyclic declarations are
+unsupported. The no-argument array factory and opaque structured ARRAY decoders are removed.
+Array fields cannot be inferred from `@ApiV2ResourceField`; declare them programmatically with their
+children. Annotation inference fails with that guidance rather than creating an opaque placeholder.
 
-A supplied array replaces the complete value, including on PATCH. Every replacement row must
-supply its required children. Unknown or non-writable children fail with indexed paths such as
-`openingHours[2].start`. Scalar, null and direct-array rows are rejected. Finite declared embedded
-objects and nested arrays follow the same rules. Child read access can narrow the parent's access.
+Each supplied array replaces the entire value. Unknown and non-writable child keys, null/scalar
+rows, and direct array rows fail with indexed paths such as `openingHours[2].start`. Required
+children apply on CREATE and UPDATE. Child defaults fill omitted keys only, without inventing rows.
+Child write access runs after the complete parent input enters the caller context.
 
-`CollectionFieldTypes.object()` remains a server-rendered read-only object. Use declared children
-for an embedded object that participates in array parsing or projection. Opaque ARRAY declarations
-and the no-argument `array()` factory are unsupported. Scalar collections remain deferred.
+Only declared readable properties are serialized, including DTO rows, caller-specific overrides,
+and pre-rendered included documents. The parent gates the whole value and child restrictions narrow
+that access. Entity values, overrides, defaults, examples, and fresh custom serializer results must
+contain required children before access filtering. A custom serializer returns the complete declared
+value; the shared field renderer applies child read access afterward.
+
+Pre-rendered included documents have already passed validation and caller projection. They may omit
+unreadable required children. Reprojection validates every supplied child and every required readable
+child, plus row-count bounds. Row and whole-array rules run when all values needed to reconstruct the
+rows remain available; those rules cannot be rerun after projection removes their input. Producers
+must validate complete values before creating such an included document. This exception does not
+apply to readOverrides or fresh serializer output.
+
+Defaults and published examples pass declared-child validation, including scalar child constraints. Recursive
+`fields` metadata and OpenAPI object `items` come from those definitions, including constraints,
+required keys on CREATE and replacement UPDATE, and `additionalProperties: false`. Read properties
+may be omitted by child access, so read item schemas do not require those keys. Each declared
+property also publishes `x-rspace-fields` for custom frontend renderers. Scalar `hasMany` and generic array row editors
+remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are unchanged.
+
+`CollectionFieldTypes.object()` remains available for read-only opaque objects. Writable non-array
+structured values can still use `structured(...)`; ARRAY values always use declared children.
 
 A writable field can supply a fixed value when a create document omits it: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
