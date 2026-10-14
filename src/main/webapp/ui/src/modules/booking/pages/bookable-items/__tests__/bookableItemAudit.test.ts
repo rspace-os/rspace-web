@@ -17,6 +17,7 @@ import {
   auditPresetRange,
   auditRangeToQuery,
   fetchBookingConfigurationAudit,
+  recordedValues,
   validateAuditDateRange,
 } from "../bookableItemAudit";
 
@@ -33,6 +34,59 @@ const event = {
   payload: { enabled: true, bookingConfigurationId: "booking-configurations:7" },
   target: "bookings:41",
 };
+
+it.each([
+  {
+    openingHours: [
+      { dayOfWeek: 2, start: "10:00", end: "24:00" },
+      { dayOfWeek: 1, start: "09:00", end: "17:00" },
+    ],
+  },
+  { openingHours: '[{"dayOfWeek":2,"start":"10:00","end":"24:00"},{"dayOfWeek":1,"start":"09:00","end":"17:00"}]' },
+])("formats independent hours in weekday order from an audit snapshot", ({ openingHours }) => {
+  expect(recordedValues({ openingHours }, "en-US")).toEqual([
+    ["openingHours", "Monday 09:00–17:00, Tuesday 10:00–24:00"],
+  ]);
+});
+
+it("retains unknown and historical audit schedule values", () => {
+  expect(recordedValues({ openingHours: { legacy: true }, openingStart: "09:00", openDays: [1, 2] }, "en-US")).toEqual([
+    ["openingHours", '{"legacy":true}'],
+    ["openingStart", "09:00"],
+    ["openDays", "[1,2]"],
+  ]);
+});
+
+describe("recorded audit values", () => {
+  it("formats booking instants in UTC while preserving unknown and invalid values", () => {
+    const instant = "2026-10-09T08:00:00Z";
+    const values = Object.fromEntries(
+      recordedValues(
+        {
+          start: Date.parse(instant),
+          end: instant,
+          futureField: { nested: [1, 2] },
+          maxBookingDurationMinutes: 90,
+        },
+        "en-US",
+      ),
+    );
+    expect(values.start).toBe(
+      new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeStyle: "long",
+        timeZone: "UTC",
+      }).format(new Date(instant)),
+    );
+    expect(values.end).toBe(values.start);
+    expect(values.futureField).toBe('{"nested":[1,2]}');
+    expect(values.maxBookingDurationMinutes).toBe("90");
+    expect(recordedValues({ start: "invalid", end: null }, "en-US")).toEqual([
+      ["start", "invalid"],
+      ["end", "—"],
+    ]);
+  });
+});
 
 function page(docs = [event]) {
   return {
@@ -68,6 +122,8 @@ describe("fetchBookingConfigurationAudit", () => {
       page: 1,
       start: "2026-08-01T00:00:00.000Z",
       end: "2026-08-26T00:00:00.000Z",
+      search: " PurposeMarker ",
+      actions: ["WRITE"],
       snapshot: { snapshotDate: "2026-08-25", snapshotFingerprint: fingerprint },
       token: "secret",
     });
@@ -79,6 +135,8 @@ describe("fetchBookingConfigurationAudit", () => {
       limit: "20",
       start: "2026-08-01T00:00:00.000Z",
       end: "2026-08-26T00:00:00.000Z",
+      search: "PurposeMarker",
+      actions: "WRITE",
       snapshotDate: "2026-08-25",
       snapshotFingerprint: fingerprint,
     });
