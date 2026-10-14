@@ -426,7 +426,7 @@ class DeclaredArrayFieldTest {
     assertTrue(failure.getMessage().contains("Field.embedded"));
   }
 
-  @ApiV2ResourceDefinition(name = "arrayBeans", entity = ArrayBean.class)
+  @ApiV2ResourceDefinition(name = "arrayBeans", entity = ArrayBean.class, id = "id")
   private record ArrayResource(@ApiV2ResourceField Long id, @ApiV2ResourceField List<Row> rows) {}
 
   public static class ArrayBean {
