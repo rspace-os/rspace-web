@@ -1079,13 +1079,10 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public Optional<Instrument> findReadableInstrument(Long dbId, User user) {
-    if (!instrumentExists(dbId)) {
-      return Optional.empty();
-    }
-    Instrument instrument = instrumentDao.get(dbId);
-    return invPermissions.canUserReadOrLimitedReadInventoryRecord(instrument, user)
-        ? Optional.of(instrument)
-        : Optional.empty();
+    return instrumentDao
+        .getSafeNull(dbId)
+        .filter(
+            instrument -> invPermissions.canUserReadOrLimitedReadInventoryRecord(instrument, user));
   }
 
   @Override

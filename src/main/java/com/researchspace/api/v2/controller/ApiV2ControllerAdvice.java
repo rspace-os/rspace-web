@@ -84,13 +84,12 @@ public class ApiV2ControllerAdvice {
     return interpolatedMessage != null ? interpolatedMessage : messages.getMessage(error);
   }
 
-  @ExceptionHandler(TypeMismatchException.class)
-  public ResponseEntity<ApiV2Problem> handleTypeMismatch() {
-    return problem(HttpStatus.BAD_REQUEST, "errors.api.v2.invalidRequest");
-  }
-
-  @ExceptionHandler(HttpMessageNotReadableException.class)
-  public ResponseEntity<ApiV2Problem> handleUnreadableBody() {
+  @ExceptionHandler({
+    TypeMismatchException.class,
+    HttpMessageNotReadableException.class,
+    ConstraintViolationException.class
+  })
+  public ResponseEntity<ApiV2Problem> handleInvalidRequest() {
     return problem(HttpStatus.BAD_REQUEST, "errors.api.v2.invalidRequest");
   }
 
@@ -184,11 +183,6 @@ public class ApiV2ControllerAdvice {
                 violation ->
                     new ApiV2Problem.InvalidParam(violation.field(), violation.reason().code()))
             .toList());
-  }
-
-  @ExceptionHandler(ConstraintViolationException.class)
-  public ResponseEntity<ApiV2Problem> handleConstraintViolation() {
-    return problem(HttpStatus.BAD_REQUEST, "errors.api.v2.invalidRequest");
   }
 
   @ExceptionHandler(CollectionQueryException.class)

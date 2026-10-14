@@ -121,28 +121,6 @@ class UsersV2ControllerTest {
   }
 
   @Test
-  void omitsUnavailableOptionalProfileData() throws Exception {
-    User user = mock(User.class);
-    UserProfile profile = mock(UserProfile.class);
-    when(userProfileManager.getUserProfile(user)).thenReturn(profile);
-    when(externalIdResolver.isIdentifierSchemeAvailable(user, IdentifierScheme.ORCID))
-        .thenReturn(false);
-
-    mockMvc
-        .perform(
-            get("/api/v2/users/me")
-                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.profileImageUrl").isEmpty())
-        .andExpect(jsonPath("$.profileImageApiUrl").isEmpty())
-        .andExpect(jsonPath("$.orcid.available").value(false))
-        .andExpect(jsonPath("$.orcid.id").isEmpty())
-        .andExpect(jsonPath("$.livechat.enabled").value(false))
-        .andExpect(jsonPath("$.livechat.serverKey").isEmpty())
-        .andExpect(jsonPath("$.session.lastSession").isEmpty());
-  }
-
-  @Test
   void servesProfileImageThroughApiAuthenticationSurface() throws Exception {
     User user = mock(User.class);
     UserProfile profile = mock(UserProfile.class);
@@ -187,6 +165,8 @@ class UsersV2ControllerTest {
     when(user.getLastName()).thenReturn("");
     when(containerApiManager.getWorkbenchIdForUser(user)).thenReturn(null);
     when(userProfileManager.getUserProfile(user)).thenReturn(mock(UserProfile.class));
+    when(externalIdResolver.isIdentifierSchemeAvailable(user, IdentifierScheme.ORCID))
+        .thenReturn(false);
 
     mockMvc
         .perform(
@@ -210,6 +190,8 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.profileImageApiUrl").isEmpty())
         .andExpect(jsonPath("$.orcid.available").value(false))
         .andExpect(jsonPath("$.orcid.id").isEmpty())
+        .andExpect(jsonPath("$.livechat.enabled").value(false))
+        .andExpect(jsonPath("$.livechat.serverKey").isEmpty())
         .andExpect(jsonPath("$.capabilities.canUseInventory").value(false))
         .andExpect(jsonPath("$.capabilities.canPublish").value(false))
         .andExpect(jsonPath("$.capabilities.canViewSystem").value(false))
