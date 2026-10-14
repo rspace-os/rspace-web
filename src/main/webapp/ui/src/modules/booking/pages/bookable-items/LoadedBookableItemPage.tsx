@@ -1,5 +1,5 @@
 import { Tabs } from "@base-ui/react/tabs";
-import { PencilIcon } from "lucide-react";
+import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -104,6 +104,8 @@ export function LoadedBookableItemPage({
     handleLifecycleAction,
     rulesSaveBlocked,
     setRulesSaveBlocked,
+    conflictVersion,
+    discardConflictedDraft,
   } = useLoadedBookableItemPageActions({ configuration, globalId, tab, token });
   const [cutoff] = useState(() => new Date().toISOString());
   const formId = `bookable-item-details-${useId()}`;
@@ -239,6 +241,7 @@ export function LoadedBookableItemPage({
                               disabled={updateMutation.isPending || rulesSaveBlocked}
                               aria-busy={updateMutation.isPending}
                             >
+                              <SaveIcon aria-hidden="true" />
                               {t("bookableItems.actions.save")}
                             </Button>
                             <Button
@@ -248,6 +251,7 @@ export function LoadedBookableItemPage({
                               disabled={updateMutation.isPending}
                               onClick={cancelEdit}
                             >
+                              <XIcon aria-hidden="true" />
                               {t("bookableItemDetails.cancelEdit")}
                             </Button>
                           </>
@@ -275,8 +279,10 @@ export function LoadedBookableItemPage({
                         formId={formId}
                         pending={updateMutation.isPending}
                         staleEdit={staleEdit}
+                        conflictVersion={conflictVersion}
                         failed={updateMutation.isError}
                         onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
+                        onDiscardConflictedDraft={discardConflictedDraft}
                         onSaveBlockedChange={setRulesSaveBlocked}
                       />
                     ) : (

@@ -487,7 +487,8 @@ class ApiV2OpenApiGeneratorTest {
     Map<String, Object> timeSlotBookingSelectors =
         objectMap(objectMap(timeSlotBookingWhere.get("x-rspace-filter")).get("selectors"));
     Map<String, Object> requesterId = objectMap(timeSlotBookingSelectors.get("requesterId"));
-    assertEquals("integer", objectMap(requesterId.get("schema")).get("type"));
+    // Null for an event the caller sees only as busy.
+    assertEquals(List.of("integer", "null"), objectMap(requesterId.get("schema")).get("type"));
     assertTrue(((List<?>) requesterId.get("operators")).contains("=="));
     Map<String, Object> timeSlotBookingSort =
         timeSlotBookingParameters.stream()

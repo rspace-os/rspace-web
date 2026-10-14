@@ -50,15 +50,14 @@ const bookingConfigurationReadParameters = {
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
-/** The booking configuration API answered with an error status. */
 export class BookingConfigurationRequestError extends Error {
   constructor(readonly status: number) {
     super(`Booking configuration request failed with status ${status}`);
   }
 }
 
-/** No readable booking configuration exists for a target. */
-class BookingConfigurationNotFoundError extends Error {
+/** No readable booking configuration exists for a target: it is unconfigured, missing, or not visible. */
+export class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
 }
 
