@@ -156,6 +156,7 @@
       "adminLogin": {
         "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
       },
+      "busy": "The server is busy and could not check your password. Please try again in a moment.",
       "credentials": {
         "wrong": "Invalid username or password, please try again."
       },
@@ -220,6 +221,7 @@
       "notEqualUsername": "Please use a password other than your username."
     },
     "reauthentication": {
+      "busy": "The server is busy and could not check your password. Please try again in a moment. Nothing has been changed.",
       "failed": "Reauthentication failed, please try again."
     },
     "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",

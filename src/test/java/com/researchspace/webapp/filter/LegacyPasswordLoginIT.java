@@ -2,7 +2,6 @@ package com.researchspace.webapp.filter;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +12,7 @@ import com.researchspace.dao.customliquibaseupdates.WrapLegacyPasswordHashes_RSD
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IReauthenticator;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.util.List;
@@ -115,8 +115,10 @@ class LegacyPasswordLoginIT extends RealTransactionSpringTestBase {
     String wrapped = storeWrapped(u, SALTED_HEX, SALT);
     login(createAndSaveUser(randomAlphabetic(10)), TESTPASSWD);
 
-    assertFalse(reauthenticator.reauthenticate(reload(u), "legacyPass1x"));
-    assertTrue(reauthenticator.reauthenticate(reload(u), "legacyPass1"));
+    assertEquals(
+        ReauthenticationResult.WRONG, reauthenticator.reauthenticate(reload(u), "legacyPass1x"));
+    assertEquals(
+        ReauthenticationResult.OK, reauthenticator.reauthenticate(reload(u), "legacyPass1"));
     assertStillWrapped(u, wrapped, "legacyPass1");
   }
 
