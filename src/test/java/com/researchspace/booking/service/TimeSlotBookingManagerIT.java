@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -15,7 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.booking.BookingOpeningException;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -878,7 +879,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             setup,
             owner,
             new BookingSchedulingSettings.Patch(
-                null, null, null, List.of(2, 3, 4, 5, 6, 7), null, null, null, null, null),
+                null, hours("00:00", "24:00", 2, 3, 4, 5, 6, 7), null, null, null, null),
             () -> bookingManager.createBooking(command, owner, owner));
 
     assertTrue(
@@ -923,10 +924,14 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             owner,
             new BookingSchedulingSettings.Patch(
                 null,
-                null,
-                null,
-                null,
-                List.of(new BookingOpeningException(2, "12:00", "13:00")),
+                List.of(
+                    new BookingOpeningHoursEntry(1, "00:00", "24:00"),
+                    new BookingOpeningHoursEntry(2, "12:00", "13:00"),
+                    new BookingOpeningHoursEntry(3, "00:00", "24:00"),
+                    new BookingOpeningHoursEntry(4, "00:00", "24:00"),
+                    new BookingOpeningHoursEntry(5, "00:00", "24:00"),
+                    new BookingOpeningHoursEntry(6, "00:00", "24:00"),
+                    new BookingOpeningHoursEntry(7, "00:00", "24:00")),
                 null,
                 null,
                 null,
