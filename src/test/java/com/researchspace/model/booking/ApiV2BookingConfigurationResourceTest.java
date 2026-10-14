@@ -214,8 +214,6 @@ class ApiV2BookingConfigurationResourceTest {
             "enabled",
             true,
             "slotGranularityMinutes",
-            "incrementUnit",
-            "alignToIncrement",
             15L,
             "openingHours",
             List.of(new BookingOpeningHoursEntry(1, "08:00", "18:00")),
