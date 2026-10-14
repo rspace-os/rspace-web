@@ -514,6 +514,7 @@ describe("CalendarPage", () => {
   });
 
   it("keeps resource pagination when a search matches more than one page", async () => {
+    const catalogueRequests: { query: string | null; page: number }[] = [];
     const catalogueItems = Array.from({ length: 21 }, (_, index) => {
       const fixture = bookableItemFixtures[index % bookableItemFixtures.length];
       return {
@@ -525,6 +526,8 @@ describe("CalendarPage", () => {
         name: `No-event microscope ${index + 1}`,
         timezone: fixture.timezone,
         slotGranularityMinutes: fixture.slotGranularityMinutes,
+        incrementUnit: "MINUTES" as const,
+        alignToIncrement: true,
         openingHours: fixture.openingHours,
         bufferBeforeMinutes: fixture.bufferBeforeMinutes,
         bufferAfterMinutes: fixture.bufferAfterMinutes,
@@ -535,14 +538,14 @@ describe("CalendarPage", () => {
         location: null,
       };
     });
-    const catalogueRequests: Array<{ q: string | null; page: number }> = [];
     server.use(
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const url = new URL(request.url);
+        const query = url.searchParams.get("q");
         const page = Number(url.searchParams.get("page") ?? "1");
-        catalogueRequests.push({ q: url.searchParams.get("q"), page });
         const pageSize = Number(url.searchParams.get("limit") ?? "20");
+        catalogueRequests.push({ query, page });
         const start = (page - 1) * pageSize;
         return HttpResponse.json({
           items: catalogueItems.slice(start, start + pageSize),
@@ -567,8 +570,9 @@ describe("CalendarPage", () => {
     const nextPage = screen.getByRole("button", { name: "Next page" });
     expect(nextPage).toBeEnabled();
     await user.click(nextPage);
+    await waitFor(() => expect(catalogueRequests).toContainEqual({ query: "No-event", page: 2 }));
     await waitFor(() => expect(screen.getByText("No-event microscope 21")).toBeVisible());
-    expect(catalogueRequests.at(-1)).toEqual({ q: "No-event", page: 2 });
+    expect(catalogueRequests.at(-1)).toEqual({ query: "No-event", page: 2 });
   });
 
   it("shows an empty state when a calendar search has no matches", async () => {

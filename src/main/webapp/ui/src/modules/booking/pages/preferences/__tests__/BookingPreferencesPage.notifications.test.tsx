@@ -6,7 +6,12 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
-import { renderPage, useDefaultBookingPreferencesHandlers } from "./bookingPreferencesPageTestUtils";
+import {
+  expectNoAlertMessage,
+  expectStatusMessage,
+  renderPage,
+  useDefaultBookingPreferencesHandlers,
+} from "./bookingPreferencesPageTestUtils";
 
 describe("BookingPreferencesPage", () => {
   beforeEach(() => useDefaultBookingPreferencesHandlers());
@@ -42,7 +47,7 @@ describe("BookingPreferencesPage", () => {
     const savedButton = await screen.findByRole("button", { name: "booking:preferences.actions.saved" });
     expect(savedButton).toHaveClass("bg-emerald-600");
     expect(savedButton).toBeDisabled();
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(saved).toEqual({
       notifyOwnActions: false,
       autoSubscribeOwnedItems: true,
@@ -53,7 +58,7 @@ describe("BookingPreferencesPage", () => {
     await user.click(
       screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.unsubscribeAll" }),
     );
-    expect(await screen.findByText("booking:notificationSubscriptions.preferences.unsubscribed")).toBeVisible();
+    await expectStatusMessage("booking:notificationSubscriptions.preferences.unsubscribed");
     expect(deleted).toBe(1);
     expect(screen.getByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     expect(
@@ -92,6 +97,7 @@ describe("BookingPreferencesPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" }));
 
     expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    await expectStatusMessage("booking:preferences.actions.saved");
     expect(saved).toEqual({
       notifyOwnActions: true,
       autoSubscribeOwnedItems: false,
@@ -120,7 +126,10 @@ describe("BookingPreferencesPage", () => {
     await user.click(on);
     const save = screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" });
     await user.click(save);
-    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toBeVisible();
+    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toHaveAttribute(
+      "role",
+      "alert",
+    );
     expect(on).toBeChecked();
     expect(save).toBeEnabled();
     await user.click(save);

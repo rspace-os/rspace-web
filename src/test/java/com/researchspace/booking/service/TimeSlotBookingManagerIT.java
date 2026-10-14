@@ -225,6 +225,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       boolean allowDoubleBooking,
       long bufferBeforeMinutes,
       long bufferAfterMinutes) {
+    // Five-minute increments keep the default buffer boundaries on the grid.
     return persistConfiguration(
         configurationManager,
         instrumentDao,
@@ -233,7 +234,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
         owner,
         instrumentId,
         allowDoubleBooking,
-        null,
+        5L,
         bufferBeforeMinutes,
         bufferAfterMinutes);
   }

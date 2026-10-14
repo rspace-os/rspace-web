@@ -20,7 +20,9 @@ export const schedulingSettingsFieldNames = [
   "allowDoubleBooking",
 ] as const;
 export const schedulingSettingsEntries = {
-  slotGranularityMinutes: v.picklist([1, 5, 10, 15]),
+  slotGranularityMinutes: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(MAX_BOOKING_DURATION_MINUTES)),
+  incrementUnit: v.picklist(INCREMENT_UNITS),
+  alignToIncrement: v.boolean(),
   openingHours: OpeningHoursSchema,
   bufferBeforeMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
   bufferAfterMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BUFFER_MINUTES)),
@@ -39,9 +41,11 @@ const bookingDisplayPreferencesEntries = {
 export const SchedulingSettingsSchema = v.pipe(
   v.object(schedulingSettingsEntries),
   v.forward(
-    v.check((settings) =>
-      validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings.slotGranularityMinutes),
-    ),
+    v.check((settings) => validIncrementForSchedule(settings)),
+    ["slotGranularityMinutes"],
+  ),
+  v.forward(
+    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -52,9 +56,7 @@ export const BookingSettingsSchema = v.pipe(
     ...bookingDisplayPreferencesEntries,
   }),
   v.forward(
-    v.check((settings) =>
-      validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings.slotGranularityMinutes),
-    ),
+    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -77,9 +79,7 @@ export const BookingAdminSettingsSchema = v.pipe(
     configurationVersion: v.number(),
   }),
   v.forward(
-    v.check((settings) =>
-      validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings.slotGranularityMinutes),
-    ),
+    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -90,7 +90,9 @@ export type BookingAdminSettings = v.InferOutput<typeof BookingAdminSettingsSche
 export type BookingSettingsInput = SchedulingSettings & BookingDisplayPreferencesInput;
 
 export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
-  slotGranularityMinutes: 5,
+  slotGranularityMinutes: 15,
+  incrementUnit: "MINUTES",
+  alignToIncrement: true,
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,

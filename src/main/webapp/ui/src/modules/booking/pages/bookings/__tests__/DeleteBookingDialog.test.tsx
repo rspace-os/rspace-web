@@ -6,7 +6,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
-import { type BookingDetails, fetchBooking } from "@/modules/booking/domain/booking";
+import { type BookingDetails, bookingQueryOptions, fetchBooking } from "@/modules/booking/domain/booking";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { DeleteBookingDialog } from "../DeleteBookingDialog";
 
@@ -78,7 +78,7 @@ function renderDialog(
 
 function ActiveBookingHarness({ onDeleted }: { onDeleted: ComponentProps<typeof DeleteBookingDialog>["onDeleted"] }) {
   const { data: booking } = useQuery({
-    queryKey: ["api-v2", "bookings", 41],
+    queryKey: bookingQueryOptions(41, "").queryKey,
     queryFn: ({ signal }) => fetchBooking(41, "token", signal),
     retry: false,
   });
@@ -174,9 +174,8 @@ describe("DeleteBookingDialog", () => {
     expect(requests[0].method).toBe("PATCH");
     expect(requests[0].headers.get("Authorization")).toBe("Bearer token");
     expect(requests[0].headers.get("If-Match")).toBe('"0"');
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
-    expect(invalidate).toHaveBeenCalledTimes(2);
+    expect(invalidate).toHaveBeenCalledOnce();
     expect(onDeleted).toHaveBeenCalledOnce();
   });
 
@@ -278,9 +277,8 @@ describe("DeleteBookingDialog", () => {
     expect(screen.getByRole("alert")).not.toHaveTextContent("Do not display this");
     expect(screen.getByRole("alertdialog")).toBeVisible();
     if (status !== 403) {
-      expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
       expect(invalidate).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
-      expect(invalidate).toHaveBeenCalledTimes(2);
+      expect(invalidate).toHaveBeenCalledOnce();
     }
   });
 

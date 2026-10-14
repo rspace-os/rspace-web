@@ -123,6 +123,7 @@
       "createBooking": "Create booking",
       "leave": "Leave configuration"
     },
+    "alignmentUnavailable": "Not available for 24 hours or more",
     "archived": "Archived",
     "archiveDialog": {
       "confirm": "Archive",
@@ -203,6 +204,7 @@
         "tooWide": "Choose a period of no more than 183 days."
       },
       "values": {
+        "alignToIncrement": "Start on clock intervals",
         "allowDoubleBooking": "Allow concurrent bookings",
         "availabilityWindowEnd": "Availability window end",
         "availabilityWindowStart": "Availability window start",
@@ -218,6 +220,7 @@
         "enabled": "Enabled",
         "end": "End (UTC)",
         "increment": "Time increment (minutes)",
+        "incrementUnit": "Time increment unit",
         "kind": "Event type",
         "maximumDuration": "Maximum duration (minutes)",
         "openingHours": "Opening hours",
@@ -259,6 +262,7 @@
       "replace": "Replace link",
       "replaceConfirm": "Replace link",
       "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
+      "replaced": "Calendar link replaced.",
       "replaceWarning": "Calendars using the current link will stop updating.",
       "retry": "Retry",
       "statusError": "Calendar subscription status could not be loaded.",
@@ -266,6 +270,7 @@
       "trigger": "Add to calendar"
     },
     "cancelEdit": "Cancel",
+    "days": "{count, plural, one {# day} other {# days}}",
     "disabled": "Disabled",
     "edit": "Edit configuration",
     "enabled": "Enabled",
@@ -291,6 +296,7 @@
       "requester": "Requester"
     },
     "fields": {
+      "alignToIncrement": "Start on clock intervals",
       "bufferAfter": "Buffer after",
       "bufferBefore": "Buffer before",
       "createdAt": "Created at",
@@ -303,6 +309,7 @@
       "openOn": "Open on",
       "timezone": "Time zone"
     },
+    "hours": "{count, plural, one {# hour} other {# hours}}",
     "leaveDialog": {
       "description": "Your direct access will be removed. Access inherited through a group or All users is not affected.",
       "error": "Could not leave this configuration.",
@@ -414,6 +421,20 @@
     },
     "editError": "Could not update the bookable item. Try again.",
     "editTitle": "Edit Bookable Item",
+    "feedback": {
+      "added": "{item} was added as a bookable item.",
+      "archived": "{item} is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.",
+      "bulkArchived": "{count, plural, =0 {No items were archived.} one {# item is now archived. Its future bookings, if any, were cancelled and will not return when it is restored.} other {# items are now archived. Their future bookings, if any, were cancelled and will not return when they are restored.}}",
+      "bulkArchivedUnknown": "The archive request succeeded. Refreshing the items to confirm their current state.",
+      "bulkDisabled": "{count, plural, =0 {No items were disabled.} one {# item is now disabled.} other {# items are now disabled.}}",
+      "bulkDisabledUnknown": "The disable request succeeded. Refreshing the items to confirm their current state.",
+      "bulkEnabled": "{count, plural, =0 {No items were enabled.} one {# item is now enabled.} other {# items are now enabled.}}",
+      "bulkEnabledUnknown": "The enable request succeeded. Refreshing the items to confirm their current state.",
+      "deleted": "{item} was permanently deleted.",
+      "restored": "{item} is now restored. Previously cancelled bookings remain cancelled.",
+      "viewCalendar": "View calendar",
+      "viewDetails": "View item details"
+    },
     "fields": {
       "actions": "Actions",
       "enabled": "Enabled",
@@ -482,6 +503,12 @@
       "reasonLabel": "Cancellation reason (optional)",
       "title": "Cancel booking?"
     },
+    "clockChange": {
+      "changesDays": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses {count, plural, one {a clock change} other {# clock changes}} in {timezone}. It spans {days, plural, one {# calendar day} other {# calendar days}} but lasts {duration}.",
+      "changesRange": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses {count, plural, one {a clock change} other {# clock changes}} in {timezone}. It runs from {start} to {end} local time and lasts {duration}.",
+      "daylightSavingDays": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses a daylight-saving change in {timezone}. It spans {days, plural, one {# calendar day} other {# calendar days}} but lasts {duration}.",
+      "daylightSavingRange": "{kind, select, maintenance {This maintenance event} other {This booking}} crosses a daylight-saving change in {timezone}. It runs from {start} to {end} local time and lasts {duration}."
+    },
     "compact": {
       "bookingTitle": "New Booking",
       "discard": "Discard changes",
@@ -513,7 +540,6 @@
         "conflict": "This event changed while you were editing. Copy any changes you want to keep, then refresh this page.",
         "discard": "Discard",
         "maintenanceTitle": "Edit maintenance event",
-        "saved": "Changes saved.",
         "title": "Edit booking"
       },
       "lastUpdated": "Last updated",
@@ -535,6 +561,8 @@
     },
     "editTitle": "Edit Booking",
     "errors": {
+      "alignment": "The start must fall on this item's clock intervals of {increment}, counted from midnight in {timezone}.",
+      "alignmentRejected": "The start time is not on this bookable item's clock intervals.",
       "buffer": "Too close to another booking. This item needs {before} before and {after} after each booking.",
       "bufferAfter": "Too close to another booking. This item needs {after} after each booking.",
       "bufferBefore": "Too close to another booking. This item needs {before} before each booking.",
@@ -544,14 +572,18 @@
       "cancellationReasonRequiresCancel": "A cancellation reason can only be provided when cancelling a booking.",
       "checkExistingBookings": "Check My Bookings",
       "concurrentModification": "This event changed while you were editing it. Review the latest details and try again.",
+      "dayEndMissing": "This booking would end at {time} on {date}, but that local time does not exist in {timezone}. Change the start time or choose another duration.",
+      "dayEndMissingRejected": "This booking would end at a local time that does not exist on its last day. Change the start time or choose another duration.",
+      "dayIncrement": "Day bookings must end at the same local time as they start, a multiple of {increment} later, in {timezone}.",
       "deleteForbidden": "You no longer have permission to cancel this booking.",
       "deleteGeneric": "RSpace could not cancel the booking. Try again.",
       "deleteStale": "This booking can no longer be cancelled.",
-      "duration": "Bookings may not exceed 366 days.",
+      "duration": "Bookings may not last longer than 8,784 hours.",
+      "durationMultiple": "The booking length must be a multiple of {increment}.",
       "endAfterStart": "The end must be after the start.",
       "forbidden": "You cannot edit this booking.",
       "generic": "RSpace could not save the booking. Try again.",
-      "granularity": "Start and end times must use this bookable item's time increment.",
+      "granularity": "The booking length is not a whole number of this bookable item's time increments.",
       "itemLoad": "RSpace could not load bookable items.",
       "itemRequired": "Select a bookable item.",
       "load": "RSpace could not load this booking.",
@@ -574,6 +606,14 @@
       "window": "Enter a start in the future and an end after the start.",
       "windowRequired": "Enter a valid start and end."
     },
+    "feedback": {
+      "eventAdded": "{itemName} event added.",
+      "eventUpdated": "{itemName} event updated.",
+      "focusOnCalendar": "Focus on calendar",
+      "maintenanceAdded": "Maintenance for {itemName} added.",
+      "maintenanceUpdated": "Maintenance for {itemName} updated.",
+      "viewDetails": "View details"
+    },
     "form": {
       "cancel": "Cancel",
       "changeTimezone": "Change Time Zone",
@@ -582,6 +622,7 @@
       "earlierOccurrence": "Earlier occurrence ({offset})",
       "end": "End",
       "endDate": "End date",
+      "endSnapped": "End adjusted to {time} on {date} so the booking lasts a multiple of {increment}.",
       "endTime": "End time",
       "endTimezone": "End time zone",
       "instrumentTimes": "Instrument time: {start} - {end} ({timezone})",
@@ -609,21 +650,27 @@
       "previousItems": "Previous",
       "purpose": "Purpose",
       "purposeCount": "{count, number}/1,000 characters",
+      "repeatedEnd": "The end time {time} occurs twice on {date} in {timezone}. Choose which one to use.",
       "returnToCalendar": "Return to Calendar",
       "returnToMyBookings": "Return to My Bookings",
       "save": "Save changes",
       "selectedItem": "{name} ({globalId})",
       "start": "Start",
       "startDate": "Start date",
+      "startSnapped": "Start adjusted to {time} to match the clock intervals of {increment}.",
       "startTime": "Start time",
       "startTimezone": "Start time zone",
       "submit": "Book",
       "submitMaintenance": "Create maintenance event",
       "time": "Time",
-      "timeSnapped": "Adjusted to {time} to match the {increment, number}-minute time increment.",
       "type": "Booking type",
       "typeBlockout": "Maintenance",
       "typeBooking": "Booking"
+    },
+    "increment": {
+      "days": "{count, plural, one {# day} other {# days}}",
+      "hours": "{count, plural, one {# hour} other {# hours}}",
+      "minutes": "{count, plural, one {# minute} other {# minutes}}"
     },
     "instrumentTimeTooltip": "Instrument time: {dateTime} ({timezone})",
     "itemInformation": {
@@ -671,6 +718,7 @@
     "detailLoading": "Loading bookings.",
     "detailUnavailable": "Bookings are unavailable.",
     "event": "Booking event",
+    "eventFocusUnavailable": "This event is no longer available in the calendar.",
     "feed": {
       "bookedBy": "Booked by: {0}",
       "booking": "Booking",
@@ -709,6 +757,10 @@
       "events": "Booking events",
       "items": "Bookable items",
       "legend": "Calendar filters"
+    },
+    "focusFallback": {
+      "overflow": "Opened the Time grid day view to show the event hidden in the week view.",
+      "resources": "Opened the Time grid day view because this event's item has no enabled resource row."
     },
     "grid": "Calendar grid",
     "inlineEditor": {
@@ -1091,6 +1143,7 @@
       "saved": "Saved"
     },
     "availabilityWindow": {
+      "allDay": "Show all day",
       "description": "The times shown on each day's availability bars and timelines.",
       "end": "End time",
       "endOfDay": "{midnight} means midnight at the end of the day.",
@@ -1107,11 +1160,14 @@
       "create": "Create calendar subscription",
       "createError": "The calendar subscription could not be created. Try again.",
       "description": "Subscribe to your confirmed RSpace bookings across all bookable items. The private link updates automatically in your calendar app.",
+      "disconnected": "Calendar link disconnected.",
       "google": "Google Calendar",
       "loading": "Loading calendar subscription.",
       "other": "Other",
+      "ready": "Calendar link is ready.",
       "replace": "Replace private link",
       "replaceConflict": "This link was changed elsewhere. The current link is shown above.",
+      "replaced": "Calendar link replaced.",
       "replaceDialog": {
         "cancel": "Keep current link",
         "confirm": "Replace link",
@@ -1194,25 +1250,37 @@
     },
     "errors": {
       "buffer": "Enter a whole number from 0 to 10,080.",
-      "granularity": "Choose 1, 5, 10, or 15 minutes.",
-      "maximumDuration": "Use 0 or a duration divisible by the selected time increment.",
+      "incrementAlignedOpening": "No start on the increment's clock intervals leaves room for a whole increment within an opening period. Change the increment or the opening hours, or turn off Start on clock intervals.",
+      "incrementDaysNeedFullWeek": "Day increments require continuous availability, 24 hours a day, seven days a week.",
+      "incrementOpening": "The increment must fit within one continuous opening period.",
+      "incrementRange": "Enter an increment from 1 minute to 527,040 minutes.",
+      "incrementWholeDays": "Enter a whole number of days.",
+      "incrementWholeMinutes": "The increment must be a whole number of minutes.",
+      "maximumDuration": "Use 0, or a multiple of the time increment up to 527,040 minutes.",
+      "maximumDurationDays": "The maximum must be 0 or at least {minutes, number} elapsed minutes for this {days, plural, one {#-day} other {#-day}} increment.",
       "openingHours": "Use an opening start before the end, or enter 00:00 as the end to close at midnight.",
       "save": "RSpace could not save the booking settings. Try again.",
       "stale": "These settings changed after you opened this page. Reload the page and try again."
     },
     "fields": {
+      "alignToIncrement": "Start on clock intervals",
+      "alignToIncrementDescription": "Start bookings at multiples of the increment from midnight in the item's timezone. For 15 minutes, starts are :00, :15, :30 or :45. When off, bookings can start at any minute, but durations must still be multiples of the increment.",
+      "alignToIncrementUnavailable": "Unavailable for increments of 24 hours or more.",
       "allowDoubleBooking": "Allow double booking",
       "buffer": "Buffer before and after bookings (minutes)",
       "bufferAfter": "Buffer after booking (minutes)",
       "bufferBefore": "Buffer before booking (minutes)",
       "bufferMixed": "The stored before and after buffers differ. Enter a value to replace both, or leave this blank to preserve them.",
       "granularity": "Time increment",
-      "granularityOption": "{count, plural, one {# minute} other {# minutes}}",
+      "incrementDays": "Days",
+      "incrementDaysUnavailable": "Select Open all day on every day to use Days.",
+      "incrementHours": "Hours",
+      "incrementMinutes": "Minutes",
+      "incrementUnit": "Time increment unit",
       "legend": "Scheduling rules",
-      "maximumDuration": "Maximum booking duration (minutes)",
+      "maximumDuration": "Maximum booking duration (elapsed minutes)",
       "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
       "openingEnd": "Opening end",
-      "openingEndDescription": "Enter {midnight} to close at midnight (the end of the day).",
       "openingStart": "Opening start"
     },
     "notPermitted": {
@@ -1227,7 +1295,7 @@
       },
       "midnightEnd": "An end of {midnight} closes at midnight at the end of this day.",
       "openAllDay": "Open all day",
-      "openAllDaySelected": "Open all day selected."
+      "openAllDaySelected": "Open all day selected. The start and end times stay unavailable until you clear it."
     },
     "saved": "Booking settings saved.",
     "title": "Booking Settings",
@@ -1256,5 +1324,24 @@
     "rangeAndEndDate": "{period} · {date}",
     "rangeWithOffset": "{period} {offset}",
     "withDayOffset": "{time} ({days})"
+  },
+  "timelineEdit": {
+    "continuationHint": "Double-click or press Enter to apply.",
+    "endAtMidnight": "End at midnight after {date}",
+    "resizeDays": "Day bookings keep the same local start and end time. Move the booking or change its duration in the form.",
+    "resizeEnd": "No other valid end time fits on this day.",
+    "resizeStart": "No other valid start time fits on this day.",
+    "startAtMidnight": "Start at midnight on {date}",
+    "unavailable": {
+      "alignment": "Midnight is not on this item's clock intervals.",
+      "dayEndMissing": "Midnight would not leave a whole number of this item's increments.",
+      "duration": "Midnight would not leave a whole number of this item's increments.",
+      "maximum": "Midnight would make the booking longer than this item's maximum.",
+      "midnightRepeated": "Midnight occurs twice on {date} in {timezone}. Use the form to choose which one.",
+      "midnightSkipped": "Midnight does not occur on {date} in {timezone}. Use the form to set this time.",
+      "openingHours": "Midnight would extend the booking outside this item's opening hours.",
+      "order": "Midnight would leave the booking with no length.",
+      "precision": "Midnight would leave the booking with no length."
+    }
   }
 }

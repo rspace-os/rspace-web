@@ -26,6 +26,7 @@ import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
 import { cn } from "@/modules/common/utils/cn";
 import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
 import { BookingConfigurationActionsMenu } from "../bookable-items/BookingConfigurationActionsMenu";
+import { bookableItemLifecycleNotice } from "../bookable-items/bookableItemFeedback";
 import {
   archiveBookingConfiguration,
   permanentlyDeleteBookingConfiguration,
@@ -82,6 +83,8 @@ export function AllBookableItemsTable({
   rowsDate,
   token,
   quickFilterText,
+  alertsRef,
+  attachAlerts,
 }: AllBookableItemsTableProps) {
   const { t } = useTranslation("booking");
   const navigate = useNavigate({ from: "/booking/all-items/" });
@@ -147,14 +150,20 @@ export function AllBookableItemsTable({
             configuration={row}
             close={close}
             onArchive={(id, version) => archiveBookingConfiguration(id, version, token)}
-            onArchived={(id) => onLifecycleChanged([id])}
+            onArchived={async (id) => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("archived", row, t));
+              await onLifecycleChanged([id]);
+            }}
           />
         ) : actionId === "permanent-delete" ? (
           <PermanentDeleteBookableItemDialog
             configuration={row}
             close={close}
             onDelete={(id, version) => permanentlyDeleteBookingConfiguration(id, version, token)}
-            onDeleted={() => onLifecycleChanged([row.id], true)}
+            onDeleted={async () => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("deleted", row, t));
+              await onLifecycleChanged([row.id], true);
+            }}
           />
         ) : null,
     }),
@@ -252,18 +261,16 @@ export function AllBookableItemsTable({
           </Button>
         </div>
       ) : null}
-      {notificationFeedback ? (
-        <p role="status" className="text-sm text-primary">
-          {t(
-            notificationFeedback.enabled
-              ? "notificationSubscriptions.bulk.subscribedCount"
-              : "notificationSubscriptions.bulk.unsubscribedCount",
-            { count: notificationFeedback.count },
-          )}
-        </p>
-      ) : null}
+      <p role="status" className="text-sm text-primary">
+        {notificationFeedback
+          ? notificationFeedback.enabled
+            ? t("notificationSubscriptions.bulk.subscribedCount", { count: notificationFeedback.count })
+            : t("notificationSubscriptions.bulk.unsubscribedCount", { count: notificationFeedback.count })
+          : null}
+      </p>
       <TableList
         {...tableProps}
+        alertsRef={attachAlerts}
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
         filterButtons={availabilityFilters}

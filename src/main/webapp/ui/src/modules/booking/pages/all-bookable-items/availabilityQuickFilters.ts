@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
-import {
-  type CatalogueAvailability,
-  type CatalogueAvailabilityWindow,
-  fetchBookingCatalogueAvailabilityCounts,
-} from "@/modules/booking/domain/bookingCatalogue";
+import type { CatalogueAvailability, CatalogueAvailabilityWindow } from "@/modules/booking/domain/bookingCatalogue";
+import { bookingCatalogueAvailabilityCountsQuery } from "@/modules/booking/domain/bookingCatalogue";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import type { FilterExpression } from "@/modules/common/table-list/types";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 
@@ -150,26 +148,12 @@ export function useAvailabilityCounts(
   today: TodayAvailabilityWindow,
   enabled = true,
 ) {
-  const queryKey = [
-    "api-v2",
-    "bookings",
-    "booking-catalogue",
-    "availability-counts",
-    authScope,
-    token,
-    search.q,
-    search.types,
-    search.mine,
-    search.where,
-    today.start,
-    today.end,
-    today.now,
-  ] as const;
+  const scope = useQueryIdentityScope(authScope);
+  const options = bookingCatalogueAvailabilityCountsQuery(scope, search, today, token);
+  const queryKey = options.queryKey;
   return useQuery({
-    queryKey,
-    queryFn: ({ signal }) => fetchBookingCatalogueAvailabilityCounts(search, today, token, signal),
+    ...options,
     enabled: enabled && token.length > 0,
-    staleTime: 30_000,
     placeholderData: keepAcrossMinutes(queryKey),
   });
 }

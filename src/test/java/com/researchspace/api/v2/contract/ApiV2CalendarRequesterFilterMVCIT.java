@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.contract;
 
+import com.researchspace.model.inventory.Instrument;
 import static com.researchspace.api.v2.contract.ApiV2FilterExpansionMVCIT.OBJECT_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -329,7 +330,8 @@ class ApiV2CalendarRequesterFilterMVCIT {
   }
 
   private static Instant alignedStart() {
-    return Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    Instant candidate = Instant.now().plus(7, ChronoUnit.DAYS);
+    return Instant.ofEpochSecond(((candidate.getEpochSecond() + 899) / 900) * 900);
   }
 
   private long instrument(User instrumentOwner, String name) {

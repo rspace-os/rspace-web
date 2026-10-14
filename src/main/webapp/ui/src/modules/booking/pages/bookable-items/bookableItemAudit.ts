@@ -1,5 +1,7 @@
+import { queryOptions } from "@tanstack/react-query";
 import * as v from "valibot";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { bookingConfigurationKeys } from "@/modules/booking/domain/bookingKeys";
 import { formatIsoWeekday, formatOpeningRange, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingTimeFormat,
@@ -188,16 +190,15 @@ function parsedArray(value: unknown): unknown {
 /** Opening hours as weekday names and scheduling-zone ranges; otherwise undefined. */
 function openingValue(key: string, value: unknown, locale: string, timeLocale: string): string | undefined {
   if (key === "openingHours") {
-    const exceptions = v.safeParse(OpeningHoursSchema, parsedArray(value));
-    if (exceptions.success) {
-      if (exceptions.output.length === 0) return "—";
+    const hours = v.safeParse(OpeningHoursSchema, parsedArray(value));
+    if (hours.success) {
       return formatList(
-        exceptions.output
+        hours.output
           .toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)
-          .map((exception) =>
+          .map((entry) =>
             i18n.t("booking:bookableItemDetails.audit.weekdayRange", {
-              day: formatIsoWeekday(exception.dayOfWeek, "long", locale),
-              hours: formatOpeningRange(exception, timeLocale),
+              day: formatIsoWeekday(entry.dayOfWeek, "long", locale),
+              hours: formatOpeningRange(entry, timeLocale),
               lng: locale,
             }),
           ),
@@ -212,14 +213,15 @@ function openingValue(key: string, value: unknown, locale: string, timeLocale: s
 /** Translated words for recorded booleans and enumerated values, so they read as the rest of the UI does. */
 export type RecordedValueWords = { yes: string; no: string; values: Readonly<Record<string, string>> };
 
-const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking"]);
+const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking", "alignToIncrement"]);
+const ENUMERATED_KEYS = new Set(["state", "kind", "incrementUnit"]);
 
-/** Booleans as Yes/No, states and kinds by their labels, and a bookable-item target by its global ID. */
+/** Booleans as Yes/No, states, kinds and increment units by their labels, and a target by its global ID. */
 function wordValue(key: string, value: unknown, words: RecordedValueWords): string | undefined {
   if (typeof value === "boolean" || (BOOLEAN_KEYS.has(key) && (value === "true" || value === "false"))) {
     return value === true || value === "true" ? words.yes : words.no;
   }
-  if ((key === "state" || key === "kind") && typeof value === "string") return words.values[value];
+  if (ENUMERATED_KEYS.has(key) && typeof value === "string") return words.values[value];
   if (key === "target") {
     const target = parsedArray(value);
     if (
@@ -274,3 +276,25 @@ export function recordedValues(
       ];
     });
 }
+
+export const bookingConfigurationAuditQuery = (
+  input: Parameters<typeof fetchBookingConfigurationAudit>[0],
+  generation: number,
+) =>
+  queryOptions({
+    queryKey: [
+      ...bookingConfigurationKeys.all,
+      input.configurationId,
+      "audit",
+      input.dateFrom,
+      input.dateTo,
+      input.search,
+      input.actions,
+      input.page,
+      input.snapshot?.snapshotDate ?? null,
+      input.snapshot?.snapshotFingerprint ?? null,
+      generation,
+    ] as const,
+    queryFn: ({ signal }) => fetchBookingConfigurationAudit({ ...input, signal }),
+    retry: false,
+  });

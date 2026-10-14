@@ -135,6 +135,48 @@ describe("BookingForm", () => {
     return submit;
   }
 
+  it("warns, without blocking, when the entered window crosses a clock change", async () => {
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={{ ...editableBooking, start: "2026-10-24T10:00:00Z", end: "2026-10-25T11:00:00Z" }}
+        configuration={target}
+        token="token"
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByRole("note")).toHaveTextContent("booking:bookings.clockChange.daylightSavingDays");
+    expect(screen.getByRole("button", { name: "booking:bookings.form.save" })).toBeInTheDocument();
+  });
+
+  it("warns while adding a booking whose entered window crosses a clock change", async () => {
+    const user = userEvent.setup();
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        eventKind="BOOKING"
+        initialTarget={target}
+        initialDate="2026-10-24"
+        token="token"
+        pending={false}
+        onSubmit={vi.fn()}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    await user.type(within(start).getByLabelText("booking:bookings.form.time"), "12:00");
+    await user.clear(within(end).getByLabelText("booking:bookings.form.date"));
+    await user.type(within(end).getByLabelText("booking:bookings.form.date"), "2026-10-25");
+    await user.type(within(end).getByLabelText("booking:bookings.form.time"), "12:00");
+
+    expect(await screen.findByRole("note")).toHaveTextContent("booking:bookings.clockChange.daylightSavingDays");
+    expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeEnabled();
+  });
+
   it("uses refreshed edit policies without resetting entered fields", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
@@ -428,7 +470,7 @@ describe("BookingForm", () => {
   it.each([
     [1, "60"],
     [15, "900"],
-  ])("uses the configured %i-minute increment", async (increment, step) => {
+  ])("uses the configured %i-minute increment for aligned starts", async (increment, step) => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
@@ -445,7 +487,7 @@ describe("BookingForm", () => {
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
     expect(within(start).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
-    expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
+    expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", "60");
   });
 
   it.each(["add", "edit"] as const)("snaps typed %s-form times to the nearest configured interval", async (mode) => {
@@ -499,6 +541,9 @@ describe("BookingForm", () => {
         name: mode === "add" ? "booking:bookings.form.submit" : "booking:bookings.form.save",
       }),
     );
+    if (mode === "add") {
+      expect(screen.queryByText("booking:bookings.errors.durationMultiple")).not.toBeInTheDocument();
+    }
     expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -937,7 +982,9 @@ describe("BookingForm", () => {
         initialTarget={{
           ...target,
           timezone: "UTC",
-          openingHours: target.openingHours.filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek)),
+          openingHours: target.openingHours.filter((entry) =>
+            [1, 2, 3, 4, 5].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+          ),
         }}
         initialWindow={{ startDate: "2026-08-22", startTime: "10:00", endDate: "2026-08-22", endTime: "11:00" }}
         token="token"
@@ -993,7 +1040,7 @@ describe("BookingForm", () => {
       "2026-08-17",
       "openingWindowsOnDate",
     ],
-  ])("summarizes %s on an item closed on some weekdays", async (_, displayTimezone, weekdays, initialDate, summary) => {
+  ])("summarizes %s on an item closed on some weekdays", async (_, displayTimezone, openDays, initialDate, summary) => {
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
     renderForm(
       <BookingForm
@@ -1003,7 +1050,7 @@ describe("BookingForm", () => {
         initialTarget={{
           ...target,
           timezone: "UTC",
-          openingHours: target.openingHours.filter(({ dayOfWeek }) => weekdays.includes(dayOfWeek)),
+          openingHours: target.openingHours.filter((entry) => openDays.includes(entry.dayOfWeek)),
         }}
         initialDate={initialDate}
         token="token"

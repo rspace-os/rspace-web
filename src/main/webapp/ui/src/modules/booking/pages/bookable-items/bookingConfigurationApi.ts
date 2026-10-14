@@ -1,7 +1,16 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { queryOptions, skipToken } from "@tanstack/react-query";
+import * as v from "valibot";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import {
+  bookingCatalogueKeys,
+  bookingConfigurationKeys,
+  bookingKeys,
+  bookingTargetKeys,
+} from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
@@ -10,8 +19,8 @@ import { type BookingConfiguration, BookingConfigurationSchema } from "./booking
 /** Refreshes both catalogue query families after a configuration changes. */
 export async function invalidateBookingCatalogueQueries(queryClient: QueryClient): Promise<void> {
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
-    queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "booking-catalogue"] }),
+    queryClient.invalidateQueries({ queryKey: bookingCatalogueKeys.all }),
+    queryClient.invalidateQueries({ queryKey: bookingKeys.catalogue() }),
   ]);
 }
 
@@ -41,10 +50,10 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
 }
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,alignToIncrement,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 export const bookingConfigurationTargetQueryKey = (globalId: string) =>
-  ["api-v2", "booking-configurations", "target", globalId] as const;
+  bookingConfigurationTargetQuery(globalId, "").queryKey;
 
 const bookingConfigurationReadParameters = {
   depth: "2",
@@ -149,3 +158,51 @@ export async function fetchBookingOwnershipCandidates(
   if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
   return parseOrThrow(v2PageEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
 }
+
+export const bookingConfigurationTargetQuery = (globalId: string, token: string) =>
+  queryOptions({
+    queryKey: bookingConfigurationKeys.target(globalId),
+    queryFn: ({ signal }) => fetchBookingConfigurationDetailsByTarget(globalId, token, signal),
+    retry: retryUnlessClientError,
+  });
+
+export const inventoryBookingConfigurationQuery = (globalId: string, token: string) =>
+  queryOptions({
+    queryKey: [...bookingConfigurationKeys.all, "inventory-action", globalId] as const,
+    queryFn: ({ signal }) => findBookingConfigurationByTarget(globalId, token, signal),
+  });
+
+export const bookingConfigurationPickerTargetQuery = (globalId: string | undefined, token: string) =>
+  queryOptions({
+    queryKey: bookingConfigurationKeys.pickerTarget(globalId),
+    queryFn: !globalId ? skipToken : ({ signal }) => fetchBookingConfigurationByTarget(globalId, token, signal),
+    retry: false,
+  });
+
+export const BookingTargetSchema = v.object({
+  id: v.number(),
+  globalId: v.string(),
+  name: v.string(),
+  deleted: v.literal(false),
+});
+
+export const MINIMUM_TARGET_QUERY_LENGTH = 2;
+
+/** Searches eligible instruments; a blank query lists the first eligible instruments by name. */
+export async function searchBookingTargets(query: string, token: string | undefined, signal?: AbortSignal) {
+  const parameters = new URLSearchParams({ limit: "20" });
+  // The API rejects a non-blank query shorter than two characters.
+  if (query.trim().length >= MINIMUM_TARGET_QUERY_LENGTH) parameters.set("q", query.trim());
+  const response = await fetchWithUiToken(`/api/v2/booking-configuration-targets?${parameters}`, {
+    headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    signal,
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+  return parseOrThrow(v.object({ docs: v.array(BookingTargetSchema) }), (await response.json()) as unknown).docs;
+}
+
+export const bookingRouteTargetQuery = (globalId: string | undefined, token: string) =>
+  queryOptions({
+    queryKey: [...bookingTargetKeys.all, "route-target", globalId] as const,
+    queryFn: globalId === undefined ? skipToken : ({ signal }) => searchBookingTargets(globalId, token, signal),
+  });
