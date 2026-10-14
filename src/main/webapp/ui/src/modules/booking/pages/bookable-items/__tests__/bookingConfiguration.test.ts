@@ -1,7 +1,11 @@
 import { HttpResponse, http } from "msw";
+import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import {
+  BookingConfigurationInputSchema,
+  BookingConfigurationUpdateInputSchema,
+  bookingConfigurationFields,
   fetchBookingConfiguration,
   fetchBookingConfigurationByTarget,
   fetchBookingConfigurationDetailsByTarget,
@@ -26,8 +30,7 @@ const configuration = {
   enabled: true,
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
-  openingStart: "00:00",
-  openingEnd: "24:00",
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -67,6 +70,10 @@ describe("booking configuration reads", () => {
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("depth")).toBe("1");
     expect(url.searchParams.has("fields[instruments]")).toBe(false);
+    const fields = url.searchParams.get("fields[booking-configurations]")?.split(",");
+    expect(fields).toContain("openingHours");
+    expect(fields).not.toContain("openingStart");
+    expect(fields).not.toContain("openingEnd");
     expect(request?.headers.get("Authorization")).toBe("Bearer token");
   });
 
@@ -194,5 +201,39 @@ describe("booking configuration reads", () => {
 
     server.use(http.get("/api/v2/booking-configurations", () => new HttpResponse(null, { status: 500 })));
     await expect(fetchBookingConfigurationByTarget("IN123", "token")).rejects.toThrow("status 500");
+  });
+});
+
+describe("booking configuration schedules", () => {
+  const openingHours = [
+    { dayOfWeek: 2, start: "10:00", end: "16:00" },
+    { dayOfWeek: 1, start: "08:00", end: "24:00" },
+  ];
+
+  it("validates and canonicalizes the complete schedule on create and replacement update", () => {
+    const input = { ...configuration, target: { relationTo: "booking-instruments", value: 123 }, openingHours };
+    expect(v.parse(BookingConfigurationInputSchema, input).openingHours).toEqual(openingHours.toReversed());
+    expect(v.parse(BookingConfigurationUpdateInputSchema, input).openingHours).toEqual(openingHours.toReversed());
+    expect(
+      v.parse(BookingConfigurationUpdateInputSchema, { ...input, openingHours: [openingHours[1]] }).openingHours,
+    ).toEqual([openingHours[1]]);
+    expect(
+      v.safeParse(BookingConfigurationUpdateInputSchema, { ...input, openingHours: [{ dayOfWeek: 1 }] }).success,
+    ).toBe(false);
+  });
+
+  it("declares the required array children without exposing schedule filters or sorting", () => {
+    const field = bookingConfigurationFields.find((candidate) => candidate.name === "openingHours");
+    expect(field).toMatchObject({
+      type: "array",
+      minRows: 1,
+      maxRows: 7,
+      capabilities: { sortable: false, filterOperators: [] },
+    });
+    expect(field?.type === "array" ? field.fields : []).toMatchObject([
+      { name: "dayOfWeek", required: true, writeConstraints: { integer: true, minimum: 1, maximum: 7 } },
+      { name: "start", required: true, writeConstraints: { format: "time" } },
+      { name: "end", required: true, writeConstraints: { format: "time", allow24HourEnd: true } },
+    ]);
   });
 });

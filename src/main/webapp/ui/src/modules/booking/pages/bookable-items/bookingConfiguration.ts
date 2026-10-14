@@ -3,7 +3,6 @@ import * as v from "valibot";
 import {
   schedulingSettingsEntries,
   validMaximumBookingDuration,
-  validOpeningHours,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/config";
@@ -84,10 +83,6 @@ export const BookingConfigurationSchema = v.pipe(
     ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.boolean() })),
   }),
   v.forward(
-    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
-    ["openingEnd"],
-  ),
-  v.forward(
     v.check((configuration) =>
       validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
     ),
@@ -112,10 +107,6 @@ export const BookingConfigurationInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
-    ["openingEnd"],
-  ),
-  v.forward(
     v.check((configuration) =>
       validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
     ),
@@ -131,10 +122,6 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) => validOpeningHours(configuration.openingStart, configuration.openingEnd)),
-    ["openingEnd"],
-  ),
-  v.forward(
     v.check((configuration) =>
       validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
     ),
@@ -145,7 +132,7 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 const bookingConfigurationReadParameters = {
   depth: "1",
@@ -388,18 +375,36 @@ export const bookingConfigurationConfig = {
       form: false,
     },
     {
-      name: "openingStart",
-      type: "text",
-      labelKey: "booking:settings.fields.openingStart",
+      name: "openingHours",
+      type: "array",
+      labelKey: "booking:bookableItemDetails.fields.openingHours",
+      minRows: 1,
+      maxRows: 7,
       list: false,
       form: false,
-    },
-    {
-      name: "openingEnd",
-      type: "text",
-      labelKey: "booking:settings.fields.openingEnd",
-      list: false,
-      form: false,
+      fields: [
+        {
+          name: "dayOfWeek",
+          type: "number",
+          labelKey: "booking:settings.openingHours.dayOfWeek",
+          required: true,
+          writeConstraints: { integer: true, minimum: 1, maximum: 7 },
+        },
+        {
+          name: "start",
+          type: "text",
+          labelKey: "booking:settings.fields.openingStart",
+          required: true,
+          writeConstraints: { format: "time" },
+        },
+        {
+          name: "end",
+          type: "text",
+          labelKey: "booking:settings.fields.openingEnd",
+          required: true,
+          writeConstraints: { format: "time", allow24HourEnd: true },
+        },
+      ],
     },
     {
       name: "bufferBeforeMinutes",

@@ -22,8 +22,10 @@ import { addBookableItemSearch } from "@/modules/booking/pages/bookable-items/se
 const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
 const settings = {
   slotGranularityMinutes: 5,
-  openingStart: "00:00",
-  openingEnd: "24:00",
+  openingHours: [
+    { dayOfWeek: 1, start: "08:00", end: "17:00" },
+    { dayOfWeek: 2, start: "10:00", end: "16:00" },
+  ],
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -176,8 +178,7 @@ describe("AddBookableItemPage", () => {
       target: { relationTo: "booking-instruments", value: 123 },
       enabled: true,
       slotGranularityMinutes: 5,
-      openingStart: "00:00",
-      openingEnd: "24:00",
+      openingHours: settings.openingHours,
       bufferBeforeMinutes: 0,
       bufferAfterMinutes: 0,
       maxBookingDurationMinutes: 0,
@@ -187,20 +188,37 @@ describe("AddBookableItemPage", () => {
 
   it("keeps the completed form available when creation fails", async () => {
     const user = userEvent.setup();
+    let requestBody: unknown;
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
       targetsHandler(),
       availabilityHandler(),
-      http.post("/api/v2/booking-configurations", () => new HttpResponse(null, { status: 500 })),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBody = await request.json();
+        return new HttpResponse(null, { status: 500 });
+      }),
     );
     renderPage();
     await completeForm(user);
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
 
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.addError");
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeEnabled();
     expect(screen.getByRole("heading", { name: "booking:bookableItems.addTitle" })).toBeVisible();
+    expect(mondayStart).toHaveValue("09:00");
+    expect(
+      within(screen.getByRole("group", { name: "Tuesday" })).getByLabelText("booking:settings.fields.openingStart"),
+    ).toHaveValue("10:00");
+    expect(requestBody).toMatchObject({
+      openingHours: [{ ...settings.openingHours[0], start: "09:00" }, settings.openingHours[1]],
+    });
+    expect(settings.openingHours[0].start).toBe("08:00");
   });
 
   it("searches only eligible instruments and selects a result", async () => {
