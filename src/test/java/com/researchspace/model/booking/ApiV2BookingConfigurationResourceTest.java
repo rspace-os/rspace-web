@@ -487,7 +487,8 @@ class ApiV2BookingConfigurationResourceTest {
                 List.of(
                     ApiV2BookingConfigurationResource.DESCRIPTION,
                     ApiV2UserResource.DESCRIPTION,
-                    ApiV2BookingInstrumentResource.DESCRIPTION)));
+                    ApiV2BookingInstrumentResource.DESCRIPTION,
+                    ApiV2BookingLocationResource.DESCRIPTION)));
     var selection =
         ResourceFieldSelections.root(FieldSelection.include(Set.of("roleSources", "ownerHealth")));
 
