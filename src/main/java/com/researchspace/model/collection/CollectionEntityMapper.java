@@ -46,7 +46,7 @@ final class CollectionEntityMapper<T> {
     Map<String, Object> document = new LinkedHashMap<>();
     fields.values().stream()
         .filter(field -> selection.test(field.name()))
-        .filter(field -> field.readAccess().allowsField(context))
+        .filter(field -> idField.equals(field.name()) || field.readAccess().allowsField(context))
         .forEach(
             field ->
                 document.put(
