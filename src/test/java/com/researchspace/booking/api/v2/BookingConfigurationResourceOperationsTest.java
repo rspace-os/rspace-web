@@ -78,6 +78,20 @@ class BookingConfigurationResourceOperationsTest {
   }
 
   @Test
+  void passesAnExplicitTimezoneThroughCreates() {
+    ResolvedResourceReference<BookableTargetType, Long> resolved = resolved(12L);
+
+    operations.create(
+        new ParsedDocument(
+            WriteOperation.CREATE,
+            Map.of("enabled", true, "target", resolved, "timezone", "Europe/Berlin")),
+        ApiV2Caller.direct(actor));
+
+    verify(manager)
+        .createConfiguration(new Create(true, "Europe/Berlin", target(resolved)), actor, actor);
+  }
+
+  @Test
   void authorizesAsTheSubjectAndRetainsTheOriginatingActorForWrites() {
     User subject = mock(User.class);
     User originatingActor = mock(User.class);
