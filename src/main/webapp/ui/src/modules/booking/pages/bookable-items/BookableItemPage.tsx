@@ -6,6 +6,7 @@ import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -144,8 +145,7 @@ function configurationInput(configuration: BookingConfiguration): BookingConfigu
   return {
     enabled: configuration.enabled,
     slotGranularityMinutes: configuration.slotGranularityMinutes,
-    openingStart: configuration.openingStart,
-    openingEnd: configuration.openingEnd,
+    openingHours: configuration.openingHours.map((entry) => ({ ...entry })),
     bufferBeforeMinutes: configuration.bufferBeforeMinutes,
     bufferAfterMinutes: configuration.bufferAfterMinutes,
     maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
@@ -243,7 +243,7 @@ function RulesReadOut({
   const facts: Array<[string, ReactNode]> = [
     [t("bookableItemDetails.fields.timezone"), configuration.timezone],
     [t("bookableItemDetails.fields.updatedAt"), updatedAt],
-    [t("bookableItemDetails.fields.openingHours"), `${configuration.openingStart}–${configuration.openingEnd}`],
+    ...openingHoursFacts(configuration, t),
     [
       t("bookableItemDetails.fields.granularity"),
       t("bookableItemDetails.minutes", { count: configuration.slotGranularityMinutes }),

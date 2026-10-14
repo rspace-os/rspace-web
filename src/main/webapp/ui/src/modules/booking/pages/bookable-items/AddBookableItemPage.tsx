@@ -147,8 +147,7 @@ function AddBookableItemContent() {
     initialInput: {
       enabled: true,
       slotGranularityMinutes: defaults.slotGranularityMinutes,
-      openingStart: defaults.openingStart,
-      openingEnd: defaults.openingEnd,
+      openingHours: defaults.openingHours.map((entry) => ({ ...entry })),
       bufferBeforeMinutes: defaults.bufferBeforeMinutes,
       bufferAfterMinutes: defaults.bufferAfterMinutes,
       maxBookingDurationMinutes: defaults.maxBookingDurationMinutes,
