@@ -8,7 +8,8 @@ They use `NOTIFICATION_BOOKING_CREATED_PREF` and
 `BookingNotificationService` notifies enabled subscribers with current instrument read access
 after a booking is saved or cancelled, including archive-triggered cancellations. Maintenance,
 ordinary edits, repeated cancellations, deleted instruments, and the recipient's own actions
-do not generate notifications. Owners can subscribe automatically; other readers opt in.
+do not generate notifications. Restoring a cancelled booking uses the creation type, and so the
+creation switch, with a "was restored" message (`BookingNotificationData.restored`). Owners can subscribe automatically; other readers opt in.
 See [Booking notification subscriptions](BookingNotificationSubscriptions.md) for eligibility,
 selection timing, and per-user settings.
 

@@ -17,7 +17,7 @@
 			<td>{{event.displayAction}}</td>
 			<td>{{event.domain}}</td>
 			<td>{{#event.resourceHref}}<a href="{{event.resourceHref}}">{{event.data.data.id}}</a>{{/event.resourceHref}}{{^event.resourceHref}}{{event.data.data.id}}{{/event.resourceHref}}</td>
-			<td>{{event.data.data.name}}</td>
+			<td>{{event.displayName}}</td>
 			<td>{{event.description}}</td>
 		</tr>
 		<!--{{/results}}-->
@@ -32,7 +32,7 @@
 			<td>{{event.displayAction}}</td>
 			<td>{{event.domain}}</td>
 			<td>{{#event.resourceHref}}<a href="{{event.resourceHref}}">{{event.data.data.id}}</a>{{/event.resourceHref}}{{^event.resourceHref}}{{event.data.data.id}}{{/event.resourceHref}}</td>
-			<td>{{event.data.data.name}}</td>
+			<td>{{event.displayName}}</td>
 			<td>{{event.description}}</td>
 		</tr>
 	{{/results}}

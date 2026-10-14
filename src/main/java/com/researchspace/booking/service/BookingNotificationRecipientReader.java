@@ -72,8 +72,8 @@ public class BookingNotificationRecipientReader {
    * Selects all enabled subscribers who can currently read the target and want this event.
    *
    * <p>For cancellations by somebody other than the requester, the requester is added when they are
-   * active, Booking-enabled, and can still read the target. The requester is selected without their
-   * event preference because the cancellation is about their booking.
+   * active, booking-enabled, and can still read the target. The requester is deliberately selected
+   * without their event preference because the cancellation is about their booking.
    *
    * <p>The candidate query is the first consistent read and establishes the snapshot used by all
    * later feature-flag, permission, and display-default reads. Returned users are detached when
