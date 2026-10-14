@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { FormStore } from "@formisch/react";
+import type { ComponentType, CSSProperties, ReactElement, ReactNode } from "react";
 
 export type FieldName<TDocument> = Extract<keyof TDocument, string>;
 
@@ -123,7 +124,7 @@ export function selectOptionText(option: SelectOption): string {
   return "textValue" in option ? option.textValue : option.label;
 }
 
-export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card"> & {
+export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card" | "radio"> & {
   isOptionDisabled?: (option: SelectOption, data: Partial<TDocument>) => boolean;
 };
 
@@ -147,6 +148,8 @@ type BaseFieldConfig<
   required?: boolean;
   nullable?: boolean;
   readOnly?: boolean;
+  defaultValue?: unknown;
+  writeConstraints?: Readonly<Record<string, unknown>>;
   capabilities?: FieldCapabilities;
   origin?: FieldOrigin;
   list?: false | FieldListConfig<TDocument>;
@@ -167,7 +170,7 @@ export type FieldConfig<TDocument> =
   | (BaseFieldConfig<TDocument, "dateTime"> & {
       type: "dateTime";
     })
-  | (BaseFieldConfig<TDocument, "select" | "card", SelectFieldFormConfig<TDocument>> & {
+  | (BaseFieldConfig<TDocument, "select" | "card" | "radio", SelectFieldFormConfig<TDocument>> & {
       type: "select";
       options: readonly SelectOption[];
     })
@@ -175,7 +178,27 @@ export type FieldConfig<TDocument> =
       type: "relationship";
       relationTo: string;
       hasMany: boolean;
+    })
+  | (BaseFieldConfig<TDocument, "custom", StructuredFieldFormConfig<TDocument>> & {
+      type: "array" | "object";
+      fields: readonly FieldConfig<Record<string, unknown>>[];
+      minRows?: number;
+      maxRows?: number;
     });
+
+/** A declared object or array uses an application-owned editor, which receives its child metadata. */
+export type StructuredFieldProps<TDocument> = {
+  form: FormStore;
+  disabled: boolean;
+  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "array" | "object" }>;
+  id: string;
+  describedBy: string | undefined;
+  invalid: boolean;
+};
+
+export type StructuredFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "custom"> & {
+  component: ComponentType<StructuredFieldProps<TDocument>>;
+};
 
 type ResolveField<TField> = TField extends { capabilities?: FieldCapabilities }
   ? Omit<TField, "capabilities"> & {

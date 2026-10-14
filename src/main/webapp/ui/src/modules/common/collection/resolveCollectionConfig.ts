@@ -45,6 +45,8 @@ const defaultCapabilities: Record<FieldConfig<never>["type"], ResolvedFieldCapab
     filterOperators: [...commonOperators, "contains", "matches"],
     supportsWildcards: false,
   },
+  array: { sortable: false, filterOperators: [], supportsWildcards: false },
+  object: { sortable: false, filterOperators: [], supportsWildcards: false },
   relationship: {
     sortable: false,
     filterOperators: commonOperators,
@@ -59,6 +61,8 @@ const allowedOperators: Record<FieldConfig<never>["type"], ReadonlySet<FilterOpe
   dateTime: new Set(defaultCapabilities.dateTime.filterOperators),
   select: new Set(defaultCapabilities.select.filterOperators),
   relationship: new Set(defaultCapabilities.relationship.filterOperators),
+  array: new Set(),
+  object: new Set(),
 };
 
 export function isFilterOperatorCompatible(fieldType: FieldConfig<never>["type"], operator: FilterOperator): boolean {
@@ -92,6 +96,37 @@ function directSearchField<TDocument>(
   return null;
 }
 
+function validateDeclaredChildren<TDocument>(field: FieldConfig<TDocument>, ancestors = new Set<object>()): void {
+  const queryCapabilities =
+    field.capabilities?.sortable ||
+    field.capabilities?.filterOperators?.length ||
+    field.capabilities?.supportsWildcards;
+  if (ancestors.size && queryCapabilities) {
+    throw new Error(`Embedded field ${field.name} cannot be filtered or sorted`);
+  }
+  if (field.type !== "array" && field.type !== "object") return;
+  if (ancestors.has(field)) throw new Error(`Cyclic child fields: ${field.name}`);
+  if (!Array.isArray(field.fields) || field.fields.length === 0) {
+    throw new Error(`${field.type} field ${field.name} must declare non-empty child fields`);
+  }
+  if (queryCapabilities) {
+    throw new Error(`${field.type} field ${field.name} cannot be filtered or sorted`);
+  }
+  const names = new Set<string>();
+  const nested = new Set(ancestors).add(field);
+  for (const child of field.fields) {
+    if (typeof child !== "object" || child === null || !Object.hasOwn(defaultCapabilities, child.type)) {
+      throw new Error(`Invalid child field declaration: ${field.name}`);
+    }
+    if (typeof child.name !== "string" || !child.name.trim() || names.has(child.name))
+      throw new Error(`Duplicate or empty child field: ${field.name}.${child.name}`);
+    names.add(child.name);
+    if (child.type === "relationship")
+      throw new Error(`Embedded relationship is unsupported: ${field.name}.${child.name}`);
+    validateDeclaredChildren(child, nested);
+  }
+}
+
 export function resolveCollectionConfig<
   TDocument,
   TId extends FieldName<TDocument> = FieldName<TDocument>,
@@ -102,6 +137,10 @@ export function resolveCollectionConfig<
 
   const fieldMap = new Map<FieldName<TDocument>, FieldConfig<TDocument>>();
   for (const field of config.fields) {
+    validateDeclaredChildren(field);
+    if ((field.type === "array" || field.type === "object") && field.form !== false && !field.form?.component) {
+      throw new Error(`${field.type} field ${field.name} needs a custom editor or form: false`);
+    }
     if (fieldMap.has(field.name)) throw new Error(`Duplicate field: ${field.name}`);
     fieldMap.set(field.name, field);
   }
