@@ -41,16 +41,7 @@ public final class AccessContext {
   }
 
   public AccessContext(User user, Operation operation, String resourceName, Object targetId) {
-    this(user, operation, resourceName, targetId, List.of());
-  }
-
-  private AccessContext(
-      User user,
-      Operation operation,
-      String resourceName,
-      Object targetId,
-      List<ParsedDocument> inputDocuments) {
-    this(user, operation, resourceName, targetId, inputDocuments, new HashMap<>());
+    this(user, operation, resourceName, targetId, List.of(), new HashMap<>());
   }
 
   private AccessContext(

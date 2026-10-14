@@ -170,8 +170,7 @@ public final class CollectionDescription<T> {
       throw new IllegalArgumentException("Default sort must include the ID field");
     }
 
-    this.entityMapper =
-        new CollectionEntityMapper<>(List.copyOf(this.fields.values()), this.idField);
+    this.entityMapper = new CollectionEntityMapper<>(this.fields, this.idField);
     this.accessEvaluator =
         new CollectionAccessEvaluator<>(
             this.fields, this.relationships, filterSelectors, this.idField);
@@ -371,10 +370,6 @@ public final class CollectionDescription<T> {
 
   public ResourceSchema schema() {
     return schemaBuilder.build();
-  }
-
-  Object readRelationship(T entity, Relationship<T> relationship) {
-    return entityMapper.readRelationship(entity, relationship);
   }
 
   /**

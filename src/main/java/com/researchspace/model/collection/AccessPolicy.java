@@ -36,16 +36,6 @@ public record AccessPolicy(
     return all(AccessFunction.authenticated());
   }
 
-  /** Anonymous reads and system-administrator writes. */
-  public static AccessPolicy publicReadsSysadminWrites() {
-    return withWrites(AccessFunction.anyone(), AccessFunction.sysadmin());
-  }
-
-  /** Authenticated reads and system-administrator writes. */
-  public static AccessPolicy authenticatedReadsSysadminWrites() {
-    return withWrites(AccessFunction.authenticated(), AccessFunction.sysadmin());
-  }
-
   /** Readable subject to {@code read}, with every mutation refused. */
   public static AccessPolicy readOnly(AccessFunction read) {
     return withWrites(read, AccessFunction.never());

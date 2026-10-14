@@ -2,7 +2,6 @@ package com.researchspace.dao.query;
 
 import static com.researchspace.dao.query.RsqlSqlFragments.symbol;
 
-import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import java.util.ArrayList;
@@ -22,9 +21,6 @@ final class RsqlNumericTextPredicateCompiler implements RsqlFieldPredicateCompil
       List<String> equalities = new ArrayList<>();
       for (Object value : comparison.values()) {
         equalities.add(numeric + " = :" + state.add(value));
-      }
-      if (equalities.isEmpty()) {
-        throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
       }
       String any = "(" + String.join(" OR ", equalities) + ")";
       return operator == Operator.IN ? any : "NOT " + any;

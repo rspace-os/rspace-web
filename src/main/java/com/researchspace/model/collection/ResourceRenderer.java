@@ -310,7 +310,7 @@ public final class ResourceRenderer {
     while (!level.isEmpty()) {
       Set<TargetKey> targets = new LinkedHashSet<>();
       List<PendingExpansion> expansions = new ArrayList<>();
-      level.forEach(node -> collectTargets(node, targets, expansions));
+      level.forEach(node -> collectTargetsCaptured(node, node.description(), targets, expansions));
       Map<TargetKey, Optional<ResolvedTarget>> resolved = targetResolver.resolveAll(targets);
       List<RenderNode> next = new ArrayList<>();
       for (PendingExpansion expansion : expansions) {
@@ -339,11 +339,6 @@ public final class ResourceRenderer {
     }
   }
 
-  private void collectTargets(
-      RenderNode node, Set<TargetKey> targets, List<PendingExpansion> expansions) {
-    collectTargetsCaptured(node, node.description(), targets, expansions);
-  }
-
   private <T> void collectTargetsCaptured(
       RenderNode node,
       CollectionDescription<T> description,
@@ -354,7 +349,7 @@ public final class ResourceRenderer {
       if (!node.fields().includes(relationship.name(), description.idField())) {
         continue;
       }
-      Object value = description.readRelationship(entity, relationship);
+      Object value = relationship.read(entity);
       if (!(value instanceof ResourceReference<?, ?> reference)) {
         continue;
       }
@@ -422,7 +417,7 @@ public final class ResourceRenderer {
       return;
     }
     Optional<IncludeTree> child = includes.relationship(relationship.name());
-    Object value = description.readRelationship(entity, relationship);
+    Object value = relationship.read(entity);
     if (value == null) {
       document.put(relationship.name(), null);
       return;
@@ -463,7 +458,7 @@ public final class ResourceRenderer {
               .<Object>map(
                   targetEntity ->
                       targetEntity.readDocument().isEmpty()
-                          ? renderUnknown(
+                          ? renderCaptured(
                               targetEntity.entity(),
                               targetDescription,
                               targetEntity
@@ -480,7 +475,8 @@ public final class ResourceRenderer {
                               targetEntity
                                   .fields()
                                   .intersect(requestedFields, targetDescription.idField()),
-                              context.forRead(target.resourceName(), reference.id())))
+                              context.forRead(target.resourceName(), reference.id()),
+                              true))
               .orElse(renderedValue);
     }
     Map<String, Object> referenceDocument = new LinkedHashMap<>();
@@ -490,14 +486,6 @@ public final class ResourceRenderer {
       referenceDocument.put("globalId", target.globalIdPrefix() + reference.id());
     }
     return Optional.of(referenceDocument);
-  }
-
-  private static Map<String, Object> selectReadDocument(
-      Map<String, Object> document,
-      CollectionDescription<?> description,
-      FieldSelection fields,
-      AccessContext context) {
-    return selectReadDocument(document, description, fields, context, true);
   }
 
   private static Map<String, Object> selectReadDocument(
@@ -526,19 +514,6 @@ public final class ResourceRenderer {
 
   private static <V> Object serialize(CollectionFieldType<V> type, Object value) {
     return type.serialize(type.javaType().cast(value));
-  }
-
-  private Map<String, Object> renderUnknown(
-      Object entity,
-      CollectionDescription<?> description,
-      FieldSelection fields,
-      ResourceFieldSelections selections,
-      IncludeTree includes,
-      TargetResolver targetResolver,
-      Map<String, Object> readOverrides,
-      AccessContext context) {
-    return renderCaptured(
-        entity, description, fields, selections, includes, targetResolver, readOverrides, context);
   }
 
   private <T> Map<String, Object> renderCaptured(
