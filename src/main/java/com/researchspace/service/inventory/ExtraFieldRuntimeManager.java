@@ -5,6 +5,7 @@ import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,4 +42,9 @@ public interface ExtraFieldRuntimeManager<T> extends RuntimeCollectionFields<T> 
 
   @Override
   Map<Object, Map<String, Object>> values(List<T> resources, Set<String> fieldIds, User actor);
+
+  /** Loads values in a transaction from IDs already authorized by the owning collection. */
+  @Override
+  Map<Object, Map<String, Object>> valuesForAuthorizedIds(
+      Collection<?> resourceIds, Set<String> fieldIds, User actor);
 }
