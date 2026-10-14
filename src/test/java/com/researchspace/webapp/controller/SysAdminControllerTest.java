@@ -18,20 +18,26 @@ import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.IControllerInputValidator;
+import com.researchspace.model.dtos.UserRoleChangeCmnd;
 import com.researchspace.model.views.GroupListResult;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.UserStatisticsManager;
+import com.researchspace.session.UserSessionTracker;
 import com.researchspace.testutils.TestFactory;
 import java.security.Principal;
 import java.util.Collections;
@@ -44,6 +50,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockServletContext;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
 
 @ExtendWith(MockitoExtension.class)
 public class SysAdminControllerTest {
@@ -56,6 +65,9 @@ public class SysAdminControllerTest {
   @Mock UserDeletionManager delMgr;
   @Mock UserExportHandler userExportHandler;
   @Mock CommunityServiceManager commService;
+  @Mock IReauthenticator reauthenticator;
+  @Mock IControllerInputValidator inputValidator;
+  @Mock UserRoleHandler userRoleHandler;
   @InjectMocks SysAdminController ctrller;
   private User sysadmin;
 
@@ -66,6 +78,26 @@ public class SysAdminControllerTest {
 
   @AfterEach
   public void tearDown() throws Exception {}
+
+  @Test
+  public void busyPasswordCheckOnAPromptSaysBusyAndChangesNothing() {
+    sysadmin = TestFactory.createAnyUserWithRole("sys", SYSADMIN_ROLE);
+    MockServletContext context = new MockServletContext();
+    context.setAttribute(UserSessionTracker.USERS_KEY, new UserSessionTracker());
+    ctrller.setServletContext(context);
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(sysadmin);
+    when(reauthenticator.reauthenticate(sysadmin, "pw")).thenReturn(ReauthenticationResult.BUSY);
+    UserRoleChangeCmnd cmd = new UserRoleChangeCmnd();
+    cmd.setUserId(2L);
+    cmd.setSysadminPassword("pw");
+    BindingResult errors = new BeanPropertyBindingResult(cmd, "cmd");
+
+    ctrller.grantPIRoleSubmit(cmd, errors);
+
+    assertEquals(
+        "errors.reauthentication.busy", errors.getFieldError("sysadminPassword").getCode());
+    Mockito.verifyNoInteractions(userRoleHandler);
+  }
 
   @Test
   public void noUserExportIfUserRemovableCheckFails() {

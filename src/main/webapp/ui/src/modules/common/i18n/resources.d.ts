@@ -5576,6 +5576,7 @@ export default interface Resources {
         "invalidCredentials": "Invalid user credentials.",
         "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
         "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
+        "serverBusy": "The server is busy; retry after the Retry-After interval.",
         "tokenCreationFailed": "OAuth token could not be created.",
         "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
         "userApiAccessDisabled": "User ''{0}'' doesn''t have access to API",
@@ -5762,6 +5763,7 @@ export default interface Resources {
         "adminLogin": {
           "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
         },
+        "busy": "The server is busy and could not check your password. Please try again in a moment.",
         "credentials": {
           "wrong": "Invalid username or password, please try again."
         },
@@ -5815,6 +5817,7 @@ export default interface Resources {
       },
       "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
+        "busy": "The server is busy and could not check your password. Please try again in a moment. Nothing has been changed.",
         "failed": "Reauthentication failed, please try again."
       },
       "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",

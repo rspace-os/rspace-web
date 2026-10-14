@@ -78,11 +78,19 @@ management, the OAuth password grant, sysadmin actions and operate-as), goes thr
 `java.util.concurrent.Semaphore`. Permits and wait are deployment properties,
 `login.passwordVerification.maxConcurrent` (default 8) and `login.passwordVerification.waitSeconds`
 (default 5). At the default, peak Argon2 heap is 8 times 19 MiB, about 152 MiB, regardless of
-request volume. A request that cannot get its turn before the wait elapses fails with the same
-generic failure the user sees for a wrong password, but through a distinct exception type,
-`LoginVerificationBusyException`. The login filter (`StandaloneShiroFormAuthFilterExt`) and
-`ReauthenticatorImpl` catch it before any failure is recorded, so a flood cannot lock legitimate
-users out. A check waiting for a permit or an account's lock holds its request thread for up to
+request volume. A request that cannot get its turn before the wait elapses fails through a
+distinct exception type, `LoginVerificationBusyException`, and the user is told the server is
+busy, never that the password was wrong. The login page and the SSO emergency admin login show
+`errors.login.busy`. Every authenticated password prompt (signing, witnessing, API key, email and
+password changes, sysadmin prompts) gets `ReauthenticationResult.BUSY` from `IReauthenticator`
+and shows `errors.reauthentication.busy` where it would show the wrong-password text. The OAuth
+password grant answers HTTP 503 with `Retry-After` set to `waitSeconds`. The login filter
+(`StandaloneShiroFormAuthFilterExt`) and `ReauthenticatorImpl` catch it before any failure is
+recorded, and the OAuth grant gives back the guess it counted, so a flood cannot lock legitimate
+users out or use up their guesses. `SentinelPasswordCheck` lets the exception through as well, so
+an unknown username, a locked account, a padded LDAP-source user and an unreadable stored hash
+all get the same busy answer as a real account. If only real accounts said busy, a flood would
+reveal which usernames exist. A check waiting for a permit or an account's lock holds its request thread for up to
 `waitSeconds`, so a global admission cap (`login.passwordVerification.maxQueued`, default 32)
 bounds the threads login can hold to `maxConcurrent + maxQueued`; callers past it are refused as
 busy at once. The cap is taken after a per-username check that lets one attempt run and one
@@ -235,8 +243,8 @@ That table must change in the same commit as any limit, default, message or rout
   `oauth.passwordGrant.maxFailures` wrong passwords in `oauth.passwordGrant.failureWindowSeconds`,
   counting each admitted attempt before its check. Its unknown-name and refused-name padding runs
   through the same `SentinelPasswordCheck` as the login page, keyed on the submitted username. A
-  busy refusal on that route still returns the invalid-credentials answer and still counts as a
-  guess; both are addressed with the other busy answers (fix plan of 2026-10-14). The per-account
+  busy refusal on that route answers 503 with `Retry-After` and is not counted as a guess, and a
+  busy pad for an unknown or refused name answers the same 503, so the route stays symmetric. The per-account
   key, which lets anyone who knows a username keep it refused on this route, is RSDEV-1557.
 - Usernames must not leak from unauthenticated endpoints. Argon2's cost would make the login
   page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs

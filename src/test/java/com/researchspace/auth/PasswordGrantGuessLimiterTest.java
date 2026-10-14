@@ -74,6 +74,23 @@ public class PasswordGrantGuessLimiterTest {
   }
 
   @Test
+  public void anAttemptRefusedAsBusyDoesNotUseUpAGuess() {
+    acquire("bob", 5);
+    limiter.uncount("bob");
+
+    assertTrue(limiter.tryAcquire("bob"));
+    assertFalse(limiter.tryAcquire("bob"));
+  }
+
+  @Test
+  public void uncountingAnAccountWithNoCountIsHarmless() {
+    limiter.uncount("bob");
+
+    acquire("bob", 5);
+    assertFalse(limiter.tryAcquire("bob"));
+  }
+
+  @Test
   public void admitsUpToTheLimitThenRefuses() {
     acquire("bob", 5);
     assertFalse(limiter.tryAcquire("bob"));

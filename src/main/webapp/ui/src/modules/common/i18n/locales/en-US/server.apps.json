@@ -241,6 +241,7 @@
       "invalidCredentials": "Invalid user credentials.",
       "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
       "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
+      "serverBusy": "The server is busy; retry after the Retry-After interval.",
       "tokenCreationFailed": "OAuth token could not be created.",
       "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
       "userApiAccessDisabled": "User ''{0}'' doesn''t have access to API",

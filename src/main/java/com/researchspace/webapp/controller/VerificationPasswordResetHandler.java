@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.model.User;
 import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.ReauthenticationResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -11,8 +12,9 @@ public class VerificationPasswordResetHandler extends PasswordChangeHandlerBase 
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
 
   @Override
-  protected boolean reauthenticate(User user, String currentPassword) {
-    return verificationPasswordValidator.authenticateVerificationPassword(user, currentPassword);
+  protected ReauthenticationResult reauthenticate(User user, String currentPassword) {
+    return ReauthenticationResult.of(
+        verificationPasswordValidator.authenticateVerificationPassword(user, currentPassword));
   }
 
   @Override

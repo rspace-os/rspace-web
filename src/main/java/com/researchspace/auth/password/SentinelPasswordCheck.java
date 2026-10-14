@@ -28,12 +28,13 @@ public class SentinelPasswordCheck {
     return "\0sentinel:" + username;
   }
 
-  /** Checks the supplied password against the sentinel hash and discards the answer. */
+  /**
+   * Checks the supplied password against the sentinel hash and discards the answer.
+   *
+   * @throws LoginVerificationBusyException when the verifier is busy, so an unknown name gets the
+   *     same busy answer as a real one and a flood cannot tell the two apart
+   */
   public void pad(String username, CharSequence suppliedPassword) {
-    try {
-      verifier.verify(sentinelKey(username), suppliedPassword, sentinelEncoded);
-    } catch (LoginVerificationBusyException e) {
-      // a busy pad is still a refusal
-    }
+    verifier.verify(sentinelKey(username), suppliedPassword, sentinelEncoded);
   }
 }
