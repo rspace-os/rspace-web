@@ -2,15 +2,18 @@ package com.researchspace.api.v2.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.controller.BookingSettingsController.SettingsPatch;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException.Reason;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import java.time.Clock;
@@ -93,5 +96,42 @@ class BookingSettingsPatchTest {
 
   private BookingSchedulingSettings.Patch patch(String json) throws Exception {
     return mapper.readValue(json, SettingsPatch.class).schedulingPatch();
+  }
+
+  @Test
+  void decodesTheIncrementUnitAndAlignmentAndRendersThemInBothDocuments() throws Exception {
+    BookingSchedulingSettings.Patch supplied =
+        patch("{\"incrementUnit\":\"DAYS\",\"alignToIncrement\":false,\"configurationVersion\":0}");
+    assertEquals(BookingIncrementUnit.DAYS, supplied.incrementUnit());
+    assertEquals(false, supplied.alignToIncrement());
+    BookingSchedulingSettings.Patch omitted = patch("{\"configurationVersion\":0}");
+    assertNull(omitted.incrementUnit());
+    assertNull(omitted.alignToIncrement());
+
+    BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
+    defaults.setSlotGranularityMinutes(1440);
+    defaults.setIncrementUnit(BookingIncrementUnit.HOURS);
+    defaults.setAlignToIncrement(true);
+    Clock clock = Clock.fixed(Instant.EPOCH, ZoneId.of("UTC"));
+    JsonNode document =
+        mapper.valueToTree(BookingSettingsController.SettingsDocument.from(defaults, clock));
+    JsonNode admin =
+        mapper.valueToTree(BookingSettingsController.AdminSettingsDocument.from(defaults, clock));
+    for (JsonNode rendered : List.of(document, admin)) {
+      assertEquals(1440, rendered.get("slotGranularityMinutes").asLong());
+      assertEquals("HOURS", rendered.get("incrementUnit").asText());
+      assertTrue(rendered.get("alignToIncrement").asBoolean());
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"\"WEEKS\"", "\"days\"", "\"\"", "1", "true"})
+  void rejectsAnUnknownIncrementUnitWhileReadingTheBody(String value) {
+    assertThrows(
+        JsonProcessingException.class,
+        () ->
+            mapper.readValue(
+                "{\"incrementUnit\":" + value + ",\"configurationVersion\":0}",
+                SettingsPatch.class));
   }
 }

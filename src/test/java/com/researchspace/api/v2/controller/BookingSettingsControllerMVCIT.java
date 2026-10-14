@@ -2,6 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,6 +12,7 @@ import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.service.FeatureFlagManager;
@@ -72,6 +74,8 @@ class BookingSettingsControllerMVCIT {
     settingsManager.updateDefaults(
         new BookingSchedulingSettings.Patch(
             originalSettings.slotGranularityMinutes(),
+            originalSettings.incrementUnit(),
+            originalSettings.alignToIncrement(),
             originalSettings.openingHours(),
             originalSettings.bufferBeforeMinutes(),
             originalSettings.bufferAfterMinutes(),
@@ -450,5 +454,77 @@ class BookingSettingsControllerMVCIT {
             .header("apiKey", fixture.sysadminKey())
             .contentType(MediaType.APPLICATION_JSON)
             .content(body));
+  }
+
+  @Test
+  void keepsTwentyFourHoursAndOneDayDistinctAndPreservesThemWhenOmitted() throws Exception {
+    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
+
+    patchDefaults(
+            """
+            {"slotGranularityMinutes":1440,"incrementUnit":"HOURS","alignToIncrement":true,
+             "openingHours":%s,"maxBookingDurationMinutes":0,"configurationVersion":%d}
+            """
+                .formatted(
+                    com.researchspace.model.booking.BookingOpeningHoursCodec.openingHoursJson(
+                        BookingSchedulingSettings.DEFAULT_OPENING_HOURS),
+                    version))
+        .andDo(BookingSettingsControllerMVCIT::failOnUnexpectedServerError)
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.slotGranularityMinutes").value(1440))
+        .andExpect(jsonPath("$.incrementUnit").value("HOURS"))
+        .andExpect(jsonPath("$.alignToIncrement").value(true));
+    assertEquals(
+        BookingIncrementUnit.HOURS, settingsManager.getDefaults(sysadmin).getIncrementUnit());
+
+    patchDefaults(
+            """
+            {"incrementUnit":"DAYS","configurationVersion":%d}
+            """
+                .formatted(version + 1))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.incrementUnit").value("DAYS"));
+    patchDefaults(
+            """
+            {"allowDoubleBooking":true,"configurationVersion":%d}
+            """
+                .formatted(version + 2))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(get("/api/v2/booking-settings").header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.slotGranularityMinutes").value(1440))
+        .andExpect(jsonPath("$.incrementUnit").value("DAYS"))
+        .andExpect(jsonPath("$.alignToIncrement").value(true));
+    BookingConfigurationDefaults persisted = settingsManager.getDefaults(sysadmin);
+    assertEquals(BookingIncrementUnit.DAYS, persisted.getIncrementUnit());
+    assertEquals(1440, persisted.getSlotGranularityMinutes());
+    assertTrue(persisted.isAlignToIncrement());
+
+    patchDefaults(
+            """
+            {"openingHours":[{"dayOfWeek":1,"start":"00:00","end":"24:00"}],"configurationVersion":%d}
+            """
+                .formatted(version + 3))
+        .andExpect(status().isBadRequest())
+        .andExpect(
+            jsonPath("$.code").value("errors.api.v2.bookingConfiguration.granularity.invalid"));
+  }
+
+  @Test
+  void rejectsAnUnknownIncrementUnitWithoutWriting() throws Exception {
+    long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
+
+    for (String invalid : new String[] {"\"WEEKS\"", "\"days\"", "1", "true"}) {
+      patchDefaults(
+              """
+              {"incrementUnit":%s,"configurationVersion":%d}
+              """
+                  .formatted(invalid, version))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    }
+    assertEquals(version, settingsManager.getDefaults(sysadmin).getConfigurationVersion());
   }
 }

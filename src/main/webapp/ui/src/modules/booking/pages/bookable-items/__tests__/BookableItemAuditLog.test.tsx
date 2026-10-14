@@ -34,6 +34,9 @@ const event = {
     bookingConfigurationId: "booking-configurations:7",
     openDays: [1, 6],
     openingExceptions: [{ dayOfWeek: 6, start: "10:00", end: "16:00" }],
+    slotGranularityMinutes: 1440,
+    incrementUnit: "HOURS",
+    alignToIncrement: false,
   },
   target: "bookings:41",
 };
@@ -119,11 +122,16 @@ describe("BookableItemAuditLog", () => {
       within(item).getByText("booking:bookableItemDetails.audit.values.openingExceptions").nextElementSibling,
     ).toHaveTextContent("Saturday 10:00\u201316:00");
     expect(
-      within(item).getByText("booking:bookableItemDetails.audit.values.openDays").nextElementSibling,
-    ).toHaveTextContent("Monday, Saturday");
+      within(item).getByText("booking:bookableItemDetails.audit.values.incrementUnit").nextElementSibling,
+    ).toHaveTextContent("booking:settings.fields.incrementHours");
+    // With its unit recorded, 1440 minutes reads as 24 hours rather than a raw minute count.
     expect(
-      within(item).getByText("booking:bookableItemDetails.audit.values.openingExceptions").nextElementSibling,
-    ).toHaveTextContent("Saturday 10:00\u201316:00");
+      within(item).getByText("booking:bookableItemDetails.fields.granularity").nextElementSibling,
+    ).toHaveTextContent("booking:bookableItemDetails.hours");
+    expect(within(item).queryByText("booking:bookableItemDetails.audit.values.increment")).not.toBeInTheDocument();
+    expect(
+      within(item).getByText("booking:bookableItemDetails.audit.values.alignToIncrement").nextElementSibling,
+    ).toHaveTextContent("booking:bookableItemDetails.no");
     await expectAccessible(container);
   });
 

@@ -57,7 +57,7 @@ class BookingCalendarFeedControllerMVCIT {
     long instrumentId = fixture.instrument(owner, "Calendar " + fixture.marker());
     long configurationId = fixture.bookingConfiguration(instrumentId, "UTC");
     Instant candidate = Instant.now().plus(2, ChronoUnit.DAYS);
-    Instant start = Instant.ofEpochSecond(((candidate.getEpochSecond() + 299) / 300) * 300);
+    Instant start = Instant.ofEpochSecond(((candidate.getEpochSecond() + 899) / 900) * 900);
     String firstToken = token(calendarManager.create(configurationId, owner, owner));
     assertAvailable(firstToken);
 

@@ -1,10 +1,19 @@
 import { Temporal } from "@js-temporal/polyfill";
+import type { TFunction } from "i18next";
 import { GlobeIcon, InfoIcon } from "lucide-react";
 import { type ChangeEvent, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { maximumDurationMessage } from "@/modules/booking/creation/useCreateBooking";
 import { bookingTimeZoneOptions, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  type IncrementSettings,
+  type IncrementViolation,
+  incrementRule,
+  incrementViolation,
+  snapEndToIncrement,
+  snapStartToGrid,
+} from "@/modules/booking/domain/bookingIncrement";
 import {
   coversInterval,
   MAX_BOOKING_DURATION_MINUTES,
@@ -16,10 +25,10 @@ import {
   bookingDateTimeLocale,
   formatPlainDate,
   formatWallClockTime,
-  isBookingInstantAlignedToGranularity,
   resolveWallClock,
   sameTimeZone,
   type WallClockResolution,
+  wallClockDraftFromInstants,
   wallClockInstant,
 } from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
@@ -45,22 +54,43 @@ function offset(instant: string, timezone: string): string {
   return Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).offset;
 }
 
-function snapTimeToIncrement(time: string, incrementMinutes: number, schedulingOffsetMinutes = 0): string {
-  const match = /^(\d{2}):(\d{2})$/.exec(time);
-  if (!match) return time;
-  const minutes = Number(match[1]) * 60 + Number(match[2]);
-  const firstValidMinute = ((-schedulingOffsetMinutes % incrementMinutes) + incrementMinutes) % incrementMinutes;
-  const latestValidMinute =
-    firstValidMinute + Math.floor((24 * 60 - 1 - firstValidMinute) / incrementMinutes) * incrementMinutes;
-  const snappedMinutes = Math.min(
-    latestValidMinute,
-    Math.max(
-      firstValidMinute,
-      firstValidMinute + Math.round((minutes - firstValidMinute) / incrementMinutes) * incrementMinutes,
-    ),
-  );
-  return `${String(Math.floor(snappedMinutes / 60)).padStart(2, "0")}:${String(snappedMinutes % 60).padStart(2, "0")}`;
+/** An instant as one endpoint's wall-clock date, time and repeated-hour occurrence in `timezone`. */
+function endpointDraft(instant: string, timezone: string) {
+  const draft = wallClockDraftFromInstants(instant, instant, timezone);
+  return { date: draft.startDate, time: draft.startTime, occurrence: draft.startOccurrence };
 }
+
+/** The increment as words in its configured unit, such as "15 minutes", "1.5 hours" or "2 days". */
+export function incrementLabel(settings: IncrementSettings, t: TFunction<"booking">): string {
+  const unit = settings.incrementUnit;
+  const count = settings.slotGranularityMinutes / (unit === "DAYS" ? 1440 : unit === "HOURS" ? 60 : 1);
+  if (unit === "DAYS") return t("bookings.increment.days", { count });
+  if (unit === "HOURS") return t("bookings.increment.hours", { count });
+  return t("bookings.increment.minutes", { count });
+}
+
+/** What the end snap could not apply: a Day end that does not exist, or a repeated one to choose. */
+type EndIssue =
+  | { kind: "missing"; date: string; time: string; draftKey: string }
+  | { kind: "choose"; date: string; time: string; earlier: string; later: string; draftKey: string };
+
+function draftKey(draft: BookingWindowDraft): string {
+  return [
+    draft.startDate,
+    draft.startTime,
+    draft.startOccurrence,
+    draft.endDate,
+    draft.endTime,
+    draft.endOccurrence,
+  ].join("|");
+}
+
+/** Maintenance is exempt from the item's increment, as the server is. */
+export const UNRESTRICTED_INCREMENT: IncrementSettings = {
+  slotGranularityMinutes: 1,
+  incrementUnit: "MINUTES",
+  alignToIncrement: false,
+};
 
 /** The zone each endpoint's wall clock is read in; a single zone applies to both. */
 export type EndpointTimezones = string | { start: string; end: string };
@@ -87,15 +117,15 @@ export function resolveBookingWindow(
   };
 }
 
-export type BookingWindowPolicy = OpeningSchedule & {
-  schedulingTimezone: string;
-  slotGranularityMinutes: number;
-  /** The configurable item limit; 0 means only the absolute limit applies. */
-  maxBookingDurationMinutes: number;
-  /** False is the explicit maintenance bypass: closed weekdays and hours are not checked. */
-  enforceOpeningHours?: boolean;
-  allowPolicyMismatch?: boolean;
-};
+export type BookingWindowPolicy = OpeningSchedule &
+  IncrementSettings & {
+    schedulingTimezone: string;
+    /** The configurable item limit; 0 means only the absolute limit applies. */
+    maxBookingDurationMinutes: number;
+    /** False is the explicit maintenance bypass: closed weekdays and hours are not checked. */
+    enforceOpeningHours?: boolean;
+    allowPolicyMismatch?: boolean;
+  };
 
 /** Resolve and validate synchronously so rendering and submission use the same window. */
 export function validateBookingWindow(
@@ -104,6 +134,8 @@ export function validateBookingWindow(
   {
     schedulingTimezone: resolvedSchedulingTimezone,
     slotGranularityMinutes,
+    incrementUnit,
+    alignToIncrement,
     maxBookingDurationMinutes,
     enforceOpeningHours = true,
     allowPolicyMismatch = false,
@@ -111,11 +143,25 @@ export function validateBookingWindow(
   }: BookingWindowPolicy,
 ) {
   const result = resolveBookingWindow(value, timezones);
-  const granularityInvalid = Boolean(
-    result.window &&
-      (!isBookingInstantAlignedToGranularity(result.window.start, resolvedSchedulingTimezone, slotGranularityMinutes) ||
-        !isBookingInstantAlignedToGranularity(result.window.end, resolvedSchedulingTimezone, slotGranularityMinutes)),
-  );
+  const rule = incrementRule({ slotGranularityMinutes, incrementUnit, alignToIncrement });
+  const violation: IncrementViolation | null = result.window
+    ? incrementViolation(rule, result.window.start, result.window.end, resolvedSchedulingTimezone)
+    : null;
+  const incrementInvalid = violation !== null;
+  // The same-time Day end that does not exist, named so the message can say which date and time.
+  const missingDayEnd =
+    violation === "dayEndMissing" && result.window
+      ? {
+          date: Temporal.Instant.from(result.window.end)
+            .toZonedDateTimeISO(resolvedSchedulingTimezone)
+            .toPlainDate()
+            .toString(),
+          time: Temporal.Instant.from(result.window.start)
+            .toZonedDateTimeISO(resolvedSchedulingTimezone)
+            .toPlainTime()
+            .toString({ smallestUnit: "minute" }),
+        }
+      : undefined;
   // The smaller of the item limit and the absolute limit; checked first so an unbounded draft never
   // reaches the opening-hours date walk.
   const maximumDurationLimitMinutes =
@@ -134,12 +180,14 @@ export function validateBookingWindow(
       !maximumDurationInvalid &&
       !coversInterval(openingSchedule, resolvedSchedulingTimezone, result.window),
   );
-  const policyInvalid = granularityInvalid || openingInvalid || maximumDurationInvalid;
+  const policyInvalid = incrementInvalid || openingInvalid || maximumDurationInvalid;
   const resolvedWindow = policyInvalid && !allowPolicyMismatch ? undefined : result.window;
   return {
     ...result,
     window: resolvedWindow,
-    granularityInvalid,
+    rule,
+    incrementViolation: violation,
+    missingDayEnd,
     openingInvalid,
     maximumDurationInvalid,
     maximumDurationLimitMinutes,
@@ -151,6 +199,8 @@ export function ZonedBookingWindowFields({
   displayTimezone,
   schedulingTimezone,
   slotGranularityMinutes,
+  incrementUnit = "MINUTES",
+  alignToIncrement = true,
   maxBookingDurationMinutes,
   openingHours,
   enforceOpeningHours = true,
@@ -167,6 +217,8 @@ export function ZonedBookingWindowFields({
   displayTimezone?: string;
   schedulingTimezone?: string;
   slotGranularityMinutes: number;
+  incrementUnit?: IncrementSettings["incrementUnit"];
+  alignToIncrement?: boolean;
   maxBookingDurationMinutes: number;
   openingHours: readonly OpeningHoursEntry[];
   enforceOpeningHours?: boolean;
@@ -199,6 +251,8 @@ export function ZonedBookingWindowFields({
       validateBookingWindow(value, zones, {
         schedulingTimezone: resolvedSchedulingTimezone,
         slotGranularityMinutes,
+        incrementUnit,
+        alignToIncrement,
         maxBookingDurationMinutes,
         openingHours,
         enforceOpeningHours,
@@ -210,65 +264,168 @@ export function ZonedBookingWindowFields({
       resolvedEndTimezone,
       resolvedSchedulingTimezone,
       slotGranularityMinutes,
+      incrementUnit,
+      alignToIncrement,
       maxBookingDurationMinutes,
       openingHours,
       enforceOpeningHours,
       allowPolicyMismatch,
     ],
   );
-  const { granularityInvalid, openingInvalid, maximumDurationInvalid, policyInvalid } = result;
-  const schedulingEndpoint = (instant: string | undefined) =>
-    instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
+  const {
+    rule,
+    incrementViolation: violation,
+    missingDayEnd,
+    openingInvalid,
+    maximumDurationInvalid,
+    policyInvalid,
+  } = result;
+  const increment = incrementLabel({ slotGranularityMinutes, incrementUnit, alignToIncrement }, t);
+  const locale = bookingDateTimeLocale(timeFormat);
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
-  // The time each endpoint was last snapped to, so the adjustment is shown rather than silent.
-  const [snappedTimes, setSnappedTimes] = useState<Partial<Record<"start" | "end", string>>>({});
+  // The endpoint each snap produced, so the adjustment is announced rather than silent until the next edit.
+  const [snaps, setSnaps] = useState<Partial<Record<"start" | "end", { date: string; time: string; note: string }>>>(
+    {},
+  );
+  const [endIssue, setEndIssue] = useState<EndIssue>();
+  // An end issue belongs to the draft, rule and zones it was found for; any change retires it.
+  const endIssueKey = [
+    draftKey(value),
+    slotGranularityMinutes,
+    incrementUnit,
+    alignToIncrement,
+    zones.start,
+    zones.end,
+    resolvedSchedulingTimezone,
+  ].join("|");
   const changeTime = (name: "start" | "end", time: string) => {
     const timeKey = `${name}Time` as const;
     const occurrenceKey = `${name}Occurrence` as const;
-    setSnappedTimes((current) => ({ ...current, [name]: undefined }));
+    setSnaps((current) => ({ ...current, [name]: undefined }));
     change({ [timeKey]: time, [occurrenceKey]: undefined });
   };
-  const snapTime = (name: "start" | "end") => {
-    const dateKey = `${name}Date` as const;
-    const timeKey = `${name}Time` as const;
-    const occurrenceKey = `${name}Occurrence` as const;
+  // A repeated time is snapped only once the user has chosen its occurrence; until then the form asks for it.
+  const typedInstant = (name: "start" | "end") => wallClockInstant(result[name], value[`${name}Occurrence`]);
+  const applySnap = (
+    name: "start" | "end",
+    instant: string,
+    note: (time: string, date: string) => string,
+    // The user picked this instant's occurrence, rather than typing a time the snap moved.
+    chosen = false,
+  ) => {
+    const draft = endpointDraft(instant, zones[name]);
+    // A snap onto a repeated time keeps an occurrence only if the user chose it for this very time; a choice made
+    // for the typed time does not carry over to a different one.
+    const sameTime = draft.date === value[`${name}Date`] && draft.time === value[`${name}Time`];
+    const next = chosen || (sameTime && value[`${name}Occurrence`]) ? draft : { ...draft, occurrence: undefined };
     if (
-      originalValue &&
-      value[dateKey] === originalValue[dateKey] &&
-      value[timeKey] === originalValue[timeKey] &&
-      value[occurrenceKey] === originalValue[occurrenceKey]
+      next.date === value[`${name}Date`] &&
+      next.time === value[`${name}Time`] &&
+      next.occurrence === value[`${name}Occurrence`]
     ) {
       return;
     }
-    const endpointResolution = result[name];
-    const instant =
-      endpointResolution?.kind === "unique"
-        ? endpointResolution.instant
-        : endpointResolution?.kind === "ambiguous"
-          ? endpointResolution[value[occurrenceKey] ?? "earlier"]
-          : undefined;
-    const schedulingTime = schedulingEndpoint(instant);
-    const match = /^(\d{2}):(\d{2})$/.exec(value[timeKey]);
-    const displayMinute = match ? Number(match[1]) * 60 + Number(match[2]) : undefined;
-    const schedulingOffsetMinutes =
-      schedulingTime && displayMinute !== undefined
-        ? schedulingTime.hour * 60 + schedulingTime.minute - displayMinute
-        : 0;
-    const snappedTime = snapTimeToIncrement(value[timeKey], slotGranularityMinutes, schedulingOffsetMinutes);
-    if (snappedTime === value[timeKey]) return;
-    setSnappedTimes((current) => ({ ...current, [name]: snappedTime }));
-    change({ [timeKey]: snappedTime, [occurrenceKey]: undefined });
+    setSnaps((current) => ({
+      ...current,
+      [name]: {
+        date: next.date,
+        time: next.time,
+        note: note(formatWallClockTime(next.time, locale), formatPlainDate(next.date, locale)),
+      },
+    }));
+    change({ [`${name}Date`]: next.date, [`${name}Time`]: next.time, [`${name}Occurrence`]: next.occurrence });
+  };
+  const originalEndpoint = (name: "start" | "end") =>
+    originalValue &&
+    value[`${name}Date`] === originalValue[`${name}Date`] &&
+    value[`${name}Time`] === originalValue[`${name}Time`] &&
+    value[`${name}Occurrence`] === originalValue[`${name}Occurrence`];
+  // Only an aligned start moves to the clock grid; the end follows the start by whole increments.
+  const snapStart = () => {
+    if (originalEndpoint("start")) return;
+    if (rule.kind !== "elapsed" || !rule.aligned) return;
+    const instant = typedInstant("start");
+    if (!instant) return;
+    applySnap("start", snapStartToGrid(instant, rule.minutes, resolvedSchedulingTimezone), (time) =>
+      t("bookings.form.startSnapped", { time, increment }),
+    );
+  };
+  const endSnapNote = (time: string, date: string) => t("bookings.form.endSnapped", { time, date, increment });
+  const snapEnd = () => {
+    if (originalEndpoint("end")) return;
+    const start = wallClockInstant(result.start, value.startOccurrence);
+    const end = typedInstant("end");
+    if (!start || !end) return;
+    const snap = snapEndToIncrement(rule, start, end, resolvedSchedulingTimezone);
+    setEndIssue(undefined);
+    if (snap.kind === "instant") {
+      applySnap("end", snap.instant, endSnapNote);
+      return;
+    }
+    // The nearest Day end does not exist; name it rather than moving the booking to another date.
+    if (snap.kind === "dayEndMissing") {
+      setEndIssue({ kind: "missing", date: snap.date, time: snap.time, draftKey: endIssueKey });
+      return;
+    }
+    // In another display zone the repeated time reads as two different times, so ask which one to use here.
+    if (!sameTimeZone(zones.end, resolvedSchedulingTimezone)) {
+      setEndIssue({ ...snap, kind: "choose", draftKey: endIssueKey });
+      return;
+    }
+    if (snap.date === value.endDate && snap.time === value.endTime) return;
+    setSnaps((current) => ({
+      ...current,
+      end: {
+        date: snap.date,
+        time: snap.time,
+        note: endSnapNote(formatWallClockTime(snap.time, locale), formatPlainDate(snap.date, locale)),
+      },
+    }));
+    change({ endDate: snap.date, endTime: snap.time, endOccurrence: undefined });
+  };
+  // Shown only while the draft is the one the end snap examined.
+  const activeEndIssue = endIssue && endIssue.draftKey === endIssueKey ? endIssue : undefined;
+  const endIssueFields = () => {
+    if (!activeEndIssue) return null;
+    const timezone = resolvedSchedulingTimezone;
+    const date = formatPlainDate(activeEndIssue.date, locale);
+    const time = formatWallClockTime(activeEndIssue.time, locale);
+    if (activeEndIssue.kind === "missing") {
+      return (
+        <FieldError id={`${fieldId}-end-issue`}>
+          {t("bookings.errors.dayEndMissing", { time, date, timezone })}
+        </FieldError>
+      );
+    }
+    const choice = activeEndIssue;
+    return (
+      <fieldset className="space-y-2" id={`${fieldId}-end-issue`}>
+        <legend className="text-sm font-medium">{t("bookings.form.repeatedEnd", { time, date, timezone })}</legend>
+        {(["earlier", "later"] as const).map((occurrence) => (
+          <Label key={occurrence} className="flex items-center gap-2">
+            <input
+              type="radio"
+              name={`${fieldId}-end-issue-occurrence`}
+              disabled={disabled}
+              checked={false}
+              onChange={() => {
+                setEndIssue(undefined);
+                applySnap("end", choice[occurrence], endSnapNote, true);
+              }}
+            />
+            {t(`bookings.form.${occurrence}Occurrence`, { offset: offset(choice[occurrence], timezone) })}
+          </Label>
+        ))}
+      </fieldset>
+    );
   };
   const snapNote = (name: "start" | "end") => {
-    const snappedTime = snappedTimes[name];
+    const snap = snaps[name];
     return (
       <div aria-live="polite">
-        {snappedTime !== undefined && snappedTime === value[`${name}Time`] ? (
+        {snap && snap.time === value[`${name}Time`] && snap.date === value[`${name}Date`] ? (
           <p role="status" id={`${fieldId}-${name}-snap`} className="text-sm text-muted-foreground">
-            {t("bookings.form.timeSnapped", {
-              time: formatWallClockTime(snappedTime, bookingDateTimeLocale(timeFormat)),
-              increment: slotGranularityMinutes,
-            })}
+            {snap.note}
           </p>
         ) : null}
       </div>
@@ -301,6 +458,7 @@ export function ZonedBookingWindowFields({
           !endpointResolution || result.orderInvalid || (policyInvalid && !allowPolicyMismatch)
             ? windowErrorId
             : undefined,
+          name === "end" && activeEndIssue ? `${fieldId}-end-issue` : undefined,
         ]
           .filter(Boolean)
           .join(" ") || undefined
@@ -326,7 +484,17 @@ export function ZonedBookingWindowFields({
               checked={occurrence === choice}
               aria-invalid={showErrors && !occurrence ? true : undefined}
               aria-describedby={showErrors && !occurrence ? endpointErrorId : undefined}
-              onChange={() => change({ [occurrenceKey]: choice })}
+              onChange={() => {
+                // Choosing the occurrence resolves the start, so an aligned start snaps now rather than on blur.
+                if (name === "start" && rule.kind === "elapsed" && rule.aligned) {
+                  const snapped = snapStartToGrid(endpointResolution[choice], rule.minutes, resolvedSchedulingTimezone);
+                  if (snapped !== endpointResolution[choice]) {
+                    applySnap("start", snapped, (time) => t("bookings.form.startSnapped", { time, increment }), true);
+                    return;
+                  }
+                }
+                change({ [occurrenceKey]: choice });
+              }}
             />
             {t(`bookings.form.${choice}Occurrence`, {
               offset: offset(endpointResolution[choice], zones[name]),
@@ -350,7 +518,8 @@ export function ZonedBookingWindowFields({
       id: `${fieldId}-${name}-time`,
       "aria-label": t(`bookings.form.${name}Time`),
       type: "time",
-      step: slotGranularityMinutes * 60,
+      // Only an aligned start has a clock grid; every other time is a whole minute.
+      step: name === "start" && rule.kind === "elapsed" && rule.aligned ? rule.minutes * 60 : 60,
       required: true,
       "aria-invalid":
         showErrors && (!endpointResolution || endpointInvalid(name, endpointResolution)) ? true : undefined,
@@ -358,7 +527,7 @@ export function ZonedBookingWindowFields({
       disabled,
       value: value[`${name}Time`],
       onChange: (event: ChangeEvent<HTMLInputElement>) => changeTime(name, event.currentTarget.value),
-      onBlur: () => snapTime(name),
+      onBlur: name === "start" ? snapStart : snapEnd,
     };
     if (!onTimezoneChange || name !== "start") return <Input {...inputProps} />;
     const timezoneLabel = t("bookings.form.changeTimezone");
@@ -496,6 +665,7 @@ export function ZonedBookingWindowFields({
             <Label htmlFor={timeId}>{t("bookings.form.time")}</Label>
             {timeInput(name, endpointResolution)}
             {snapNote(name)}
+            {name === "end" ? endIssueFields() : null}
           </div>
         </div>
         {timezoneField(name)}
@@ -516,17 +686,49 @@ export function ZonedBookingWindowFields({
         <Label htmlFor={timeId}>{t(`bookings.form.${name}`)}</Label>
         {timeInput(name, endpointResolution)}
         {snapNote(name)}
+        {name === "end" ? endIssueFields() : null}
         {endpointError(name, endpointResolution)}
         {occurrenceFields(name, endpointResolution, occurrence)}
       </div>
     );
   };
 
+  const incrementError = (current: IncrementViolation | null) => {
+    // The end field already names the missing Day end the snap found.
+    if (activeEndIssue?.kind === "missing" && (current === "duration" || current === "dayEndMissing")) return null;
+    if (current === "alignment") {
+      return (
+        <FieldError>{t("bookings.errors.alignment", { increment, timezone: resolvedSchedulingTimezone })}</FieldError>
+      );
+    }
+    if (current === "dayEndMissing" && missingDayEnd) {
+      return (
+        <FieldError>
+          {t("bookings.errors.dayEndMissing", {
+            time: formatWallClockTime(missingDayEnd.time, locale),
+            date: formatPlainDate(missingDayEnd.date, locale),
+            timezone: resolvedSchedulingTimezone,
+          })}
+        </FieldError>
+      );
+    }
+    if (current === "duration" || current === "dayEndMissing") {
+      return (
+        <FieldError>
+          {rule.kind === "days"
+            ? t("bookings.errors.dayIncrement", { increment, timezone: resolvedSchedulingTimezone })
+            : t("bookings.errors.durationMultiple", { increment })}
+        </FieldError>
+      );
+    }
+    return null;
+  };
+
   const windowErrors = showErrors ? (
     <div id={windowErrorId}>
       {(!result.start || !result.end) && <FieldError>{t("bookings.errors.windowRequired")}</FieldError>}
       {result.orderInvalid && <FieldError>{t("bookings.errors.endAfterStart")}</FieldError>}
-      {granularityInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.granularity")}</FieldError>}
+      {!allowPolicyMismatch && incrementError(violation)}
       {openingInvalid && !allowPolicyMismatch && <FieldError>{t("bookings.errors.openingHours")}</FieldError>}
       {maximumDurationInvalid && !allowPolicyMismatch && (
         <FieldError>{maximumDurationMessage(result.maximumDurationLimitMinutes, t)}</FieldError>
@@ -534,7 +736,8 @@ export function ZonedBookingWindowFields({
     </div>
   ) : null;
 
-  if (density === "compact" && value.startDate === value.endDate) {
+  // The compact layout has one date for both endpoints, so a multi-day draft or Day increment needs both dates.
+  if (density === "compact" && value.startDate === value.endDate && incrementUnit !== "DAYS") {
     const dateId = `${fieldId}-date`;
     const dateInvalid = !value.startDate;
     const compactTooltipStart = startInstant ?? endInstant;

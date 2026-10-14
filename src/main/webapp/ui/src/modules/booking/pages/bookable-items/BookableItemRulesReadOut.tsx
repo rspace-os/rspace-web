@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { incrementFacts } from "@/modules/booking/configuration/incrementFacts";
 import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
@@ -13,10 +14,7 @@ export function BookableItemRulesReadOut({ configuration }: { configuration: Boo
   const facts: Array<[string, ReactNode]> = [
     [t("bookableItemDetails.fields.timezone"), configuration.timezone],
     ...openingHoursFacts(configuration, t),
-    [
-      t("bookableItemDetails.fields.granularity"),
-      t("bookableItemDetails.minutes", { count: configuration.slotGranularityMinutes }),
-    ],
+    ...incrementFacts(configuration, t),
     [
       t("bookableItemDetails.fields.maximumDuration"),
       configuration.maxBookingDurationMinutes === 0

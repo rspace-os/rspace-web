@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import { DraftMarker } from "../DraftMarker";
-import type { TimelineMovePolicy } from "../timelineMove";
+import { type TimelinePolicy, unrestrictedTimelinePolicy } from "../timelineRange";
 
 function mockTimelineBounds() {
   const canvas = screen.getByTestId("day-timeline-canvas");
@@ -27,13 +27,13 @@ function renderDraftMarker(
     timeZone = "UTC",
     schedulingTimezone = timeZone,
     snapIncrementMinutes = 5,
-    movementPolicy,
+    policy,
     onChange,
   }: {
     timeZone?: string;
     schedulingTimezone?: string;
     snapIncrementMinutes?: number;
-    movementPolicy?: TimelineMovePolicy;
+    policy?: Partial<TimelinePolicy>;
     onChange?: (draft: BookingWindowDraft) => void;
   } = {},
 ) {
@@ -46,9 +46,12 @@ function renderDraftMarker(
     <DraftMarker
       creation={{ ownerId: "test", triggerId: "timeline", initialDate: draft.startDate, eventKind: "BOOKING" }}
       timeZone={timeZone}
-      schedulingTimezone={schedulingTimezone}
-      snapIncrementMinutes={snapIncrementMinutes}
-      movementPolicy={movementPolicy}
+      policy={{
+        ...unrestrictedTimelinePolicy(schedulingTimezone),
+        slotGranularityMinutes: snapIncrementMinutes,
+        alignToIncrement: true,
+        ...policy,
+      }}
       draft={draft}
       onChange={onChange}
     />,
@@ -227,7 +230,7 @@ it("does not emit a keyboard move when the complete interval exceeds the item du
   const move = renderDraftMarker(
     { startDate: "2026-08-17", startTime: "09:00", endDate: "2026-08-17", endTime: "09:30" },
     {
-      movementPolicy: {
+      policy: {
         maxBookingDurationMinutes: 15,
         openingHours: [],
         enforceOpeningHours: false,
@@ -240,4 +243,68 @@ it("does not emit a keyboard move when the complete interval exceeds the item du
   await user.keyboard("{ArrowRight}");
 
   expect(onChange).not.toHaveBeenCalled();
+});
+
+it("moves an overnight booking by one minute without pulling its end into the day", async () => {
+  const user = userEvent.setup();
+  const onChange = vi.fn();
+  render(
+    <section id="timeline">
+      <div data-testid="day-timeline-canvas" />
+    </section>,
+  );
+  render(
+    <DraftMarker
+      creation={{ ownerId: "test", triggerId: "timeline", initialDate: "2026-08-17", eventKind: "BOOKING" }}
+      timeZone="UTC"
+      draft={{
+        startDate: "2026-08-17",
+        startTime: "22:00",
+        endDate: "2026-08-18",
+        endTime: "02:00",
+      }}
+      onChange={onChange}
+    />,
+  );
+
+  screen.getByRole("button", { name: "booking:calendar.windowEditor.move" }).focus();
+  await user.keyboard("{ArrowLeft}");
+
+  expect(onChange).toHaveBeenCalledWith({
+    startDate: "2026-08-17",
+    startTime: "21:59",
+    endDate: "2026-08-18",
+    endTime: "01:59",
+  });
+});
+
+it("ends an overnight booking at midnight on double-click or Enter, but not on a single click", async () => {
+  const user = userEvent.setup();
+  const onChange = vi.fn();
+  render(
+    <section id="timeline">
+      <div data-testid="day-timeline-canvas" />
+    </section>,
+  );
+  render(
+    <DraftMarker
+      creation={{ ownerId: "test", triggerId: "timeline", initialDate: "2026-08-17", eventKind: "BOOKING" }}
+      timeZone="UTC"
+      draft={{ startDate: "2026-08-17", startTime: "22:00", endDate: "2026-08-18", endTime: "02:00" }}
+      onChange={onChange}
+    />,
+  );
+  const continuation = screen.getByRole("button", { name: "booking:timelineEdit.endAtMidnight" });
+  expect(screen.queryByRole("button", { name: "booking:calendar.windowEditor.end" })).not.toBeInTheDocument();
+
+  await user.click(continuation);
+  expect(onChange).not.toHaveBeenCalled();
+  expect(continuation).toHaveFocus();
+
+  await user.keyboard("{Enter}");
+  await user.dblClick(continuation);
+  const midnight = { startDate: "2026-08-17", startTime: "22:00", endDate: "2026-08-18", endTime: "00:00" };
+  expect(onChange).toHaveBeenNthCalledWith(1, midnight);
+  expect(onChange).toHaveBeenNthCalledWith(2, midnight);
+  expect(onChange).toHaveBeenCalledTimes(2);
 });

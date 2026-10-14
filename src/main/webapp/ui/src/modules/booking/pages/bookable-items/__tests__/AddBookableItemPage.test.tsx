@@ -15,8 +15,13 @@ import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import {
+  BookingLocalNotices,
+  BookingNoticesProvider,
+  useBookingLocalNotices,
+  useBookingNoticeHost,
+} from "@/modules/booking/feedback/BookingNotices";
 import AddBookableItemPage from "@/modules/booking/pages/bookable-items/AddBookableItemPage";
 import { addBookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 import { collectionPage } from "../mocks/bookableItemsMocks";
@@ -24,10 +29,13 @@ import { collectionPage } from "../mocks/bookableItemsMocks";
 const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
 const settings = {
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
+  alignToIncrement: true,
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:00" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
   ],
+
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -58,7 +66,14 @@ function availabilityHandler(
 
 function DestinationPage() {
   const { t } = useTranslation("booking");
-  return <h1>{t("bookableItems.plural")}</h1>;
+  const notices = useBookingLocalNotices();
+  useBookingNoticeHost("bookable-items", notices.notify);
+  return (
+    <>
+      <h1>{t("bookableItems.plural")}</h1>
+      <BookingLocalNotices alerts={notices.alerts} onDismiss={notices.dismiss} />
+    </>
+  );
 }
 
 function ExistingConfigurationPage() {
@@ -73,7 +88,11 @@ function renderPage(initialEntry = "/booking/bookable-items/add", defaults: obje
   const bookingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/booking",
-    component: Outlet,
+    component: () => (
+      <BookingNoticesProvider>
+        <Outlet />
+      </BookingNoticesProvider>
+    ),
   });
   const destinationRoute = createRoute({
     getParentRoute: () => bookingRoute,
@@ -256,51 +275,163 @@ describe("AddBookableItemPage", () => {
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
   });
 
-  it("submits the selected booking configuration and returns to the list", async () => {
+  it.each([true, false])(
+    "submits the configuration and gates its calendar action when enabled is %s",
+    async (enabled) => {
+      const user = userEvent.setup();
+      let requestBody: unknown;
+      let authorization: string | null = null;
+      server.use(
+        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+        targetsHandler(),
+        availabilityHandler(),
+        http.post("/api/v2/booking-configurations", async ({ request }) => {
+          requestBody = await request.json();
+          authorization = request.headers.get("Authorization");
+          return HttpResponse.json({ id: 7 }, { status: 201 });
+        }),
+      );
+      const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+      const { container, queryClient } = renderPage();
+      queryClient.setQueryData(catalogueQueryKey, []);
+
+      expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
+      expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+      await completeForm(user);
+
+      await expectAccessible(container);
+
+      const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
+      expect(timezone).toHaveValue("Etc/UTC");
+      await user.clear(timezone);
+      await user.type(timezone, "Europe/Berl");
+      await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
+      if (!enabled) await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
+
+      await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+      expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true);
+      expect(await screen.findByText("booking:bookableItems.feedback.added")).toBeVisible();
+      expect(screen.getByRole("link", { name: "booking:bookableItems.feedback.viewDetails" })).toHaveAttribute(
+        "href",
+        "/booking/bookable-items/IN123",
+      );
+      if (enabled) {
+        expect(screen.getByRole("link", { name: "booking:bookableItems.feedback.viewCalendar" })).toHaveAttribute(
+          "href",
+          "/booking/calendar?target=IN123",
+        );
+      } else {
+        expect(
+          screen.queryByRole("link", { name: "booking:bookableItems.feedback.viewCalendar" }),
+        ).not.toBeInTheDocument();
+      }
+      expect(authorization).toBe("Bearer test-token");
+      expect(requestBody).toEqual({
+        target: { relationTo: "booking-instruments", value: 123 },
+        enabled,
+        timezone: "Europe/Berlin",
+        slotGranularityMinutes: 5,
+        incrementUnit: "MINUTES",
+        alignToIncrement: true,
+        openingHours: settings.openingHours,
+
+        bufferBeforeMinutes: 0,
+        bufferAfterMinutes: 0,
+        maxBookingDurationMinutes: 0,
+        allowDoubleBooking: false,
+      });
+    },
+  );
+
+  it.each([
+    { unit: "Hours", value: "2", minutes: 120, incrementUnit: "HOURS" },
+    { unit: "Days", value: "2", minutes: 2880, incrementUnit: "DAYS" },
+  ])("saves a $value $unit increment as $minutes minutes", async ({ unit, value, minutes, incrementUnit }) => {
     const user = userEvent.setup();
     let requestBody: unknown;
-    let authorization: string | null = null;
     server.use(
       targetsHandler(),
       availabilityHandler(),
       http.post("/api/v2/booking-configurations", async ({ request }) => {
         requestBody = await request.json();
-        authorization = request.headers.get("Authorization");
         return HttpResponse.json({ id: 7 }, { status: 201 });
       }),
     );
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
-    const { container, queryClient } = renderPage();
-    queryClient.setQueryData(catalogueQueryKey, []);
-
-    expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
-    expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+    renderPage(undefined, {
+      ...settings,
+      slotGranularityMinutes: 15,
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+    });
     await completeForm(user);
 
-    await expectAccessible(container);
-
-    const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
-    expect(timezone).toHaveValue("Etc/UTC");
-    await user.clear(timezone);
-    await user.type(timezone, "Europe/Berl");
-    await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
-
+    const increment = screen.getByRole("spinbutton", { name: "booking:settings.fields.granularity" });
+    const minuteUnit = screen.getByRole("button", { name: "booking:settings.fields.incrementMinutes" });
+    expect(increment).toHaveValue(15);
+    expect(minuteUnit).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: `booking:settings.fields.increment${unit}` }));
+    await user.clear(increment);
+    await user.type(increment, value);
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
-    expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true);
-    expect(authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
-    expect(requestBody).toEqual({
-      target: { relationTo: "booking-instruments", value: 123 },
-      enabled: true,
-      timezone: "Europe/Berlin",
-      slotGranularityMinutes: 5,
-      openingHours: settings.openingHours,
-      bufferBeforeMinutes: 0,
-      bufferAfterMinutes: 0,
-      maxBookingDurationMinutes: 0,
-      allowDoubleBooking: false,
+    expect(requestBody).toMatchObject({ slotGranularityMinutes: minutes, incrementUnit });
+  });
+
+  it("saves one independently configured Open all day interval and restores that day's previous range when toggled off", async () => {
+    const user = userEvent.setup();
+    let requestBody: unknown;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBody = await request.json();
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage(undefined, {
+      ...settings,
+      openingHours: settings.openingHours
+        .map((entry) => ({ ...entry, start: "09:00", end: "17:00" }))
+        .map(
+          (entry) =>
+            [{ dayOfWeek: 1, start: "10:00", end: "12:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
+    });
+    await completeForm(user);
+
+    const list = screen.getByRole("list", { name: "booking:bookableItemDetails.fields.openingHours" });
+    const monday = within(list)
+      .getAllByRole("listitem")
+      .find((item) => within(item).queryByText("Monday", { exact: true })) as HTMLElement;
+
+    const dayHours = within(monday).getByRole("group", { name: "Monday" });
+    const openAllDay = within(dayHours).getByRole("checkbox", {
+      name: "booking:settings.openingHours.openAllDay",
+    });
+    const start = within(dayHours).getByLabelText("booking:settings.fields.openingStart");
+    const end = within(dayHours).getByLabelText("booking:settings.fields.openingEnd");
+    await user.click(openAllDay);
+    expect(start).toBeDisabled();
+    expect(end).toBeDisabled();
+    await user.click(openAllDay);
+    expect(start).toHaveValue("10:00");
+    expect(end).toHaveValue("12:00");
+    expect(start).toBeEnabled();
+    expect(end).toBeEnabled();
+    await user.click(openAllDay);
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(requestBody).toMatchObject({
+      openingHours: settings.openingHours.map((entry) => ({
+        ...entry,
+        start: entry.dayOfWeek === 1 ? "00:00" : "09:00",
+        end: entry.dayOfWeek === 1 ? "24:00" : "17:00",
+      })),
     });
   });
 

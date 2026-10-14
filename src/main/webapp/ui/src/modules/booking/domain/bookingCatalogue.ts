@@ -74,6 +74,8 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
     state: "ACTIVE" as const,
     timezone: item.timezone,
     slotGranularityMinutes: item.slotGranularityMinutes,
+    incrementUnit: item.incrementUnit,
+    alignToIncrement: item.alignToIncrement,
     openingHours: item.openingHours,
     bufferBeforeMinutes: item.bufferBeforeMinutes,
     bufferAfterMinutes: item.bufferAfterMinutes,

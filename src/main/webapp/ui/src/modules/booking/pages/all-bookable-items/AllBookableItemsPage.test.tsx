@@ -114,7 +114,10 @@ function BookingMutationTrigger() {
             name: "Confocal microscope",
             timezone: "Europe/Berlin",
             slotGranularityMinutes: 5,
+            incrementUnit: "MINUTES",
+            alignToIncrement: true,
             openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
             bufferBeforeMinutes: 0,
             bufferAfterMinutes: 0,
             maxBookingDurationMinutes: 0,
@@ -364,7 +367,7 @@ describe("AllBookableItemsPage", () => {
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
       http.delete("/api/v2/booking-configurations", ({ request }) => {
         archiveRequests.push(new URL(request.url).searchParams.get("where") ?? "");
-        return new HttpResponse(null, { status: 204 });
+        return HttpResponse.json({ docs: [{ id: 7 }, { id: 8 }] });
       }),
       ...bookableItemsHandlers(() => undefined),
     );
@@ -384,6 +387,11 @@ describe("AllBookableItemsPage", () => {
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
 
     await waitFor(() => expect(archiveRequests).toEqual(["id=in=(7,8)"]));
+    expect(
+      await screen.findByText(
+        "2 items are now archived. Their future bookings, if any, were cancelled and will not return when they are restored.",
+      ),
+    ).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
     );

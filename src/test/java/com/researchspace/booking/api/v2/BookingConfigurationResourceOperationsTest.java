@@ -22,6 +22,7 @@ import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ParsedDocument;
@@ -179,6 +180,30 @@ class BookingConfigurationResourceOperationsTest {
                 null,
                 null,
                 new BookingSchedulingSettings.Patch(null, null, null, null, 60L, null))));
+  }
+
+  @Test
+  void translatesIncrementUnitAndAlignmentPatchesToSchedulingSettings() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    BookingSchedulingSettings.Patch schedulingPatch =
+        new BookingSchedulingSettings.Patch(
+            1440L, BookingIncrementUnit.DAYS, false, null, null, null, null, null);
+    when(manager.updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor))
+        .thenReturn(Optional.of(configuration));
+
+    operations.update(
+        42L,
+        ParsedDocument.update(
+            Map.of(
+                "slotGranularityMinutes",
+                1440L,
+                "incrementUnit",
+                BookingIncrementUnit.DAYS,
+                "alignToIncrement",
+                false)),
+        ApiV2Caller.direct(actor));
+
+    verify(manager).updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor);
   }
 
   @Test

@@ -193,7 +193,7 @@ function parsedArray(value: unknown): unknown {
   }
 }
 
-/** Recorded schedules as weekday names and scheduling-zone ranges; otherwise undefined. */
+/** Open days as weekday names, and each exception as `Weekday HH:mm–HH:mm`; otherwise undefined. */
 function openingValue(key: string, value: unknown, locale: string): string | undefined {
   // A midnight close is stored as 24:00 and shown as 00:00, as everywhere else.
   if (key === "openingEnd" && value === "24:00") return "00:00";
@@ -230,14 +230,15 @@ function openingValue(key: string, value: unknown, locale: string): string | und
 /** Translated words for recorded booleans and enumerated values, so they read as the rest of the UI does. */
 export type RecordedValueWords = { yes: string; no: string; values: Readonly<Record<string, string>> };
 
-const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking"]);
+const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking", "alignToIncrement"]);
+const ENUMERATED_KEYS = new Set(["state", "kind", "incrementUnit"]);
 
-/** Booleans as Yes/No, states and kinds by their labels, and a bookable-item target by its global ID. */
+/** Booleans as Yes/No, states, kinds and increment units by their labels, and a target by its global ID. */
 function wordValue(key: string, value: unknown, words: RecordedValueWords): string | undefined {
   if (typeof value === "boolean" || (BOOLEAN_KEYS.has(key) && (value === "true" || value === "false"))) {
     return value === true || value === "true" ? words.yes : words.no;
   }
-  if ((key === "state" || key === "kind") && typeof value === "string") return words.values[value];
+  if (ENUMERATED_KEYS.has(key) && typeof value === "string") return words.values[value];
   if (key === "target") {
     const target = parsedArray(value);
     if (
