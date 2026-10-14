@@ -150,7 +150,13 @@ public final class EmbeddedObjects {
         }
         values.put(child.name(), parseChild(child, node.get(child.name()), operation, childPath));
       } else if (child.hasDefaultValue() && child.writableOn(operation)) {
-        values.put(child.name(), child.defaultValue());
+        try {
+          values.put(child.name(), child.validateValue(child.defaultValue()));
+        } catch (EmbeddedFieldException ex) {
+          throw failure(appendPath(childPath, ex.path()), ex.reason());
+        } catch (RuntimeException ex) {
+          throw failure(childPath, Reason.INVALID_VALUE);
+        }
       } else if (child.isRequiredOnCreate()) {
         throw failure(childPath, Reason.REQUIRED);
       }
@@ -324,8 +330,8 @@ public final class EmbeddedObjects {
           if (!projected || readable) {
             throw failure(childPath, Reason.REQUIRED);
           }
-          complete = false;
         }
+        complete &= !projected || readable;
         continue;
       }
       if (raw == null) {
@@ -436,6 +442,10 @@ public final class EmbeddedObjects {
 
   private static String childPath(String path, String name) {
     return path.isEmpty() ? name : path + "." + name;
+  }
+
+  private static String appendPath(String parent, String child) {
+    return child.isEmpty() ? parent : parent + (child.startsWith("[") ? "" : ".") + child;
   }
 
   private static EmbeddedFieldException failure(String path, Reason reason) {
