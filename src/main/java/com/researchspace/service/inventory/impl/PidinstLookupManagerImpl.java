@@ -118,25 +118,42 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
 
   /**
-   * The query-string syntax B2INST (InvenioRDM, Elasticsearch) would parse inside a wildcard term,
-   * escaped by {@link #containsForB2inst(String)}. Unlike DataCite's set it includes {@code /},
-   * which B2INST answers 400 for unescaped and accepts escaped; it leaves out {@code *} and {@code
-   * ?}, which stay wildcards, and {@link #B2INST_REMOVED}.
+   * Lucene regular-expression syntax, escaped to a literal inside the B2INST term, plus {@code /},
+   * which closes the term itself. {@code *} and {@code ?} are absent: a typed one stays a live
+   * wildcard, as {@code .*} and {@code .}. {@code "}, {@code <} and {@code >} never reach it, being
+   * removed first ({@link #B2INST_REMOVED}); they stay so that the set is Lucene's documented list
+   * and still holds if that removal goes. Nothing else is syntax inside a regular expression,
+   * whatever the query parser would have made of it outside one (ADR 0009 decision 8, amended
+   * 2026-10-12).
    */
-  private static final Pattern B2INST_RESERVED = Pattern.compile("([\\\\+\\-=&|!(){}\\[\\]^~:/])");
+  private static final String B2INST_REGEX_RESERVED = ".+|{}[]()\"\\#@&<>~/";
 
   /**
-   * Removed from a B2INST query rather than escaped: a quote because the whole query is already one
-   * phrase, and {@code <} and {@code >} because Elasticsearch cannot escape them at all
-   * (https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-query-string-query#reserved-characters).
+   * How many code points of a B2INST query the term is built from, and the minimum is checked on.
+   * Sized so that letters of the Basic Multilingual Plane, four characters each in the term, stay
+   * within {@link #B2INST_REGEX_MAX_LENGTH}; that length is the hard limit, enforced while the term
+   * is built (ADR 0009 decision 8).
+   */
+  private static final int B2INST_REGEX_INPUT_LIMIT = 240;
+
+  /**
+   * Elasticsearch refuses a regular expression longer than {@code index.max_regex_length}, 1000 by
+   * default. A cased letter outside the Basic Multilingual Plane is six characters in the term, so
+   * enough of them reach it within {@link #B2INST_REGEX_INPUT_LIMIT} code points; the term then
+   * ends at the last whole piece that fits.
+   */
+  private static final int B2INST_REGEX_MAX_LENGTH = 1000;
+
+  /**
+   * Removed from a B2INST query rather than escaped, so that {@code Instr"1} finds {@code Instr1};
+   * a quote also because the whole query is already one phrase (ADR 0009 decision 8).
    */
   private static final Pattern B2INST_REMOVED = Pattern.compile("[\"<>]");
 
   /**
-   * What Lucene's classic query parser, and so B2INST, splits a query on. Java's {@code \s} misses
-   * U+3000, which the parser lists as whitespace (QueryParser.jj {@code _WHITESPACE}), so an
-   * unescaped one split the query back into clauses: {@code *Instr1<U+3000>OR<U+3000>**} matched
-   * all 810 records on b2inst-test.gwdg.de (2026-09-25).
+   * What Lucene's classic query parser treats as whitespace: Java's {@code \s} misses U+3000, which
+   * QueryParser.jj lists in {@code _WHITESPACE}. Every run of it in the query is one space in the
+   * B2INST term, so extra spacing in what the user typed still matches a name spaced once.
    */
   private static final Pattern LUCENE_WHITESPACE = Pattern.compile("[\\s\\u3000]+");
 
@@ -328,9 +345,19 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    */
   private RegistryPage b2instPage(String query, int page) {
     // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
-    String searchable = B2INST_REMOVED.matcher(query).replaceAll("").strip();
-    // the minimum again, on what is left to match: <<<a would otherwise go out as *a*, which
-    // matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match nothing specific
+    String removed = B2INST_REMOVED.matcher(query).replaceAll("");
+    String stripped = LUCENE_WHITESPACE.matcher(removed).replaceAll(" ").strip();
+    // whitespace collapsed and capped before the minimum, so the minimum judges exactly the text
+    // the term is built from
+    String searchable =
+        stripped.substring(
+            0,
+            stripped.offsetByCodePoints(
+                0,
+                Math.min(B2INST_REGEX_INPUT_LIMIT, stripped.codePointCount(0, stripped.length()))));
+    // the minimum again, on what is left to match: <<<a would otherwise go out as a one-letter
+    // term, which matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match
+    // nothing specific
     if (searchable.replaceAll("[*?]", "").length() < MIN_QUERY_LENGTH) {
       return RegistryPage.EMPTY;
     }
@@ -382,31 +409,39 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * The B2INST query: the whole of what the user typed as one wildcard term, with its spaces
-   * escaped so Elasticsearch does not split it (RSDEV-1522).
-   *
-   * <p>This is a real "contains", spaces included. Verified 2026-09-22 against b2inst-test.gwdg.de,
-   * where {@code *nstr1\ prova_CO*} finds {@code Instr1 prova_COPY} - both words cut at both ends
-   * and the match spanning the space - while {@code *Instr1\ prova_COPY*} finds only that record
-   * where the unescaped {@code *Instr1 prova_COPY*} also returned {@code Instr1 prova 123}. Without
-   * the escape Elasticsearch parses the query before the wildcards apply and splits it on
-   * whitespace itself, leaving {@code *Instr1} (ends-with) and {@code prova_COPY*} (starts-with),
-   * which B2INST then ORs.
-   *
-   * <p>One leading wildcard however many words the query holds, so it stays fast: 0.2-0.4s.
-   *
-   * <p>The user's query syntax is neutralised first, because the wildcards turn it into operators:
-   * {@code *"Instr1\ prova_COPY"*} is {@code *} OR a phrase OR {@code *} and matched all 810
-   * records on b2inst-test.gwdg.de where the quoted phrase alone matched 1, and {@code (}, {@code
-   * ~} and {@code ^} did the same (2026-09-25). Quotes are dropped, since the whole query is
-   * already one phrase and {@code *Instr1\ prova_COPY*} answers that same 1, and so are {@code <}
-   * and {@code >}, which cannot be escaped; the rest of {@link #B2INST_RESERVED} is escaped to a
-   * literal, which also turns the 400 on a pasted partial Handle such as {@code T11975/97g70-tsv60}
-   * into its one record. {@code *} and {@code ?} stay live.
+   * The B2INST query: what the user typed as one Lucene regular expression with {@code .*} on
+   * either side, every cased letter a class of both its cases, so the match is a "contains" that
+   * ignores case. One term, so B2INST cannot split it on whitespace into OR'ed clauses, and the
+   * only shape that ignores case across a space: a wildcard term holding one matches only the
+   * unanalysed copy of a field, which keeps the record's case. Evidence, cost and the rejected
+   * shapes are in ADR 0009 decision 8 (RSDEV-1522, amended for RSDEV-1542).
    */
   private static String containsForB2inst(String searchable) {
-    String literal = B2INST_RESERVED.matcher(searchable).replaceAll("\\\\$1");
-    return "*" + LUCENE_WHITESPACE.matcher(literal).replaceAll("\\\\ ") + "*";
+    String end = ".*/";
+    StringBuilder regex = new StringBuilder("/.*");
+    for (int cp : searchable.codePoints().toArray()) {
+      String piece;
+      if (cp == '*') {
+        piece = ".*";
+      } else if (cp == '?') {
+        piece = ".";
+      } else if (B2INST_REGEX_RESERVED.indexOf(cp) >= 0) {
+        piece = "\\" + Character.toString(cp);
+      } else if (Character.toUpperCase(cp) != Character.toLowerCase(cp)) {
+        piece =
+            "["
+                + Character.toString(Character.toUpperCase(cp))
+                + Character.toString(Character.toLowerCase(cp))
+                + "]";
+      } else {
+        piece = Character.toString(cp);
+      }
+      if (regex.length() + piece.length() + end.length() > B2INST_REGEX_MAX_LENGTH) {
+        break;
+      }
+      regex.append(piece);
+    }
+    return regex.append(end).toString();
   }
 
   /**

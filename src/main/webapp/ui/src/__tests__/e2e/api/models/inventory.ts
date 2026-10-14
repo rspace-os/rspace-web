@@ -28,6 +28,8 @@ export interface ApiInventoryIdentifierInfo {
   id: number;
   state: string;
   associatedGlobalId: string;
+  /** The provider record id (B2INST RID) or DOI/Handle; the RID before a B2INST PID is minted. */
+  doi: string;
 }
 
 export interface ApiInventorySampleUpdateRequest {

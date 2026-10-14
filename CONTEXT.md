@@ -107,6 +107,16 @@ resolved during design. This file is a glossary only — no implementation detai
   provider, distinct from a citable public URL: it exists from registration
   onwards and may require signing in to that provider, so it is never presented
   as the identifier's public address.
+- **Public URL** — the citable address a resolver follows to a PID: the doi.org address
+  of a DataCite DOI, the hdl.handle.net address of a B2INST Handle. It is what every place outside
+  RSpace links to for an item's PID, an exported document's List of Materials and a
+  repository deposit's related material among them, and it exists only while the PID
+  resolves: a draft, or a B2INST record still under review, has none, while a retracted
+  DataCite DOI keeps it, because retracting hides a DOI from search without stopping it
+  resolving. For a B2INST PID that RSpace registered, the identifier RSpace stores is
+  the provider's record id, not the Handle, so the public URL is never that value with a
+  resolver in front of it. (RSDEV-1536)
+  _Avoid_: public link (that is the suffix), DOI link, IGSN link, landing page
 - **Public link suffix** — the unguessable random token that names an
   identifier's public landing page. Generated when a new identifier registration
   begins — always before the identifier is created, and before the provider call
@@ -242,8 +252,8 @@ resolved during design. This file is a glossary only — no implementation detai
   registry's update time, newest first, fifty to a page, each hit naming its registry; hits
   updated at the same moment keep the registry's own order. A lookup needs at least four
   characters, so a query shorter than that is refused rather than answered with most of a
-  registry. How free text matches depends on the registry: a
-  B2INST lookup matches a *substring*, so part of a name finds the record that carries it, while a
+  registry. How free text matches depends on the registry: a B2INST lookup matches a *substring*,
+  ignoring case, so part of a name finds the record that carries it however it was typed, while a
   DataCite lookup matches whole indexed words, exactly as a search in DataCite's own portal does.
   Only *public* records are found: a PID whose registration is still in progress, or has been
   declined, is not a lookup result and cannot be imported, because it has no resolvable landing

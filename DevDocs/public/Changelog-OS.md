@@ -4,6 +4,12 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# Unreleased
+
+### Server
+
+- RSDEV-1546 the OAuth password grant (`/oauth/token`, `grant_type=password`) now validates the client id and secret before checking the user's password, so an unregistered client can no longer trigger a password check or learn whether a password was correct. With a valid client, the grant now answers a username with the ordinary invalid-credentials response, at the cost of one password check, after `oauth.passwordGrant.maxFailures` wrong passwords (default 5) within `oauth.passwordGrant.failureWindowSeconds` (default 600), until the window passes. Administrators see a block in the security log. The count is held in memory and does not touch the account's login-page lockout. Unknown usernames are answered after one password check, so for ordinary accounts their response time is close to that of a wrong password.
+
 # 2.27.0 2026-10-02
 
 ### ELN Features

@@ -10,6 +10,7 @@ export type FolderTreeNode = {
   globalId: string;
   name: string;
   type: string;
+  systemFolder?: boolean;
 };
 
 export type FolderTreeResponse = {
@@ -59,6 +60,7 @@ type InternalFolderTreeResponse = {
     lastModified: string;
     parentFolderId: number;
     type: string;
+    systemFolder?: boolean;
     _links: Array<{
       link: string;
       rel: string;
@@ -131,6 +133,7 @@ export default function useFolders(): {
             globalId: record.globalId,
             name: record.name,
             type: record.type,
+            systemFolder: record.systemFolder,
           })),
         };
       } catch (e) {
