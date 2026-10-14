@@ -12,7 +12,7 @@ export default function BookingSettingsPage() {
   );
 }
 
-function SettingsSkeleton() {
+export function SettingsSkeleton() {
   const { t } = useTranslation("common");
   return (
     <main className="p-4 sm:p-8" aria-busy="true">

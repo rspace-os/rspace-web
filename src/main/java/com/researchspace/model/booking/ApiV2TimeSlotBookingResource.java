@@ -217,10 +217,8 @@ public final class ApiV2TimeSlotBookingResource {
                     "requesterId",
                     "requester.id",
                     CollectionFieldTypes.longNumber(),
-                    booking ->
-                        booking.getPrivacy() == BookingPrivacy.FULL
-                            ? booking.getRequester().getId()
-                            : null)
+                    booking -> visibleRequester(booking, User::getId))
+                .allowNull()
                 .withQueryCapabilities(true, false),
             Field.writable(
                     "kind",
