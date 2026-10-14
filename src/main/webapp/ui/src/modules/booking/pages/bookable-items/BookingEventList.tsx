@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { Booking } from "@/modules/booking/domain/booking";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -35,6 +36,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       new Intl.DateTimeFormat(i18n.language, {
         dateStyle: "medium",
         timeStyle: "short",
+        hourCycle: bookingHourCycle(),
         timeZone: timezone,
       }),
     [i18n.language, timezone],

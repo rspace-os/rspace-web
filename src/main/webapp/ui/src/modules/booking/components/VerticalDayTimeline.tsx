@@ -12,6 +12,7 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader } from "@/modules/common/ui/card";
+
 import type { DayTimelineEvent } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { expandedEventIdAfterChange } from "./expandedEvent";
@@ -334,6 +335,7 @@ export function VerticalDayTimeline({
                     date={date}
                     timezone={timezone}
                     compactCards={false}
+                    truncateTitle
                     expanded={expandedEventId === event.id}
                     onExpandedChange={(expanded) => openDetails(event.id, expanded)}
                     portalContainer={portalContainer}

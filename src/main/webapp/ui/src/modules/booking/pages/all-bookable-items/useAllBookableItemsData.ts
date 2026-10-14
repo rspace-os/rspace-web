@@ -168,6 +168,16 @@ export function useAllBookableItemsData({
     staleTime: 30_000,
   });
   const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
+  const hasNoBookableItems =
+    catalogue.isSuccess &&
+    catalogue.data.total === 0 &&
+    !q &&
+    !where &&
+    !target &&
+    !routeAvailability &&
+    !mine &&
+    !types?.length;
   const availabilityRows = rows.flatMap((row) => {
     if (!row.target) return [];
     const availabilityRow = calendarAvailabilityRow({ globalId: row.target.globalId, ...row });
@@ -201,6 +211,7 @@ export function useAllBookableItemsData({
     quickFilterError,
     catalogue,
     rows,
+    hasNoBookableItems,
     useQuickAvailability,
     availability,
   };

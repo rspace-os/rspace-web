@@ -3,6 +3,7 @@ import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import type { CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
@@ -10,7 +11,7 @@ import { TableList } from "@/modules/common/table-list/TableList";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
-import { AuditEventItem } from "./BookableItemAuditEvent";
+import { AuditActionBadge, AuditEventItem, useAuditEventKindLabels } from "./BookableItemAuditEvent";
 import {
   AUDIT_ACTIONS,
   type AuditAction,
@@ -27,42 +28,77 @@ import {
 
 const PRESET_DAYS = [7, 30, 90] as const;
 const RANGE_SEPARATOR = "\u2013";
-const errorMessageKeys = {
-  unavailable: {
-    title: "bookableItemDetails.audit.unavailable.title",
-    description: "bookableItemDetails.audit.unavailable.description",
-  },
-  tooMany: {
-    title: "bookableItemDetails.audit.tooMany.title",
-    description: "bookableItemDetails.audit.tooMany.description",
-  },
-  generic: {
-    title: "bookableItemDetails.audit.error.title",
-    description: "bookableItemDetails.audit.error.description",
-  },
-} as const;
 
 const auditEventConfig = resolveCollectionConfig<AuditRow>({
   slug: "booking-configuration-audit",
   idField: "rowId",
   labels: {
-    singularKey: "booking:bookableItemDetails.audit.singular",
-    pluralKey: "booking:bookableItemDetails.audit.plural",
+    singularKey: "booking:bookableItemDetails.audit.singular" satisfies CollectionTranslationKey,
+    pluralKey: "booking:bookableItemDetails.audit.plural" satisfies CollectionTranslationKey,
   },
   useAsTitle: "timestamp",
   defaultColumns: ["timestamp", "username", "action", "target", "payload"],
   listSearchableFields: ["username", "fullName", "action", "description", "target", "payload"],
   fields: [
-    { name: "rowId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.rowId" },
-    { name: "eventId", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.eventId" },
-    { name: "timestamp", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.timestamp" },
-    { name: "username", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.actor" },
-    { name: "fullName", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.fullName" },
-    { name: "action", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.action" },
-    { name: "description", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.description" },
-    { name: "domain", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.domain" },
-    { name: "target", type: "text", labelKey: "booking:bookableItems.fields.id" },
-    { name: "payload", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.values" },
+    {
+      name: "rowId",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.rowId" satisfies CollectionTranslationKey,
+    },
+    {
+      name: "eventId",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.eventId" satisfies CollectionTranslationKey,
+    },
+    {
+      name: "timestamp",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.timestamp" satisfies CollectionTranslationKey,
+    },
+    {
+      name: "username",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.actor" satisfies CollectionTranslationKey,
+    },
+    {
+      name: "fullName",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.fullName" satisfies CollectionTranslationKey,
+    },
+    {
+      name: "action",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.action" satisfies CollectionTranslationKey,
+      list: {
+        width: 300,
+        minWidth: 220,
+        dependencies: ["description"],
+        renderCell: ({ row }) => (
+          <span>
+            <AuditActionBadge row={row} />
+            {row.description === null || row.description === undefined ? null : (
+              <span className="mt-2 block whitespace-normal text-muted-foreground">{row.description}</span>
+            )}
+          </span>
+        ),
+      },
+    },
+    {
+      name: "description",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.description" satisfies CollectionTranslationKey,
+    },
+    {
+      name: "domain",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.domain" satisfies CollectionTranslationKey,
+    },
+    { name: "target", type: "text", labelKey: "booking:bookableItems.fields.id" satisfies CollectionTranslationKey },
+    {
+      name: "payload",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.values" satisfies CollectionTranslationKey,
+    },
   ],
 });
 
@@ -94,6 +130,13 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const focusResultsAfterRestart = useRef(false);
   const bounds = auditRangeToQuery(applied);
+  const eventKindLabels = useAuditEventKindLabels();
+  const actionLabels: Record<AuditAction, string> = {
+    CREATE: eventKindLabels.created,
+    WRITE: t("bookableItemDetails.audit.actions.changedOrCancelled"),
+    DELETE: eventKindLabels.deleted,
+    RESTORE: eventKindLabels.restored,
+  };
 
   const audit = useQuery({
     queryKey: [
@@ -123,6 +166,20 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
       }),
     retry: false,
   });
+  const errorMessages = {
+    unavailable: {
+      title: t("bookableItemDetails.audit.unavailable.title"),
+      description: t("bookableItemDetails.audit.unavailable.description"),
+    },
+    tooMany: {
+      title: t("bookableItemDetails.audit.tooMany.title"),
+      description: t("bookableItemDetails.audit.tooMany.description"),
+    },
+    generic: {
+      title: t("bookableItemDetails.audit.error.title"),
+      description: t("bookableItemDetails.audit.error.description"),
+    },
+  };
   const errorKind = audit.isError ? requestError(audit.error) : null;
 
   useEffect(() => {
@@ -200,6 +257,8 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   });
   const resultDate = audit.data?.snapshotDate;
   const stableEmpty = resultDate !== undefined && applied.from > resultDate;
+  // The daily snapshot ends before today, so a range reaching past it cannot show the newest changes yet.
+  const rangeAfterSnapshot = resultDate !== undefined && applied.to > resultDate;
   const formattedResultDate =
     resultDate === undefined
       ? null
@@ -261,7 +320,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
             <option value="">{t("bookableItemDetails.audit.allActions")}</option>
             {AUDIT_ACTIONS.map((auditAction) => (
               <option key={auditAction} value={auditAction}>
-                {auditAction}
+                {actionLabels[auditAction]}
               </option>
             ))}
           </select>
@@ -353,8 +412,8 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
       ) : errorKind !== null ? (
         <Alert variant="destructive">
           <AlertTriangleIcon aria-hidden="true" />
-          <AlertTitle>{t(errorMessageKeys[errorKind].title)}</AlertTitle>
-          <AlertDescription>{t(errorMessageKeys[errorKind].description)}</AlertDescription>
+          <AlertTitle>{errorMessages[errorKind].title}</AlertTitle>
+          <AlertDescription>{errorMessages[errorKind].description}</AlertDescription>
         </Alert>
       ) : (
         <TableList
@@ -362,7 +421,11 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
           clientSide={false}
           status={audit.isPending ? "loading" : audit.isFetching ? "refreshing" : "idle"}
           emptyDescription={
-            stableEmpty ? t("bookableItemDetails.audit.emptyStable") : t("bookableItemDetails.audit.empty")
+            stableEmpty
+              ? t("bookableItemDetails.audit.emptyStable")
+              : rangeAfterSnapshot
+                ? t("bookableItemDetails.audit.emptyThroughSnapshot", { date: formattedResultDate })
+                : t("bookableItemDetails.audit.empty")
           }
           variant="transparent"
           hideHeader

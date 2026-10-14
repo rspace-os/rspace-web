@@ -6,7 +6,6 @@ import { Suspense, useState } from "react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { type BookingWindowDraft, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { BookingDayTimelineAside } from "../BookingDayTimelineAside";
 import type { BookableItemOption } from "../bookableItemOption";
@@ -27,7 +26,7 @@ const target: BookableItemOption = {
   name: "Confocal microscope",
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
-  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "06:00", end: "22:00" })),
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "06:00", end: "22:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -156,6 +155,48 @@ async function expectVisibleOccurrence(text: string) {
 }
 
 describe("BookingDayTimelineAside acceptance", () => {
+  it.each([
+    [
+      "the shared hours",
+      target,
+      [
+        { top: "0px", height: "336px" },
+        { top: "1232px", height: "112px" },
+      ],
+    ],
+    [
+      "a weekday exception",
+      {
+        ...target,
+        openingHours: target.openingHours.map(
+          (entry) =>
+            [{ dayOfWeek: 1, start: "10:00", end: "12:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
+      },
+      [
+        { top: "0px", height: "560px" },
+        { top: "672px", height: "672px" },
+      ],
+    ],
+    [
+      "a closed weekday",
+      { ...target, openingHours: target.openingHours.filter((entry) => [2, 3, 4, 5, 6, 7].includes(entry.dayOfWeek)) },
+      [{ top: "0px", height: "1344px" }],
+    ],
+  ])("shades the closed periods of %s on the draft day", async (_, selectedTarget, expected) => {
+    server.use(http.get("/api/v2/bookings", () => emptyPage()));
+    render(asideTree({ client: queryClient(), selectedTarget }));
+
+    await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
+    // 2026-08-17 is a Monday; the timeline is 56 px per hour.
+    const canvas = screen.getAllByTestId("vertical-day-timeline-canvas")[0];
+    expect(
+      within(canvas)
+        .getAllByTestId("vertical-day-timeline-closed-hours")
+        .map((segment) => ({ top: segment.style.top, height: segment.style.height })),
+    ).toEqual(expected);
+  });
+
   it("keeps the loading state visible until the day schedule resolves", async () => {
     const request = Promise.withResolvers<Response>();
     let requests = 0;

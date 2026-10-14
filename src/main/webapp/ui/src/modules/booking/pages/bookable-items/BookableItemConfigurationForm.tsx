@@ -1,6 +1,7 @@
 import { Form, isDirty, useForm } from "@formisch/react";
 import { pick } from "es-toolkit";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
 import { useTranslation } from "react-i18next";
 import {
   SchedulingSettingsFields,
@@ -31,6 +32,7 @@ export function BookableItemConfigurationForm({
   staleEdit,
   failed,
   onSubmit,
+  onSaveBlockedChange,
 }: {
   configuration: BookingConfiguration;
   globalId: string;
@@ -39,6 +41,8 @@ export function BookableItemConfigurationForm({
   staleEdit: boolean;
   failed: boolean;
   onSubmit: (input: BookingConfigurationUpdateInput, version: number) => Promise<unknown>;
+  /** True until a field changes; the owner disables Save. */
+  onSaveBlockedChange?: (blocked: boolean) => void;
 }) {
   const { t } = useTranslation("booking");
   const [version] = useState(configuration.configurationVersion);
@@ -46,10 +50,16 @@ export function BookableItemConfigurationForm({
     schema: BookingConfigurationUpdateInputSchema,
     initialInput: configurationInput(configuration),
   });
+  const dirty = isDirty(form);
+  // An unchanged form has nothing to save.
+  const saveBlocked = !dirty;
+  useEffect(() => {
+    onSaveBlockedChange?.(saveBlocked);
+  }, [onSaveBlockedChange, saveBlocked]);
   return (
     <>
       <DirtyNavigationGuard
-        dirty={isDirty(form)}
+        dirty={dirty}
         shouldBlockNavigation={({ current, next }) =>
           current.pathname !== next.pathname &&
           (next.routeId !== "/booking/bookable-items/$globalId/{-$tab}/" ||
@@ -57,7 +67,12 @@ export function BookableItemConfigurationForm({
             !next.search.edit)
         }
       />
-      <Form id={formId} of={form} className="min-w-0 space-y-4" onSubmit={(input) => onSubmit(input, version)}>
+      <Form
+        id={formId}
+        of={form}
+        className="min-w-0 space-y-4"
+        onSubmit={(input) => (saveBlocked ? undefined : onSubmit(input, version))}
+      >
         <RenderFields
           fields={bookingConfigurationFields.filter((field) => field.name !== "target" && field.name !== "timezone")}
           form={form}
