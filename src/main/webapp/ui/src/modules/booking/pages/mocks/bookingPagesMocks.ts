@@ -214,6 +214,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
         state: "CONFIRMED",
         kind: payload.kind,
         purpose: payload.purpose ?? null,
+        cancellationReason: null,
         bookedBy: "Ada Lovelace",
         createdBy: "Ada Lovelace",
         privacy: "full",

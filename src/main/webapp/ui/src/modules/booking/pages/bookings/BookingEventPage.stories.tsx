@@ -39,6 +39,7 @@ const booking = {
   state: "CONFIRMED",
   kind: "BOOKING",
   privacy: "full",
+  cancellationReason: null,
   purpose: "Cell imaging",
   bookedBy: "Ada Lovelace (ada)",
   createdBy: "Grace Hopper (grace)",

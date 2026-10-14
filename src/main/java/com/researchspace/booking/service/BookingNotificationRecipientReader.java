@@ -74,7 +74,7 @@ public class BookingNotificationRecipientReader {
    *
    * <p>For cancellations or time changes by somebody other than the requester, the requester is
    * added when they are active, Booking-enabled, and can still read the target. The requester is
-   * selected without their event preference because the cancellation is about their booking.
+   * selected without their event preference because the event is about their booking.
    *
    * <p>The candidate query is the first consistent read and establishes the snapshot used by all
    * later feature-flag, permission, and display-default reads. Returned users are detached when

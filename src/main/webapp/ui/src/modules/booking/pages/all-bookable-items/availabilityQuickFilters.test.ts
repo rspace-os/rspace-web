@@ -176,6 +176,7 @@ describe("the availability oracle", () => {
     start,
     end,
     state: "CONFIRMED",
+    cancellationReason: null,
     kind,
     privacy: "busy",
     purpose: null,

@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { browserTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { bookingHourCycle, sameTimeZone } from "@/modules/booking/domain/bookingTime";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
@@ -28,10 +28,12 @@ export function BookingInstrumentTimeTooltip({
   const browserZone = browserTimeZone();
   const timeFormat = useBookingTimeFormat();
 
+  // Aliases such as Asia/Kolkata and the Asia/Calcutta a browser may report are one zone, so they need no tooltip.
   const showTooltip =
     (!!start || !!time) &&
     !!instrumentTimeZone &&
-    (instrumentTimeZone !== displayTimeZone || (browserZone !== null && instrumentTimeZone !== browserZone));
+    (!sameTimeZone(instrumentTimeZone, displayTimeZone) ||
+      (browserZone !== null && !sameTimeZone(instrumentTimeZone, browserZone)));
 
   if (!showTooltip && !trigger) return children ?? null;
 

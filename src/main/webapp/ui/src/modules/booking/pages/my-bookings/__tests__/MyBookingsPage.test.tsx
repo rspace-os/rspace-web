@@ -31,12 +31,14 @@ import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import i18n from "@/modules/common/i18n";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
-import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+import {
+  customNewYorkBookingPreferences,
+  inheritedBrowserBookingPreferences,
+} from "../../preferences/bookingPreferencesFixtures";
 import {
   bookingHandlers,
   bookingsOpenApi,
   cancelledBooking,
-  pastBooking,
   roleLostBooking,
   upcomingBooking,
 } from "../mocks/bookingMocks";
@@ -53,6 +55,8 @@ function renderPage(
   onListRequest: (url: URL) => void = () => undefined,
   onCountRequest: (url: URL) => void = () => undefined,
   docs?: readonly unknown[],
+  openApi: typeof bookingsOpenApi = bookingsOpenApi,
+  preferences = inheritedBrowserBookingPreferences,
 ) {
   const location = new URL(path, window.location.origin);
   server.use(
@@ -61,11 +65,8 @@ function renderPage(
   );
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
-  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
-  queryClient.setQueryData(
-    ["api-v2", "openapi", "bookings"],
-    apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),
-  );
+  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
+  queryClient.setQueryData(["api-v2", "openapi", "bookings"], apiV2CollectionMetadataFromOpenApi(openApi, "bookings"));
   let search = location.search;
   const onUrlUpdate = ({ queryString }: UrlUpdateEvent) => {
     search = queryString;
@@ -252,6 +253,18 @@ describe("My Bookings page", () => {
 
     const table = within(await screen.findByRole("table"));
     expect(await table.findByText(expectedStart)).toBeVisible();
+  });
+
+  it("tells the two occurrences of a repeated hour apart with their offsets", async () => {
+    // New York falls back on 2026-11-01: 05:30Z and 06:30Z are both 1:30 on the wall clock.
+    const repeatedHour = { ...upcomingBooking, start: "2026-11-01T05:30:00Z", end: "2026-11-01T06:30:00Z" };
+    renderPage(initialPath, 84, undefined, undefined, [repeatedHour], bookingsOpenApi, customNewYorkBookingPreferences);
+
+    await screen.findByRole("table");
+    const times = () =>
+      Array.from(document.querySelectorAll(`time[datetime^="2026-11-01"]`), (time) => time.textContent);
+    await waitFor(() => expect(times()).toEqual(expect.arrayContaining([expect.stringMatching(/1:30.* -04:00$/)])));
+    expect(times()).toEqual(expect.arrayContaining([expect.stringMatching(/1:30.* -05:00$/)]));
   });
 
   it("shows an unknown item for a role-lost requester without item navigation", async () => {

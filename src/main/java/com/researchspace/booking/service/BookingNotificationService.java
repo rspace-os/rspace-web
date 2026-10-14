@@ -48,6 +48,20 @@ public class BookingNotificationService {
    */
   @Transactional(propagation = Propagation.MANDATORY)
   public void notify(TimeSlotBooking booking, User actor, NotificationType notificationType) {
+    notify(booking, actor, notificationType, false);
+  }
+
+  /**
+   * Notifies subscribers that a cancelled booking was restored to its slot. It uses the "booking
+   * created" type, so the same subscribers and preferences apply, with a "restored" message.
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void notifyRestored(TimeSlotBooking booking, User actor) {
+    notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_CREATED, true);
+  }
+
+  private void notify(
+      TimeSlotBooking booking, User actor, NotificationType notificationType, boolean restored) {
     if (booking == null || booking.getKind() != BookingEventKind.BOOKING || actor == null) {
       return;
     }
@@ -62,6 +76,7 @@ public class BookingNotificationService {
         recipientReader.selectRecipients(
             targetInstrument.getId(), notificationType, actor.getId(), requesterId)) {
       BookingNotificationData data = notificationData(booking, targetInstrument);
+      data.setRestored(restored);
       data.setEmailDisplayTimezone(recipient.displayZone().getId());
       data.setEmailTimeFormat(recipient.timeFormat());
       NotificationConfig config = new NotificationConfig();
@@ -108,6 +123,7 @@ public class BookingNotificationService {
     data.setInstrumentGlobalIdentifier(instrument.getGlobalIdentifier());
     data.setStartTime(DateTimeFormatter.ISO_INSTANT.format(booking.getStartTime().toInstant()));
     data.setEndTime(DateTimeFormatter.ISO_INSTANT.format(booking.getEndTime().toInstant()));
+    data.setCancellationReason(booking.getCancellationReason());
     return data;
   }
 }

@@ -124,6 +124,7 @@ export const editableBooking = {
   kind: "BOOKING",
   privacy: "full",
   purpose: "Imaging",
+  cancellationReason: null,
   bookedBy: "Ada Lovelace",
   canEdit: true,
   canCancel: true,
