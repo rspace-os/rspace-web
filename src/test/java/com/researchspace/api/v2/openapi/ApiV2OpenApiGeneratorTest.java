@@ -876,8 +876,8 @@ class ApiV2OpenApiGeneratorTest {
             MultiTargetFilterFixture.class,
             List.of(
                 Field.readOnly(
-                    "id", "id", CollectionFieldTypes.longNumber(), MultiTargetFilterFixture::id)),
-            List.of(target),
+                    "id", "id", CollectionFieldTypes.longNumber(), MultiTargetFilterFixture::id),
+                target),
             "id",
             List.of(new Sort("id", true)));
     ApiV2ResourceSpec<MultiTargetFilterFixture, Long> spec =
