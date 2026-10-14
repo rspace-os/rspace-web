@@ -9,10 +9,6 @@ final class BookingSettingsValidation {
 
   private BookingSettingsValidation() {}
 
-  /**
-   * Validates one complete, merged settings value, including the rules that span the shared
-   * interval, the open weekdays and their exceptions.
-   */
   static void requireValid(BookingSchedulingSettings settings) {
     requireValid(
         settings.slotGranularityMinutes(),
@@ -20,14 +16,6 @@ final class BookingSettingsValidation {
         settings.bufferBeforeMinutes(),
         settings.bufferAfterMinutes(),
         settings.maxBookingDurationMinutes());
-    if (!BookingSchedulingSettings.areOpenDaysValid(settings.openDays())) {
-      throw new InvalidBookingSchedulingSettingsException(Reason.OPEN_DAYS);
-    }
-    if (!BookingSchedulingSettings.areOpeningExceptionsValid(settings.openingExceptions())
-        || !BookingSchedulingSettings.areOpeningExceptionsOnOpenDays(
-            settings.openingExceptions(), settings.openDays())) {
-      throw new InvalidBookingSchedulingSettingsException(Reason.OPENING_EXCEPTIONS);
-    }
   }
 
   static void requireValid(
