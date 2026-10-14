@@ -26,9 +26,14 @@ describe("BookableItemPage", () => {
     );
     const { container } = renderPage();
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
+    const heading = await screen.findByRole("heading", { level: 1, name: "Confocal microscope" });
+    expect(heading).toHaveClass("text-2xl", "font-semibold");
     expect(screen.getByText("IN123")).toBeVisible();
     const facts = screen.getByRole("complementary", { name: "booking:bookableItemDetails.about" });
+    const tabList = screen.getByRole("tablist");
+    expect(heading.closest("section")?.parentElement).toBe(tabList.parentElement);
+    expect(facts.parentElement?.parentElement).toBe(tabList.parentElement);
+    expect(tabList.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
     expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
     expect(within(facts).getByText("booking:bookableItemDetails.fields.createdAt")).toBeVisible();
@@ -37,7 +42,7 @@ describe("BookableItemPage", () => {
     ).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toBeVisible();
-    expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);
+    expect(within(heading.closest("section") as HTMLElement).queryByText("UTC")).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -51,7 +56,6 @@ describe("BookableItemPage", () => {
     expect(screen.getByText("10:00–16:00")).toBeVisible();
     expect(screen.getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(5);
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
-    expect(screen.getByText("booking:bookableItemDetails.notAvailable")).toBeVisible();
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" })).toHaveAttribute(
       "aria-selected",
       "true",

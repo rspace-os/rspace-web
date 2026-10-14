@@ -1,5 +1,5 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -67,12 +67,14 @@ describe("BookableItemPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.audit" }));
 
-    // TableList keeps both the table and card presentations mounted and picks
-    // between them with container queries, which jsdom does not evaluate, so
-    // every cell matches twice.
-    expect((await screen.findAllByText("Morgan Ellis (morgan.ellis)"))[0]).toBeVisible();
-    expect(screen.getAllByText("WRITE")[0]).toBeVisible();
-    expect(screen.getAllByText("maxBookingDurationMinutes")[0]).toBeVisible();
+    const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
+    expect(within(item).getByText("Morgan Ellis (morgan.ellis)")).toBeVisible();
+    expect(within(item).getByText("WRITE")).toBeVisible();
+    expect(
+      within(item).queryByText("booking:bookableItemDetails.audit.values.maximumDuration"),
+    ).not.toBeInTheDocument();
+    await user.click(within(item).getByRole("button", { name: "common:actions.expand" }));
+    expect(within(item).getByText("booking:bookableItemDetails.audit.values.maximumDuration")).toBeVisible();
     await waitFor(() => expect(auditRequests).toBe(1));
   });
 
@@ -104,7 +106,7 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(eventRequests).toBe(2));
   });
 
-  it("marks the configuration update timestamp as machine-readable time", async () => {
+  it("does not show the configuration update timestamp in booking rules", async () => {
     const updatedAt = "2026-08-10T12:00:00Z";
     server.use(
       http.get("/api/v2/booking-configurations", () =>
@@ -114,10 +116,8 @@ describe("BookableItemPage", () => {
     );
     renderPage("/booking/bookable-items/IN123/details");
 
-    const updatedTime = (await screen.findAllByRole("time")).find(
-      (element) => element.getAttribute("datetime") === updatedAt,
-    );
-    expect(updatedTime).toBeVisible();
+    await screen.findByText("booking:bookableItemDetails.rules");
+    expect(screen.queryByText("booking:bookableItemDetails.fields.updatedAt")).not.toBeInTheDocument();
   });
 
   it("reformats existing events after a configuration timezone refresh without refetching events", async () => {

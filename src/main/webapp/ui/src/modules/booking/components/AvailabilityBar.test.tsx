@@ -299,6 +299,9 @@ describe("AvailabilityBar", () => {
       const disclosure = within(dialog).getByLabelText(
         `Show details for ${kind === "BOOKING" ? "Confocal microscope" : "Maintenance blockout"}, 09:00–10:00`,
       );
+      expect(
+        within(dialog).getByText(kind === "BOOKING" ? "Booked by Ada Lovelace (ada)" : "Maintenance blockout"),
+      ).toBeVisible();
       await user.click(disclosure);
 
       expect(within(dialog).getByRole("link", { name: "Open inventory record IN123" })).toBeVisible();
@@ -377,6 +380,33 @@ describe("AvailabilityBar", () => {
     expect(within(dialog).getByText("Maintenance blockout")).toBeVisible();
     expect(screen.queryByText("Private maintenance actor")).not.toBeInTheDocument();
     expect(screen.queryByText("Private maintenance reason")).not.toBeInTheDocument();
+  });
+
+  it("can omit redundant booking context while preserving the reusable detail path", async () => {
+    const user = userEvent.setup();
+    await renderRoutedAvailabilityBar({
+      intervals: [
+        sourced("booking:41", "2026-08-12T09:00:00.000Z", "2026-08-12T10:00:00.000Z", "booking", undefined, undefined, {
+          id: 41,
+          kind: "BOOKING",
+          privacy: "full",
+          purpose: "Cell imaging",
+          bookedBy: "Ada Lovelace (ada)",
+        }),
+      ],
+      showBookingContextDetails: false,
+    });
+
+    await user.hover(await screen.findByRole("button", { name: /Confocal microscope, Booked/ }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+
+    expect(within(dialog).getByText("Booked by Ada Lovelace (ada)")).toBeVisible();
+    expect(within(dialog).getByText("Cell imaging")).toBeVisible();
+    expect(within(dialog).queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Booked by")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("link", { name: "Details" })).toBeVisible();
+    await expectAccessible(dialog);
   });
 
   it("uses an explicitly supplied arbitrary period", async () => {
