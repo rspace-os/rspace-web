@@ -560,18 +560,20 @@ This setting prevents the query layer from sending the property to Hibernate.
 Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
 writer or row-specific field access.
 
-`CollectionFieldTypes.array()` and `object()` stay read-only. A field that must accept a JSON array
-or object uses `CollectionFieldTypes.structured(...)` instead. The parser still checks the JSON kind,
-then passes the whole node to the type's decoder; a decoder failure is an invalid value. The decoder
-validates the complete value, and its `structure` map (for example `items`) is published in the
-field's OpenAPI schema. Structured fields are never filterable or sortable. Booking configurations
-use this for `openDays` and `openingExceptions`; rules that span fields, such as an exception day
-having to be open, stay in the manager's validation of the merged settings.
+Declare an ARRAY with `CollectionFieldTypes.array(rowType, fields, adapter)`. Its non-empty
+child `fields` list controls parsing, validation, output, metadata and OpenAPI. Children reuse the
+scalar types and constraints. A row adapter runs after child validation; row and array validators
+then enforce rules such as opening intervals and unique weekdays. Arrays are never filterable or
+sortable. Booking uses this declaration for `openingHours` and read-only `roleSources`.
 
-`BigDecimal`, `Instant`, typed lists and typed objects are not field types yet. Each waits for its
-first consumer because it needs more than a parser: decimal equality must ignore scale, `Instant`
-needs explicit serialization, and lists need generic type checks and JSON examples and defaults.
-Until then, use `structured(...)` or a programmatic description.
+A supplied array replaces the complete value, including on PATCH. Every replacement row must
+supply its required children. Unknown or non-writable children fail with indexed paths such as
+`openingHours[2].start`. Scalar, null and direct-array rows are rejected. Finite declared embedded
+objects and nested arrays follow the same rules. Child read access can narrow the parent's access.
+
+`CollectionFieldTypes.object()` remains a server-rendered read-only object. Use declared children
+for an embedded object that participates in array parsing or projection. Opaque ARRAY declarations
+and the no-argument `array()` factory are unsupported. Scalar collections remain deferred.
 
 A writable field can supply a fixed value when a create document omits it: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
@@ -606,9 +608,9 @@ Startup fails in these cases:
 - An example or a default breaks the field's own rules.
 
 A programmatic field uses `CollectionFieldTypes.constrained(type, constraints)`. One decorator holds
-all of a field's rules, so it cannot wrap another constrained type, a structured type or a read-only
-opaque type. A structured type's decoder validates the whole value itself. A constraint `Pattern`
-must have no flags, because the published pattern cannot carry them.
+all of a scalar field's rules, so it cannot wrap another constrained type, a structured type or a
+read-only opaque type. Declare constraints on embedded children using the same scalar types. A
+constraint `Pattern` must have no flags, because the published pattern cannot carry them.
 
 These are wire rules for one field. The manager must still enforce all domain rules.
 
@@ -633,7 +635,7 @@ Before it calls the operations class, the parser rejects these inputs:
 - An unknown field.
 - A read-only field.
 - A missing required field.
-- An invalid scalar value, or an invalid value for a structured field.
+- An invalid scalar value, or an invalid declared object or array child.
 - A relationship with an invalid form.
 
 ### Bulk create
