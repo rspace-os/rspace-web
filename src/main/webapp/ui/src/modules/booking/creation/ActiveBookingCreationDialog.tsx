@@ -11,6 +11,7 @@ import {
   isBookingCreationOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
+import { bookingConflicts } from "@/modules/booking/domain/availability";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
@@ -140,7 +141,8 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
         openingHours: maintenance
           ? [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
           : availabilityTarget.openingHours,
-        allowDoubleBooking: maintenance ? false : availabilityTarget.allowDoubleBooking,
+        // Fetch overlaps even when double booking is allowed, so the form can explain them.
+        allowDoubleBooking: false,
       })
     : undefined;
   const availabilityInterval = formState?.window
@@ -162,6 +164,10 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
       availabilityTarget &&
       availability.data.get(availabilityTarget.globalId)?.some(() => true),
   );
+  const conflicts = availabilityViolation
+    ? bookingConflicts(availability.data?.get(availabilityTarget?.globalId ?? "") ?? [], preferences.timeZone)
+    : [];
+  const conflictBlocksSubmission = availabilityViolation && !availabilityTarget?.allowDoubleBooking;
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
@@ -235,16 +241,18 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             token={token}
             pending={mutation.isPending}
             error={
-              availabilityViolation
+              availabilityViolation && conflicts.length === 0
                 ? t("bookings.errors.overlap")
                 : mutation.error
                   ? t(bookingCreationProblemKey(mutation.error))
                   : undefined
             }
+            conflicts={conflicts}
+            conflictSeverity={availabilityTarget?.allowDoubleBooking ? "warning" : "error"}
             outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||
-              availabilityViolation ||
+              conflictBlocksSubmission ||
               isBookingOverlapError(mutation.error) ||
               isBookingCreationOutcomeUncertain(mutation.error)
             }

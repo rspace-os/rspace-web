@@ -28,9 +28,34 @@ export type AvailabilitySource = {
   };
 };
 
+export type BookingConflict = NonNullable<AvailabilitySource["booking"]> & {
+  start: string;
+  end: string;
+  timezone: string;
+};
+
 export type SourcedAvailabilityInterval = AvailabilityInterval & {
   source: AvailabilitySource;
 };
+
+export function bookingConflicts(
+  intervals: readonly SourcedAvailabilityInterval[],
+  timezone: string,
+  excludedBookingId?: number,
+): BookingConflict[] {
+  const conflicts = new Map<number, BookingConflict>();
+  for (const interval of intervals) {
+    const booking = interval.source.booking;
+    if (!booking || booking.id === excludedBookingId || conflicts.has(booking.id)) continue;
+    conflicts.set(booking.id, {
+      ...booking,
+      start: interval.source.startsAt.toISOString(),
+      end: interval.source.endsAt.toISOString(),
+      timezone,
+    });
+  }
+  return [...conflicts.values()];
+}
 
 export type AvailabilitySlice<T extends AvailabilityInterval = AvailabilityInterval> = AvailabilitySegment & {
   intervals: readonly T[];

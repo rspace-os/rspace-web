@@ -41,7 +41,7 @@ export function CalendarTimeGrid({
   const month = firstOfMonth(date).slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
   return (
-    <section aria-label={t("calendar.layout.time-grid")} className="p-3" aria-busy={isLoading}>
+    <section aria-label={t("calendar.layout.time-grid")} className="py-3" aria-busy={isLoading}>
       {view === "day" ? (
         <div className="relative grid min-h-56">
           <div className="grid min-w-0" aria-hidden={isLoading || undefined} inert={isLoading}>

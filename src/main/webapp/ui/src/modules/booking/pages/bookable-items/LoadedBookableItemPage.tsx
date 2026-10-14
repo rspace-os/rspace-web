@@ -497,6 +497,10 @@ export function LoadedBookableItemPage({
                         resourceId={configuration.id}
                         token={token}
                         adapter={bookingResourceAccessAdapter(t)}
+                        inheritedResource={{
+                          href: `/globalId/${globalId}`,
+                          label: t("bookableItemDetails.viewInventory", { name: target.value.name }),
+                        }}
                         readOnly={!active}
                         onLeave={() => void navigate({ to: "/booking", ignoreBlocker: true })}
                       />

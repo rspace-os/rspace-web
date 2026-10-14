@@ -66,7 +66,7 @@ describe("ZonedBookingWindowFields", () => {
           openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" })),
         }).window,
       ).toEqual({ start, end });
-      expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
+      expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
       expect(screen.queryByText("booking:bookings.form.schedulingTimezone")).not.toBeInTheDocument();
       expect(screen.queryByText("booking:bookings.errors.openingHours")).not.toBeInTheDocument();
     },
