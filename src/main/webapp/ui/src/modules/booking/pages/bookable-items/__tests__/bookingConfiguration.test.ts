@@ -251,6 +251,23 @@ describe("booking configuration reads", () => {
     server.use(http.get("/api/v2/booking-configurations", () => new HttpResponse(null, { status: 500 })));
     await expect(fetchBookingConfigurationByTarget("IN123", "token")).rejects.toThrow("status 500");
   });
+
+  it("selects the opening policy and rejects a response without it", async () => {
+    let request: Request | undefined;
+    server.use(
+      http.get("/api/v2/booking-configurations/7", ({ request: received }) => {
+        request = received;
+        return HttpResponse.json(configuration);
+      }),
+    );
+    await fetchBookingConfiguration(7, "token");
+    const fields = new URL(request?.url ?? "http://localhost").searchParams.get("fields[booking-configurations]");
+    expect(fields?.split(",")).toEqual(expect.arrayContaining(["openingHours"]));
+
+    const { openingHours: _openingHours, ...withoutOpeningHours } = configuration;
+    server.use(http.get("/api/v2/booking-configurations/7", () => HttpResponse.json(withoutOpeningHours)));
+    await expect(fetchBookingConfiguration(7, "token")).rejects.toThrow();
+  });
 });
 
 describe("booking configuration schedules", () => {

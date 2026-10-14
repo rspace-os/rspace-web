@@ -21,27 +21,19 @@ type BookingCalendarFileButtonProps = {
   iconOnly?: boolean;
 };
 
+type BookingCalendarFileDownload = Pick<BookingCalendarFileButtonProps, "bookingId" | "itemName" | "period" | "token">;
+
 /**
- * Saves one booking as a calendar file. The outcome is announced rather than shown because the
- * button often sits in a table row where extra text would shift the layout.
+ * Download state for one booking's calendar file, for controls that cannot host the live regions
+ * themselves, such as a menu item that unmounts when its menu closes. Render `announcements`
+ * somewhere that stays mounted.
  */
-export function BookingCalendarFileButton({
-  bookingId,
-  itemName,
-  period,
-  token,
-  className,
-  size = "sm",
-  variant = "outline",
-  iconOnly = false,
-}: BookingCalendarFileButtonProps) {
+export function useBookingCalendarFileDownload({ bookingId, itemName, period, token }: BookingCalendarFileDownload) {
   const { t } = useTranslation("booking");
   const active = useRef(false);
   const [pending, setPending] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [failed, setFailed] = useState(false);
-  const accessibleLabel = t("calendar.file.accessibleLabel", { item: itemName, period });
-  const shortLabel = t("calendar.file.label");
 
   const download = async () => {
     if (active.current) return;
@@ -60,6 +52,43 @@ export function BookingCalendarFileButton({
       setPending(false);
     }
   };
+
+  const announcements = (
+    <>
+      {/* Two regions rather than one with a swapped role: an alert announces on insertion, a
+          status only announces changes to a region that was already there. */}
+      <span role="status" className="sr-only">
+        {failed ? "" : announcement}
+      </span>
+      {failed ? (
+        <span role="alert" className="sr-only">
+          {announcement}
+        </span>
+      ) : null}
+    </>
+  );
+
+  return { download, pending, announcements };
+}
+
+/**
+ * Saves one booking as a calendar file. The outcome is announced rather than shown because the
+ * button often sits in a table row where extra text would shift the layout.
+ */
+export function BookingCalendarFileButton({
+  bookingId,
+  itemName,
+  period,
+  token,
+  className,
+  size = "sm",
+  variant = "outline",
+  iconOnly = false,
+}: BookingCalendarFileButtonProps) {
+  const { t } = useTranslation("booking");
+  const { download, pending, announcements } = useBookingCalendarFileDownload({ bookingId, itemName, period, token });
+  const accessibleLabel = t("calendar.file.accessibleLabel", { item: itemName, period });
+  const shortLabel = t("calendar.file.label");
 
   const button = (
     <Button
@@ -89,16 +118,7 @@ export function BookingCalendarFileButton({
       ) : (
         button
       )}
-      {/* Two regions rather than one with a swapped role: an alert announces on insertion, a
-          status only announces changes to a region that was already there. */}
-      <span role="status" className="sr-only">
-        {failed ? "" : announcement}
-      </span>
-      {failed ? (
-        <span role="alert" className="sr-only">
-          {announcement}
-        </span>
-      ) : null}
+      {announcements}
     </>
   );
 }

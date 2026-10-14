@@ -24,4 +24,8 @@ describe("My Bookings route", () => {
       matchedSearch("/booking/my-bookings?period=past&my-bookings.q=scope&unrelated=discarded"),
     ).resolves.toEqual({ period: "past", "my-bookings.q": "scope", unrelated: "discarded" });
   });
+
+  it("keeps the cancelled period", async () => {
+    await expect(matchedSearch("/booking/my-bookings?period=cancelled")).resolves.toEqual({ period: "cancelled" });
+  });
 });

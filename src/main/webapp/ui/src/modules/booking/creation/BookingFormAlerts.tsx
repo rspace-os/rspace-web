@@ -24,41 +24,56 @@ export function BookingFormAlerts({
   conflictSeverity = "error",
   outcomeUncertain,
 }: BookingFormAlertsProps) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
 
   if (!warning && !error && !conflicts?.length) return null;
 
+  const conflictList = (items: readonly BookingConflict[]) => (
+    <ul className="mt-1 list-inside list-disc">
+      {items.map((booking) => {
+        const label =
+          booking.purpose ??
+          t(
+            booking.kind === "MAINTENANCE"
+              ? "bookings.errors.overlapMaintenance"
+              : booking.privacy === "busy"
+                ? "bookings.errors.overlapReserved"
+                : "bookings.errors.overlapBooking",
+            { id: booking.id },
+          );
+        return (
+          <li key={booking.id}>
+            <span className="font-medium">{label}</span>
+            {" · "}
+            <BookingInstrumentTimeTooltip
+              start={booking.start}
+              end={booking.end}
+              displayTimeZone={displayTimezone}
+              instrumentTimeZone={booking.instrumentTimeZone}
+            >
+              {formatAgendaPeriod(booking.start, booking.end, displayTimezone)}
+            </BookingInstrumentTimeTooltip>
+          </li>
+        );
+      })}
+    </ul>
+  );
+  const overlaps = conflicts?.filter(({ bufferOnly }) => !bufferOnly) ?? [];
+  const buffered = conflicts?.filter(({ bufferOnly }) => bufferOnly) ?? [];
   const conflictMessage = conflicts?.length ? (
     <>
-      <p>{t("bookings.errors.overlapSummary")}</p>
-      <ul className="mt-1 list-inside list-disc">
-        {conflicts.map((booking) => {
-          const label =
-            booking.purpose ??
-            t(
-              booking.kind === "MAINTENANCE"
-                ? "bookings.errors.overlapMaintenance"
-                : booking.privacy === "busy"
-                  ? "bookings.errors.overlapReserved"
-                  : "bookings.errors.overlapBooking",
-              { id: booking.id },
-            );
-          return (
-            <li key={booking.id}>
-              <span className="font-medium">{label}</span>
-              {" · "}
-              <BookingInstrumentTimeTooltip
-                start={booking.start}
-                end={booking.end}
-                displayTimeZone={displayTimezone}
-                instrumentTimeZone={booking.instrumentTimeZone}
-              >
-                {formatAgendaPeriod(booking.start, booking.end, displayTimezone, i18n.language)}
-              </BookingInstrumentTimeTooltip>
-            </li>
-          );
-        })}
-      </ul>
+      {overlaps.length ? (
+        <>
+          <p>{t("bookings.errors.overlapSummary")}</p>
+          {conflictList(overlaps)}
+        </>
+      ) : null}
+      {buffered.length ? (
+        <>
+          <p className={overlaps.length ? "mt-2" : undefined}>{t("bookings.errors.bufferSummary")}</p>
+          {conflictList(buffered)}
+        </>
+      ) : null}
     </>
   ) : null;
 

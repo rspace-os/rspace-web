@@ -58,6 +58,23 @@ import {
 } from "./availabilityQuickFilters";
 import { BookingNotificationBulkActions } from "./BookingNotificationBulkActions";
 
+/** The instrument's Inventory location; the tooltip explains a bare container name such as "WB user1a". */
+function InstrumentLocation({ name, globalId }: { name?: string | null; globalId?: string | null }) {
+  const { t } = useTranslation("booking");
+  if (name == null || globalId == null) return null;
+  const workbench = name.startsWith("WB ");
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<span className="inline-flex min-w-0 items-center gap-1" />}>
+        <InventoryLocationLink name={name} globalId={globalId} />
+      </TooltipTrigger>
+      <TooltipContent role="tooltip" className="rounded-sm">
+        {workbench ? t("allBookableItems.location.workbenchDescription") : t("allBookableItems.location.description")}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function createAllBookableItemsConfig(
   availableNow: string,
   freeLaterToday: string,
@@ -95,7 +112,7 @@ function createAllBookableItemsConfig(
                 idLinkLabel={openRecordLabel(row.target.globalId)}
                 size="xs"
               >
-                <InventoryLocationLink
+                <InstrumentLocation
                   name={row.target.value.parentContainerName}
                   globalId={row.target.value.parentContainerGlobalId}
                 />
@@ -281,6 +298,16 @@ function AllBookableItemsContentForUser({
     staleTime: 30_000,
   });
   const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
+  const hasNoBookableItems =
+    catalogue.isSuccess &&
+    catalogue.data.total === 0 &&
+    !q &&
+    !where &&
+    !target &&
+    !routeAvailability &&
+    !mine &&
+    !types?.length;
   const notificationSubscriptionMutation = useMutation({
     mutationFn: ({ configurationIds, enabled }: { configurationIds: readonly number[]; enabled: boolean }) =>
       updateBookingNotificationSubscriptions(configurationIds, enabled, token),
@@ -560,36 +587,44 @@ function AllBookableItemsContentForUser({
           });
         },
       },
-      ...(["available-now", "free-later-today"] as const).map((mode) => ({
-        id: mode,
-        label: (
-          <>
-            {mode === "available-now"
-              ? t("allBookableItems.quickFilters.availableNow")
-              : t("allBookableItems.quickFilters.freeLaterToday")}
-            <span
-              aria-hidden="true"
-              className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
-            >
-              {quickIndex.isError ? (
-                "—"
-              ) : quickIndex.data ? (
-                [...quickIndex.data.values()].filter(({ category }) => category === mode).length
-              ) : (
-                <Skeleton className="h-3 w-3" />
-              )}
-            </span>
-          </>
-        ),
-        icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
-        pressed: quickMode === mode,
-        disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
-        onClick: () =>
-          setFilters({
-            ...filters,
-            expression: withAvailability(filters.expression, quickMode === mode ? undefined : mode),
-          }),
-      })),
+      ...(["available-now", "free-later-today"] as const).map((mode) => {
+        // The two categories are mutually exclusive, so each chip explains which items it counts.
+        const description =
+          mode === "available-now"
+            ? t("allBookableItems.quickFilters.availableNowDescription")
+            : t("allBookableItems.quickFilters.freeLaterTodayDescription");
+        return {
+          id: mode,
+          label: (
+            <>
+              {mode === "available-now"
+                ? t("allBookableItems.quickFilters.availableNow")
+                : t("allBookableItems.quickFilters.freeLaterToday")}
+              <span
+                aria-hidden="true"
+                className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
+              >
+                {quickIndex.isError ? (
+                  "—"
+                ) : quickIndex.data ? (
+                  [...quickIndex.data.values()].filter(({ category }) => category === mode).length
+                ) : (
+                  <Skeleton className="h-3 w-3" />
+                )}
+              </span>
+            </>
+          ),
+          description,
+          icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
+          pressed: quickMode === mode,
+          disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
+          onClick: () =>
+            setFilters({
+              ...filters,
+              expression: withAvailability(filters.expression, quickMode === mode ? undefined : mode),
+            }),
+        };
+      }),
     ],
     onReset: resetView,
   };
@@ -704,6 +739,14 @@ function AllBookableItemsContentForUser({
           },
         ]}
         rowActions={rowActions}
+        emptyDescription={
+          hasNoBookableItems ? (
+            <>
+              {t("bookableItems.primer.description")}{" "}
+              <Link to="/booking/bookable-items/add">{t("bookableItems.addTitle")}</Link>
+            </>
+          ) : undefined
+        }
         createAction={
           <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
             <PlusIcon aria-hidden="true" data-icon="inline-start" />
