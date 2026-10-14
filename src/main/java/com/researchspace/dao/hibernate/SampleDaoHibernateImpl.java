@@ -74,7 +74,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     // requestable sample is visible, but an explicit ownedBy still narrows it. The name
     // filter below is independent of that and still applies on top of it.
     boolean unscopedRequestableSearch = Boolean.TRUE.equals(requestable);
-    boolean unscopedOwnedBy = unscopedRequestableSearch && ownedBy != null && !ownedBy.isEmpty();
+    boolean unscopedOwnedBy = unscopedRequestableSearch && StringUtils.isNotEmpty(ownedBy);
 
     List<String> userGroupMembers =
         invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
@@ -89,7 +89,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     String requestableQueryFragment =
         requestable == null ? "" : "and requestable=" + requestable + " ";
     // the name filter is for requestable searches only; other searches go through Lucene
-    boolean limitByNameQuery = requestable != null && StringUtils.isNotBlank(query);
+    boolean limitByNameQuery = unscopedRequestableSearch && StringUtils.isNotBlank(query);
     String nameQueryFragment =
         limitByNameQuery ? "and lower(editInfo.name) like :nameQuery escape '!' " : "";
 

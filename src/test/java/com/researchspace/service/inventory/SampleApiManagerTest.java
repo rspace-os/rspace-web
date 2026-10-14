@@ -1409,6 +1409,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // the plain samples listing has never filtered by query; that stays with the Lucene search
     assertEquals(
         2, sampleApiMgr.getSamplesForUser(null, null, null, null, "A", alice).getTotalHits());
+    // nor does a listing of samples that are not requestable
+    assertEquals(
+        2, sampleApiMgr.getSamplesForUser(null, null, null, false, "A", alice).getTotalHits());
   }
 
   @Test

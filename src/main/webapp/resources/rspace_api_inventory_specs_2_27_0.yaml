@@ -1332,10 +1332,13 @@ paths:
           description: >-
             The sample does not exist, is in the trash, or sample requests are
             not enabled on this instance.
+        "409":
+          $ref: "#/components/responses/ConcurrentChange"
         "422":
           description: >-
-            The request is not valid: the sample is not marked requestable, is
-            owned by the current user, or the global id does not name a sample.
+            The request is not valid: the sample is not marked requestable,
+            sample requests are not enabled for its owner, it is owned by the
+            current user, or the global id does not name a sample.
   "/sampleRequests/{id}/status":
     put:
       summary: Move a sample request to a new status
@@ -1446,8 +1449,9 @@ paths:
             by transferring the sample to its requester, and `transferredSample`
             summarises the sample the request was fulfilled with, if one was
             recorded, limited to what the current user may read. `requester`,
-            `originalOwner` and each `createdBy` are user objects; a user deleted
-            since keeps their username, with a null id.
+            `originalOwner` and each `createdBy` are user objects with public
+            details only (no email, home folder or roles); a user deleted since
+            keeps their username, with a null id.
         "404":
           description: >-
             No such request, the caller is not a party to it, or sample requests
@@ -4597,7 +4601,8 @@ components:
     ConcurrentChange:
       description: >
         The same data was changed by someone else at the same time (MariaDB "record has changed
-        since last read"). Nothing was saved; reload and try again.
+        since last read", or a deadlock between two concurrent changes). Nothing was saved;
+        reload and try again.
       content:
         application/json:
           schema:

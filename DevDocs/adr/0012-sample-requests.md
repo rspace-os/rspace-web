@@ -62,10 +62,16 @@ The setting is DENIED by default. While it is off for the caller:
 - `GET /samples?requestable=true` returns an empty page rather than an error, as befits a
   search filter.
 
+The setting is hierarchical, so one community can switch it off while others keep it on. A
+request is therefore also refused, with the same 422 as a sample that is not requestable,
+when the setting is off for the sample's owner: their community could not act on it. The
+requestable search still lists such samples; hiding them would need a per-community filter
+in the query, which is not worth it.
+
 Requestable flags set before the feature was switched off stay in the database; with the
-gates above they are inert. Request validation (a malformed body or query parameter, 400)
-runs before the feature check, so a malformed call can tell that the endpoint exists; we
-accept that, as nothing about any request is disclosed.
+gates above they cannot be acted on. Request validation (a malformed body, query parameter
+or global id: 400 or 422) runs before the feature check, so a malformed call can tell that
+the endpoint exists; we accept that, as nothing about any request is disclosed.
 
 ### D5 Who is asked is fixed when the request is raised
 
@@ -82,8 +88,9 @@ original owner; anyone else gets 404, so its existence is not disclosed.
 
 `requesterUsername`, `originalOwner` and each history entry's `createdByUsername` are
 usernames, not foreign keys, so a request and its history survive the deletion of either
-party. The API returns them as user objects; a deleted user keeps their username with a
-null id. Deleting a user deletes the requests against their own samples, with their
+party. The API returns them as user objects with public details only (no email, home
+folder or roles), since the parties are often in different groups; a deleted user keeps
+their username with a null id. Deleting a user deletes the requests against their own samples, with their
 history. Where usernames are reused (SSO deployments, see `User.getSid`), a
 new account with a deleted requester's username sees that user's old requests as its own,
 and could cancel a pending one; matching on that security identifier would close this, and
@@ -146,13 +153,17 @@ locking read must be the transaction's first read: MariaDB 11.6+ enables
 the same transaction then fails with error 1020 instead of waiting. A unique constraint on
 (request, status) backs up the lock, since no status is reachable twice.
 
-Raising a request takes a shared lock on the requested sample, so a transfer that runs at
-the same time waits for the new request to commit and then closes it (D9), instead of
-leaving it PENDING and addressed to the previous owner.
+Raising a request takes a shared lock on the requested sample, as its first read, so a
+transfer that runs at the same time waits for the new request to commit and then closes it
+(D9), instead of leaving it PENDING and addressed to the previous owner. Only raising a
+request takes it: the fulfilled-with sample is read without a lock.
 
 Where 1020 still occurs, for example a transfer racing a fulfilment, the API returns
-409 `EDIT_CONFLICT` ("changed by someone else at the same time"), not 500. Only 1020 is
-mapped; deadlocks and lock timeouts stay 500 for now. The mapping is in
+409 `EDIT_CONFLICT` ("changed by someone else at the same time"), not 500. Deadlocks
+(1213) are mapped the same way: a fulfilment naming the request's own sample can deadlock
+with a transfer of it, because saving the history row checks its foreign key to the sample.
+MariaDB rolls the loser back, so nothing is saved and the client can retry. Lock wait
+timeouts stay 500 for now. The mapping is in
 `ApiControllerAdvice`, so it applies to every API endpoint, not only sample requests: for
 example, one user creating samples in parallel now gets 409 instead of 500.
 

@@ -21,6 +21,7 @@ import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.dao.SampleRequestDao;
+import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -29,6 +30,7 @@ import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -536,6 +538,63 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     assertThrows(
         NotFoundException.class,
         () -> sampleRequestApiMgr.updateStatus(raised.getId(), fulfil, owner));
+  }
+
+  @Test
+  public void createRequest_isRefusedWhenSampleRequestsAreOffForTheSampleOwner() {
+    User otherPi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User otherOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("otherOwner"));
+    initialiseContentWithEmptyContent(otherPi, otherOwner);
+    Group otherGroup = createGroup("otherGroup", otherPi);
+    addUsersToGroup(otherPi, otherGroup, otherOwner);
+    ApiSampleWithFullSubSamples theirSample = createBasicSampleForUser(otherOwner);
+    ApiSample requestable = new ApiSample();
+    requestable.setId(theirSample.getId());
+    requestable.setRequestable(true);
+    sampleApiMgr.updateApiSample(requestable, otherOwner);
+    // the owner's community then switches sample requests off; the requester's has them on
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    Community community = createAndSaveCommunity(sysadmin, getRandomAlphabeticString("comm"));
+    communityMgr.addGroupToCommunity(otherGroup.getId(), community.getId(), sysadmin);
+    SystemPropertyValue off =
+        new SystemPropertyValue(
+            systemPropertyMgr
+                .findByName(SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE)
+                .getProperty(),
+            HierarchicalPermission.DENIED.toString(),
+            community);
+    systemPropertyMgr.save(off, sysadmin);
+
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(theirSample.getGlobalId());
+    post.setNote("Need 2ml for the binding assay");
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleRequestApiMgr.createRequest(post, requester));
+    assertEquals("errors.inventory.sampleRequest.notRequestable", refused.getMessage());
+  }
+
+  @Test
+  public void requestParties_seeOnlyEachOthersPublicDetails() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiSampleRequest seenByRequester =
+        sampleRequestApiMgr.getRequestById(raised.getId(), requester);
+    ApiSampleRequestInfo listedForRequester =
+        listFor(SampleRequestRole.REQUESTER, requester).getRequests().get(0);
+    for (ApiUser party :
+        List.of(
+            seenByRequester.getRequester(),
+            seenByRequester.getOriginalOwner(),
+            seenByRequester.getStatusChanges().get(1).getCreatedBy(),
+            listedForRequester.getOriginalOwner())) {
+      assertNotNull(party.getUsername());
+      assertNull(party.getEmail(), party.getUsername() + "'s email");
+      assertNull(party.getHomeFolderId(), party.getUsername() + "'s home folder");
+      assertNull(party.getHasPiRole(), party.getUsername() + "'s roles");
+    }
   }
 
   @Test

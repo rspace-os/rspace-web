@@ -7,9 +7,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
+import com.researchspace.api.v1.model.ApiSampleSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequestStatus;
@@ -293,6 +295,39 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
         .stream()
         .map(ApiSampleRequestInfo::getId)
         .toList();
+  }
+
+  @Test
+  public void requestableSampleSearchOverHttp() throws Exception {
+    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
+    User stranger = createAndSaveUser(getRandomName(10));
+    initUsers(owner, stranger);
+    String strangerApiKey = createNewApiKeyForUser(stranger);
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+    ApiSampleWithFullSubSamples wanted = createBasicSampleForUser(owner, "glycerol stock");
+    markRequestable(wanted, owner);
+    markRequestable(createBasicSampleForUser(owner, "water"), owner);
+    createBasicSampleForUser(owner, "glycerol, not offered");
+
+    // a user outside the owner's group finds the requestable sample by name
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryGet(API_VERSION.ONE, strangerApiKey, "/samples", stranger)
+                    .param("requestable", "true")
+                    .param("ownedBy", owner.getUsername())
+                    .param("query", "glycerol"))
+            .andReturn();
+
+    assertNull(result.getResolvedException());
+    ApiSampleSearchResult found =
+        mvcUtils.getFromJsonResponseBody(result, ApiSampleSearchResult.class);
+    assertEquals(
+        List.of(wanted.getGlobalId()),
+        found.getSamples().stream().map(ApiSampleInfo::getGlobalId).toList());
   }
 
   private ApiSampleRequestSearchResult listRequests(
