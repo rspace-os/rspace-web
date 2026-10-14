@@ -11,9 +11,10 @@ list of bundles and their purposes.
 
 Keep entry files mount-only: they find their DOM container, call `createRoot`,
 and render inline JSX, but define no components and export nothing. Put
-components in their own modules and name new entries `*Entrypoint.tsx`, where
-Biome rejects component definitions. A component defined in an entry makes it a
-Fast Refresh boundary, so a hot update re-executes it and mounts React twice.
+components in their own modules. Every entry, and nothing else, is named
+`*Entrypoint.tsx`, where Biome rejects component definitions. A component
+defined in an entry makes it a Fast Refresh boundary, so a hot update
+re-executes it and mounts React twice.
 
 The root [package.json](../../../package.json) defines the dependencies and
 scripts for development, testing, and building the application.
