@@ -1,9 +1,9 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.dao.InstrumentCustomFieldDao;
-import com.researchspace.dao.InstrumentCustomFieldDao.DefinitionPage;
 import com.researchspace.dao.InstrumentCustomFieldDao.DefinitionRow;
 import com.researchspace.dao.InstrumentCustomFieldDao.ValueRow;
+import com.researchspace.dao.query.LookAheadPagination.Result;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -23,14 +23,12 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /** Publishes template-backed instrument fields as REST API v2 runtime fields. */
@@ -40,9 +38,9 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
   static final String NAMESPACE = RuntimeFieldNamespaces.CUSTOM_FIELDS;
 
   private static final Set<FieldType> PUBLISHED_TYPES =
-      Arrays.stream(FieldType.values())
+      java.util.Arrays.stream(FieldType.values())
           .filter(type -> valueType(type) != null)
-          .collect(Collectors.toUnmodifiableSet());
+          .collect(java.util.stream.Collectors.toUnmodifiableSet());
 
   private final InstrumentCustomFieldDao customFieldDao;
   private final InstrumentReadAccess readAccess;
@@ -66,12 +64,12 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
     }
     Set<Long> ids = new LinkedHashSet<>();
     if (query.hydratesIds()) {
-      query.ids().forEach(id -> add(ids, globalIdToDatabaseId(id)));
+      query.ids().forEach(id -> RuntimeFieldManagerSupport.add(ids, globalIdToDatabaseId(id)));
       if (ids.isEmpty()) {
         return RuntimeFieldCatalogPage.empty();
       }
     }
-    DefinitionPage page =
+    Result<DefinitionRow> page =
         customFieldDao.readableDefinitions(
             access.constraintOrEmpty().orElse(null),
             query.normalisedSearch(),
@@ -84,44 +82,19 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
 
   @Override
   public Map<String, ResolvedRuntimeField> resolveAll(Set<String> selectors, User actor) {
-    Map<String, Long> requested = new LinkedHashMap<>();
-    for (String selector : selectors) {
-      Long definitionId = definitionId(selector);
-      if (definitionId != null) {
-        requested.put(selector, definitionId);
-      }
-    }
-    if (requested.isEmpty()) {
-      return Map.of();
-    }
-    Map<String, RuntimeFieldDefinition> found = new LinkedHashMap<>();
-    List<Long> ids = new ArrayList<>(new LinkedHashSet<>(requested.values()));
-    for (int from = 0; from < ids.size(); from += RuntimeFieldCatalogQuery.MAX_IDS) {
-      Set<String> batch = new LinkedHashSet<>();
-      ids.subList(from, Math.min(from + RuntimeFieldCatalogQuery.MAX_IDS, ids.size()))
-          .forEach(id -> batch.add(globalId(id)));
-      discover(actor, RuntimeFieldCatalogQuery.byIds(batch))
-          .fields()
-          .forEach(definition -> found.put(definition.id(), definition));
-    }
-    Map<String, ResolvedRuntimeField> resolved = new LinkedHashMap<>();
-    requested.forEach(
-        (selector, definitionId) -> {
-          RuntimeFieldDefinition definition = found.get(globalId(definitionId));
-          if (definition != null) {
-            resolved.put(selector, new ResolvedRuntimeField(definition, binding(definitionId)));
-          }
-        });
-    return resolved;
+    return RuntimeFieldManagerSupport.resolveAll(
+        selectors,
+        selector -> definitionId(selector),
+        InstrumentCustomFieldManagerImpl::globalId,
+        InstrumentCustomFieldManagerImpl::binding,
+        ids -> discover(actor, RuntimeFieldCatalogQuery.byIds(ids)));
   }
 
   @Override
   public Map<Object, Map<String, Object>> values(
       List<Instrument> resources, Set<String> fieldIds, User actor) {
-    Set<Long> definitionIds = new LinkedHashSet<>();
-    fieldIds.forEach(id -> add(definitionIds, globalIdToDatabaseId(id)));
-    Set<Long> instrumentIds = new LinkedHashSet<>();
-    resources.forEach(instrument -> instrumentIds.add(instrument.getId()));
+    Set<Long> definitionIds = definitionIds(fieldIds);
+    Set<Long> instrumentIds = instrumentIds(resources);
     if (definitionIds.isEmpty() || instrumentIds.isEmpty()) {
       return Map.of();
     }
@@ -156,14 +129,8 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
   @Override
   public Map<Object, Map<String, Object>> valuesForIds(
       Collection<?> resourceIds, Set<String> fieldIds, User actor) {
-    Set<Long> instrumentIds = new LinkedHashSet<>();
-    for (Object id : resourceIds) {
-      if (id instanceof Number number) {
-        instrumentIds.add(number.longValue());
-      }
-    }
-    Set<Long> definitionIds = new LinkedHashSet<>();
-    fieldIds.forEach(id -> add(definitionIds, globalIdToDatabaseId(id)));
+    Set<Long> instrumentIds = instrumentIds(resourceIds);
+    Set<Long> definitionIds = definitionIds(fieldIds);
     if (instrumentIds.isEmpty() || definitionIds.isEmpty()) {
       return Map.of();
     }
@@ -209,10 +176,23 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
     return definitions;
   }
 
-  private static void add(Set<Long> ids, Long id) {
-    if (id != null) {
-      ids.add(id);
+  private static Set<Long> instrumentIds(Collection<?> resources) {
+    Set<Long> ids = new LinkedHashSet<>();
+    for (Object resource : resources) {
+      if (resource instanceof Instrument instrument) {
+        RuntimeFieldManagerSupport.add(ids, instrument.getId());
+      } else if (resource instanceof Number id) {
+        RuntimeFieldManagerSupport.add(ids, id.longValue());
+      }
     }
+    return ids;
+  }
+
+  private static Set<Long> definitionIds(Set<String> selectors) {
+    Set<Long> ids = new LinkedHashSet<>();
+    selectors.forEach(
+        selector -> RuntimeFieldManagerSupport.add(ids, globalIdToDatabaseId(selector)));
+    return ids;
   }
 
   private static RuntimeFieldBinding binding(Long definitionId) {
@@ -239,11 +219,7 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
   }
 
   private static Long definitionId(String selector) {
-    String prefix = NAMESPACE + ".";
-    if (selector == null || !selector.startsWith(prefix)) {
-      return null;
-    }
-    return globalIdToDatabaseId(selector.substring(prefix.length()));
+    return globalIdToDatabaseId(RuntimeFieldManagerSupport.selectorId(selector, NAMESPACE));
   }
 
   private static Long globalIdToDatabaseId(String globalId) {

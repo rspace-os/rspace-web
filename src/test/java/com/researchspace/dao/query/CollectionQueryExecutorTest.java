@@ -54,14 +54,9 @@ class CollectionQueryExecutorTest {
 
   @Test
   void pagesWithTranslatedFiltersAndMappedSortProperties() {
-    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
-    PagedList<Widget> page = erasedMock(PagedList.class);
     Widget third = new Widget(3L, "Grace");
     Widget fourth = new Widget(4L, "Linus");
-    when(query.page(2, 2)).thenReturn(paginated);
-    when(paginated.getResultList()).thenReturn(page);
-    when(page.getTotalSize()).thenReturn(5L);
-    when(page.toArray()).thenReturn(new Object[] {third, fourth});
+    stubPage(query, 2, 2, 5, third, fourth);
 
     ResourcePage<Widget> result =
         executor.page(
@@ -84,11 +79,7 @@ class CollectionQueryExecutorTest {
 
   @Test
   void countsThroughAPagedQueryOrderedByTheMappedIdProperty() {
-    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
-    PagedList<Widget> page = erasedMock(PagedList.class);
-    when(query.page(0, 1)).thenReturn(paginated);
-    when(paginated.getResultList()).thenReturn(page);
-    when(page.getTotalSize()).thenReturn(7L);
+    stubPage(query, 0, 1, 7);
 
     assertEquals(7L, executor.count(factory, session, request(null, List.of(), 1, 20)));
     verify(query).orderByAsc("item.entityId");
@@ -96,11 +87,7 @@ class CollectionQueryExecutorTest {
 
   @Test
   void returnsAnEmptyPageWithAnAccurateTotalWhenTheOffsetExceedsBlazesIntegerLimit() {
-    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
-    PagedList<Widget> countPage = erasedMock(PagedList.class);
-    when(query.page(0, 1)).thenReturn(paginated);
-    when(paginated.getResultList()).thenReturn(countPage);
-    when(countPage.getTotalSize()).thenReturn(7L);
+    stubPage(query, 0, 1, 7);
 
     ResourcePage<Widget> result =
         executor.page(factory, session, request(null, List.of(), Integer.MAX_VALUE, 2));
@@ -113,13 +100,8 @@ class CollectionQueryExecutorTest {
   @Test
   void projectsScalarRowsWithTheSameFilterConstraintsSortAndPage() {
     CriteriaBuilder<WidgetRow> projection = scalarQuery();
-    PaginatedCriteriaBuilder<WidgetRow> paginated = erasedMock(PaginatedCriteriaBuilder.class);
-    PagedList<WidgetRow> page = erasedMock(PagedList.class);
     WidgetRow row = new WidgetRow(4L, "Ada");
-    when(projection.page(2, 2)).thenReturn(paginated);
-    when(paginated.getResultList()).thenReturn(page);
-    when(page.getTotalSize()).thenReturn(5L);
-    when(page.toArray()).thenReturn(new Object[] {row});
+    stubPage(projection, 2, 2, 5, row);
     ResourceRequest request =
         request(
                 new FilterExpression.Comparison(
@@ -159,11 +141,7 @@ class CollectionQueryExecutorTest {
   @Test
   void scalarPageUsesTheMappedIdForOverflowCounts() {
     CriteriaBuilder<WidgetRow> projection = scalarQuery();
-    PaginatedCriteriaBuilder<WidgetRow> paginated = erasedMock(PaginatedCriteriaBuilder.class);
-    PagedList<WidgetRow> countPage = erasedMock(PagedList.class);
-    when(projection.page(0, 1)).thenReturn(paginated);
-    when(paginated.getResultList()).thenReturn(countPage);
-    when(countPage.getTotalSize()).thenReturn(7L);
+    stubPage(projection, 0, 1, 7);
 
     ResourcePage<WidgetRow> result =
         executor.projectedPage(
@@ -178,6 +156,27 @@ class CollectionQueryExecutorTest {
     assertEquals(List.of(), result.resources());
     assertEquals(7L, result.total());
     verify(projection).orderByAsc("item.entityId");
+  }
+
+  @Test
+  void listsAStableIdOrderedPrefix() {
+    List<Widget> widgets = List.of(new Widget(1L, "Ada"));
+    when(query.getResultList()).thenReturn(widgets);
+
+    assertEquals(
+        widgets, executor.listById(factory, session, request(null, List.of(), 1, 20), 1000));
+    verify(query).orderByAsc("item.entityId");
+    verify(query).setMaxResults(1000);
+  }
+
+  private static <T> void stubPage(
+      CriteriaBuilder<T> builder, int first, int max, long total, Object... rows) {
+    PaginatedCriteriaBuilder<T> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<T> page = erasedMock(PagedList.class);
+    when(builder.page(first, max)).thenReturn(paginated);
+    when(paginated.getResultList()).thenReturn(page);
+    when(page.getTotalSize()).thenReturn(total);
+    when(page.toArray()).thenReturn(rows);
   }
 
   private CriteriaBuilder<WidgetRow> scalarQuery() {
@@ -196,17 +195,6 @@ class CollectionQueryExecutorTest {
   @SuppressWarnings("unchecked") // Mockito has no Class token for parameterized third-party APIs.
   private static <T> T erasedMock(Class<?> rawType) {
     return (T) mock(rawType);
-  }
-
-  @Test
-  void listsAStableIdOrderedPrefix() {
-    List<Widget> widgets = List.of(new Widget(1L, "Ada"));
-    when(query.getResultList()).thenReturn(widgets);
-
-    assertEquals(
-        widgets, executor.listById(factory, session, request(null, List.of(), 1, 20), 1000));
-    verify(query).orderByAsc("item.entityId");
-    verify(query).setMaxResults(1000);
   }
 
   private static ResourceRequest request(

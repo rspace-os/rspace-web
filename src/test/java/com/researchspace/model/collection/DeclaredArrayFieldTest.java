@@ -21,6 +21,22 @@ class DeclaredArrayFieldTest {
       Field.embedded("number", CollectionFieldTypes.integer(), Row::number).defaultValue(2);
   private static final DeclaredFieldType<List<Row>> ROWS =
       CollectionFieldTypes.array(Row.class, List.of(NAME, NUMBER), DeclaredArrayFieldTest::row);
+  private static final CollectionDescription<Parent> PARENTS =
+      new CollectionDescription<>(
+          "parents",
+          Parent.class,
+          List.of(
+              Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Parent::id),
+              Relationship.referenceToOne(
+                  "item",
+                  "items",
+                  CollectionFieldTypes.longNumber(),
+                  Item.class,
+                  Parent::item,
+                  Item::id,
+                  "item.id")),
+          "id",
+          List.of(new Sort("id", true)));
 
   @Test
   void requiresUniqueChildrenAndRejectsEmbeddedQueriesAndOpaqueArrays() {
@@ -127,11 +143,7 @@ class DeclaredArrayFieldTest {
                 Field.embedded("number", CollectionFieldTypes.integer(), Row::number)
                     .writeOnlyOn(WriteOperation.CREATE)),
             DeclaredArrayFieldTest::row);
-    DeclaredFieldType<List<Group>> groups =
-        CollectionFieldTypes.array(
-            Group.class,
-            List.of(Field.embedded("detail", detail, Group::detail).required()),
-            values -> new Group((Row) values.get("detail")));
+    DeclaredFieldType<List<Group>> groups = groupsOf(detail);
     var replacement = JSON.readTree("[{\"detail\":{\"name\":\"first\"}}]");
     assertEquals(
         List.of(new Group(new Row("first", null, "private"))),
@@ -193,26 +205,7 @@ class DeclaredArrayFieldTest {
   void includedReadDocumentsCannotBypassChildProjectionOrArrayValidation() {
     CollectionDescription<Item> items =
         description(Field.readOnly("rows", "rows", ROWS, Item::rows));
-    CollectionDescription<Parent> parents =
-        new CollectionDescription<>(
-            "parents",
-            Parent.class,
-            List.of(
-                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Parent::id),
-                Relationship.referenceToOne(
-                    "item",
-                    "items",
-                    CollectionFieldTypes.longNumber(),
-                    Item.class,
-                    Parent::item,
-                    Item::id,
-                    "item.id")),
-            "id",
-            List.of(new Sort("id", true)));
-    ResourceRegistry registry = new ResourceRegistry(List.of(parents, items));
-    ResourceRenderer renderer = new ResourceRenderer(registry);
     Item item = new Item(9L, List.of());
-    Parent parent = new Parent(1L, item);
     ResourceRenderer.TargetResolver good =
         (resource, id) ->
             Optional.of(
@@ -225,16 +218,7 @@ class DeclaredArrayFieldTest {
                         "rows",
                         List.of(
                             Map.of("name", "included", "number", 3, "privateValue", "hidden")))));
-    Map<?, ?> reference =
-        (Map<?, ?>)
-            renderer
-                .render(
-                    parent,
-                    parents,
-                    FieldSelection.all(),
-                    IncludeTree.toDepth(parents, registry, 1),
-                    good)
-                .get("item");
+    Map<?, ?> reference = (Map<?, ?>) renderIncluded(items, item, good).get("item");
     assertEquals(
         List.of(Map.of("name", "included", "number", 3)),
         ((Map<?, ?>) reference.get("value")).get("rows"));
@@ -243,15 +227,7 @@ class DeclaredArrayFieldTest {
             Optional.of(
                 ResourceRenderer.ResolvedTarget.lazy(
                     () -> item, FieldSelection.all(), Map.of("id", 9L, "rows", List.of("scalar"))));
-    assertThrows(
-        EmbeddedFieldException.class,
-        () ->
-            renderer.render(
-                parent,
-                parents,
-                FieldSelection.all(),
-                IncludeTree.toDepth(parents, registry, 1),
-                bad));
+    assertThrows(EmbeddedFieldException.class, () -> renderIncluded(items, item, bad));
   }
 
   @Test
@@ -330,11 +306,7 @@ class DeclaredArrayFieldTest {
             Row.class,
             List.of(NAME.readableBy(AccessFunction.never()), NUMBER),
             DeclaredArrayFieldTest::row);
-    DeclaredFieldType<List<Group>> groups =
-        CollectionFieldTypes.array(
-            Group.class,
-            List.of(Field.embedded("detail", detail, Group::detail).required()),
-            values -> new Group((Row) values.get("detail")));
+    DeclaredFieldType<List<Group>> groups = groupsOf(detail);
     CollectionDescription<GroupItem> items =
         new CollectionDescription<>(
             "groups",
@@ -491,38 +463,12 @@ class DeclaredArrayFieldTest {
             List.of(new Sort("id", true)));
     Item item = new Item(9L, List.of());
     assertEquals(9L, items.toDocument(item).get("id"));
-    CollectionDescription<Parent> parents =
-        new CollectionDescription<>(
-            "parents",
-            Parent.class,
-            List.of(
-                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Parent::id),
-                Relationship.referenceToOne(
-                    "item",
-                    "items",
-                    CollectionFieldTypes.longNumber(),
-                    Item.class,
-                    Parent::item,
-                    Item::id,
-                    "item.id")),
-            "id",
-            List.of(new Sort("id", true)));
-    ResourceRegistry registry = new ResourceRegistry(List.of(parents, items));
     ResourceRenderer.TargetResolver resolver =
         (resource, id) ->
             Optional.of(
                 ResourceRenderer.ResolvedTarget.lazy(
                     () -> item, FieldSelection.all(), Map.of("id", 9L, "rows", List.of())));
-    Map<?, ?> reference =
-        (Map<?, ?>)
-            new ResourceRenderer(registry)
-                .render(
-                    new Parent(1L, item),
-                    parents,
-                    FieldSelection.all(),
-                    IncludeTree.toDepth(parents, registry, 1),
-                    resolver)
-                .get("item");
+    Map<?, ?> reference = (Map<?, ?>) renderIncluded(items, item, resolver).get("item");
     assertEquals(9L, ((Map<?, ?>) reference.get("value")).get("id"));
   }
 
@@ -561,6 +507,25 @@ class DeclaredArrayFieldTest {
         List.of(Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Item::id), rows),
         "id",
         List.of(new Sort("id", true)));
+  }
+
+  private static DeclaredFieldType<List<Group>> groupsOf(DeclaredFieldType<Row> detail) {
+    return CollectionFieldTypes.array(
+        Group.class,
+        List.of(Field.embedded("detail", detail, Group::detail).required()),
+        values -> new Group((Row) values.get("detail")));
+  }
+
+  private static Map<String, Object> renderIncluded(
+      CollectionDescription<Item> items, Item item, ResourceRenderer.TargetResolver resolver) {
+    ResourceRegistry registry = new ResourceRegistry(List.of(PARENTS, items));
+    return new ResourceRenderer(registry)
+        .render(
+            new Parent(1L, item),
+            PARENTS,
+            FieldSelection.all(),
+            IncludeTree.toDepth(PARENTS, registry, 1),
+            resolver);
   }
 
   private static class MutableArray implements DeclaredFieldType<List<Row>> {

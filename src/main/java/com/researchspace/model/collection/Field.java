@@ -275,9 +275,9 @@ public final class Field<T, V> implements ResourceMember<T> {
         supportsWildcards(),
         sortable(),
         openApi,
-        CollectionSchemaBuilder.documented(readAccess, inherited.readAccess()),
-        CollectionSchemaBuilder.documented(createAccess, inherited.createAccess()),
-        CollectionSchemaBuilder.documented(updateAccess, inherited.updateAccess()),
+        CollectionSchemaBuilder.documented(childAccess.readAccess()),
+        CollectionSchemaBuilder.documented(childAccess.createAccess()),
+        CollectionSchemaBuilder.documented(childAccess.updateAccess()),
         type.fields().stream().map(child -> child.schema(childAccess)).toList());
   }
 

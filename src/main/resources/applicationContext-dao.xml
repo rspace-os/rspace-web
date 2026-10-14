@@ -5,14 +5,12 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <!-- Applies the Liquibase schema changes at startup. -->
+    <!--  used to apply liquibase DB schema changes -->
     <bean depends-on="appContextRetriever, loggingInitializer" id="liquibase" class="liquibase.integration.spring.SpringLiquibase">
         <property name="dataSource" ref="dataSource" />
         <property name="changeLog" value="classpath:sqlUpdates/liquibase-master.xml" />
-        <!-- Runtime Liquibase contexts. The pom excludes this file from Maven filtering and
-             re-adds it unfiltered, so ${liquibase.context} resolves from deployment.properties
-             when the server starts. The copy under src/test/resources is filtered, so there
-             Maven substitutes the same placeholder at build time. -->
+        <!-- Runtime Liquibase contexts. This file is excluded from Maven filtering (see pom.xml),
+             so ${liquibase.context} resolves from deployment.properties at runtime. -->
         <property name="contexts" value="${liquibase.context}" />
     </bean>
 
@@ -30,44 +28,28 @@
 				<prop key="hibernate.cache.use_second_level_cache">true</prop>
 				<prop key="hibernate.cache.use_query_cache">true</prop>
 				<prop key="hibernate.cache.region.factory_class">org.hibernate.cache.jcache.JCacheRegionFactory</prop>
-				<!-- hibernate-jcache reads only the hibernate.javax.cache.* keys, because JCache never
-				     moved to the jakarta namespace. Hibernate's ClassLoaderService resolves the uri as a
-				     classpath resource, so it takes no classpath: prefix. Given a wrong key or uri,
-				     Hibernate falls back to an empty default CacheManager without raising an error, and
-				     every region becomes an untuned create-warn default with unlimited size and no expiry.
-				     SecondLevelCacheTestIT guards this wiring. -->
+				<!-- Hibernate 6.4's JCache integration uses the hibernate.javax.cache.* settings. The URI
+				     is resolved as a classpath resource; an invalid URI prevents SessionFactory startup. -->
 				<prop key="hibernate.javax.cache.provider">org.ehcache.jsr107.EhcacheCachingProvider</prop>
 				<prop key="hibernate.javax.cache.uri">ehcache.xml</prop>
-				<!-- The hibernate-jcache default, made explicit and pinned by EhcacheRegionConfigTest.
-				     When ehcache.xml has no matching region, Hibernate creates one untuned, with unbounded
-				     heap and no expiry, and logs a warning instead of failing startup.
-				     EhcacheRegionConfigTest keeps ehcache.xml complete, so that path should never run. -->
+				<!-- A missing region is created with JCache's default configuration and a warning. Keep
+				     ehcache.xml complete so the configured regions retain their intended limits. -->
 				<prop key="hibernate.javax.cache.missing_cache_strategy">create-warn</prop>
 				<prop key="hibernate.search.indexing.plan.synchronization.strategy">sync</prop>
 				<prop key="jakarta.persistence.validation.factory">#{@validator}</prop>
-				<!-- Id generation for TABLE-strategy entities. Every such entity carries an explicit
-				     @TableGenerator keyed to its own row in hibernate_sequences. Where a generator declares
-				     no pkColumnValue, Hibernate segments it by the entity's physical table name, because
-				     prefer_entity_table_as_segment_value defaults to true for annotation-defined table
-				     generators. That keeps the one counter per table layout Hibernate 5 used.
-				     The two TABLE_PER_CLASS hierarchies, AbstractUserOrGroupImpl and Communication, pin
-				     pkColumnValue explicitly because sibling tables must share one counter. On upgrade,
-				     changeLog-rsdev-444.xml re-seeds every row above its table's MAX(id), so allocation
-				     cannot collide with pre-upgrade ids. Do NOT add a bare @GeneratedValue(strategy=TABLE)
-				     without a generator. It would allocate from a shared "default" segment, which
-				     TableIdGeneratorConfigTest fails on. See DevDocs/DeveloperNotes/UpgradingToSpring6.md,
-				     "What the migration changes in the database". -->
+				<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
+				     @TableGenerator, keyed to its own row in hibernate_sequences.
+				     Generators declared without pkColumnValue segment by the entity's physical table
+				     name (Hibernate defaults prefer_entity_table_as_segment_value=true for
+				     annotation-defined table generators), preserving the one-counter-per-table layout
+				     Hibernate 5 used. The two TABLE_PER_CLASS hierarchies (AbstractUserOrGroupImpl,
+				     Communication) pin pkColumnValue explicitly because sibling tables share one counter.
+				     On upgrade, changeLog-rsdev-444.xml re-seeds every row above its table's MAX(id),
+				     avoiding collisions with pre-upgrade ids. -->
 			</props>
     	</property>
     </bean>
 
-    <bean id="blazeCriteriaConfiguration"
-          class="com.researchspace.dao.query.BlazeCriteriaConfiguration"
-          factory-method="create" />
-    <bean id="criteriaBuilderFactory"
-          factory-bean="blazeCriteriaConfiguration"
-          factory-method="createCriteriaBuilderFactory">
-        <constructor-arg ref="sessionFactory" />
-    </bean>
+    <import resource="classpath:applicationContext-blaze.xml" />
 
 </beans>

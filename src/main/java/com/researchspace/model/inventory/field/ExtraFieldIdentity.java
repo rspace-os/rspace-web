@@ -6,8 +6,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HexFormat;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * The stable identity of an ad-hoc extra-field definition: its exact name and its declared type.
@@ -77,16 +80,30 @@ public final class ExtraFieldIdentity {
       }
       return null;
     }
+
+    public static PublishedType fromEntityType(Class<?> entityType) {
+      for (PublishedType published : values()) {
+        if (published.entityType == entityType) return published;
+      }
+      return null;
+    }
   }
 
   /** One definition: an exact name and the type it was declared with. */
-  public record Definition(String name, FieldType type) {}
+  public record Definition(String name, FieldType type) {
+
+    public Definition {
+      Objects.requireNonNull(name, "Extra field name");
+      Objects.requireNonNull(type, "Extra field type");
+    }
+  }
 
   private ExtraFieldIdentity() {}
 
   public static Set<FieldType> publishedTypes() {
-    return Set.of(
-        PublishedType.TEXT.fieldType, PublishedType.NUMBER.fieldType, PublishedType.LINK.fieldType);
+    return Arrays.stream(PublishedType.values())
+        .map(PublishedType::fieldType)
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   /**

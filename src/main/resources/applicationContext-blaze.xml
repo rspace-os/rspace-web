@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean id="blazeCriteriaConfiguration"
+          class="com.researchspace.dao.query.BlazeCriteriaConfiguration"
+          factory-method="create" />
+    <bean id="criteriaBuilderFactory"
+          factory-bean="blazeCriteriaConfiguration"
+          factory-method="createCriteriaBuilderFactory">
+        <constructor-arg ref="sessionFactory" />
+    </bean>
+
+</beans>
