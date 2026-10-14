@@ -1,12 +1,17 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
+import type { DayTimelineRange } from "@/modules/booking/components/DayTimelineEvent";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
 import {
   type OpeningHoursEntry,
   type OpeningSchedule,
   openingIntervals,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
+import {
+  type AbsoluteDisplayInterval,
+  displayInterval,
+  instantToDayMinute,
+} from "@/modules/booking/domain/bookingTime";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 import { fetchDayBookings } from "./fetchDayBookings";
 
@@ -48,6 +53,8 @@ export type BookingConflict = NonNullable<AvailabilitySource["booking"]> & {
   end: string;
   timezone: string;
   instrumentTimeZone?: string | null;
+  /** The draft only reaches the buffer around this event, not the event itself. */
+  bufferOnly?: boolean;
 };
 
 export function bookingConflicts(
@@ -58,13 +65,23 @@ export function bookingConflicts(
   const conflicts = new Map<number, BookingConflict>();
   for (const interval of intervals) {
     const booking = interval.source.booking;
-    if (!booking || booking.id === excludedBookingId || conflicts.has(booking.id)) continue;
+    if (!booking || booking.id === excludedBookingId) continue;
+    // Intervals are buffer-widened and clipped to the draft, so missing the raw event means only the buffer overlaps.
+    const bufferOnly =
+      interval.endsAt.getTime() <= interval.source.startsAt.getTime() ||
+      interval.startsAt.getTime() >= interval.source.endsAt.getTime();
+    const existing = conflicts.get(booking.id);
+    if (existing) {
+      if (!bufferOnly) existing.bufferOnly = false;
+      continue;
+    }
     conflicts.set(booking.id, {
       ...booking,
       start: interval.source.startsAt.toISOString(),
       end: interval.source.endsAt.toISOString(),
       timezone,
       instrumentTimeZone: booking.instrumentTimeZone ?? null,
+      bufferOnly,
     });
   }
   return [...conflicts.values()];
@@ -281,8 +298,10 @@ function sourcedInterval(
   };
 }
 
+type ClosureSchedule = OpeningSchedule & { globalId: string; timezone: string };
+
 function closedInterval(
-  row: CalendarAvailabilityRow,
+  row: ClosureSchedule,
   startsAt: string,
   endsAt: string,
   interval: AbsoluteDisplayInterval,
@@ -296,10 +315,7 @@ function closedInterval(
   return clipInterval(candidate, interval);
 }
 
-function closedIntervals(
-  row: CalendarAvailabilityRow,
-  interval: AbsoluteDisplayInterval,
-): SourcedAvailabilityInterval[] {
+function closedIntervals(row: ClosureSchedule, interval: AbsoluteDisplayInterval): SourcedAvailabilityInterval[] {
   const closed: SourcedAvailabilityInterval[] = [];
   let cursor = interval.start;
   for (const opening of [
@@ -311,6 +327,16 @@ function closedIntervals(
     cursor = opening.end;
   }
   return closed;
+}
+
+/** Closed periods on the displayed `date`, in timeline elapsed-minute coordinates for `timezone`. */
+export function closedDayRanges(row: ClosureSchedule, date: string, timezone: string): DayTimelineRange[] {
+  const interval = displayInterval(date, timezone, "00:00", "24:00");
+  if (interval.elapsedMinutes === 0) return [];
+  return closedIntervals(row, interval).map((closed) => ({
+    startMinute: instantToDayMinute(closed.startsAt.toISOString(), date, timezone),
+    endMinute: instantToDayMinute(closed.endsAt.toISOString(), date, timezone),
+  }));
 }
 
 function bookingInterval(
