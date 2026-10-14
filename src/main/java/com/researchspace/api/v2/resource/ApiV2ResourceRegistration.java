@@ -15,6 +15,7 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionQueryException;
+import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
@@ -515,9 +516,6 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     if (result.isDenied()) {
       return Map.of();
     }
-    FilterExpression idsFilter =
-        new FilterExpression.Comparison(
-            description.idField(), Operator.IN, new ArrayList<>(ids), false);
     return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
             actor,
             description.resourceName(),
@@ -544,20 +542,33 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
                                     document)));
                 return Optional.of(resolved);
               }
-              List<T> resources =
-                  operations
-                      .find(
-                          new ResourceRequest(
-                              idsFilter,
-                              description.defaultSort(),
-                              new ResourceRequest.Page(1, ids.size()),
-                              FieldSelection.all(),
-                              IncludeTree.empty()),
-                          actor)
-                      .resources()
-                      .stream()
-                      .filter(entity -> ids.contains(description.idValue(entity)))
-                      .toList();
+              List<T> resources = new ArrayList<>();
+              List<ID> orderedIds = new ArrayList<>(ids);
+              for (int from = 0;
+                  from < orderedIds.size();
+                  from += CollectionQueryLimits.MAX_PAGE_SIZE) {
+                List<ID> batch =
+                    orderedIds.subList(
+                        from,
+                        Math.min(from + CollectionQueryLimits.MAX_PAGE_SIZE, orderedIds.size()));
+                FilterExpression idsFilter =
+                    new FilterExpression.Comparison(
+                        description.idField(), Operator.IN, new ArrayList<>(batch), false);
+                resources.addAll(
+                    operations
+                        .find(
+                            new ResourceRequest(
+                                idsFilter,
+                                description.defaultSort(),
+                                new ResourceRequest.Page(1, batch.size()),
+                                FieldSelection.all(),
+                                IncludeTree.empty()),
+                            actor)
+                        .resources()
+                        .stream()
+                        .filter(entity -> batch.contains(description.idValue(entity)))
+                        .toList());
+              }
               Map<Object, Map<String, Object>> overrides =
                   operations.readOverrides(resources, actor);
               Map<Object, ResolvedTarget> resolved = new LinkedHashMap<>();
