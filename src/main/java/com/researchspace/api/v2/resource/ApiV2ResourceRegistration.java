@@ -114,6 +114,16 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
 
   public ApiV2ListResult<Map<String, Object>> list(ResourceRequest request, User caller) {
     ResourceRequest authorized = authorize(Operation.READ, caller, request);
+    if (operations.usesReadDocuments()) {
+      return crud.listReadDocuments(
+          authorized,
+          caller,
+          id ->
+              narrowFields(
+                  new AccessContext(caller, Operation.READ, description.resourceName(), id),
+                  authorized.fields()),
+          runtimeReadDocumentValues(authorized, caller));
+    }
     return crud.list(
         authorized,
         caller,
@@ -227,13 +237,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     if (request.runtime().projected().isEmpty()) {
       return ApiV2CrudDispatcher.DocumentDecorator.none();
     }
-    Map<RuntimeCollectionFields<T>, Set<String>> requested = new LinkedHashMap<>();
-    for (RuntimeCollectionFields<T> provider : spec.runtimeFields()) {
-      Set<String> ids = request.runtime().projectedIdsUnder(provider.namespace());
-      if (!ids.isEmpty()) {
-        requested.put(provider, ids);
-      }
-    }
+    Map<RuntimeCollectionFields<T>, Set<String>> requested = requestedRuntimeValues(request);
     Map<String, Set<String>> hopped = hoppedProjections(request);
     if (requested.isEmpty() && hopped.isEmpty()) {
       return ApiV2CrudDispatcher.DocumentDecorator.none();
@@ -249,6 +253,40 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
           });
       hopped.forEach(
           (responseField, ids) -> attachHopped(responseField, ids, resources, documents, caller));
+    };
+  }
+
+  private Map<RuntimeCollectionFields<T>, Set<String>> requestedRuntimeValues(
+      ResourceRequest request) {
+    Map<RuntimeCollectionFields<T>, Set<String>> requested = new LinkedHashMap<>();
+    for (RuntimeCollectionFields<T> provider : spec.runtimeFields()) {
+      Set<String> ids = request.runtime().projectedIdsUnder(provider.namespace());
+      if (!ids.isEmpty()) {
+        requested.put(provider, ids);
+      }
+    }
+    return requested;
+  }
+
+  private ApiV2CrudDispatcher.ReadDocumentDecorator runtimeReadDocumentValues(
+      ResourceRequest request, User caller) {
+    Map<RuntimeCollectionFields<T>, Set<String>> requested = requestedRuntimeValues(request);
+    if (requested.isEmpty()) {
+      return ApiV2CrudDispatcher.ReadDocumentDecorator.none();
+    }
+    return (resources, documents) -> {
+      List<Object> resourceIds =
+          resources.stream().map(resource -> resource.get(description.idField())).toList();
+      requested.forEach(
+          (provider, ids) -> {
+            Map<Object, Map<String, Object>> values =
+                provider.valuesForAuthorizedIds(resourceIds, ids, caller);
+            for (int index = 0; index < resourceIds.size(); index++) {
+              documents
+                  .get(index)
+                  .put(provider.namespace(), values.getOrDefault(resourceIds.get(index), Map.of()));
+            }
+          });
     };
   }
 
@@ -320,9 +358,15 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     ID id = parseId(rawId);
     AccessContext context =
         new AccessContext(caller, Operation.READ, description.resourceName(), id);
-    decide(context, Operation.READ);
+    AccessResult access = decide(context, Operation.READ);
     rejectUnreadableQueryFields(context, request);
     ResourceRequest narrowed = narrowSelection(context, request);
+    if (operations.usesReadDocuments()) {
+      ResourceRequest authorized =
+          access.constraintOrEmpty().map(narrowed::restrict).orElse(narrowed);
+      return crud.getReadDocument(
+          id, authorized, caller, runtimeReadDocumentValues(authorized, caller));
+    }
     return crud.get(id, narrowed, caller, runtimeValues(narrowed, caller));
   }
 
