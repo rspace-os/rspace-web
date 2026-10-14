@@ -4,18 +4,16 @@ import * as v from "valibot";
 import type { AvailabilityInterval, SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
 import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "@/modules/booking/domain/booking";
 import {
-  type AbsoluteDisplayInterval,
-  addCalendarDays,
-  displayInterval,
-  zonedDayBounds,
-} from "@/modules/booking/domain/bookingTime";
+  type OpeningHoursEntry,
+  type OpeningSchedule,
+  openingIntervals,
+} from "@/modules/booking/domain/bookingOpeningHours";
+import { type AbsoluteDisplayInterval, displayInterval, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 
-export type CalendarAvailabilityRow = {
+export type CalendarAvailabilityRow = OpeningSchedule & {
   globalId: string;
   timezone: string;
-  openingStart: string;
-  openingEnd: string;
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
   allowDoubleBooking: boolean;
@@ -26,16 +24,14 @@ export type DatedCalendarAvailabilityRow = CalendarAvailabilityRow & { date: str
 export function calendarAvailabilityRow(row: {
   globalId: string;
   timezone?: string;
-  openingStart?: string;
-  openingEnd?: string;
+  openingHours?: readonly OpeningHoursEntry[];
   bufferBeforeMinutes?: number;
   bufferAfterMinutes?: number;
   allowDoubleBooking?: boolean;
 }): CalendarAvailabilityRow | undefined {
   if (
     row.timezone === undefined ||
-    row.openingStart === undefined ||
-    row.openingEnd === undefined ||
+    row.openingHours === undefined ||
     row.bufferBeforeMinutes === undefined ||
     row.bufferAfterMinutes === undefined ||
     row.allowDoubleBooking === undefined
@@ -45,8 +41,7 @@ export function calendarAvailabilityRow(row: {
   return {
     globalId: row.globalId,
     timezone: row.timezone,
-    openingStart: row.openingStart,
-    openingEnd: row.openingEnd,
+    openingHours: row.openingHours,
     bufferBeforeMinutes: row.bufferBeforeMinutes,
     bufferAfterMinutes: row.bufferAfterMinutes,
     allowDoubleBooking: row.allowDoubleBooking,
@@ -99,18 +94,6 @@ function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval
     start: Temporal.Instant.from(interval.start).subtract({ minutes: after }).toString(),
     end: Temporal.Instant.from(interval.end).add({ minutes: before }).toString(),
   };
-}
-
-function schedulingDates(row: CalendarAvailabilityRow, interval: AbsoluteDisplayInterval): string[] {
-  const first = Temporal.Instant.from(interval.start).toZonedDateTimeISO(row.timezone).toPlainDate().toString();
-  const last = Temporal.Instant.from(interval.end)
-    .subtract({ nanoseconds: 1 })
-    .toZonedDateTimeISO(row.timezone)
-    .toPlainDate()
-    .toString();
-  const dates = [first];
-  while (dates.at(-1) !== last) dates.push(addCalendarDays(dates.at(-1) ?? first, 1));
-  return dates;
 }
 
 function clipInterval<T extends AvailabilityInterval>(candidate: T, interval: AbsoluteDisplayInterval): T | undefined {
@@ -171,23 +154,17 @@ function closedIntervals(
   row: CalendarAvailabilityRow,
   interval: AbsoluteDisplayInterval,
 ): SourcedAvailabilityInterval[] {
-  if (row.openingStart === "00:00" && row.openingEnd === "24:00") return [];
-  return schedulingDates(row, interval).flatMap((dateValue) => {
-    const date = Temporal.PlainDate.from(dateValue);
-    const day = zonedDayBounds(dateValue, row.timezone);
-    const openingStart = date
-      .toZonedDateTime({ timeZone: row.timezone, plainTime: row.openingStart })
-      .toInstant()
-      .toString();
-    const openingEnd =
-      row.openingEnd === "24:00"
-        ? day.end
-        : date.toZonedDateTime({ timeZone: row.timezone, plainTime: row.openingEnd }).toInstant().toString();
-    return [
-      closedInterval(row, day.start, openingStart, interval),
-      closedInterval(row, openingEnd, day.end, interval),
-    ].filter((value): value is SourcedAvailabilityInterval => value !== undefined);
-  });
+  const closed: SourcedAvailabilityInterval[] = [];
+  let cursor = interval.start;
+  for (const opening of [
+    ...openingIntervals(row, row.timezone, interval),
+    { start: interval.end, end: interval.end },
+  ]) {
+    const gap = closedInterval(row, cursor, opening.start, interval);
+    if (gap) closed.push(gap);
+    cursor = opening.end;
+  }
+  return closed;
 }
 
 function bookingInterval(
@@ -307,8 +284,7 @@ export function useCalendarAvailability(
     .map((row) => [
       row.globalId,
       row.timezone,
-      row.openingStart,
-      row.openingEnd,
+      JSON.stringify(row.openingHours),
       row.bufferBeforeMinutes,
       row.bufferAfterMinutes,
       row.allowDoubleBooking,
