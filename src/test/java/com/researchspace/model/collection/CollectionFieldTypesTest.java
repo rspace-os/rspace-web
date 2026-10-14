@@ -134,17 +134,16 @@ class CollectionFieldTypesTest {
                     List.of(Field.embedded("name", CollectionFieldTypes.text(), Item::name)),
                     values -> new Item(null, (String) values.get("name"))),
                 minLength(1)));
+    CollectionFieldType<String> structured =
+        CollectionFieldTypes.structured(
+            String.class,
+            CollectionFieldType.InputKind.OBJECT,
+            Map.of(),
+            JsonNode::toString,
+            value -> value);
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            CollectionFieldTypes.constrained(
-                CollectionFieldTypes.structured(
-                    String.class,
-                    CollectionFieldType.InputKind.ARRAY,
-                    Map.of(),
-                    JsonNode::toString,
-                    value -> value),
-                minLength(1)));
+        () -> CollectionFieldTypes.constrained(structured, minLength(1)));
     assertThrows(
         IllegalArgumentException.class,
         () ->
