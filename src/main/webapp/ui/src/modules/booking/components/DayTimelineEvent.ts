@@ -68,8 +68,16 @@ export type DayTimelineViewState = {
 export type DayTimelineRange = Readonly<{ startMinute: number; endMinute: number }>;
 
 export type DayTimelineActionRenderers = {
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => ReactNode;
+  renderEventActions?: (
+    event: Extract<DayTimelineEvent, { kind: "booking" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => ReactNode;
+  renderBlockoutActions?: (
+    event: Extract<DayTimelineEvent, { kind: "blockout" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => ReactNode;
 };
 
 /** Machine-readable `HH:mm` for `<time dateTime>` attributes; use formatMinuteWithDayOffset for visible text. */

@@ -103,11 +103,7 @@ describe("CalendarPage", () => {
       await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
       expect(saved).toBe(true);
       expect(versions).toEqual(['"0"', '"1"']);
-      expect(patches[1]).toEqual({
-        start: ownBooking.start,
-        end: ownBooking.end,
-        purpose: "Keep my calendar draft",
-      });
+      expect(patches[1]).toEqual({ purpose: "Keep my calendar draft" });
     },
   );
 
@@ -145,7 +141,12 @@ describe("CalendarPage", () => {
     await user.type(await within(card).findByRole("textbox", { name: "Purpose" }), " first draft");
     await user.click(within(card).getByRole("button", { name: "Save changes" }));
 
-    const purpose = await within(card).findByDisplayValue("Concurrent edit");
+    expect(await within(card).findByRole("alert")).toHaveTextContent(
+      "Someone else changed this booking while you were editing. Your changes are kept",
+    );
+    await waitFor(() => expect(within(card).getByRole("button", { name: "Save changes" })).toBeEnabled());
+    const purpose = within(card).getByRole("textbox", { name: "Purpose" });
+    expect(purpose).toHaveValue(`${ownBooking.purpose} first draft`);
     await user.type(purpose, " updated");
     await user.click(within(card).getByRole("button", { name: "Save changes" }));
 

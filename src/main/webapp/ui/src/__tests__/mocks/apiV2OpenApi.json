@@ -2043,6 +2043,15 @@
               "description" : "A logged-in session is required."
             }
           },
+          "cancellationReason" : {
+            "maxLength" : 500,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
           "createdAt" : {
             "format" : "date-time",
             "readOnly" : true,
@@ -2285,6 +2294,15 @@
       "BookingsUpdate" : {
         "additionalProperties" : false,
         "properties" : {
+          "cancellationReason" : {
+            "maxLength" : 500,
+            "type" : [ "string", "null" ],
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
           "end" : {
             "format" : "date-time",
             "type" : "string",
@@ -8025,7 +8043,7 @@
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
             "booking-locations" : [ "id", "globalId", "name" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "cancellationReason", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "exclude"
@@ -8054,7 +8072,7 @@
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
             "booking-locations" : [ "id", "globalId", "name" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "cancellationReason", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "fields"
@@ -8842,7 +8860,7 @@
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
             "booking-locations" : [ "id", "globalId", "name" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "cancellationReason", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "exclude"
@@ -8871,7 +8889,7 @@
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
             "booking-locations" : [ "id", "globalId", "name" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "cancellationReason", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "fields"
@@ -8964,7 +8982,7 @@
         "x-rspace-operation" : "READ"
       },
       "patch" : {
-        "description" : "Partially updates one bookings and returns the updated document.",
+        "description" : "Updates or cancels one booking.",
         "operationId" : "updateBookings",
         "parameters" : [ {
           "description" : "Resource identifier.",
@@ -8988,6 +9006,10 @@
         "requestBody" : {
           "content" : {
             "application/json" : {
+              "example" : {
+                "cancellationReason" : "Instrument needs recalibration",
+                "state" : "CANCELLED"
+              },
               "schema" : {
                 "$ref" : "#/components/schemas/BookingsUpdate"
               }
@@ -9051,6 +9073,24 @@
             "content" : {
               "application/problem+json" : {
                 "examples" : {
+                  "errors.api.v2.booking.cancellationReason.length" : {
+                    "summary" : "The cancellation reason must not exceed 500 characters.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.cancellationReason.length",
+                      "detail" : "The cancellation reason must not exceed 500 characters.",
+                      "status" : 400,
+                      "title" : "The cancellation reason must not exceed 500 characters."
+                    }
+                  },
+                  "errors.api.v2.booking.cancellationReason.requiresCancel" : {
+                    "summary" : "A cancellation reason can only be supplied when cancelling a booking.",
+                    "value" : {
+                      "code" : "errors.api.v2.booking.cancellationReason.requiresCancel",
+                      "detail" : "A cancellation reason can only be supplied when cancelling a booking.",
+                      "status" : 400,
+                      "title" : "A cancellation reason can only be supplied when cancelling a booking."
+                    }
+                  },
                   "errors.api.v2.booking.duration" : {
                     "summary" : "The booking interval exceeds 366 days.",
                     "value" : {
@@ -9084,7 +9124,7 @@
                 }
               }
             },
-            "description" : "The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 366 days."
+            "description" : "The booking start must be in the future. The booking interval is invalid. The booking interval exceeds 366 days. The cancellation reason must not exceed 500 characters. A cancellation reason can only be supplied when cancelling a booking."
           },
           "401" : {
             "$ref" : "#/components/responses/Unauthenticated"

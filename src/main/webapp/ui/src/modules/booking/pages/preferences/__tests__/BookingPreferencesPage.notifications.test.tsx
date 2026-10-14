@@ -83,4 +83,30 @@ describe("BookingPreferencesPage", () => {
     expect(cancelled).not.toBeChecked();
     await expectAccessible(container);
   });
+
+  it("keeps notification choices after a failed save and allows retrying", async () => {
+    const user = userEvent.setup();
+    let attempts = 0;
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
+      http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
+        attempts += 1;
+        return attempts === 1
+          ? HttpResponse.json({}, { status: 503 })
+          : HttpResponse.json({ ...((await request.json()) as object), emailDelivery: false });
+      }),
+    );
+    renderPage();
+    const on = await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" });
+    await user.click(on);
+    const save = screen.getByRole("button", { name: "booking:notificationSubscriptions.preferences.save" });
+    await user.click(save);
+    expect(await screen.findByText("booking:notificationSubscriptions.preferences.saveError")).toBeVisible();
+    expect(on).toBeChecked();
+    expect(save).toBeEnabled();
+    await user.click(save);
+    expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+    expect(attempts).toBe(2);
+  });
 });

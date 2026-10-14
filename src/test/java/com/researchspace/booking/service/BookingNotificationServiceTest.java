@@ -179,11 +179,13 @@ class BookingNotificationServiceTest {
   }
 
   @Test
-  void marksCancellationRequesterForEventPreferenceOverride() {
+  void addsCancellationReasonAndPreferenceOverrideForARequesterCancelledBySomeoneElse() {
     User actor = user(1L, "owner");
     User requester = user(2L, "requester");
-    when(instrumentDao.getSafeNull(INSTRUMENT_ID))
-        .thenReturn(Optional.of(instrument("Microscope")));
+    Instrument instrument = instrument("Microscope");
+    TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, requester);
+    booking.setCancellationReason("Needs <repair>");
+    when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
     when(recipientReader.selectRecipients(
             INSTRUMENT_ID,
             NotificationType.NOTIFICATION_BOOKING_CANCELLED,
@@ -194,15 +196,18 @@ class BookingNotificationServiceTest {
                 new BookingNotificationRecipient(
                     requester, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, true)));
 
-    service.notify(
-        booking(BOOKING_ID, BookingEventKind.BOOKING, requester),
-        actor,
-        NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+    service.notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
 
     ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
-    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), any());
+    ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
+    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), message.capture());
     assertTrue(config.getValue().isNotificationEventPreferenceOverride());
     assertEquals(Set.of(requester), config.getValue().getNotificationTargetsOverride());
+    assertEquals(
+        "Needs <repair>",
+        ((BookingNotificationData) config.getValue().getNotificationData())
+            .getCancellationReason());
+    assertTrue(message.getValue().contains("Reason: Needs &lt;repair&gt;"), message.getValue());
   }
 
   @Test
