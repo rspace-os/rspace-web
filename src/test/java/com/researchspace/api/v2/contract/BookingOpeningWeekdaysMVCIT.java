@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.contract;
 
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -14,14 +15,15 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.booking.BookingOpeningException;
+import com.researchspace.model.booking.BookingOpeningHoursCodec;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.envers.AuditReaderFactory;
@@ -36,11 +38,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.context.WebApplicationContext;
 
-/** Open weekdays and opening exceptions through the collection API, schema and Envers history. */
+/** Independent weekday hours through HTTP, persistence and Envers history. */
 @ApiV2WebIntegrationTest
 class BookingOpeningWeekdaysMVCIT {
-
-  private static final String EXCEPTION = "{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}";
 
   @Autowired private WebApplicationContext context;
   @Autowired private JdbcTemplate jdbcTemplate;
@@ -62,75 +62,72 @@ class BookingOpeningWeekdaysMVCIT {
   }
 
   @Test
-  void freshSchemaDefaultsSevenOpenDaysAndNoExceptions() {
-    Map<String, Object> defaults =
-        jdbcTemplate.queryForMap(
-            "select openDays, openingExceptions from BookingConfigurationDefaults where id = 1");
-
-    assertEquals("[1,2,3,4,5,6,7]", defaults.get("openDays"));
-    assertEquals("[]", defaults.get("openingExceptions"));
+  void freshSchemaDefaultsSevenIndependentFullDays() {
+    assertEquals(
+        BookingSchedulingSettings.DEFAULT_OPENING_HOURS,
+        BookingOpeningHoursCodec.openingHours(
+            jdbcTemplate.queryForObject(
+                "select openingHours from BookingConfigurationDefaults where id = 1",
+                String.class)));
   }
 
   @Test
-  void patchesReplaceWholeListsAndInvalidPatchesWriteNothing() throws Exception {
-    User owner = fixture.user();
-    long instrumentId = fixture.instrument(owner, fixture.marker());
+  void patchesReplaceTheWholeWeekAndRejectedWritesLeaveRowsVersionsAndHistoryUnchanged()
+      throws Exception {
+    long instrumentId = fixture.instrument(fixture.user(), fixture.marker());
     long id = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
     String path = "/api/v2/booking-configurations/" + id;
-
-    mockMvc
-        .perform(get(path).header("apiKey", fixture.userKey()))
-        .andExpect(status().isOk())
-        .andExpect(
-            jsonPath("$.openDays").value(org.hamcrest.Matchers.contains(1, 2, 3, 4, 5, 6, 7)))
-        .andExpect(jsonPath("$.openingExceptions").isEmpty());
-
+    List<BookingOpeningHoursEntry> replacement =
+        List.of(
+            new BookingOpeningHoursEntry(1, "09:00", "17:00"),
+            new BookingOpeningHoursEntry(6, "10:00", "16:00"));
     patchConfiguration(
-            path, "\"0\"", "{\"openDays\":[6,5,4,3,2,1],\"openingExceptions\":[" + EXCEPTION + "]}")
+            path,
+            "\"0\"",
+            """
+            {"openingHours":[{"dayOfWeek":6,"start":"10:00","end":"16:00"},
+                             {"dayOfWeek":1,"start":"09:00","end":"17:00"}]}
+            """)
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.openDays").value(org.hamcrest.Matchers.contains(1, 2, 3, 4, 5, 6)))
-        .andExpect(jsonPath("$.openingExceptions[0].dayOfWeek").value(6))
-        .andExpect(jsonPath("$.openingExceptions[0].start").value("10:00"))
-        .andExpect(jsonPath("$.openingExceptions[0].end").value("16:00"))
-        .andExpect(jsonPath("$.configurationVersion").value(1));
+        .andExpect(jsonPath("$.openingHours.length()").value(2))
+        .andExpect(jsonPath("$.openingHours[0].dayOfWeek").value(1))
+        .andExpect(jsonPath("$.openingHours[1].start").value("10:00"))
+        .andExpect(jsonPath("$.configurationVersion").value(1))
+        .andExpect(jsonPath("$.openingStart").doesNotExist())
+        .andExpect(jsonPath("$.openDays").doesNotExist());
 
     for (String invalid :
         List.of(
-            "{\"openDays\":[1,2,3,4,5]}",
-            "{\"openDays\":[\"1\"]}",
-            "{\"openDays\":null}",
-            "{\"openDays\":[]}",
-            "{\"openingExceptions\":[{\"dayOfWeek\":7,\"start\":\"10:00\",\"end\":\"16:00\"}]}",
-            "{\"openingExceptions\":[{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\","
-                + "\"note\":\"x\"}]}")) {
+            "{\"openingHours\":null}",
+            "{\"openingHours\":[]}",
+            "{\"openingHours\":[1]}",
+            "{\"openingHours\":[{\"dayOfWeek\":\"1\",\"start\":\"09:00\",\"end\":\"17:00\"}]}",
+            "{\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\"}]}",
+            "{\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\",\"end\":\"17:00\",\"note\":\"x\"}]}",
+            "{\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\",\"end\":\"17:00\"},"
+                + "{\"dayOfWeek\":1,\"start\":\"10:00\",\"end\":\"16:00\"}]}",
+            "{\"openingStart\":\"08:00\"}",
+            "{\"openDays\":[1]}")) {
       patchConfiguration(path, "\"1\"", invalid).andExpect(status().isBadRequest());
     }
-    patchConfiguration(path, "\"1\"", "{\"openDays\":[1,2,3,4,5]}")
-        .andExpect(
-            jsonPath("$.code")
-                .value("errors.api.v2.bookingConfiguration.openingExceptions.invalid"));
-
-    patchConfiguration(path, "\"1\"", "{\"openingStart\":\"08:00\",\"openingEnd\":\"18:00\"}")
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.openDays").value(org.hamcrest.Matchers.contains(1, 2, 3, 4, 5, 6)))
-        .andExpect(jsonPath("$.openingExceptions[0].dayOfWeek").value(6))
-        .andExpect(jsonPath("$.configurationVersion").value(2));
-    patchConfiguration(path, "\"2\"", "{\"openDays\":[1,2,3,4,5],\"openingExceptions\":[]}")
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.openingExceptions").isEmpty());
-
-    Map<String, Object> stored =
-        jdbcTemplate.queryForMap(
-            "select openDays, openingExceptions from BookingConfiguration where id = ?", id);
-    assertEquals("[1,2,3,4,5]", stored.get("openDays"));
-    assertEquals("[]", stored.get("openingExceptions"));
-    List<String> auditedDays =
-        jdbcTemplate.queryForList(
-            "select openDays from BookingConfiguration_AUD where id = ? order by REV",
-            String.class,
-            id);
+    assertEquals(replacement, storedHours(id));
     assertEquals(
-        List.of("[1,2,3,4,5,6,7]", "[1,2,3,4,5,6]", "[1,2,3,4,5,6]", "[1,2,3,4,5]"), auditedDays);
+        Long.valueOf(1),
+        jdbcTemplate.queryForObject(
+            "select configurationVersion from BookingConfiguration where id = ?", Long.class, id));
+    assertEquals(Integer.valueOf(2), auditCount(id));
+
+    patchConfiguration(path, "\"1\"", "{\"bufferAfterMinutes\":5}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openingHours.length()").value(2));
+    assertEquals(replacement, storedHours(id));
+    patchConfiguration(
+            path,
+            "\"2\"",
+            "{\"openingHours\":[{\"dayOfWeek\":3,\"start\":\"00:00\",\"end\":\"24:00\"}]}")
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openingHours.length()").value(1));
+    assertEquals(hours("00:00", "24:00", 3), storedHours(id));
 
     mockMvc
         .perform(
@@ -148,39 +145,29 @@ class BookingOpeningWeekdaysMVCIT {
               .addOrder(org.hibernate.envers.query.AuditEntity.revisionNumber().asc())
               .getResultList();
       assertEquals(5, revisions.size());
-      BookingConfiguration second = (BookingConfiguration) ((Object[]) revisions.get(1))[0];
-      assertEquals(List.of(1, 2, 3, 4, 5, 6), second.getOpenDays());
       assertEquals(
-          List.of(new BookingOpeningException(6, "10:00", "16:00")), second.getOpeningExceptions());
+          replacement, ((BookingConfiguration) ((Object[]) revisions.get(1))[0]).getOpeningHours());
       Object[] deletion = (Object[]) revisions.get(4);
       assertEquals(RevisionType.DEL, deletion[2]);
-      assertNull(((BookingConfiguration) deletion[0]).getOpenDays());
+      assertNull(((BookingConfiguration) deletion[0]).getOpeningHours());
     }
   }
 
   @Test
-  void aPartialDayMayCloseAtMidnightAndBookingsMayEndThereButNotLater() throws Exception {
-    User owner = fixture.user();
-    long instrumentId = fixture.instrument(owner, fixture.marker());
+  void partialDaysMayCloseAtMidnightAndBookingsMayEndThereButNotLater() throws Exception {
+    long instrumentId = fixture.instrument(fixture.user(), fixture.marker());
     long id = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
-    String path = "/api/v2/booking-configurations/" + id;
-
     String patched =
         patchConfiguration(
-                path,
+                "/api/v2/booking-configurations/" + id,
                 "\"0\"",
-                "{\"openingStart\":\"18:00\",\"openingEnd\":\"24:00\",\"openingExceptions\":"
-                    + "[{\"dayOfWeek\":6,\"start\":\"20:00\",\"end\":\"24:00\"}]}")
+                "{\"openingHours\":"
+                    + BookingOpeningHoursCodec.openingHoursJson(hours("18:00", "24:00"))
+                    + "}")
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.openingStart").value("18:00"))
-            .andExpect(jsonPath("$.openingEnd").value("24:00"))
-            .andExpect(jsonPath("$.openingExceptions[0].start").value("20:00"))
-            .andExpect(jsonPath("$.openingExceptions[0].end").value("24:00"))
             .andReturn()
             .getResponse()
             .getContentAsString();
-
-    // The configuration uses the institution time zone; times are local midnights in it.
     ZoneId zone = ZoneId.of(JsonPath.read(patched, "$.timezone"));
     LocalDate day = LocalDate.now(zone).plusDays(7);
     fixture.booking(
@@ -193,69 +180,46 @@ class BookingOpeningWeekdaysMVCIT {
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"target\":{\"relationTo\":\"booking-instruments\",\"value\":%d},"
-                            .formatted(instrumentId)
-                        + "\"start\":\"%s\",\"end\":\"%s\"}"
-                            .formatted(
-                                day.plusDays(1).atTime(22, 0).atZone(zone).toInstant(),
-                                day.plusDays(2).atTime(0, 5).atZone(zone).toInstant())))
+                    "{\"target\":{\"relationTo\":\"booking-instruments\",\"value\":%d},\"start\":\"%s\",\"end\":\"%s\"}"
+                        .formatted(
+                            instrumentId,
+                            day.plusDays(1).atTime(22, 0).atZone(zone).toInstant(),
+                            day.plusDays(2).atTime(0, 15).atZone(zone).toInstant())))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.booking.openingHours"));
   }
 
   @Test
   void createCopiesDefaultsWhenOmittedAndRejectsExplicitNull() throws Exception {
-    User owner = fixture.user();
-    long instrumentId = fixture.instrument(owner, fixture.marker());
+    long instrumentId = fixture.instrument(fixture.user(), fixture.marker());
     fixture.enableBookings();
-
     mockMvc
         .perform(
             post("/api/v2/booking-configurations")
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"openDays\":null,\"target\":{\"relationTo\":\"booking-instruments\","
-                        + "\"value\":"
-                        + instrumentId
-                        + "}}"))
+                    "{\"openingHours\":null,\"target\":{\"relationTo\":\"booking-instruments\",\"value\":%d}}"
+                        .formatted(instrumentId)))
         .andExpect(status().isBadRequest());
-    mockMvc
-        .perform(
-            post("/api/v2/booking-configurations")
-                .header("apiKey", fixture.userKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(
-                    "{\"openDays\":[1],\"openingExceptions\":["
-                        + EXCEPTION
-                        + "],"
-                        + "\"target\":{\"relationTo\":\"booking-instruments\",\"value\":"
-                        + instrumentId
-                        + "}}"))
-        .andExpect(status().isBadRequest())
-        .andExpect(
-            jsonPath("$.code")
-                .value("errors.api.v2.bookingConfiguration.openingExceptions.invalid"));
     long id = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
-
-    mockMvc
-        .perform(get("/api/v2/booking-configurations/" + id).header("apiKey", fixture.userKey()))
-        .andExpect(
-            jsonPath("$.openDays").value(org.hamcrest.Matchers.contains(1, 2, 3, 4, 5, 6, 7)))
-        .andExpect(jsonPath("$.openingExceptions").isEmpty());
+    assertEquals(
+        BookingOpeningHoursCodec.openingHours(
+            jdbcTemplate.queryForObject(
+                "select openingHours from BookingConfigurationDefaults where id = 1",
+                String.class)),
+        storedHours(id));
   }
 
   @Test
-  void usersWithoutTheSchedulingCapabilityCannotChangeOpenDaysOrExceptions() throws Exception {
+  void schedulingPermissionsStillGateIndependentHours() throws Exception {
     User owner = fixture.user();
     fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
     fixture.thirdUser();
     long instrumentId = fixture.instrument(owner, fixture.marker());
     long id = fixture.bookingConfiguration(instrumentId, "UTC", fixture.userKey());
     String path = "/api/v2/booking-configurations/" + id;
-
-    // The owner's PI can edit the default-shared instrument (BOOKER); once the owner restricts
-    // sharing, the PI can only read it (VIEWER). Neither holds the scheduling capability.
+    List<BookingOpeningHoursEntry> original = storedHours(id);
     for (String role : List.of("BOOKER", "VIEWER")) {
       if (role.equals("VIEWER")) {
         ApiInstrument instrument = instrumentManager.getApiInstrumentById(instrumentId, owner);
@@ -267,30 +231,29 @@ class BookingOpeningWeekdaysMVCIT {
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.effectiveRole").value(role))
           .andExpect(jsonPath("$.capabilities.canEditConfiguration").value(false));
-      for (String body :
-          List.of(
-              "{\"openDays\":[1,2,3,4,5]}",
-              "{\"openingExceptions\":[" + EXCEPTION + "]}",
-              "{\"openDays\":[6],\"openingExceptions\":[" + EXCEPTION + "]}")) {
-        patchConfigurationAs(fixture.otherUserKey(), path, "\"0\"", body)
-            .andExpect(status().isForbidden());
-        patchConfigurationAs(fixture.thirdUserKey(), path, "\"0\"", body)
-            .andExpect(status().isNotFound());
-      }
+      String body = "{\"openingHours\":[{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}]}";
+      patchConfigurationAs(fixture.otherUserKey(), path, "\"0\"", body)
+          .andExpect(status().isForbidden());
+      patchConfigurationAs(fixture.thirdUserKey(), path, "\"0\"", body)
+          .andExpect(status().isNotFound());
     }
-
-    Map<String, Object> stored =
-        jdbcTemplate.queryForMap(
-            "select openDays, openingExceptions, configurationVersion from BookingConfiguration"
-                + " where id = ?",
-            id);
-    assertEquals("[1,2,3,4,5,6,7]", stored.get("openDays"));
-    assertEquals("[]", stored.get("openingExceptions"));
-    assertEquals(0L, ((Number) stored.get("configurationVersion")).longValue());
+    assertEquals(original, storedHours(id));
     assertEquals(
-        Integer.valueOf(1),
+        Long.valueOf(0),
         jdbcTemplate.queryForObject(
-            "select count(*) from BookingConfiguration_AUD where id = ?", Integer.class, id));
+            "select configurationVersion from BookingConfiguration where id = ?", Long.class, id));
+    assertEquals(Integer.valueOf(1), auditCount(id));
+  }
+
+  private Integer auditCount(long id) {
+    return jdbcTemplate.queryForObject(
+        "select count(*) from BookingConfiguration_AUD where id = ?", Integer.class, id);
+  }
+
+  private List<BookingOpeningHoursEntry> storedHours(long id) {
+    return BookingOpeningHoursCodec.openingHours(
+        jdbcTemplate.queryForObject(
+            "select openingHours from BookingConfiguration where id = ?", String.class, id));
   }
 
   private org.springframework.test.web.servlet.ResultActions patchConfiguration(
