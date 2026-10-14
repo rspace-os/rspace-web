@@ -1,9 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.dao.ExtraFieldDao;
-import com.researchspace.dao.ExtraFieldDao.ExtraFieldPage;
-import com.researchspace.dao.ExtraFieldDao.ExtraFieldRow;
 import com.researchspace.dao.ExtraFieldDao.ExtraFieldScope;
+import com.researchspace.dao.query.LookAheadPagination.Result;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -18,6 +17,7 @@ import com.researchspace.model.collection.RuntimeFieldNamespaces;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity.Definition;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity.PublishedType;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import java.util.ArrayList;
@@ -73,14 +73,16 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
     if (access.isDenied()) {
       return RuntimeFieldCatalogPage.empty();
     }
-    Set<ExtraFieldRow> wanted = new LinkedHashSet<>();
+    Set<Definition> wanted = new LinkedHashSet<>();
     if (query.hydratesIds()) {
-      query.ids().forEach(id -> add(wanted, decode(id)));
+      query
+          .ids()
+          .forEach(id -> RuntimeFieldManagerSupport.add(wanted, ExtraFieldIdentity.decode(id)));
       if (wanted.isEmpty()) {
         return RuntimeFieldCatalogPage.empty();
       }
     }
-    ExtraFieldPage page =
+    Result<Definition> page =
         extraFieldDao.readableDefinitions(
             scope,
             access.constraintOrEmpty().orElse(null),
@@ -94,38 +96,13 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
 
   @Override
   public Map<String, ResolvedRuntimeField> resolveAll(Set<String> selectors, User actor) {
-    Map<String, ExtraFieldRow> requested = new LinkedHashMap<>();
-    for (String selector : selectors) {
-      ExtraFieldRow row = decode(idOf(selector));
-      if (row != null) {
-        requested.put(selector, row);
-      }
-    }
-    if (requested.isEmpty()) {
-      return Map.of();
-    }
-    Set<String> ids = new LinkedHashSet<>();
-    requested.values().forEach(row -> ids.add(encode(row)));
-    Map<String, RuntimeFieldDefinition> found = new LinkedHashMap<>();
-    List<String> ordered = new ArrayList<>(ids);
-    for (int from = 0; from < ordered.size(); from += RuntimeFieldCatalogQuery.MAX_IDS) {
-      Set<String> batch =
-          new LinkedHashSet<>(
-              ordered.subList(
-                  from, Math.min(from + RuntimeFieldCatalogQuery.MAX_IDS, ordered.size())));
-      discover(actor, RuntimeFieldCatalogQuery.byIds(batch))
-          .fields()
-          .forEach(definition -> found.put(definition.id(), definition));
-    }
-    Map<String, ResolvedRuntimeField> resolved = new LinkedHashMap<>();
-    requested.forEach(
-        (selector, row) -> {
-          RuntimeFieldDefinition definition = found.get(encode(row));
-          if (definition != null) {
-            resolved.put(selector, new ResolvedRuntimeField(definition, binding(row)));
-          }
-        });
-    return resolved;
+    return RuntimeFieldManagerSupport.resolveAll(
+        selectors,
+        selector ->
+            ExtraFieldIdentity.decode(RuntimeFieldManagerSupport.selectorId(selector, NAMESPACE)),
+        definition -> ExtraFieldIdentity.encode(definition.name(), definition.type()),
+        this::binding,
+        ids -> discover(actor, RuntimeFieldCatalogQuery.byIds(ids)));
   }
 
   @Override
@@ -137,8 +114,9 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
   @Override
   public Map<Object, Map<String, Object>> valuesForAuthorizedIds(
       Collection<?> resourceIds, Set<String> fieldIds, User actor) {
-    Set<ExtraFieldRow> definitions = new LinkedHashSet<>();
-    fieldIds.forEach(id -> add(definitions, decode(id)));
+    Set<Definition> definitions = new LinkedHashSet<>();
+    fieldIds.forEach(
+        id -> RuntimeFieldManagerSupport.add(definitions, ExtraFieldIdentity.decode(id)));
     Map<Object, Long> parentIds = new LinkedHashMap<>();
     for (Object id : resourceIds) {
       if (id instanceof Number number) {
@@ -148,32 +126,34 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
     if (definitions.isEmpty() || parentIds.isEmpty()) {
       return Map.of();
     }
-    Map<Long, Map<ExtraFieldRow, String>> rows =
+    Map<Long, Map<Definition, String>> rows =
         extraFieldDao.valuesByParent(scope, new LinkedHashSet<>(parentIds.values()), definitions);
     Map<Object, Map<String, Object>> values = new LinkedHashMap<>();
     parentIds.forEach(
         (publicId, databaseId) -> {
-          Map<ExtraFieldRow, String> owned = rows.get(databaseId);
+          Map<Definition, String> owned = rows.get(databaseId);
           if (owned == null) {
             return;
           }
           Map<String, Object> document = new LinkedHashMap<>();
           owned.forEach(
               (definition, stored) ->
-                  document.put(encode(definition), valueType(definition.type()).serialize(stored)));
+                  document.put(
+                      ExtraFieldIdentity.encode(definition.name(), definition.type()),
+                      valueType(definition.type()).serialize(stored)));
           values.put(publicId, document);
         });
     return values;
   }
 
-  private List<RuntimeFieldDefinition> definitions(List<ExtraFieldRow> rows) {
+  private List<RuntimeFieldDefinition> definitions(List<Definition> rows) {
     List<RuntimeFieldDefinition> definitions = new ArrayList<>(rows.size());
-    for (ExtraFieldRow row : rows) {
+    for (Definition row : rows) {
       RuntimeFieldValueType type = valueType(row.type());
       if (type == null) {
         continue;
       }
-      String id = encode(row);
+      String id = ExtraFieldIdentity.encode(row.name(), row.type());
       definitions.add(
           new RuntimeFieldDefinition(
               id, NAMESPACE + "." + id, row.name(), type, "", "", List.of()));
@@ -181,49 +161,20 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
     return definitions;
   }
 
-  private RuntimeFieldBinding binding(ExtraFieldRow row) {
+  private RuntimeFieldBinding binding(Definition row) {
     Map<String, Object> match = new LinkedHashMap<>();
     match.put("editInfo.name", row.name());
     match.put("deleted", false);
+    PublishedType published = PublishedType.fromFieldType(row.type());
     return new RuntimeFieldBinding(
-        entityType(row.type()), scope.parentProperty() + ".id", "editInfo.description", match);
-  }
-
-  private static Class<?> entityType(FieldType type) {
-    PublishedType published = PublishedType.fromFieldType(type);
-    return published == null ? null : published.entityType();
+        published == null ? null : published.entityType(),
+        scope.parentProperty() + ".id",
+        "editInfo.description",
+        match);
   }
 
   private static RuntimeFieldValueType valueType(FieldType type) {
     PublishedType published = PublishedType.fromFieldType(type);
     return published == null ? null : published.runtimeType();
-  }
-
-  /**
-   * The stable ID of a definition, as {@link ExtraFieldIdentity} encodes it.
-   *
-   * <p>Shared with the search index writer, which has to name a value's index field the same way
-   * this provider names the definition a filter resolves to.
-   */
-  static String encode(ExtraFieldRow row) {
-    return ExtraFieldIdentity.encode(row.name(), row.type());
-  }
-
-  static ExtraFieldRow decode(String id) {
-    ExtraFieldIdentity.Definition definition = ExtraFieldIdentity.decode(id);
-    return definition == null ? null : new ExtraFieldRow(definition.name(), definition.type());
-  }
-
-  private static String idOf(String selector) {
-    String prefix = NAMESPACE + ".";
-    return selector == null || !selector.startsWith(prefix)
-        ? null
-        : selector.substring(prefix.length());
-  }
-
-  private static void add(Set<ExtraFieldRow> rows, ExtraFieldRow row) {
-    if (row != null) {
-      rows.add(row);
-    }
   }
 }

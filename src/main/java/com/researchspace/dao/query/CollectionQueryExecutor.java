@@ -179,10 +179,7 @@ public final class CollectionQueryExecutor<T> {
       ResourceRequest request,
       int limit,
       RelationshipReadAccess targets) {
-    CriteriaBuilder<T> query = query(factory, session, request, null, targets);
-    orderById(query);
-    query.setMaxResults(limit);
-    return query.getResultList();
+    return byId(factory, session, request, limit, targets, false);
   }
 
   /** As {@link #listById}, locking every selected row for an atomic server-side command. */
@@ -192,10 +189,22 @@ public final class CollectionQueryExecutor<T> {
       ResourceRequest request,
       int limit,
       RelationshipReadAccess targets) {
+    return byId(factory, session, request, limit, targets, true);
+  }
+
+  private List<T> byId(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      int limit,
+      RelationshipReadAccess targets,
+      boolean forUpdate) {
     CriteriaBuilder<T> query = query(factory, session, request, null, targets);
     orderById(query);
     query.setMaxResults(limit);
-    return query.getQuery().setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
+    return forUpdate
+        ? query.getQuery().setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList()
+        : query.getResultList();
   }
 
   /** Returns every matching row in the caller-requested stable sort order. */
