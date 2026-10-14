@@ -5,17 +5,28 @@ import {
   createRoute,
   createRouter,
   Outlet,
+  type RouterHistory,
   RouterProvider,
 } from "@tanstack/react-router";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import BookableItemsPage from "@/modules/booking/pages/bookable-items/BookableItemsPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
 
-export function BookableItemsStory() {
+export function BookableItemsStory({
+  history = createMemoryHistory({ initialEntries: ["/booking/config/bookable-items"] }),
+}: {
+  history?: RouterHistory;
+} = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const rootRoute = createRootRoute({ component: Outlet });
+  const rootRoute = createRootRoute({
+    component: () => (
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
+    ),
+  });
   const bookingRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/booking",
@@ -38,18 +49,14 @@ export function BookableItemsStory() {
   ]);
   const router = createRouter({
     routeTree,
-    history: createMemoryHistory({
-      initialEntries: [`/booking/config/bookable-items${window.location.search}`],
-    }),
+    history,
   });
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
     </QueryClientProvider>
   );
 }
