@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
 import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
-import { LIGHTHOUSE_SCRIPT_SRC, loadLighthouseSdk, showLighthouse } from "@/modules/common/app/lighthouse";
+import { configureLighthouse, LIGHTHOUSE_SCRIPT_SRC, showLighthouse } from "@/modules/common/app/lighthouse";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { Menu } from "../DialogBoundary";
 
@@ -56,10 +56,6 @@ function HelpDocs() {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  function loadLighthouse(): void {
-    loadScript(`${LIGHTHOUSE_SCRIPT_SRC}?t=${Date.now()}`);
-  }
-
   const hasExtraHelpLinks = uiNavigationData.tag === "success" && uiNavigationData.value.extraHelpLinks.length > 0;
 
   useEffect(() => {
@@ -71,8 +67,11 @@ function HelpDocs() {
         livechatServerKey?: string;
         currentUser: string;
       }>("/livechatProperties");
-      loadLighthouseSdk({ livechatEnabled, livechatServerKey, currentUser }, () => setLighthouseIsLoaded(true));
-      loadLighthouse();
+      configureLighthouse({
+        livechatProperties: { livechatEnabled, livechatServerKey, currentUser },
+        onReady: () => setLighthouseIsLoaded(true),
+      });
+      loadScript(`${LIGHTHOUSE_SCRIPT_SRC}?t=${Date.now()}`);
     })();
   }, []);
 

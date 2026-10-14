@@ -2,15 +2,48 @@ import Intercom from "@intercom/messenger-js-sdk";
 import * as React from "react";
 import i18n from "@/modules/common/i18n";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
-import { createLighthouseConfig, LIGHTHOUSE_SCRIPT_ID, LIGHTHOUSE_SCRIPT_SRC } from "./helpWidget";
+
+export const LIGHTHOUSE_SCRIPT_ID = "rspace-lighthouse";
+export const LIGHTHOUSE_SCRIPT_SRC = "https://lighthouse.helpdocs.io/load";
+
+type LighthouseConfig = {
+  widget_key: string;
+  logo: string;
+  launcher_button_image: string;
+  brand: string;
+  color_mode: string;
+  disable_authorship: boolean;
+  suggestions: string[];
+  i18n: {
+    contact_button: string;
+    search_placeholder: string;
+    view_all: string;
+    suggested_articles: string;
+  };
+  onReady: () => void;
+  onShow: () => void;
+  onLoad: () => void;
+  onHide: () => void;
+  onNavigate?: ({ page }: { page: string }) => void;
+};
+
+declare global {
+  interface Window {
+    Lighthouse: {
+      hide: () => void;
+      show: () => void;
+      showButton: () => void;
+      hideButton: () => void;
+    };
+    hdlh: LighthouseConfig;
+  }
+}
 
 export type LivechatProperties = {
   livechatEnabled: boolean;
   livechatServerKey?: string;
   currentUser: string;
 };
-
-export { LIGHTHOUSE_SCRIPT_ID, LIGHTHOUSE_SCRIPT_SRC };
 
 type LighthouseAction = "hide" | "show" | "showButton" | "hideButton";
 
@@ -45,12 +78,20 @@ function registerIntercomHandlers() {
 }
 
 function installLighthouseConfig() {
-  window.hdlh = createLighthouseConfig({
+  window.hdlh = {
+    widget_key: "anqvq7xcs3n2jzflnzp7",
+    logo: "/images/helplogo.svg",
+    launcher_button_image: "/images/helplogo.svg",
     brand: i18n.t("helpDocs.brand", { defaultValue: helpDocsFallback.brand }),
-    contactButton: i18n.t("helpDocs.chatWithUs", { defaultValue: helpDocsFallback.chatWithUs }),
-    searchPlaceholder: i18n.t("helpDocs.searchPlaceholder", { defaultValue: helpDocsFallback.searchPlaceholder }),
-    viewAll: i18n.t("helpDocs.viewAllArticles", { defaultValue: helpDocsFallback.viewAllArticles }),
-    suggestedArticles: i18n.t("helpDocs.suggestedArticles", { defaultValue: helpDocsFallback.suggestedArticles }),
+    color_mode: "light",
+    disable_authorship: true,
+    suggestions: ["article:pfsj1e1u7j", "article:xw0ds8tee1", "article:bzgr8ea9e3", "article:dagfzhl3yw"],
+    i18n: {
+      contact_button: i18n.t("helpDocs.chatWithUs", { defaultValue: helpDocsFallback.chatWithUs }),
+      search_placeholder: i18n.t("helpDocs.searchPlaceholder", { defaultValue: helpDocsFallback.searchPlaceholder }),
+      view_all: i18n.t("helpDocs.viewAllArticles", { defaultValue: helpDocsFallback.viewAllArticles }),
+      suggested_articles: i18n.t("helpDocs.suggestedArticles", { defaultValue: helpDocsFallback.suggestedArticles }),
+    },
     onReady() {
       registerIntercomHandlers();
       if (window.Intercom) {
@@ -67,17 +108,16 @@ function installLighthouseConfig() {
     onHide() {
       callLighthouse("hideButton");
     },
-  });
+    onNavigate({ page }: { page: string }) {
+      if (page !== "contact" || currentLivechatProperties?.livechatEnabled) return;
 
-  window.hdlh.onNavigate = ({ page }: { page: string }) => {
-    if (page !== "contact" || currentLivechatProperties?.livechatEnabled) return;
-
-    window.open("mailto:support@researchspace.com", "_blank");
-    callLighthouse("hide");
+      window.open("mailto:support@researchspace.com", "_blank");
+      callLighthouse("hide");
+    },
   };
 }
 
-function configureLighthouse({
+export function configureLighthouse({
   livechatProperties,
   onReady,
 }: {
@@ -104,10 +144,6 @@ if (typeof window !== "undefined") {
   i18n.on("loaded", () => installLighthouseConfig());
 }
 
-export function loadLighthouseSdk(livechatProperties: LivechatProperties, onReady: () => void) {
-  configureLighthouse({ livechatProperties, onReady });
-}
-
 export function showLighthouse() {
   callLighthouse("showButton");
   callLighthouse("show");
@@ -119,8 +155,11 @@ export function useLighthouseSdk(livechatProperties: LivechatProperties | undefi
   React.useEffect(() => {
     if (!livechatProperties) return;
 
-    loadLighthouseSdk(livechatProperties, () => {
-      setLighthouseReady(isLighthouseReady());
+    configureLighthouse({
+      livechatProperties,
+      onReady: () => {
+        setLighthouseReady(isLighthouseReady());
+      },
     });
 
     if (isLighthouseReady()) {
