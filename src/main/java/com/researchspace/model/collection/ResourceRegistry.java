@@ -41,58 +41,40 @@ public final class ResourceRegistry {
     Objects.requireNonNull(descriptions, "Resource descriptions");
     Map<String, CollectionDescription<?>> names = new LinkedHashMap<>();
     Map<Class<?>, List<CollectionDescription<?>>> entityTypes = new LinkedHashMap<>();
-    descriptions.forEach(
-        description -> {
-          Objects.requireNonNull(description, "Resource description");
-          description.fields().forEach(Field::validateConfiguration);
-          if (names.putIfAbsent(description.resourceName(), description) != null) {
+    for (CollectionDescription<?> description : descriptions) {
+      Objects.requireNonNull(description, "Resource description");
+      description.fields().forEach(Field::validateConfiguration);
+      if (names.putIfAbsent(description.resourceName(), description) != null) {
+        throw new IllegalArgumentException("Duplicate resource name " + description.resourceName());
+      }
+      entityTypes
+          .computeIfAbsent(description.entityType(), ignored -> new ArrayList<>())
+          .add(description);
+    }
+    for (CollectionDescription<?> description : names.values()) {
+      for (Relationship<?> relationship : description.relationships()) {
+        for (RelationshipTarget<?> target : relationship.targets()) {
+          CollectionDescription<?> targetDescription = names.get(target.resourceName());
+          if (targetDescription == null) {
             throw new IllegalArgumentException(
-                "Duplicate resource name " + description.resourceName());
+                "Unknown relationship target " + target.resourceName());
           }
-          entityTypes
-              .computeIfAbsent(description.entityType(), ignored -> new ArrayList<>())
-              .add(description);
-        });
-    names
-        .values()
-        .forEach(
-            description ->
-                description
-                    .relationships()
-                    .forEach(
-                        relationship ->
-                            relationship
-                                .targets()
-                                .forEach(
-                                    target -> {
-                                      CollectionDescription<?> targetDescription =
-                                          names.get(target.resourceName());
-                                      if (targetDescription == null) {
-                                        throw new IllegalArgumentException(
-                                            "Unknown relationship target " + target.resourceName());
-                                      }
-                                      if (target.entityType() != Object.class
-                                          && !target
-                                              .entityType()
-                                              .equals(targetDescription.entityType())) {
-                                        throw new IllegalArgumentException(
-                                            "Relationship target entity type does not match"
-                                                + " resource "
-                                                + target.resourceName());
-                                      }
-                                      if (!relationship
-                                          .idType()
-                                          .javaType()
-                                          .equals(
-                                              targetDescription
-                                                  .requireField(targetDescription.idField())
-                                                  .type()
-                                                  .javaType())) {
-                                        throw new IllegalArgumentException(
-                                            "Relationship target ID type does not match resource "
-                                                + target.resourceName());
-                                      }
-                                    })));
+          if (target.entityType() != Object.class
+              && !target.entityType().equals(targetDescription.entityType())) {
+            throw new IllegalArgumentException(
+                "Relationship target entity type does not match resource " + target.resourceName());
+          }
+          if (!relationship
+              .idType()
+              .javaType()
+              .equals(
+                  targetDescription.requireField(targetDescription.idField()).type().javaType())) {
+            throw new IllegalArgumentException(
+                "Relationship target ID type does not match resource " + target.resourceName());
+          }
+        }
+      }
+    }
     byName = Collections.unmodifiableMap(names);
     entityTypes.replaceAll((ignored, matchingDescriptions) -> List.copyOf(matchingDescriptions));
     byEntityType = Collections.unmodifiableMap(entityTypes);
@@ -174,69 +156,47 @@ public final class ResourceRegistry {
   private static Map<String, Map<String, RelationshipQueryPath>> buildRelationshipQueryPaths(
       Map<String, CollectionDescription<?>> descriptions) {
     Map<String, Map<String, RelationshipQueryPath>> all = new LinkedHashMap<>();
-    descriptions
-        .values()
-        .forEach(
-            source -> {
-              Map<String, RelationshipQueryPath> paths = new LinkedHashMap<>();
-              source
-                  .relationships()
-                  .forEach(
-                      relationship -> {
-                        Set<String> targetFields = new LinkedHashSet<>();
-                        relationship
-                            .targets()
-                            .forEach(
-                                target ->
-                                    descriptions
-                                        .get(target.resourceName())
-                                        .publicFilterSelectors()
-                                        .stream()
-                                        .filter(FilterSelector.Property.class::isInstance)
-                                        .map(FilterSelector::name)
-                                        .forEach(targetFields::add));
-                        targetFields.forEach(
-                            targetField -> {
-                              List<TargetQueryField> targets = new ArrayList<>();
-                              relationship
-                                  .targets()
-                                  .forEach(
-                                      target -> {
-                                        CollectionDescription<?> targetDescription =
-                                            descriptions.get(target.resourceName());
-                                        FilterSelector<?> selector =
-                                            targetDescription
-                                                .findPublicFilterSelector(targetField)
-                                                .orElse(null);
-                                        if (selector
-                                            instanceof FilterSelector.Property<?> property) {
-                                          targets.add(
-                                              new TargetQueryField(
-                                                  target, targetDescription, property));
-                                        }
-                                      });
-                              validateCompatibleTargetFields(
-                                  source, relationship, targetField, targets);
-                              FilterSelector.Property<?> representative = targets.get(0).property();
-                              Set<Operator> operators =
-                                  new LinkedHashSet<>(
-                                      FilterSelector.relationshipTargetFieldOperators());
-                              targets.forEach(
-                                  target -> operators.retainAll(target.property().operators()));
-                              String selector = relationship.name() + "." + targetField;
-                              paths.put(
-                                  selector,
-                                  new RelationshipQueryPath(
-                                      selector,
-                                      relationship,
-                                      targetField,
-                                      targets,
-                                      new FilterSelector.RelationshipProperty<>(
-                                          selector, representative.type(), operators)));
-                            });
-                      });
-              all.put(source.resourceName(), Collections.unmodifiableMap(paths));
-            });
+    for (CollectionDescription<?> source : descriptions.values()) {
+      Map<String, RelationshipQueryPath> paths = new LinkedHashMap<>();
+      for (Relationship<?> relationship : source.relationships()) {
+        Set<String> targetFields = new LinkedHashSet<>();
+        for (RelationshipTarget<?> target : relationship.targets()) {
+          descriptions.get(target.resourceName()).publicFilterSelectors().stream()
+              .filter(FilterSelector.Property.class::isInstance)
+              .map(FilterSelector::name)
+              .forEach(targetFields::add);
+        }
+        for (String targetField : targetFields) {
+          List<TargetQueryField> targets = new ArrayList<>();
+          for (RelationshipTarget<?> target : relationship.targets()) {
+            CollectionDescription<?> targetDescription = descriptions.get(target.resourceName());
+            FilterSelector<?> selector =
+                targetDescription.findPublicFilterSelector(targetField).orElse(null);
+            if (selector instanceof FilterSelector.Property<?> property) {
+              targets.add(new TargetQueryField(target, targetDescription, property));
+            }
+          }
+          validateCompatibleTargetFields(source, relationship, targetField, targets);
+          FilterSelector.Property<?> representative = targets.get(0).property();
+          Set<Operator> operators =
+              new LinkedHashSet<>(FilterSelector.relationshipTargetFieldOperators());
+          for (TargetQueryField target : targets) {
+            operators.retainAll(target.property().operators());
+          }
+          String selector = relationship.name() + "." + targetField;
+          paths.put(
+              selector,
+              new RelationshipQueryPath(
+                  selector,
+                  relationship,
+                  targetField,
+                  targets,
+                  new FilterSelector.RelationshipProperty<>(
+                      selector, representative.type(), operators)));
+        }
+      }
+      all.put(source.resourceName(), Collections.unmodifiableMap(paths));
+    }
     return Collections.unmodifiableMap(all);
   }
 

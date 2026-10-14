@@ -310,8 +310,9 @@ public final class EmbeddedObjects {
       throw failure(path, Reason.WRONG_TYPE);
     }
     if (wire && !access) {
+      Map<String, Field<?, ?>> children = children(type);
       for (Object name : ((Map<?, ?>) value).keySet()) {
-        if (!children(type).containsKey(name)) {
+        if (!children.containsKey(name)) {
           throw failure(childPath(path, String.valueOf(name)), Reason.UNKNOWN_FIELD);
         }
       }
