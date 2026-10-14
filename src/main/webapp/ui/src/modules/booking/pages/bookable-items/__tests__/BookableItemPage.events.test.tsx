@@ -70,7 +70,7 @@ describe("BookableItemPage", () => {
 
     const item = await screen.findByRole("article", { name: "Updated booking configuration IN123" });
     expect(within(item).getByText("Morgan Ellis (morgan.ellis)")).toBeVisible();
-    expect(within(item).getByText("WRITE")).toBeVisible();
+    expect(within(item).getByText("booking:bookableItemDetails.audit.actions.changed")).toBeVisible();
     expect(
       within(item).queryByText("booking:bookableItemDetails.audit.values.maximumDuration"),
     ).not.toBeInTheDocument();

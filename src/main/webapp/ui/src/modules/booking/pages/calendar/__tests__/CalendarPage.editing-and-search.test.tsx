@@ -3,6 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import {
@@ -18,6 +19,7 @@ import {
   setupCalendarBookableItems,
   setupCalendarScrollTo,
 } from "./calendarPageTestUtils";
+import { currentUser } from "./calendarTestHarness";
 
 beforeAll(() => setupCalendarScrollTo());
 beforeEach(() => setupCalendarBookableItems());
@@ -180,6 +182,41 @@ describe("CalendarPage", () => {
 
     await waitFor(() => expect(within(card).queryByRole("textbox", { name: "Purpose" })).not.toBeInTheDocument());
     expect(within(card).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+  });
+
+  it("explains a server buffer rejection in the inline calendar editor and lists the named booking", async () => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.patch("/api/v2/bookings/41", () =>
+        HttpResponse.json(
+          {
+            status: 409,
+            code: "errors.api.v2.booking.buffer",
+            detail: "private server detail",
+            conflict: { id: 59, kind: "BOOKING", start: "2026-08-17T11:00:00Z", end: "2026-08-17T12:00:00Z" },
+            bufferBeforeMinutes: 0,
+            bufferAfterMinutes: 30,
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+
+    await user.click((await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ }))[0]);
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    await user.type(await screen.findByRole("textbox", { name: "Purpose" }), " updated");
+    const save = screen.getByRole("button", { name: "Save changes" });
+    await user.click(save);
+
+    const alert = await screen.findByRole("alert", {}, { timeout: 3_000 });
+    await waitFor(() => expect(alert).toHaveTextContent(/Too close to another booking/));
+    expect(alert).not.toHaveTextContent("private server detail");
+    expect(within(alert).getByRole("listitem")).toHaveTextContent("Booking #59");
+    expect(save).toBeDisabled();
   });
 
   it("uses one search for calendar events and bookable items", async () => {

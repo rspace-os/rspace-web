@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
@@ -17,7 +18,7 @@ export const bookingConfigurationConfig = {
     pluralKey: "booking:bookableItems.plural",
   },
   useAsTitle: "target",
-  defaultColumns: ["target", "state", "enabled", "updatedAt"],
+  defaultColumns: ["target", "state", "updatedAt"],
   listSearchableFields: ["target.name", "target.globalId"],
   fields: [
     { name: "id", type: "number", labelKey: "booking:bookableItems.fields.id", list: false, form: false },
@@ -47,10 +48,8 @@ export const bookingConfigurationConfig = {
       name: "enabled",
       type: "boolean",
       labelKey: "booking:bookableItems.fields.enabled",
-      list: {
-        renderCell: ({ row }) =>
-          i18n.t(row.enabled ? "booking:bookableItemDetails.enabled" : "booking:bookableItemDetails.disabled"),
-      },
+      // Shown through the combined Status column; still filterable on its own.
+      list: false,
     },
     {
       name: "state",
@@ -59,10 +58,13 @@ export const bookingConfigurationConfig = {
       labelKey: "booking:bookableItems.fields.state",
       form: false,
       list: {
+        dependencies: ["enabled"],
+        // One status column: an archived item is Archived; an active one is Enabled or Disabled.
+        renderHeader: () => i18n.t("booking:bookableItems.fields.status"),
         renderCell: ({ row }) =>
-          row.state === "ACTIVE"
-            ? i18n.t("booking:bookableItems.states.active")
-            : i18n.t("booking:bookableItemDetails.archived"),
+          row.state === "ARCHIVED"
+            ? i18n.t("booking:bookableItemDetails.archived")
+            : i18n.t(row.enabled ? "booking:bookableItemDetails.enabled" : "booking:bookableItemDetails.disabled"),
       },
     },
     {
@@ -83,9 +85,11 @@ export const bookingConfigurationConfig = {
       list: {
         renderCell: ({ row }) =>
           row.updatedAt
-            ? new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short" }).format(
-                new Date(row.updatedAt),
-              )
+            ? new Intl.DateTimeFormat(i18n.language, {
+                dateStyle: "medium",
+                timeStyle: "short",
+                hourCycle: bookingHourCycle(),
+              }).format(new Date(row.updatedAt))
             : i18n.t("booking:bookableItemDetails.notAvailable"),
       },
     },
