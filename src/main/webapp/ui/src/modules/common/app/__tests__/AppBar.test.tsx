@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { type ComponentProps, type ReactElement, Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import AccountMenu, { formatFullName, logoutHrefForSession } from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
 import HelpMenu from "@/modules/common/app/HelpMenu";
@@ -21,6 +22,10 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 
 vi.mock("@/modules/common/app/lighthouse", () => ({
   useLighthouseSdk: vi.fn(),
+}));
+
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
 }));
 
 vi.mock("@/modules/common/ui/avatar", () => ({
@@ -61,6 +66,9 @@ const currentUser: CurrentUser = {
   session: {
     operatedAs: false,
     lastSession: null,
+    canUseDevtools: false,
+    canOverrideFeatureFlags: false,
+    canChangeFeatureFlagBaselines: false,
   },
 };
 
@@ -111,6 +119,7 @@ beforeEach(() => {
   server.use(...defaultHandlers);
   vi.mocked(useOauthTokenQuery).mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
   vi.mocked(useLighthouseSdk).mockReturnValue({ lighthouseReady: false, showLighthouse: vi.fn() });
+  vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
 });
 
 afterEach(() => {
