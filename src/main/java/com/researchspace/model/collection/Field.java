@@ -1,5 +1,7 @@
 package com.researchspace.model.collection;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -26,6 +28,7 @@ public final class Field<T, V> implements ResourceMember<T> {
   private final AccessFunction createAccess;
   private final AccessFunction updateAccess;
   private final OpenApiSchemaDocumentation openApi;
+  private final boolean embedded;
 
   private Field(
       String name,
@@ -42,7 +45,8 @@ public final class Field<T, V> implements ResourceMember<T> {
       AccessFunction readAccess,
       AccessFunction createAccess,
       AccessFunction updateAccess,
-      OpenApiSchemaDocumentation openApi) {
+      OpenApiSchemaDocumentation openApi,
+      boolean embedded) {
     this.name = requireName(name, "Field name");
     this.property = requireName(property, "Field property");
     this.type = Objects.requireNonNull(type, "Field type");
@@ -58,6 +62,7 @@ public final class Field<T, V> implements ResourceMember<T> {
     this.createAccess = AccessFunction.requireDocumentedOrInherited(createAccess);
     this.updateAccess = AccessFunction.requireDocumentedOrInherited(updateAccess);
     this.openApi = Objects.requireNonNull(openApi, "OpenAPI field documentation");
+    this.embedded = embedded;
     validateConfiguration();
   }
 
@@ -78,7 +83,8 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.inherited(),
         AccessFunction.inherited(),
         AccessFunction.inherited(),
-        OpenApiSchemaDocumentation.EMPTY);
+        OpenApiSchemaDocumentation.EMPTY,
+        false);
   }
 
   public static <T, V> Field<T, V> writable(
@@ -102,7 +108,38 @@ public final class Field<T, V> implements ResourceMember<T> {
         AccessFunction.inherited(),
         AccessFunction.inherited(),
         AccessFunction.inherited(),
-        OpenApiSchemaDocumentation.EMPTY);
+        OpenApiSchemaDocumentation.EMPTY,
+        false);
+  }
+
+  /**
+   * Declares a child of an embedded object. A row adapter constructs the row after child
+   * validation, so this definition has write metadata without an entity setter.
+   */
+  public static <T, V> Field<T, V> embedded(
+      String name, CollectionFieldType<V> type, Function<T, V> reader) {
+    return new Field<>(
+        name,
+        name,
+        type,
+        false,
+        false,
+        reader,
+        null,
+        EnumSet.allOf(WriteOperation.class),
+        false,
+        false,
+        null,
+        AccessFunction.inherited(),
+        AccessFunction.inherited(),
+        AccessFunction.inherited(),
+        OpenApiSchemaDocumentation.EMPTY,
+        true);
+  }
+
+  /** Whether this definition belongs to an embedded row rather than a collection entity. */
+  public boolean embedded() {
+    return embedded;
   }
 
   /**
@@ -174,6 +211,9 @@ public final class Field<T, V> implements ResourceMember<T> {
    */
   public Field<T, V> defaultValue(V value) {
     V checked = type.javaType().cast(Objects.requireNonNull(value, "Field default value"));
+    if (type instanceof DeclaredFieldType<?> declared) {
+      EmbeddedObjects.validateValue(declared, checked);
+    }
     type.validate(checked);
     return copy(writeOperations, requiredOnCreate, nullable, filterable, sortable, checked);
   }
@@ -209,6 +249,13 @@ public final class Field<T, V> implements ResourceMember<T> {
   }
 
   public FieldSchema schema(AccessPolicy inherited) {
+    AccessPolicy childAccess =
+        new AccessPolicy(
+            readAccess == AccessFunction.INHERITED ? inherited.readAccess() : readAccess,
+            createAccess == AccessFunction.INHERITED ? inherited.createAccess() : createAccess,
+            updateAccess == AccessFunction.INHERITED ? inherited.updateAccess() : updateAccess,
+            inherited.deleteAccess(),
+            inherited.softDeleteAccess());
     return new FieldSchema(
         name,
         property,
@@ -218,14 +265,19 @@ public final class Field<T, V> implements ResourceMember<T> {
         nullable,
         writeOperations.isEmpty(),
         writeOperations,
-        defaultValue == null ? null : type.serialize(defaultValue),
+        defaultValue == null
+            ? null
+            : type instanceof DeclaredFieldType<?> declared
+                ? EmbeddedObjects.defaultDocument(declared, defaultValue)
+                : type.serialize(defaultValue),
         operators(),
         supportsWildcards(),
         sortable(),
         openApi,
         CollectionSchemaBuilder.documented(readAccess, inherited.readAccess()),
         CollectionSchemaBuilder.documented(createAccess, inherited.createAccess()),
-        CollectionSchemaBuilder.documented(updateAccess, inherited.updateAccess()));
+        CollectionSchemaBuilder.documented(updateAccess, inherited.updateAccess()),
+        type.fields().stream().map(child -> child.schema(childAccess)).toList());
   }
 
   public Set<Operator> operators() {
@@ -238,6 +290,10 @@ public final class Field<T, V> implements ResourceMember<T> {
 
   public boolean sortable() {
     return sortable && type.sortable();
+  }
+
+  boolean declaresQueryCapabilities() {
+    return filterable || sortable;
   }
 
   public FilterSelector<T> filterSelector() {
@@ -265,8 +321,48 @@ public final class Field<T, V> implements ResourceMember<T> {
   }
 
   Object documentValue(T entity) {
+    return documentValue(entity, new AccessContext(null, AccessContext.Operation.READ, "embedded"));
+  }
+
+  Object documentValue(T entity, AccessContext context) {
     V value = reader.apply(entity);
-    return value == null ? null : type.serialize(value);
+    if (value == null) {
+      return projectReadValue(null, context);
+    }
+    if (type instanceof DeclaredFieldType<?> declared) {
+      EmbeddedObjects.validateValue(declared, value);
+      Object serialized = serializeDeclared(type, value, context);
+      return EmbeddedObjects.project(declared, serialized, context);
+    }
+    return type.serialize(value);
+  }
+
+  /** Validates and projects an alternate read value without invoking the entity reader. */
+  public Object projectReadValue(Object value, AccessContext context) {
+    if (value == null) {
+      if (!nullable && type instanceof DeclaredFieldType<?>) {
+        throw new EmbeddedFieldException("", DocumentValidationException.Reason.NULL_NOT_ALLOWED);
+      }
+      return null;
+    }
+    return type instanceof DeclaredFieldType<?> declared
+        ? EmbeddedObjects.serialize(declared, value, context)
+        : value;
+  }
+
+  /** Reprojects an included document that has already omitted unreadable required children. */
+  Object projectIncludedReadValue(Object value, AccessContext context) {
+    if (value == null || !(type instanceof DeclaredFieldType<?> declared)) {
+      return projectReadValue(value, context);
+    }
+    return EmbeddedObjects.project(declared, value, context);
+  }
+
+  private static <V> Object serializeDeclared(
+      CollectionFieldType<V> type, V value, AccessContext context) {
+    @SuppressWarnings("unchecked")
+    DeclaredFieldType<V> declared = (DeclaredFieldType<V>) type;
+    return declared.serialize(value, context);
   }
 
   void write(T entity, Object value) {
@@ -289,6 +385,9 @@ public final class Field<T, V> implements ResourceMember<T> {
       return null;
     }
     V cast = type.javaType().cast(value);
+    if (type instanceof DeclaredFieldType<?> declared) {
+      EmbeddedObjects.validateValue(declared, cast);
+    }
     type.validate(cast);
     return cast;
   }
@@ -324,7 +423,8 @@ public final class Field<T, V> implements ResourceMember<T> {
         readAccess,
         createAccess,
         updateAccess,
-        openApi);
+        openApi,
+        embedded);
   }
 
   private Field<T, V> copyAccess(
@@ -347,14 +447,16 @@ public final class Field<T, V> implements ResourceMember<T> {
         reads,
         creates,
         updates,
-        documentation);
+        documentation,
+        embedded);
   }
 
-  private void validateConfiguration() {
+  void validateConfiguration() {
     Objects.requireNonNull(type.javaType(), "Field Java type");
     Objects.requireNonNull(type.inputKind(), "Field input kind");
     Set.copyOf(Objects.requireNonNull(type.operators(), "Field operators"));
-    if (writer == null && !writeOperations.isEmpty()) {
+    EmbeddedObjects.validateDeclaration(type);
+    if (writer == null && !embedded && !writeOperations.isEmpty()) {
       throw new IllegalArgumentException("Writable field requires a writer");
     }
     if (writer != null && writeOperations.isEmpty()) {
@@ -374,6 +476,31 @@ public final class Field<T, V> implements ResourceMember<T> {
     }
     if (defaultValue != null && requiredOnCreate) {
       throw new IllegalArgumentException("Required field must not have a default value");
+    }
+    validatePublishedValues();
+  }
+
+  private void validatePublishedValues() {
+    if (defaultValue != null) {
+      validateValue(defaultValue);
+    }
+    if (type instanceof DeclaredFieldType<?> declared) {
+      java.util.stream.Stream.concat(
+              java.util.stream.Stream.ofNullable(openApi.example()),
+              openApi.additionalExamples().stream())
+          .forEach(
+              example -> {
+                try {
+                  var node = new ObjectMapper().readTree(example);
+                  if (node != null && node.isNull() && nullable) {
+                    return;
+                  }
+                  EmbeddedObjects.validateValue(declared, node);
+                } catch (IOException ex) {
+                  throw new IllegalArgumentException("Invalid embedded field example", ex);
+                }
+              });
+      type.fields().forEach(Field::validatePublishedValues);
     }
   }
 

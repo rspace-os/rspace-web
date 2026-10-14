@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
@@ -14,7 +15,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-/** Standard scalar field types for collection descriptions. */
+/** Standard scalar and declared embedded field types for collection descriptions. */
 public final class CollectionFieldTypes {
 
   private static final Set<Operator> ORDERED_OPERATORS =
@@ -105,10 +106,96 @@ public final class CollectionFieldTypes {
     return new OpaqueFieldType<>((Class) Map.class, CollectionFieldType.InputKind.OBJECT);
   }
 
-  /** A server-rendered array field that is readable but never queryable or writable. */
+  /** Declares object rows, whose adapter runs after child validation. */
+  public static <R> DeclaredFieldType<List<R>> array(
+      Class<R> rowType,
+      List<? extends Field<R, ?>> fields,
+      Function<Map<String, Object>, R> adapter) {
+    return array(rowType, fields, adapter, row -> {}, rows -> {}, 0, Integer.MAX_VALUE);
+  }
+
+  /** Declares row and whole-array rules, including published inclusive row bounds. */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public static <E> CollectionFieldType<List<E>> array() {
-    return new OpaqueFieldType<>((Class) List.class, CollectionFieldType.InputKind.ARRAY);
+  public static <R> DeclaredFieldType<List<R>> array(
+      Class<R> rowType,
+      List<? extends Field<R, ?>> fields,
+      Function<Map<String, Object>, R> adapter,
+      Consumer<R> rowValidator,
+      Consumer<List<R>> arrayValidator,
+      int minRows,
+      int maxRows) {
+    if (minRows < 0 || maxRows < minRows) {
+      throw new IllegalArgumentException("Invalid array row bounds");
+    }
+    Map<String, Object> bounds = new LinkedHashMap<>();
+    if (minRows > 0) {
+      bounds.put("minItems", minRows);
+    }
+    if (maxRows < Integer.MAX_VALUE) {
+      bounds.put("maxItems", maxRows);
+    }
+    Consumer<List<R>> validator = Objects.requireNonNull(arrayValidator, "Array validator");
+    return new EmbeddedType<List<R>, R>(
+        (Class<List<R>>) (Class) List.class,
+        CollectionFieldType.InputKind.ARRAY,
+        rowType,
+        fields,
+        adapter,
+        rowValidator,
+        rows -> {
+          if (rows.size() < minRows || rows.size() > maxRows) {
+            throw new IllegalArgumentException("Array violates its row bounds");
+          }
+          validator.accept(rows);
+        },
+        bounds);
+  }
+
+  /** Declares a finite embedded object using the same child definitions as array rows. */
+  public static <R> DeclaredFieldType<R> object(
+      Class<R> rowType,
+      List<? extends Field<R, ?>> fields,
+      Function<Map<String, Object>, R> adapter) {
+    return object(rowType, fields, adapter, row -> {});
+  }
+
+  public static <R> DeclaredFieldType<R> object(
+      Class<R> rowType,
+      List<? extends Field<R, ?>> fields,
+      Function<Map<String, Object>, R> adapter,
+      Consumer<R> rowValidator) {
+    return new EmbeddedType<>(
+        rowType,
+        CollectionFieldType.InputKind.OBJECT,
+        rowType,
+        fields,
+        adapter,
+        rowValidator,
+        value -> {},
+        Map.of());
+  }
+
+  /**
+   * A writable structured field decoded from its complete JSON value by {@code parser}.
+   *
+   * @param structure JSON Schema keywords, such as {@code items}, published for the value
+   */
+  public static <V> CollectionFieldType<V> structured(
+      Class<V> javaType,
+      CollectionFieldType.InputKind inputKind,
+      Map<String, Object> structure,
+      Function<JsonNode, V> parser,
+      Function<V, Object> serializer) {
+    if (inputKind == CollectionFieldType.InputKind.ARRAY) {
+      throw new IllegalArgumentException("Array fields must declare their children");
+    }
+    return new StructuredType<>(
+        Objects.requireNonNull(javaType, "Structured Java type"),
+        Objects.requireNonNull(inputKind, "Structured input kind"),
+        new CollectionFieldType.Schema(
+            inputKind.name().toLowerCase(java.util.Locale.ROOT), null, null, structure),
+        Objects.requireNonNull(parser, "Structured parser"),
+        Objects.requireNonNull(serializer, "Structured serializer"));
   }
 
   public static CollectionFieldType<String> text() {
@@ -167,13 +254,16 @@ public final class CollectionFieldTypes {
    * on body properties only, because {@code where} literals are never checked against them.
    *
    * <p>One decorator holds all of a field's rules, so wrapping a constrained type is rejected, as
-   * is an opaque type, which cannot be written at all.
+   * is an opaque type, which cannot be written at all, and a structured type, whose decoder already
+   * validates the complete value and which the parser must still recognise.
    */
   public static <V> CollectionFieldType<V> constrained(
       CollectionFieldType<V> base, Constraints constraints) {
     Objects.requireNonNull(base, "Constrained field type");
     Objects.requireNonNull(constraints, "Field constraints");
-    if (base instanceof ConstrainedFieldType<?> || base instanceof OpaqueFieldType<?>) {
+    if (base instanceof ConstrainedFieldType<?>
+        || base instanceof OpaqueFieldType<?>
+        || base instanceof StructuredFieldType<?>) {
       throw new IllegalArgumentException("Constraints require a single scalar field type");
     }
     if ((constraints.minimum() != null || constraints.maximum() != null)
@@ -370,6 +460,86 @@ public final class CollectionFieldTypes {
         keywords.put("enum", constraints.allowed());
       }
       return Collections.unmodifiableMap(keywords);
+    }
+  }
+
+  private record StructuredType<V>(
+      Class<V> javaType,
+      InputKind inputKind,
+      Schema schema,
+      Function<JsonNode, V> parser,
+      Function<V, Object> serializer)
+      implements StructuredFieldType<V> {
+
+    @Override
+    public V parse(JsonNode value) {
+      return parser.apply(value);
+    }
+
+    @Override
+    public V parse(String value) {
+      throw new UnsupportedOperationException("Structured fields cannot be parsed from text");
+    }
+
+    @Override
+    public Object serialize(V value) {
+      return serializer.apply(value);
+    }
+
+    @Override
+    public Set<Operator> operators() {
+      return Set.of();
+    }
+
+    @Override
+    public boolean sortable() {
+      return false;
+    }
+  }
+
+  private record EmbeddedType<V, R>(
+      Class<V> javaType,
+      InputKind inputKind,
+      Class<R> rowType,
+      List<? extends Field<R, ?>> fields,
+      Function<Map<String, Object>, R> adapter,
+      Consumer<R> rowValidator,
+      Consumer<V> validator,
+      Map<String, Object> writeConstraints)
+      implements DeclaredFieldType<V> {
+
+    private EmbeddedType {
+      EmbeddedObjects.validateRowType(rowType);
+      fields = List.copyOf(fields);
+      Objects.requireNonNull(adapter, "Embedded row adapter");
+      Objects.requireNonNull(rowValidator, "Embedded row validator");
+      writeConstraints = Map.copyOf(writeConstraints);
+      EmbeddedObjects.validateDeclaration(inputKind, fields);
+    }
+
+    @Override
+    public Object assemble(Map<String, Object> values) {
+      return rowType.cast(Objects.requireNonNull(adapter.apply(values), "Embedded row"));
+    }
+
+    @Override
+    public void validateRow(Object row) {
+      rowValidator.accept(rowType.cast(row));
+    }
+
+    @Override
+    public void validate(V value) {
+      validator.accept(value);
+    }
+
+    @Override
+    public Set<Operator> operators() {
+      return Set.of();
+    }
+
+    @Override
+    public boolean sortable() {
+      return false;
     }
   }
 

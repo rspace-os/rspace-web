@@ -44,6 +44,7 @@ public final class ResourceRegistry {
     descriptions.forEach(
         description -> {
           Objects.requireNonNull(description, "Resource description");
+          description.fields().forEach(Field::validateConfiguration);
           if (names.putIfAbsent(description.resourceName(), description) != null) {
             throw new IllegalArgumentException(
                 "Duplicate resource name " + description.resourceName());

@@ -28,19 +28,32 @@ final class CollectionEntityMapper<T> {
 
   Map<String, Object> toDocument(
       T entity, Predicate<String> selection, Map<String, Object> readOverrides) {
+    return toDocument(
+        entity,
+        selection,
+        readOverrides,
+        new AccessContext(null, AccessContext.Operation.READ, "embedded"));
+  }
+
+  Map<String, Object> toDocument(
+      T entity,
+      Predicate<String> selection,
+      Map<String, Object> readOverrides,
+      AccessContext context) {
     Objects.requireNonNull(entity, "Entity");
     Objects.requireNonNull(selection, "Selection");
     Objects.requireNonNull(readOverrides, "Read overrides");
     Map<String, Object> document = new LinkedHashMap<>();
     fields.values().stream()
         .filter(field -> selection.test(field.name()))
+        .filter(field -> field.readAccess().allowsField(context))
         .forEach(
             field ->
                 document.put(
                     field.name(),
                     readOverrides.containsKey(field.name())
-                        ? readOverrides.get(field.name())
-                        : field.documentValue(entity)));
+                        ? field.projectReadValue(readOverrides.get(field.name()), context)
+                        : field.documentValue(entity, context)));
     return document;
   }
 

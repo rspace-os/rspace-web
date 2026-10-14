@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,5 +20,6 @@ public record FieldSchema(
     OpenApiSchemaDocumentation openApi,
     AccessDocumentation readAccess,
     AccessDocumentation createAccess,
-    AccessDocumentation updateAccess)
+    AccessDocumentation updateAccess,
+    List<FieldSchema> fields)
     implements ResourceFieldSchema {}
