@@ -1,9 +1,12 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingSummaryList } from "@/modules/booking/components/BookingSummaryList";
 import { DayTimelineEventCard } from "@/modules/booking/components/DayTimeline";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingDateTimeLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
+import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingActions } from "./BookingEventActions";
@@ -13,6 +16,7 @@ import {
   layoutWeekGridDay,
   WEEK_GRID_DAY_MINUTES,
   WEEK_GRID_PIXELS_PER_HOUR,
+  type WeekGridOverflow,
   weekGridEventBox,
 } from "./calendarWeekLayout";
 
@@ -23,6 +27,57 @@ const HOURS = Array.from({ length: WEEK_GRID_DAY_MINUTES / 60 - 1 }, (_, index) 
 
 function clampToDay(minute: number) {
   return Math.min(WEEK_GRID_DAY_MINUTES, Math.max(0, minute));
+}
+
+/** A crowded overlap group's collapsed bookings, listed as the dashboard's At a glance day lists them. */
+function OverflowBookings({
+  day,
+  overflow,
+  timezone,
+  onShowDay,
+}: {
+  day: string;
+  overflow: WeekGridOverflow;
+  timezone: string;
+  onShowDay: (day: string) => void;
+}) {
+  const { t } = useTranslation("booking");
+  const popupRef = React.useRef<HTMLDivElement>(null);
+  const dateLabel = formatDate(day, { dateStyle: "full" });
+  const bookings = React.useMemo(() => overflow.hidden.map(({ booking }) => booking), [overflow.hidden]);
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={<Button variant="outline" size="xs" className="h-full w-full items-start rounded-sm px-1 pt-1" />}
+        aria-label={t("calendar.weekGrid.moreLabel", { count: overflow.hiddenCount, date: dateLabel })}
+      >
+        {t("calendar.weekGrid.more", { count: overflow.hiddenCount })}
+      </PopoverTrigger>
+      <PopoverContent
+        ref={popupRef}
+        // Focus the dialog, so its date and count are read first. Focusing the first booking would open that
+        // booking's time tooltip, which then takes the first Escape instead of this popover.
+        initialFocus={popupRef}
+        side="bottom"
+        align="start"
+        sideOffset={8}
+        collisionPadding={8}
+        sticky
+        className="max-h-[min(32rem,var(--available-height))] w-80 max-w-[calc(100vw-1rem)] gap-3 overflow-y-auto overscroll-contain rounded-sm p-3"
+      >
+        <div className="min-w-0">
+          <PopoverTitle className="text-base font-semibold leading-tight">{dateLabel}</PopoverTitle>
+          <PopoverDescription className="mt-1 text-xs">
+            {t("calendar.weekGrid.moreCount", { count: overflow.hiddenCount })}
+          </PopoverDescription>
+        </div>
+        <BookingSummaryList bookings={bookings} timeZone={timezone} showActor />
+        <Button type="button" variant="outline" size="sm" onClick={() => onShowDay(day)}>
+          {t("calendar.weekGrid.openDay")}
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
 }
 
 /** The Time grid week: seven day columns sharing one wall-clock hour axis. */
@@ -47,6 +102,7 @@ export function CalendarWeekTimeGrid({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [expandedEventKey, setExpandedEventKey] = React.useState<string | null>(null);
   const columns = React.useMemo(
@@ -109,7 +165,7 @@ export function CalendarWeekTimeGrid({
                 className="absolute right-1.5 -translate-y-1/2 text-[11px] leading-none whitespace-nowrap text-muted-foreground tabular-nums"
                 style={{ top: hour * WEEK_GRID_PIXELS_PER_HOUR }}
               >
-                {formatWallClockTime(`${hour}:00`)}
+                {formatWallClockTime(`${hour}:00`, bookingDateTimeLocale(timeFormat))}
               </span>
             ))}
           </div>
@@ -180,18 +236,7 @@ export function CalendarWeekTimeGrid({
                     className="absolute z-10 px-0.5 py-px"
                     style={weekGridEventBox(overflow)}
                   >
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      className="h-full w-full items-start rounded-sm px-1 pt-1"
-                      aria-label={t("calendar.weekGrid.moreLabel", {
-                        count: overflow.hiddenCount,
-                        date: formatDate(day, { dateStyle: "full" }),
-                      })}
-                      onClick={() => onShowDay(day)}
-                    >
-                      {t("calendar.weekGrid.more", { count: overflow.hiddenCount })}
-                    </Button>
+                    <OverflowBookings day={day} overflow={overflow} timezone={timezone} onShowDay={onShowDay} />
                   </li>
                 ))}
               </ol>
