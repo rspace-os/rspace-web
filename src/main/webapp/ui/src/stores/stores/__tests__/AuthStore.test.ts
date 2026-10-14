@@ -1,14 +1,10 @@
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { tokenExpiringIn } from "@/__tests__/helpers/jwt";
 import { server } from "@/__tests__/mswServer";
 import JwtService from "@/common/JwtService";
 import AuthStore from "@/stores/stores/AuthStore";
 import type { RootStore } from "@/stores/stores/RootStore";
-
-function tokenExpiringInOneHour(): string {
-  const payload = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }));
-  return `header.${payload}.signature`;
-}
 
 beforeEach(() => {
   sessionStorage.clear();
@@ -21,8 +17,8 @@ afterEach(() => {
 
 describe("AuthStore", () => {
   it("mints a fresh session-bound token on authenticated initialization", async () => {
-    JwtService.saveToken(tokenExpiringInOneHour());
-    const freshToken = tokenExpiringInOneHour();
+    JwtService.saveToken(tokenExpiringIn(3600));
+    const freshToken = tokenExpiringIn(3600);
     let requestCount = 0;
     server.use(
       http.post("/api/v2/oauth/tokens", () => {
@@ -33,7 +29,7 @@ describe("AuthStore", () => {
     const authStore = new AuthStore({} as RootStore);
 
     try {
-      await authStore.synchronizeWithSessionStorage();
+      await authStore.refreshAuthentication();
 
       expect(requestCount).toBe(1);
       expect(JwtService.getToken()).toBe(freshToken);
@@ -46,7 +42,7 @@ describe("AuthStore", () => {
 
   it("mints a fresh legacy token on public document initialization", async () => {
     document.body.appendChild(Object.assign(document.createElement("div"), { id: "public_document_view" }));
-    JwtService.saveToken(tokenExpiringInOneHour());
+    JwtService.saveToken(tokenExpiringIn(3600));
     let requestCount = 0;
     server.use(
       http.get("/public/publicView/userform/ajax/inventoryOauthToken", () => {
@@ -57,7 +53,7 @@ describe("AuthStore", () => {
     const authStore = new AuthStore({} as RootStore);
 
     try {
-      await authStore.synchronizeWithSessionStorage();
+      await authStore.refreshAuthentication();
 
       expect(requestCount).toBe(1);
       expect(JwtService.getToken()).toBe("public-legacy-token");

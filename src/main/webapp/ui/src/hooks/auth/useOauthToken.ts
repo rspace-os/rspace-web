@@ -1,6 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import { fetchOauthToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
+import { fetchOauthToken, isPublicDocumentView, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
 
 const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
 
@@ -39,8 +39,6 @@ function refreshDelayMs(token: string): number {
  * changes cannot reuse an earlier browser-session context.
  */
 export default function useOauthToken(): { getToken: () => Promise<string> } {
-  const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
-
   /*
    * We use a ref instead of useState to store the token because we need the
    * `getToken` function to have a stable reference. If we used useState, then

@@ -6,13 +6,25 @@ import useOauthToken from "@/hooks/auth/useOauthToken";
 import { getStoredToken, saveStoredToken } from "@/modules/common/utils/auth";
 
 const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
+let cleanupSetTimeoutSpy = () => {};
 
 beforeEach(() => {
   sessionStorage.clear();
   document.getElementById("public_document_view")?.remove();
+  const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+  cleanupSetTimeoutSpy = () => {
+    setTimeoutSpy.mock.results.forEach((result, index) => {
+      if (setTimeoutSpy.mock.calls[index]?.[1] === MAX_SET_TIMEOUT_DELAY_MS) {
+        clearTimeout(result.value as ReturnType<typeof setTimeout>);
+      }
+    });
+    setTimeoutSpy.mockRestore();
+  };
 });
 
 afterEach(() => {
+  cleanupSetTimeoutSpy();
+  cleanupSetTimeoutSpy = () => {};
   document.getElementById("public_document_view")?.remove();
 });
 
@@ -26,7 +38,6 @@ describe("useOauthToken", () => {
         return HttpResponse.json({ accessToken: "current-session-token" });
       }),
     );
-    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
     const { result, unmount } = renderHook(() => useOauthToken());
 
     try {
@@ -40,12 +51,6 @@ describe("useOauthToken", () => {
       expect(getStoredToken()).toBe("token-from-an-earlier-session-context");
     } finally {
       unmount();
-      setTimeoutSpy.mock.results.forEach((result, index) => {
-        if (setTimeoutSpy.mock.calls[index]?.[1] === MAX_SET_TIMEOUT_DELAY_MS) {
-          clearTimeout(result.value as ReturnType<typeof setTimeout>);
-        }
-      });
-      setTimeoutSpy.mockRestore();
     }
   });
 
@@ -57,7 +62,6 @@ describe("useOauthToken", () => {
         HttpResponse.json({ data: "public-token" }),
       ),
     );
-    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
     const { result, unmount } = renderHook(() => useOauthToken());
 
     try {
@@ -70,12 +74,6 @@ describe("useOauthToken", () => {
       expect(getStoredToken()).toBe("public-token");
     } finally {
       unmount();
-      setTimeoutSpy.mock.results.forEach((result, index) => {
-        if (setTimeoutSpy.mock.calls[index]?.[1] === MAX_SET_TIMEOUT_DELAY_MS) {
-          clearTimeout(result.value as ReturnType<typeof setTimeout>);
-        }
-      });
-      setTimeoutSpy.mockRestore();
     }
   });
 });
