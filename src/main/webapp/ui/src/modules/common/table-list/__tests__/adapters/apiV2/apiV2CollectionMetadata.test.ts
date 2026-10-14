@@ -58,6 +58,15 @@ const openApi = {
             "x-rspace-allowed-fields": { records: ["id", "title", "modifiedAt"] },
           },
         ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: { properties: { docs: { items: { properties: {} } } } },
+              },
+            },
+          },
+        },
       },
     },
   },
@@ -178,6 +187,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
     expect(apiV2CollectionMetadataFromOpenApi<TestRecord>(openApi, "records")).toEqual({
       resourceName: "records",
       fields: ["id", "title", "modifiedAt"],
+      structuredFields: {},
       sorting: {
         fields: ["title", "modifiedAt"],
         default: [{ field: "modifiedAt", direction: "desc" }],
