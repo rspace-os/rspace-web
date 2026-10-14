@@ -11,8 +11,7 @@ describe("ZonedBookingWindowFields", () => {
         timezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingStart="00:00"
-        openingEnd="24:00"
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
         density="compact"
         value={{
           startDate: "2026-08-17",
@@ -53,8 +52,7 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone={schedulingTimezone}
           slotGranularityMinutes={5}
           maxBookingDurationMinutes={0}
-          openingStart="09:00"
-          openingEnd="17:00"
+          openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" }))}
           value={{ startDate: "2026-08-17", startTime, endDate: "2026-08-17", endTime }}
           onChange={vi.fn()}
         />,
@@ -65,8 +63,7 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone,
           slotGranularityMinutes: 5,
           maxBookingDurationMinutes: 0,
-          openingStart: "09:00",
-          openingEnd: "17:00",
+          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" })),
         }).window,
       ).toEqual({ start, end });
       expect(screen.queryByText("booking:bookings.form.timezone")).not.toBeInTheDocument();
@@ -83,8 +80,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="Asia/Kathmandu"
         slotGranularityMinutes={10}
         maxBookingDurationMinutes={0}
-        openingStart="00:00"
-        openingEnd="24:00"
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
         value={{
           startDate: "2026-08-17",
           startTime: "09:02",
@@ -109,8 +105,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="America/New_York"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingStart="00:00"
-        openingEnd="24:00"
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
         value={{
           startDate: "2026-08-18",
           startTime: "05:00",
@@ -130,8 +125,7 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone: "America/New_York",
           slotGranularityMinutes: 5,
           maxBookingDurationMinutes: 0,
-          openingStart: "00:00",
-          openingEnd: "24:00",
+          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         },
       ).window,
     ).toEqual({ start: "2026-08-18T03:00:00Z", end: "2026-08-18T05:00:00Z" });
@@ -148,8 +142,7 @@ describe("ZonedBookingWindowFields", () => {
         <ZonedBookingWindowFields
           timezone="UTC"
           slotGranularityMinutes={5}
-          openingStart={openingStart}
-          openingEnd={openingEnd}
+          openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: openingStart, end: openingEnd }))}
           maxBookingDurationMinutes={maxBookingDurationMinutes}
           value={{ startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" }}
           onChange={vi.fn()}
@@ -159,7 +152,16 @@ describe("ZonedBookingWindowFields", () => {
         validateBookingWindow(
           { startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" },
           "UTC",
-          { schedulingTimezone: "UTC", slotGranularityMinutes: 5, openingStart, openingEnd, maxBookingDurationMinutes },
+          {
+            schedulingTimezone: "UTC",
+            slotGranularityMinutes: 5,
+            openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
+              dayOfWeek,
+              start: openingStart,
+              end: openingEnd,
+            })),
+            maxBookingDurationMinutes,
+          },
         ).window,
       ).toEqual(valid ? { start: "2026-10-19T10:00:00Z", end: "2026-10-21T11:00:00Z" } : undefined);
     },
@@ -171,8 +173,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone: "UTC",
         slotGranularityMinutes: 1,
         maxBookingDurationMinutes: 0,
-        openingStart: "08:00",
-        openingEnd: "24:00",
+        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "24:00" })),
       });
 
     expect(validate("00:00")).toMatchObject({
@@ -188,8 +189,7 @@ describe("ZonedBookingWindowFields", () => {
         timezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingStart="00:00"
-        openingEnd="24:00"
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
         value={{
           startDate: "2026-03-29",
           startTime: "02:30",
@@ -211,8 +211,7 @@ describe("ZonedBookingWindowFields", () => {
         timezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingStart="00:00"
-        openingEnd="24:00"
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
         value={{
           startDate: "2026-10-25",
           startTime: "02:30",
@@ -234,8 +233,7 @@ describe("ZonedBookingWindowFields", () => {
         timezone="Europe/Berlin"
         slotGranularityMinutes={1}
         maxBookingDurationMinutes={60}
-        openingStart="00:00"
-        openingEnd="24:00"
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
         value={{
           startDate: "2026-10-25",
           startTime: "02:30",
@@ -264,8 +262,7 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone: "Europe/Berlin",
           slotGranularityMinutes: 1,
           maxBookingDurationMinutes: 60,
-          openingStart: "00:00",
-          openingEnd: "24:00",
+          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         },
       ).window,
     ).toBeUndefined();
@@ -277,8 +274,7 @@ describe("ZonedBookingWindowFields", () => {
         timezone="Europe/Berlin"
         slotGranularityMinutes={1}
         maxBookingDurationMinutes={60}
-        openingStart="00:00"
-        openingEnd="24:00"
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
         value={{
           startDate: "2026-10-25",
           startTime: "02:30",
@@ -307,13 +303,91 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone: "Europe/Berlin",
           slotGranularityMinutes: 1,
           maxBookingDurationMinutes: 60,
-          openingStart: "00:00",
-          openingEnd: "24:00",
+          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         },
       ).window,
     ).toEqual({
       start: "2026-10-25T00:30:00Z",
       end: "2026-10-25T01:30:00Z",
+    });
+  });
+});
+describe("independent weekday booking windows", () => {
+  const policy = {
+    schedulingTimezone: "UTC",
+    slotGranularityMinutes: 5,
+    maxBookingDurationMinutes: 0,
+    openingHours: [
+      { dayOfWeek: 1, start: "08:00", end: "24:00" },
+      { dayOfWeek: 2, start: "00:00", end: "16:00" },
+      { dayOfWeek: 4, start: "10:00", end: "18:00" },
+    ],
+  };
+
+  it.each([
+    {
+      name: "touching Monday and Tuesday",
+      startDate: "2026-08-17",
+      startTime: "23:00",
+      endDate: "2026-08-18",
+      endTime: "10:00",
+      valid: true,
+    },
+    {
+      name: "Tuesday's exclusive closing boundary",
+      startDate: "2026-08-18",
+      startTime: "15:00",
+      endDate: "2026-08-18",
+      endTime: "16:00",
+      valid: true,
+    },
+    {
+      name: "time beyond Tuesday's closing boundary",
+      startDate: "2026-08-18",
+      startTime: "15:00",
+      endDate: "2026-08-18",
+      endTime: "16:05",
+      valid: false,
+    },
+    {
+      name: "a closed Wednesday",
+      startDate: "2026-08-19",
+      startTime: "10:00",
+      endDate: "2026-08-19",
+      endTime: "11:00",
+      valid: false,
+    },
+    {
+      name: "Thursday's different start",
+      startDate: "2026-08-20",
+      startTime: "09:00",
+      endDate: "2026-08-20",
+      endTime: "11:00",
+      valid: false,
+    },
+    {
+      name: "a window crossing a closed weekday",
+      startDate: "2026-08-18",
+      startTime: "15:00",
+      endDate: "2026-08-20",
+      endTime: "11:00",
+      valid: false,
+    },
+  ])("checks $name", ({ name: _name, valid, ...draft }) => {
+    const result = validateBookingWindow(draft, "UTC", policy);
+    expect(result.openingInvalid).toBe(!valid);
+    expect(Boolean(result.window)).toBe(valid);
+  });
+
+  it("retains the maintenance bypass and the edit policy-mismatch allowance", () => {
+    const draft = { startDate: "2026-08-19", startTime: "10:00", endDate: "2026-08-19", endTime: "11:00" };
+    expect(validateBookingWindow(draft, "UTC", { ...policy, enforceOpeningHours: false })).toMatchObject({
+      openingInvalid: false,
+      window: { start: "2026-08-19T10:00:00Z", end: "2026-08-19T11:00:00Z" },
+    });
+    expect(validateBookingWindow(draft, "UTC", { ...policy, allowPolicyMismatch: true })).toMatchObject({
+      openingInvalid: true,
+      window: { start: "2026-08-19T10:00:00Z", end: "2026-08-19T11:00:00Z" },
     });
   });
 });
