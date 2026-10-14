@@ -49,6 +49,11 @@ Callers that explicitly reset the form must also remount `SchedulingSettingsFiel
 editing session. Availability-window, timezone, default sharing, granularity and buffer settings
 remain separate from the weekly schedule.
 
+Item creation copies the full institution schedule into its draft. Item edits submit the full
+`openingHours` value, including unchanged weekdays. Cancelling restores all entries from the
+configuration, while a failed or stale save keeps the current draft and its closed-day history.
+Item details show every weekday independently, including closed days, in the scheduling timezone.
+
 ## REST API compatibility
 
 The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
