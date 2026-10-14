@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 final class ResourceRoleSchemeValidator {
 
@@ -27,8 +28,7 @@ final class ResourceRoleSchemeValidator {
   }
 
   private static void validateFixedAudiences(ResourceRoleScheme scheme, List<ResourceRole> roles) {
-    Set<String> roleKeys =
-        roles.stream().map(ResourceRole::key).collect(java.util.stream.Collectors.toSet());
+    Set<String> roleKeys = roles.stream().map(ResourceRole::key).collect(Collectors.toSet());
     scheme
         .fixedAudienceRoles()
         .forEach(
@@ -77,8 +77,7 @@ final class ResourceRoleSchemeValidator {
 
   private static void validateRequiredPersistedRoles(
       ResourceRoleScheme scheme, List<ResourceRole> roles) {
-    Set<String> roleKeys =
-        roles.stream().map(ResourceRole::key).collect(java.util.stream.Collectors.toSet());
+    Set<String> roleKeys = roles.stream().map(ResourceRole::key).collect(Collectors.toSet());
     Set<String> requiredRoles =
         Objects.requireNonNull(scheme.requiredPersistedRoles(), "requiredPersistedRoles");
     if (!requiredRoles.contains(ResourceRoleScheme.OWNER_ROLE)) {
