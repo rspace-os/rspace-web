@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { type ComponentProps, type ReactElement, Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import AccountMenu, { formatFullName, logoutHrefForSession } from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
@@ -94,6 +95,7 @@ const maintenanceEnvelope = (docs: Array<Record<string, unknown>>) => ({
 });
 
 const defaultHandlers = [
+  http.get("/api/v2/feature-flags", () => HttpResponse.json(maintenanceEnvelope([]))),
   http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
   http.get("/api/v2/config", () => HttpResponse.json(appConfig)),
   http.get("/api/v2/maintenances", () => HttpResponse.json(maintenanceEnvelope([]))),
@@ -164,6 +166,32 @@ describe("NewAppBar (MSW-driven)", () => {
       within(navigation).queryByRole("link", { name: "common:appBar.sections.inventory.title" }),
     ).not.toBeInTheDocument();
     expect(within(navigation).getByRole("link", { name: "common:appBar.sections.system.title" })).toBeInTheDocument();
+  });
+
+  it("shows the booking nav link when the booking feature flag is enabled", async () => {
+    const featureFlagReader = vi.mocked(useIsFeatureFlagEnabled);
+    featureFlagReader.mockClear();
+    featureFlagReader.mockImplementation((flag) => flag === FEATURE_FLAGS.bookingEnabled);
+
+    renderAppBar();
+
+    const navigation = await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
+    expect(featureFlagReader).toHaveBeenCalledWith(FEATURE_FLAGS.bookingEnabled);
+    expect(within(navigation).getByRole("link", { name: "common:appBar.sections.booking.title" })).toBeInTheDocument();
+  });
+
+  it("hides the booking nav link when the booking feature flag is disabled", async () => {
+    const featureFlagReader = vi.mocked(useIsFeatureFlagEnabled);
+    featureFlagReader.mockClear();
+    featureFlagReader.mockImplementation((flag) => flag !== FEATURE_FLAGS.bookingEnabled);
+
+    renderAppBar();
+
+    const navigation = await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
+    expect(featureFlagReader).toHaveBeenCalledWith(FEATURE_FLAGS.bookingEnabled);
+    expect(
+      within(navigation).queryByRole("link", { name: "common:appBar.sections.booking.title" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the maintenance notice when /api/v2/maintenances carries a scheduled window", async () => {

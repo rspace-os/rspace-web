@@ -2,7 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, onTestFinished, test } from "vitest";
 import { page } from "vitest/browser";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { clickWhenInViewport, moveToastStackIntoViewport } from "@/__tests__/pageObjects/viewport";
 import { PidinstImportDialogStory } from "./PidinstImportDialog.story";
 import { PidinstImportDialogPage } from "./pageObjects/PidinstImportDialogPage";
