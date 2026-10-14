@@ -26,6 +26,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionDescription;
@@ -124,10 +125,8 @@ public final class BookingConfigurationResourceOperations
                         true,
                         "slotGranularityMinutes",
                         5,
-                        "openingStart",
-                        "08:00",
-                        "openingEnd",
-                        "18:00",
+                        "openingHours",
+                        List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
                         "bufferBeforeMinutes",
                         15,
                         "bufferAfterMinutes",
@@ -325,8 +324,7 @@ public final class BookingConfigurationResourceOperations
   private static BookingSchedulingSettings.Patch schedulingPatch(ParsedDocument document) {
     return new BookingSchedulingSettings.Patch(
         value(document, "slotGranularityMinutes", Long.class),
-        value(document, "openingStart", String.class),
-        value(document, "openingEnd", String.class),
+        openingHours(document),
         value(document, "bufferBeforeMinutes", Long.class),
         value(document, "bufferAfterMinutes", Long.class),
         value(document, "maxBookingDurationMinutes", Long.class),
@@ -346,6 +344,13 @@ public final class BookingConfigurationResourceOperations
     Object selectedEntity = resolved.entityAs(metadata.entityType());
     InventoryRecord entity = InventoryRecord.class.cast(selectedEntity);
     return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);
+  }
+
+  private static List<BookingOpeningHoursEntry> openingHours(ParsedDocument document) {
+    Object value = document.values().get("openingHours");
+    return value == null
+        ? null
+        : List.class.cast(value).stream().map(BookingOpeningHoursEntry.class::cast).toList();
   }
 
   private static <T> T value(ParsedDocument document, String field, Class<T> type) {

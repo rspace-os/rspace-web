@@ -2,15 +2,18 @@ package com.researchspace.model.booking;
 
 import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.NEVER;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2ResourceDefinition;
 import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceMember;
@@ -18,8 +21,12 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.collection.WriteOperation;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
+import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @ApiV2ResourceDefinition(
     name = "booking-configurations",
@@ -48,14 +55,6 @@ public record ApiV2BookingConfigurationResource(
             description = "Allowed wall-clock booking increment in minutes.",
             example = "5")
         long slotGranularityMinutes,
-    @ApiV2ResourceField(
-            description = "Inclusive daily opening time in the configured time zone.",
-            example = "08:00")
-        String openingStart,
-    @ApiV2ResourceField(
-            description = "Daily closing time, where 24:00 means the next local midnight.",
-            example = "18:00")
-        String openingEnd,
     @ApiV2ResourceField(description = "Unavailable minutes before a booking.", example = "15")
         long bufferBeforeMinutes,
     @ApiV2ResourceField(description = "Unavailable minutes after a booking.", example = "15")
@@ -102,6 +101,116 @@ public record ApiV2BookingConfigurationResource(
                   "Instrument to which this booking configuration applies.",
                   null));
 
+  private record RoleSourceGrantee(String kind, String key, Object id, String name) {
+    static RoleSourceGrantee from(ResourceRoleSource source) {
+      Map<String, Object> grantee = source.grantee();
+      return grantee == null
+          ? null
+          : new RoleSourceGrantee(
+              (String) grantee.get("kind"),
+              (String) grantee.get("key"),
+              grantee.get("id"),
+              (String) grantee.get("name"));
+    }
+  }
+
+  private static final CollectionFieldType<Object> GRANTEE_ID_TYPE =
+      new CollectionFieldType<>() {
+        @Override
+        public Class<Object> javaType() {
+          return Object.class;
+        }
+
+        @Override
+        public InputKind inputKind() {
+          return InputKind.STRING;
+        }
+
+        @Override
+        public Schema schema() {
+          return new Schema(
+              "integer",
+              null,
+              null,
+              Map.of(
+                  "type",
+                  List.of("integer", "string"),
+                  "oneOf",
+                  List.of(
+                      Map.of("type", "integer", "format", "int64"),
+                      Map.of("type", "string", "enum", List.of("ALL_USERS")))));
+        }
+
+        @Override
+        public boolean accepts(JsonNode value) {
+          return value.isIntegralNumber() && value.canConvertToLong()
+              || value.isTextual() && "ALL_USERS".equals(value.textValue());
+        }
+
+        @Override
+        public Object parse(String value) {
+          return "ALL_USERS".equals(value) ? value : Long.valueOf(value);
+        }
+
+        @Override
+        public Object parseScalar(JsonNode value) {
+          return value.isIntegralNumber() ? value.longValue() : parse(value.textValue());
+        }
+
+        @Override
+        public Object serialize(Object value) {
+          return value;
+        }
+
+        @Override
+        public Set<Operator> operators() {
+          return Set.of();
+        }
+
+        @Override
+        public boolean sortable() {
+          return false;
+        }
+      };
+
+  private static final CollectionFieldType<RoleSourceGrantee> GRANTEE_TYPE =
+      CollectionFieldTypes.object(
+          RoleSourceGrantee.class,
+          List.of(
+              Field.embedded("kind", CollectionFieldTypes.text(), RoleSourceGrantee::kind)
+                  .required(),
+              Field.embedded("key", CollectionFieldTypes.text(), RoleSourceGrantee::key).required(),
+              Field.embedded("id", GRANTEE_ID_TYPE, RoleSourceGrantee::id).required(),
+              Field.embedded("name", CollectionFieldTypes.text(), RoleSourceGrantee::name)
+                  .required()),
+          values ->
+              new RoleSourceGrantee(
+                  (String) values.get("kind"),
+                  (String) values.get("key"),
+                  values.get("id"),
+                  (String) values.get("name")));
+
+  private static final CollectionFieldType<List<ResourceRoleSource>> ROLE_SOURCES_TYPE =
+      CollectionFieldTypes.array(
+          ResourceRoleSource.class,
+          List.of(
+              Field.embedded(
+                      "kind",
+                      CollectionFieldTypes.enumeration(ResourceRoleSourceKind.class),
+                      ResourceRoleSource::kind)
+                  .required(),
+              Field.embedded("role", CollectionFieldTypes.text(), ResourceRoleSource::roleKey)
+                  .required(),
+              Field.embedded("grantee", GRANTEE_TYPE, RoleSourceGrantee::from)),
+          values -> {
+            RoleSourceGrantee grantee = (RoleSourceGrantee) values.get("grantee");
+            return new ResourceRoleSource(
+                (ResourceRoleSourceKind) values.get("kind"),
+                (String) values.get("role"),
+                grantee == null ? null : grantee.key(),
+                grantee == null ? null : grantee.name());
+          });
+
   /** Stable shape used by isolated metadata tests; production injects {@link #description}. */
   public static final CollectionDescription<BookingConfiguration> DESCRIPTION =
       description(AccessFunction.authenticated());
@@ -123,6 +232,30 @@ public record ApiV2BookingConfigurationResource(
             List.of(new Sort("id", true)),
             access);
     List<Field<BookingConfiguration, ?>> fields = new ArrayList<>(base.fields());
+    int afterGranularity =
+        fields.indexOf(
+                fields.stream()
+                    .filter(field -> field.name().equals("slotGranularityMinutes"))
+                    .findFirst()
+                    .orElseThrow())
+            + 1;
+    fields.add(
+        afterGranularity,
+        Field.writable(
+                "openingHours",
+                "openingHours",
+                BookingOpeningHoursCodec.TYPE,
+                BookingConfiguration::getOpeningHours,
+                BookingConfiguration::setOpeningHours)
+            .documented(
+                OpenApiSchemaDocumentation.of(
+                    null,
+                    "Independent interval for each open ISO weekday (1 = Monday to 7 = Sunday)."
+                        + " Entries are returned in weekday order; omitted weekdays are closed."
+                        + " Replaces the entire schedule and defaults to institution settings on"
+                        + " create.",
+                    null))
+            .withQueryCapabilities(false, false));
     fields.add(
         Field.readOnly(
                 "createdByName",
@@ -143,7 +276,7 @@ public record ApiV2BookingConfigurationResource(
         Field.readOnly(
                 "roleSources",
                 "roleSources",
-                CollectionFieldTypes.array(),
+                ROLE_SOURCES_TYPE,
                 BookingConfiguration::getRoleSources)
             .withQueryCapabilities(false, false));
     fields.add(

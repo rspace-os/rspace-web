@@ -1,7 +1,9 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException.Reason;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
+import java.util.List;
 
 final class BookingSettingsValidation {
 
@@ -10,8 +12,7 @@ final class BookingSettingsValidation {
   static void requireValid(BookingSchedulingSettings settings) {
     requireValid(
         settings.slotGranularityMinutes(),
-        settings.openingStart(),
-        settings.openingEnd(),
+        settings.openingHours(),
         settings.bufferBeforeMinutes(),
         settings.bufferAfterMinutes(),
         settings.maxBookingDurationMinutes());
@@ -19,15 +20,14 @@ final class BookingSettingsValidation {
 
   static void requireValid(
       long granularity,
-      String openingStart,
-      String openingEnd,
+      List<BookingOpeningHoursEntry> openingHours,
       long before,
       long after,
       long maximumDuration) {
     if (!BookingSchedulingSettings.isGranularityValid(granularity)) {
       throw new InvalidBookingSchedulingSettingsException(Reason.GRANULARITY);
     }
-    if (!BookingSchedulingSettings.areOpeningHoursValid(openingStart, openingEnd)) {
+    if (!BookingSchedulingSettings.areOpeningHoursValid(openingHours)) {
       throw new InvalidBookingSchedulingSettingsException(Reason.OPENING_HOURS);
     }
     if (!BookingSchedulingSettings.isBufferValid(before)
