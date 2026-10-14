@@ -21,6 +21,7 @@ import com.researchspace.model.inventory.field.ExtraFieldIdentity;
 import com.researchspace.model.inventory.field.ExtraFieldIdentity.PublishedType;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -130,11 +131,16 @@ public class ExtraFieldRuntimeManagerImpl<T> implements ExtraFieldRuntimeManager
   @Override
   public Map<Object, Map<String, Object>> values(
       List<T> resources, Set<String> fieldIds, User actor) {
+    return valuesForAuthorizedIds(resources.stream().map(idOf).toList(), fieldIds, actor);
+  }
+
+  @Override
+  public Map<Object, Map<String, Object>> valuesForAuthorizedIds(
+      Collection<?> resourceIds, Set<String> fieldIds, User actor) {
     Set<ExtraFieldRow> definitions = new LinkedHashSet<>();
     fieldIds.forEach(id -> add(definitions, decode(id)));
     Map<Object, Long> parentIds = new LinkedHashMap<>();
-    for (T resource : resources) {
-      Object id = idOf.apply(resource);
+    for (Object id : resourceIds) {
       if (id instanceof Number number) {
         parentIds.put(id, number.longValue());
       }
