@@ -16,6 +16,7 @@ import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.PageOffsets;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceReference;
@@ -138,7 +139,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       return page(scope.get(), page, limit, caller);
     }
     java.util.Objects.requireNonNull(window, "An availability filter needs its window");
-    long firstRow = (long) (page - 1) * limit;
+    long firstRow = PageOffsets.offset(page, limit);
     List<BookingConfiguration> rows = new ArrayList<>();
     long[] total = {0};
     scanAvailability(
