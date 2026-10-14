@@ -70,7 +70,6 @@ public final class ApiV2BookingLocationResource {
                     "name", "name", CollectionFieldTypes.text(255), Location::name)
                 .withQueryCapabilities(false, false)
                 .documented(documentation("Name", "Container name.", "Cold room"))),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(readAccess));
