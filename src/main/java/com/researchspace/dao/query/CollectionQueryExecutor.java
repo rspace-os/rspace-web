@@ -104,9 +104,35 @@ public final class CollectionQueryExecutor<T> {
       Predicate restriction,
       RelationshipReadAccess targets,
       List<String> fetchPaths) {
-    long firstResult = (long) (request.page().number() - 1) * request.page().size();
     CriteriaBuilder<T> query = query(factory, session, request, restriction, targets);
     fetchPaths.forEach(path -> query.fetch(alias + "." + path));
+    return paged(query, request);
+  }
+
+  /**
+   * Reads scalar constructor arguments without materializing the collection's entity aggregate.
+   *
+   * <p>Properties are trusted persistence paths, relative to this collection's alias. Projection
+   * shares the entity path's predicates, sorting, pagination, overflow and total-count semantics.
+   */
+  public <R> ResourcePage<R> projectedPage(
+      CriteriaBuilderFactory factory,
+      Session session,
+      ResourceRequest request,
+      Predicate restriction,
+      RelationshipReadAccess targets,
+      Class<R> resultType,
+      List<String> properties) {
+    CriteriaBuilder<R> query = factory.create(session, resultType).from(entityType, alias);
+    applyRequest(query, request, restriction, targets);
+    var selection = query.selectNew(resultType);
+    properties.forEach(property -> selection.with(alias + "." + property));
+    selection.end();
+    return paged(query, request);
+  }
+
+  private <R> ResourcePage<R> paged(CriteriaBuilder<R> query, ResourceRequest request) {
+    long firstResult = (long) (request.page().number() - 1) * request.page().size();
     if (firstResult > Integer.MAX_VALUE) {
       return new ResourcePage<>(List.of(), totalMatching(query));
     }
@@ -114,7 +140,7 @@ public final class CollectionQueryExecutor<T> {
     if (request.sort().isEmpty()) {
       orderById(query);
     }
-    PagedList<T> page = query.page((int) firstResult, request.page().size()).getResultList();
+    PagedList<R> page = query.page((int) firstResult, request.page().size()).getResultList();
     return new ResourcePage<>(page, page.getTotalSize());
   }
 
@@ -200,11 +226,19 @@ public final class CollectionQueryExecutor<T> {
       Predicate restriction,
       RelationshipReadAccess targets) {
     CriteriaBuilder<T> query = factory.create(session, entityType, alias);
+    applyRequest(query, request, restriction, targets);
+    return query;
+  }
+
+  private void applyRequest(
+      CriteriaBuilder<?> query,
+      ResourceRequest request,
+      Predicate restriction,
+      RelationshipReadAccess targets) {
     // Blaze ANDs each where expression, so the access restriction cannot widen the caller's filter.
     apply(query, filterQuery.translate(request.filter(), targets, request.runtime()));
     apply(query, requestConstraintQuery.translateTrusted(request.serverConstraint(), targets));
     apply(query, restriction);
-    return query;
   }
 
   private static void apply(CriteriaBuilder<?> query, Predicate predicate) {
@@ -234,17 +268,17 @@ public final class CollectionQueryExecutor<T> {
   }
 
   /** Uses the page count because Blaze's root-count query fails when there are no restrictions. */
-  private long totalMatching(CriteriaBuilder<T> query) {
+  private long totalMatching(CriteriaBuilder<?> query) {
     orderById(query);
     return query.page(0, 1).getResultList().getTotalSize();
   }
 
-  private void applySort(CriteriaBuilder<T> query, Sort sort) {
+  private void applySort(CriteriaBuilder<?> query, Sort sort) {
     String property = description.requireField(sort.field()).property();
     query.orderBy(alias + "." + property, sort.ascending());
   }
 
-  private void orderById(CriteriaBuilder<T> query) {
+  private void orderById(CriteriaBuilder<?> query) {
     String property = description.requireField(description.idField()).property();
     query.orderByAsc(alias + "." + property);
   }
