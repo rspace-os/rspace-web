@@ -55,6 +55,7 @@ function booking({
     state: "CONFIRMED",
     kind,
     privacy: "full",
+    cancellationReason: null,
     purpose: `Purpose ${id}`,
     bookedBy: "Ada Lovelace",
     canEdit: false,

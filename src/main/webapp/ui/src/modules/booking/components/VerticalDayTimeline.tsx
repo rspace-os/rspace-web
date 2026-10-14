@@ -135,7 +135,9 @@ export function VerticalDayTimeline({
   const [gestureActive, setGestureActive] = React.useState(false);
   const [announcement, setAnnouncement] = React.useState("");
   const interactionCallbackRef = React.useRef(editing?.onInteractionChange);
-  interactionCallbackRef.current = editing?.onInteractionChange;
+  React.useLayoutEffect(() => {
+    interactionCallbackRef.current = editing?.onInteractionChange;
+  }, [editing?.onInteractionChange]);
   const interactionRef = React.useRef<{
     edge: AdjustmentEdge;
     pointerId: number;
