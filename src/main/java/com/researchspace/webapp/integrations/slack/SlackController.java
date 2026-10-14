@@ -470,15 +470,4 @@ public class SlackController extends BaseOAuth2Controller {
       return users.get(0);
     }
   }
-
-  /* ==============
-   *  for tests
-   * ============== */
-  protected void setUserAppCfgMgr(UserAppConfigManager userAppCfgMgr) {
-    this.userAppCfgMgr = userAppCfgMgr;
-  }
-
-  protected void setClock(Clock clock) {
-    this.clock = clock;
-  }
 }
