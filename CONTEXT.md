@@ -504,3 +504,14 @@ resolved during design. This file is a glossary only — no implementation detai
   the parent container its row names, or else in a new "imported items" container on the Bench,
   and every imported item keeps everything its row gave it.
   _Avoid_: bulk upload, Instrument import (that is the PID registry path)
+
+- **Existing-template import** — a CSV import of Samples or Instruments that creates every
+  item from a template the user picks, instead of a new template suggested from the file.
+  Every column not converted to an item property must match one of the template's custom
+  fields, by position, name and type.
+  _Avoid_: template match (that is the check, not the import)
+
+- **Blank column** — a CSV column with no value in any row. In an existing-template import
+  it fits a custom field of any type and leaves that field empty on every item, unless the
+  field is mandatory, which refuses it.
+  _Avoid_: empty column, unused column
