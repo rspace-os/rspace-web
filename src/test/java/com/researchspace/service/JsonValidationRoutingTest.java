@@ -9,6 +9,7 @@ import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.field.ChoiceFieldForm;
 import com.researchspace.model.field.DateFieldForm;
 import com.researchspace.model.field.RadioFieldForm;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.MessageInterpolator;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -37,20 +38,10 @@ class JsonValidationRoutingTest {
       InventoryApiSearchConfig search = new InventoryApiSearchConfig();
       search.setResultType("invalid");
 
-      assertEquals(
-          "Start date is required.",
-          validator
-              .validateValue(ScheduledMaintenance.class, "startDate", null)
-              .iterator()
-              .next()
-              .getMessage());
-      assertEquals(
-          "End date is required.",
-          validator
-              .validateValue(ScheduledMaintenance.class, "endDate", null)
-              .iterator()
-              .next()
-              .getMessage());
+      assertMessage(
+          validator, ScheduledMaintenance.class, "startDate", null, "Start date is required.");
+      assertMessage(
+          validator, ScheduledMaintenance.class, "endDate", null, "End date is required.");
       assertMessage(validator, date, "format", "Date format is required.");
       assertMessage(validator, choice, "choiceOptions", "Choice options are required.");
       assertMessage(validator, radio, "radioOption", "Radio options are required.");
@@ -80,7 +71,7 @@ class JsonValidationRoutingTest {
       var violations = factory.getValidator().validate(new Request());
       assertEquals(
           Set.of("darf nicht null sein", "Description \"abcdef\" must be less than 3 characters."),
-          violations.stream().map(violation -> violation.getMessage()).collect(Collectors.toSet()));
+          violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toSet()));
       var required =
           violations.stream()
               .filter(violation -> violation.getPropertyPath().toString().equals("required"))
@@ -104,7 +95,16 @@ class JsonValidationRoutingTest {
     assertEquals(
         Set.of(expected),
         validator.validateProperty(target, property).stream()
-            .map(violation -> violation.getMessage())
+            .map(ConstraintViolation::getMessage)
+            .collect(Collectors.toSet()));
+  }
+
+  private static <T> void assertMessage(
+      Validator validator, Class<T> target, String property, Object value, String expected) {
+    assertEquals(
+        Set.of(expected),
+        validator.validateValue(target, property, value).stream()
+            .map(ConstraintViolation::getMessage)
             .collect(Collectors.toSet()));
   }
 }
