@@ -2,7 +2,6 @@ package com.researchspace.dao;
 
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
-import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +40,13 @@ public interface InstrumentCustomFieldDao {
   record DefinitionPage(List<DefinitionRow> rows, Long total, boolean hasMore) {}
 
   /**
+   * One stored value, without hydrating its field, template or instrument associations.
+   *
+   * <p>A row with null data is applicable but empty; an inapplicable definition has no row.
+   */
+  record ValueRow(Long instrumentId, Long definitionId, FieldType type, String data) {}
+
+  /**
    * Definitions this caller may name, narrowed and bounded.
    *
    * @param constraint the caller's instrument read rule, compiled against the instrument alias
@@ -61,13 +67,14 @@ public interface InstrumentCustomFieldDao {
   Map<Long, List<String>> optionsFor(Set<Long> definitionIds);
 
   /**
-   * Values of the selected definitions for the selected instruments, in one query.
+   * Values of the selected definitions for the selected authorized instruments, in one scalar
+   * query.
    *
    * <p>The outer key is the instrument ID and the inner key is the definition ID. A definition that
    * does not apply to an instrument is absent rather than null, which is the documented difference
    * between "not applicable" and "applicable but empty".
    */
-  Map<Long, Map<Long, InventoryEntityField>> valuesByInstrument(
+  Map<Long, Map<Long, ValueRow>> valuesByInstrument(
       Set<Long> instrumentIds, Set<Long> definitionIds);
 
   /**
