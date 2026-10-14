@@ -45,6 +45,9 @@ public class BookingNotificationMessageFormatter {
 
   private static final String CREATED_MESSAGE_KEY = "bookingNotifications.created";
   private static final String CANCELLED_MESSAGE_KEY = "bookingNotifications.cancelled";
+  private static final String RESTORED_MESSAGE_KEY = "bookingNotifications.restored";
+  private static final String CANCELLED_WITH_REASON_MESSAGE_KEY =
+      "bookingNotifications.cancelledWithReason";
   private static final String BOOKING_PATH = "/booking/calendar/bookings/";
   private static final String BOOKABLE_ITEM_PATH = "/booking/bookable-items/";
   private static final Pattern FINAL_ISO_INSTANT =
@@ -208,7 +211,7 @@ public class BookingNotificationMessageFormatter {
       throw new IllegalArgumentException("Unsupported booking notification type: " + type);
     }
     return messageSource.getMessage(
-        messageKey(type),
+        messageKey(type, data),
         new Object[] {
           StringEscapeUtils.escapeHtml4(data.getBookingId()),
           StringEscapeUtils.escapeHtml4(data.getInstrumentName()),
@@ -216,7 +219,8 @@ public class BookingNotificationMessageFormatter {
           formatInstant(data.getStartTime(), zone, locale, hourCycle),
           formatInstant(data.getEndTime(), zone, locale, hourCycle),
           href(linkBase, BOOKING_PATH, data.getBookingId()),
-          href(linkBase, BOOKABLE_ITEM_PATH, data.getInstrumentGlobalIdentifier())
+          href(linkBase, BOOKABLE_ITEM_PATH, data.getInstrumentGlobalIdentifier()),
+          StringEscapeUtils.escapeHtml4(data.getCancellationReason())
         },
         locale);
   }
@@ -292,10 +296,13 @@ public class BookingNotificationMessageFormatter {
         || NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(type);
   }
 
-  private static String messageKey(NotificationType type) {
-    return NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)
-        ? CREATED_MESSAGE_KEY
-        : CANCELLED_MESSAGE_KEY;
+  private static String messageKey(NotificationType type, BookingNotificationData data) {
+    if (NotificationType.NOTIFICATION_BOOKING_CREATED.equals(type)) {
+      return data.isRestored() ? RESTORED_MESSAGE_KEY : CREATED_MESSAGE_KEY;
+    }
+    return data.getCancellationReason() == null
+        ? CANCELLED_MESSAGE_KEY
+        : CANCELLED_WITH_REASON_MESSAGE_KEY;
   }
 
   /** Formats an instant with the {@code hc} keyword {@code hourCycle}, or the locale's if null. */

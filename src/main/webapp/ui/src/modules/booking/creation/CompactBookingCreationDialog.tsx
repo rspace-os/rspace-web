@@ -9,7 +9,7 @@ export function CompactBookingCreationDialog() {
   const endCreation = useBookingCreationStore((state) => state.endCreation);
   useEffect(
     () => () => {
-      if (creation) endCreation(creation.ownerId);
+      if (creation) endCreation(creation);
     },
     [creation, endCreation],
   );

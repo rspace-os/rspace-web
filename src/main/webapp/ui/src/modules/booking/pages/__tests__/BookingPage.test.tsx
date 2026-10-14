@@ -9,7 +9,7 @@ import {
   RouterProvider,
   useMatches,
 } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -78,8 +78,42 @@ function TestShell() {
   );
 }
 
-function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady = Promise.resolve()) {
+type AdministrationAccess = { readableConfigurations: number; eligibleTargets: number };
+
+function renderAt(
+  initialPath: string,
+  hasSysAdminRole = true,
+  preferencesReady = Promise.resolve(),
+  { readableConfigurations, eligibleTargets }: AdministrationAccess = { readableConfigurations: 1, eligibleTargets: 0 },
+) {
   server.use(
+    // Answers only the sidebar's unfiltered count; a test's own lookup handler serves filtered reads.
+    http.get("/api/v2/booking-configurations", ({ request }) =>
+      new URL(request.url).searchParams.has("where")
+        ? undefined
+        : HttpResponse.json({
+            docs: [],
+            totalDocs: readableConfigurations,
+            limit: 1,
+            page: 1,
+            pagingCounter: 1,
+            totalPages: readableConfigurations,
+            hasPrevPage: false,
+            hasNextPage: readableConfigurations > 1,
+            prevPage: null,
+            nextPage: readableConfigurations > 1 ? 2 : null,
+          }),
+    ),
+    http.get("/api/v2/booking-configuration-targets", () =>
+      HttpResponse.json(
+        Array.from({ length: eligibleTargets }, (_, index) => ({
+          id: 500 + index,
+          globalId: `IN${500 + index}`,
+          name: `Unconfigured instrument ${index + 1}`,
+          deleted: false,
+        })),
+      ),
+    ),
     http.get("/api/v2/users/me", () => HttpResponse.json({ ...currentUser, hasSysAdminRole })),
     http.get("/api/v2/instruments/123", () =>
       HttpResponse.json({ parentContainerName: null, parentContainerGlobalId: null }),
@@ -265,16 +299,58 @@ describe("booking layout", () => {
     expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
   });
 
-  it("shows Bookable items but not Settings to users who are not sysadmins", async () => {
-    renderAt("/booking", false);
+  it("shows Bookable items but not Settings to users who can read a booking configuration", async () => {
+    renderAt("/booking", false, undefined, { readableConfigurations: 3, eligibleTargets: 0 });
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "booking:sidebar.bookableItems" })).toHaveAttribute(
+      "href",
+      "/booking/config/bookable-items",
+    );
     expect(screen.getByRole("button", { name: "booking:sidebar.administration" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "booking:sidebar.bookableItems" })).toHaveAttribute(
+    expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
+  });
+
+  it("shows Bookable items to users who can only set up an instrument", async () => {
+    renderAt("/booking", false, undefined, { readableConfigurations: 0, eligibleTargets: 1 });
+
+    expect(await screen.findByRole("link", { name: "booking:sidebar.bookableItems" })).toHaveAttribute(
       "href",
       "/booking/config/bookable-items",
     );
     expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
+  });
+
+  it("hides Administration from users who can neither read nor set up a bookable item", async () => {
+    let signalRequests = 0;
+    server.events.on("request:start", ({ request }) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v2/booking-configurations" || path === "/api/v2/booking-configuration-targets") {
+        signalRequests += 1;
+      }
+    });
+    try {
+      const { container } = renderAt("/booking", false, undefined, { readableConfigurations: 0, eligibleTargets: 0 });
+
+      expect(await screen.findByRole("link", { name: "booking:sidebar.calendar" })).toBeInTheDocument();
+      await waitFor(() => expect(signalRequests).toBe(2));
+      expect(screen.queryByRole("button", { name: "booking:sidebar.administration" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "booking:sidebar.settings" })).not.toBeInTheDocument();
+      await expectAccessible(container);
+    } finally {
+      server.events.removeAllListeners("request:start");
+    }
+  });
+
+  it("keeps Settings for a sysadmin who has no bookable items to administer", async () => {
+    renderAt("/booking", true, undefined, { readableConfigurations: 0, eligibleTargets: 0 });
+
+    expect(await screen.findByRole("link", { name: "booking:sidebar.settings" })).toHaveAttribute(
+      "href",
+      "/booking/config/settings",
+    );
+    expect(screen.queryByRole("link", { name: "booking:sidebar.bookableItems" })).not.toBeInTheDocument();
   });
 
   it("links the Administration breadcrumb to the bookable items list", async () => {

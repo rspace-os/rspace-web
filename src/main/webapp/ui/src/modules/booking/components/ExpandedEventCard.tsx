@@ -25,6 +25,7 @@ export function ExpandedEventCard({
   timezone,
   event,
   exactPeriod,
+  eventAnchor,
   renderEventActions,
   renderBlockoutActions,
 }: {
@@ -32,8 +33,17 @@ export function ExpandedEventCard({
   timezone: string;
   event: DetailedDayTimelineEvent;
   exactPeriod: string;
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
+  eventAnchor?: HTMLElement | null;
+  renderEventActions?: (
+    event: Extract<DayTimelineEvent, { kind: "booking" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => React.ReactNode;
+  renderBlockoutActions?: (
+    event: Extract<DayTimelineEvent, { kind: "blockout" }>,
+    period: string,
+    timelineEventElement?: HTMLElement | null,
+  ) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
@@ -57,7 +67,9 @@ export function ExpandedEventCard({
       children
     );
   const actions =
-    event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : renderBlockoutActions?.(event, exactPeriod);
+    event.kind === "booking"
+      ? renderEventActions?.(event, exactPeriod, eventAnchor)
+      : renderBlockoutActions?.(event, exactPeriod, eventAnchor);
 
   return (
     <>

@@ -144,13 +144,30 @@ describe("BookableItemAuditLog", () => {
   });
 
   it("offers only Booking actions in Booking terms and labels a cancellation", async () => {
+    const user = userEvent.setup();
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", () =>
         HttpResponse.json(
           auditPage([
-            { ...event, eventId: "c".repeat(64), description: "Cancelled booking 41", payload: { state: "CANCELLED" } },
-            { ...event, eventId: "d".repeat(64), description: "Edited booking 41", payload: { state: "CONFIRMED" } },
-            { ...event, eventId: "e".repeat(64), action: "CREATE", description: "Created booking 41" },
+            {
+              ...event,
+              eventId: "c".repeat(64),
+              description: "Cancelled booking 41",
+              payload: { state: "CANCELLED", cancellationReason: "Instrument needs recalibration" },
+            },
+            {
+              ...event,
+              eventId: "d".repeat(64),
+              description: "Edited booking 41",
+              payload: { state: "CONFIRMED", cancellationReason: null },
+            },
+            {
+              ...event,
+              eventId: "e".repeat(64),
+              action: "CREATE",
+              description: "Created booking 41",
+              payload: { cancellationReason: null },
+            },
           ]),
         ),
       ),
@@ -160,6 +177,9 @@ describe("BookableItemAuditLog", () => {
     const cancelled = await screen.findByRole("article", { name: "Cancelled booking 41" });
     expect(within(cancelled).getByText("booking:bookableItemDetails.audit.actions.cancelled")).toBeVisible();
     expect(within(cancelled).queryByText("WRITE")).not.toBeInTheDocument();
+    await user.click(within(cancelled).getByRole("button", { name: "common:actions.expand" }));
+    expect(within(cancelled).getByText("booking:bookableItemDetails.audit.values.cancellationReason")).toBeVisible();
+    expect(within(cancelled).getByText("Instrument needs recalibration")).toBeVisible();
     const edited = screen.getByRole("article", { name: "Edited booking 41" });
     expect(within(edited).getByText("booking:bookableItemDetails.audit.actions.changed")).toBeVisible();
     const created = screen.getByRole("article", { name: "Created booking 41" });

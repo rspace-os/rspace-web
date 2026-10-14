@@ -251,6 +251,15 @@ public final class ApiV2TimeSlotBookingResource {
                     TimeSlotBooking::setState)
                 .writeOnlyOn(WriteOperation.UPDATE),
             Field.writable(
+                    "cancellationReason",
+                    "cancellationReason",
+                    CollectionFieldTypes.text(500),
+                    TimeSlotBooking::getVisibleCancellationReason,
+                    TimeSlotBooking::setCancellationReason)
+                .allowNull()
+                .writeOnlyOn(WriteOperation.UPDATE)
+                .withQueryCapabilities(false, false),
+            Field.writable(
                     "purpose",
                     "purpose",
                     CollectionFieldTypes.text(1000),
