@@ -185,7 +185,6 @@ public class BookingLocationQuery {
             Field.<T, Long>readOnly("id", "id", CollectionFieldTypes.longNumber(), T::getId),
             Field.<T, Boolean>readOnly(
                 "deleted", "deleted", CollectionFieldTypes.bool(), T::isDeleted)),
-        List.of(),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(AccessFunction.authenticated()),
