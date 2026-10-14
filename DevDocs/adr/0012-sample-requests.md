@@ -82,17 +82,20 @@ history.
 | To | From | Who | Reason |
 | --- | --- | --- | --- |
 | APPROVED | PENDING | current owner | not accepted |
-| REJECTED | PENDING | current owner | required |
+| REJECTED | PENDING, APPROVED | current owner | required |
 | CANCELLED | PENDING | requester | not accepted |
 | FULFILLED | PENDING, APPROVED | current owner | not accepted |
 
 REJECTED, CANCELLED and FULFILLED are terminal. PENDING is only written when the request
-is raised. Approved requests can only be fulfilled: neither side can back out of an
-approval, except through a transfer (D9). CANCELLED is kept separate from REJECTED because
+is raised. The owner can withdraw an approval by rejecting it, which is also the transition
+a transfer applies (D9), but the requester cannot cancel an approved request: the owner may
+already be preparing the material. CANCELLED is kept separate from REJECTED because
 "withdrawn by the requester" and "refused by the owner" are different facts in the record.
 
 All transitions go through `updateStatus`, which checks the actor before legality, so a
-caller who may not act at all learns nothing about the request's state. A user may hold
+caller who may not act at all learns nothing about the request's state. The transfer's
+auto-reject checks legality against the same table but not the actor, since a PI or admin
+of the owner's group may make the transfer. A user may hold
 several open requests for the same sample; there is no uniqueness rule.
 
 ### D8 Status history is a table, not the audit log
@@ -104,8 +107,8 @@ that change in many ways and may be restored, not a linear state history.
 
 ### D9 A transfer rejects the open requests
 
-Changing a sample's owner rejects every PENDING or APPROVED request against it, with a
-reason naming the new owner. The new owner did not agree to anything the previous owner was
+Changing a sample's owner rejects every PENDING or APPROVED request against it, through
+the table's REJECTED transitions (D7), with a reason naming the new owner. The new owner did not agree to anything the previous owner was
 asked, so carrying the requests across would be wrong. The request being fulfilled is
 already FULFILLED by then, so it is untouched. Open question: an open request raised by the
 recipient themselves is rejected too, although they now own the sample.

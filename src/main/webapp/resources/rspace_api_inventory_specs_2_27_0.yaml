@@ -1340,6 +1340,8 @@ paths:
 
         | REJECTED | PENDING | sample's current owner | required |
 
+        | REJECTED | APPROVED | sample's current owner | required |
+
         | CANCELLED | PENDING | the requester | not accepted |
 
         | FULFILLED | PENDING | sample's current owner | not accepted |

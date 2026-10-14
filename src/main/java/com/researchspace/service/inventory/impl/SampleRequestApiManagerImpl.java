@@ -63,9 +63,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   /**
    * Every transition a user can make. PENDING is absent: it is written only when a request is
    * raised. FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a
-   * separate approval step), or after already approving the request. A sample transfer also rejects
-   * PENDING and APPROVED requests outside this table, see
-   * autoRejectActiveRequestsForTransferredSample.
+   * separate approval step), or after already approving the request. REJECTED likewise: an owner
+   * can withdraw an approval, and a sample transfer rejects PENDING and APPROVED requests through
+   * the same entries, see autoRejectActiveRequestsForTransferredSample.
    */
   private static final List<Transition> TRANSITIONS =
       List.of(
@@ -73,6 +73,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
               SampleRequestStatus.APPROVED, SampleRequestStatus.PENDING, Actor.OWNER, false),
           new Transition(
               SampleRequestStatus.REJECTED, SampleRequestStatus.PENDING, Actor.OWNER, true),
+          new Transition(
+              SampleRequestStatus.REJECTED, SampleRequestStatus.APPROVED, Actor.OWNER, true),
           new Transition(
               SampleRequestStatus.CANCELLED, SampleRequestStatus.PENDING, Actor.REQUESTER, false),
           new Transition(
@@ -293,6 +295,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
             "inventory.sampleRequest.autoRejectedReason",
             new Object[] {newOwner.getFirstName() + " " + newOwner.getLastName()});
     for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
+      // a PI or admin of the owner's group may transfer too, so only legality is checked
+      legalFrom(transitionsTo(SampleRequestStatus.REJECTED), request.getStatus());
       request.recordStatus(actor, SampleRequestStatus.REJECTED, reason);
       SampleRequest saved = sampleRequestDao.save(request);
       publisher.publishEvent(new SampleRequestStatusEvent(saved, actor));
