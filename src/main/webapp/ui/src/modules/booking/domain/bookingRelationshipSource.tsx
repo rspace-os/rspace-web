@@ -7,7 +7,7 @@ import {
 } from "@/modules/common/relationship-picker/relationshipSources";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { bookingApiV2Headers } from "./apiV2";
-import { fetchBookingCatalogue } from "./bookingCatalogue";
+import { fetchBookingCatalogue, fetchBookingCatalogueLocations } from "./bookingCatalogue";
 
 const targetSchema = v.object({ id: v.number(), name: v.string(), globalId: v.string() });
 const referenceSchema = v.object({
@@ -30,6 +30,8 @@ const canonicalId = (value: string) => {
 export const bookingInstrumentSource: RelationshipSource = {
   id: "booking-instruments",
   globalIdPrefix: "IN",
+  // The catalogue answers an empty term with its first page, so the filter lists items at once.
+  browsable: true,
   normalizeValue: canonicalId,
   ownsValue: validId,
   search: async (term, token, signal) => {
@@ -89,18 +91,57 @@ export const bookingInstrumentSource: RelationshipSource = {
     return {
       value: target.globalId,
       label: target.name,
-      content: (
-        <InventoryItem
-          name={target.name}
-          globalId={target.globalId}
-          href={`/globalId/${target.globalId}`}
-          idLinkLabel={context.idLinkLabel(target.globalId)}
-          compact={context.compact}
-          size="xs"
-        />
-      ),
+      content: <InventoryItem name={target.name} globalId={target.globalId} compact={context.compact} size="xs" />,
     };
   },
 };
 
-export const bookingRelationshipSources = { "booking-instruments": bookingInstrumentSource };
+const locationSchema = v.object({ globalId: v.string(), name: v.string() });
+/** Containers and workbenches share one ID space, so either global ID names the same row. */
+const locationId = (value: string) => databaseIdFromGlobalId(value, "IC") ?? databaseIdFromGlobalId(value, "BE");
+const canonicalLocation = (value: string) => {
+  const id = locationId(value);
+  return id === null ? null : `IC${id}`;
+};
+
+/**
+ * Immediate Inventory parents of bookable items, among the Containers the caller can read. The
+ * filter value is `IC<id>`, which also addresses a workbench; the option still shows its `BE` ID.
+ */
+export const bookingLocationSource: RelationshipSource = {
+  id: "booking-locations",
+  globalIdPrefix: "IC",
+  browsable: true,
+  normalizeValue: canonicalLocation,
+  ownsValue: (value) => locationId(value) !== null,
+  search: async (term, token, signal) =>
+    (await fetchBookingCatalogueLocations({ q: term, pageSize: 20 }, token ?? "", signal)).items,
+  batchSize: 100,
+  resolveMany: async (values, token, signal) => {
+    const globalIds = [...new Set(values.map(canonicalLocation).filter((value): value is string => value !== null))];
+    if (globalIds.length === 0) return {};
+    const page = await fetchBookingCatalogueLocations({ globalIds, pageSize: globalIds.length }, token ?? "", signal);
+    const requested = new Set(globalIds);
+    return Object.fromEntries(
+      page.items.flatMap((location) => {
+        const key = canonicalLocation(location.globalId);
+        return key !== null && requested.has(key) ? [[key, location]] : [];
+      }),
+    );
+  },
+  toOption: (document, context) => {
+    const location = parseOrThrow(locationSchema, document);
+    const value = canonicalLocation(location.globalId);
+    if (value === null) throw new Error("Booking location has an invalid global ID");
+    return {
+      value,
+      label: location.name,
+      content: <InventoryItem name={location.name} globalId={location.globalId} compact={context.compact} size="xs" />,
+    };
+  },
+};
+
+export const bookingRelationshipSources = {
+  "booking-instruments": bookingInstrumentSource,
+  "booking-locations": bookingLocationSource,
+};

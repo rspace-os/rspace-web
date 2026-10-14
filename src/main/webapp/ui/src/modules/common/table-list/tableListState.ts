@@ -129,6 +129,8 @@ export type TableListCardFieldLayout = {
 
 export type TableListFilterButtons = {
   legend: string;
+  /** Alignment of quick-filter and shared toolbar buttons, including wrapped rows. */
+  align?: "start" | "end";
   /** Keep the toolbar controls on a row below Search at every breakpoint. */
   controlsOnSeparateRow?: boolean;
   /** Page-owned filter controls rendered before the quick-filter buttons. */

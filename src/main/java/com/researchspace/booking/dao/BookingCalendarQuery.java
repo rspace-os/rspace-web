@@ -50,10 +50,28 @@ public final class BookingCalendarQuery {
     this.registry = registry;
   }
 
+  /** The event target reference inside {@link #resources}' event subquery. */
+  public static final String RESOURCE_EVENT_TARGET = "calendarEvent.bookingConfiguration.target";
+
   /** Requires one visible event to satisfy the complete expression, before count and pagination. */
   public Predicate resources(
       ResourceRequest eventRequest, Instant start, Instant end, String text, User caller) {
-    boolean filtered = eventRequest.filter() != null;
+    return resources(eventRequest, null, start, end, text, caller);
+  }
+
+  /**
+   * As {@link #resources(ResourceRequest, Instant, Instant, String, User)}, with a trusted event
+   * restriction that the same event must also satisfy. It refers to the event's target as {@link
+   * #RESOURCE_EVENT_TARGET}.
+   */
+  public Predicate resources(
+      ResourceRequest eventRequest,
+      Predicate eventRestriction,
+      Instant start,
+      Instant end,
+      String text,
+      User caller) {
+    boolean filtered = eventRequest.filter() != null || eventRestriction != null;
     if (!filtered && (text == null || text.isBlank())) return null;
     RelationshipReadAccess targets = RelationshipReadAccess.forActor(registry.getObject(), caller);
     AccessResult access =
@@ -80,6 +98,7 @@ public final class BookingCalendarQuery {
             new Predicate(alias + ".bookingConfiguration.id = bookingConfiguration.id", Map.of()),
             mandatory,
             filter,
+            eventRestriction,
             filtered ? or(itemText, eventTextPredicate) : eventTextPredicate);
     Predicate exists =
         new Predicate(

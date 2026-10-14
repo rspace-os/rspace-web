@@ -19,12 +19,15 @@ export function BookableItemsBulkActions({
   disabled,
   activeAction,
   failedAction,
+  offerEnable = true,
   onAction,
 }: {
   selection: TableListSelectionContext;
   disabled: boolean;
   activeAction: BookableItemsBulkAction | null;
   failedAction: BookableItemsBulkAction | null;
+  /** False where every listed item is already enabled, as on All items. */
+  offerEnable?: boolean;
   onAction: (action: BookableItemsBulkAction, selectedRowIds: ReadonlySet<string>) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
@@ -49,16 +52,18 @@ export function BookableItemsBulkActions({
 
   return (
     <>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        disabled={disabled}
-        aria-busy={activeAction === "enable"}
-        onClick={() => void runAction("enable")}
-      >
-        {t("bookableItems.bulk.actions.enable")}
-      </Button>
+      {offerEnable ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          disabled={disabled}
+          aria-busy={activeAction === "enable"}
+          onClick={() => void runAction("enable")}
+        >
+          {t("bookableItems.bulk.actions.enable")}
+        </Button>
+      ) : null}
       <Button
         type="button"
         variant="secondary"
