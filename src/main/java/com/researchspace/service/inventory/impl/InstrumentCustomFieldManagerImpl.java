@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import com.researchspace.dao.InstrumentCustomFieldDao;
 import com.researchspace.dao.InstrumentCustomFieldDao.DefinitionPage;
 import com.researchspace.dao.InstrumentCustomFieldDao.DefinitionRow;
+import com.researchspace.dao.InstrumentCustomFieldDao.ValueRow;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -129,7 +130,7 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
 
   private Map<Object, Map<String, Object>> valuesOf(
       Set<Long> instrumentIds, Set<Long> definitionIds) {
-    Map<Long, Map<Long, InventoryEntityField>> rows =
+    Map<Long, Map<Long, ValueRow>> rows =
         customFieldDao.valuesByInstrument(instrumentIds, definitionIds);
     Map<Object, Map<String, Object>> values = new LinkedHashMap<>();
     rows.forEach(
@@ -137,9 +138,9 @@ public class InstrumentCustomFieldManagerImpl implements InstrumentCustomFieldMa
           Map<String, Object> document = new LinkedHashMap<>();
           fields.forEach(
               (definitionId, field) -> {
-                RuntimeFieldValueType type = valueType(field.getType());
+                RuntimeFieldValueType type = valueType(field.type());
                 if (type != null) {
-                  document.put(globalId(definitionId), type.serialize(field.getData()));
+                  document.put(globalId(definitionId), type.serialize(field.data()));
                 }
               });
           values.put(instrumentId, document);
