@@ -106,12 +106,15 @@ public interface RuntimeCollectionFields<T> {
    * Loads values from the authorized IDs of a scalar-document page.
    *
    * <p>The caller must have applied this collection's row-read policy before invoking this method.
-   * Providers may use those IDs directly without entity carriers. The default retains the safer
-   * arbitrary-ID check in {@link #valuesForIds}.
+   * Providers may use those IDs directly without entity carriers. Providers that support {@link
+   * #projectsThroughRelationship} are called directly through {@link #valuesForIds} so transaction
+   * advice runs at that call boundary. Other providers must implement this method explicitly; it is
+   * unsupported by default.
    */
   default Map<Object, Map<String, Object>> valuesForAuthorizedIds(
       Collection<?> resourceIds, Set<String> fieldIds, User actor) {
-    return valuesForIds(resourceIds, fieldIds, actor);
+    throw new UnsupportedOperationException(
+        getClass().getName() + " does not support values from authorized page IDs");
   }
 
   static <T> RuntimeCollectionFields<T> none() {
