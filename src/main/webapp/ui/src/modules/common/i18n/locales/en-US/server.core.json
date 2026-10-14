@@ -315,6 +315,8 @@
       "licenseNameStringRange": "License name \"${validatedValue}\" must be between {min} and {max} characters.",
       "licenseUrlRequired": "License URL is a required field.",
       "licenseUrlStringMax": "License URL \"${validatedValue}\" must be less than {max} characters.",
+      "maintenanceEndDateRequired": "End date is required.",
+      "maintenanceStartDateRequired": "Start date is required.",
       "maintenanceMessageStringMax": "Message must be no longer than {max} characters.",
       "maxLinkLevelRequired": "maxLinkLevel is a required field.",
       "nameRequired": "Name is a required field.",
