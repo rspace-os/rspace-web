@@ -38,7 +38,10 @@ describe("CalendarPage", () => {
     const eventRequests: URL[] = [];
     server.use(
       http.get("/api/v2/openapi.json", () =>
-        HttpResponse.json({ paths: { ...bookableItemsOpenApi.paths, ...bookingsOpenApi.paths } }),
+        HttpResponse.json({
+          paths: { ...bookableItemsOpenApi.paths, ...bookingsOpenApi.paths },
+          components: bookableItemsOpenApi.components,
+        }),
       ),
       ...bookableItemsHandlers((request) => {
         const url = new URL(request.url);
