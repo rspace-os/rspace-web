@@ -16,10 +16,6 @@ export type MultiSelectOption = string | { label: string; value: string };
 
 type Option = { label: string; value: string };
 
-function sameOption(option: Option, other: Option) {
-  return option.value === other.value;
-}
-
 export function MultiSelect({
   options,
   value,
@@ -80,7 +76,7 @@ export function MultiSelect({
       value={selected}
       inputValue={inputValue}
       disabled={disabled}
-      isItemEqualToValue={sameOption}
+      isItemEqualToValue={(option, other) => option.value === other.value}
       onInputValueChange={setInputValue}
       onValueChange={(next: Option[]) => {
         onValueChange(next.map((option) => option.value));

@@ -2,7 +2,6 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import { useRender } from "@base-ui/react/use-render";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { Separator } from "@/modules/common/ui/separator";
 import { cn } from "@/modules/common/utils/cn";
 
 const buttonGroupVariants = cva(
@@ -58,22 +57,4 @@ function ButtonGroupText({ className, render, ...props }: useRender.ComponentPro
   });
 }
 
-function ButtonGroupSeparator({
-  className,
-  orientation = "vertical",
-  ...props
-}: React.ComponentProps<typeof Separator>) {
-  return (
-    <Separator
-      data-slot="button-group-separator"
-      orientation={orientation}
-      className={cn(
-        "relative self-stretch bg-input data-horizontal:mx-px data-horizontal:w-auto data-vertical:my-px data-vertical:h-auto",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-export { ButtonGroup, ButtonGroupSeparator, ButtonGroupText, buttonGroupVariants };
+export { ButtonGroup, ButtonGroupText };
