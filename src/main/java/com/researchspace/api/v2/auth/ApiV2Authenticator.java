@@ -74,13 +74,10 @@ public class ApiV2Authenticator {
   }
 
   private User authenticateApiKey(HttpServletRequest request, String apiKey) {
-    if (!apiAvailabilityHandler.isApiAvailableForUser(null)) {
+    if (!apiAvailabilityHandler.isApiAvailableForUser(null) || !apiKey.matches(APIKEY_REGEX)) {
       throw new ApiV2AuthenticationException();
     }
-    if (!apiKey.matches(APIKEY_REGEX)) {
-      throw new ApiV2AuthenticationException();
-    }
-    User user = apiKeyManager.findUserByKey(apiKey).orElseThrow(ApiV2Authenticator::unknownToken);
+    User user = apiKeyManager.findUserByKey(apiKey).orElseThrow(ApiV2AuthenticationException::new);
     if (!apiAvailabilityHandler.isApiAvailableForUser(user)) {
       throw new ApiV2AuthenticationException();
     }
@@ -102,7 +99,7 @@ public class ApiV2Authenticator {
     }
     ServiceOperationResult<OAuthToken> authentication = oAuthTokenManager.authenticate(tokenValue);
     if (!authentication.isSucceeded()) {
-      throw unknownToken();
+      throw new ApiV2AuthenticationException();
     }
     OAuthToken token = authentication.getEntity();
     if (OAuthTokenType.UI_TOKEN.equals(token.getTokenType())) {
@@ -113,13 +110,9 @@ public class ApiV2Authenticator {
     // Deviation from v1: external OAuth callers are also subject to the deployment-wide and
     // per-user "API disabled by administrator" settings, which v1 only enforces on the API-key
     // path. Scoped to API_OAUTH_TOKEN so that UI tokens keep working when the public API is off.
-    if (!apiAvailabilityHandler.isApiAvailableForUser(null)) {
-      throw new ApiV2AuthenticationException();
-    }
-    if (!apiAvailabilityHandler.isApiAvailableForUser(user)) {
-      throw new ApiV2AuthenticationException();
-    }
-    if (!apiAvailabilityHandler.isOAuthAccessAllowed(user)) {
+    if (!apiAvailabilityHandler.isApiAvailableForUser(null)
+        || !apiAvailabilityHandler.isApiAvailableForUser(user)
+        || !apiAvailabilityHandler.isOAuthAccessAllowed(user)) {
       throw new ApiV2AuthenticationException();
     }
     assertLoginAllowed(user);
@@ -158,10 +151,6 @@ public class ApiV2Authenticator {
     if (user.isLoginDisabled()) {
       throw new ApiV2AuthenticationException();
     }
-  }
-
-  private static ApiV2AuthenticationException unknownToken() {
-    return new ApiV2AuthenticationException();
   }
 
   private void logExternalApiRequest(HttpServletRequest request, User user) {

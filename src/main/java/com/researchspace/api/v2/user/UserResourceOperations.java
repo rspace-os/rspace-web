@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * User manager adapter for the generic REST v2 CRUD dispatcher.
+ * Read-only user adapter for the generic REST API v2 dispatcher.
  *
  * <p>The resource access policy refuses every mutation before dispatch gets here. The explicit
  * write methods are non-persistent placeholders until user mutation semantics are defined.
@@ -52,9 +52,8 @@ public final class UserResourceOperations implements ResourceOperations<User, Lo
   }
 
   /**
-   * Unreachable for an ordinary caller: their policy returns a row constraint, so {@code get} goes
-   * through {@link #find} instead. Only a system administrator, whose access carries no constraint,
-   * reaches this path.
+   * Returns a user only when {@link UserManager} confirms that the actor is the user or a system
+   * administrator. Ordinary collection reads are narrowed to the caller's row in the manager.
    */
   @Override
   public Optional<User> findById(Long id, User actor) {

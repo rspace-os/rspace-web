@@ -60,13 +60,9 @@ class ApiV2InstrumentResourceTest {
 
   @Test
   void filtersOnNameThroughTheEmbeddedEditInfoProperty() {
-    assertEquals(
-        "editInfo.name", ApiV2InstrumentResource.DESCRIPTION.requireField("name").property());
-    assertTrue(
-        ApiV2InstrumentResource.DESCRIPTION
-            .requireField("name")
-            .operators()
-            .contains(Operator.CONTAINS));
+    var name = ApiV2InstrumentResource.DESCRIPTION.requireField("name");
+    assertEquals("editInfo.name", name.property());
+    assertTrue(name.operators().contains(Operator.CONTAINS));
   }
 
   @Test

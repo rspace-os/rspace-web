@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.springframework.core.ExceptionDepthComparator;
+import org.springframework.util.Assert;
 
 /** Everything needed to expose one collection through the standard REST API v2 routes. */
 public record ApiV2ResourceSpec<T, ID>(
@@ -36,8 +37,8 @@ public record ApiV2ResourceSpec<T, ID>(
     Objects.requireNonNull(description, "Resource description");
     Objects.requireNonNull(operations, "Resource operations");
     Objects.requireNonNull(idParser, "ID parser");
-    createErrorKey = requireText(createErrorKey, "Create error key");
-    updateErrorKey = requireText(updateErrorKey, "Update error key");
+    Assert.hasText(createErrorKey, "Create error key must not be blank");
+    Assert.hasText(updateErrorKey, "Update error key must not be blank");
     Set<ResourceOperation> exposed = Set.copyOf(exposedOperations);
     exposedOperations = exposed;
     operationDocumentation = Map.copyOf(operationDocumentation);
@@ -257,12 +258,5 @@ public record ApiV2ResourceSpec<T, ID>(
     return documentation
         .getOrDefault(operation, OpenApiOperationDocumentation.EMPTY)
         .withResponses(responses);
-  }
-
-  private static String requireText(String value, String label) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(label + " must not be blank");
-    }
-    return value;
   }
 }

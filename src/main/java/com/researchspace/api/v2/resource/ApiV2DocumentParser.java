@@ -336,7 +336,7 @@ public final class ApiV2DocumentParser {
       return null;
     }
     try {
-      return field.validateValue(field.parse(node.asText()));
+      return field.validateValue(field.type().parse(node.asText()));
     } catch (RuntimeException ex) {
       violations.add(new Violation(field.name(), Reason.INVALID_VALUE));
       return null;
