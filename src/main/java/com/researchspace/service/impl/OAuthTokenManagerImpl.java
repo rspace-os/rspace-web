@@ -21,7 +21,6 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.vavr.control.Try;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.Arrays;
@@ -29,7 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -275,29 +274,24 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
 
   @Override
   public String createUiToken(User user) {
-    Retry retry = Retry.of("jwtTokenGeneration", UI_TOKEN_RETRY);
-    Callable<NewOAuthTokenResponse> createWithRetry =
-        Retry.decorateCallable(
-            retry,
+    return withUiTokenRetry(
+            "jwtTokenGeneration",
             () ->
-                uiTokenTransaction.execute(
-                    status ->
-                        createNewJwtToken(
-                                UI_CLIENT_ID, UI_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
-                            .getEntity()));
-    return Try.ofCallable(createWithRetry).get().getAccessToken();
+                createNewJwtToken(UI_CLIENT_ID, UI_CLIENT_SECRET, user, OAuthTokenType.UI_TOKEN)
+                    .getEntity())
+        .getAccessToken();
   }
 
   @Override
   public String createUiToken(User subject, User actor, String sessionContextId) {
-    Retry retry = Retry.of("sessionBoundJwtTokenGeneration", UI_TOKEN_RETRY);
-    Callable<String> createWithRetry =
-        Retry.decorateCallable(
-            retry,
-            () ->
-                uiTokenTransaction.execute(
-                    status -> createSessionBoundUiToken(subject, actor, sessionContextId)));
-    return Try.ofCallable(createWithRetry).get();
+    return withUiTokenRetry(
+        "sessionBoundJwtTokenGeneration",
+        () -> createSessionBoundUiToken(subject, actor, sessionContextId));
+  }
+
+  private <T> T withUiTokenRetry(String name, Supplier<T> operation) {
+    Retry retry = Retry.of(name, UI_TOKEN_RETRY);
+    return retry.executeSupplier(() -> uiTokenTransaction.execute(status -> operation.get()));
   }
 
   private String createSessionBoundUiToken(User subject, User actor, String sessionContextId) {

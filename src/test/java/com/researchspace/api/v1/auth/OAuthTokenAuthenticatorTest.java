@@ -24,6 +24,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.OAuthTokenManager.UiTokenContext;
+import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
@@ -32,7 +33,6 @@ import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +41,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class OAuthTokenAuthenticatorTest {
@@ -195,12 +196,15 @@ class OAuthTokenAuthenticatorTest {
     ApiV2Caller caller = ApiV2Caller.direct(subject);
     RecordingOAuthTokenAuthenticator authenticator =
         authenticatorForUiToken(
-            request, subject, caller, new UiTokenContext(42L, Optional.empty(), context));
+            request,
+            subject,
+            Optional.of(caller),
+            new UiTokenContext(42L, Optional.empty(), context));
 
     assertSame(subject, authenticator.authenticate(request));
 
     verify(subject).setAuthenticatedBy(UserAuthenticationMethod.UI_OAUTH_TOKEN);
-    Assertions.assertEquals(0, authenticator.statelessLoginCount);
+    assertEquals(0, authenticator.statelessLoginCount);
   }
 
   @Test
@@ -214,12 +218,15 @@ class OAuthTokenAuthenticatorTest {
     ApiV2Caller caller = new ApiV2Caller(subject, actor);
     RecordingOAuthTokenAuthenticator authenticator =
         authenticatorForUiToken(
-            request, subject, caller, new UiTokenContext(42L, Optional.of(7L), context));
+            request,
+            subject,
+            Optional.of(caller),
+            new UiTokenContext(42L, Optional.of(7L), context));
 
     assertSame(subject, authenticator.authenticate(request));
 
     verify(subject).setAuthenticatedBy(UserAuthenticationMethod.UI_OAUTH_TOKEN);
-    Assertions.assertEquals(0, authenticator.statelessLoginCount);
+    assertEquals(0, authenticator.statelessLoginCount);
   }
 
   @Test
@@ -228,31 +235,18 @@ class OAuthTokenAuthenticatorTest {
     when(subject.getId()).thenReturn(42L);
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/inventory");
     request.addHeader("Authorization", "Bearer v2-ui-token");
-    OAuthTokenManager tokenManager = mock(OAuthTokenManager.class);
-    when(tokenManager.validateToken("v2-ui-token"))
-        .thenReturn(new ServiceOperationResult<>(null, true, "valid"));
-    when(tokenManager.getUiTokenContext("v2-ui-token"))
-        .thenReturn(Optional.of(new UiTokenContext(42L, Optional.empty(), "session-context")));
-    when(tokenManager.authenticate("v2-ui-token"))
-        .thenReturn(
-            new ServiceOperationResult<>(
-                new OAuthToken(subject, "browser", OAuthTokenType.UI_TOKEN),
-                true,
-                "authenticated"));
-    ApiV2BrowserSessionAuthenticator browserSessionAuthenticator =
-        mock(ApiV2BrowserSessionAuthenticator.class);
-    when(browserSessionAuthenticator.authenticateIfPresent(request)).thenReturn(Optional.empty());
-    ApiV2Authenticator apiV2Authenticator =
-        apiV2Authenticator(tokenManager, browserSessionAuthenticator);
-    RecordingOAuthTokenAuthenticator authenticator = new RecordingOAuthTokenAuthenticator();
-    ReflectionTestUtils.setField(authenticator, "tokenManager", tokenManager);
-    ReflectionTestUtils.setField(authenticator, "apiV2Authenticator", apiV2Authenticator);
+    RecordingOAuthTokenAuthenticator authenticator =
+        authenticatorForUiToken(
+            request,
+            subject,
+            Optional.empty(),
+            new UiTokenContext(42L, Optional.empty(), "session-context"));
 
     ApiAuthenticationException exception =
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
 
     assertEquals("api.errors.authentication.oauthTokenInvalid", exception.getMessageKey());
-    Assertions.assertEquals(0, authenticator.statelessLoginCount);
+    assertEquals(0, authenticator.statelessLoginCount);
   }
 
   @Test
@@ -264,14 +258,14 @@ class OAuthTokenAuthenticatorTest {
         authenticatorForUiToken(
             request,
             subject,
-            ApiV2Caller.direct(subject),
+            Optional.of(ApiV2Caller.direct(subject)),
             new UiTokenContext(42L, Optional.empty(), "another-browser-session"));
 
     ApiAuthenticationException exception =
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
 
     assertEquals("api.errors.authentication.oauthTokenInvalid", exception.getMessageKey());
-    Assertions.assertEquals(0, authenticator.statelessLoginCount);
+    assertEquals(0, authenticator.statelessLoginCount);
   }
 
   @Test
@@ -285,14 +279,14 @@ class OAuthTokenAuthenticatorTest {
         authenticatorForUiToken(
             request,
             subject,
-            ApiV2Caller.direct(subject),
+            Optional.of(ApiV2Caller.direct(subject)),
             new UiTokenContext(42L, Optional.empty(), context));
 
     ApiAuthenticationException exception =
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
 
     assertEquals("api.errors.authentication.oauthTokenInvalid", exception.getMessageKey());
-    Assertions.assertEquals(0, authenticator.statelessLoginCount);
+    assertEquals(0, authenticator.statelessLoginCount);
   }
 
   @Test
@@ -317,11 +311,14 @@ class OAuthTokenAuthenticatorTest {
     assertSame(user, authenticator.authenticate(request));
 
     verify(user).setAuthenticatedBy(UserAuthenticationMethod.API_OAUTH_TOKEN);
-    Assertions.assertEquals(1, authenticator.statelessLoginCount);
+    assertEquals(1, authenticator.statelessLoginCount);
   }
 
   private RecordingOAuthTokenAuthenticator authenticatorForUiToken(
-      MockHttpServletRequest request, User subject, ApiV2Caller caller, UiTokenContext context) {
+      MockHttpServletRequest request,
+      User subject,
+      Optional<ApiV2Caller> caller,
+      UiTokenContext context) {
     OAuthTokenManager tokenManager = mock(OAuthTokenManager.class);
     when(tokenManager.validateToken("v2-ui-token"))
         .thenReturn(new ServiceOperationResult<>(null, true, "valid"));
@@ -334,8 +331,7 @@ class OAuthTokenAuthenticatorTest {
     when(tokenManager.getUiTokenContext("v2-ui-token")).thenReturn(Optional.of(context));
     ApiV2BrowserSessionAuthenticator browserSessionAuthenticator =
         mock(ApiV2BrowserSessionAuthenticator.class);
-    when(browserSessionAuthenticator.authenticateIfPresent(request))
-        .thenReturn(Optional.of(caller));
+    when(browserSessionAuthenticator.authenticateIfPresent(request)).thenReturn(caller);
     ApiV2Authenticator apiV2Authenticator =
         apiV2Authenticator(tokenManager, browserSessionAuthenticator);
     RecordingOAuthTokenAuthenticator authenticator = new RecordingOAuthTokenAuthenticator();
@@ -348,7 +344,7 @@ class OAuthTokenAuthenticatorTest {
       OAuthTokenManager tokenManager,
       ApiV2BrowserSessionAuthenticator browserSessionAuthenticator) {
     return new ApiV2Authenticator(
-        mock(com.researchspace.service.UserApiKeyManager.class),
+        mock(UserApiKeyManager.class),
         tokenManager,
         mock(AnalyticsManager.class),
         mock(ApiAvailabilityHandler.class),

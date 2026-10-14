@@ -3,6 +3,7 @@ package com.researchspace.api.v2.resource;
 import java.util.Objects;
 import java.util.function.Function;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.Assert;
 
 /** Runtime and OpenAPI definition of one collection-operation failure. */
 public record ApiV2ErrorMapping(
@@ -15,8 +16,8 @@ public record ApiV2ErrorMapping(
   public ApiV2ErrorMapping {
     Objects.requireNonNull(exceptionType, "Exception type");
     Objects.requireNonNull(status, "Error status");
-    errorCode = requireText(errorCode, "Error code");
-    description = requireText(description, "Error description");
+    Assert.hasText(errorCode, "Error code must not be blank");
+    Assert.hasText(description, "Error description must not be blank");
     Objects.requireNonNull(argumentExtractor, "Error argument extractor");
     if (!status.isError()) {
       throw new IllegalArgumentException("Resource error mapping requires an error status");
@@ -53,12 +54,5 @@ public record ApiV2ErrorMapping(
 
   OpenApiOperationDocumentation.Response documentedResponse() {
     return new OpenApiOperationDocumentation.Response(description, errorCode);
-  }
-
-  private static String requireText(String value, String label) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(label + " must not be blank");
-    }
-    return value;
   }
 }

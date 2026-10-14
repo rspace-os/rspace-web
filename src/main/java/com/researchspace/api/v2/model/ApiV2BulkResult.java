@@ -10,9 +10,4 @@ import java.util.List;
  * error list could only ever be empty. Publishing it in OpenAPI meant a generated SDK carried
  * partial-failure handling that no response could trigger.
  */
-public record ApiV2BulkResult<T>(List<T> docs) {
-
-  public static <T> ApiV2BulkResult<T> success(List<T> docs) {
-    return new ApiV2BulkResult<>(docs);
-  }
-}
+public record ApiV2BulkResult<T>(List<T> docs) {}

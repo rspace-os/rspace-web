@@ -517,77 +517,72 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
       return Map.of();
     }
     return ApiV2ReadableTargetSupport.hideAuthorizationFailure(
-            actor,
-            description.resourceName(),
-            () -> {
-              Optional<Map<Object, Map<String, Object>>> readDocuments =
-                  operations.relationshipReadDocuments(ids, actor);
-              if (readDocuments.isPresent()) {
-                Map<Object, ResolvedTarget> resolved = new LinkedHashMap<>();
-                readDocuments
-                    .orElseThrow()
-                    .forEach(
-                        (id, document) ->
-                            resolved.put(
-                                id,
-                                ResolvedTarget.lazy(
-                                    () ->
-                                        operations
-                                            .findById(castId(id), actor)
-                                            .orElseThrow(NotFoundException::new),
-                                    narrowFields(
-                                        new AccessContext(
-                                            actor, Operation.READ, description.resourceName(), id),
-                                        FieldSelection.all()),
-                                    document)));
-                return Optional.of(resolved);
-              }
-              List<T> resources = new ArrayList<>();
-              List<ID> orderedIds = new ArrayList<>(ids);
-              for (int from = 0;
-                  from < orderedIds.size();
-                  from += CollectionQueryLimits.MAX_PAGE_SIZE) {
-                List<ID> batch =
-                    orderedIds.subList(
-                        from,
-                        Math.min(from + CollectionQueryLimits.MAX_PAGE_SIZE, orderedIds.size()));
-                FilterExpression idsFilter =
-                    new FilterExpression.Comparison(
-                        description.idField(), Operator.IN, new ArrayList<>(batch), false);
-                resources.addAll(
-                    operations
-                        .find(
-                            new ResourceRequest(
-                                idsFilter,
-                                description.defaultSort(),
-                                new ResourceRequest.Page(1, batch.size()),
-                                FieldSelection.all(),
-                                IncludeTree.empty()),
-                            actor)
-                        .resources()
-                        .stream()
-                        .filter(entity -> batch.contains(description.idValue(entity)))
-                        .toList());
-              }
-              Map<Object, Map<String, Object>> overrides =
-                  operations.readOverrides(resources, actor);
-              Map<Object, ResolvedTarget> resolved = new LinkedHashMap<>();
-              for (T entity : resources) {
-                Object id = description.idValue(entity);
-                resolved.put(
-                    id,
-                    new ResolvedTarget(
-                        entity,
-                        narrowFields(
-                            new AccessContext(
-                                actor, Operation.READ, description.resourceName(), id),
-                            FieldSelection.all()),
-                        overrides.getOrDefault(id, Map.of())));
-              }
-              return Optional.of(resolved);
-            })
-        .<Map<Object, ResolvedTarget>>map(map -> new LinkedHashMap<>(map))
-        .orElseGet(Map::of);
+        actor,
+        description.resourceName(),
+        () -> {
+          Optional<Map<Object, Map<String, Object>>> readDocuments =
+              operations.relationshipReadDocuments(ids, actor);
+          if (readDocuments.isPresent()) {
+            Map<Object, ResolvedTarget> resolved = new LinkedHashMap<>();
+            readDocuments
+                .orElseThrow()
+                .forEach(
+                    (id, document) ->
+                        resolved.put(
+                            id,
+                            ResolvedTarget.lazy(
+                                () ->
+                                    operations
+                                        .findById(castId(id), actor)
+                                        .orElseThrow(NotFoundException::new),
+                                narrowFields(
+                                    new AccessContext(
+                                        actor, Operation.READ, description.resourceName(), id),
+                                    FieldSelection.all()),
+                                document)));
+            return resolved;
+          }
+          List<T> resources = new ArrayList<>();
+          List<ID> orderedIds = new ArrayList<>(ids);
+          for (int from = 0;
+              from < orderedIds.size();
+              from += CollectionQueryLimits.MAX_PAGE_SIZE) {
+            List<ID> batch =
+                orderedIds.subList(
+                    from, Math.min(from + CollectionQueryLimits.MAX_PAGE_SIZE, orderedIds.size()));
+            FilterExpression idsFilter =
+                new FilterExpression.Comparison(
+                    description.idField(), Operator.IN, new ArrayList<>(batch), false);
+            resources.addAll(
+                operations
+                    .find(
+                        new ResourceRequest(
+                            idsFilter,
+                            description.defaultSort(),
+                            new ResourceRequest.Page(1, batch.size()),
+                            FieldSelection.all(),
+                            IncludeTree.empty()),
+                        actor)
+                    .resources()
+                    .stream()
+                    .filter(entity -> batch.contains(description.idValue(entity)))
+                    .toList());
+          }
+          Map<Object, Map<String, Object>> overrides = operations.readOverrides(resources, actor);
+          Map<Object, ResolvedTarget> resolved = new LinkedHashMap<>();
+          for (T entity : resources) {
+            Object id = description.idValue(entity);
+            resolved.put(
+                id,
+                new ResolvedTarget(
+                    entity,
+                    narrowFields(
+                        new AccessContext(actor, Operation.READ, description.resourceName(), id),
+                        FieldSelection.all()),
+                    overrides.getOrDefault(id, Map.of())));
+          }
+          return resolved;
+        });
   }
 
   /**
