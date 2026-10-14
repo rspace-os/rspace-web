@@ -132,7 +132,7 @@ public final class CollectionQueryExecutor<T> {
   }
 
   private <R> ResourcePage<R> paged(CriteriaBuilder<R> query, ResourceRequest request) {
-    long firstResult = (long) (request.page().number() - 1) * request.page().size();
+    long firstResult = request.page().offset();
     if (firstResult > Integer.MAX_VALUE) {
       return new ResourcePage<>(List.of(), totalMatching(query));
     }
