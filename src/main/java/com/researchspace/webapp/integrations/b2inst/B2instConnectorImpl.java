@@ -412,7 +412,7 @@ public class B2instConnectorImpl implements B2instConnector {
             .queryParam("page", pageNumber + 1)
             .queryParam("sort", "updated-desc")
             .encode()
-            .buildAndExpand(query)
+            .buildAndExpand(Map.of("q", query))
             .toUri();
     try {
       B2instSearchResult result = lookupRestTemplate.getForObject(url, B2instSearchResult.class);

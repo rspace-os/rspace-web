@@ -146,4 +146,6 @@ Decided with Nico on 2026-10-05.
   b2inst.gwdg.de sent raw and 5 sent as `%2B` (2026-10-13). Since RSDEV-1576 the term goes in as a
   URI template variable and is encoded on expansion, as `searchDois` does in datacite-java-client,
   whose `searchDoisEncodesAPlusSoItIsNotReadAsASpace` has pinned `C++` as `C%2B%2B` since 1.3.0.
+  Expansion encodes every character outside the unreserved set, so the regular expression's `/` and
+  `*` now go out as `%2F` and `%2A` too; B2INST decodes them and still answers the 5 records.
   DataCite was checked for the same gap and is not affected.
