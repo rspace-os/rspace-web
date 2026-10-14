@@ -58,13 +58,18 @@ export function nextFreeRange(
   startWindow: number,
   endWindow: number,
   increment: number,
+  // Day-minute ranges, such as closed hours, that a proposal must also avoid.
+  unavailable: readonly { startMinute: number; endMinute: number }[] = [],
 ): { startMinute: number; endMinute: number } | undefined {
   startWindow = wallClockToDayMinute(date, timezone, startWindow);
   endWindow = wallClockToDayMinute(date, timezone, endWindow);
   if (endWindow <= startWindow) return undefined;
   const duration = Math.min(60, endWindow - startWindow);
   const firstStart = Math.ceil(startWindow / increment) * increment;
-  const occupied = events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone));
+  const occupied = [
+    ...events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone)),
+    ...unavailable,
+  ];
   for (let startMinute = firstStart; startMinute + duration <= endWindow; startMinute += increment) {
     const endMinute = startMinute + duration;
     if (!occupied.some((event) => event.startMinute < endMinute && event.endMinute > startMinute)) {
