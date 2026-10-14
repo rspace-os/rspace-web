@@ -165,6 +165,59 @@ export const metadataReadSchema = v.object({
   properties: v.pipe(objectInput, v.record(v.string(), v.pipe(objectInput, v.looseObject({})))),
 });
 
+const rowBoundEntries = { minItems: v.optional(nonNegativeInteger), maxItems: v.optional(nonNegativeInteger) };
+export const metadataRowBoundsSchema = v.pipe(
+  v.object(rowBoundEntries),
+  v.check(
+    ({ minItems, maxItems }) => minItems === undefined || maxItems === undefined || minItems <= maxItems,
+    "Invalid row bounds",
+  ),
+  v.transform(({ minItems, maxItems }) => ({
+    ...(minItems === undefined ? {} : { minRows: minItems }),
+    ...(maxItems === undefined ? {} : { maxRows: maxItems }),
+  })),
+);
+const enumValues = v.pipe(strings, v.minLength(1));
+const writeConstraints = v.pipe(
+  objectInput,
+  v.looseObject({
+    ...rowBoundEntries,
+    maxLength: v.optional(nonNegativeInteger),
+    enum: v.optional(enumValues),
+  }),
+);
+export const metadataChildrenSchema = v.pipe(v.array(v.unknown()), v.minLength(1));
+export const metadataChildSchema = v.object({
+  name: v.pipe(
+    v.string(),
+    v.check((name) => name.trim() !== "", "Child name must not be empty"),
+  ),
+  type: v.object({
+    jsonType,
+    format: v.nullish(v.string()),
+    maxLength: v.nullish(nonNegativeInteger),
+    structure: v.pipe(objectInput, v.looseObject({ enum: v.optional(enumValues) })),
+  }),
+  writeConstraints,
+  requiredOnCreate: v.boolean(),
+  nullable: v.boolean(),
+  readOnly: v.boolean(),
+  defaultValue: v.optional(v.unknown()),
+  openApi: v.pipe(
+    objectInput,
+    v.object({
+      title: v.nullish(v.string()),
+      format: v.nullish(v.string()),
+    }),
+  ),
+  fields: v.array(v.unknown()),
+});
+export const metadataStructuredPropertySchema = v.object({
+  type: declaredType,
+  readOnly: v.optional(v.boolean(), false),
+  "x-rspace-fields": metadataChildrenSchema,
+});
+
 /**
  * A document schema must be an object schema: the adapter narrows it to the selected fields with
  * `v.pick` before it validates a response.
