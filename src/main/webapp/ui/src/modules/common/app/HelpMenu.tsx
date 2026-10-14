@@ -17,11 +17,16 @@ export default function HelpMenu({
   const { lighthouseReady, showLighthouse } = useLighthouseSdk(livechatProperties);
   const hasExtraHelpLinks = helpLinks.length > 0;
 
-  if (!hasExtraHelpLinks) {
-    return (
-      <Tooltip>
-        <TooltipTrigger
-          render={
+  const helpTrigger = (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          hasExtraHelpLinks ? (
+            <MenuTrigger
+              className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+              aria-label={t("helpDocs.openHelp")}
+            />
+          ) : (
             <Button
               variant="ghost"
               size="icon-sm"
@@ -29,30 +34,20 @@ export default function HelpMenu({
               disabled={!lighthouseReady}
               onClick={showLighthouse}
             />
-          }
-        >
-          <HelpCircleIcon />
-        </TooltipTrigger>
-        <TooltipContent>{t("helpDocs.openHelp")}</TooltipContent>
-      </Tooltip>
-    );
-  }
+          )
+        }
+      >
+        <HelpCircleIcon />
+      </TooltipTrigger>
+      <TooltipContent>{t("helpDocs.openHelp")}</TooltipContent>
+    </Tooltip>
+  );
+
+  if (!hasExtraHelpLinks) return helpTrigger;
 
   return (
     <Menu>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <MenuTrigger
-              className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-              aria-label={t("helpDocs.openHelp")}
-            />
-          }
-        >
-          <HelpCircleIcon />
-        </TooltipTrigger>
-        <TooltipContent>{t("helpDocs.openHelp")}</TooltipContent>
-      </Tooltip>
+      {helpTrigger}
       <MenuContent>
         {helpLinks.map(({ label, url }) => (
           <MenuLinkItem key={`${label}-${url}`} href={url} rel="noreferrer">
