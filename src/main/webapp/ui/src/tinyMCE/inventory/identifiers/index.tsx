@@ -3,41 +3,18 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import createAccentedTheme from "../../../accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
-import Alerts from "../../../components/Alerts/Alerts";
 import AppBar from "../../../components/AppBar";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManagementPage";
 import { type Identifier, IdentifiersRefreshProvider } from "../../../Inventory/useIdentifiers";
-import i18n from "../../../modules/common/i18n";
-import I18nRoot from "../../../modules/common/i18n/I18nRoot";
-import { Optional } from "../../../util/optional";
 import RsSet from "../../../util/set";
 import { toTitleCase } from "../../../util/Util";
 
-declare global {
-  interface Window {
-    insertActions?: Map<
-      string,
-      {
-        text: string;
-        icon: string;
-        action: () => void;
-        aliases?: string[];
-      }
-    >;
-  }
-}
-
-type Editor = {
+export type Editor = {
   ui: {
     registry: {
       addMenuItem: (menuItemIdentifier: string, options: { text: string; icon: string; onAction: () => void }) => void;
@@ -47,7 +24,15 @@ type Editor = {
   execCommand: (command: string, someFlag: boolean, htmlContent: string) => void;
 };
 
-function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: () => void; editor: Editor }) {
+export default function IdentifiersDialog({
+  open,
+  onClose,
+  editor,
+}: {
+  open: boolean;
+  onClose: () => void;
+  editor: Editor;
+}) {
   const { t } = useTranslation(["workspace", "common"]);
   const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(new RsSet([]));
   const { getToken } = useOauthToken();
@@ -122,90 +107,6 @@ function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: 
     </Dialog>
   );
 }
-
-type IdentifiersDialogProps = {
-  open?: boolean;
-  onClose?: () => void;
-};
-
-class IdentifiersPlugin {
-  constructor(editor: Editor) {
-    function* renderIdentifiers(
-      domContainer: HTMLElement,
-    ): Generator<IdentifiersDialogProps, void, IdentifiersDialogProps> {
-      const root = createRoot(domContainer);
-      let newProps: IdentifiersDialogProps = {
-        open: false,
-        onClose: () => {},
-      };
-      while (true) {
-        newProps = yield newProps;
-        root.render(
-          <I18nRoot namespaces={["workspace", "common"]}>
-            <StyledEngineProvider injectFirst enableCssLayer>
-              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-                <Alerts>
-                  <IdentifiersDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
-                </Alerts>
-              </ThemeProvider>
-            </StyledEngineProvider>
-          </I18nRoot>,
-        );
-      }
-    }
-
-    const element = Optional.fromNullable(document.getElementById("tinymce-inventory-identifiers")).orElseGet(() => {
-      const div = document.createElement("div");
-      div.id = "tinymce-inventory-identifiers";
-      document.body?.appendChild(div);
-      return div;
-    });
-    const identifiersRenderer = renderIdentifiers(element);
-    identifiersRenderer.next({ open: false });
-
-    editor.ui.registry.addMenuItem("optIdentifiers", {
-      text: i18n.t("workspace:tinymce.identifiers.pageTitle"),
-      icon: "inventory_identifiers",
-      onAction: () => {
-        identifiersRenderer.next({
-          open: true,
-          onClose: () => {
-            identifiersRenderer.next({ open: false });
-          },
-        });
-      },
-    });
-    editor.ui.registry.addButton("identifiers", {
-      tooltip: i18n.t("workspace:tinymce.identifiers.pageTitle"),
-      icon: "inventory_identifiers",
-      onAction: () => {
-        identifiersRenderer.next({
-          open: true,
-          onClose: () => {
-            identifiersRenderer.next({ open: false });
-          },
-        });
-      },
-    });
-    if (!window.insertActions) window.insertActions = new Map();
-    window.insertActions.set("optIdentifiers", {
-      text: i18n.t("workspace:tinymce.identifiers.pageTitle"),
-      aliases: ["IGSN"],
-      icon: "inventory_identifiers",
-      action: () => {
-        identifiersRenderer.next({
-          open: true,
-          onClose: () => {
-            identifiersRenderer.next({ open: false });
-          },
-        });
-      },
-    });
-  }
-}
-
-// @ts-expect-error TS does not recognise the PluginManager property
-tinyMCE.PluginManager.add("identifiers", IdentifiersPlugin);
 
 function tableHtml({ data }: { data: Array<{ igsn: Identifier; barcodeUrl: string }> }): HTMLTableElement {
   const identifiersTable = document.createElement("table");

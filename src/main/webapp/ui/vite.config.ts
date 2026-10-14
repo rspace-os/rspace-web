@@ -284,8 +284,9 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  // Entries mount React at module load. Fast Refresh's footer imports its own module, and after a hot update Vite
-  // adds ?t= to that import while the JSP <script> keeps the bare URL, so the entry ran twice (createRoot warning).
+  // Entries mount React at module load. Fast Refresh's footer would make an entry that defines components
+  // self-accepting, so a hot update re-executes it and calls createRoot again. Entries are kept mount-only
+  // (*Entrypoint.tsx, components in their own modules); this exclude guards against one that isn't.
   const plugins: PluginOption[] = [
     react({ exclude: [/\/node_modules\//, ...Object.values(resolvedBundleEntries)] }),
     legacyI18n(),

@@ -16,10 +16,8 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import i18n from "../../../modules/common/i18n";
-import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import theme from "../../../theme";
 
@@ -31,14 +29,14 @@ class GroupEditBar extends React.Component<any, any> {
     this.state = {
       toast: false,
       editing: false,
-      group_id: domContainer.getAttribute("data-group-id"),
-      can_edit: domContainer.getAttribute("data-can-edit") === "true",
-      profile_text: domContainer.getAttribute("data-profile-text"),
-      pi_can_edit_permission: domContainer.getAttribute("data-can-editpieditallchioce") === "true",
-      pi_can_edit_value: domContainer.getAttribute("data-pieditallchoicevalue") === "true",
-      profile_hiding_enabled: domContainer.getAttribute("data-profile-hiding-enabled") === "true",
-      can_hide_profile: domContainer.getAttribute("data-can-hide-group-profile") === "true",
-      profile_is_hidden: domContainer.getAttribute("data-group-private-profile") === "true",
+      group_id: props.domContainer.getAttribute("data-group-id"),
+      can_edit: props.domContainer.getAttribute("data-can-edit") === "true",
+      profile_text: props.domContainer.getAttribute("data-profile-text"),
+      pi_can_edit_permission: props.domContainer.getAttribute("data-can-editpieditallchioce") === "true",
+      pi_can_edit_value: props.domContainer.getAttribute("data-pieditallchoicevalue") === "true",
+      profile_hiding_enabled: props.domContainer.getAttribute("data-profile-hiding-enabled") === "true",
+      can_hide_profile: props.domContainer.getAttribute("data-can-hide-group-profile") === "true",
+      profile_is_hidden: props.domContainer.getAttribute("data-group-private-profile") === "true",
       default_text: i18n.t("profile.groups.editBar.noProfile"),
       errorMessage: "",
     };
@@ -82,7 +80,7 @@ class GroupEditBar extends React.Component<any, any> {
 
     if (
       this.state.pi_can_edit_permission &&
-      this.state.pi_can_edit_value !== (domContainer.getAttribute("data-pieditallchoicevalue") === "true")
+      this.state.pi_can_edit_value !== (this.props.domContainer.getAttribute("data-pieditallchoicevalue") === "true")
     ) {
       data = new FormData();
       data.set("canPIEditAll", this.state.pi_can_edit_value);
@@ -99,7 +97,7 @@ class GroupEditBar extends React.Component<any, any> {
     if (
       this.state.can_hide_profile &&
       this.state.profile_hiding_enabled &&
-      this.state.profile_is_hidden !== (domContainer.getAttribute("data-group-private-profile") === "true")
+      this.state.profile_is_hidden !== (this.props.domContainer.getAttribute("data-group-private-profile") === "true")
     ) {
       data = new FormData();
       data.set("hideProfile", this.state.profile_is_hidden);
@@ -256,10 +254,4 @@ class GroupEditBar extends React.Component<any, any> {
   }
 }
 
-const domContainer = document.getElementById("groupEditBar") as HTMLElement;
-const root = createRoot(domContainer);
-root.render(
-  <I18nRoot namespaces={["common"]}>
-    <GroupEditBar />
-  </I18nRoot>,
-);
+export default GroupEditBar;

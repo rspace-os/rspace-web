@@ -4,20 +4,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { createRoot } from "react-dom/client";
 import createAccentedTheme from "./accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
 import Analytics from "./components/Analytics";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
-import LoaderCircular from "./components/LoadingCircular";
-import I18nRoot from "./modules/common/i18n/I18nRoot";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
 
 const queryClient = new QueryClient();
 
-function App(): React.ReactNode {
+export function App(): React.ReactNode {
   const { authStore, peopleStore, unitStore } = useStores();
   const [loadingDone, setLoadingDone] = useState(false);
 
@@ -66,21 +63,5 @@ function App(): React.ReactNode {
     </>
   );
 }
-
-window.addEventListener("load", () => {
-  const domContainer = document.getElementById("app");
-  window.scrollTo(0, 1);
-
-  // WebKit can fire this handler twice for the same container.
-  if (domContainer && domContainer.dataset.reactRootMounted !== "true") {
-    domContainer.dataset.reactRootMounted = "true";
-    const root = createRoot(domContainer);
-    root.render(
-      <I18nRoot namespaces={["inventory", "common", "about"]} fallback={<LoaderCircular />}>
-        <App />
-      </I18nRoot>,
-    );
-  }
-});
 
 export default observer(App);

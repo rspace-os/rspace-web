@@ -7,11 +7,9 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import materialTheme from "../../theme";
 import { getSorting } from "../../util/table";
@@ -101,16 +99,5 @@ export default function AccountActivity(props: any) {
         </Box>
       </ThemeProvider>
     </StyledEngineProvider>
-  );
-}
-
-const domContainer = document.getElementById("account-activity");
-
-if (domContainer) {
-  const root = createRoot(domContainer);
-  root.render(
-    <I18nRoot namespaces={["common"]}>
-      <AccountActivity userId={domContainer.dataset.userid} />
-    </I18nRoot>,
   );
 }
