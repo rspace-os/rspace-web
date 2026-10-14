@@ -198,28 +198,32 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
   }
 
   @Override
-  public Map<Long, Map<Long, InventoryEntityField>> valuesByInstrument(
+  public Map<Long, Map<Long, ValueRow>> valuesByInstrument(
       Set<Long> instrumentIds, Set<Long> definitionIds) {
-    Map<Long, Map<Long, InventoryEntityField>> values = new LinkedHashMap<>();
+    Map<Long, Map<Long, ValueRow>> values = new LinkedHashMap<>();
     if (instrumentIds.isEmpty() || definitionIds.isEmpty()) {
       return values;
     }
-    List<InventoryEntityField> rows =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery(
-                "from InventoryEntityField f"
-                    + " where f.instrumentEntity.id in :instrumentIds"
-                    + " and f.templateField.id in :definitionIds"
-                    + " and f.deleted = false",
-                InventoryEntityField.class)
-            .setParameterList("instrumentIds", instrumentIds)
-            .setParameterList("definitionIds", definitionIds)
-            .list();
-    for (InventoryEntityField row : rows) {
+    List<ValueRow> rows =
+        criteriaBuilderFactory
+            .create(sessionFactory.getCurrentSession(), ValueRow.class)
+            .from(InventoryEntityField.class, "f")
+            .selectNew(ValueRow.class)
+            .with("f.instrumentEntity.id")
+            .with("f.templateField.id")
+            .with("f.type")
+            .with("f.data")
+            .end()
+            .whereExpression("f.instrumentEntity.id in :instrumentIds")
+            .whereExpression("f.templateField.id in :definitionIds")
+            .whereExpression("f.deleted = false")
+            .setParameter("instrumentIds", instrumentIds)
+            .setParameter("definitionIds", definitionIds)
+            .getResultList();
+    for (ValueRow row : rows) {
       values
-          .computeIfAbsent(row.getInstrumentEntity().getId(), ignored -> new LinkedHashMap<>())
-          .put(row.getTemplateField().getId(), row);
+          .computeIfAbsent(row.instrumentId(), ignored -> new LinkedHashMap<>())
+          .put(row.definitionId(), row);
     }
     return values;
   }
