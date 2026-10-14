@@ -17,6 +17,7 @@ import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
@@ -157,5 +158,15 @@ class TimeSlotBookingManagerTest {
 
   static Date instant(String value) {
     return Date.from(Instant.parse(value));
+  }
+
+  static TimeSlotBooking event(long id, BookingEventKind kind, String startValue, String endValue) {
+    TimeSlotBooking event = new TimeSlotBooking();
+    event.setId(id);
+    event.setKind(kind);
+    event.setStartTime(instant(startValue));
+    event.setEndTime(instant(endValue));
+    event.setPurpose("Private purpose");
+    return event;
   }
 }

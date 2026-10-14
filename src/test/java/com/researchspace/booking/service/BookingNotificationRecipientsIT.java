@@ -71,6 +71,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
 
   private static final NotificationType CREATED = NotificationType.NOTIFICATION_BOOKING_CREATED;
   private static final NotificationType CANCELLED = NotificationType.NOTIFICATION_BOOKING_CANCELLED;
+  private static final String LONG_CANCELLATION_REASON = "&".repeat(500);
 
   private final TimeSlotBookingManager bookingManager;
   private final BookingConfigurationManager configurationManager;
@@ -220,18 +221,45 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     emailCapture.clear();
 
     logoutAndLoginAs(owner);
-    bookingManager
-        .updateBooking(
-            booking.getId(),
-            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
-            owner,
-            owner)
-        .orElseThrow();
+    TimeSlotBooking cancelled =
+        bookingManager
+            .updateBooking(
+                booking.getId(),
+                new TimeSlotBookingManager.Patch(
+                    null, null, false, null, BookingState.CANCELLED, LONG_CANCELLATION_REASON),
+                booking.getVersion(),
+                owner,
+                owner)
+            .orElseThrow();
 
+    assertEquals(LONG_CANCELLATION_REASON, cancelled.getCancellationReason());
     assertSingleNotification(requester, "UTC", CANCELLED);
+    String escapedReason = "&amp;".repeat(500);
+    Notification cancellationNotification =
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, requester, CANCELLED)
+            .get(0);
+    assertTrue(
+        cancellationNotification.getNotificationMessage().contains("Reason: " + escapedReason));
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored -> {
+              Notification persisted =
+                  (Notification)
+                      communicationDao
+                          .getWithTargets(cancellationNotification.getId())
+                          .orElseThrow();
+              assertTrue(persisted.getNotificationMessage().contains("Reason: " + escapedReason));
+            });
     if (emailEnabled) {
       assertEquals(1, emailCapture.deliveries().size());
       assertEquals(List.of(requester.getEmail()), emailCapture.deliveries().get(0).addresses());
+      assertTrue(
+          emailCapture
+              .deliveries()
+              .get(0)
+              .notificationMessage()
+              .contains("Reason: " + escapedReason));
+      assertTrue(emailCapture.deliveries().get(0).htmlContent().contains(escapedReason));
     } else {
       assertTrue(emailCapture.deliveries().isEmpty());
     }
@@ -247,6 +275,10 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     Group bookerGroup = createGroupForUsersWithDefaultPi(owner, requester);
     shareWithBookersOnly(setup.instrumentId(), bookerGroup);
     setRecipientPreferences(requester, false, false, "UTC");
+    userMgr.setPreference(
+        Preference.NOTIFICATION_BOOKING_CANCELLED_PREF,
+        Boolean.FALSE.toString(),
+        requester.getUsername());
 
     logoutAndLoginAs(requester);
     TimeSlotBooking booking = createBooking(setup, requester);
@@ -258,12 +290,17 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     bookingManager
         .updateBooking(
             booking.getId(),
-            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+            new TimeSlotBookingManager.Patch(
+                null, null, false, null, BookingState.CANCELLED, "No longer needed"),
+            booking.getVersion(),
             owner,
             owner)
         .orElseThrow();
 
-    assertNoNotification(requester, CANCELLED);
+    assertTrue(
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, requester, CANCELLED)
+            .isEmpty(),
+        ineligibility.name());
     assertTrue(emailCapture.deliveries().isEmpty(), ineligibility.name());
   }
 
@@ -634,7 +671,8 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     }
   }
 
-  private record EmailDelivery(List<String> addresses, String notificationMessage) {}
+  private record EmailDelivery(
+      List<String> addresses, String notificationMessage, String htmlContent) {}
 
   private enum RequesterIneligibility {
     DISABLED,
@@ -649,7 +687,10 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
     public void sendEmail(EmailContent content, List<String> recipients, Communication comm) {
       Notification notification = (Notification) comm;
       recorded.add(
-          new EmailDelivery(List.copyOf(recipients), notification.getNotificationMessage()));
+          new EmailDelivery(
+              List.copyOf(recipients),
+              notification.getNotificationMessage(),
+              content.htmlContent()));
     }
 
     List<EmailDelivery> deliveries() {

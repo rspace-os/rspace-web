@@ -123,7 +123,12 @@ export function formatDate(date: string, options: Intl.DateTimeFormatOptions): s
 }
 
 export function scrollCalendarWithArrowKeys(event: React.KeyboardEvent<HTMLElement>) {
-  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  if (
+    event.defaultPrevented ||
+    event.target !== event.currentTarget ||
+    (event.key !== "ArrowLeft" && event.key !== "ArrowRight")
+  )
+    return;
   event.preventDefault();
   event.currentTarget.scrollBy({ left: event.key === "ArrowLeft" ? -240 : 240, behavior: "smooth" });
 }
@@ -144,8 +149,15 @@ export function useScrollToToday(date: string, view: CalendarView, today: string
 }
 
 export function actionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {
-  return (timelineEvent: Pick<DayTimelineEvent, "id">) => {
+  return (timelineEvent: Pick<DayTimelineEvent, "id">, _period: string, timelineEventElement?: HTMLElement | null) => {
     const event = events.find(({ id }) => String(id) === timelineEvent.id);
-    return event ? <BookingActions event={event} timezone={timezone} timelineDate={timelineDate} /> : null;
+    return event ? (
+      <BookingActions
+        event={event}
+        timezone={timezone}
+        timelineDate={timelineDate}
+        timelineEventElement={timelineEventElement}
+      />
+    ) : null;
   };
 }
