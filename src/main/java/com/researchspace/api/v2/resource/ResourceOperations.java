@@ -23,6 +23,24 @@ public interface ResourceOperations<T, ID> {
   /** Finds one page, resolving any caller-specific values for the effective {@code subject}. */
   ResourcePage<T> find(ResourceRequest request, User subject);
 
+  /** Whether ordinary list and single reads use scalar documents instead of entity aggregates. */
+  default boolean usesReadDocuments() {
+    return false;
+  }
+
+  /**
+   * Finds an authorized scalar-document page under the same request and row-read policy as find.
+   *
+   * <p>Documents use the collection's public field names and serialized values, including its ID.
+   * The renderer applies selection and per-row field access after validating declared values.
+   * Runtime fields are loaded separately from the authorized page IDs. Collections with
+   * relationships retain entity reads; audit and write callers continue using the entity methods.
+   */
+  default ResourcePage<Map<String, Object>> findReadDocuments(
+      ResourceRequest request, User subject) {
+    throw new UnsupportedOperationException(getClass().getName() + " has no scalar read documents");
+  }
+
   /** Counts matching resources after caller-specific values are resolved. */
   long count(ResourceRequest request, User subject);
 
