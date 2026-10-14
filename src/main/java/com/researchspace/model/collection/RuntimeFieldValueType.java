@@ -2,8 +2,6 @@ package com.researchspace.model.collection;
 
 import com.researchspace.core.util.JacksonUtil;
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
@@ -38,23 +36,11 @@ public enum RuntimeFieldValueType {
           Operator.EXISTS),
       true),
 
-  NUMBER(
-      "number",
-      Set.of(
-          Operator.EQUAL,
-          Operator.NOT_EQUAL,
-          Operator.GREATER_THAN,
-          Operator.GREATER_THAN_OR_EQUAL,
-          Operator.LESS_THAN,
-          Operator.LESS_THAN_OR_EQUAL,
-          Operator.IN,
-          Operator.NOT_IN,
-          Operator.EXISTS),
-      false),
+  NUMBER("number", OperatorSets.ORDERED, false),
 
-  DATE("string", orderedTextOperators(), false),
+  DATE("string", OperatorSets.ORDERED, false),
 
-  TIME("string", orderedTextOperators(), false),
+  TIME("string", OperatorSets.ORDERED, false),
 
   RADIO(
       "string",
@@ -71,7 +57,7 @@ public enum RuntimeFieldValueType {
   /** Maximum scale supported by MariaDB's DECIMAL conversion for numeric runtime fields. */
   public static final int MAX_NUMBER_SCALE = 30;
 
-  private static final int MAX_NUMBER_INTEGER_DIGITS = MAX_NUMBER_PRECISION - MAX_NUMBER_SCALE;
+  public static final int MAX_NUMBER_INTEGER_DIGITS = MAX_NUMBER_PRECISION - MAX_NUMBER_SCALE;
 
   /**
    * Unanchored number syntax shared with the SQL numeric conversion. ASCII digits only: {@link
@@ -99,17 +85,18 @@ public enum RuntimeFieldValueType {
     this.wildcards = wildcards;
   }
 
-  private static Set<Operator> orderedTextOperators() {
-    return Set.of(
-        Operator.EQUAL,
-        Operator.NOT_EQUAL,
-        Operator.GREATER_THAN,
-        Operator.GREATER_THAN_OR_EQUAL,
-        Operator.LESS_THAN,
-        Operator.LESS_THAN_OR_EQUAL,
-        Operator.IN,
-        Operator.NOT_IN,
-        Operator.EXISTS);
+  private static final class OperatorSets {
+    private static final Set<Operator> ORDERED =
+        Set.of(
+            Operator.EQUAL,
+            Operator.NOT_EQUAL,
+            Operator.GREATER_THAN,
+            Operator.GREATER_THAN_OR_EQUAL,
+            Operator.LESS_THAN,
+            Operator.LESS_THAN_OR_EQUAL,
+            Operator.IN,
+            Operator.NOT_IN,
+            Operator.EXISTS);
   }
 
   public String jsonType() {
@@ -141,8 +128,8 @@ public enum RuntimeFieldValueType {
     }
     return switch (this) {
       case NUMBER -> parseNumber(value);
-      case DATE -> requireFormat(value, DATE_FORMAT, true);
-      case TIME -> requireFormat(value, TIME_FORMAT, false);
+      case DATE -> requireFormat(value, DATE_FORMAT);
+      case TIME -> requireFormat(value, TIME_FORMAT);
       case TEXT, RADIO, CHOICE -> value;
     };
   }
@@ -205,13 +192,9 @@ public enum RuntimeFieldValueType {
     return Arrays.asList(options);
   }
 
-  private static String requireFormat(String value, DateTimeFormatter format, boolean date) {
+  private static String requireFormat(String value, DateTimeFormatter format) {
     try {
-      if (date) {
-        LocalDate.parse(value, format);
-      } else {
-        LocalTime.parse(value, format);
-      }
+      format.parse(value);
     } catch (DateTimeParseException ex) {
       throw new IllegalArgumentException("Runtime field value has an invalid format", ex);
     }

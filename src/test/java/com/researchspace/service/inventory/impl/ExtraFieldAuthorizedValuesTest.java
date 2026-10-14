@@ -10,12 +10,13 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.ExtraFieldDao;
-import com.researchspace.dao.ExtraFieldDao.ExtraFieldRow;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity.Definition;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,13 +45,13 @@ class ExtraFieldAuthorizedValuesTest {
             context -> {
               throw new AssertionError("Authorized page IDs have already passed the read policy");
             });
-    ExtraFieldRow text = new ExtraFieldRow("Room", FieldType.TEXT);
-    ExtraFieldRow number = new ExtraFieldRow("Voltage", FieldType.NUMBER);
-    ExtraFieldRow link = new ExtraFieldRow("Reference", FieldType.LINK);
-    String textId = ExtraFieldRuntimeManagerImpl.encode(text);
-    String numberId = ExtraFieldRuntimeManagerImpl.encode(number);
-    String linkId = ExtraFieldRuntimeManagerImpl.encode(link);
-    Map<ExtraFieldRow, String> stored = new LinkedHashMap<>();
+    Definition text = new Definition("Room", FieldType.TEXT);
+    Definition number = new Definition("Voltage", FieldType.NUMBER);
+    Definition link = new Definition("Reference", FieldType.LINK);
+    String textId = ExtraFieldIdentity.encode(text.name(), text.type());
+    String numberId = ExtraFieldIdentity.encode(number.name(), number.type());
+    String linkId = ExtraFieldIdentity.encode(link.name(), link.type());
+    Map<Definition, String> stored = new LinkedHashMap<>();
     stored.put(text, null);
     stored.put(number, "12.5");
     stored.put(link, "https://example.test/reference");

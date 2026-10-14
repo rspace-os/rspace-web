@@ -16,21 +16,12 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import java.util.Set;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
 class InstrumentParentLocationAccessIT extends SpringTransactionalTest {
 
   @Autowired private InstrumentDao instrumentDao;
-
-  @AfterEach
-  void restoreContentInitializer() throws Exception {
-    super.tearDown();
-  }
 
   @Test
   public void resolvesDirectContainerAccessForEveryInventoryPermissionBranch() throws Exception {
