@@ -1,22 +1,12 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import "@/__tests__/__mocks__/matchMedia";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
 import { useTheme } from "../useTheme";
 
 beforeEach(() => {
   localStorage.clear();
   document.documentElement.classList.remove("dark");
-
-  if (typeof window.matchMedia === "undefined") {
-    Object.defineProperty(window, "matchMedia", {
-      writable: true,
-      value: (_query: string) => ({
-        matches: false,
-        addEventListener: () => {},
-        removeEventListener: () => {},
-      }),
-    });
-  }
 });
 
 afterEach(() => {
