@@ -44,10 +44,8 @@ const CurrentUserResponseSchema = v.object({
 });
 
 export type CurrentUser = v.InferOutput<typeof CurrentUserResponseSchema>;
-export type CurrentUserOrcid = v.InferOutput<typeof CurrentUserOrcidSchema>;
-export type CurrentUserCapabilities = v.InferOutput<typeof CurrentUserCapabilitiesSchema>;
-export type CurrentUserLivechat = v.InferOutput<typeof CurrentUserLivechatSchema>;
-export type CurrentUserSession = v.InferOutput<typeof CurrentUserSessionSchema>;
+
+const currentUserEvents = ["USER_RENAME", "USER_SET_ORCID", "USER_SET_EMAIL"] as const;
 
 export const currentUserQueryKeys = {
   all: ["rspace.api.v2.users"] as const,
@@ -89,14 +87,14 @@ export function useCurrentUserEventSync() {
       void queryClient.invalidateQueries({ queryKey: currentUserQueryKeys.me() });
     };
 
-    window.addEventListener("USER_RENAME", invalidateCurrentUser);
-    window.addEventListener("USER_SET_ORCID", invalidateCurrentUser);
-    window.addEventListener("USER_SET_EMAIL", invalidateCurrentUser);
+    for (const eventName of currentUserEvents) {
+      window.addEventListener(eventName, invalidateCurrentUser);
+    }
 
     return () => {
-      window.removeEventListener("USER_RENAME", invalidateCurrentUser);
-      window.removeEventListener("USER_SET_ORCID", invalidateCurrentUser);
-      window.removeEventListener("USER_SET_EMAIL", invalidateCurrentUser);
+      for (const eventName of currentUserEvents) {
+        window.removeEventListener(eventName, invalidateCurrentUser);
+      }
     };
   }, [queryClient]);
 }

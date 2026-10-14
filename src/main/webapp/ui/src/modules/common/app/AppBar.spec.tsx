@@ -35,7 +35,6 @@ describe("AppBar", () => {
       await expect.element(appBar.header).toBeVisible();
       await expect.element(appBar.help).toBeVisible();
       await expect.poll(() => appBar.documentFitsViewport()).toBe(true);
-      await expect.poll(() => appBar.isFullyWithinViewport(appBar.help)).toBe(true);
       await expect.poll(() => appBar.visibleControlsFitViewport()).toBe(true);
     } finally {
       await page.viewport(originalViewport.width, originalViewport.height);

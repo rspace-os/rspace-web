@@ -24,28 +24,28 @@ export type AppBarRouteContext = {
   sidebar?: () => React.ReactNode;
 };
 
-export function getSidebarRenderer(matches: Array<{ context: unknown }>): (() => React.ReactNode) | undefined {
+function innermostContext<Key extends keyof AppBarRouteContext>(
+  matches: Array<{ context: unknown }>,
+  key: Key,
+): AppBarRouteContext[Key] | undefined {
   for (let index = matches.length - 1; index >= 0; index -= 1) {
     const context = matches[index]?.context;
-    if (typeof context !== "object" || context === null || !("sidebar" in context)) continue;
+    if (typeof context !== "object" || context === null || !(key in context)) continue;
 
-    const { sidebar } = context as AppBarRouteContext;
-    if (sidebar !== undefined) return sidebar;
+    const value = (context as AppBarRouteContext)[key];
+    if (value !== undefined) return value;
   }
 
   return undefined;
 }
 
+export function getSidebarRenderer(matches: Array<{ context: unknown }>): (() => React.ReactNode) | undefined {
+  return innermostContext(matches, "sidebar");
+}
+
 export function getAppBarConfig(matches: Array<{ context: unknown }>): AppBarConfig | false {
-  for (let index = matches.length - 1; index >= 0; index -= 1) {
-    const context = matches[index]?.context;
-    if (typeof context !== "object" || context === null || !("appBar" in context)) continue;
-
-    const { appBar } = context as AppBarRouteContext;
-    if (appBar !== undefined) return appBar;
-  }
-
-  return { currentPage: "rspace" };
+  const appBarConfig = innermostContext(matches, "appBar");
+  return appBarConfig === undefined ? { currentPage: "rspace" } : appBarConfig;
 }
 
 export function RouteTransitionIndicator() {

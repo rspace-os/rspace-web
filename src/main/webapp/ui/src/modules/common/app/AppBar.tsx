@@ -89,6 +89,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
       iconClassName: "text-blue-500",
     },
   ];
+  const visibleNavItems = navItems.filter((item) => item.isVisible);
 
   return (
     <header className="sticky top-0 z-50 border-b bg-background">
@@ -106,8 +107,8 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
             <span className="hidden font-semibold md:inline">{t("helpDocs.rspaceAlt")}</span>
           )}
         </a>
-        <MobileSectionSwitcher currentPage={currentPage} navItems={navItems} />
-        <MainNavigation currentPage={currentPage} navItems={navItems} />
+        <MobileSectionSwitcher currentPage={currentPage} visibleNavItems={visibleNavItems} />
+        <MainNavigation currentPage={currentPage} visibleNavItems={visibleNavItems} />
         <div className="min-w-0 flex-1" />
         {nextMaintenance && <MaintenanceNotice startDate={nextMaintenance.startDate} />}
         <a

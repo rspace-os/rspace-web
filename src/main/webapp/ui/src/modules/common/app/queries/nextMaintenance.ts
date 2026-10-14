@@ -3,7 +3,7 @@ import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 
-export const MaintenanceSchema = v.object({
+const MaintenanceSchema = v.object({
   id: v.pipe(v.number(), v.integer()),
   startDate: v.pipe(v.string(), v.isoTimestamp()),
 });
