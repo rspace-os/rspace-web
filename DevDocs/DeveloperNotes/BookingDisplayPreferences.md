@@ -70,6 +70,11 @@ Calendar availability resolves each weekday's hours in the item's scheduling tim
 weekdays are unavailable for the whole local day. The interval helper merges touching openings
 and follows Java's DST boundary resolution, including `24:00` at the next midnight.
 
+Booking creation and edits validate the whole absolute window against the independent weekday
+entries. Touching openings permit a booking across midnight; any closed gap rejects it.
+Maintenance keeps its explicit opening-hours bypass. Non-uniform schedules appear as a weekly
+readout alongside the item's scheduling timezone.
+
 ## REST API compatibility
 
 The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
