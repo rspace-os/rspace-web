@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.booking.dao.TimeSlotBookingDao.EventInterval;
@@ -7,7 +8,6 @@ import com.researchspace.booking.service.BookingCatalogueManager.Availability;
 import com.researchspace.booking.service.BookingCatalogueManager.AvailabilityWindow;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingEventKind;
-import com.researchspace.model.booking.BookingOpeningException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -39,8 +39,7 @@ class BookingCurrentAvailabilityTest {
   @Test
   void distinguishesBeforeOpeningOpenNowAndAfterClosing() {
     BookingConfiguration restricted = configuration("UTC");
-    restricted.setOpeningStart("08:00");
-    restricted.setOpeningEnd("18:00");
+    restricted.setOpeningHours(hours("08:00", "18:00"));
 
     assertEquals(LATER, classify(restricted, List.of(), atUtc("2026-08-17T07:00:00Z")));
     assertEquals(NOW, classify(restricted, List.of(), atUtc("2026-08-17T09:00:00Z")));
@@ -48,11 +47,11 @@ class BookingCurrentAvailabilityTest {
   }
 
   @Test
-  void treatsAClosedWeekdayAsUnavailableAndFollowsItsException() {
+  void treatsAClosedWeekdayAsUnavailableAndUsesIndependentHours() {
     BookingConfiguration closedMonday = configuration("UTC");
-    closedMonday.setOpenDays(List.of(2, 3, 4, 5, 6, 7));
+    closedMonday.setOpeningHours(hours("00:00", "24:00", 2, 3, 4, 5, 6, 7));
     BookingConfiguration lateMonday = configuration("UTC");
-    lateMonday.setOpeningExceptions(List.of(new BookingOpeningException(1, "12:00", "18:00")));
+    lateMonday.setOpeningHours(hours("12:00", "18:00", 1));
 
     assertEquals(NEITHER, classify(closedMonday, List.of(), UTC_DAY_AT_NINE));
     assertEquals(LATER, classify(lateMonday, List.of(), UTC_DAY_AT_NINE));
@@ -122,8 +121,7 @@ class BookingCurrentAvailabilityTest {
   void uses24HourClosingAndTheSchedulingZoneAcrossTheDisplayDay() {
     // Tokyo is UTC+9: a 00:00-24:00 display day in UTC spans two Tokyo dates.
     BookingConfiguration evenings = configuration("Asia/Tokyo");
-    evenings.setOpeningStart("18:00");
-    evenings.setOpeningEnd("24:00");
+    evenings.setOpeningHours(hours("18:00", "24:00"));
 
     // 09:00Z is 18:00 in Tokyo, the opening instant.
     assertEquals(NOW, classify(evenings, List.of(), UTC_DAY_AT_NINE));
@@ -140,10 +138,7 @@ class BookingCurrentAvailabilityTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(1L);
     configuration.setTimeZone(zone);
-    configuration.setOpeningStart("00:00");
-    configuration.setOpeningEnd("24:00");
-    configuration.setOpenDays(List.of(1, 2, 3, 4, 5, 6, 7));
-    configuration.setOpeningExceptions(List.of());
+    configuration.setOpeningHours(hours("00:00", "24:00"));
     configuration.setBufferBeforeMinutes(0);
     configuration.setBufferAfterMinutes(0);
     configuration.setAllowDoubleBooking(false);
