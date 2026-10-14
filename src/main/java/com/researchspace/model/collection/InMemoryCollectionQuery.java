@@ -21,7 +21,7 @@ public final class InMemoryCollectionQuery<T> {
   /** Returns the requested page and the total number of matching resources. */
   public ResourcePage<T> page(Collection<T> resources, ResourceRequest request) {
     List<T> matches = matching(resources, request);
-    long offset = ((long) request.page().number() - 1) * request.page().size();
+    long offset = request.page().offset();
     if (offset >= matches.size()) {
       return new ResourcePage<>(List.of(), matches.size());
     }

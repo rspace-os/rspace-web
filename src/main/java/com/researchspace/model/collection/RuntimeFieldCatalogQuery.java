@@ -39,7 +39,7 @@ public record RuntimeFieldCatalogQuery(String search, Set<String> ids, int page,
     if (limit < 1 || limit > MAX_LIMIT) {
       throw new IllegalArgumentException("Page size must be between 1 and " + MAX_LIMIT);
     }
-    if ((long) (page - 1) * limit > Integer.MAX_VALUE) {
+    if (PageOffsets.offset(page, limit) > Integer.MAX_VALUE) {
       throw new IllegalArgumentException("Page number is out of range");
     }
   }
@@ -61,6 +61,6 @@ public record RuntimeFieldCatalogQuery(String search, Set<String> ids, int page,
   }
 
   public int offset() {
-    return (page - 1) * limit;
+    return Math.toIntExact(PageOffsets.offset(page, limit));
   }
 }
