@@ -43,8 +43,10 @@ const configuration = {
   enabled: true,
   timezone: "UTC",
   slotGranularityMinutes: 5,
-  openingStart: "08:00",
-  openingEnd: "17:30",
+  openingHours: [
+    { dayOfWeek: 1, start: "08:00", end: "17:30" },
+    { dayOfWeek: 2, start: "10:00", end: "16:00" },
+  ],
   bufferBeforeMinutes: 5,
   bufferAfterMinutes: 15,
   maxBookingDurationMinutes: 0,
@@ -117,7 +119,11 @@ describe("BookableItemPage", () => {
     });
     await user.clear(maximum);
     await user.type(maximum, "60");
-    current = { ...configuration, configurationVersion: 1, openingEnd: "20:00" };
+    current = {
+      ...configuration,
+      configurationVersion: 1,
+      openingHours: configuration.openingHours.map((entry) => ({ ...entry, end: "20:00" })),
+    };
     await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] }));
     const save = screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
     await user.click(save);
@@ -249,6 +255,8 @@ describe("BookableItemPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     expect(screen.getByText("08:00–17:30")).toBeVisible();
+    expect(screen.getByText("10:00–16:00")).toBeVisible();
+    expect(screen.getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(5);
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(screen.getByText("booking:bookableItemDetails.notAvailable")).toBeVisible();
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" })).toHaveAttribute(
@@ -446,10 +454,18 @@ describe("BookableItemPage", () => {
     const maximumDuration = await screen.findByLabelText("booking:bookableItemDetails.fields.maximumDuration");
     await user.clear(maximumDuration);
     await user.type(maximumDuration, "60");
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
 
     await waitFor(() => expect(patches).toHaveLength(1));
-    expect(patches[0]).toMatchObject({ maxBookingDurationMinutes: 60 });
+    expect(patches[0]).toMatchObject({
+      maxBookingDurationMinutes: 60,
+      openingHours: [{ ...configuration.openingHours[0], start: "09:00" }, configuration.openingHours[1]],
+    });
     expect(patches[0]).not.toHaveProperty("timezone");
     const editButton = await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" });
     expect(editButton).toHaveFocus();
@@ -470,11 +486,28 @@ describe("BookableItemPage", () => {
 
     await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
+    await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
+    await user.click(screen.getByRole("checkbox", { name: "Sunday" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }));
 
     expect(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" })).toHaveFocus();
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(patched).toBe(false);
+    await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.edit" }));
+    expect(
+      within(await screen.findByRole("group", { name: "Monday" })).getByLabelText(
+        "booking:settings.fields.openingStart",
+      ),
+    ).toHaveValue("08:00");
+    expect(
+      within(screen.getByRole("group", { name: "Tuesday" })).getByLabelText("booking:settings.fields.openingStart"),
+    ).toHaveValue("10:00");
+    expect(screen.getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
   });
 
   it("keeps the editor and draft open when PATCH fails", async () => {
@@ -489,12 +522,23 @@ describe("BookableItemPage", () => {
     const maximumDuration = await screen.findByLabelText("booking:bookableItemDetails.fields.maximumDuration");
     await user.clear(maximumDuration);
     await user.type(maximumDuration, "60");
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
+    await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
     const saveButton = screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
     await user.click(saveButton);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.editError");
     expect(maximumDuration).toHaveValue(60);
     expect(saveButton).toHaveFocus();
+    expect(mondayStart).toHaveValue("09:00");
+    await user.click(screen.getByRole("checkbox", { name: "Tuesday" }));
+    expect(
+      within(screen.getByRole("group", { name: "Tuesday" })).getByLabelText("booking:settings.fields.openingStart"),
+    ).toHaveValue("10:00");
   });
 
   it("keeps a caller without edit capability in view mode on the direct edit URL", async () => {

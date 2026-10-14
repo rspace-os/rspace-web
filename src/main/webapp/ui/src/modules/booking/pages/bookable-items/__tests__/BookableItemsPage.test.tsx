@@ -21,7 +21,7 @@ import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { mutateBookableItems } from "../BookableItemsPage";
-import { ownerBookingAccess } from "../mocks/bookableItemsMocks";
+import { bookableItemsOpenApi, ownerBookingAccess } from "../mocks/bookableItemsMocks";
 import { createBookableItemRoute, createBookableItemsRoute } from "../routes";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
@@ -48,8 +48,7 @@ const bookingConfiguration = {
   enabled: true,
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
-  openingStart: "00:00",
-  openingEnd: "24:00",
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -98,18 +97,11 @@ function pagedCollectionResponse(docs: readonly Record<string, unknown>[], page:
 }
 
 const openApi = {
+  components: bookableItemsOpenApi.components,
   paths: {
     "/api/v2/booking-configurations": {
       get: {
-        responses: {
-          "200": {
-            content: {
-              "application/json": {
-                schema: { properties: { docs: { items: { properties: {} } } } },
-              },
-            },
-          },
-        },
+        responses: bookableItemsOpenApi.paths["/api/v2/booking-configurations"].get.responses,
         parameters: [
           {
             name: "sort",
@@ -200,8 +192,7 @@ const openApi = {
                 "state",
                 "timezone",
                 "slotGranularityMinutes",
-                "openingStart",
-                "openingEnd",
+                "openingHours",
                 "bufferBeforeMinutes",
                 "bufferAfterMinutes",
                 "maxBookingDurationMinutes",
@@ -447,7 +438,7 @@ describe("BookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
+        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
       );
       expect(params.get("depth")).toBe("1");
     });
