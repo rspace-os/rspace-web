@@ -6,8 +6,15 @@ import com.axiope.userimport.IPostUserCreationSetUp;
 import com.axiope.userimport.NotifyUserPostUserCreate;
 import com.researchspace.admin.service.IServerlogRetriever;
 import com.researchspace.admin.service.impl.FileLocationBasedLogRetriever;
+import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.booking.service.BookingConfigurationManager;
+import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.core.util.cache.DefaultTimeLimitedMemoryCache;
 import com.researchspace.core.util.cache.TimeLimitedMemoryCache;
+import com.researchspace.dao.ContainerDao;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.dataverse.spring.config.DataverseSpringConfig;
 import com.researchspace.dryad.rspaceadapter.DryadRSpaceRepository;
 import com.researchspace.figshare.rspaceadapter.FigshareRSpaceRepository;
@@ -19,12 +26,16 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IMediaFactory;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RemoteLicenseService;
+import com.researchspace.service.impl.BookingFixturesAppInitialiser;
 import com.researchspace.service.impl.CommunicationManagerImpl;
 import com.researchspace.service.impl.EcatMediaFactory;
 import com.researchspace.service.impl.GlobalInitManagerImpl;
 import com.researchspace.service.impl.LicenseServerChecker;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
+import com.researchspace.service.inventory.ContainerApiManager;
+import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.spring.taskexecutors.ShiroThreadBindingSubjectThreadPoolExecutor;
 import com.researchspace.webapp.filter.EASERemoteUserPolicy;
 import com.researchspace.webapp.filter.MockRemoteUserPolicy;
@@ -47,6 +58,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /** Configuration for deployment/production */
 @Configuration
@@ -152,7 +164,8 @@ public class ProductionConfig extends BaseConfig {
   @Profile("!prod-test")
   public GlobalInitManager globalInitManager(
       @Qualifier("dBDataIntegrityChecker") IApplicationInitialisor dBDataIntegrityChecker,
-      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor) {
+      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor,
+      @Qualifier("bookingFixtures") IApplicationInitialisor bookingFixtures) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<>();
     inits.add(featureFlagInitialisor);
@@ -163,6 +176,7 @@ public class ProductionConfig extends BaseConfig {
     inits.add(chemistryImageUpdater());
     inits.add(integrationsHandlerInitialisor());
     inits.add(sampleTemplateAppInitialiser());
+    inits.add(bookingFixtures);
     inits.add(customForms());
     // should be last
     inits.add(dBDataIntegrityChecker);
@@ -177,7 +191,8 @@ public class ProductionConfig extends BaseConfig {
   @Bean
   @Profile("!prod")
   public GlobalInitManager globalInitManagerTest(
-      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor) {
+      @Qualifier("featureFlagInitialisor") IApplicationInitialisor featureFlagInitialisor,
+      @Qualifier("bookingFixtures") IApplicationInitialisor bookingFixtures) {
     GlobalInitManagerImpl mgr = new GlobalInitManagerImpl();
     List<IApplicationInitialisor> inits = new ArrayList<>();
     inits.add(featureFlagInitialisor);
@@ -188,8 +203,40 @@ public class ProductionConfig extends BaseConfig {
     inits.add(chemistryImageUpdater());
     inits.add(licenseServerChecker());
     inits.add(sharedSnippetsFolderCreator());
+    inits.add(bookingFixtures);
     mgr.setApplicationInitialisors(inits);
     return mgr;
+  }
+
+  @Bean
+  public IApplicationInitialisor bookingFixtures(
+      @Value("${default.user.password}") String devUserPassword,
+      UserDao userDao,
+      ContainerDao containerDao,
+      InstrumentDao instrumentDao,
+      ContainerApiManager containerManager,
+      InstrumentEntityApiManager instrumentManager,
+      MessageSourceUtils messages,
+      BookingConfigurationManager configurationManager,
+      TimeSlotBookingManager bookingManager,
+      @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
+      @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao,
+      PlatformTransactionManager transactionManager,
+      @Value("${deployment.test.fb.instance:false}") boolean featureBranchInstance) {
+    return new BookingFixturesAppInitialiser(
+        devUserPassword,
+        userDao,
+        containerDao,
+        instrumentDao,
+        containerManager,
+        instrumentManager,
+        messages,
+        configurationManager,
+        bookingManager,
+        configurationDao,
+        bookingDao,
+        transactionManager,
+        featureBranchInstance);
   }
 
   /**
