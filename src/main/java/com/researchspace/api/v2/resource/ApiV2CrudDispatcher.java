@@ -5,6 +5,7 @@ import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.IncludeTree;
@@ -109,7 +110,8 @@ public final class ApiV2CrudDispatcher<T, ID> {
                   resource -> overrides.getOrDefault(description.idValue(resource), Map.of()),
                   request.fieldSelections(),
                   request.includes(),
-                  targetResolver);
+                  targetResolver,
+                  readContext(actor));
           decorator.decorate(page.resources(), documents);
           return ApiV2ListResult.of(
               documents, page.total(), request.page().size(), request.page().number());
@@ -152,7 +154,8 @@ public final class ApiV2CrudDispatcher<T, ID> {
         request.fieldSelections(),
         request.includes(),
         targetResolver(actor),
-        overrides.getOrDefault(description.idValue(resource), Map.of()));
+        overrides.getOrDefault(description.idValue(resource), Map.of()),
+        readContext(actor));
   }
 
   private Map<Object, Map<String, Object>> readOverrides(
@@ -202,9 +205,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
       ParsedDocument document, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
         ResourceOperation.CREATE,
-        () ->
-            document(
-                operations.create(document, caller), selection, targetResolver(caller.subject())));
+        () -> document(operations.create(document, caller), selection, caller.subject()));
   }
 
   public ApiV2BulkResult<Map<String, Object>> createMany(
@@ -227,7 +228,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
         () ->
             operations
                 .update(id, document, expectedVersion, caller)
-                .map(resource -> document(resource, selection, targetResolver(caller.subject())))
+                .map(resource -> document(resource, selection, caller.subject()))
                 .orElseThrow(NotFoundException::new));
   }
 
@@ -257,8 +258,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
                             .map(
                                 resource ->
                                     ResourceDeleteResult.retained(
-                                        document(
-                                            resource, selection, targetResolver(caller.subject()))))
+                                        document(resource, selection, caller.subject())))
                             .orElseGet(ResourceDeleteResult::permanentlyDeleted))
                 .orElseThrow(NotFoundException::new));
   }
@@ -287,9 +287,15 @@ public final class ApiV2CrudDispatcher<T, ID> {
    * <p>There is deliberately no overload that renders every field. The selection must always come
    * from {@code ApiV2ResourceRegistration}, which narrows it against the caller's access.
    */
-  private Map<String, Object> document(
-      T resource, FieldSelection selection, TargetResolver targetResolver) {
-    return renderer.render(resource, description, selection, IncludeTree.empty(), targetResolver);
+  private Map<String, Object> document(T resource, FieldSelection selection, User actor) {
+    return renderer.render(
+        resource,
+        description,
+        com.researchspace.model.collection.ResourceFieldSelections.root(selection),
+        IncludeTree.empty(),
+        targetResolver(actor),
+        Map.of(),
+        readContext(actor));
   }
 
   private List<Map<String, Object>> renderMany(
@@ -299,9 +305,15 @@ public final class ApiV2CrudDispatcher<T, ID> {
         resources,
         description,
         ignored -> selection,
+        ignored -> Map.of(),
         com.researchspace.model.collection.ResourceFieldSelections.root(selection),
         IncludeTree.empty(),
-        targetResolver);
+        targetResolver,
+        readContext(actor));
+  }
+
+  private AccessContext readContext(User actor) {
+    return new AccessContext(actor, AccessContext.Operation.READ, description.resourceName());
   }
 
   private TargetResolver targetResolver(User actor) {
