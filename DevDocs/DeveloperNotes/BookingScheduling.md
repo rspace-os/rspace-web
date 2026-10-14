@@ -24,3 +24,8 @@ buffers, permissions, and configuration versions keep their existing behavior.
 Apply the additive independent-hours migration before running this application.
 Legacy columns remain for migration and historical data; application code no
 longer reads or writes them. See [booking database migrations](BookingDatabaseMigrations.md).
+
+Audit snapshots store `openingHours`. My RSpace's audit response and CSV export use the same
+formatter for weekday/time rows. Historical `openingStart`, `openingEnd`, `openDays` and
+`openingExceptions` remain readable; unknown or deleted schedules keep their historical values.
+The formatter does not rewrite recorded snapshot JSON.
