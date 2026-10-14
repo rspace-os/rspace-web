@@ -3,10 +3,14 @@ package com.researchspace.model.collection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RuntimeFieldValueTypeTest {
   @Test
@@ -29,6 +33,21 @@ class RuntimeFieldValueTypeTest {
         IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1".repeat(36)));
     assertThrows(
         IllegalArgumentException.class, () -> RuntimeFieldValueType.NUMBER.parse("1e2147483647"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"0", "-0", "+12", "12.", ".5", "-.5", "1.25", "+1.25e-3", "12.e+2", ".5E+1"})
+  void preservesNumericSyntax(String value) {
+    assertEquals(new BigDecimal(value), RuntimeFieldValueType.parseNumber(value));
+  }
+
+  @Test
+  void rejectsLongMalformedStoredNumbersWithoutExcessiveBacktracking() {
+    String stored = "0".repeat(20_000) + "x";
+
+    assertTimeout(
+        Duration.ofSeconds(1), () -> assertNull(RuntimeFieldValueType.NUMBER.serialize(stored)));
   }
 
   @Test
