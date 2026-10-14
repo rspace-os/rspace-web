@@ -1,7 +1,7 @@
 import { type FormStore, getInput, useField } from "@formisch/react";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
-import type { FieldConditionContext, ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
+import type { FieldConditionContext, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
 import type { ControlProps, FieldLayout, RelationshipOptions } from "./RenderFields.types";
 import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "./responsiveFieldLayout";

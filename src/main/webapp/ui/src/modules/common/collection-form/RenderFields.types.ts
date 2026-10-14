@@ -1,10 +1,7 @@
 import type { FieldStore, FormSchema, FormStore } from "@formisch/react";
 import type React from "react";
-import type { ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
-import type {
-  RelationshipOptionAvailability,
-  RelationshipOptions,
-} from "@/modules/common/relationship-picker/relationshipOptions";
+import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
+import type { RelationshipOptionAvailability, RelationshipOptions } from "@/modules/common/relationship-picker/types";
 
 export type {
   RelationshipOption,
@@ -13,7 +10,7 @@ export type {
   RelationshipOptions,
   ToOneRelationshipValue,
   UnavailableRelationshipOption,
-} from "@/modules/common/relationship-picker/relationshipOptions";
+} from "@/modules/common/relationship-picker/types";
 
 /**
  * `stacked` puts each label above its control. `inline` stacks in narrow
