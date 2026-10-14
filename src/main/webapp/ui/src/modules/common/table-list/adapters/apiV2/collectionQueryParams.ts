@@ -1,7 +1,24 @@
-import type { FieldName, ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import type { FieldName, ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/collectionConfig";
 import type { CollectionQueryState, FilterExpression } from "../../tableListState";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
 import { serializeRsql } from "./rsql/serializeRsql";
+
+// The only current global-ID search selector is the Booking instrument target.
+const GLOBAL_ID_PATTERN = /^IN(\d+)$/i;
+const MAX_GLOBAL_ID_SUFFIX = "9223372036854775807";
+
+function supportedGlobalId(value: string): string | null {
+  const match = GLOBAL_ID_PATTERN.exec(value);
+  if (!match) return null;
+  const suffix = match[1].replace(/^0+(?=\d)/, "");
+  if (
+    suffix.length > MAX_GLOBAL_ID_SUFFIX.length ||
+    (suffix.length === MAX_GLOBAL_ID_SUFFIX.length && suffix > MAX_GLOBAL_ID_SUFFIX)
+  ) {
+    return null;
+  }
+  return value.toUpperCase();
+}
 
 function searchExpression<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
@@ -10,10 +27,20 @@ function searchExpression<TDocument>(
   const value = search.trim();
   const fields = config.listSearchableFields ?? [];
   if (value === "" || fields.length === 0) return null;
-  return {
-    kind: "or",
-    children: fields.map((field) => ({ kind: "comparison", field, operator: "contains", value })),
-  };
+  const children: FilterExpression<TDocument>[] = [];
+  for (const field of fields) {
+    const selector = String(field);
+    if (!selector.endsWith(".globalId")) {
+      children.push({ kind: "comparison", field, operator: "contains", value });
+      continue;
+    }
+    const globalId = supportedGlobalId(value);
+    if (globalId === null) continue;
+    const relationship = selector.slice(0, selector.lastIndexOf(".")) as SearchSelector<TDocument>;
+    children.push({ kind: "comparison", field: relationship, operator: "equals", value: globalId });
+  }
+  if (children.length === 0) return null;
+  return children.length === 1 ? children[0] : { kind: "or", children };
 }
 
 /**
