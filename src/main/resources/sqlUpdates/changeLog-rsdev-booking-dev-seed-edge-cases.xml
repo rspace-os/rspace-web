@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-booking-dev-seed-edge-cases" author="researchspace" context="dev-test">
+    <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                   onFailMessage="booking dev seed edge cases skipped: seeded items 910100002-910100008 were edited or are missing"
+                   onErrorMessage="booking dev seed edge cases skipped: seeded items 910100002-910100008 could not be checked">
+      <sqlCheck expectedResult="7">
+        SELECT COUNT(*) FROM BookingConfiguration
+        WHERE openingStart = '00:00' AND openingEnd = '24:00'
+          AND openDays = '[1,2,3,4,5,6,7]' AND openingExceptions = '[]'
+          AND slotGranularityMinutes = 5
+          AND ((id = 910100002 AND timeZone = 'Europe/Berlin')
+            OR (id IN (910100003, 910100004) AND timeZone = 'UTC')
+            OR (id IN (910100005, 910100006) AND timeZone = 'America/New_York')
+            OR (id IN (910100007, 910100008) AND timeZone = 'Asia/Singapore'))
+      </sqlCheck>
+    </preConditions>
+    <comment>
+      Turn the fresh dev booking seed into an edge-case catalogue: give items 910100002-910100008
+      partial opening hours, closed weekdays, per-weekday exceptions and unusual time zones, and add
+      a few events that sit on those boundaries. Runs only while all seven items still have the
+      seed's all-day, every-day defaults, so it never overwrites a developer's edits. Item
+      910100001 (double booking, all day) is left unchanged. Raw SQL bypasses Envers, so no _AUD
+      rows are written, as with the original seed.
+    </comment>
+    <sqlFile path="booking-dev-seed-edge-cases.sql" relativeToChangelogFile="true"
+             splitStatements="true" stripComments="true" endDelimiter=";"/>
+  </changeSet>
+</databaseChangeLog>
