@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useCanOpenBookableItemsAdministration } from "@/modules/booking/pages/bookable-items/bookableItemsAdministrationAccess";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
 import {
@@ -25,10 +26,18 @@ import {
   SidebarMenuSubItem,
 } from "@/modules/common/ui/sidebar";
 
-// Bookable items lists only the configurations the API lets the user read, so every user can open it.
-// Settings edits institution-wide defaults and stays sysadmin-only.
-const items = (today: string, isSysAdmin: boolean) =>
-  [
+// Bookable items appears once the user can read a configuration or set up an instrument; with neither,
+// its table would be empty and offer no Add. Settings edits institution-wide defaults and stays sysadmin-only.
+const items = (today: string, isSysAdmin: boolean, canOpenBookableItems: boolean) => {
+  const administration = [
+    ...(isSysAdmin
+      ? [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> } as const]
+      : []),
+    ...(canOpenBookableItems
+      ? [{ key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> } as const]
+      : []),
+  ];
+  return [
     {
       key: "dashboard",
       icon: LayoutDashboardIcon,
@@ -61,24 +70,19 @@ const items = (today: string, isSysAdmin: boolean) =>
       icon: SlidersHorizontalIcon,
       link: <Link {...linkOptions({ to: "/booking/preferences" })} />,
     },
-    {
-      key: "administration",
-      icon: SettingsIcon,
-      children: [
-        ...(isSysAdmin
-          ? [{ key: "settings", link: <Link {...linkOptions({ to: "/booking/config/settings" })} /> } as const]
-          : []),
-        { key: "bookableItems", link: <Link {...linkOptions({ to: "/booking/config/bookable-items" })} /> } as const,
-      ],
-    },
+    ...(administration.length > 0
+      ? [{ key: "administration", icon: SettingsIcon, children: administration } as const]
+      : []),
   ] as const;
+};
 
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
 export function BookingSidebar() {
   const { t } = useTranslation("booking");
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole);
+  const canOpenBookableItems = useCanOpenBookableItemsAdministration();
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole, canOpenBookableItems);
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),

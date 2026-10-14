@@ -232,7 +232,8 @@
         "timeFormat": "Time format",
         "timezone": "Scheduling time zone",
         "timezoneMode": "Time zone mode"
-      }
+      },
+      "weekdayRange": "{day} {hours}"
     },
     "backgroundError": "Couldn't refresh this item. You can retry without losing your unsaved changes.",
     "calendarSubscription": {
@@ -972,7 +973,8 @@
       "viewDetails": "View details"
     },
     "cancelled": {
-      "announcement": "Cancelled the {itemName} booking for {period}. It is now listed under Cancelled."
+      "alert": "Cancelled {itemName}, {period}.",
+      "undoFailed": "The booking could not be restored: {reason}"
     },
     "count": {
       "accessible": "{count, plural, one {# upcoming booking} other {# upcoming bookings}}",

@@ -98,6 +98,7 @@ describe("Booking display preferences", () => {
         availabilityWindowStart: "09:00",
         availabilityWindowEnd: "17:00",
         timezoneMode: "INSTITUTION",
+        timeFormat: "AUTOMATIC",
         customTimezone: null,
       },
       "token",
@@ -107,6 +108,7 @@ describe("Booking display preferences", () => {
       availabilityWindowEnd: "17:00",
       timezoneMode: "INSTITUTION",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
     });
   });
 });

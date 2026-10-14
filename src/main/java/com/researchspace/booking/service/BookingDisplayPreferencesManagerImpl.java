@@ -33,10 +33,7 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
       LoggerFactory.getLogger(BookingDisplayPreferencesManagerImpl.class);
   private static final int CURRENT_VERSION = 1;
 
-  /**
-   * The stored override. {@code timeFormat} was added within version 1: a document without it reads
-   * as {@link BookingTimeFormat#AUTOMATIC}, the behaviour it was saved under.
-   */
+  /** The complete stored override. */
   private record StoredPreference(
       int version,
       String availabilityWindowStart,

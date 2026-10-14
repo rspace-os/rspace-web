@@ -15,6 +15,9 @@ function calendarBounds(firstDate: string, lastDate: string, timezone: string) {
   };
 }
 
+// Calendar projections intentionally omit cancellation details.
+const { cancellationReason: _ownReason, ...ownCalendarBooking } = ownBooking;
+
 describe("calendar events", () => {
   it("sends complete item/event grouping and Search before the event limit", async () => {
     const where = "(target==IN1,target.customFields.SF152==BSL-2);kind==BOOKING";
@@ -37,7 +40,7 @@ describe("calendar events", () => {
         signal: new AbortController().signal,
         scope: { where, q: "purpose-only" },
       }),
-    ).resolves.toEqual([ownBooking]);
+    ).resolves.toEqual([ownCalendarBooking]);
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("q")).toBe("purpose-only");
     expect(requests[0].searchParams.get("start")).toBe("2026-08-17T00:00:00Z");

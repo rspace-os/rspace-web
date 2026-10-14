@@ -132,6 +132,7 @@ export function BookingEventsCalendar({
   myItemsOnly?: boolean;
   onMyItemsChange?: (myItemsOnly: boolean) => void;
   creationDisabled?: boolean;
+  /** Starts a booking for a range chosen on a Resources row or on the single-item Time grid day view. */
   onResourceRangeSelect?: (
     resource: BookableItemOption,
     range: { startMinute: number; endMinute: number },
@@ -317,6 +318,8 @@ export function BookingEventsCalendar({
                     onViewChange("day");
                   }}
                   schedule={timeGridSchedule}
+                  creationDisabled={creationDisabled}
+                  onRangeSelect={onResourceRangeSelect}
                   isLoading={isLoading}
                 />
               )}

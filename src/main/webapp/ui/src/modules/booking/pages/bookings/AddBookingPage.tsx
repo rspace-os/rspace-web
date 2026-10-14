@@ -21,7 +21,7 @@ function AddBookingSkeleton() {
       <div aria-hidden="true" className="space-y-6">
         <Skeleton className="h-9 w-56" />
         <div className="@container">
-          <div className="grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]">
+          <div className="grid gap-6 @4xl:grid-cols-[minmax(0,13fr)_minmax(0,7fr)]">
             <div className="min-w-0 space-y-6">
               {[0, 1, 2].map((row) => (
                 <Skeleton key={row} className="h-16 w-full" />

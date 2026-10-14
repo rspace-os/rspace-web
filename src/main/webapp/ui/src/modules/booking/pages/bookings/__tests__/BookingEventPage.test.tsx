@@ -1,3 +1,17 @@
+import { beforeAll as beforeBookingCatalog } from "vitest";
+import appI18n from "@/modules/common/i18n";
+
+beforeBookingCatalog(async () => {
+  appI18n.addResourceBundle(
+    "en-US",
+    "booking",
+    (await import("@/modules/common/i18n/locales/en-US/booking.json")).default,
+  );
+});
+
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
+import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -11,7 +25,7 @@ import {
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
+import { type ComponentType, type ReactNode, Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
@@ -48,6 +62,7 @@ const document = {
   state: "CONFIRMED",
   kind: "BOOKING",
   privacy: "full",
+  cancellationReason: null as string | null,
   purpose: "Cell imaging",
   bookedBy: "Ada Lovelace (ada)",
   createdBy: "Grace Hopper (grace)",
@@ -57,7 +72,12 @@ const document = {
   updatedAt: "2026-08-02T10:00:00Z",
 } as const;
 
-function renderPage(path = "/booking/calendar/bookings/41", preferencesReady?: Promise<void>) {
+function renderPage(
+  path = "/booking/calendar/bookings/41",
+  preferencesReady?: Promise<void>,
+  preferences: unknown = inheritedBrowserBookingPreferences,
+  wrapper?: ComponentType<{ children: ReactNode }>,
+) {
   server.use(oauthTokenHandler(true));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
@@ -69,7 +89,7 @@ function renderPage(path = "/booking/calendar/bookings/41", preferencesReady?: P
       }),
     );
   } else {
-    queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
+    queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
   }
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
@@ -90,6 +110,7 @@ function renderPage(path = "/booking/calendar/bookings/41", preferencesReady?: P
           <RouterProvider router={router as never} />
         </Suspense>
       </QueryClientProvider>,
+      { wrapper },
     ),
     router,
     queryClient,
@@ -207,6 +228,34 @@ describe("BookingEventPage", () => {
     expect(screen.queryByRole("link", { name: "Imaging lab" })).not.toBeInTheDocument();
   });
 
+  it.each([
+    // Europe/Berlin repeats 02:00-03:00 on 2026-10-25; both bookings start at 02:30 and end at 03:30.
+    ["earlier", "2026-10-25T00:30:00Z", /0?2:30\s?(AM)? \+02:00 – .*0?3:30\s?(AM)? \+01:00/],
+    ["later", "2026-10-25T01:30:00Z", /0?2:30\s?(AM)? \+01:00 – .*0?3:30\s?(AM)? \+01:00/],
+  ])("tells the %s occurrence of a repeated hour apart in the booking's times", async (_, start, when) => {
+    server.use(
+      http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...document, start, end: "2026-10-25T02:30:00Z" })),
+    );
+    const wrapper = await createRealI18nWrapper({
+      resources: { booking: bookingEnglish, common: commonEnglish },
+      defaultNS: "booking",
+    });
+    renderPage(
+      "/booking/calendar/bookings/41",
+      undefined,
+      {
+        ...inheritedBrowserBookingPreferences,
+        timezoneMode: "CUSTOM",
+        customTimezone: "Europe/Berlin",
+        overridden: true,
+      },
+      wrapper,
+    );
+
+    const label = await screen.findByText("When");
+    expect(label.nextElementSibling).toHaveTextContent(when);
+  });
+
   it("keeps role-lost details readable without configuration capabilities", async () => {
     server.use(
       http.get("/api/v2/bookings/41", () =>
@@ -248,18 +297,41 @@ describe("BookingEventPage", () => {
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(current)),
       http.patch("/api/v2/bookings/41", () => {
-        current = { ...current, version: 1, state: "CANCELLED", canEdit: false, canCancel: false };
+        current = {
+          ...current,
+          version: 1,
+          state: "CANCELLED",
+          cancellationReason: "Instrument needs recalibration",
+          canEdit: false,
+          canCancel: false,
+        };
         return HttpResponse.json(current);
       }),
     );
     const { router } = renderPage();
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const trigger = await screen.findByRole("button", { name: "booking:bookings.actions.cancel" });
+    await user.click(trigger);
+    await user.click(screen.getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
+    await waitFor(() => expect(screen.getByText("booking:bookings.details.confirmed")).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+    const badge = screen.getByText("booking:bookings.details.confirmed");
+    const hiddenAtFocus: boolean[] = [];
+    badge.addEventListener("focus", () => {
+      hiddenAtFocus.push(Boolean(badge.closest('[aria-hidden="true"]')));
+    });
+    await user.click(trigger);
     const cancellationButtons = screen.getAllByRole("button", { name: "booking:bookings.actions.cancel" });
     await user.click(cancellationButtons[cancellationButtons.length - 1]);
 
-    expect(await screen.findByText("booking:bookings.details.cancelled")).toBeVisible();
+    const cancelledBadge = await screen.findByText("booking:bookings.details.cancelled");
+    await waitFor(() => expect(cancelledBadge).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(hiddenAtFocus).toEqual([false]);
+    expect(screen.getByText("booking:bookings.details.cancellationReason")).toBeVisible();
+    expect(screen.getByText("Instrument needs recalibration")).toBeVisible();
     expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41");
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });
@@ -284,7 +356,7 @@ describe("BookingEventPage", () => {
   it("conceals a busy-only response behind the unavailable state", async () => {
     server.use(
       http.get("/api/v2/bookings/41", () =>
-        HttpResponse.json({ ...document, privacy: "busy", purpose: null, bookedBy: null }),
+        HttpResponse.json({ ...document, privacy: "busy", purpose: null, cancellationReason: null, bookedBy: null }),
       ),
     );
     renderPage();
