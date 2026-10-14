@@ -146,12 +146,22 @@ export function createApiV2CollectionAdapter<TDocument>({
       };
     }
     const selector = metadata.filtering.selectors[field.name] ?? metadata.relationshipFields?.[String(field.name)];
+    let sourceField = field;
+    const structured = metadata.structuredFields?.[field.name];
+    if ((field.type === "array" || field.type === "object") && metadata.structuredFields !== undefined) {
+      if (!structured) throw new Error(`OpenAPI field ${field.name} must declare x-rspace-fields`);
+      if (structured.type !== field.type)
+        throw new Error(`OpenAPI field ${field.name} has a different structured type`);
+      sourceField = { ...field, ...structured, readOnly: field.readOnly || structured.readOnly };
+    } else if (structured && field.type !== "relationship") {
+      throw new Error(`Collection config field ${field.name} must use type ${structured.type}`);
+    }
     const filterOperators =
       selector?.operators
         .map((operator) => semanticOperators[operator])
-        .filter((operator) => isFilterOperatorCompatible(field.type, operator)) ?? [];
+        .filter((operator) => isFilterOperatorCompatible(sourceField.type, operator)) ?? [];
     return {
-      ...field,
+      ...sourceField,
       capabilities: {
         sortable: metadata.sorting.fields.includes(field.name),
         filterOperators,
