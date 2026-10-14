@@ -85,6 +85,8 @@ function BookingSettingsContent() {
     enabled: submittedGranteeSearch.length >= 2,
   });
   const form = useForm({ schema: SchedulingSettingsSchema, initialInput: settings });
+  // Adopting a baseline ends the edit session, including retained closed-day drafts and custom-hour history.
+  const [editorVersion, setEditorVersion] = useState(0);
   const mutation = useMutation({
     mutationFn: (input: SchedulingSettings) =>
       saveBookingSettings(
@@ -101,6 +103,7 @@ function BookingSettingsContent() {
       setSettings(saved);
       queryClient.setQueryData(["api-v2", "booking-settings", "admin"], saved);
       reset(form, { initialInput: saved });
+      setEditorVersion((version) => version + 1);
       setDisplaySettings({
         availabilityWindowStart: saved.availabilityWindowStart,
         availabilityWindowEnd: saved.availabilityWindowEnd,
@@ -142,7 +145,7 @@ function BookingSettingsContent() {
       <p className="mb-5 text-sm text-muted-foreground">{t("settings.description")}</p>
       <Separator className="mb-8 h-px bg-gray-300" />
       <Form of={form} className="max-w-2xl space-y-8" onSubmit={(input) => mutation.mutateAsync(input)}>
-        <SchedulingSettingsFields form={form} disabled={mutation.isPending} />
+        <SchedulingSettingsFields key={editorVersion} form={form} disabled={mutation.isPending} />
         <Separator />
         <section className="space-y-4" aria-labelledby="booking-display-defaults-heading">
           <div>
