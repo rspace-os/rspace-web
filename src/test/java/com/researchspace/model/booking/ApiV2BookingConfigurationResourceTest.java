@@ -64,7 +64,8 @@ class ApiV2BookingConfigurationResourceTest {
           List.of(
               ApiV2BookingConfigurationResource.DESCRIPTION,
               ApiV2UserResource.DESCRIPTION,
-              ApiV2BookingInstrumentResource.DESCRIPTION));
+              ApiV2BookingInstrumentResource.DESCRIPTION,
+              ApiV2BookingLocationResource.DESCRIPTION));
 
   private final ObjectMapper mapper = new ObjectMapper();
 
