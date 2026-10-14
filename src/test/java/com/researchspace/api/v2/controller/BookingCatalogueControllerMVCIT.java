@@ -140,6 +140,24 @@ class BookingCatalogueControllerMVCIT {
   }
 
   @Test
+  void oversizedLocationPageReturnsNoOptionsAndKeepsTheTotal() throws Exception {
+    ApiContainer parent = fixture.container(fixture.user(), "Paging lab " + fixture.marker());
+    long instrument = fixture.instrumentIn(fixture.user(), fixture.marker(), parent);
+    fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-catalogue/locations")
+                .queryParam("q", fixture.marker())
+                .queryParam("page", Integer.toString(Integer.MAX_VALUE))
+                .queryParam("limit", "100")
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.total").value(1))
+        .andExpect(jsonPath("$.items.length()").value(0));
+  }
+
+  @Test
   void filtersByExactReadableImmediateParentAndPagesLocationOptions() throws Exception {
     ApiContainer parent = fixture.container(fixture.user(), "Imaging lab " + fixture.marker());
     String parentGlobalId = "IC" + parent.getId();
