@@ -139,3 +139,11 @@ Decided with Nico on 2026-10-05.
   RSDEV-1545 ("Keep authoritative imported metadata non-editable while allowing users to add
   custom metadata") on 2026-10-05, and on 2026-10-07 the ticket itself moved it under its *Out of
   scope*, handled by RSDEV-1545. Nothing in this ADR or in the code it describes locks a field.
+- The B2INST lookup URL had the `+` gap the DataCite client was written to avoid (RSDEV-1576,
+  2026-10-14). `B2instConnectorImpl.searchPublicRecords` concatenated the term into the builder and
+  encoded the built components, which leaves `+` raw because it is legal in a query, and InvenioRDM
+  decodes a raw `+` as a space: the term built for `G1+G2 Glider` answered 0 of 5 records on
+  b2inst.gwdg.de sent raw and 5 sent as `%2B` (2026-10-13). Since RSDEV-1576 the term goes in as a
+  URI template variable and is encoded on expansion, as `searchDois` does in datacite-java-client,
+  whose `searchDoisEncodesAPlusSoItIsNotReadAsASpace` has pinned `C++` as `C%2B%2B` since 1.3.0.
+  DataCite was checked for the same gap and is not affected.

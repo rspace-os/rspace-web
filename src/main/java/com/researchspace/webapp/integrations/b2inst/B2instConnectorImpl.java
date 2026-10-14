@@ -399,18 +399,20 @@ public class B2instConnectorImpl implements B2instConnector {
       value = "pidinstLookupResults",
       key = "'b2inst:' + #query + ':' + #pageNumber + ':' + #pageSize")
   public B2instSearchResult searchPublicRecords(String query, int pageNumber, int pageSize) {
-    // a URI, not a String: RestTemplate treats a String as a URI template and encodes it again, so
+    // The term must stay a template variable expanded after encode(): encoding the built components
+    // leaves '+' raw, and InvenioRDM reads a raw '+' as a space (RSDEV-1576, ADR 0011).
+    // A URI, not a String: RestTemplate treats a String as a URI template and encodes it again, so
     // a space would reach B2INST as %2520
     URI url =
         UriComponentsBuilder.fromUriString(lookupApiBase())
             .pathSegment("records")
-            .queryParam("q", query)
+            .queryParam("q", "{q}")
             .queryParam("size", pageSize)
             // InvenioRDM pages are 1-based; the API and the manager count from 0
             .queryParam("page", pageNumber + 1)
             .queryParam("sort", "updated-desc")
-            .build()
             .encode()
+            .buildAndExpand(query)
             .toUri();
     try {
       B2instSearchResult result = lookupRestTemplate.getForObject(url, B2instSearchResult.class);
