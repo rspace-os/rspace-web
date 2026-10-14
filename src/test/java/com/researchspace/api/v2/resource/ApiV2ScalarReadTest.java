@@ -76,6 +76,7 @@ class ApiV2ScalarReadTest {
     RuntimeCollectionFields<Item> provider =
         mock(RuntimeCollectionFields.class, CALLS_REAL_METHODS);
     when(provider.namespace()).thenReturn("customFields");
+    when(provider.projectsThroughRelationship()).thenReturn(true);
     ResolvedRuntimeField runtime =
         new ResolvedRuntimeField(
             new RuntimeFieldDefinition(
@@ -120,7 +121,7 @@ class ApiV2ScalarReadTest {
             Map.of("id", 8L, "name", "two", "customFields", Map.of())),
         result.docs());
     assertEquals(5L, result.totalDocs());
-    verify(provider).valuesForAuthorizedIds(List.of(7L, 8L), Set.of("SF1"), actor);
+    verify(provider, never()).valuesForAuthorizedIds(any(), any(), any());
     verify(provider).valuesForIds(List.of(7L, 8L), Set.of("SF1"), actor);
     verify(provider, never()).values(any(), any(), any());
     verify(operations, never()).find(any(), any());
