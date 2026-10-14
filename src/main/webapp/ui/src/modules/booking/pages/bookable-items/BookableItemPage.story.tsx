@@ -1,14 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  createBrowserHistory,
+  createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
   Outlet,
+  type RouterHistory,
   RouterProvider,
 } from "@tanstack/react-router";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -40,33 +41,39 @@ export const storyUser: CurrentUser = {
   },
 };
 
-export function BookableItemPageStory({ hasSysAdminRole = true }: { hasSysAdminRole?: boolean } = {}) {
-  if (!window.location.pathname.startsWith("/booking/bookable-items/")) {
-    window.history.replaceState({}, "", "/booking/bookable-items/IN123");
-  }
-
+export function BookableItemPageStory({
+  hasSysAdminRole = true,
+  history = createMemoryHistory({ initialEntries: ["/booking/bookable-items/IN123"] }),
+}: {
+  hasSysAdminRole?: boolean;
+  history?: RouterHistory;
+} = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   queryClient.setQueryData(currentUserQueryKeys.me(), { ...storyUser, hasSysAdminRole });
-  const rootRoute = createRootRoute({ component: Outlet });
+  const rootRoute = createRootRoute({
+    component: () => (
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
+    ),
+  });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([createBookableItemRoute(bookingRoute), createBookableItemsRoute(bookingRoute)]),
     ]),
-    history: createBrowserHistory(),
+    history,
   });
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <BookingCreationStoreProvider>
-          <Suspense fallback={null}>
-            <RouterProvider router={router as never} />
-          </Suspense>
-        </BookingCreationStoreProvider>
-      </NuqsAdapter>
+      <BookingCreationStoreProvider>
+        <Suspense fallback={null}>
+          <RouterProvider router={router as never} />
+        </Suspense>
+      </BookingCreationStoreProvider>
     </QueryClientProvider>
   );
 }

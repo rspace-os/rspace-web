@@ -453,6 +453,14 @@ export function DayTimelineEventCard({
     <Popover
       open={isExpanded}
       onOpenChange={(nextOpen, eventDetails) => {
+        if (
+          !nextOpen &&
+          eventDetails.event.target instanceof Element &&
+          eventDetails.event.target.closest("[data-timeline-window-editor]")
+        ) {
+          eventDetails.cancel();
+          return;
+        }
         if (!nextOpen) {
           const destination =
             eventDetails.event instanceof FocusEvent ? eventDetails.event.relatedTarget : eventDetails.event.target;
@@ -745,6 +753,7 @@ export function DayTimeline({
               minHeight: eventAreaTop + 16 + laneCount * EVENT_LANE_PITCH,
             }}
             data-testid="day-timeline-canvas"
+            data-timeline-date={date}
             data-hour-width={densityHourWidth}
             data-creation-disabled={creationDisabled || undefined}
             onPointerDown={(event) => {
