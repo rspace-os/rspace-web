@@ -67,7 +67,7 @@ The design and its trade-offs are in
   `ReauthenticationResult.BUSY` and the prompts show
   `errors.reauthentication.busy`; the login page and the SSO admin login
   show `errors.login.busy`; `ApiControllerAdvice` answers the OAuth
-  password grant with 503 and `Retry-After: waitSeconds`, and the grant
+  password grant with 503 and `Retry-After: waitSeconds` (at least 1), and the grant
   gives back the counted guess (`PasswordGrantGuessLimiter.uncount`).
   `SentinelPasswordCheck.pad` does not swallow the exception, so padded
   unknown names, locked accounts and LDAP-source users get the same busy

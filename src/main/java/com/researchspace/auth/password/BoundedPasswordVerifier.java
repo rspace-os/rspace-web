@@ -207,9 +207,11 @@ public class BoundedPasswordVerifier {
     return Math.max(0, deadline - System.nanoTime());
   }
 
+  /** The key is escaped because callers log the message and keys carry raw request input. */
   private static LoginVerificationBusyException busy(String username, String reason) {
+    String escaped = username.replace("\0", "\\0").replace("\r", "\\r").replace("\n", "\\n");
     return new LoginVerificationBusyException(
-        "Password verification for [" + username + "] refused: " + reason);
+        "Password verification for [" + escaped + "] refused: " + reason);
   }
 
   private static final class Held {

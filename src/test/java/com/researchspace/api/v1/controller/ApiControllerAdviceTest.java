@@ -74,6 +74,19 @@ class ApiControllerAdviceTest {
   }
 
   @Test
+  void busyPasswordCheckNeverAsksForAnImmediateRetryAndListsNoEmptyError() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    advice.passwordWaitSeconds = 0;
+
+    ResponseEntity<Object> response =
+        advice.handlePasswordCheckBusy(new LoginVerificationBusyException("busy"), null);
+
+    assertEquals("1", response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER));
+    assertEquals(List.of(), ((ApiError) response.getBody()).getErrors());
+  }
+
+  @Test
   void inventoryEditLockHeldMapsTo409NamingTheHolder() {
     ApiControllerAdvice advice = new ApiControllerAdvice();
     advice.messages = new MessageSourceUtils(new JsonMessageSource());
