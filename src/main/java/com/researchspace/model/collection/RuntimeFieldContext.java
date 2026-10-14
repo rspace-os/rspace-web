@@ -1,7 +1,6 @@
 package com.researchspace.model.collection;
 
 import com.researchspace.model.User;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,25 +56,14 @@ public record RuntimeFieldContext(
     return providers.isEmpty();
   }
 
-  /**
-   * The provider of another resource, for a field reached through a relationship.
-   *
-   * <p>A bookable item has no custom fields of its own; the instrument it points at does. Resolving
-   * that still goes through the target resource's own provider and the caller's own access, so the
-   * hop grants nothing the caller could not already see on the target itself.
-   */
-  public Optional<ResolvedRuntimeField> resolveOnTarget(String resourceName, String selector) {
-    RuntimeCollectionFields<?> provider = providerFor(byResource.apply(resourceName), selector);
-    return provider == null ? Optional.empty() : provider.resolve(selector, actor);
-  }
-
   public Map<String, ResolvedRuntimeField> resolveAllOnTarget(
       String resourceName, Set<String> selectors) {
     return resolveAll(byResource.apply(resourceName), selectors);
   }
 
   /**
-   * As {@link #resolveOnTarget}, but only through a provider whose values a hop can project.
+   * Like {@link #resolveAllOnTarget(String, Set)}, but only through a provider whose values a hop
+   * can project.
    *
    * <p>Filtering a hopped runtime field needs nothing of the target document, so every provider
    * supports it. Projecting one has to put a value in this collection's response, which the
@@ -143,12 +131,6 @@ public record RuntimeFieldContext(
     Map<String, ResolvedRuntimeField> resolved = new LinkedHashMap<>();
     byProvider.forEach((provider, owned) -> resolved.putAll(provider.resolveAll(owned, actor)));
     return resolved;
-  }
-
-  public List<String> namespaces() {
-    List<String> names = new ArrayList<>(providers.size());
-    providers.forEach(provider -> names.add(provider.namespace()));
-    return List.copyOf(names);
   }
 
   private RuntimeCollectionFields<?> providerFor(String selector) {
