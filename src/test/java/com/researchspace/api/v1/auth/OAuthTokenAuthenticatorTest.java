@@ -70,6 +70,19 @@ class OAuthTokenAuthenticatorTest {
   }
 
   @Test
+  void matchingSubjectPrincipalAllowsUiTokenWhenCachedSessionUserDiffers() {
+    User targetUser = TestFactory.createAnyUser("run-as-user");
+    User cachedSessionUser = TestFactory.createAnyUser("sysadmin");
+    givenTokenFor(targetUser, OAuthTokenType.UI_TOKEN);
+    when(subject.getPrincipal()).thenReturn(targetUser.getUsername());
+    when(subject.getSession(false)).thenReturn(session);
+    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(cachedSessionUser);
+
+    assertSame(targetUser, authenticator.authenticate(request));
+    verify(subject, never()).login(any());
+  }
+
+  @Test
   void mismatchedUiTokenIsRejected() {
     User tokenUser = TestFactory.createAnyUser("token-user");
     User sessionUser = TestFactory.createAnyUser("session-user");
@@ -77,6 +90,22 @@ class OAuthTokenAuthenticatorTest {
     when(subject.getPrincipal()).thenReturn(sessionUser.getUsername());
     when(subject.getSession(false)).thenReturn(session);
     when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(sessionUser);
+
+    ApiAuthenticationException exception =
+        assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
+
+    assertEquals("api.errors.authentication.oauthTokenInvalid", exception.getMessageKey());
+    verify(subject, never()).login(any());
+  }
+
+  @Test
+  void uiTokenForCachedSessionUserIsRejectedWhenSubjectRunsAsAnotherUser() {
+    User cachedSessionUser = TestFactory.createAnyUser("sysadmin");
+    User runAsUser = TestFactory.createAnyUser("run-as-user");
+    givenTokenFor(cachedSessionUser, OAuthTokenType.UI_TOKEN);
+    when(subject.getPrincipal()).thenReturn(runAsUser.getUsername());
+    when(subject.getSession(false)).thenReturn(session);
+    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(cachedSessionUser);
 
     ApiAuthenticationException exception =
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
@@ -95,6 +124,7 @@ class OAuthTokenAuthenticatorTest {
         "api.errors.authentication.oauthTokenInvalid",
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request))
             .getMessageKey());
+    verify(subject, never()).getSession(false);
   }
 
   @Test

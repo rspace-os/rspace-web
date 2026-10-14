@@ -31,7 +31,6 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
    */
   abstract String retrieveTokenFromHeader(HttpServletRequest request);
 
-  /** Retrieve the user and authentication method for the given token. */
   abstract Function<String, Optional<AuthenticationResult>> findUserForToken();
 
   @Override
@@ -61,7 +60,8 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
   private User authenticateUiToken(User targetUser) {
     try {
       Subject shiroSubject = SecurityUtils.getSubject();
-      if (shiroSubject.getPrincipal() == null) {
+      Object principal = shiroSubject.getPrincipal();
+      if (principal == null) {
         throw invalidUiToken();
       }
 
@@ -71,7 +71,9 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
       }
 
       User sessionUser = (User) session.getAttribute(SessionAttributeUtils.USER);
-      if (sessionUser == null || !sessionUser.getUsername().equals(targetUser.getUsername())) {
+      // The Shiro principal reflects the run-as user; the cached session user may still be the
+      // original user.
+      if (sessionUser == null || !targetUser.getUsername().equals(principal)) {
         throw invalidUiToken();
       }
 
@@ -80,7 +82,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
           targetUser.getUsername());
       return targetUser;
     } catch (ShiroException e) {
-      log.warn("Unable to reuse browser session for UI OAuth token authentication", e);
+      log.warn("Unable to reuse browser session for UI OAuth token authentication");
       throw invalidUiToken();
     }
   }

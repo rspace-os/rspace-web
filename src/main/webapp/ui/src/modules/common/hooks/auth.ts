@@ -62,7 +62,7 @@ async function fetchToken(): Promise<string> {
  *   const { data: token, error } = useOauthTokenQuery();
  *
  *   // Use the token in fetch requests
- *   const response = await fetch(`/api/v1/inventory/samples`, {
+ *   const response = await fetchWithUiToken(`/api/v1/inventory/samples`, {
  *     headers: {
  *       Authorization: "Bearer " + token,
  *     },

@@ -5,7 +5,6 @@ import JwtService from "./JwtService";
 
 type JSON = unknown;
 
-// Axios wrapper for making requests to RSpace APIs
 class ApiServiceBase {
   api: AxiosInstance;
 
@@ -15,12 +14,6 @@ class ApiServiceBase {
       timeout: 360000,
     });
     this.api = api;
-    // UI token recovery can replace the stored token without a reload.
-    api.interceptors.request.use((config) => {
-      const token = JwtService.getToken();
-      if (token && config.headers.Authorization) config.headers.Authorization = `Bearer ${token}`;
-      return config;
-    });
   }
 
   setAuthorizationHeader() {

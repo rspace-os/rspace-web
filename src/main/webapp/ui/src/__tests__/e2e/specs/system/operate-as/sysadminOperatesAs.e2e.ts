@@ -57,7 +57,6 @@ test.describe("Sysadmin Operate As", { tag: tags.SYSTEM }, () => {
       );
       const page2Reloaded = page2.waitForEvent("load");
       await workspace.releaseOperateAs();
-      // Searching in the stale tab sends an Inventory API request with the old token.
       await inventorySearch.getByRole("searchbox", { name: "Search" }).fill("stale token");
       await inventorySearch.getByRole("button", { name: "Search", exact: true }).first().click();
       await staleTokenRejected;

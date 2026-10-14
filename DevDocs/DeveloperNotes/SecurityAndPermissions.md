@@ -32,6 +32,17 @@ annotations on the User entity class.
 New users are persisted in `UserManager#saveUser` and salted password
 hashes generated. Plain text passwords are not stored.
 
+### Browser API tokens
+
+UI OAuth tokens require an active browser session and must match its current
+Shiro principal, including the identity selected by Operate As. They cannot
+restore an expired session. An API request after browser session expiry sends
+the user to login; public document views reload their public URL to restore
+anonymous access. An expired token with an active session can be refreshed for
+the same user without losing page state. Only GET requests retry automatically;
+pending writes fail without replay. API keys and external OAuth clients retain
+their stateless authentication behavior.
+
 ## Authorization
 
 Authorization is configured at several levels:
