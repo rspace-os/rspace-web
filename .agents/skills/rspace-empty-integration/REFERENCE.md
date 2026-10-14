@@ -180,7 +180,7 @@ tinymce.PluginManager.add('<name>', function (editor, url) {
 </html>
 ```
 
-### 7. `src/main/webapp/ui/src/tinyMCE/<name>/index.tsx`
+### 7. `src/main/webapp/ui/src/tinyMCE/<name>/<Name>Entrypoint.tsx`
 
 ```tsx
 import React from "react";
@@ -504,7 +504,7 @@ scripts/externalTinymcePlugins/<name>/plugin.min.js
 Add a new entry to the JSON object, alongside the other `tinymce*` entries:
 
 ```json
-"tinymce<Name>": "src/tinyMCE/<name>/index.tsx",
+"tinymce<Name>": "src/tinyMCE/<name>/<Name>Entrypoint.tsx",
 ```
 
 > **Do not** add an `externalWorkFlows` entry.

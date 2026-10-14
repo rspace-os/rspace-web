@@ -4,7 +4,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { worker } from "@/__tests__/browserSetup";
 import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
+import StoichiometryDialogRoot from "../StoichiometryDialogRoot";
 import { chemistryIntegrationHandler, createDialogStoichiometryResponse } from "./mocks/stoichiometryMocks";
 import { StoichiometryDialogPage } from "./pageObjects/StoichiometryDialogPage";
 import {
@@ -189,7 +189,7 @@ describe("Stoichiometry Dialog", () => {
     const DeletableDialog = () => {
       const [stoichiometryId, setStoichiometryId] = React.useState<number | undefined>(1);
       return (
-        <StoichiometryDialogEntrypoint
+        <StoichiometryDialogRoot
           open
           onClose={() => {}}
           chemId={12345}
