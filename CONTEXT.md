@@ -499,7 +499,8 @@ resolved during design. This file is a glossary only — no implementation detai
 
 - **CSV import** — creating Inventory items in bulk from CSV files, one file per item type
   (Containers, Samples, Subsamples, Instruments), where each row becomes a new item and each
-  column becomes either one of the item's own properties (name, description, tags) or a
-  template field. Each imported item lands in the parent container its row names, or else in
-  a new "imported items" container on the Bench, and keeps everything its row gave it.
+  column becomes either one of the item's own properties, a link to its parent, or, for Samples
+  and Instruments, a template field. Each imported Container, Subsample and Instrument lands in
+  the parent container its row names, or else in a new "imported items" container on the Bench,
+  and every imported item keeps everything its row gave it.
   _Avoid_: bulk upload, Instrument import (that is the PID registry path)
