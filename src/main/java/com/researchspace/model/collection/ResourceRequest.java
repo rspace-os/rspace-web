@@ -22,6 +22,11 @@ public record ResourceRequest(
                 + CollectionQueryLimits.MAX_PAGE_SIZE);
       }
     }
+
+    /** The zero-based row offset, which can exceed a persistence adapter's integer limit. */
+    public long offset() {
+      return PageOffsets.offset(number, size);
+    }
   }
 
   public ResourceRequest {
