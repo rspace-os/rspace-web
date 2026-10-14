@@ -11,6 +11,7 @@ import com.researchspace.model.FileProperty;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Container.ContainerType;
@@ -36,6 +37,8 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   public record InstrumentReadSummaryRow(Long instrumentId, String name, Boolean deleted) {}
 
+  public record InstrumentScalarRow(Long instrumentId, String name, Boolean deleted) {}
+
   private String defaultTemplateOwner;
 
   public InstrumentDaoHibernateImpl(Class<Instrument> persistentClass) {
@@ -50,6 +53,31 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
   public ResourcePage<Instrument> getReadableResources(
       ResourceRequest request, AccessResult access) {
     return readableResourcePage(COLLECTION_QUERY, request, access);
+  }
+
+  @Override
+  public ResourcePage<InstrumentReadSummary> getReadableResourceSummaries(
+      ResourceRequest request, AccessResult access) {
+    if (access.isDenied()) {
+      return new ResourcePage<>(List.of(), 0);
+    }
+    ResourcePage<InstrumentScalarRow> rows =
+        COLLECTION_QUERY.projectedPage(
+            criteriaBuilderFactory(),
+            getSession(),
+            request,
+            access.constraintOrEmpty().map(COLLECTION_QUERY::compileConstraint).orElse(null),
+            RelationshipReadAccess.none(),
+            InstrumentScalarRow.class,
+            List.of("id", "editInfo.name", "deleted"));
+    return new ResourcePage<>(
+        rows.resources().stream()
+            .map(
+                row ->
+                    new InstrumentReadSummary(
+                        row.instrumentId(), row.name(), row.deleted(), null, null, null))
+            .toList(),
+        rows.total());
   }
 
   @Override

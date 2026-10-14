@@ -1048,6 +1048,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   @Override
+  public ResourcePage<InstrumentReadSummary> getReadableInstrumentSummaries(
+      ResourceRequest request, User user) {
+    return instrumentDao.getReadableResourceSummaries(request, readAccess(user));
+  }
+
+  @Override
   public long countReadableInstruments(ResourceRequest request, User user) {
     return instrumentDao.countReadableResources(request, readAccess(user));
   }
