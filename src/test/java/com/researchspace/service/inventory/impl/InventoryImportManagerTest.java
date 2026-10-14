@@ -1005,6 +1005,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     for (ApiInventoryBulkOperationRecordResult imported : subSampleImportResult.getResults()) {
       ApiSubSample saved =
           subSampleManager.getApiSubSampleById(imported.getRecord().getId(), testUser);
+      assertEquals(1, saved.getVersion());
       assertThat(saved.getTags()).extracting(ApiTagInfo::getValue).containsExactly("frozen");
     }
   }

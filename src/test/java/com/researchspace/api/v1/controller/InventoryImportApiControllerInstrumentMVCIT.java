@@ -190,6 +190,7 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
     for (ApiInventoryBulkOperationRecordResult imported : instrumentResult.getResults()) {
       ApiInstrument saved =
           instrumentApiMgr.getApiInstrumentById(imported.getRecord().getId(), anyUser);
+      assertEquals(1, saved.getVersion());
       assertThat(saved.getTags()).extracting(ApiTagInfo::getValue).containsExactly("microscopy");
     }
   }
