@@ -8,7 +8,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.dao.ExtraFieldDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.FieldSelection;
@@ -19,11 +18,10 @@ import com.researchspace.model.collection.ResourceRenderer;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
-import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
-import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
@@ -31,20 +29,16 @@ class InstrumentParentLocationRedactionTest {
 
   private final InstrumentEntityApiManager manager = mock(InstrumentEntityApiManager.class);
   private final InstrumentResourceOperations operations =
-      new InstrumentResourceOperations(
-          manager,
-          mock(InstrumentReadAccess.class),
-          mock(InstrumentCustomFieldManager.class),
-          mock(ExtraFieldDao.class));
+      InstrumentResourceOperationsTest.operationsFor(manager);
   private final User actor = mock(User.class);
 
   @Test
   void resolvesDistinctCurrentParentsOnceAndMasksEveryUnresolvedLocation() {
-    Instrument readable = instrument(1L);
-    Instrument sameReadableParent = instrument(2L);
-    Instrument unreadable = instrument(3L);
-    Instrument missing = instrument(4L);
-    Instrument stale = instrument(5L);
+    Instrument readable = InstrumentResourceOperationsTest.instrument(1L);
+    Instrument sameReadableParent = InstrumentResourceOperationsTest.instrument(2L);
+    Instrument unreadable = InstrumentResourceOperationsTest.instrument(3L);
+    Instrument missing = InstrumentResourceOperationsTest.instrument(4L);
+    Instrument stale = InstrumentResourceOperationsTest.instrument(5L);
     when(manager.getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L, 5L)))
         .thenReturn(
             Map.of(
@@ -69,7 +63,7 @@ class InstrumentParentLocationRedactionTest {
 
   @Test
   void doesNotAddLocationFieldsThatTheRequestDidNotSelect() {
-    Instrument instrument = instrument(1L);
+    Instrument instrument = InstrumentResourceOperationsTest.instrument(1L);
     when(manager.getParentLocationSummaries(Set.of(1L)))
         .thenReturn(
             Map.of(
@@ -85,7 +79,7 @@ class InstrumentParentLocationRedactionTest {
             ApiV2InstrumentResource.DESCRIPTION,
             ResourceFieldSelections.root(FieldSelection.include(Set.of("globalId"))),
             IncludeTree.empty(),
-            (resource, id) -> java.util.Optional.empty(),
+            (resource, id) -> Optional.empty(),
             overrides);
     Map<String, Object> withLocation =
         renderer.render(
@@ -94,7 +88,7 @@ class InstrumentParentLocationRedactionTest {
             ResourceFieldSelections.root(
                 FieldSelection.include(Set.of("parentContainerName", "parentContainerGlobalId"))),
             IncludeTree.empty(),
-            (resource, id) -> java.util.Optional.empty(),
+            (resource, id) -> Optional.empty(),
             overrides);
 
     assertFalse(withoutLocation.containsKey("parentContainerName"));
@@ -110,11 +104,5 @@ class InstrumentParentLocationRedactionTest {
     assertTrue(values.containsKey("parentContainerGlobalId"));
     assertNull(values.get("parentContainerName"));
     assertNull(values.get("parentContainerGlobalId"));
-  }
-
-  private static Instrument instrument(long id) {
-    Instrument instrument = new Instrument();
-    instrument.setId(id);
-    return instrument;
   }
 }
