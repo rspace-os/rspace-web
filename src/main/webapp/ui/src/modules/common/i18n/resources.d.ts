@@ -770,6 +770,9 @@ export default interface Resources {
         "openingHours": "Opening hours",
         "timezone": "Timezone",
         "updatedAt": "Last updated"
+      },
+      "openingHours": {
+        "closed": "Closed"
       }
     },
     "preferences": {
@@ -858,6 +861,14 @@ export default interface Resources {
         "maximumDurationDescription": "Use 0 to allow bookings up to the 366-day system limit.",
         "openingEnd": "Opening end",
         "openingStart": "Opening start"
+      },
+      "openingHours": {
+        "errors": {
+          "noDays": "Select at least one open day."
+        },
+        "midnightEnd": "An end of {midnight} closes at midnight at the end of this day.",
+        "openAllDay": "Open all day",
+        "openAllDaySelected": "Open all day selected."
       },
       "saved": "Booking settings saved.",
       "title": "Booking Settings"
