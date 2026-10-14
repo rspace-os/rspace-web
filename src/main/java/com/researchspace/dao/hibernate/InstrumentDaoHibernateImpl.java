@@ -17,6 +17,7 @@ import com.researchspace.model.UserGroup;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.PageOffsets;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -280,7 +281,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                     + " group by parent.id, parent.editInfo.name, parent.containerType"
                     + " order by lower(parent.editInfo.name), parent.id",
                 Object[].class)
-            .setFirstResult((page - 1) * limit)
             .setMaxResults(limit);
     setBookingCatalogueLocationParameters(
         countQuery, caller, groupMembers, groupNames, visibleOwners, query);
@@ -291,8 +291,13 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
       pageQuery.setParameterList("locationIds", containerIds);
     }
     long total = countQuery.getSingleResult();
+    long offset = PageOffsets.offset(page, limit);
+    if (offset > Integer.MAX_VALUE) {
+      return new ResourcePage<>(List.of(), total);
+    }
     List<InstrumentParentLocationSummary> locations =
         pageQuery
+            .setFirstResult((int) offset)
             .getResultStream()
             .map(
                 row ->
