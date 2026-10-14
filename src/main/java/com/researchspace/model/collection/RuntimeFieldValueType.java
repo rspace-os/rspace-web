@@ -76,8 +76,11 @@ public enum RuntimeFieldValueType {
   /**
    * Unanchored number syntax shared with the SQL numeric conversion. ASCII digits only: {@link
    * BigDecimal} also accepts other Unicode digits, which the SQL side cannot convert.
+   *
+   * <p>The decimal point separates digit runs to avoid polynomial backtracking on malformed values.
    */
-  public static final String NUMBER_PATTERN = "[+-]?([0-9]+[.]?[0-9]*|[.][0-9]+)([eE][+-]?[0-9]+)?";
+  public static final String NUMBER_PATTERN =
+      "[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)([eE][+-]?[0-9]+)?";
 
   private static final Pattern NUMBER_SYNTAX = Pattern.compile(NUMBER_PATTERN);
 
