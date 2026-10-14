@@ -7,7 +7,11 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 
-/** Sends cloud OAuth token parameters in the POST body, keeping secrets out of request URLs. */
+/**
+ * Sends cloud OAuth token parameters in the POST body, keeping secrets out of request URLs.
+ *
+ * @deprecated To be removed when we migrate to RestClient; RSDEV-1579
+ */
 public final class OAuthTokenPost {
   private OAuthTokenPost() {}
 
