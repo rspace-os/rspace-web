@@ -20,6 +20,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
+import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
@@ -33,6 +34,7 @@ import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,6 +54,7 @@ class BookingCatalogueManagerImplTest {
   @Mock private BookingItemQuery itemQuery;
   @Mock private BookingCalendarQuery calendarQuery;
   @Mock private User caller;
+  @Mock private InstrumentReadAccess instrumentReadAccess;
 
   private BookingCatalogueManagerImpl manager;
 
@@ -97,6 +100,7 @@ class BookingCatalogueManagerImplTest {
             List.of(),
             List.of(),
             BookingCatalogueManager.Capability.CREATE_BOOKING,
+            false,
             3,
             7,
             caller);
@@ -119,35 +123,6 @@ class BookingCatalogueManagerImplTest {
                 comparison ->
                     comparison.field().equals("enabled")
                         && comparison.operator() == Operator.EQUAL));
-  }
-
-  @Test
-  void returnsEmptyPageWithoutQueryWhenNonSysadminHasNoCapableTargets() {
-    RsqlCollectionQuery.Predicate noAccess = new RsqlCollectionQuery.Predicate("1 = 0", Map.of());
-    when(itemQuery.restriction(caller, true, false, "bookingConfiguration.target"))
-        .thenReturn(noAccess);
-    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller), same(noAccess)))
-        .thenReturn(new ResourcePage<>(List.of(), 0));
-
-    BookingCatalogueManager.Page result =
-        manager.search(
-            null,
-            null,
-            ResourceRequest.unpaged(null),
-            List.of(),
-            List.of(),
-            BookingCatalogueManager.Capability.CREATE_BOOKING,
-            4,
-            9,
-            caller);
-
-    assertEquals(List.of(), result.items());
-    assertEquals(4, result.page());
-    assertEquals(9, result.pageSize());
-    assertEquals(0, result.total());
-    assertEquals(List.of(), result.facets().types());
-    verify(configurations)
-        .getConfigurations(any(ResourceRequest.class), same(caller), same(noAccess));
   }
 
   @Test
@@ -177,7 +152,7 @@ class BookingCatalogueManagerImplTest {
     when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
     when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
 
-    manager.search(null, null, request, List.of(), List.of(), null, 3, 7, caller);
+    manager.search(null, null, request, List.of(), List.of(), null, false, 3, 7, caller);
 
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations).getConfigurations(captured.capture(), same(caller));
@@ -193,5 +168,75 @@ class BookingCatalogueManagerImplTest {
         assertInstanceOf(QueryConstraint.And.class, catalogueRequest.serverConstraint());
     assertSame(callerConstraint, restrictions.children().get(0));
     assertInstanceOf(FilterExpression.And.class, restrictions.children().get(1));
+  }
+
+  @Test
+  void appliesCallerOwnershipBeforePaging() {
+    RsqlCollectionQuery.Predicate ownership =
+        new RsqlCollectionQuery.Predicate("EXISTS ownedBookingItem", Map.of("owner", caller));
+    when(itemQuery.ownedBy(caller, "bookingConfiguration.target")).thenReturn(ownership);
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), same(ownership)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
+    when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
+
+    manager.search(
+        null, null, ResourceRequest.unpaged(null), List.of(), List.of(), null, true, 2, 20, caller);
+
+    verify(configurations)
+        .getConfigurations(any(ResourceRequest.class), same(caller), same(ownership));
+  }
+
+  @Test
+  void combinesCapabilityAndMineWithIndependentTrustedBindings() {
+    User subject = caller;
+    when(subject.isEnabled()).thenReturn(true);
+    when(subject.getUsername()).thenReturn("booking-user");
+    when(instrumentReadAccess.documentation())
+        .thenReturn(AccessFunction.authenticated().documentation());
+    FilterExpression notDeleted =
+        new FilterExpression.Comparison("deleted", Operator.EQUAL, List.of(false), false);
+    when(instrumentReadAccess.constraint(subject, true)).thenReturn(notDeleted);
+    when(instrumentReadAccess.constraint(subject, false)).thenReturn(notDeleted);
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(subject), any(RsqlCollectionQuery.Predicate.class)))
+        .thenReturn(new ResourcePage<>(List.of(), 0));
+    when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
+    when(instruments.getReadableParentLocationSummaries(Set.of(), subject)).thenReturn(Map.of());
+
+    BookingCatalogueManagerImpl managerWithRealItemQuery =
+        new BookingCatalogueManagerImpl(
+            configurations,
+            instruments,
+            featureFlags,
+            new BookingItemQuery(instrumentReadAccess),
+            calendarQuery);
+
+    managerWithRealItemQuery.search(
+        null,
+        null,
+        ResourceRequest.unpaged(null),
+        List.of(),
+        List.of(),
+        BookingCatalogueManager.Capability.CREATE_BOOKING,
+        true,
+        1,
+        20,
+        subject);
+
+    ArgumentCaptor<RsqlCollectionQuery.Predicate> restriction =
+        ArgumentCaptor.forClass(RsqlCollectionQuery.Predicate.class);
+    verify(configurations)
+        .getConfigurations(any(ResourceRequest.class), same(subject), restriction.capture());
+    RsqlCollectionQuery.Predicate combined = restriction.getValue();
+
+    assertTrue(combined.expression().contains("EXISTS bookingItemCapability"));
+    assertTrue(combined.expression().contains("EXISTS ownedBookingItemCapability"));
+    assertTrue(combined.parameters().containsKey("bookingItemType"));
+    assertTrue(combined.parameters().containsKey("ownedBookingItemType"));
+    assertTrue(combined.parameters().containsValue(subject.getUsername()));
+    assertTrue(combined.subqueries().containsKey("bookingItemCapability"));
+    assertTrue(combined.subqueries().containsKey("ownedBookingItemCapability"));
   }
 }

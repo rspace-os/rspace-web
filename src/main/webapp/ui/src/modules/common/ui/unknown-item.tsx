@@ -9,7 +9,7 @@ function UnknownItem(props: React.ComponentProps<typeof Item>) {
   const { t } = useTranslation("common");
 
   return (
-    <Item {...props}>
+    <Item data-unknown-item {...props}>
       <ItemMedia variant="icon">
         <CircleQuestionMarkIcon aria-hidden="true" />
       </ItemMedia>
