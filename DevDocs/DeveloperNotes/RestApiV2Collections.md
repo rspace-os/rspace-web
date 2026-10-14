@@ -42,9 +42,10 @@ Instrument list and single reads use `ResourceOperations.usesReadDocuments()` an
 pagination as entity reads. `CollectionQueryExecutor.projectedPage()` avoids hydrating the
 Inventory aggregate. The renderer validates supplied declared objects and arrays before applying
 selection and per-row field access. Location masking resolves the authorized page's current
-parents in bulk. Runtime providers receive those page IDs through `valuesForAuthorizedIds()`;
-its default delegates to the provider's authorization-aware `valuesForIds()`. Providers may trust
-these IDs only after the collection read policy has selected the page. Scalar read documents do
+parents in bulk. Runtime providers that support relationship ID projection receive authorized
+page IDs through a direct `valuesForIds()` call, retaining their transaction advice. Other
+providers must explicitly implement `valuesForAuthorizedIds()` and may trust those IDs only after
+the collection read policy has selected the page. Scalar read documents do
 not bind relationships. Entity reads remain available to internal domain callers and relationship
 resolution.
 
