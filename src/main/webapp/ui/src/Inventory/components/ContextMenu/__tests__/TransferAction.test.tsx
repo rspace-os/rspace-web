@@ -63,8 +63,11 @@ describe("TransferAction", () => {
               enabled: true,
               timezone: "UTC",
               slotGranularityMinutes: 5,
-              openingStart: "00:00",
-              openingEnd: "24:00",
+              openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
+                dayOfWeek,
+                start: "00:00",
+                end: "24:00",
+              })),
               bufferBeforeMinutes: 0,
               bufferAfterMinutes: 0,
               maxBookingDurationMinutes: 0,
