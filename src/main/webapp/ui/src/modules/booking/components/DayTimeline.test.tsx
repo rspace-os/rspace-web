@@ -58,6 +58,50 @@ describe("DayTimeline table row", () => {
     expect(onRender).not.toHaveBeenCalled();
   });
 
+  it("keeps the item name and time on short duration-sized cards by dropping the booker badge first", async () => {
+    const wrapper = await createRealI18nWrapper({
+      resources: { booking: bookingEnglish, common: commonEnglish },
+      defaultNS: "common",
+    });
+    const event = {
+      id: "sized-card",
+      kind: "booking",
+      privacy: "full",
+      title: "Confocal microscope",
+      bookedBy: "Ada Lovelace (ada)",
+      item: { name: "Confocal microscope", globalId: "IN123" },
+      canEdit: false,
+      startMinute: 480,
+      endMinute: 540,
+    } as const;
+    const card = (fitHeight: number) =>
+      render(
+        <DayTimelineEventCard
+          date="2026-08-17"
+          event={event}
+          timezone="UTC"
+          compactCards={false}
+          variant="timeline"
+          fitHeight={fitHeight}
+        />,
+        { wrapper },
+      );
+
+    const short = card(56);
+    expect(short.container.querySelector("[data-event-time]")).toBeInTheDocument();
+    expect(within(short.container).queryByText("Ada Lovelace (ada)")).not.toBeInTheDocument();
+    expect(within(short.container).getByText("Confocal microscope", { selector: "span[title]" })).toHaveClass(
+      "truncate",
+    );
+    short.unmount();
+
+    const tall = card(112);
+    expect(within(tall.container).getByText("Ada Lovelace (ada)")).toBeInTheDocument();
+    expect(within(tall.container).getByText("Confocal microscope", { selector: "span[title]" })).toHaveClass(
+      "line-clamp-2",
+    );
+  });
+
   it("reuses the expandable event card outside the timeline", async () => {
     const user = userEvent.setup();
     const wrapper = await createRealI18nWrapper({
@@ -88,15 +132,15 @@ describe("DayTimeline table row", () => {
       { wrapper },
     );
 
-    expect(screen.getByText("17-08-2026")).toBeVisible();
-    expect(screen.getByText("08:00 - 09:00")).toBeVisible();
+    expect(screen.getByText("08/17/2026")).toBeVisible();
+    expect(screen.getByText("08:00 AM - 09:00 AM")).toBeVisible();
     const details = screen.getByRole("button", { name: /Show details for Confocal microscope · Ada/ });
     details.focus();
     await user.keyboard("{Enter}");
 
     expect(details).toHaveAttribute("aria-expanded", "true");
-    const popup = screen.getByRole("dialog", { name: "08:00–09:00" });
-    expect(within(popup).getByText("17-08-2026")).toBeVisible();
+    const popup = screen.getByRole("dialog", { name: "08:00 AM–09:00 AM" });
+    expect(within(popup).getByText("08/17/2026")).toBeVisible();
     expect(within(popup).queryByText("Start")).not.toBeInTheDocument();
     expect(within(popup).queryByText("End")).not.toBeInTheDocument();
     expect(within(popup).getByText("Cell imaging")).toBeVisible();
@@ -134,18 +178,18 @@ describe("DayTimeline table row", () => {
       { wrapper },
     );
 
-    expect(screen.getByText("16-08-2026 - 18-08-2026")).toBeVisible();
-    expect(screen.getByText("23:30 (-1) - 01:30 (+1)")).toBeVisible();
+    expect(screen.getByText("08/16/2026 - 08/18/2026")).toBeVisible();
+    expect(screen.getByText("11:30 PM (-1) - 01:30 AM (+1)")).toBeVisible();
     const details = screen.getByRole("button", {
-      name: /Show details for Overnight acquisition · Ada, 23:30 \(-1\)–01:30 \(\+1\)/,
+      name: /Show details for Overnight acquisition · Ada, 11:30 PM \(-1\)–01:30 AM \(\+1\)/,
     });
     await user.click(details);
 
-    const popup = screen.getByRole("dialog", { name: "23:30 (-1)–01:30 (+1)" });
+    const popup = screen.getByRole("dialog", { name: "11:30 PM (-1)–01:30 AM (+1)" });
     expect(within(popup).getByText("Start")).toBeVisible();
-    expect(within(popup).getByText("16-08-2026 · 23:30 (-1)")).toBeVisible();
+    expect(within(popup).getByText("08/16/2026 · 11:30 PM (-1)")).toBeVisible();
     expect(within(popup).getByText("End")).toBeVisible();
-    expect(within(popup).getByText("18-08-2026 · 01:30 (+1)")).toBeVisible();
+    expect(within(popup).getByText("08/18/2026 · 01:30 AM (+1)")).toBeVisible();
     expect(within(popup).getByText("26 hours")).toBeVisible();
   });
 
@@ -237,7 +281,7 @@ describe("DayTimeline table row", () => {
     expect(screen.queryByRole("button", { name: "Manage readonly" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Show details for Confocal microscope · Ada/ }));
-    const editablePopup = screen.getByRole("dialog", { name: "08:00–09:00" });
+    const editablePopup = screen.getByRole("dialog", { name: "08:00 AM–09:00 AM" });
     await user.click(within(editablePopup).getByRole("button", { name: /Hide details for Confocal microscope · Ada/ }));
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Show details for Confocal microscope · Ada/ })).toHaveFocus();
@@ -247,7 +291,7 @@ describe("DayTimeline table row", () => {
     await user.click(screen.getByRole("button", { name: /Show details for Maintenance/ }));
     expect(screen.queryByRole("button", { name: "Manage busy" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Manage blockout" })).toBeVisible();
-    const blockoutPopup = screen.getByRole("dialog", { name: "14:00–15:00" });
+    const blockoutPopup = screen.getByRole("dialog", { name: "02:00 PM–03:00 PM" });
     expect(within(blockoutPopup).getByText("Laser alignment")).toBeVisible();
     expect(within(blockoutPopup).getByText("Morgan Ellis (mellis)")).toBeVisible();
     expect(within(blockoutPopup).queryByText("Booked by")).not.toBeInTheDocument();
@@ -286,10 +330,12 @@ describe("DayTimeline table row", () => {
       />,
       { wrapper },
     );
-    expect(screen.getByRole("article", { name: /Repeated hour · Ada, 02:45 \+02:00–02:15 \+01:00/ })).toBeVisible();
-    expect(screen.getByRole("article", { name: /Busy, 23:30 \+01:00–00:00 \+01:00/ })).toBeVisible();
-    expect(screen.getByText("02:00 +02:00")).toBeVisible();
-    expect(screen.getByText("02:00 +01:00")).toBeVisible();
+    expect(
+      screen.getByRole("article", { name: /Repeated hour · Ada, 02:45 AM \+02:00–02:15 AM \+01:00/ }),
+    ).toBeVisible();
+    expect(screen.getByRole("article", { name: /Busy, 11:30 PM \+01:00–12:00 AM \+01:00/ })).toBeVisible();
+    expect(screen.getByText("02:00 AM +02:00")).toBeVisible();
+    expect(screen.getByText("02:00 AM +01:00")).toBeVisible();
     await user.click(screen.getByRole("button", { name: /Show details for Repeated hour/ }));
     expect(within(screen.getByRole("dialog")).getByText("30 minutes")).toBeVisible();
     await user.keyboard("{Escape}");
@@ -310,7 +356,7 @@ describe("DayTimeline table row", () => {
       { keys: "[MouseLeft>]", target: canvas },
       { target: canvas, coords: { clientX: 195 } },
     ]);
-    expect(screen.getByText("02:45 +02:00–02:15 +01:00")).toBeVisible();
+    expect(screen.getByText("02:45 AM +02:00–02:15 AM +01:00")).toBeVisible();
     await user.pointer("[/MouseLeft]");
     expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 165, endMinute: 195 }, expect.any(HTMLElement));
   });
@@ -353,7 +399,7 @@ describe("DayTimeline table row", () => {
       { keys: "[MouseLeft>]", target: canvas },
       { target: canvas, coords: { clientX: 539 } },
     ]);
-    expect(screen.getByText("08:00–09:00")).toBeVisible();
+    expect(screen.getByText("08:00 AM–09:00 AM")).toBeVisible();
     await user.pointer("[/MouseLeft]");
     expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 480, endMinute: 540 }, expect.any(HTMLElement));
 
@@ -377,5 +423,51 @@ describe("DayTimeline table row", () => {
       "[/MouseLeft]",
     ]);
     expect(onRangeSelect).toHaveBeenCalledTimes(1);
+  });
+
+  it("shades closed periods behind events and fully shades a closed day", async () => {
+    const wrapper = await createRealI18nWrapper({
+      resources: { booking: bookingEnglish, common: commonEnglish },
+      defaultNS: "common",
+    });
+    const timeline = (closedPeriods: ReadonlyArray<{ startMinute: number; endMinute: number }> | undefined) => (
+      <DayTimeline
+        date="2026-08-17"
+        timezone="Europe/Berlin"
+        events={[
+          {
+            id: "early",
+            kind: "booking",
+            privacy: "busy",
+            startMinute: 7 * 60,
+            endMinute: 8 * 60,
+          },
+        ]}
+        closedPeriods={closedPeriods}
+        startWindow={0}
+        endWindow={24 * 60}
+        variant="table-row"
+      />
+    );
+    const { rerender } = render(timeline(undefined), { wrapper });
+    expect(screen.queryAllByTestId("day-timeline-closed-hours")).toHaveLength(0);
+
+    rerender(
+      timeline([
+        { startMinute: -30, endMinute: 9 * 60 },
+        { startMinute: 17 * 60, endMinute: 25 * 60 },
+        { startMinute: 600, endMinute: 600 },
+      ]),
+    );
+    const closed = screen.getAllByTestId("day-timeline-closed-hours");
+    expect(closed).toHaveLength(2);
+    expect(closed[0]).toHaveStyle({ left: "0%", width: "37.5%" });
+    expect(closed[1].style.left).toBe(`${((17 * 60) / 1440) * 100}%`);
+    expect(closed[1].style.width).toBe(`${((7 * 60) / 1440) * 100}%`);
+    expect(document.querySelector('[data-event-id="early"]')).toBeInTheDocument();
+
+    rerender(timeline([{ startMinute: 0, endMinute: 24 * 60 }]));
+    expect(screen.getByTestId("day-timeline-closed-hours")).toHaveStyle({ left: "0%", width: "100%" });
+    expect(document.querySelector('[data-event-id="early"]')).toBeInTheDocument();
   });
 });

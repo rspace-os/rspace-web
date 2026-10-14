@@ -200,16 +200,14 @@ export class ApiV2ProblemError extends Error {
     readonly status: number,
     readonly code: string | undefined,
     message: string,
+    /** The raw problem body, for extension members such as a booking `conflict`. */
+    readonly problem?: Record<string, unknown>,
   ) {
     super(message);
   }
 }
 
 export class BookingUnavailableError extends Error {}
-
-export function isBookingOverlapError(error: unknown): boolean {
-  return error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.overlap";
-}
 
 export const BOOKING_READ_FIELDS =
   "id,version,target,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
@@ -225,6 +223,7 @@ export async function parseApiV2Problem(response: Response): Promise<ApiV2Proble
         : typeof record.message === "string"
           ? record.message
           : `Request failed (${response.status})`,
+      record,
     );
   }
   return new ApiV2ProblemError(response.status, undefined, `Request failed (${response.status})`);

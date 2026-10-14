@@ -1,5 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
+import type { DayTimelineRange } from "@/modules/booking/components/DayTimelineEvent";
 import type { AvailabilityInterval, SourcedAvailabilityInterval } from "@/modules/booking/domain/availability";
 import type { Booking } from "@/modules/booking/domain/booking";
 import {
@@ -7,9 +8,13 @@ import {
   type OpeningSchedule,
   openingIntervals,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { type AbsoluteDisplayInterval, displayInterval, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import {
+  type AbsoluteDisplayInterval,
+  displayInterval,
+  instantToDayMinute,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 import { fetchDayBookings } from "@/modules/booking/domain/fetchDayBookings";
-
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 
 export type CalendarAvailabilityRow = OpeningSchedule & {
@@ -98,8 +103,10 @@ function sourcedInterval(
   };
 }
 
+type ClosureSchedule = OpeningSchedule & { globalId: string; timezone: string };
+
 function closedInterval(
-  row: CalendarAvailabilityRow,
+  row: ClosureSchedule,
   startsAt: string,
   endsAt: string,
   interval: AbsoluteDisplayInterval,
@@ -113,10 +120,8 @@ function closedInterval(
   return clipInterval(candidate, interval);
 }
 
-function closedIntervals(
-  row: CalendarAvailabilityRow,
-  interval: AbsoluteDisplayInterval,
-): SourcedAvailabilityInterval[] {
+/** The gaps between opening intervals, including wholly closed weekdays, within the display interval. */
+function closedIntervals(row: ClosureSchedule, interval: AbsoluteDisplayInterval): SourcedAvailabilityInterval[] {
   const closed: SourcedAvailabilityInterval[] = [];
   let cursor = interval.start;
   for (const opening of [
@@ -128,6 +133,16 @@ function closedIntervals(
     cursor = opening.end;
   }
   return closed;
+}
+
+/** Closed periods on the displayed `date`, in the timeline's elapsed-minute coordinates for `timezone`. */
+export function closedDayRanges(row: ClosureSchedule, date: string, timezone: string): DayTimelineRange[] {
+  const interval = displayInterval(date, timezone, "00:00", "24:00");
+  if (interval.elapsedMinutes === 0) return [];
+  return closedIntervals(row, interval).map((closed) => ({
+    startMinute: instantToDayMinute(closed.startsAt.toISOString(), date, timezone),
+    endMinute: instantToDayMinute(closed.endsAt.toISOString(), date, timezone),
+  }));
 }
 
 function bookingInterval(

@@ -266,7 +266,9 @@ describe("availability quick filters", () => {
     );
     const restricted = {
       ...candidate(1, "IN1", "UTC"),
-      openingHours: [{ dayOfWeek: 1, start: "08:00", end: "18:00" }],
+      openingHours: candidate(1, "IN1", "UTC")
+        .openingHours.filter((entry) => [1, 2, 3, 4, 5, 6, 7].includes(entry.dayOfWeek))
+        .map((entry) => ({ ...entry, start: "08:00", end: "18:00" })),
     };
 
     for (const [time, expected] of [
@@ -285,6 +287,41 @@ describe("availability quick filters", () => {
       );
       expect(result.get("IN1")?.category).toBe(expected);
     }
+  });
+
+  it("treats an item closed on the instrument's weekday as unavailable and follows its exception", async () => {
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
+      ),
+    );
+    // 2026-08-17 is a Monday.
+    const closedMonday = {
+      ...candidate(1, "IN1", "UTC"),
+      openingHours: candidate(1, "IN1", "UTC").openingHours.filter((entry) =>
+        [2, 3, 4, 5, 6, 7].includes(entry.dayOfWeek),
+      ),
+    };
+    const lateMonday = {
+      ...candidate(2, "IN2", "UTC"),
+      openingHours: candidate(2, "IN2", "UTC").openingHours.map(
+        (entry) =>
+          [{ dayOfWeek: 1, start: "12:00", end: "18:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+      ),
+    };
+
+    const result = await loadAvailabilityQuickIndex(
+      [closedMonday, lateMonday],
+      new Date("2026-08-17T09:00:00Z"),
+      "UTC",
+      "00:00",
+      "24:00",
+      "token",
+      new AbortController().signal,
+    );
+
+    expect(result.get("IN1")?.category).toBe("unavailable-today");
+    expect(result.get("IN2")?.category).toBe("free-later-today");
   });
 
   it("does not request data without a token and loads counts once authenticated", async () => {
@@ -323,6 +360,31 @@ describe("availability quick filters", () => {
     expect(bookingRequests).toBe(1);
   });
 
+  it("refreshes bookings, but not fresh candidates, at the next minute", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime("2026-08-17T09:00:30Z");
+    let candidateRequests = 0;
+    let bookingRequests = 0;
+    server.use(
+      http.get("/api/v2/booking-catalogue", () => {
+        candidateRequests += 1;
+        return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
+      }),
+      http.get("/api/v2/bookings", () => {
+        bookingRequests += 1;
+        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
+      }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children);
+    const { result } = renderHook(() => useAvailabilityQuickFilterIndex("token"), { wrapper });
+    await act(async () => vi.waitFor(() => expect(result.current.data).toBeDefined()));
+    await act(() => vi.advanceTimersByTimeAsync(30_000));
+    await act(async () => vi.waitFor(() => expect(bookingRequests).toBe(2)));
+    expect(candidateRequests).toBe(1);
+    vi.useRealTimers();
+  });
   it.each([
     ["2026-08-17T12:00:00Z", "available-now"],
     ["2026-08-18T12:00:00Z", "free-later-today"],
@@ -351,32 +413,6 @@ describe("availability quick filters", () => {
       new AbortController().signal,
     );
     expect(result.get("IN1")?.category).toBe(category);
-  });
-
-  it("refreshes bookings, but not fresh candidates, at the next minute", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime("2026-08-17T09:00:30Z");
-    let candidateRequests = 0;
-    let bookingRequests = 0;
-    server.use(
-      http.get("/api/v2/booking-catalogue", () => {
-        candidateRequests += 1;
-        return HttpResponse.json(page([candidate(1, "IN1", "UTC")]));
-      }),
-      http.get("/api/v2/bookings", () => {
-        bookingRequests += 1;
-        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
-      }),
-    );
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: queryClient }, children);
-    const { result } = renderHook(() => useAvailabilityQuickFilterIndex("token"), { wrapper });
-    await act(async () => vi.waitFor(() => expect(result.current.data).toBeDefined()));
-    await act(() => vi.advanceTimersByTimeAsync(30_000));
-    await act(async () => vi.waitFor(() => expect(bookingRequests).toBe(2)));
-    expect(candidateRequests).toBe(1);
-    vi.useRealTimers();
   });
 
   it("recomputes availability when the weekday schedule changes within the same minute", async () => {

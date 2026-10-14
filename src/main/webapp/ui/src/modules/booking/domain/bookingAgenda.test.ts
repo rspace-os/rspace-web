@@ -94,9 +94,10 @@ describe("booking agenda date helpers", () => {
     expect(
       formatBookingAgendaTimeRange("2026-10-25T00:05:00.000Z", "2026-10-25T00:35:00.000Z", "Europe/Berlin", "en-US"),
     ).toMatch(/GMT\+2.*GMT\+2/);
+    // The 12- or 24-hour clock follows the browser region (en-US here), not the app language, to match native inputs.
     expect(
       formatBookingAgendaTimeRange("2026-09-24T12:00:00.000Z", "2026-09-24T14:00:00.000Z", "Europe/Berlin", "de-DE"),
-    ).not.toEqual(
+    ).toEqual(
       formatBookingAgendaTimeRange("2026-09-24T12:00:00.000Z", "2026-09-24T14:00:00.000Z", "Europe/Berlin", "en-US"),
     );
     expect(

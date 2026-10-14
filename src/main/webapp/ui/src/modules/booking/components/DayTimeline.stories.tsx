@@ -4,6 +4,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { DayTimeline, type DayTimelineEvent, type DayTimelineViewState } from "./DayTimeline";
 import { DayTimelineStory } from "./DayTimeline.story";
+import { formatDayDate, formatMinuteWithDayOffset, period } from "./DayTimelineEvent";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
 const denseBookings: Array<DayTimelineEvent> = Array.from({ length: 12 }, (_, index) => ({
@@ -100,6 +101,11 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+// The timeline writes times and dates in the browser region's format, so expected labels come from its formatters.
+const clock = (minute: number) => formatMinuteWithDayOffset(meta.args.date, meta.args.timezone, minute);
+const densePeriod = (index: number) => period(denseBookings[index], meta.args.date, meta.args.timezone);
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export const DensityAwareEqualHourWidths: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -107,8 +113,8 @@ export const DensityAwareEqualHourWidths: Story = {
     const eventBars = Array.from(canvasElement.querySelectorAll("[data-event-id]"));
     expect(eventBars).toHaveLength(12);
     expect(new Set(eventBars.map((event) => event.getAttribute("data-lane"))).size).toBe(3);
-    expect(eventBars[0].querySelector("[data-event-time]")).toHaveTextContent("09:00");
-    expect(eventBars[11].querySelector("[data-event-time]")).toHaveTextContent("09:55");
+    expect(eventBars[0].querySelector("[data-event-time]")).toHaveTextContent(clock(9 * 60));
+    expect(eventBars[11].querySelector("[data-event-time]")).toHaveTextContent(clock(9 * 60 + 55));
   },
 };
 
@@ -122,8 +128,8 @@ export const DensityWithoutCompactCards: Story = {
     await canvas.findByTestId("day-timeline-canvas");
     const eventBars = Array.from(canvasElement.querySelectorAll<HTMLElement>("[data-event-id]"));
     for (const eventBar of eventBars) expect(eventBar.getBoundingClientRect().width).toBeCloseTo(120, 0);
-    expect(eventBars[0].querySelector("[data-event-time]")).toHaveTextContent("09:00–09:05");
-    expect(eventBars[11].querySelector("[data-event-time]")).toHaveTextContent("09:55–10:00");
+    expect(eventBars[0].querySelector("[data-event-time]")).toHaveTextContent(densePeriod(0));
+    expect(eventBars[11].querySelector("[data-event-time]")).toHaveTextContent(densePeriod(11));
   },
 };
 
@@ -132,7 +138,7 @@ export const Sub15MinuteEvents: Story = {
     const canvas = within(canvasElement);
     const timelineCanvas = await canvas.findByTestId("day-timeline-canvas");
     const eventBars = Array.from(canvasElement.querySelectorAll<HTMLElement>("[data-event-id]"));
-    for (const eventBar of eventBars) {
+    for (const [index, eventBar] of eventBars.entries()) {
       expect(eventBar.getBoundingClientRect().width).toBeCloseTo(44, 0);
       const card = eventBar.querySelector<HTMLElement>("article");
       const time = eventBar.querySelector<HTMLElement>("[data-event-time]");
@@ -140,8 +146,9 @@ export const Sub15MinuteEvents: Story = {
       const timeRange = eventBar.querySelector<HTMLElement>("[data-event-time-range]");
       expect(card).not.toBeNull();
       expect(time).not.toBeNull();
-      expect(eventDate).toHaveTextContent("22-07-2026");
-      expect(timeRange).toHaveTextContent(/\d{2}:\d{2} - \d{2}:\d{2}/);
+      expect(eventDate).toHaveTextContent(formatDayDate(meta.args.date));
+      const { startMinute, endMinute } = denseBookings[index];
+      expect(timeRange).toHaveTextContent(`${clock(startMinute)} - ${clock(endMinute)}`);
       if (!card || !time || !eventDate || !timeRange) throw new Error("Timeline card content is missing");
       expect(card).toHaveAttribute("title");
       expect(time.getBoundingClientRect().top).toBeGreaterThan(card.getBoundingClientRect().top);
@@ -150,17 +157,17 @@ export const Sub15MinuteEvents: Story = {
     }
     const heightBeforeOpening = timelineCanvas.getBoundingClientRect().height;
     const firstDetails = canvas.getByRole("button", {
-      name: /show details for Confocal microscope · researcher\.01, 09:00–09:05/i,
+      name: new RegExp(`show details for Confocal microscope · researcher\\.01, ${escapeRegExp(densePeriod(0))}`, "i"),
     });
     await userEvent.click(firstDetails);
     expect(firstDetails).toHaveAttribute("aria-expanded", "true");
     expect(timelineCanvas.getBoundingClientRect().height).toBeCloseTo(heightBeforeOpening, 0);
     const popover = within(document.body);
-    expect(popover.getByText("09:00–09:05")).toBeInTheDocument();
+    expect(popover.getByText(densePeriod(0))).toBeInTheDocument();
     expect(popover.getByText("Sample check 1.")).toBeInTheDocument();
     await userEvent.click(firstDetails);
     expect(firstDetails).toHaveAttribute("aria-expanded", "false");
-    await waitFor(() => expect(popover.queryByRole("dialog", { name: "09:00–09:05" })).not.toBeInTheDocument());
+    await waitFor(() => expect(popover.queryByRole("dialog", { name: densePeriod(0) })).not.toBeInTheDocument());
   },
 };
 
@@ -170,9 +177,11 @@ export const NowBeforeWindow: Story = {
     const canvas = within(canvasElement);
     await canvas.findByTestId("day-timeline-canvas");
     expect(canvas.getByTestId("day-timeline-now")).toHaveAttribute("data-edge", "before");
-    const nowLabel = canvas.getByText("Now 07:15");
+    const nowLabel = canvas.getByText(`Now ${clock(7 * 60 + 15)}`);
     expect(canvas.queryByText(/before visible window/i)).not.toBeInTheDocument();
-    expect(nowLabel.getBoundingClientRect().bottom).toBeLessThan(canvas.getByText("00:00").getBoundingClientRect().top);
+    expect(nowLabel.getBoundingClientRect().bottom).toBeLessThan(
+      canvas.getByText(clock(0)).getBoundingClientRect().top,
+    );
   },
 };
 

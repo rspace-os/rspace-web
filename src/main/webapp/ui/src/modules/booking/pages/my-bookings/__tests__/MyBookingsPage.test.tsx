@@ -22,10 +22,19 @@ import i18n from "@/modules/common/i18n";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { MyBookingsRoutePage } from "../MyBookingsPage";
-import { bookingHandlers, bookingsOpenApi, roleLostBooking, upcomingBooking } from "../mocks/bookingMocks";
+import {
+  bookingHandlers,
+  bookingsOpenApi,
+  cancelledBooking,
+  pastBooking,
+  roleLostBooking,
+  upcomingBooking,
+} from "../mocks/bookingMocks";
 
 const initialColumns = '{ "fields": ["target", "start", "end"] }';
 const initialPath = `/booking/my-bookings?period=upcoming&my-bookings.q=confocal&my-bookings.where=target.name%3Dcontains%3Dscope&my-bookings.columns=${encodeURIComponent(initialColumns)}&my-bookings.sort=-start`;
+/** No column override, so the default columns, including the status chip, are shown. */
+const defaultColumnsPath = "/booking/my-bookings?period=upcoming";
 
 function renderPage(
   path = initialPath,
@@ -118,7 +127,8 @@ describe("My Bookings page", () => {
     const pastWhere = requests.at(-1)?.searchParams.get("where");
     expect(pastWhere).toContain("target.name=contains=scope");
     expect(pastWhere).toContain("confocal");
-    expect(pastWhere).toContain("state==CANCELLED");
+    expect(pastWhere).toContain("state==CONFIRMED");
+    expect(pastWhere).not.toContain("state==CANCELLED");
 
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" }));
     await waitFor(() => expect(searchParams().get("period")).toBe("past"));
@@ -165,6 +175,49 @@ describe("My Bookings page", () => {
     ).toContain(`end=gt=${asOf}`);
   });
 
+  it("lists cancelled bookings in their own period, whatever their end time", async () => {
+    const requests: URL[] = [];
+    const { searchParams } = renderPage(defaultColumnsPath, 84, (url) => requests.push(url));
+    const user = userEvent.setup();
+
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByText("Confocal microscope")).toBeVisible();
+    expect(table.queryByText(cancelledBooking.target.value.name)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "booking:myBookings.period.cancelled" }));
+    await waitFor(() => expect(searchParams().get("period")).toBe("cancelled"));
+    expect(screen.getByRole("button", { name: "booking:myBookings.period.cancelled" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("where")).toContain("state==CANCELLED"));
+    const cancelledWhere = requests.at(-1)?.searchParams.get("where");
+    expect(cancelledWhere).toContain("requesterId==84");
+    expect(cancelledWhere).toContain("kind==BOOKING");
+    expect(cancelledWhere).not.toContain("state==CONFIRMED");
+    expect(cancelledWhere).not.toContain("end=");
+    expect(await table.findByText(cancelledBooking.target.value.name)).toBeVisible();
+    expect(table.queryByText("Confocal microscope")).not.toBeInTheDocument();
+  });
+
+  it("shows each booking's status in its row", async () => {
+    renderPage(defaultColumnsPath);
+    const user = userEvent.setup();
+
+    const table = within(await screen.findByRole("table"));
+    expect(await table.findByRole("columnheader", { name: "booking:myBookings.fields.state" })).toBeInTheDocument();
+    const confirmedRow = (await table.findByText("Confocal microscope")).closest("tr");
+    if (!confirmedRow) throw new Error("Expected a table row");
+    expect(within(confirmedRow).getByText("booking:bookings.details.confirmed")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "booking:myBookings.period.cancelled" }));
+    const cancelledRow = (await table.findByText(cancelledBooking.target.value.name)).closest("tr");
+    if (!cancelledRow) throw new Error("Expected a table row");
+    const status = within(cancelledRow).getByText("booking:bookings.details.cancelled");
+    expect(status).toHaveClass("text-muted-foreground");
+    expect(within(cancelledRow).queryByText("booking:bookings.details.confirmed")).not.toBeInTheDocument();
+  });
+
   it("formats booking times in the resolved display timezone", async () => {
     renderPage();
     const expectedStart = new Intl.DateTimeFormat(i18n.language, {
@@ -192,16 +245,79 @@ describe("My Bookings page", () => {
     expect(screen.queryByRole("link", { name: "common:tableList.filters.openRecord" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "booking:myBookings.actions.edit" })).not.toBeInTheDocument();
     expect(table.getByText("booking:myBookings.roleLoss.readOnly")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
-    // The download endpoint requires the same configuration read the row has lost.
-    expect(screen.queryByRole("button", { name: "booking:calendar.file.accessibleLabel" })).not.toBeInTheDocument();
+    // Neither cancelling nor the calendar file (which needs the configuration read the row has lost) is offered.
+    expect(table.queryByRole("button", { name: "booking:myBookings.actions.more" })).not.toBeInTheDocument();
   });
 
   it("offers a calendar file for a confirmed booking the requester can still read", async () => {
     renderPage();
+    const user = userEvent.setup();
 
     const table = within(await screen.findByRole("table"));
-    expect(await table.findByRole("button", { name: "booking:calendar.file.accessibleLabel" })).toBeVisible();
+    await user.click(await table.findByRole("button", { name: "booking:myBookings.actions.more" }));
+    expect(
+      await screen.findByRole("menuitem", { name: "booking:myBookings.actions.downloadCalendarFile" }),
+    ).toBeVisible();
+  });
+
+  it("opens the cancel dialog from More actions and keeps the booking on dismissal", async () => {
+    let requests = 0;
+    server.use(
+      http.patch("/api/v2/bookings/41", () => {
+        requests += 1;
+        return HttpResponse.json({});
+      }),
+    );
+    renderPage();
+    const user = userEvent.setup();
+
+    const table = within(await screen.findByRole("table"));
+    const moreActions = await table.findByRole("button", { name: "booking:myBookings.actions.more" });
+    await user.click(moreActions);
+    const cancel = await screen.findByRole("menuitem", { name: "booking:bookings.actions.cancel" });
+    expect(cancel).toHaveClass("text-destructive");
+    await user.click(cancel);
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(dialog).toHaveTextContent("booking:bookings.cancelDialog.description");
+    await user.click(within(dialog).getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
+
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(requests).toBe(0);
+    await waitFor(() => expect(moreActions).toHaveFocus());
+  });
+
+  it("announces a cancellation from the page and keeps focus in the list once the row is gone", async () => {
+    const docs: Array<Record<string, unknown>> = [{ ...upcomingBooking }, pastBooking, cancelledBooking];
+    server.use(
+      http.patch("/api/v2/bookings/41", () => {
+        docs[0] = { ...upcomingBooking, state: "CANCELLED", version: 1 };
+        return HttpResponse.json(docs[0]);
+      }),
+    );
+    renderPage(initialPath, 84, undefined, undefined, docs);
+    const user = userEvent.setup();
+
+    const table = within(await screen.findByRole("table"));
+    await user.click(await table.findByRole("button", { name: "booking:myBookings.actions.more" }));
+    await user.click(await screen.findByRole("menuitem", { name: "booking:bookings.actions.cancel" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    await waitFor(() => expect(table.queryByText(upcomingBooking.target.value.name)).not.toBeInTheDocument());
+    // The row, its dialog and the dialog's own status message are gone, so the page announces instead.
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByRole("status")
+          .some((status) => status.textContent === "booking:myBookings.cancelled.announcement"),
+      ).toBe(true),
+    );
+    // No row is left to take focus (jsdom lays nothing out), so focus falls back to the selected period.
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "booking:myBookings.period.upcoming" })).toHaveFocus(),
+    );
   });
 
   it("keeps page actions accessible by name", async () => {
@@ -212,8 +328,7 @@ describe("My Bookings page", () => {
     const viewDetails = (await screen.findAllByRole("link", { name: "booking:myBookings.actions.viewDetails" }))[0];
     const table = within(screen.getByRole("table"));
     const edit = table.getByRole("link", { name: "booking:myBookings.actions.edit" });
-    const calendarFile = table.getByRole("button", { name: "booking:calendar.file.accessibleLabel" });
-    const cancel = table.getByRole("button", { name: "booking:bookings.actions.cancel" });
+    const moreActions = table.getByRole("button", { name: "booking:myBookings.actions.more" });
 
     expect(screen.getByRole("group", { name: "booking:myBookings.period.legend" })).toContainElement(upcoming);
     expect(screen.queryByRole("heading", { name: "booking:myBookings.plural" })).not.toBeInTheDocument();
@@ -222,8 +337,19 @@ describe("My Bookings page", () => {
     expect(within(past).getByText("booking:myBookings.period.past")).toBeVisible();
     expect(within(viewDetails).queryByText("booking:myBookings.actions.viewDetails")).not.toBeInTheDocument();
     expect(within(edit).queryByText("booking:myBookings.actions.edit")).not.toBeInTheDocument();
-    expect(within(calendarFile).queryByText("booking:calendar.file.label")).not.toBeInTheDocument();
-    expect(within(cancel).queryByText("booking:bookings.actions.cancel")).not.toBeInTheDocument();
+    expect(within(moreActions).queryByText("booking:myBookings.actions.more")).not.toBeInTheDocument();
+    // The less frequent actions carry visible text inside the menu.
+    await userEvent.setup().click(moreActions);
+    expect(
+      within(
+        await screen.findByRole("menuitem", { name: "booking:myBookings.actions.downloadCalendarFile" }),
+      ).getByText("booking:myBookings.actions.downloadCalendarFile"),
+    ).toBeVisible();
+    expect(
+      within(screen.getByRole("menuitem", { name: "booking:bookings.actions.cancel" })).getByText(
+        "booking:bookings.actions.cancel",
+      ),
+    ).toBeVisible();
   });
 
   it("shows period-specific empty states", async () => {
@@ -234,5 +360,7 @@ describe("My Bookings page", () => {
     expect(await table.findByText("booking:myBookings.empty.upcoming")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:myBookings.period.past" }));
     expect(await table.findByText("booking:myBookings.empty.past")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "booking:myBookings.period.cancelled" }));
+    expect(await table.findByText("booking:myBookings.empty.cancelled")).toBeVisible();
   });
 });

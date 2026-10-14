@@ -8,7 +8,12 @@ import {
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { ALL_ISO_WEEKDAYS, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  ALL_ISO_WEEKDAYS,
+  MAX_BOOKING_DURATION_MINUTES,
+  OpeningHoursSchema,
+  validOpeningHours,
+} from "@/modules/booking/domain/bookingOpeningHours";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -19,10 +24,8 @@ import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 
-export { validOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
-
 export const MAX_BUFFER_MINUTES = 10_080;
-export const MAX_BOOKING_DURATION_MINUTES = 527_040;
+export { MAX_BOOKING_DURATION_MINUTES, validOpeningHours };
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "openingHours",
@@ -274,9 +277,9 @@ export function SchedulingSettingsFields({
             </Field>
           </div>
 
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-buffer-before`}>{t("bookableItemDetails.fields.bufferBefore")}</FieldLabel>
-            <Field>
+          <div className="grid min-w-0 grid-cols-2 items-start gap-4 @md:col-span-2">
+            <Field className="min-w-0">
+              <FieldLabel htmlFor={`${id}-buffer-before`}>{t("bookableItemDetails.fields.bufferBefore")}</FieldLabel>
               <Input
                 id={`${id}-buffer-before`}
                 type="number"
@@ -297,11 +300,8 @@ export function SchedulingSettingsFields({
                 <FieldError id={bufferBeforeErrorId}>{t("settings.errors.buffer")}</FieldError>
               ) : null}
             </Field>
-          </div>
-
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-buffer-after`}>{t("bookableItemDetails.fields.bufferAfter")}</FieldLabel>
-            <Field>
+            <Field className="min-w-0">
+              <FieldLabel htmlFor={`${id}-buffer-after`}>{t("bookableItemDetails.fields.bufferAfter")}</FieldLabel>
               <Input
                 id={`${id}-buffer-after`}
                 type="number"
