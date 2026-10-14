@@ -314,6 +314,46 @@ class DeclaredArrayFieldTest {
   }
 
   @Test
+  void projectedOptionalChildrenDoNotRunRulesAgainstValuesThatAccessRemoved() {
+    DeclaredFieldType<List<Row>> rows =
+        CollectionFieldTypes.array(
+            Row.class,
+            List.of(NAME, NUMBER.readableBy(AccessFunction.never())),
+            DeclaredArrayFieldTest::row,
+            row -> {
+              if (row.number() == null || row.number() < 1) {
+                throw new IllegalArgumentException("A positive number is required");
+              }
+            },
+            values -> {},
+            1,
+            2);
+    AccessContext context = new AccessContext(null, AccessContext.Operation.READ, "items");
+    assertEquals(
+        List.of(Map.of("name", "first")),
+        EmbeddedObjects.project(rows, List.of(Map.of("name", "first")), context));
+    assertThrows(
+        EmbeddedFieldException.class,
+        () -> EmbeddedObjects.serialize(rows, List.of(Map.of("name", "first")), context));
+  }
+
+  @Test
+  void changedChildDefaultsValidateBeforeTheAdapterCanReplaceTheirValues() throws Exception {
+    List<Row> defaults = new ArrayList<>(List.of(new Row("initial", 2, "private")));
+    DeclaredFieldType<RowGroup> group =
+        CollectionFieldTypes.object(
+            RowGroup.class,
+            List.of(Field.embedded("rows", ROWS, RowGroup::rows).defaultValue(defaults)),
+            values -> new RowGroup(List.of(new Row("replacement", 2, "private"))));
+    defaults.set(0, new Row(null, 2, "private"));
+    var body = JSON.readTree("{}");
+    EmbeddedFieldException failure =
+        assertThrows(EmbeddedFieldException.class, () -> group.parse(body));
+    assertEquals("rows[0].name", failure.path());
+    assertEquals(DocumentValidationException.Reason.REQUIRED, failure.reason());
+  }
+
+  @Test
   void freshCustomSerializerOutputRequiresHiddenChildrenBeforeValidatingTheArray() {
     MutableArray custom =
         new MutableArray() {
@@ -506,4 +546,6 @@ class DeclaredArrayFieldTest {
   private record Group(Row detail) {}
 
   private record GroupItem(Long id, List<Group> groups) {}
+
+  private record RowGroup(List<Row> rows) {}
 }
