@@ -37,6 +37,20 @@ class JsonValidationRoutingTest {
       InventoryApiSearchConfig search = new InventoryApiSearchConfig();
       search.setResultType("invalid");
 
+      assertEquals(
+          "Start date is required.",
+          validator
+              .validateValue(ScheduledMaintenance.class, "startDate", null)
+              .iterator()
+              .next()
+              .getMessage());
+      assertEquals(
+          "End date is required.",
+          validator
+              .validateValue(ScheduledMaintenance.class, "endDate", null)
+              .iterator()
+              .next()
+              .getMessage());
       assertMessage(validator, date, "format", "Date format is required.");
       assertMessage(validator, choice, "choiceOptions", "Choice options are required.");
       assertMessage(validator, radio, "radioOption", "Radio options are required.");
