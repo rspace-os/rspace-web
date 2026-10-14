@@ -180,7 +180,13 @@ public final class ApiV2DocumentParser {
                   return;
                 }
                 if (field.hasDefaultValue()) {
-                  values.put(field.name(), field.defaultValue());
+                  try {
+                    values.put(field.name(), field.validateValue(field.defaultValue()));
+                  } catch (EmbeddedFieldException ex) {
+                    violations.add(new Violation(path(field.name(), ex.path()), ex.reason()));
+                  } catch (RuntimeException ex) {
+                    violations.add(new Violation(field.name(), Reason.INVALID_VALUE));
+                  }
                 } else if (field.isRequiredOnCreate()) {
                   violations.add(new Violation(field.name(), Reason.REQUIRED));
                 }
