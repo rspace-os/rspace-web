@@ -10,9 +10,9 @@ public record SplitReferenceBinding<T, K, ID>(
   public SplitReferenceBinding {
     Objects.requireNonNull(reader, "Reference reader");
     if (kindProperty != null) {
-      kindProperty = requireProperty(kindProperty, "Kind property");
+      kindProperty = CollectionDescription.requireText(kindProperty, "Kind property");
     }
-    idProperty = requireProperty(idProperty, "ID property");
+    idProperty = CollectionDescription.requireText(idProperty, "ID property");
   }
 
   /** Creates a binding whose relationship target is fixed rather than stored on every row. */
@@ -27,12 +27,5 @@ public record SplitReferenceBinding<T, K, ID>(
 
   public boolean hasKindProperty() {
     return kindProperty != null;
-  }
-
-  private static String requireProperty(String property, String label) {
-    if (property == null || property.isBlank()) {
-      throw new IllegalArgumentException(label + " must not be blank");
-    }
-    return property;
   }
 }
