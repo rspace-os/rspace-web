@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -19,7 +19,7 @@ import com.researchspace.Constants;
 import com.researchspace.api.v1.controller.OAuthClientController;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.auth.PasswordGrantGuessLimiter;
-import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
 import com.researchspace.service.IReauthenticator;
@@ -44,9 +44,9 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
   private Object controllerTarget;
   private Object originalReauthenticator;
-  private Object originalCredentialsMatcher;
+  private Object originalSentinelCheck;
   private IReauthenticator reauthenticator;
-  private UsernamePasswordCredentialsMatcher credentialsMatcher;
+  private SentinelPasswordCheck sentinelCheck;
 
   /**
    * Spies are swapped into the shared beans by hand rather than with {@code @MockitoSpyBean}. A
@@ -61,16 +61,15 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
     reauthenticator = mock(IReauthenticator.class, delegatesTo(originalReauthenticator));
     ReflectionTestUtils.setField(controllerTarget, "reauthenticator", reauthenticator);
 
-    originalCredentialsMatcher = ReflectionTestUtils.getField(guessLimiter, "credentialsMatcher");
-    credentialsMatcher =
-        mock(UsernamePasswordCredentialsMatcher.class, delegatesTo(originalCredentialsMatcher));
-    ReflectionTestUtils.setField(guessLimiter, "credentialsMatcher", credentialsMatcher);
+    originalSentinelCheck = ReflectionTestUtils.getField(guessLimiter, "sentinelCheck");
+    sentinelCheck = mock(SentinelPasswordCheck.class, delegatesTo(originalSentinelCheck));
+    ReflectionTestUtils.setField(guessLimiter, "sentinelCheck", sentinelCheck);
   }
 
   @AfterEach
   public void restoreOriginals() {
     ReflectionTestUtils.setField(controllerTarget, "reauthenticator", originalReauthenticator);
-    ReflectionTestUtils.setField(guessLimiter, "credentialsMatcher", originalCredentialsMatcher);
+    ReflectionTestUtils.setField(guessLimiter, "sentinelCheck", originalSentinelCheck);
   }
 
   /**
@@ -373,8 +372,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
 
     verify(reauthenticator, times(5)).reauthenticate(any(), any());
-    verify(credentialsMatcher, times(1))
-        .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), any());
+    verify(sentinelCheck, times(1)).pad(eq(username), any());
   }
 
   @Test
@@ -427,7 +425,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
 
     verify(reauthenticator, never()).reauthenticate(any(), any());
-    verify(credentialsMatcher, times(1)).test(any(), any());
+    verify(sentinelCheck, times(1)).pad(any(), any());
   }
 
   private ResultActions passwordGrant(OAuthAppInfo app, String username, String password)
