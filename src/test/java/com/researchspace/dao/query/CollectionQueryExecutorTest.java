@@ -2,6 +2,7 @@ package com.researchspace.dao.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +10,8 @@ import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.blazebit.persistence.PagedList;
 import com.blazebit.persistence.PaginatedCriteriaBuilder;
+import com.blazebit.persistence.SelectObjectBuilder;
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
@@ -16,6 +19,7 @@ import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
@@ -106,6 +110,89 @@ class CollectionQueryExecutorTest {
     verify(query).orderByAsc("item.entityId");
   }
 
+  @Test
+  void projectsScalarRowsWithTheSameFilterConstraintsSortAndPage() {
+    CriteriaBuilder<WidgetRow> projection = scalarQuery();
+    PaginatedCriteriaBuilder<WidgetRow> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<WidgetRow> page = erasedMock(PagedList.class);
+    WidgetRow row = new WidgetRow(4L, "Ada");
+    when(projection.page(2, 2)).thenReturn(paginated);
+    when(paginated.getResultList()).thenReturn(page);
+    when(page.getTotalSize()).thenReturn(5L);
+    when(page.toArray()).thenReturn(new Object[] {row});
+    ResourceRequest request =
+        request(
+                new FilterExpression.Comparison(
+                    "displayName", Operator.EQUAL, List.of("Ada"), false),
+                List.of(new Sort("displayName", false)),
+                2,
+                2)
+            .restrict(
+                new FilterExpression.Comparison("id", Operator.LESS_THAN, List.of(10L), false));
+    Predicate restriction =
+        executor.compileConstraint(
+            new FilterExpression.Comparison("id", Operator.GREATER_THAN, List.of(1L), false));
+
+    ResourcePage<WidgetRow> result =
+        executor.projectedPage(
+            factory,
+            session,
+            request,
+            restriction,
+            RelationshipReadAccess.none(),
+            WidgetRow.class,
+            List.of("entityId", "name"));
+
+    assertEquals(List.of(row), result.resources());
+    assertEquals(5L, result.total());
+    verify(projection).whereExpression("item.name = :rsql0");
+    verify(projection).setParameter("rsql0", "Ada");
+    verify(projection).whereExpression("item.entityId < :rsqlRequestAccess0");
+    verify(projection).setParameter("rsqlRequestAccess0", 10L);
+    verify(projection).whereExpression("item.entityId > :rsqlAccess0");
+    verify(projection).setParameter("rsqlAccess0", 1L);
+    verify(projection).orderBy("item.name", false);
+    verify(projection).page(2, 2);
+    verify(factory, never()).create(session, Widget.class, "item");
+  }
+
+  @Test
+  void scalarPageUsesTheMappedIdForOverflowCounts() {
+    CriteriaBuilder<WidgetRow> projection = scalarQuery();
+    PaginatedCriteriaBuilder<WidgetRow> paginated = erasedMock(PaginatedCriteriaBuilder.class);
+    PagedList<WidgetRow> countPage = erasedMock(PagedList.class);
+    when(projection.page(0, 1)).thenReturn(paginated);
+    when(paginated.getResultList()).thenReturn(countPage);
+    when(countPage.getTotalSize()).thenReturn(7L);
+
+    ResourcePage<WidgetRow> result =
+        executor.projectedPage(
+            factory,
+            session,
+            request(null, List.of(), Integer.MAX_VALUE, 2),
+            null,
+            RelationshipReadAccess.none(),
+            WidgetRow.class,
+            List.of("entityId", "name"));
+
+    assertEquals(List.of(), result.resources());
+    assertEquals(7L, result.total());
+    verify(projection).orderByAsc("item.entityId");
+  }
+
+  private CriteriaBuilder<WidgetRow> scalarQuery() {
+    CriteriaBuilder<WidgetRow> projection = erasedMock(CriteriaBuilder.class);
+    SelectObjectBuilder<CriteriaBuilder<WidgetRow>> selection =
+        erasedMock(SelectObjectBuilder.class);
+    when(factory.create(session, WidgetRow.class)).thenReturn(projection);
+    when(projection.from(Widget.class, "item")).thenReturn(projection);
+    when(projection.selectNew(WidgetRow.class)).thenReturn(selection);
+    when(selection.with("item.entityId")).thenReturn(selection);
+    when(selection.with("item.name")).thenReturn(selection);
+    when(selection.end()).thenReturn(projection);
+    return projection;
+  }
+
   @SuppressWarnings("unchecked") // Mockito has no Class token for parameterized third-party APIs.
   private static <T> T erasedMock(Class<?> rawType) {
     return (T) mock(rawType);
@@ -133,4 +220,6 @@ class CollectionQueryExecutorTest {
   }
 
   private record Widget(Long entityId, String name) {}
+
+  private record WidgetRow(Long id, String name) {}
 }
