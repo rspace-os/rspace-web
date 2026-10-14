@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.openapi;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
@@ -1449,6 +1450,7 @@ public final class ApiV2OpenApiGenerator {
                 : "string";
     try {
       return switch (type) {
+        case "object", "array" -> Json31.mapper().readValue(value, Object.class);
         case "integer" -> Long.valueOf(value);
         case "number" -> new BigDecimal(value);
         case "boolean" -> {
@@ -1459,7 +1461,7 @@ public final class ApiV2OpenApiGenerator {
         }
         default -> value;
       };
-    } catch (NumberFormatException ex) {
+    } catch (JsonProcessingException | NumberFormatException ex) {
       throw new IllegalArgumentException(
           "OpenAPI value '" + value + "' is not a valid " + type, ex);
     }
