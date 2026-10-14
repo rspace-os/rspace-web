@@ -5,9 +5,11 @@ import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "rea
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import { BookableItemPicker } from "@/modules/booking/creation/BookableItemPicker";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
   currentWallClock,
@@ -188,8 +190,7 @@ export function BookingForm(props: BookingFormProps) {
             schedulingTimezone: target.timezone,
             slotGranularityMinutes: target.slotGranularityMinutes,
             maxBookingDurationMinutes: eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes,
-            openingStart: eventKind === "MAINTENANCE" ? "00:00" : target.openingStart,
-            openingEnd: eventKind === "MAINTENANCE" ? "24:00" : target.openingEnd,
+            openingHours: target.openingHours,
             enforceOpeningHours: eventKind !== "MAINTENANCE",
             allowPolicyMismatch,
           }).window
@@ -249,14 +250,20 @@ export function BookingForm(props: BookingFormProps) {
   }, [dirty, draft, eventKind, purposeValue, target, window]);
   const compact = props.density === "compact";
   const inline = props.layout === "inline";
+  const firstHours = target?.openingHours[0];
+  const uniformHours =
+    firstHours &&
+    target?.openingHours.length === ALL_ISO_WEEKDAYS.length &&
+    target.openingHours.every((entry) => entry.start === firstHours.start && entry.end === firstHours.end)
+      ? firstHours
+      : undefined;
   const windowFields = target ? (
     <ZonedBookingWindowFields
       displayTimezone={displayTimezone}
       schedulingTimezone={target.timezone}
       slotGranularityMinutes={target.slotGranularityMinutes}
       maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes}
-      openingStart={eventKind === "MAINTENANCE" ? "00:00" : target.openingStart}
-      openingEnd={eventKind === "MAINTENANCE" ? "24:00" : target.openingEnd}
+      openingHours={target.openingHours}
       enforceOpeningHours={eventKind !== "MAINTENANCE"}
       value={draft}
       onChange={setDraft}
@@ -302,18 +309,29 @@ export function BookingForm(props: BookingFormProps) {
           <>
             {eventKind === "BOOKING" && props.showRulesSummary !== false && !inline ? (
               <>
-                <p className="text-sm text-muted-foreground">
-                  {t(
-                    target.timezone === displayTimezone
-                      ? "bookings.form.openingHours"
-                      : "bookings.form.openingHoursDifferentTimezone",
-                    {
-                      start: target.openingStart,
-                      end: target.openingEnd,
-                      timezone: target.timezone,
-                    },
-                  )}
-                </p>
+                {uniformHours ? (
+                  <p className="text-sm text-muted-foreground">
+                    {target.timezone === displayTimezone
+                      ? t("bookings.form.openingHours", { start: uniformHours.start, end: uniformHours.end })
+                      : t("bookings.form.openingHoursDifferentTimezone", {
+                          start: uniformHours.start,
+                          end: uniformHours.end,
+                          timezone: target.timezone,
+                        })}
+                  </p>
+                ) : (
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground text-sm">
+                    {[
+                      ...openingHoursFacts(target, t),
+                      [t("bookableItemDetails.fields.timezone"), target.timezone] as const,
+                    ].map(([label, value]) => (
+                      <div key={label} className="contents">
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
                 {target.maxBookingDurationMinutes > 0 ? (
                   <p className="text-sm text-muted-foreground">
                     {t("bookings.form.maximumDuration", {
