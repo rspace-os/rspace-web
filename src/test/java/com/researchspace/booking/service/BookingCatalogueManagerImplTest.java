@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -14,10 +15,15 @@ import static org.mockito.Mockito.when;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +62,18 @@ class BookingCatalogueManagerImplTest {
   @Test
   void appliesCapabilityTargetIntersectionBeforeRequestedPage() {
     Set<Long> capableTargetIds = Set.of(101L, 202L);
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.setId(7L);
+    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 101L));
+    List<BookingOpeningHoursEntry> openingHours =
+        List.of(
+            new BookingOpeningHoursEntry(1, "09:00", "17:00"),
+            new BookingOpeningHoursEntry(2, "10:00", "16:00"));
+    configuration.setOpeningHours(openingHours);
+    Instrument instrument = mock(Instrument.class);
+    when(instrument.getId()).thenReturn(101L);
+    when(instrument.getGlobalIdentifier()).thenReturn("IN101");
+    when(instrument.getName()).thenReturn("Microscope");
     Set<String> bookingRoles =
         Set.of(
             BookingResourceRoleScheme.OWNER,
@@ -64,9 +82,10 @@ class BookingCatalogueManagerImplTest {
     when(configurationDao.findBookableInstrumentIds(caller, bookingRoles))
         .thenReturn(capableTargetIds);
     when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
-        .thenReturn(new ResourcePage<>(List.of(), 2));
-    when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
-    when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
+        .thenReturn(new ResourcePage<>(List.of(configuration), 2));
+    when(instruments.getBookingRelationshipTargets(Set.of(101L)))
+        .thenReturn(Map.of(101L, instrument));
+    when(instruments.getReadableParentLocationSummaries(Set.of(101L), caller)).thenReturn(Map.of());
 
     BookingCatalogueManager.Page result =
         manager.search(
@@ -83,6 +102,7 @@ class BookingCatalogueManagerImplTest {
     assertEquals(3, result.page());
     assertEquals(7, result.pageSize());
     assertEquals(2, result.total());
+    assertEquals(openingHours, result.items().get(0).openingHours());
     ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations).getConfigurations(request.capture(), same(caller));
     assertEquals(new ResourceRequest.Page(3, 7), request.getValue().page());
