@@ -612,7 +612,7 @@ class TimeSlotBookingSchedulingTest {
     ResolvedBookableTarget target = target(12L);
     BookingConfiguration configuration = configuration(4L, 12L, true);
     configuration.setTimeZone("UTC");
-    configuration.setOpenDays(List.of(3));
+    configuration.setOpeningHours(hours("08:00", "18:00", 3));
     when(configurationDao.lockActiveByTarget(target.reference()))
         .thenReturn(Optional.of(configuration));
 
