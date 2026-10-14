@@ -106,7 +106,7 @@ async function fetchCandidatePage(page: number, token: string, signal: AbortSign
     limit: "100",
     depth: "1",
     "fields[booking-configurations]":
-      "target,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
+      "target,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
   });
   const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
@@ -146,8 +146,7 @@ export async function loadAvailabilityQuickIndex(
           {
             globalId: candidate.target.globalId,
             timezone: candidate.timezone,
-            openingStart: candidate.openingStart,
-            openingEnd: candidate.openingEnd,
+            openingHours: candidate.openingHours,
             bufferBeforeMinutes: candidate.bufferBeforeMinutes,
             bufferAfterMinutes: candidate.bufferAfterMinutes,
             maxBookingDurationMinutes: candidate.maxBookingDurationMinutes,
@@ -192,8 +191,7 @@ export function useAvailabilityQuickFilterIndex(
             [
               candidate.target.globalId,
               candidate.timezone,
-              candidate.openingStart,
-              candidate.openingEnd,
+              JSON.stringify(candidate.openingHours),
               candidate.bufferBeforeMinutes,
               candidate.bufferAfterMinutes,
               candidate.maxBookingDurationMinutes,
