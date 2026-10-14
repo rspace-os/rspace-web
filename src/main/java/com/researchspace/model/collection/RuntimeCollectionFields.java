@@ -102,6 +102,18 @@ public interface RuntimeCollectionFields<T> {
     return Map.of();
   }
 
+  /**
+   * Loads values from the authorized IDs of a scalar-document page.
+   *
+   * <p>The caller must have applied this collection's row-read policy before invoking this method.
+   * Providers may use those IDs directly without entity carriers. The default retains the safer
+   * arbitrary-ID check in {@link #valuesForIds}.
+   */
+  default Map<Object, Map<String, Object>> valuesForAuthorizedIds(
+      Collection<?> resourceIds, Set<String> fieldIds, User actor) {
+    return valuesForIds(resourceIds, fieldIds, actor);
+  }
+
   static <T> RuntimeCollectionFields<T> none() {
     return new RuntimeCollectionFields<>() {
 
