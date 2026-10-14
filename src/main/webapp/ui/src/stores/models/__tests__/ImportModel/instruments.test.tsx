@@ -226,7 +226,7 @@ describe("instrumentsSubmittable", () => {
     expect(model.instrumentsSubmittable).toBe(true);
   });
 
-  test("is true for the ticket's PIDINST CSV, whose date, link and web address columns are blank in every row", () => {
+  test("is true for a PIDINST CSV whose date, link and web address columns are blank in every row", () => {
     // [template field name, template field type, mandatory, blank in every row]
     const pidinstFields: Array<[string, FieldModelType, boolean, boolean]> = [
       ["Owner", "string", true, false],
@@ -386,7 +386,7 @@ describe("importInstrumentMatchesExistingTemplate", () => {
     expect(model.importInstrumentMatchesExistingTemplate).toEqual({ matches: true });
   });
 
-  test.each(["date", "uri", "link", "number", "time"] as const)(
+  test.each(["date", "uri", "number", "time", "reference", "attachment"] as const)(
     "returns matches:true when a column with no value in any row fills a %s field",
     (type) => {
       const model = new ImportModel("INSTRUMENTS");

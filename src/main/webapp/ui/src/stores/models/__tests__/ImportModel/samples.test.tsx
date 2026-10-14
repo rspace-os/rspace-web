@@ -14,7 +14,7 @@ vi.mock("../../../stores/getRootStore", () => ({
   }),
 }));
 
-const matchWithBlankColumnFor = (type: FieldModelType, mandatory = false) => {
+const matchWithBlankColumnFor = (type: FieldModelType, mandatory = false, blankColumns = ["Collected"]) => {
   const model = new ImportModel("SAMPLES");
   runInAction(() => {
     model.createNewTemplate = false;
@@ -44,7 +44,7 @@ const matchWithBlankColumnFor = (type: FieldModelType, mandatory = false) => {
         fieldChangeCallback: () => {},
         isNameUnique: (c) => model.isNameUnique(c),
         columnsWithoutBlankValue: [],
-        blankColumns: ["Collected"],
+        blankColumns,
       }),
     ];
   });
@@ -52,12 +52,19 @@ const matchWithBlankColumnFor = (type: FieldModelType, mandatory = false) => {
 };
 
 describe("importMatchesExistingTemplate", () => {
-  test.each(["date", "uri", "link", "number", "time"] as const)(
+  test.each(["date", "uri", "number", "time", "reference", "attachment"] as const)(
     "returns matches:true when a column with no value in any row fills a %s field",
     (type) => {
       expect(matchWithBlankColumnFor(type)).toEqual({ matches: true });
     },
   );
+
+  test("returns matches:false when a column blank in only some rows holds text for a date field", () => {
+    expect(matchWithBlankColumnFor("date", false, [])).toEqual({
+      matches: false,
+      reason: "inventory:import.columnMapping.templateColumnTypeMismatch",
+    });
+  });
 
   test("still refuses a column with no value in any row for a mandatory field", () => {
     expect(matchWithBlankColumnFor("date", true)).toEqual({
