@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
-import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
 import com.researchspace.service.IReauthenticator;
@@ -41,7 +41,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
 
   @Autowired private OAuthAppManager oAuthAppManager;
   @MockitoSpyBean private IReauthenticator reauthenticator;
-  @MockitoSpyBean private UsernamePasswordCredentialsMatcher credentialsMatcher;
+  @MockitoSpyBean private SentinelPasswordCheck sentinelCheck;
 
   /**
    * OAuth starts disabled on a fresh database, so each test enables it first. Some tests disable it
@@ -343,8 +343,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
 
     verify(reauthenticator, times(5)).reauthenticate(any(), any());
-    verify(credentialsMatcher, times(1))
-        .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), any());
+    verify(sentinelCheck, times(1)).pad(eq(username), any());
   }
 
   @Test
@@ -397,7 +396,7 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
         .andExpect(jsonPath("$.message").value(INVALID_CREDENTIALS));
 
     verify(reauthenticator, never()).reauthenticate(any(), any());
-    verify(credentialsMatcher, times(1)).test(any(), any());
+    verify(sentinelCheck, times(1)).pad(any(), any());
   }
 
   private ResultActions passwordGrant(OAuthAppInfo app, String username, String password)
