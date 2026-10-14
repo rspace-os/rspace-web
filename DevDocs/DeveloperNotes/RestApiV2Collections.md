@@ -37,6 +37,17 @@ properties. `InventoryReadFilters` and `InstrumentReadAccess` demonstrate this p
 Public relationships must remain resolvable after the read transaction commits. Supply batched
 read overrides or safe scalar projections rather than relying on lazy entity traversal.
 
+Instrument list and single reads use `ResourceOperations.usesReadDocuments()` and
+`findReadDocuments()` to project scalar rows through the same collection query compiler and
+pagination as entity reads. `CollectionQueryExecutor.projectedPage()` avoids hydrating the
+Inventory aggregate. The renderer validates supplied declared objects and arrays before applying
+selection and per-row field access. Location masking resolves the authorized page's current
+parents in bulk. Runtime providers receive those page IDs through `valuesForAuthorizedIds()`;
+its default delegates to the provider's authorization-aware `valuesForIds()`. Providers may trust
+these IDs only after the collection read policy has selected the page. Scalar read documents do
+not bind relationships. Entity reads remain available to internal domain callers and relationship
+resolution.
+
 ## Authentication and request limits
 
 `api.permissiveCors.enabled=true` enables v2 CORS for API credentials. The browser-session token
