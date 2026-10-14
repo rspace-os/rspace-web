@@ -798,6 +798,10 @@ that share a name are two definitions. The query restricts by the concrete field
 numeric comparison never converts the text field's values and never matches it by accident.
 
 Runtime-field values are queried from the database, including ad-hoc extra fields.
+Instrument custom-field projection selects only the instrument ID, definition ID, declared type
+and stored data for the authorized page IDs. It does not hydrate field entities or their instrument
+and template associations. A missing value row omits the definition; an existing row with null or
+empty data publishes null through the same runtime-field codec used for populated rows.
 
 ### Text matching on a runtime field or a relationship target
 
