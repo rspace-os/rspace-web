@@ -333,6 +333,11 @@ final class AnnotatedCollectionDescriptionFactory {
   }
 
   private static CollectionFieldType<?> fieldType(Class<?> type, int maxLength) {
+    if (type.isArray() || Iterable.class.isAssignableFrom(type)) {
+      throw new IllegalArgumentException(
+          "Array resource fields require declared children. Use CollectionFieldTypes.array with"
+              + " Field.embedded children in a programmatic CollectionDescription.");
+    }
     if (type == String.class) {
       if (maxLength < -1) {
         throw new IllegalArgumentException("Text maximum length must not be less than -1");

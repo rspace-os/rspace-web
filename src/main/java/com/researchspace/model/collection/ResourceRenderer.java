@@ -463,7 +463,10 @@ public final class ResourceRenderer {
     Map<String, Object> selected = new LinkedHashMap<>();
     description.fields().stream()
         .filter(field -> fields.includes(field.name(), description.idField()))
-        .filter(field -> field.readAccess().allowsField(context))
+        .filter(
+            field ->
+                description.idField().equals(field.name())
+                    || field.readAccess().allowsField(context))
         .filter(field -> document.containsKey(field.name()))
         .forEach(
             field ->
