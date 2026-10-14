@@ -1,6 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
+import { isPublicDocumentView } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -18,9 +19,6 @@ import {
   type SystemSettings,
   systemSettingsFromApiResponse,
 } from "./systemSettingsMapping";
-
-/* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
-const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
 
 export type {
   B2InstSettings,
@@ -48,7 +46,7 @@ export default class AuthStore {
       pidinstEnabled: observable,
       authenticate: action,
       signOut: action,
-      synchronizeWithSessionStorage: action,
+      refreshAuthentication: action,
       getSystemSettings: action,
       setSystemSettings: action,
       fetchPidinstEnabled: action,
@@ -101,10 +99,7 @@ export default class AuthStore {
     await ElnApiService.get<void>("status");
   }
 
-  synchronizeWithSessionStorage(): Promise<void> {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-    }
+  refreshAuthentication(): Promise<void> {
     this.isSynchronizing = true;
     return this.authenticate();
   }
