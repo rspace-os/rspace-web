@@ -2166,7 +2166,7 @@
           "requesterId" : {
             "format" : "int64",
             "readOnly" : true,
-            "type" : "integer",
+            "type" : [ "integer", "null" ],
             "x-rspace-access" : {
               "authentication" : "AUTHENTICATED",
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
@@ -7792,7 +7792,7 @@
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
                   "format" : "int64",
-                  "type" : "integer"
+                  "type" : [ "integer", "null" ]
                 },
                 "wildcards" : false
               },
@@ -8477,7 +8477,7 @@
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
                   "format" : "int64",
-                  "type" : "integer"
+                  "type" : [ "integer", "null" ]
                 },
                 "wildcards" : false
               },
