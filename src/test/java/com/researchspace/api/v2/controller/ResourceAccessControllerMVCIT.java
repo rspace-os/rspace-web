@@ -78,6 +78,23 @@ class ResourceAccessControllerMVCIT {
         .andExpect(jsonPath("$.caller.capabilities.canManageOwners").value(false))
         .andExpect(jsonPath("$.caller.capabilities.canLeave").value(false))
         .andExpect(jsonPath("$.caller.granteeKey").value("user:" + owner.getId()));
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configurations/" + configurationId)
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openingHours.length()").value(7))
+        .andExpect(jsonPath("$.roleSources.length()").value(1))
+        .andExpect(jsonPath("$.roleSources[0]").value(Map.of("kind", "IMPLICIT", "role", "OWNER")))
+        .andExpect(jsonPath("$.ownerHealth").doesNotExist());
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configurations/" + configurationId)
+                .header("apiKey", fixture.sysadminKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ownerHealth").value(Map.of()));
   }
 
   @Test
