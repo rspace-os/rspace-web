@@ -4,6 +4,7 @@ import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.auth.PasswordGrantGuessLimiter;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.OAuthTokenType;
@@ -14,6 +15,7 @@ import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserManager;
@@ -122,11 +124,11 @@ public class OAuthClientController {
         response = passwordGrant(clientId, clientSecret, user, password, isJwt, request);
 
       } catch (DataAccessException e) {
-        guessLimiter.padWithSentinelCheck(username, password);
         SECURITY_LOG.warn(
             "OAuth password flow request for unknown username [{}], from {}",
             username.replaceAll("[\\r\\n]", " "),
             RequestUtil.remoteAddr(request));
+        guessLimiter.padWithSentinelCheck(username, password);
         throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
       }
       return response;
@@ -186,9 +188,13 @@ public class OAuthClientController {
       guessLimiter.padWithSentinelCheck(subject.getUsername(), password);
       throw new ApiAuthenticationException("oauth.errors.invalidCredentials");
     }
-    boolean credentialsMatch = reauthenticator.reauthenticate(subject, password);
-
-    if (!credentialsMatch) {
+    ReauthenticationResult reauthentication = reauthenticator.reauthenticate(subject, password);
+    if (reauthentication == ReauthenticationResult.BUSY) {
+      guessLimiter.uncount(subject.getUsername());
+      throw new LoginVerificationBusyException(
+          "OAuth password check for [" + subject.getUsername() + "] refused as busy");
+    }
+    if (reauthentication == ReauthenticationResult.WRONG) {
       SECURITY_LOG.warn(
           "OAuth password flow request with invalid credentials " + "for username [{}], from {}",
           subject.getUsername(),

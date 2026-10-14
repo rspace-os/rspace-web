@@ -11,6 +11,7 @@ import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,8 @@ class VerificationPasswordResetHandlerTest {
   @Test
   void currentPasswordIsCheckedThroughTheReauthenticatorAndRefusalChangesNothing() {
     User user = TestFactory.createAnyUser("sso");
-    when(reauthenticator.reauthenticateWithVerificationPassword(user, "current")).thenReturn(false);
+    when(reauthenticator.reauthenticateWithVerificationPassword(user, "current"))
+        .thenReturn(ReauthenticationResult.WRONG);
     when(messages.getMessage("passwordChange.errors.incorrectCurrentPassword"))
         .thenReturn("incorrect");
 
@@ -48,7 +50,8 @@ class VerificationPasswordResetHandlerTest {
   @Test
   void correctCurrentPasswordSavesTheNewVerificationPassword() {
     User user = TestFactory.createAnyUser("sso");
-    when(reauthenticator.reauthenticateWithVerificationPassword(user, "current")).thenReturn(true);
+    when(reauthenticator.reauthenticateWithVerificationPassword(user, "current"))
+        .thenReturn(ReauthenticationResult.OK);
     when(validator.validatePasswords("newPassword1", "newPassword1", user.getUsername()))
         .thenReturn(UserValidator.FIELD_OK);
     when(verificationPasswordValidator.hashVerificationPassword("newPassword1"))

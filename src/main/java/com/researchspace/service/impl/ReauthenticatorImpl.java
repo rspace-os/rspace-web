@@ -8,6 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserManager;
 import java.util.function.BooleanSupplier;
 import org.slf4j.Logger;
@@ -25,14 +26,15 @@ public class ReauthenticatorImpl implements IReauthenticator {
 
   /**
    * Reauthenticates a user; or if is sysadmin operating as a user, sysadmin can reauthenticate with
-   * his own password. A check the password verifier refuses as busy fails like a wrong password
-   * (RSDEV-894). Nothing is written to the user.
+   * his own password. A check the password verifier refuses as busy is reported as {@link
+   * ReauthenticationResult#BUSY}, not as a wrong password (RSDEV-894). Nothing is written to the
+   * user.
    *
    * @param subject The principal user - i.e., the subject, or whoever sysadmin is operating as.
    * @param pwd the password. This should be the subject's password, or the sysadmin password if
    *     operating as.
    */
-  public boolean reauthenticate(User subject, String pwd) {
+  public ReauthenticationResult reauthenticate(User subject, String pwd) {
 
     // check this first, before doing any password validation:  rspac-2223
     User account = userMgr.getOriginalUserForOperateAs(subject);
@@ -40,24 +42,25 @@ public class ReauthenticatorImpl implements IReauthenticator {
   }
 
   @Override
-  public boolean reauthenticateWithVerificationPassword(User passwordOwner, String pwd) {
+  public ReauthenticationResult reauthenticateWithVerificationPassword(
+      User passwordOwner, String pwd) {
     return logged(
         passwordOwner,
         () -> verificationPasswordValidator.authenticateVerificationPassword(passwordOwner, pwd));
   }
 
-  private boolean logged(User subject, BooleanSupplier passwordCheck) {
+  private ReauthenticationResult logged(User subject, BooleanSupplier passwordCheck) {
     boolean authenticated;
     try {
       authenticated = passwordCheck.getAsBoolean();
     } catch (LoginVerificationBusyException e) {
       SECURITY_LOG.warn("Reauthentication refused: {}", e.getMessage());
-      return false;
+      return ReauthenticationResult.BUSY;
     }
     if (!authenticated) {
       SECURITY_LOG.warn("Failed reauthentication as [{}]", subject.getUsername());
     }
-    return authenticated;
+    return ReauthenticationResult.of(authenticated);
   }
 
   private boolean checkPassword(User subject, String pwd) {

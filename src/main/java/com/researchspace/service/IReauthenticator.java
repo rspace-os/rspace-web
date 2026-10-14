@@ -15,8 +15,10 @@ public interface IReauthenticator {
    *
    * @param subject The principal user - i.e., the subject, or whoever sysadmin is operating as.
    * @param pwd the password
+   * @return {@link ReauthenticationResult#BUSY} when the password verifier refused the check as
+   *     busy, so the caller can tell the user to retry instead of saying the password was wrong
    */
-  boolean reauthenticate(User subject, String pwd);
+  ReauthenticationResult reauthenticate(User subject, String pwd);
 
   /**
    * Checks a user's own verification password, e.g. before changing it, with the same busy handling
@@ -26,5 +28,5 @@ public interface IReauthenticator {
    * @param passwordOwner the user whose verification password is checked
    * @param pwd the candidate verification password
    */
-  boolean reauthenticateWithVerificationPassword(User passwordOwner, String pwd);
+  ReauthenticationResult reauthenticateWithVerificationPassword(User passwordOwner, String pwd);
 }
