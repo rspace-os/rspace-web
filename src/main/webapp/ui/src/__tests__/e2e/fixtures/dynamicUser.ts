@@ -4,7 +4,17 @@ import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
 import { performLogin, loginInNewContext as sessionLoginInNewContext } from "./flows/sessions/userSessions";
 
-type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
+export type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
+
+/** Compatibility helper for booking specs that need the created user's id and password. */
+export async function createDynamicUser(
+  clientSysadmin: Parameters<typeof createSharedDynamicUser>[0],
+  role: CreatableRole,
+  namePrefix: string,
+): Promise<Awaited<ReturnType<typeof createSharedDynamicUser>> & { password: string }> {
+  const user = await createSharedDynamicUser(clientSysadmin, role, namePrefix);
+  return { ...user, password: DYNAMIC_USER_PASSWORD };
+}
 
 type DynamicUserFixtures = {
   flowCreateUser: (
