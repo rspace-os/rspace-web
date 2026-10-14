@@ -11,6 +11,7 @@ pagination and counting. Do not filter results in the controller after paginatio
 | Route | Access |
 | --- | --- |
 | `GET /api/v2/config` | Public deployment information. |
+| `GET /api/v2/openapi.json` | Public generated OpenAPI 3.1 document. |
 | `POST /api/v2/oauth/tokens` | Authenticated browser session; issues a session-bound UI token. |
 | `GET /api/v2/users/me` | Authenticated current-user information. |
 | `GET /api/v2/users/me/profile-image` | Authenticated current-user profile image. |
@@ -48,6 +49,31 @@ providers must explicitly implement `valuesForAuthorizedIds()` and may trust tho
 the collection read policy has selected the page. Scalar read documents do
 not bind relationships. Entity reads remain available to internal domain callers and relationship
 resolution.
+
+## Declared array fields
+
+Declare each public object array with `CollectionFieldTypes.array(...)` and its children with
+`Field.embedded(...)`. Pass that declared type to the resource field. For example:
+
+```java
+record Label(String text) {}
+
+var labels = CollectionFieldTypes.array(
+    Label.class,
+    List.of(Field.embedded("text", CollectionFieldTypes.text(80), Label::text).required()),
+    values -> new Label((String) values.get("text")));
+```
+
+Use `CollectionFieldTypes.object(...)` for a nested object and another declared array for nested
+rows. OpenAPI derives their recursive `properties` and `items` from these child fields, with
+`additionalProperties: false` on each object. It preserves child constraints, documentation,
+nullability and operation-specific access rules. `x-rspace-fields` contains the same recursive
+field metadata. The declared child list controls the public object shape.
+
+The array factory's row bounds become `minItems` and `maxItems`. Internal create and update body
+schemas describe a supplied array as a complete replacement. Required children and child defaults
+apply to every supplied row on either operation, while the outer field remains optional in an
+update body. These schemas do not enable HTTP write routes for read-only collections.
 
 ## Authentication and request limits
 
