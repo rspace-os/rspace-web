@@ -5,8 +5,11 @@ import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import {
+  calendarAvailabilityRow,
+  closedDayRanges,
   loadCalendarAvailability,
   loadDatedCalendarAvailability,
   useCalendarAvailability,
@@ -50,7 +53,7 @@ const booking = (id: number, target: string, start: string, end: string) => ({
 });
 
 const schedule = {
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   allowDoubleBooking: false,
@@ -234,7 +237,7 @@ describe("calendar availability", () => {
     ]);
   });
 
-  it("generates and clips closures for every scheduling date overlapped by the display interval", async () => {
+  it("generates closures between the opening intervals of every scheduling date overlapped by the display interval", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
     const interval = displayInterval("2026-08-18", "Pacific/Auckland", "00:00", "24:00");
 
@@ -243,7 +246,7 @@ describe("calendar availability", () => {
         {
           globalId: "IN1",
           timezone: "America/Los_Angeles",
-          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
           bufferBeforeMinutes: 0,
           bufferAfterMinutes: 0,
           allowDoubleBooking: false,
@@ -255,6 +258,7 @@ describe("calendar availability", () => {
     );
 
     expect(interval).toMatchObject({ start: "2026-08-17T12:00:00Z", end: "2026-08-18T12:00:00Z" });
+    // The evening and next-morning closures meet at the scheduling midnight, so they form one closed period.
     expect(result.get("IN1")).toEqual([
       sourced(
         closureId("IN1", "2026-08-17T12:00:00Z", "2026-08-17T15:00:00Z"),
@@ -271,6 +275,93 @@ describe("calendar availability", () => {
     ]);
   });
 
+  it("closes omitted weekdays even when the listed days are all day", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const row = {
+      ...schedule,
+      globalId: "IN1",
+      timezone: "UTC",
+      openingHours: schedule.openingHours.filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek)),
+    };
+    // Saturday 2026-08-22 through the end of Monday 2026-08-24.
+    const interval = { ...displayInterval("2026-08-22", "UTC", "00:00", "24:00"), end: "2026-08-25T00:00:00Z" };
+
+    const result = await loadCalendarAvailability([row], interval, "token", new AbortController().signal);
+
+    expect(result.get("IN1")).toEqual([
+      sourced(
+        closureId("IN1", "2026-08-22T00:00:00Z", "2026-08-24T00:00:00Z"),
+        "blockout",
+        "2026-08-22T00:00:00Z",
+        "2026-08-24T00:00:00Z",
+      ),
+    ]);
+  });
+
+  it("uses each weekday's own hours", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const row = {
+      ...schedule,
+      globalId: "IN1",
+      timezone: "UTC",
+      openingHours: schedule.openingHours
+        .map((entry) => ({ ...entry, start: "09:00", end: "17:00" }))
+        .map(
+          (entry) =>
+            [{ dayOfWeek: 2, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
+    };
+    // Monday 2026-08-17 and Tuesday 2026-08-18.
+    const interval = { ...displayInterval("2026-08-17", "UTC", "00:00", "24:00"), end: "2026-08-19T00:00:00Z" };
+
+    const result = await loadCalendarAvailability([row], interval, "token", new AbortController().signal);
+
+    expect(result.get("IN1")?.map(({ startsAt, endsAt }) => [startsAt.toISOString(), endsAt.toISOString()])).toEqual([
+      ["2026-08-17T00:00:00.000Z", "2026-08-17T09:00:00.000Z"],
+      ["2026-08-17T17:00:00.000Z", "2026-08-18T10:00:00.000Z"],
+      ["2026-08-18T16:00:00.000Z", "2026-08-19T00:00:00.000Z"],
+    ]);
+  });
+
+  it("requires a complete schedule in an availability row", () => {
+    expect(
+      calendarAvailabilityRow({ ...schedule, globalId: "IN1", timezone: "UTC", openingHours: undefined }),
+    ).toBeUndefined();
+  });
+
+  it("recomputes closures when only one weekday's hours change", async () => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result, rerender } = renderHook(
+      ({ end }) =>
+        useCalendarAvailability(
+          [
+            {
+              globalId: "IN1",
+              timezone: "UTC",
+              ...schedule,
+              openingHours: schedule.openingHours.map(
+                (entry) =>
+                  [{ dayOfWeek: 1, start: "09:00", end }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+              ),
+            },
+          ],
+          "2026-08-17",
+          "token",
+        ),
+      { wrapper, initialProps: { end: "17:00" } },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T17:00:00.000Z");
+
+    rerender({ end: "18:00" });
+
+    await waitFor(() =>
+      expect(result.current.data?.get("IN1")?.at(-1)?.startsAt.toISOString()).toBe("2026-08-17T18:00:00.000Z"),
+    );
+  });
+
   it("marks closed and buffered periods unavailable while double-bookable events stay available", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
@@ -280,7 +371,7 @@ describe("calendar availability", () => {
     const restricted = {
       globalId: "IN1",
       timezone: "UTC",
-      openingHours: [{ dayOfWeek: 1, start: "08:00", end: "18:00" }],
+      openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
       bufferBeforeMinutes: 10,
       bufferAfterMinutes: 20,
       allowDoubleBooking: false,
@@ -338,36 +429,32 @@ describe("calendar availability", () => {
     ).rejects.toThrow();
   });
 
-  it.each([
-    {
-      date: "2026-08-17",
-      closures: [
-        ["2026-08-17T00:00:00Z", "2026-08-17T08:00:00Z"],
-        ["2026-08-17T17:00:00Z", "2026-08-18T00:00:00Z"],
-      ],
-    },
-    { date: "2026-08-18", closures: [["2026-08-18T00:00:00Z", "2026-08-18T10:00:00Z"]] },
-    { date: "2026-08-19", closures: [["2026-08-19T00:00:00Z", "2026-08-20T00:00:00Z"]] },
-  ])("uses the independent weekday schedule on $date", async ({ date, closures }) => {
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
-    const result = await loadCalendarAvailability(
-      [
-        {
-          globalId: "IN1",
-          timezone: "UTC",
-          ...schedule,
-          openingHours: [
-            { dayOfWeek: 1, start: "08:00", end: "17:00" },
-            { dayOfWeek: 2, start: "10:00", end: "24:00" },
-          ],
-        },
-      ],
-      date,
-      "token",
-      new AbortController().signal,
-    );
-    expect(result.get("IN1")).toEqual(
-      closures.map(([start, end]) => sourced(closureId("IN1", start, end), "blockout", start, end)),
-    );
+  it("converts closures on the displayed day to timeline minutes", () => {
+    const schedule = {
+      globalId: "IN1",
+      timezone: "Europe/Berlin",
+      openingHours: [1, 2, 3, 4, 5]
+        .map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" }))
+        .map(
+          (entry) =>
+            [{ dayOfWeek: 5, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
+    };
+    expect(closedDayRanges(schedule, "2026-09-21", "Europe/Berlin")).toEqual([
+      { startMinute: 0, endMinute: 9 * 60 },
+      { startMinute: 17 * 60, endMinute: 24 * 60 },
+    ]);
+    expect(closedDayRanges(schedule, "2026-09-25", "Europe/Berlin")).toEqual([
+      { startMinute: 0, endMinute: 10 * 60 },
+      { startMinute: 16 * 60, endMinute: 24 * 60 },
+    ]);
+    expect(closedDayRanges(schedule, "2026-09-26", "Europe/Berlin")).toEqual([{ startMinute: 0, endMinute: 24 * 60 }]);
+    // A viewer in London sees the Berlin schedule an hour earlier.
+    expect(closedDayRanges(schedule, "2026-09-21", "Europe/London")).toEqual([
+      { startMinute: 0, endMinute: 8 * 60 },
+      { startMinute: 16 * 60, endMinute: 24 * 60 },
+    ]);
+    // The 23-hour clock-change day is fully shaded when closed.
+    expect(closedDayRanges(schedule, "2026-03-29", "Europe/Berlin")).toEqual([{ startMinute: 0, endMinute: 23 * 60 }]);
   });
 });

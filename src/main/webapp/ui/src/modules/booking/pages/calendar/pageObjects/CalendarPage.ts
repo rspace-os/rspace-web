@@ -14,6 +14,7 @@ export class CalendarPage {
   readonly search: Locator = page.getByRole("textbox", { name: "Search Calendar" });
   readonly timeGridLayout: Locator = page.getByRole("button", { name: "Time grid" });
   readonly timeGrid: Locator = page.getByRole("region", { name: "Time grid" });
+  readonly weekGrid: Locator = this.timeGrid.getByRole("region", { name: "Calendar grid" });
   readonly resources: Locator = page.getByRole("button", { name: "Resources" });
   readonly resourceSchedule: Locator = page.getByRole("region", { name: "Resource booking schedule" });
   readonly agenda: Locator = page.getByRole("button", { name: "Agenda" });
@@ -26,6 +27,7 @@ export class CalendarPage {
   readonly next: Locator = this.toolbar.getByRole("button", { name: /^Next / });
   readonly newBooking: Locator = page.getByRole("button", { name: "New Booking" });
   readonly timeZone: Locator = this.toolbar.getByLabelText(/^Time zone:/);
+  readonly removeTargetFilter: Locator = page.getByRole("button", { name: "Remove bookable item filter" });
 
   event(itemName: string): Locator {
     return page.getByRole("article", { name: new RegExp(itemName) });

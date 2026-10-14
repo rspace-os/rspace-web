@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import i18n from "@/modules/common/i18n";
+import { Badge } from "@/modules/common/ui/badge";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import type { BookingListDocument } from "../../domain/booking";
@@ -11,11 +14,25 @@ function dateTime(value: BookingListDocument["start"], timeZone: string, instrum
   return (
     <BookingInstrumentTimeTooltip start={value} displayTimeZone={timeZone} instrumentTimeZone={instrumentTimeZone}>
       <time dateTime={value}>
-        {new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeStyle: "short", timeZone }).format(
-          new Date(value),
-        )}
+        {new Intl.DateTimeFormat(i18n.language, {
+          dateStyle: "medium",
+          timeStyle: "short",
+          hourCycle: bookingHourCycle(),
+          timeZone,
+        }).format(new Date(value))}
       </time>
     </BookingInstrumentTimeTooltip>
+  );
+}
+
+function BookingStateBadge({ state }: { state: BookingListDocument["state"] }) {
+  const { t } = useTranslation("booking");
+  return state === "CANCELLED" ? (
+    <Badge variant="outline" className="text-muted-foreground">
+      {t("bookings.details.cancelled")}
+    </Badge>
+  ) : (
+    <Badge variant="secondary">{t("bookings.details.confirmed")}</Badge>
   );
 }
 
@@ -29,7 +46,7 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
       singularKey: "booking:myBookings.singular",
       pluralKey: "booking:myBookings.plural",
     },
-    defaultColumns: ["target", "start", "end", "purpose"],
+    defaultColumns: ["target", "state", "start", "end", "purpose"],
     defaultSort: [
       { field: "start", direction: "asc" },
       { field: "id", direction: "asc" },
@@ -51,10 +68,14 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
         hasMany: false,
         labelKey: "booking:myBookings.fields.target",
         list: {
+          // The item name identifies the row, so it gets the width the other columns can spare.
+          width: 260,
+          minWidth: 200,
           renderCell: ({ row }) =>
             row.target ? (
               <InventoryItem
                 name={row.target.value.name}
+                nameTitle={row.target.value.name}
                 globalId={row.target.globalId}
                 href={row.canViewConfiguration ? `/globalId/${row.target.globalId}` : undefined}
                 idLinkLabel={
@@ -63,7 +84,9 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
                     : undefined
                 }
                 compact
+                compactIdPlacement="below"
                 size="xs"
+                className={row.state === "CANCELLED" ? "text-muted-foreground" : undefined}
               />
             ) : (
               <UnknownItem size="xs" />
@@ -71,16 +94,25 @@ export function bookingListConfig(timeZone: string): CollectionConfig<BookingLis
         },
       },
       {
+        name: "state",
+        type: "select",
+        options: ["CONFIRMED", "CANCELLED"],
+        labelKey: "booking:myBookings.fields.state",
+        list: { width: 120, renderCell: ({ row }) => <BookingStateBadge state={row.state} /> },
+      },
+      {
         name: "start",
         type: "dateTime",
         labelKey: "booking:myBookings.fields.start",
-        list: { renderCell: ({ row }) => dateTime(row.start, timeZone, row.timezone) },
+        // Fits a medium date with a 12-hour time ("Sep 30, 2026, 10:00 AM"); the defaults total 1100px so the table fits the 1120px content column at 1440px.
+        list: { width: 185, minWidth: 180, renderCell: ({ row }) => dateTime(row.start, timeZone, row.timezone) },
       },
       {
         name: "end",
         type: "dateTime",
         labelKey: "booking:myBookings.fields.end",
-        list: { renderCell: ({ row }) => dateTime(row.end, timeZone, row.timezone) },
+        // Fits a medium date with a 12-hour time ("Sep 30, 2026, 10:00 AM"); the defaults total 1100px so the table fits the 1120px content column at 1440px.
+        list: { width: 185, minWidth: 180, renderCell: ({ row }) => dateTime(row.end, timeZone, row.timezone) },
       },
       {
         name: "purpose",
