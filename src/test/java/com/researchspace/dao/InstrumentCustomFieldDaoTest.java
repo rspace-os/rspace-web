@@ -9,6 +9,7 @@ import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.dao.InstrumentCustomFieldDao.ValueRow;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -24,6 +25,7 @@ import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
@@ -34,6 +36,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -42,6 +45,7 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
   @Autowired private InstrumentDao instrumentDao;
   @Autowired private InstrumentReadAccess instrumentReadAccess;
   @Autowired private InstrumentCustomFieldManager customFields;
+  @Autowired private InstrumentCustomFieldDao customFieldDao;
 
   @Autowired private InstrumentEntityApiManager instrumentApiManager;
 
@@ -301,5 +305,48 @@ public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
     assertEquals(2, values.values().stream().filter(row -> row.containsKey(field.id())).count());
     assertTrue(values.values().stream().anyMatch(row -> "BSL-1".equals(row.get(field.id()))));
     assertTrue(values.values().stream().anyMatch(row -> "BSL-2".equals(row.get(field.id()))));
+  }
+
+  @Test
+  public void selectsScopedScalarValuesWithoutHydratingInventoryEntities() {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(owner, "Cell line");
+    Instrument populated = instrumentFromTemplate(owner, template, "Populated", "BSL-1");
+    Instrument empty = instrumentFromTemplate(owner, template, "Empty", "");
+    empty.getActiveFields().get(0).setData(null);
+    Instrument deleted = instrumentFromTemplate(owner, template, "Deleted field", "deleted");
+    deleted.getActiveFields().get(0).setDeleted(true);
+    instrumentFromTemplate(owner, template, "Outside requested page", "not requested");
+    ApiInstrumentTemplate otherTemplate =
+        createBasicInstrumentTemplateForUser(owner, "Other template");
+    Instrument inapplicable = instrumentFromTemplate(owner, otherTemplate, "Inapplicable", "other");
+    Long definitionId = populated.getActiveFields().get(0).getTemplateField().getId();
+    Long populatedId = populated.getId();
+    Long emptyId = empty.getId();
+    Set<Long> instrumentIds = Set.of(populatedId, emptyId, deleted.getId(), inapplicable.getId());
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+
+    Statistics statistics = sessionFactory.getStatistics();
+    boolean wasEnabled = statistics.isStatisticsEnabled();
+    statistics.setStatisticsEnabled(true);
+    statistics.clear();
+    try {
+      assertEquals(
+          Map.of(
+              populatedId,
+              Map.of(
+                  definitionId, new ValueRow(populatedId, definitionId, FieldType.TEXT, "BSL-1")),
+              emptyId,
+              Map.of(definitionId, new ValueRow(emptyId, definitionId, FieldType.TEXT, null))),
+          customFieldDao.valuesByInstrument(instrumentIds, Set.of(definitionId)));
+      assertEquals(1L, statistics.getPrepareStatementCount());
+      assertEquals(0L, statistics.getEntityLoadCount());
+      assertEquals(0L, statistics.getEntityFetchCount());
+      assertEquals(0L, statistics.getCollectionLoadCount());
+      assertEquals(0L, statistics.getCollectionFetchCount());
+    } finally {
+      statistics.setStatisticsEnabled(wasEnabled);
+    }
   }
 }
