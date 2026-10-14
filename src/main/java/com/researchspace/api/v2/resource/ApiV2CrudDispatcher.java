@@ -12,6 +12,7 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer;
@@ -241,31 +242,6 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return operations.readOverrides(resources, actor);
   }
 
-  /**
-   * The single row matching a request's filter, for a {@code get} whose access policy returned a
-   * row constraint. Goes through {@link ResourceOperations#find} rather than {@code findById}
-   * because only the query can apply the constraint; {@code findById} sees an id and nothing else,
-   * so a constraint would be silently dropped and the row returned to a caller not entitled to it.
-   *
-   * <p>A row excluded by the constraint is a 404, not a 403: telling the two apart would let a
-   * caller enumerate ids that exist, which is the same probe the {@code where} and {@code sort}
-   * checks close.
-   */
-  public Map<String, Object> getMatching(ResourceRequest request, User actor) {
-    return getMatching(request, actor, DocumentDecorator.none());
-  }
-
-  public Map<String, Object> getMatching(
-      ResourceRequest request, User actor, DocumentDecorator<T> decorator) {
-    return invoke(
-        ResourceOperation.READ,
-        () ->
-            operations.find(request, actor).resources().stream()
-                .findFirst()
-                .map(resource -> decorated(resource, request, actor, decorator))
-                .orElseThrow(NotFoundException::new));
-  }
-
   public Map<String, Object> create(
       ParsedDocument document, ApiV2Caller caller, FieldSelection selection) {
     return invoke(
@@ -278,7 +254,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return invoke(
         ResourceOperation.BULK_CREATE,
         () ->
-            ApiV2BulkResult.success(
+            new ApiV2BulkResult<>(
                 renderMany(operations.createMany(documents, caller), selection, caller.subject())));
   }
 
@@ -302,7 +278,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return invoke(
         ResourceOperation.BULK_UPDATE,
         () ->
-            ApiV2BulkResult.success(
+            new ApiV2BulkResult<>(
                 renderMany(
                     operations.updateMany(request, document, caller),
                     request.fields(),
@@ -333,7 +309,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return invoke(
         ResourceOperation.BULK_DELETE,
         () ->
-            ApiV2BulkResult.success(
+            new ApiV2BulkResult<>(
                 renderMany(
                     operations.deleteMany(request, caller), request.fields(), caller.subject())));
   }
@@ -356,7 +332,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
     return renderer.render(
         resource,
         description,
-        com.researchspace.model.collection.ResourceFieldSelections.root(selection),
+        ResourceFieldSelections.root(selection),
         IncludeTree.empty(),
         targetResolver(actor),
         Map.of(),
@@ -371,7 +347,7 @@ public final class ApiV2CrudDispatcher<T, ID> {
         description,
         ignored -> selection,
         ignored -> Map.of(),
-        com.researchspace.model.collection.ResourceFieldSelections.root(selection),
+        ResourceFieldSelections.root(selection),
         IncludeTree.empty(),
         targetResolver,
         readContext(actor));

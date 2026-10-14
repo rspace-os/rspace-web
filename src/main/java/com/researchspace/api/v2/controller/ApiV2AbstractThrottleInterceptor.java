@@ -5,10 +5,7 @@ import com.researchspace.api.v2.throttling.Bucket4jApiRequestThrottler;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.User;
 import jakarta.servlet.http.HttpServletRequest;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
@@ -19,9 +16,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * admission is therefore keyed only by the network source. Retention is bounded by {@link
  * Bucket4jApiRequestThrottler}.
  */
-public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
+public abstract class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
 
-  String assertApiAccess(HttpServletRequest request) {
+  String throttleKey(HttpServletRequest request) {
     ApiV2Caller caller = ApiV2Caller.from(request);
     User user = caller == null ? null : caller.actor();
     if (user != null && user.getId() != null) {
@@ -29,20 +26,10 @@ public class ApiV2AbstractThrottleInterceptor implements HandlerInterceptor {
     }
     // RequestUtil.remoteAddr honours X-Forwarded-For, so deployments must accept that header only
     // from trusted proxies. The value is hashed to avoid retaining client addresses in memory.
-    return clientFingerprint("preAuthApiClient", request);
-  }
-
-  private static String clientFingerprint(String prefix, HttpServletRequest request) {
-    return fingerprint(prefix, RequestUtil.remoteAddr(request));
+    return fingerprint("preAuthApiClient", RequestUtil.remoteAddr(request));
   }
 
   private static String fingerprint(String prefix, String value) {
-    try {
-      byte[] digest =
-          MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
-      return prefix + ":" + HexFormat.of().formatHex(digest);
-    } catch (NoSuchAlgorithmException ex) {
-      throw new IllegalStateException("SHA-256 is unavailable", ex);
-    }
+    return prefix + ":" + DigestUtils.sha256Hex(value);
   }
 }

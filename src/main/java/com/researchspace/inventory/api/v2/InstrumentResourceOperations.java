@@ -22,8 +22,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -119,7 +121,7 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
     Set<Long> ids =
         page.resources().stream()
             .map(InstrumentReadSummary::id)
-            .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     boolean includeLocation =
         LOCATION_FIELDS.stream().anyMatch(field -> request.fields().includes(field, "id"));
     Map<Object, Map<String, Object>> locations =
@@ -128,15 +130,11 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
         page.resources().stream()
             .map(
                 summary -> {
-                  Map<String, Object> document = new LinkedHashMap<>();
-                  document.put("id", summary.id());
-                  document.put("name", summary.name());
-                  document.put("globalId", "IN" + summary.id());
-                  document.put("deleted", summary.deleted());
-                  document.put("parentContainerName", null);
-                  document.put("parentContainerGlobalId", null);
-                  document.putAll(locations.getOrDefault(summary.id(), Map.of()));
-                  return document;
+                  Map<String, Object> location = locations.getOrDefault(summary.id(), Map.of());
+                  return readDocument(
+                      summary,
+                      location.get("parentContainerName"),
+                      location.get("parentContainerGlobalId"));
                 })
             .toList();
     return new ResourcePage<>(documents, page.total());
@@ -154,13 +152,13 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
    */
   @Override
   public Optional<Instrument> findById(Long id, User actor) {
-    return instrumentManager.findReadableInstrument(id, actor).filter(this::isActive);
+    return instrumentManager.findReadableInstrument(id, actor).filter(i -> !i.isDeleted());
   }
 
   @Override
   public Map<Object, Map<String, Object>> readOverrides(List<Instrument> instruments, User actor) {
     Set<Long> instrumentIds =
-        instruments.stream().map(Instrument::getId).collect(java.util.stream.Collectors.toSet());
+        instruments.stream().map(Instrument::getId).collect(Collectors.toSet());
     return locationOverrides(instrumentIds, actor);
   }
 
@@ -175,7 +173,7 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
     Map<Object, Map<String, Object>> overrides = new LinkedHashMap<>();
     for (Long instrumentId : instrumentIds) {
       InstrumentParentLocationSummary location = locations.get(instrumentId);
-      boolean show = location != null && readable.contains(location.containerId());
+      boolean show = isReadableParent(location == null ? null : location.containerId(), readable);
       Map<String, Object> values = new LinkedHashMap<>();
       values.put("parentContainerName", show ? location.containerName() : null);
       values.put(
@@ -199,33 +197,40 @@ public class InstrumentResourceOperations implements ResourceOperations<Instrume
     Set<Long> parentIds =
         summaries.values().stream()
             .map(InstrumentReadSummary::parentContainerId)
-            .filter(java.util.Objects::nonNull)
-            .collect(java.util.stream.Collectors.toSet());
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
     Set<Long> readableParents = instrumentManager.getReadableParentContainerIds(parentIds, actor);
     Map<Object, Map<String, Object>> documents = new LinkedHashMap<>();
     summaries.forEach(
         (id, summary) -> {
-          boolean showParent =
-              summary.parentContainerId() != null
-                  && readableParents.contains(summary.parentContainerId());
-          Map<String, Object> document = new LinkedHashMap<>();
-          document.put("id", summary.id());
-          document.put("name", summary.name());
-          document.put("globalId", "IN" + summary.id());
-          document.put("parentContainerName", showParent ? summary.parentContainerName() : null);
-          document.put(
-              "parentContainerGlobalId",
-              showParent
-                  ? containerGlobalId(summary.parentContainerId(), summary.parentContainerType())
-                  : null);
-          document.put("deleted", summary.deleted());
-          documents.put(id, document);
+          boolean showParent = isReadableParent(summary.parentContainerId(), readableParents);
+          documents.put(
+              id,
+              readDocument(
+                  summary,
+                  showParent ? summary.parentContainerName() : null,
+                  showParent
+                      ? containerGlobalId(
+                          summary.parentContainerId(), summary.parentContainerType())
+                      : null));
         });
     return Optional.of(documents);
   }
 
-  private boolean isActive(Instrument instrument) {
-    return !instrument.isDeleted();
+  private static boolean isReadableParent(Long parentContainerId, Set<Long> readableParents) {
+    return parentContainerId != null && readableParents.contains(parentContainerId);
+  }
+
+  private static Map<String, Object> readDocument(
+      InstrumentReadSummary summary, Object parentName, Object parentGlobalId) {
+    Map<String, Object> document = new LinkedHashMap<>();
+    document.put("id", summary.id());
+    document.put("name", summary.name());
+    document.put("globalId", "IN" + summary.id());
+    document.put("parentContainerName", parentName);
+    document.put("parentContainerGlobalId", parentGlobalId);
+    document.put("deleted", summary.deleted());
+    return document;
   }
 
   private static String containerGlobalId(long id, ContainerType type) {

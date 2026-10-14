@@ -118,9 +118,9 @@ public final class ApiV2ResourceRequestParser {
   /**
    * Bounds the {@code where} parameter before it is URL-decoded and bound.
    *
-   * <p>The outer of the two layers that enforce {@link ApiV2CollectionQuery#MAX_WHERE_LENGTH}. This
-   * one measures the raw, still-encoded value and matches the parameter name after decoding it, so
-   * a caller cannot slip an oversized expression past it by encoding either the name ({@code
+   * <p>The outer of the two layers that enforce {@link CollectionQueryLimits#MAX_WHERE_LENGTH}.
+   * This one measures the raw, still-encoded value and matches the parameter name after decoding
+   * it, so a caller cannot slip an oversized expression past it by encoding either the name ({@code
    * w%68ere}) or the value. Because percent-encoding only lengthens a string, it is necessarily at
    * least as strict as the decoded check — an expression of 1366 characters written as {@code
    * %61}-escapes is 4098 raw characters and is refused. That conservatism is deliberate and pinned
@@ -144,9 +144,9 @@ public final class ApiV2ResourceRequestParser {
         throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
       }
       int rawValueLength = separator < 0 ? 0 : parameter.length() - separator - 1;
-      if ("where".equals(name) && rawValueLength > ApiV2CollectionQuery.MAX_WHERE_LENGTH) {
+      if ("where".equals(name) && rawValueLength > CollectionQueryLimits.MAX_WHERE_LENGTH) {
         throw new ApiV2BadRequestException(
-            "errors.api.v2.where.length", ApiV2CollectionQuery.MAX_WHERE_LENGTH);
+            "errors.api.v2.where.length", CollectionQueryLimits.MAX_WHERE_LENGTH);
       }
     }
   }
@@ -284,9 +284,9 @@ public final class ApiV2ResourceRequestParser {
 
   private static IncludeTree includes(
       int depth, CollectionDescription<?> description, ResourceRegistry registry) {
-    if (depth < 0 || depth > ApiV2CollectionQuery.MAX_DEPTH) {
+    if (depth < 0 || depth > CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH) {
       throw new ApiV2BadRequestException(
-          "errors.api.v2.depth.range", ApiV2CollectionQuery.MAX_DEPTH);
+          "errors.api.v2.depth.range", CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH);
     }
     return IncludeTree.toDepth(description, registry, depth);
   }
@@ -426,15 +426,22 @@ public final class ApiV2ResourceRequestParser {
   }
 
   /**
-   * The single authoritative check on decoded {@code where} length.
+   * Maximum length of the {@code where} expression.
    *
-   * <p>Reached by every parse path through {@link #filter}, so {@code filtered} and {@code bulk}
-   * must not call it again, and no caller needs its own copy of the rule.
+   * <p>Enforced here, not by a {@code @Size} constraint on {@link ApiV2CollectionQuery}. A
+   * constraint would be unreachable: {@link #validateRawWhere} runs before argument resolution and
+   * measures the still-encoded value, and percent-encoding only ever lengthens a string, so
+   * anything a decoded {@code @Size} check would reject has already been rejected. Keeping one
+   * decoded enforcement point also keeps count and bulk endpoints, which take {@code where} as a
+   * bare request parameter rather than binding this class, under the same rule.
+   *
+   * <p>Every parse path reaches this method through {@link #filter}, so {@code filtered} and {@code
+   * bulk} must not repeat it.
    */
   private static void validateWhere(String where) {
-    if (where != null && where.length() > ApiV2CollectionQuery.MAX_WHERE_LENGTH) {
+    if (where != null && where.length() > CollectionQueryLimits.MAX_WHERE_LENGTH) {
       throw new ApiV2BadRequestException(
-          "errors.api.v2.where.length", ApiV2CollectionQuery.MAX_WHERE_LENGTH);
+          "errors.api.v2.where.length", CollectionQueryLimits.MAX_WHERE_LENGTH);
     }
   }
 }

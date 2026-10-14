@@ -387,8 +387,8 @@ public interface UserManager extends GenericManager<User, Long> {
   /**
    * A page of users matching a REST API v2 collection request.
    *
-   * @param request already narrowed by {@code ApiV2UserResource}'s access policy, so an ordinary
-   *     caller's request carries an {@code id} constraint limiting it to their own row
+   * <p>The implementation adds an {@code id} constraint limiting an ordinary caller to their own
+   * row; a sysadmin may query every user.
    */
   ResourcePage<User> getUsers(ResourceRequest request, User actor);
 
@@ -397,12 +397,4 @@ public interface UserManager extends GenericManager<User, Long> {
 
   /** Returns a REST API v2 user row only when the actor may read it. */
   Optional<User> getUserResource(Long id, User actor);
-
-  /**
-   * A user by id, empty when there is none.
-   *
-   * <p>{@link #get} throws {@code ObjectRetrievalFailureException} on a missing row, which a REST
-   * caller would see as a 500 rather than a 404.
-   */
-  Optional<User> getOptional(Long id);
 }

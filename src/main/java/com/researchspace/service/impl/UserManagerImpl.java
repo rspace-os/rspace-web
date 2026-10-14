@@ -20,6 +20,8 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dto.UserBasicInfo;
@@ -46,6 +48,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.crypto.RandomNumberGenerator;
 import org.apache.shiro.crypto.SecureRandomNumberGenerator;
 import org.apache.shiro.lang.util.ByteSource;
@@ -675,9 +678,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   @Override
   public Optional<User> getUserResource(Long id, User actor) {
-    if (actor == null) {
-      throw new org.apache.shiro.authz.AuthorizationException("User resource read refused");
-    }
+    requireActor(actor);
     if (!actor.hasSysadminRole() && !id.equals(actor.getId())) {
       return Optional.empty();
     }
@@ -685,26 +686,21 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   }
 
   private ResourceRequest authorizeUserResourceRead(ResourceRequest request, User actor) {
-    if (actor == null) {
-      throw new org.apache.shiro.authz.AuthorizationException("User resource read refused");
-    }
+    requireActor(actor);
     if (actor.hasSysadminRole()) {
       return request;
     }
-    com.researchspace.model.collection.FilterExpression self =
-        new com.researchspace.model.collection.FilterExpression.Comparison(
-            "id", com.researchspace.model.collection.Operator.EQUAL, List.of(actor.getId()), false);
-    com.researchspace.model.collection.FilterExpression filter =
-        request.filter() == null
-            ? self
-            : new com.researchspace.model.collection.FilterExpression.And(
-                List.of(self, request.filter()));
+    FilterExpression self =
+        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(actor.getId()), false);
+    FilterExpression filter =
+        request.filter() == null ? self : new FilterExpression.And(List.of(self, request.filter()));
     return new ResourceRequest(
         filter, request.sort(), request.page(), request.fieldSelections(), request.includes());
   }
 
-  @Override
-  public Optional<User> getOptional(Long id) {
-    return userDao.getSafeNull(id);
+  private static void requireActor(User actor) {
+    if (actor == null) {
+      throw new AuthorizationException("User resource read refused");
+    }
   }
 }

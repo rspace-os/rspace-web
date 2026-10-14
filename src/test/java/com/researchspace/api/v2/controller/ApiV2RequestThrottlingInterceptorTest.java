@@ -48,7 +48,7 @@ class ApiV2RequestThrottlingInterceptorTest {
 
     assertTrue(interceptor.preHandle(request, new MockHttpServletResponse(), new Object()));
 
-    verify(preAuthentication).proceed(interceptor.assertApiAccess(request));
+    verify(preAuthentication).proceed(interceptor.throttleKey(request));
   }
 
   @Test

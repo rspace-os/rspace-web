@@ -41,12 +41,6 @@ class InstrumentResourceOperationsTest {
           mock(ExtraFieldDao.class));
   private final User actor = mock(User.class);
 
-  private static Instrument instrument(long id) {
-    Instrument instrument = new Instrument();
-    instrument.setId(id);
-    return instrument;
-  }
-
   @Test
   void projectsTheAuthorizedScalarPageWithoutEntityOrLocationReadsForBasicFields() {
     ResourceRequest request =
@@ -106,10 +100,6 @@ class InstrumentResourceOperationsTest {
     verify(manager, never()).getReadableInstruments(any(), any());
   }
 
-  private static InstrumentReadSummary summary(Long id, String name) {
-    return new InstrumentReadSummary(id, name, false, null, null, null);
-  }
-
   @Test
   void readsOneInstrumentThroughTheExistingPermissionCheck() {
     Instrument instrument = instrument(12L);
@@ -125,5 +115,23 @@ class InstrumentResourceOperationsTest {
     when(manager.findReadableInstrument(12L, actor)).thenReturn(Optional.of(instrument));
 
     assertTrue(operations.findById(12L, actor).isEmpty());
+  }
+
+  static InstrumentResourceOperations operationsFor(InstrumentEntityApiManager manager) {
+    return new InstrumentResourceOperations(
+        manager,
+        mock(InstrumentReadAccess.class),
+        mock(InstrumentCustomFieldManager.class),
+        mock(ExtraFieldDao.class));
+  }
+
+  static Instrument instrument(long id) {
+    Instrument instrument = new Instrument();
+    instrument.setId(id);
+    return instrument;
+  }
+
+  private static InstrumentReadSummary summary(Long id, String name) {
+    return new InstrumentReadSummary(id, name, false, null, null, null);
   }
 }

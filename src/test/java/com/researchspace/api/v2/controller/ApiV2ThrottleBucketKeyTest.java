@@ -14,7 +14,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 class ApiV2ThrottleBucketKeyTest {
 
   private final ApiV2AbstractThrottleInterceptor interceptor =
-      new ApiV2AbstractThrottleInterceptor();
+      new ApiV2AbstractThrottleInterceptor() {};
 
   @Test
   void ignoresUnvalidatedCredentialsAndKeysPreAuthenticationBySource() {
@@ -23,8 +23,8 @@ class ApiV2ThrottleBucketKeyTest {
     MockHttpServletRequest second = requestFrom("192.0.2.1");
     second.addHeader("Authorization", "Bearer attacker-rotated-value");
 
-    String firstKey = interceptor.assertApiAccess(first);
-    String secondKey = interceptor.assertApiAccess(second);
+    String firstKey = interceptor.throttleKey(first);
+    String secondKey = interceptor.throttleKey(second);
 
     assertEquals(firstKey, secondKey);
     assertFalse(firstKey.contains("token-value"));
@@ -32,9 +32,9 @@ class ApiV2ThrottleBucketKeyTest {
 
   @Test
   void separatesAnonymousCallersByClientAddress() {
-    String first = interceptor.assertApiAccess(requestFrom("192.0.2.1"));
-    String sameClient = interceptor.assertApiAccess(requestFrom("192.0.2.1"));
-    String otherClient = interceptor.assertApiAccess(requestFrom("192.0.2.2"));
+    String first = interceptor.throttleKey(requestFrom("192.0.2.1"));
+    String sameClient = interceptor.throttleKey(requestFrom("192.0.2.1"));
+    String otherClient = interceptor.throttleKey(requestFrom("192.0.2.2"));
 
     assertEquals(first, sameClient);
     assertNotEquals(first, otherClient);
@@ -51,7 +51,7 @@ class ApiV2ThrottleBucketKeyTest {
     second.addHeader("Authorization", "Bearer second-credential");
     second.setAttribute(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(user));
 
-    assertEquals(interceptor.assertApiAccess(first), interceptor.assertApiAccess(second));
+    assertEquals(interceptor.throttleKey(first), interceptor.throttleKey(second));
   }
 
   @Test
@@ -67,7 +67,7 @@ class ApiV2ThrottleBucketKeyTest {
     MockHttpServletRequest second = requestFrom("192.0.2.2");
     second.setAttribute(ApiV2Caller.REQUEST_ATTRIBUTE, new ApiV2Caller(secondSubject, actor));
 
-    assertEquals(interceptor.assertApiAccess(first), interceptor.assertApiAccess(second));
+    assertEquals(interceptor.throttleKey(first), interceptor.throttleKey(second));
   }
 
   private static MockHttpServletRequest requestFrom(String address) {

@@ -34,11 +34,7 @@ class ApiV2StatelessRequestFilterTest {
     request.addHeader("X-Request-Id", "request-id");
     request.setRequestedSessionId("browser-session");
     request.getSession(true).setAttribute("user", "browser-user");
-    MockFilterChain chain = new MockFilterChain();
-
-    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
-
-    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    HttpServletRequest filtered = filter(request);
     assertNull(filtered.getCookies());
     assertNull(filtered.getHeader("Cookie"));
     assertFalse(filtered.getHeaders("Cookie").hasMoreElements());
@@ -54,11 +50,7 @@ class ApiV2StatelessRequestFilterTest {
   void preservesTheExistingSessionOnlyForTokenCreation() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/v2/oauth/tokens");
     request.getSession(true).setAttribute("user", "browser-user");
-    MockFilterChain chain = new MockFilterChain();
-
-    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
-
-    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    HttpServletRequest filtered = filter(request);
     assertEquals("browser-user", filtered.getSession(false).getAttribute("user"));
   }
 
@@ -66,11 +58,7 @@ class ApiV2StatelessRequestFilterTest {
   void stripsTheSessionFromOtherMethodsOnTheTokenPath() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/oauth/tokens");
     request.getSession(true).setAttribute("user", "browser-user");
-    MockFilterChain chain = new MockFilterChain();
-
-    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
-
-    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    HttpServletRequest filtered = filter(request);
     assertNull(filtered.getSession(false));
   }
 
@@ -79,11 +67,7 @@ class ApiV2StatelessRequestFilterTest {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/users/me");
     request.addHeader("Authorization", "Bearer " + jwtWithAudience(UI_TOKEN_AUDIENCE));
     request.getSession(true).setAttribute("user", "browser-user");
-    MockFilterChain chain = new MockFilterChain();
-
-    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
-
-    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    HttpServletRequest filtered = filter(request);
     assertEquals("browser-user", filtered.getSession(false).getAttribute("user"));
   }
 
@@ -93,11 +77,7 @@ class ApiV2StatelessRequestFilterTest {
     request.addHeader("apiKey", "valid-api-key-shape");
     request.addHeader("Authorization", "Bearer " + jwtWithAudience(UI_TOKEN_AUDIENCE));
     request.getSession(true).setAttribute("user", "unrelated-browser-user");
-    MockFilterChain chain = new MockFilterChain();
-
-    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
-
-    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    HttpServletRequest filtered = filter(request);
     assertNull(filtered.getSession(false));
   }
 
@@ -106,11 +86,7 @@ class ApiV2StatelessRequestFilterTest {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/users/me");
     request.addHeader("Authorization", "Bearer " + jwtWithAudience("external-api"));
     request.getSession(true).setAttribute("user", "browser-user");
-    MockFilterChain chain = new MockFilterChain();
-
-    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
-
-    HttpServletRequest filtered = (HttpServletRequest) chain.getRequest();
+    HttpServletRequest filtered = filter(request);
     assertNull(filtered.getSession(false));
   }
 
@@ -164,6 +140,12 @@ class ApiV2StatelessRequestFilterTest {
       values.add(children.item(index).getTextContent().trim());
     }
     return values;
+  }
+
+  private static HttpServletRequest filter(MockHttpServletRequest request) throws Exception {
+    MockFilterChain chain = new MockFilterChain();
+    new ApiV2StatelessRequestFilter().doFilter(request, new MockHttpServletResponse(), chain);
+    return (HttpServletRequest) chain.getRequest();
   }
 
   private static String jwtWithAudience(String audience) {
