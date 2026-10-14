@@ -290,8 +290,8 @@ resolved during design. This file is a glossary only — no implementation detai
   cannot be linked by hand either. Every other such entry is a skipped entry. Nothing about
   a skipped entry is stored on the instrument (RSDEV-1528).
   _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
-  lookup (that is the search that precedes it), sync, instrument CSV import (that is a
-  CSV import)
+  lookup (that is the search that precedes it), sync, instrument CSV import (that is the
+  CSV import path)
 
 - **Related identifier** — a registry record's pointer to another resource (a manual, a
   dataset, a paper), of which a PIDINST record may carry any number. RSpace writes exactly
