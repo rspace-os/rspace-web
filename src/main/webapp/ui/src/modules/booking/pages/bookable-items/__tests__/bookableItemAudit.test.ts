@@ -45,19 +45,46 @@ it.each([
   { openingHours: '[{"dayOfWeek":2,"start":"10:00","end":"24:00"},{"dayOfWeek":1,"start":"09:00","end":"17:00"}]' },
 ])("formats independent hours in weekday order from an audit snapshot", ({ openingHours }) => {
   expect(recordedValues({ openingHours }, "en-US")).toEqual([
-    ["openingHours", "Monday 09:00–17:00, Tuesday 10:00–24:00"],
+    ["openingHours", "Monday 09:00–17:00, Tuesday 10:00–00:00"],
   ]);
 });
 
-it("retains unknown and historical audit schedule values", () => {
-  expect(recordedValues({ openingHours: { legacy: true }, openingStart: "09:00", openDays: [1, 2] }, "en-US")).toEqual([
-    ["openingHours", '{"legacy":true}'],
-    ["openingStart", "09:00"],
-    ["openDays", "[1,2]"],
-  ]);
+it("retains unknown audit schedule values", () => {
+  expect(recordedValues({ openingHours: { unknown: true } }, "en-US")).toEqual([["openingHours", '{"unknown":true}']]);
 });
 
 describe("recorded audit values", () => {
+  it("reads booleans, states, kinds and the bookable-item target as words", () => {
+    const words = {
+      yes: "Yes",
+      no: "No",
+      values: { ACTIVE: "Active", CANCELLED: "Cancelled", MAINTENANCE: "Maintenance" },
+    };
+    expect(
+      recordedValues(
+        {
+          enabled: true,
+          allowDoubleBooking: "false",
+          state: "ACTIVE",
+          kind: "MAINTENANCE",
+          target: '{"type":"INSTRUMENT","id":504}',
+          timezone: "Australia/Sydney",
+        },
+        "en-US",
+        words,
+      ),
+    ).toEqual([
+      ["enabled", "Yes"],
+      ["allowDoubleBooking", "No"],
+      ["state", "Active"],
+      ["kind", "Maintenance"],
+      ["target", "IN504"],
+      ["timezone", "Australia/Sydney"],
+    ]);
+    // An unknown state is left as recorded rather than hidden.
+    expect(recordedValues({ state: "PENDING" }, "en-US", words)).toEqual([["state", "PENDING"]]);
+  });
+
   it("formats booking instants in UTC while preserving unknown and invalid values", () => {
     const instant = "2026-10-09T08:00:00Z";
     const values = Object.fromEntries(

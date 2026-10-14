@@ -1,3 +1,14 @@
+import { beforeAll as beforeBookingCatalog } from "vitest";
+import appI18n from "@/modules/common/i18n";
+
+beforeBookingCatalog(async () => {
+  appI18n.addResourceBundle(
+    "en-US",
+    "booking",
+    (await import("@/modules/common/i18n/locales/en-US/booking.json")).default,
+  );
+});
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
@@ -16,12 +27,25 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { currentUser as currentUserFixture } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { ApiV2ProblemError, createBooking } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import AddBookingPage from "@/modules/booking/pages/bookings/AddBookingPage";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+
+// Delegates to the real request unless a test rejects with a problem carrying its parsed body.
+vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/booking/domain/booking")>();
+  return { ...actual, createBooking: vi.fn(actual.createBooking) };
+});
+
+function problem(status: number, code: string, body: Record<string, unknown>) {
+  return Object.assign(new ApiV2ProblemError(status, code, "private server detail"), {
+    problem: { status, code, detail: "private server detail", ...body },
+  });
+}
 
 class ResizeObserverStub {
   observe() {}
@@ -185,7 +209,6 @@ describe("AddBookingPage", () => {
     expect(screen.getByRole("combobox", { name: "booking:bookings.form.item" })).toBeEnabled();
     expect(screen.getByLabelText("booking:bookings.form.startDate")).toHaveValue("2026-08-17");
     expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2026-08-17");
-    expect(screen.getByText("booking:bookings.form.timezone")).toBeVisible();
   });
 
   it("resolves Calendar search, creates a booking, invalidates, and returns", async () => {
@@ -206,14 +229,18 @@ describe("AddBookingPage", () => {
       name: "booking:bookings.itemInformation.title",
     });
     expect(within(itemInformation).getByText("Confocal microscope")).toBeVisible();
-    expect(within(itemInformation).getByText("booking:bookableItemDetails.fields.openingHours")).toBeVisible();
+    expect(within(itemInformation).getByText("booking:bookings.itemInformation.open")).toBeVisible();
     expect(within(itemInformation).getByText("booking:bookings.itemInformation.doubleBookingAllowed")).toBeVisible();
     expect(within(itemInformation).queryByText("booking:bookings.itemInformation.buffer")).not.toBeInTheDocument();
-    expect(within(itemInformation).queryByText("booking:bookableItemDetails.fields.timezone")).not.toBeInTheDocument();
+    expect(
+      within(itemInformation).queryByRole("button", {
+        name: "booking:bookings.itemInformation.timeWithInstrumentTime",
+      }),
+    ).not.toBeInTheDocument();
     const mobileItemInformation = screen.getByRole("region", {
       name: "booking:bookings.itemInformation.title",
     });
-    expect(within(mobileItemInformation).getByText("booking:bookableItemDetails.fields.openingHours")).toBeVisible();
+    expect(within(mobileItemInformation).getByText("booking:bookings.itemInformation.open")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookings.itemInformation.title" })).not.toBeInTheDocument();
     expect(screen.queryByText("booking:bookings.form.openingHours")).not.toBeInTheDocument();
     await expectAccessible(document.body);
@@ -301,7 +328,8 @@ describe("AddBookingPage", () => {
     expect(within(itemInformation).queryByText(hidden)).not.toBeInTheDocument();
   });
 
-  it("shows the item timezone only when it differs from the user's default", async () => {
+  it("offers the item's own opening hours in the instrument-time tooltip when its timezone differs", async () => {
+    const user = userEvent.setup();
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
@@ -313,8 +341,46 @@ describe("AddBookingPage", () => {
     const itemInformation = await screen.findByRole("complementary", {
       name: "booking:bookings.itemInformation.title",
     });
-    expect(within(itemInformation).getByText("booking:bookableItemDetails.fields.timezone")).toBeVisible();
-    expect(within(itemInformation).getByText("America/New_York")).toBeVisible();
+    expect(within(itemInformation).getByText("booking:bookings.itemInformation.everyDay")).toBeVisible();
+    // The whole time is the trigger, so its name keeps the visible time and carries the tooltip text.
+    await user.hover(
+      within(itemInformation).getByRole("button", {
+        name: "booking:bookings.itemInformation.timeWithInstrumentTime",
+      }),
+    );
+    expect(await screen.findByRole("tooltip")).toHaveTextContent("booking:bookings.instrumentTimeTooltip");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("gives every open day's time its own globe button when the timezones differ", async () => {
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () =>
+        HttpResponse.json(
+          page([
+            {
+              ...catalogueOption,
+              timezone: "America/New_York",
+              openingHours: catalogueOption.openingHours.filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek)),
+            },
+          ]),
+        ),
+      ),
+    );
+    renderPage();
+
+    const itemInformation = await screen.findByRole("complementary", {
+      name: "booking:bookings.itemInformation.title",
+    });
+    expect(within(itemInformation).getAllByText("booking:bookings.itemInformation.closedDay")).toHaveLength(2);
+    expect(
+      within(itemInformation).getAllByRole("button", {
+        name: "booking:bookings.itemInformation.timeWithInstrumentTime",
+      }),
+    ).toHaveLength(5);
+    for (const closed of within(itemInformation).getAllByText("booking:bookings.itemInformation.closedDay")) {
+      expect(closed.closest("li")).not.toHaveClass("text-muted-foreground");
+    }
   });
 
   it("retains input and maps an overlap conflict to localized text", async () => {
@@ -346,6 +412,76 @@ describe("AddBookingPage", () => {
 
     expect(screen.queryByText("booking:bookings.errors.overlap")).not.toBeInTheDocument();
     expect(submit).not.toBeDisabled();
+  });
+
+  it("lists the booking a server overlap names and keeps submission blocked", async () => {
+    const user = userEvent.setup();
+    const create = vi.mocked(createBooking);
+    create.mockRejectedValueOnce(
+      problem(409, "errors.api.v2.booking.overlap", {
+        conflict: { id: 59, kind: "BOOKING", start: "2026-08-17T07:30:00Z", end: "2026-08-17T08:30:00Z" },
+      }),
+    );
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+    );
+    renderPage();
+    await fillWindow(user);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("booking:bookings.errors.overlapSummary");
+    expect(within(alert).getByRole("listitem")).toHaveTextContent(/booking:bookings\.errors\.overlapBooking · 0?9:30/);
+    expect(screen.queryByText("booking:bookings.errors.overlap")).not.toBeInTheDocument();
+    expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
+  });
+
+  it("explains a server buffer rejection and lists the booking as within its buffer", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createBooking).mockRejectedValueOnce(
+      problem(409, "errors.api.v2.booking.buffer", {
+        conflict: { id: 60, kind: "MAINTENANCE", start: "2026-08-17T08:00:00Z", end: "2026-08-17T09:00:00Z" },
+        bufferBeforeMinutes: 15,
+        bufferAfterMinutes: 15,
+      }),
+    );
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+    );
+    renderPage();
+    await fillWindow(user);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("booking:bookings.errors.buffer");
+    expect(alert).toHaveTextContent("booking:bookings.errors.bufferSummary");
+    expect(alert).not.toHaveTextContent("booking:bookings.errors.overlapSummary");
+    expect(within(alert).getByRole("listitem")).toHaveTextContent("booking:bookings.errors.overlapMaintenance");
+    expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
+  });
+
+  it("blocks resubmission after a buffer rejection without conflict details", async () => {
+    const user = userEvent.setup();
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.post("/api/v2/bookings", () =>
+        HttpResponse.json({ status: 409, code: "errors.api.v2.booking.buffer" }, { status: 409 }),
+      ),
+    );
+    renderPage();
+    await fillWindow(user);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+
+    expect(await screen.findByText("booking:bookings.errors.bufferUnknown")).toBeVisible();
+    expect(screen.queryByText("booking:bookings.errors.overlap")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
   });
 
   it("keeps the full-page add route booking-only for a sysadmin", async () => {
@@ -409,5 +545,25 @@ describe("AddBookingPage", () => {
 
     expect(await screen.findByText(message)).toBeVisible();
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["the problem", 0, { maximumDurationMinutes: 45 }],
+    ["the selected item", 120, {}],
+  ])("names the maximum duration from %s", async (_source, maxBookingDurationMinutes, body) => {
+    const user = userEvent.setup();
+    vi.mocked(createBooking).mockRejectedValueOnce(problem(400, "errors.api.v2.booking.maximumDuration", body));
+    server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/booking-catalogue", () =>
+        HttpResponse.json(page([{ ...catalogueOption, maxBookingDurationMinutes }])),
+      ),
+    );
+    renderPage();
+    await fillWindow(user);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+
+    expect(await screen.findByText("booking:bookings.errors.maximumDurationLimit")).toBeVisible();
   });
 });

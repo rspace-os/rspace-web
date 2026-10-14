@@ -1,7 +1,22 @@
 import type { ReactNode } from "react";
-import { dayMinuteToZonedTime, parsePlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  dayMinuteToZonedTime,
+  formatPlainDate,
+  formatWallClockTime,
+  instantToDayMinute,
+  parsePlainDate,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 
 const DAY_MINUTES = 24 * 60;
+
+/**
+ * Closed hours in a day timeline: a solid muted base with a diagonal hatch, so they stand apart from the timelines'
+ * alternating hour stripes in both themes.
+ */
+export const CLOSED_HOURS_CLASS_NAME =
+  "bg-muted bg-[repeating-linear-gradient(135deg,color-mix(in_oklab,var(--color-muted-foreground)_22%,transparent)_0_2px,transparent_2px_7px)]";
 
 type BaseEvent = {
   id: string;
@@ -56,6 +71,7 @@ export type DayTimelineActionRenderers = {
   renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => ReactNode;
 };
 
+/** Machine-readable `HH:mm` for `<time dateTime>` attributes; use formatMinuteWithDayOffset for visible text. */
 export function formatMinute(date: string, timezone: string, minute: number) {
   return dayMinuteToZonedTime(date, timezone, minute).toPlainTime().toString({ smallestUnit: "minute" });
 }
@@ -65,17 +81,20 @@ export function dateForMinute(date: string, timezone: string, minute: number) {
 }
 
 export function formatDayDate(date: string) {
-  const [year, month, day] = date.split("-");
-  return `${day}-${month}-${year}`;
+  return formatPlainDate(date);
+}
+
+/** ` (+1)` / ` (-1)` for a time on a later or earlier date than the one it is read against; empty on the same date. */
+export function formatDayOffset(days: number) {
+  return days === 0 ? "" : ` (${days > 0 ? "+" : ""}${days})`;
 }
 
 export function formatMinuteWithDayOffset(date: string, timezone: string, minute: number) {
   const time = dayMinuteToZonedTime(date, timezone, minute);
-  const offset = parsePlainDate(date).until(time.toPlainDate()).days;
-  const dayLabel = offset === 0 ? "" : ` (${offset > 0 ? "+" : ""}${offset})`;
+  const dayLabel = formatDayOffset(parsePlainDate(date).until(time.toPlainDate()).days);
   // Offsets distinguish both occurrences of the repeated hour on clock-change days.
   const zoneLabel = zonedDayBounds(date, timezone).elapsedMinutes === DAY_MINUTES ? "" : ` ${time.offset}`;
-  return `${time.toPlainTime().toString({ smallestUnit: "minute" })}${zoneLabel}${dayLabel}`;
+  return `${formatWallClockTime(time.toPlainTime().toString({ smallestUnit: "minute" }))}${zoneLabel}${dayLabel}`;
 }
 
 export function period(
@@ -87,4 +106,21 @@ export function period(
   const start = formatMinuteWithDayOffset(date, timezone, eventOrRange.startMinute);
   const end = formatMinuteWithDayOffset(date, timezone, eventOrRange.endMinute);
   return `${start}${separator}${end}`;
+}
+
+/**
+ * Every scheduling-zone opening window intersecting the viewer's `date`, as display-zone times with day offsets.
+ * A viewer day can intersect several windows, or none when the instrument is closed.
+ */
+export function openingWindowsOnDate(
+  date: string,
+  displayTimezone: string,
+  schedule: OpeningSchedule & { timezone: string },
+): Array<{ start: string; end: string }> {
+  const format = (instant: string) =>
+    formatMinuteWithDayOffset(date, displayTimezone, instantToDayMinute(instant, date, displayTimezone));
+  return openingIntervals(schedule, schedule.timezone, zonedDayBounds(date, displayTimezone)).map((opening) => ({
+    start: format(opening.start),
+    end: format(opening.end),
+  }));
 }

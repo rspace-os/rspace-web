@@ -42,6 +42,8 @@ export function CalendarContent() {
     myItemsOnly,
     setMyItemsOnly,
     targetItemExpression,
+    target,
+    targetName,
   } = useCalendarContentData();
 
   return (
@@ -67,6 +69,21 @@ export function CalendarContent() {
       itemFilterIssue={itemIssue}
       eventFilterIssue={eventIssue}
       hasTargetFilter={targetItemExpression !== null}
+      targetFilter={
+        target
+          ? {
+              globalId: target,
+              name: targetName,
+              onRemove: () => {
+                // Keep the date and the nuqs-owned filters; only the route's item focus is removed.
+                const search = new URLSearchParams(location.searchStr);
+                search.delete("target");
+                const query = search.toString();
+                void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
+              },
+            }
+          : undefined
+      }
       eventRuntimeFieldDefinitions={eventRuntimeFields.runtimeFields}
       eventRuntimeFieldAuthScope={eventRuntimeFields.scope}
       onSelectEventRuntimeField={eventRuntimeFields.selectRuntimeField}

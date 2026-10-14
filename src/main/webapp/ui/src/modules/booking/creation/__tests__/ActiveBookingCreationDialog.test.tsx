@@ -16,9 +16,10 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { ApiV2ProblemError, createBooking } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
@@ -28,6 +29,12 @@ import type { BookableItemOption } from "../bookableItemOption";
 import type { BookingCreationContext } from "../bookingCreationStore";
 import { BookingCreationStoreProvider } from "../bookingCreationStore";
 
+// Delegates to the real request unless a test rejects with a problem carrying its parsed body.
+vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/modules/booking/domain/booking")>();
+  return { ...actual, createBooking: vi.fn(actual.createBooking) };
+});
+
 const target: BookableItemOption = {
   configurationId: 7,
   targetId: 123,
@@ -36,8 +43,8 @@ const target: BookableItemOption = {
   timezone: "UTC",
   slotGranularityMinutes: 15,
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
+  bufferBeforeMinutes: 15,
+  bufferAfterMinutes: 15,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };
@@ -84,7 +91,7 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE", privacy: "full" | "bu
   };
 }
 
-function renderDialog(dialogCreation: BookingCreationContext, events: readonly unknown[] = []) {
+function renderDialog(dialogCreation: BookingCreationContext = creation, events: readonly unknown[] = []) {
   server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse(events))));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
@@ -170,5 +177,37 @@ describe("ActiveBookingCreationDialog", () => {
     expect(await within(dialog).findByText("booking:bookings.errors.openingHours")).toBeVisible();
     expect(within(dialog).queryByText("booking:bookings.errors.overlap")).not.toBeInTheDocument();
     expect(createRequests).toBe(0);
+  });
+
+  it("lists the booking a server buffer rejection names and keeps submission blocked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createBooking).mockRejectedValueOnce(
+      Object.assign(new ApiV2ProblemError(409, "errors.api.v2.booking.buffer", "private server detail"), {
+        problem: {
+          status: 409,
+          code: "errors.api.v2.booking.buffer",
+          conflict: { id: 59, kind: "BOOKING", start: "2026-09-28T08:00:00Z", end: "2026-09-28T10:00:00Z" },
+          bufferBeforeMinutes: 15,
+          bufferAfterMinutes: 15,
+        },
+      }),
+    );
+    renderDialog();
+
+    const dialog = await screen.findByTestId("compact-booking-dialog");
+    // Quick create stays in the viewer's zone; the full form offers the zone fields.
+    expect(
+      within(dialog).queryByRole("button", { name: "booking:bookings.form.changeTimezone" }),
+    ).not.toBeInTheDocument();
+    const submit = within(dialog).getByRole("button", { name: "booking:bookings.form.submit" });
+    await vi.waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("booking:bookings.errors.buffer");
+    expect(alert).toHaveTextContent("booking:bookings.errors.bufferSummary");
+    expect(within(alert).getByRole("listitem")).toHaveTextContent(/booking:bookings\.errors\.overlapBooking · 0?8:00/);
+    expect(alert).not.toHaveTextContent("private server detail");
+    expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submit" })).toBeDisabled();
   });
 });

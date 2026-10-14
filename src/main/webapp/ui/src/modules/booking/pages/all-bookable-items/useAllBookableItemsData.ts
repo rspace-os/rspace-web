@@ -175,6 +175,16 @@ export function useAllBookableItemsData({
     staleTime: 30_000,
   });
   const rows = runtimeFilterBlocked ? [] : (catalogue.data?.items ?? []).map(catalogueItemAsConfiguration);
+  // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
+  const hasNoBookableItems =
+    catalogue.isSuccess &&
+    catalogue.data.total === 0 &&
+    !q &&
+    !where &&
+    !target &&
+    !routeAvailability &&
+    !mine &&
+    !types?.length;
   const notificationSubscriptionMutation = useMutation({
     mutationFn: ({ configurationIds, enabled }: { configurationIds: readonly number[]; enabled: boolean }) =>
       updateBookingNotificationSubscriptions(configurationIds, enabled, token),
@@ -218,6 +228,7 @@ export function useAllBookableItemsData({
     quickFilterError,
     catalogue,
     rows,
+    hasNoBookableItems,
     selectedNotificationIds,
     setSelectedNotificationIds,
     notificationFeedback,
