@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import * as v from "valibot";
 
 /** ISO 8601 weekdays, matching Java's DayOfWeek numbering. */
@@ -32,6 +33,11 @@ export const OpeningHoursSchema = v.pipe(
 
 export type OpeningInterval = { start: string; end: string };
 
+export type OpeningSchedule = { openingHours: readonly OpeningHoursEntry[] };
+
+/** The absolute duration cap also bounds date enumeration. */
+export const MAX_BOOKING_DURATION_MINUTES = 527_040;
+
 /** A localized weekday name; 2024-01-01 is a Monday. */
 export function formatIsoWeekday(dayOfWeek: number, width: "long" | "short" = "long", locale = "en-US"): string {
   return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" }).format(
@@ -55,4 +61,65 @@ export function customOpeningHours(hours: OpeningInterval): OpeningInterval | un
   return validOpeningHours(hours.start, hours.end) && !isOpenAllDay(hours)
     ? { start: hours.start, end: hours.end }
     : undefined;
+}
+
+/** A missing weekday is closed. */
+export function effectiveHours(settings: OpeningSchedule, dayOfWeek: number): OpeningInterval | null {
+  const entry = settings.openingHours.find((candidate) => candidate.dayOfWeek === dayOfWeek);
+  return entry ? { start: entry.start, end: entry.end } : null;
+}
+
+/** Matches Java's compatible DST resolution; 24:00 is the next date's midnight. */
+export function resolveSchedulingBoundary(date: string, time: string, timezone: string): Temporal.Instant {
+  const plainDate = Temporal.PlainDate.from(date);
+  const [boundaryDate, boundaryTime] = time === "24:00" ? [plainDate.add({ days: 1 }), "00:00"] : [plainDate, time];
+  return boundaryDate
+    .toPlainDateTime(Temporal.PlainTime.from(boundaryTime))
+    .toZonedDateTime(timezone, { disambiguation: "compatible" })
+    .toInstant();
+}
+
+function laterInstant(first: Temporal.Instant, second: Temporal.Instant): Temporal.Instant {
+  return Temporal.Instant.compare(first, second) >= 0 ? first : second;
+}
+
+function earlierInstant(first: Temporal.Instant, second: Temporal.Instant): Temporal.Instant {
+  return Temporal.Instant.compare(first, second) <= 0 ? first : second;
+}
+
+/** Sorted, clipped openings in an absolute interval, merging touching weekdays. */
+export function openingIntervals(
+  settings: OpeningSchedule,
+  timezone: string,
+  interval: OpeningInterval,
+): OpeningInterval[] {
+  const start = Temporal.Instant.from(interval.start);
+  const end = Temporal.Instant.from(interval.end);
+  const comparison = Temporal.Instant.compare(start, end);
+  if (comparison > 0) throw new RangeError("Opening-hours interval end must not be before its start");
+  if (end.since(start).total("minutes") > MAX_BOOKING_DURATION_MINUTES) {
+    throw new RangeError(`Opening-hours interval exceeds ${MAX_BOOKING_DURATION_MINUTES} minutes`);
+  }
+  if (comparison === 0) return [];
+
+  const lastDate = end.subtract({ nanoseconds: 1 }).toZonedDateTimeISO(timezone).toPlainDate();
+  const merged: { start: Temporal.Instant; end: Temporal.Instant }[] = [];
+  for (
+    let date = start.toZonedDateTimeISO(timezone).toPlainDate();
+    Temporal.PlainDate.compare(date, lastDate) <= 0;
+    date = date.add({ days: 1 })
+  ) {
+    const hours = effectiveHours(settings, date.dayOfWeek);
+    if (!hours) continue;
+    const opening = laterInstant(resolveSchedulingBoundary(date.toString(), hours.start, timezone), start);
+    const closing = earlierInstant(resolveSchedulingBoundary(date.toString(), hours.end, timezone), end);
+    if (Temporal.Instant.compare(opening, closing) >= 0) continue;
+    const previous = merged.at(-1);
+    if (previous && Temporal.Instant.compare(opening, previous.end) <= 0) {
+      previous.end = laterInstant(previous.end, closing);
+    } else {
+      merged.push({ start: opening, end: closing });
+    }
+  }
+  return merged.map((opening) => ({ start: opening.start.toString(), end: opening.end.toString() }));
 }
