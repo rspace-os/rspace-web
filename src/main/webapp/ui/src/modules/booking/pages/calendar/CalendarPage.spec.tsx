@@ -1,5 +1,5 @@
 import { createBrowserHistory, createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
@@ -667,19 +667,8 @@ describe("Calendar page", () => {
     await expect.element(card.getByLabelText("End time")).toHaveValue("10:05");
 
     const end = page.getByRole("button", { name: "Change booking end time" });
-    const endElement = end.element();
-    const endBounds = endElement.getBoundingClientRect();
-    const editor = endElement.closest<HTMLElement>("[data-timeline-window-editor]");
-    if (!editor) throw new Error("Resize handle must be rendered inside a timeline editor");
-    const pointerY = endBounds.top + endBounds.height / 2;
-    const targetX = editor.getBoundingClientRect().right - fiveMinutes;
-    fireEvent.pointerDown(endElement, {
-      pointerId: 2,
-      clientX: endBounds.left + endBounds.width / 2,
-      clientY: pointerY,
-    });
-    fireEvent.pointerMove(endElement, { pointerId: 2, clientX: targetX, clientY: pointerY });
-    fireEvent.pointerUp(endElement, { pointerId: 2, clientX: targetX, clientY: pointerY });
+    end.element().focus();
+    await userEvent.keyboard("{ArrowLeft}");
     await expect.element(card.getByLabelText("Start time")).toHaveValue("08:05");
     await expect.element(card.getByLabelText("End time")).toHaveValue("10:00");
   });

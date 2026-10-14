@@ -3,6 +3,7 @@ import { EyeIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/components/DayTimeline";
+import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -22,7 +23,6 @@ import {
   occursOn,
   periodDates,
   scrollCalendarWithArrowKeys,
-  toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
 

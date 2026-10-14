@@ -5,6 +5,7 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import { coversInterval, type OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
+  isBookingInstantAlignedToGranularity,
   resolveWallClock,
   type WallClockResolution,
   wallClockInstant,
@@ -86,15 +87,11 @@ export function validateBookingWindow(
   }: BookingWindowPolicy,
 ) {
   const result = resolveBookingWindow(value, displayTimezone);
-  const schedulingEndpoint = (instant: string | undefined) =>
-    instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
-  const schedulingStart = schedulingEndpoint(result.window?.start);
-  const schedulingEnd = schedulingEndpoint(result.window?.end);
-  const startMinute = schedulingStart ? schedulingStart.hour * 60 + schedulingStart.minute : undefined;
-  const endMinute = schedulingEnd ? schedulingEnd.hour * 60 + schedulingEnd.minute : undefined;
-  const granularityInvalid =
-    (startMinute !== undefined && startMinute % slotGranularityMinutes !== 0) ||
-    (endMinute !== undefined && endMinute % slotGranularityMinutes !== 0);
+  const granularityInvalid = Boolean(
+    result.window &&
+      (!isBookingInstantAlignedToGranularity(result.window.start, resolvedSchedulingTimezone, slotGranularityMinutes) ||
+        !isBookingInstantAlignedToGranularity(result.window.end, resolvedSchedulingTimezone, slotGranularityMinutes)),
+  );
   const openingInvalid =
     enforceOpeningHours &&
     Boolean(result.window && !coversInterval({ openingHours }, resolvedSchedulingTimezone, result.window));
