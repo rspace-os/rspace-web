@@ -66,6 +66,10 @@ Item creation copies the full institution schedule into its draft. Item edits su
 configuration, while a failed or stale save keeps the current draft and its closed-day history.
 Item details show every weekday independently, including closed days, in the scheduling timezone.
 
+Calendar availability resolves each weekday's hours in the item's scheduling timezone. Missing
+weekdays are unavailable for the whole local day. The interval helper merges touching openings
+and follows Java's DST boundary resolution, including `24:00` at the next midnight.
+
 ## REST API compatibility
 
 The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
