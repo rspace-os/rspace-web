@@ -1,7 +1,6 @@
 package com.researchspace.model.collection;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -12,9 +11,8 @@ final class CollectionEntityMapper<T> {
   private final Map<String, Field<T, ?>> fields;
   private final String idField;
 
-  CollectionEntityMapper(List<? extends Field<T, ?>> fields, String idField) {
-    this.fields = new LinkedHashMap<>();
-    fields.forEach(field -> this.fields.put(field.name(), field));
+  CollectionEntityMapper(Map<String, Field<T, ?>> fields, String idField) {
+    this.fields = fields;
     this.idField = idField;
   }
 
@@ -60,9 +58,6 @@ final class CollectionEntityMapper<T> {
   Object idValue(T entity) {
     Objects.requireNonNull(entity, "Entity");
     Field<T, ?> field = fields.get(idField);
-    if (field == null) {
-      throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
-    }
     return field.documentValue(entity);
   }
 
@@ -82,12 +77,8 @@ final class CollectionEntityMapper<T> {
         .forEach(field -> field.write(entity, values.get(field.name())));
   }
 
-  Object readRelationship(T entity, Relationship<T> relationship) {
-    return relationship.read(entity);
-  }
-
   Optional<Object> relationshipTargetId(T entity, Relationship<T> relationship) {
-    Object value = readRelationship(entity, relationship);
+    Object value = relationship.read(entity);
     return value instanceof ResourceReference<?, ?> reference
         ? Optional.ofNullable(reference.id())
         : Optional.empty();

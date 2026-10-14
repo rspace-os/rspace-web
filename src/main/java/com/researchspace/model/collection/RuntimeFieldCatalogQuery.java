@@ -1,6 +1,5 @@
 package com.researchspace.model.collection;
 
-import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -29,7 +28,7 @@ public record RuntimeFieldCatalogQuery(String search, Set<String> ids, int page,
 
   public RuntimeFieldCatalogQuery {
     search = search == null || search.isBlank() ? null : search.trim();
-    ids = ids == null ? Set.of() : Set.copyOf(new LinkedHashSet<>(ids));
+    ids = ids == null ? Set.of() : Set.copyOf(ids);
     if (ids.size() > MAX_IDS) {
       throw new IllegalArgumentException("Too many runtime field IDs requested");
     }

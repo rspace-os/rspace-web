@@ -69,8 +69,8 @@ class AccessFunctionTest {
     AccessFunction undocumented = ignored -> AccessResult.allowed();
 
     assertSame(
-        AccessFunction.inherited(),
-        AccessFunction.requireDocumentedOrInherited(AccessFunction.inherited()));
+        AccessFunction.INHERITED,
+        AccessFunction.requireDocumentedOrInherited(AccessFunction.INHERITED));
     assertThrows(
         IllegalArgumentException.class,
         () -> AccessFunction.requireDocumentedOrInherited(undocumented));

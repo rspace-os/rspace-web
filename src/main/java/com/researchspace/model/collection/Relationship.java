@@ -27,7 +27,6 @@ public final class Relationship<T> implements ResourceMember<T> {
   private final String name;
   private final CollectionFieldType<?> idType;
   private final List<RelationshipTarget<?>> targets;
-  private final Function<T, ?> reader;
   private final SplitReferenceBinding<T, ?, ?> binding;
   final Set<WriteOperation> writeOperations;
   final Map<WriteOperation, Set<RelationshipInputForm>> inputForms;
@@ -42,7 +41,6 @@ public final class Relationship<T> implements ResourceMember<T> {
       String name,
       CollectionFieldType<?> idType,
       List<RelationshipTarget<?>> targets,
-      Function<T, ?> reader,
       SplitReferenceBinding<T, ?, ?> binding,
       Set<WriteOperation> writeOperations,
       Map<WriteOperation, Set<RelationshipInputForm>> inputForms,
@@ -55,7 +53,6 @@ public final class Relationship<T> implements ResourceMember<T> {
     this.name = CollectionDescription.requireText(name, "Relationship name");
     this.idType = Objects.requireNonNull(idType, "Relationship ID type");
     this.targets = validateTargets(targets);
-    this.reader = Objects.requireNonNull(reader, "Relationship reader");
     this.binding = Objects.requireNonNull(binding, "Reference binding");
     this.writeOperations = Field.immutableOperations(writeOperations);
     this.inputForms = immutableInputForms(inputForms);
@@ -92,14 +89,13 @@ public final class Relationship<T> implements ResourceMember<T> {
         name,
         Objects.requireNonNull(idType, "Relationship ID type"),
         List.of(new RelationshipTarget<>(targetResource, targetResource, targetType)),
-        binding::read,
         binding,
         Set.of(),
         Map.of(),
         false,
         true,
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
         false,
         OpenApiSchemaDocumentation.EMPTY);
   }
@@ -114,7 +110,6 @@ public final class Relationship<T> implements ResourceMember<T> {
         name,
         Objects.requireNonNull(idType, "Relationship ID type"),
         List.copyOf(targets),
-        binding::read,
         binding,
         EnumSet.allOf(WriteOperation.class),
         Map.of(
@@ -124,8 +119,8 @@ public final class Relationship<T> implements ResourceMember<T> {
             Set.of(RelationshipInputForm.OBJECT)),
         false,
         false,
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
         false,
         OpenApiSchemaDocumentation.EMPTY);
   }
@@ -280,20 +275,12 @@ public final class Relationship<T> implements ResourceMember<T> {
     return inputForms.getOrDefault(operation, Set.of()).contains(inputForm);
   }
 
-  public Set<RelationshipInputForm> inputForms(WriteOperation operation) {
-    return inputForms.getOrDefault(operation, Set.of());
-  }
-
   public boolean nullable() {
     return nullable;
   }
 
   public AccessFunction readAccess() {
     return readAccess;
-  }
-
-  public AccessFunction writeAccess() {
-    return writeAccess;
   }
 
   public boolean selfReferenceAllowed() {
@@ -319,7 +306,7 @@ public final class Relationship<T> implements ResourceMember<T> {
   }
 
   Object read(T entity) {
-    return reader.apply(entity);
+    return binding.read(entity);
   }
 
   private Relationship<T> copy(
@@ -346,7 +333,6 @@ public final class Relationship<T> implements ResourceMember<T> {
         name,
         idType,
         targets,
-        reader,
         binding,
         operations,
         forms,

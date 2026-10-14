@@ -1,6 +1,7 @@
 package com.researchspace.model.collection;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -8,10 +9,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import lombok.Getter;
 
 /** One typed scalar attribute exposed by a collection. */
 public final class Field<T, V> implements ResourceMember<T> {
+
+  private static final ObjectMapper EXAMPLE_MAPPER = new ObjectMapper();
 
   private final String name;
   private final String property;
@@ -80,9 +84,9 @@ public final class Field<T, V> implements ResourceMember<T> {
         false,
         false,
         null,
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
         false);
   }
@@ -105,9 +109,9 @@ public final class Field<T, V> implements ResourceMember<T> {
         false,
         false,
         null,
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
         false);
   }
@@ -130,9 +134,9 @@ public final class Field<T, V> implements ResourceMember<T> {
         false,
         false,
         null,
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
-        AccessFunction.inherited(),
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
+        AccessFunction.INHERITED,
         OpenApiSchemaDocumentation.EMPTY,
         true);
   }
@@ -188,13 +192,10 @@ public final class Field<T, V> implements ResourceMember<T> {
         Objects.requireNonNull(documentation, "OpenAPI field documentation"));
   }
 
-  public AccessFunction writeAccess(WriteOperation operation) {
-    return operation == WriteOperation.CREATE ? createAccess : updateAccess;
-  }
-
   /** Whether this caller may write this field on this operation. */
   public boolean writableOn(WriteOperation operation, AccessContext context) {
-    return writableOn(operation) && writeAccess(operation).allowsField(context);
+    return writableOn(operation)
+        && (operation == WriteOperation.CREATE ? createAccess : updateAccess).allowsField(context);
   }
 
   public Field<T, V> required() {
@@ -314,10 +315,6 @@ public final class Field<T, V> implements ResourceMember<T> {
 
   public V defaultValue() {
     return defaultValue;
-  }
-
-  public Object parse(String value) {
-    return type.parse(value);
   }
 
   Object documentValue(T entity) {
@@ -489,16 +486,14 @@ public final class Field<T, V> implements ResourceMember<T> {
       validateValue(defaultValue);
     }
     if (embedded || type instanceof DeclaredFieldType<?>) {
-      java.util.stream.Stream.concat(
-              java.util.stream.Stream.ofNullable(openApi.example()),
-              openApi.additionalExamples().stream())
+      Stream.concat(Stream.ofNullable(openApi.example()), openApi.additionalExamples().stream())
           .forEach(
               example -> {
                 try {
                   var node =
                       type.inputKind() == CollectionFieldType.InputKind.STRING
-                          ? com.fasterxml.jackson.databind.node.TextNode.valueOf(example)
-                          : new ObjectMapper().readTree(example);
+                          ? TextNode.valueOf(example)
+                          : EXAMPLE_MAPPER.readTree(example);
                   if (node != null && node.isNull() && nullable) {
                     return;
                   }
@@ -527,9 +522,6 @@ public final class Field<T, V> implements ResourceMember<T> {
   }
 
   private static String requireName(String value, String label) {
-    if (value == null || value.isBlank()) {
-      throw new IllegalArgumentException(label + " must not be blank");
-    }
-    return value;
+    return CollectionDescription.requireText(value, label);
   }
 }

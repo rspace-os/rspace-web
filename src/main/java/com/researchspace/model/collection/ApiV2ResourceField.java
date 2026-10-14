@@ -32,7 +32,7 @@ public @interface ApiV2ResourceField {
 
     AccessFunction resolve() {
       return switch (this) {
-        case INHERITED -> AccessFunction.inherited();
+        case INHERITED -> AccessFunction.INHERITED;
         case AUTHENTICATED -> AccessFunction.authenticated();
         case SYSADMIN -> AccessFunction.sysadmin();
         case NEVER -> AccessFunction.never();
