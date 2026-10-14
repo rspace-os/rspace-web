@@ -24,37 +24,7 @@ test.describe(`ORCID integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     await flowSysadminConfig.ensureSetting("orcid.available", "ALLOWED");
   });
 
-  test("As a user, I can set my ORCID iD on my profile", async ({ page, pageOrcidProfile }) => {
-    if (INTEGRATION_MODE !== "real") {
-      // WebKit's route.fulfill() doesn't support redirect statuses (300-399) —
-      // an actual 302 with a Location header works on chromium/firefox but
-      // throws "Cannot fulfill with redirect status" on webkit. A same-behavior
-      // client-side redirect via a tiny HTML/JS page works identically on all
-      // three engines.
-      await page.context().route("**/orcid/authorize", async (route) => {
-        const response = await route.fetch({ maxRedirects: 0 });
-        const authorizeUrl = response.headers().location;
-        if (!authorizeUrl) {
-          await route.abort();
-          return;
-        }
-        const requestUrl = new URL(authorizeUrl);
-        const redirectUri = requestUrl.searchParams.get("redirect_uri");
-        if (!redirectUri) {
-          await route.abort();
-          return;
-        }
-        const target = new URL(redirectUri);
-        target.searchParams.set("code", "mock-orcid-auth-code");
-        const state = requestUrl.searchParams.get("state");
-        if (state) target.searchParams.set("state", state);
-        await route.fulfill({
-          contentType: "text/html",
-          body: `<script>window.location.replace(${JSON.stringify(target.toString())});</script>`,
-        });
-      });
-    }
-
+  test("As a user, I can set my ORCID iD on my profile", async ({ pageOrcidProfile }) => {
     await pageOrcidProfile.open();
     await expect(pageOrcidProfile.setOrcidIdLink).toBeVisible();
 

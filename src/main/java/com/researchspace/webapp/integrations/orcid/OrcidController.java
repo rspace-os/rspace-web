@@ -42,12 +42,18 @@ public class OrcidController extends BaseOAuth2Controller {
 
   @Autowired private IntegrationsHandler integrationsHandler;
 
+  private final String authorizeUrl;
+
   private OrcidConnector connector;
+
+  public OrcidController(@Value("${orcid.oauth.authorize.url}") String authorizeUrl) {
+    this.authorizeUrl = authorizeUrl;
+  }
 
   @GetMapping("/authorize")
   public RedirectView authorize() {
     String url =
-        UriComponentsBuilder.fromUriString("https://orcid.org/oauth/authorize")
+        UriComponentsBuilder.fromUriString(authorizeUrl)
             .queryParam("client_id", clientId)
             .queryParam("redirect_uri", properties.getServerUrl() + "/orcid/redirect_uri")
             .queryParam("response_type", "code")

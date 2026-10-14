@@ -134,6 +134,7 @@ if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
     "-Dgithub.oauth.authorize.url=${E2E_MOCK_URL}/github/oauth/authorize"
     "-Dgithub.oauth.access.token.url=${E2E_MOCK_URL}/github/oauth/token"
     "-Dgithub.api.base.url=${E2E_MOCK_URL}/github-api"
+    "-Dorcid.oauth.authorize.url=${E2E_MOCK_URL}/orcid/oauth/authorize"
     "-Dorcid.oauth.token.url=${E2E_MOCK_URL}/orcid/oauth/token"
     "-Dslack.client.id=mock-client"
     "-Dslack.secret=mock-secret"
