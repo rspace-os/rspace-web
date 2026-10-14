@@ -332,7 +332,7 @@ public final class Field<T, V> implements ResourceMember<T> {
     if (type instanceof DeclaredFieldType<?> declared) {
       EmbeddedObjects.validateValue(declared, value);
       Object serialized = serializeDeclared(type, value, context);
-      return EmbeddedObjects.project(declared, serialized, context);
+      return EmbeddedObjects.serialize(declared, serialized, context);
     }
     return type.serialize(value);
   }
@@ -484,18 +484,34 @@ public final class Field<T, V> implements ResourceMember<T> {
     if (defaultValue != null) {
       validateValue(defaultValue);
     }
-    if (type instanceof DeclaredFieldType<?> declared) {
+    if (embedded || type instanceof DeclaredFieldType<?>) {
       java.util.stream.Stream.concat(
               java.util.stream.Stream.ofNullable(openApi.example()),
               openApi.additionalExamples().stream())
           .forEach(
               example -> {
                 try {
-                  var node = new ObjectMapper().readTree(example);
+                  com.fasterxml.jackson.databind.JsonNode node;
+                  try {
+                    node = new ObjectMapper().readTree(example);
+                  } catch (IOException ex) {
+                    if (type.inputKind() != CollectionFieldType.InputKind.STRING) {
+                      throw ex;
+                    }
+                    node = com.fasterxml.jackson.databind.node.TextNode.valueOf(example);
+                  }
                   if (node != null && node.isNull() && nullable) {
                     return;
                   }
-                  EmbeddedObjects.validateValue(declared, node);
+                  if (type instanceof DeclaredFieldType<?> declared) {
+                    EmbeddedObjects.validateValue(declared, node);
+                  } else {
+                    if (node == null || !type.accepts(node)) {
+                      throw new IllegalArgumentException(
+                          "Wrong JSON type in embedded field example");
+                    }
+                    validateValue(type.parseScalar(node));
+                  }
                 } catch (IOException ex) {
                   throw new IllegalArgumentException("Invalid embedded field example", ex);
                 }
