@@ -465,6 +465,10 @@ public final class Field<T, V> implements ResourceMember<T> {
     if (requiredOnCreate && !writeOperations.contains(WriteOperation.CREATE)) {
       throw new IllegalArgumentException("Required field must be writable on create");
     }
+    if (embedded && requiredOnCreate && !writeOperations.contains(WriteOperation.UPDATE)) {
+      throw new IllegalArgumentException(
+          "Required embedded child must be writable on update for complete replacements");
+    }
     if (requiredOnCreate && nullable) {
       throw new IllegalArgumentException("Required field must not accept null");
     }
