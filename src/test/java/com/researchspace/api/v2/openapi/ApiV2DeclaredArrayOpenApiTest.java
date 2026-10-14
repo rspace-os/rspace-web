@@ -18,6 +18,7 @@ import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.DeclaredFieldType;
 import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
@@ -54,10 +55,29 @@ class ApiV2DeclaredArrayOpenApiTest {
       CollectionFieldTypes.array(
           Row.class,
           List.of(
-              Field.embedded("name", CollectionFieldTypes.text(10), Row::name).required(),
-              Field.embedded("group", DETAIL, Row::group).required(),
+              Field.embedded("name", CollectionFieldTypes.text(10), Row::name)
+                  .required()
+                  .documented(
+                      OpenApiSchemaDocumentation.builder()
+                          .example("123")
+                          .additionalExample("true")
+                          .additionalExample("null")
+                          .additionalExample("\"abc\"")
+                          .build()),
+              Field.embedded("group", DETAIL, Row::group)
+                  .required()
+                  .documented(
+                      OpenApiSchemaDocumentation.builder()
+                          .example("{\"count\":3}")
+                          .additionalExample("{\"count\":4}")
+                          .build()),
               Field.embedded("children", DETAILS, Row::children)
-                  .defaultValue(List.of(new Detail(2, "private"))),
+                  .defaultValue(List.of(new Detail(2, "private")))
+                  .documented(
+                      OpenApiSchemaDocumentation.builder()
+                          .example("[{\"count\":5}]")
+                          .additionalExample("[{\"count\":6}]")
+                          .build()),
               Field.embedded("createOnly", CollectionFieldTypes.text(), Row::createOnly)
                   .writeOnlyOn(WriteOperation.CREATE)
                   .readableBy(AccessFunction.never())),
@@ -165,6 +185,37 @@ class ApiV2DeclaredArrayOpenApiTest {
     assertTrue(map(map(row.get("properties")).get("group")).containsKey("properties"));
   }
 
+  @Test
+  void publishesStructuredExamplesAsJsonValuesAndKeepsStringExamplesAsRawText() {
+    Map<String, Object> schemas = schemas(document(description("rows"), false));
+    List<Map<String, Object>> expectedExample =
+        List.of(Map.of("name", "ok", "group", Map.of("count", 3)));
+    List<Map<String, Object>> expectedAdditionalExample =
+        List.of(Map.of("name", "next", "group", Map.of("count", 4)));
+    for (String operation : List.of("Read", "Create", "Update")) {
+      Map<String, Object> array =
+          map(map(map(schemas.get("Items" + operation)).get("properties")).get("rows"));
+      assertEquals(expectedExample, array.get("example"), operation);
+      assertEquals(List.of(expectedAdditionalExample), array.get("examples"), operation);
+      assertEquals(
+          List.of(new Row("ok", new Detail(3, "private"), List.of(new Detail(2, "private")), null)),
+          ROWS.parse(Json31.mapper().valueToTree(array.get("example")), WriteOperation.UPDATE));
+      Map<String, Object> children = map(map(array.get("items")).get("properties"));
+      assertEquals("123", map(children.get("name")).get("example"), operation);
+      assertEquals(
+          List.of("true", "null", "\"abc\""), map(children.get("name")).get("examples"), operation);
+      assertEquals(Map.of("count", 3), map(children.get("group")).get("example"), operation);
+      assertEquals(
+          List.of(Map.of("count", 4)), map(children.get("group")).get("examples"), operation);
+      assertEquals(
+          List.of(Map.of("count", 5)), map(children.get("children")).get("example"), operation);
+      assertEquals(
+          List.of(List.of(Map.of("count", 6))),
+          map(children.get("children")).get("examples"),
+          operation);
+    }
+  }
+
   private static CollectionDescription<Item> description(String name) {
     return new CollectionDescription<>(
         "items",
@@ -179,7 +230,12 @@ class ApiV2DeclaredArrayOpenApiTest {
                             "example",
                             new Detail(3, "private"),
                             List.of(new Detail(2, "private")),
-                            "creation")))),
+                            "creation")))
+                .documented(
+                    OpenApiSchemaDocumentation.builder()
+                        .example("[{\"name\":\"ok\",\"group\":{\"count\":3}}]")
+                        .additionalExample("[{\"name\":\"next\",\"group\":{\"count\":4}}]")
+                        .build())),
         "id",
         List.of(new Sort("id", true)));
   }
