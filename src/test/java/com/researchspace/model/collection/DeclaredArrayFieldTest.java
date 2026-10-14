@@ -313,6 +313,132 @@ class DeclaredArrayFieldTest {
     return new Row((String) values.get("name"), (Integer) values.get("number"), "private");
   }
 
+  @Test
+  void freshCustomSerializerOutputRequiresHiddenChildrenBeforeValidatingTheArray() {
+    MutableArray custom =
+        new MutableArray() {
+          @Override
+          public Object serialize(List<Row> rows, AccessContext context) {
+            return List.of(Map.of("number", 7), Map.of("number", 7));
+          }
+
+          @Override
+          public void validate(List<Row> rows) {
+            if (rows.stream().map(Row::number).distinct().count() != rows.size()) {
+              throw new IllegalArgumentException("Duplicate numbers");
+            }
+          }
+        };
+    custom.children.add(NAME.readableBy(AccessFunction.never()));
+    custom.children.add(NUMBER);
+    CollectionDescription<Item> items =
+        description(Field.readOnly("rows", "rows", custom, Item::rows));
+    Item item =
+        new Item(1L, List.of(new Row("first", 1, "private"), new Row("second", 2, "private")));
+    EmbeddedFieldException failure =
+        assertThrows(EmbeddedFieldException.class, () -> items.toDocument(item));
+    assertEquals("[0].name", failure.path());
+    assertEquals(DocumentValidationException.Reason.REQUIRED, failure.reason());
+  }
+
+  @Test
+  void scalarChildExamplesUseTheirJsonTypeAndConstraints() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> NUMBER.documented(OpenApiSchemaDocumentation.builder().example("\"bad\"").build()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            NAME.documented(
+                OpenApiSchemaDocumentation.builder()
+                    .additionalExample("\"too-long-name\"")
+                    .build()));
+    assertEquals(
+        "4",
+        NUMBER
+            .documented(OpenApiSchemaDocumentation.builder().example("4").build())
+            .schema(AccessPolicy.authenticated())
+            .openApi()
+            .example());
+  }
+
+  @Test
+  void normalAndIncludedReadDocumentsKeepTheIdentifierDespiteItsFieldGate() {
+    CollectionDescription<Item> items =
+        new CollectionDescription<>(
+            "items",
+            Item.class,
+            List.of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Item::id)
+                    .readableBy(AccessFunction.never()),
+                Field.readOnly("rows", "rows", ROWS, Item::rows)),
+            "id",
+            List.of(new Sort("id", true)));
+    Item item = new Item(9L, List.of());
+    assertEquals(9L, items.toDocument(item).get("id"));
+    CollectionDescription<Parent> parents =
+        new CollectionDescription<>(
+            "parents",
+            Parent.class,
+            List.of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Parent::id),
+                Relationship.referenceToOne(
+                    "item",
+                    "items",
+                    CollectionFieldTypes.longNumber(),
+                    Item.class,
+                    Parent::item,
+                    Item::id,
+                    "item.id")),
+            "id",
+            List.of(new Sort("id", true)));
+    ResourceRegistry registry = new ResourceRegistry(List.of(parents, items));
+    ResourceRenderer.TargetResolver resolver =
+        (resource, id) ->
+            Optional.of(
+                ResourceRenderer.ResolvedTarget.lazy(
+                    () -> item, FieldSelection.all(), Map.of("id", 9L, "rows", List.of())));
+    Map<?, ?> reference =
+        (Map<?, ?>)
+            new ResourceRenderer(registry)
+                .render(
+                    new Parent(1L, item),
+                    parents,
+                    FieldSelection.all(),
+                    IncludeTree.toDepth(parents, registry, 1),
+                    resolver)
+                .get("item");
+    assertEquals(9L, ((Map<?, ?>) reference.get("value")).get("id"));
+  }
+
+  @Test
+  void annotatedArraysExplainHowToDeclareTheirChildren() {
+    IllegalArgumentException failure =
+        assertThrows(
+            IllegalArgumentException.class,
+            () ->
+                CollectionDescription.fromApiV2Resource(
+                    ArrayResource.class,
+                    ArrayBean.class,
+                    List.of(),
+                    List.of(new Sort("id", true))));
+    assertTrue(failure.getMessage().contains("declared children"));
+    assertTrue(failure.getMessage().contains("Field.embedded"));
+  }
+
+  @ApiV2ResourceDefinition(name = "arrayBeans", entity = ArrayBean.class)
+  private record ArrayResource(@ApiV2ResourceField Long id, @ApiV2ResourceField List<Row> rows) {}
+
+  public static class ArrayBean {
+    public Long getId() {
+      return 1L;
+    }
+
+    public List<Row> getRows() {
+      return List.of();
+    }
+  }
+
   private static CollectionDescription<Item> description(Field<Item, List<Row>> rows) {
     return new CollectionDescription<>(
         "items",

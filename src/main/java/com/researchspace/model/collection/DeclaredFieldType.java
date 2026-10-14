@@ -20,9 +20,9 @@ public interface DeclaredFieldType<V> extends StructuredFieldType<V> {
     return javaType().cast(EmbeddedObjects.parse(this, value, operation));
   }
 
-  /** Serializes readable children using the caller context that gates the parent field. */
+  /** Serializes complete declared children; the field renderer applies caller access afterward. */
   default Object serialize(V value, AccessContext context) {
-    return EmbeddedObjects.serialize(this, value, context);
+    return EmbeddedObjects.defaultDocument(this, value);
   }
 
   @Override
