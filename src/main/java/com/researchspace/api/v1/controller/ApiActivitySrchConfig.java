@@ -3,7 +3,7 @@ package com.researchspace.api.v1.controller;
 import com.researchspace.core.util.DateRangeAdjustable;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditDomain;
-import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.service.audit.search.AbstractAuditSrchConfigValidator;
 import com.researchspace.service.audit.search.IAuditTrailSearchConfig;
 import jakarta.validation.constraints.Pattern;
 import java.text.SimpleDateFormat;
@@ -38,7 +38,7 @@ public class ApiActivitySrchConfig extends ApiSearchConfig
   private Set<AuditAction> actions = new HashSet<>();
   private Set<String> usernames = new HashSet<>();
 
-  @Pattern(regexp = GlobalIdentifier.OID_PATTERN_STRING)
+  @Pattern(regexp = AbstractAuditSrchConfigValidator.AUDIT_RESOURCE_ID_PATTERN)
   private String oid;
 
   @Override
