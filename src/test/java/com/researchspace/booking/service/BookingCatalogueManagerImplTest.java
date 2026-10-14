@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -489,7 +490,7 @@ class BookingCatalogueManagerImplTest {
     buffered.setBufferBeforeMinutes(10);
     buffered.setBufferAfterMinutes(20);
     BookingConfiguration closedMonday = open(3);
-    closedMonday.setOpenDays(List.of(2, 3, 4, 5, 6, 7));
+    closedMonday.setOpeningHours(hours("00:00", "24:00", 2, 3, 4, 5, 6, 7));
     when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
         .thenReturn(new ResourcePage<>(List.of(buffered, open(2), closedMonday), 3));
     when(bookings.findConfirmedEventIntervals(any(), any(), any()))
@@ -509,10 +510,7 @@ class BookingCatalogueManagerImplTest {
         new com.researchspace.model.booking.BookableTargetReference(
             com.researchspace.model.booking.BookableTargetType.INSTRUMENT, id + 100));
     configuration.setTimeZone("UTC");
-    configuration.setOpeningStart("00:00");
-    configuration.setOpeningEnd("24:00");
-    configuration.setOpenDays(List.of(1, 2, 3, 4, 5, 6, 7));
-    configuration.setOpeningExceptions(List.of());
+    configuration.setOpeningHours(hours("00:00", "24:00"));
     return configuration;
   }
 

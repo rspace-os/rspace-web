@@ -91,7 +91,7 @@ final class BookingCurrentAvailability {
 
   /** A scheduling-zone wall-clock boundary; {@code 24:00} is the next date's start of day. */
   private static Instant boundary(LocalDate date, String time, ZoneId zone) {
-    return BookingSchedulingSettings.DEFAULT_OPENING_END.equals(time)
+    return BookingSchedulingSettings.END_OF_DAY.equals(time)
         ? date.plusDays(1).atStartOfDay(zone).toInstant()
         : date.atTime(LocalTime.parse(time)).atZone(zone).toInstant();
   }
