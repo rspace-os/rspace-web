@@ -62,7 +62,7 @@ export class BookableItemPage {
   }
 
   get save(): Locator {
-    return page.getByRole("button", { name: "Save changes" });
+    return page.getByLabelText("Details", { exact: true }).getByRole("button", { name: "Save", exact: true });
   }
 
   get cancel(): Locator {
