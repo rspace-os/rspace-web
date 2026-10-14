@@ -512,6 +512,7 @@ resolved during design. This file is a glossary only — no implementation detai
   _Avoid_: template match (that is the check, not the import)
 
 - **Blank column** — a CSV column with no value in any row. In an existing-template import
-  it fits a custom field of any type but attachment and leaves that field empty on every item,
-  unless the field is mandatory, which refuses it.
+  it fits a custom field of any type but attachment and leaves that field empty on every item
+  (a link field keeps the template's default link, if it has one), unless the field is
+  mandatory, which refuses it.
   _Avoid_: empty column, unused column
