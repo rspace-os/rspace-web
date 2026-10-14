@@ -37,6 +37,7 @@ export function dashboardBookingFixture(
     ...overrides,
     createdAt: overrides.createdAt ?? start,
     updatedAt: overrides.updatedAt ?? start,
+    cancellationReason: overrides.cancellationReason ?? null,
   };
 }
 

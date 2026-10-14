@@ -152,7 +152,11 @@ the editing baseline makes the form clean and adopts the latest cached server va
 
 Booking preferences and the sysadmin Settings page edit these values, including the Time format
 radios (each labelled with an example time in that format), with the same
-`BookingDisplaySettingsFields`.
+`BookingDisplaySettingsFields`. The custom timezone field is rendered only while Custom is
+selected. Every other mode submits `customTimezone: null`, as the input schema requires, so the
+component keeps the last custom zone in memory and restores it when the user switches back to Custom
+before saving; Custom without a remembered zone starts at `UTC`. A hidden field has no validation
+error, so an invalid custom zone blocks Save only while Custom is selected.
 
 ## Weekly scheduling defaults
 
@@ -250,6 +254,14 @@ Before mounting the Booking shell or sidebar, AppShell waits for feature flags. 
 unavailable Booking flags redirect to `/workspace` without issuing Booking queries.
 When Booking is enabled, the Inventory sidebar links to `/booking`; the legacy global AppBar
 does not include a separate Booking link.
+The Booking sidebar's Administration group lists Settings for sysadmins and Bookable Items for
+users who can read at least one booking configuration or set up an eligible instrument
+(`useCanOpenBookableItemsAdministration`: a one-row configurations count and the Add form's blank
+target browse, both cached for 10 minutes); with neither, the group is omitted. The Bookable Items
+page hides Add until an eligible target exists. Settings renders a not-permitted state for
+non-sysadmins without calling its sysadmin-only API. The Settings and bookable item queries do not
+retry permanent 4xx answers (`pages/queryRetry.ts`), so a missing or unreadable item shows its
+not-found state at once; network failures and 5xx responses keep the default three retries.
 Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
 non-string values) and use their normal display-timezone defaults.
 
@@ -278,8 +290,9 @@ draft, independently of the browsed date or whether the narrow-layout schedule
 sheet is open. On narrow layouts, a floating Day schedule button appears at
 the right edge while the form is in view and opens a right-side sheet. Its tab
 stays attached to the sheet's left edge as it slides in and out, and closes the
-sheet when pressed. The wide layout keeps
-the timeline below the item information card. Opening the
+sheet when pressed. The wide layout gives the form 65% and the sidebar 35%
+of the space remaining after the column gap. The form fills its column without
+an additional width cap, with the timeline below the item information card. Opening the
 sheet does not start a second day-schedule query. Do not use padded
 availability intervals as visual event durations.
 Both fetch paths retain the projection, authorization scope and pagination cap;

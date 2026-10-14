@@ -159,7 +159,7 @@ export default function BookingInlineEditForm() {
 
   return (
     <>
-      <div ref={panelRef} className="@4xl:col-start-1 @4xl:row-span-2 @4xl:row-start-1">
+      <div ref={panelRef} className="min-w-0 @4xl:col-start-1 @4xl:row-span-2 @4xl:row-start-1">
         <Panel
           heading={t(
             base.kind === "MAINTENANCE" ? "bookings.details.edit.maintenanceTitle" : "bookings.details.edit.title",
@@ -233,7 +233,6 @@ export default function BookingInlineEditForm() {
               submissionBlocked={blocked}
               windowAdjustment={draftBridge.windowAdjustment}
               windowAdjustmentTarget={draftBridge.windowAdjustmentTarget}
-              onWindowAdjustmentApplied={draftBridge.onWindowAdjustmentApplied}
               onDraftChange={draftBridge.onDraftChange}
               onStateChange={handleStateChange}
               onSubmit={(submission) => mutation.mutateAsync(submission)}
@@ -247,9 +246,10 @@ export default function BookingInlineEditForm() {
         </Panel>
       </div>
       {configuration.data ? (
-        <div className="@4xl:col-start-2 @4xl:row-start-2">
+        <div className="min-w-0 @4xl:col-start-2 @4xl:row-start-2">
           <BookingDayTimelineAside
             target={configuration.data}
+            formContainerRef={panelRef}
             draft={draftBridge.draft ?? originalDraft}
             timezone={displayTimeZone}
             token={token}

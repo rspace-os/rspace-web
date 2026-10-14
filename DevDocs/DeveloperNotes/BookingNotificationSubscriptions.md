@@ -32,12 +32,17 @@ the setting; request bodies never accept a user ID.
 
 | Method | Route | Payload / result |
 | --- | --- | --- |
-| GET / PUT | `/users/me/booking-notification-preferences` | `{autoSubscribeOwnedItems: boolean}` |
+| GET | `/users/me/booking-notification-preferences` | `{autoSubscribeOwnedItems, notifyOnCreated, notifyOnCancelled, emailDelivery}`, all booleans |
+| PUT | Same | `{autoSubscribeOwnedItems, notifyOnCreated, notifyOnCancelled}`; all required; returns the GET shape |
 | GET | `/booking-configurations/{id}/notification-subscription` | Saved subscription, version and effective event delivery |
 | PUT | Same | `{enabled: boolean, version: number}`; stale version returns 409 |
 | POST | `/users/me/booking-notification-subscriptions/lookup` | `{configurationIds: number[]}`; current-user subscription documents |
 | PUT | `/users/me/booking-notification-subscriptions` | `{configurationIds: number[], enabled: boolean}`; explicit bulk choice |
 | DELETE | Same | Unsubscribe from all instruments; returns `{updatedCount: number}` |
+
+`notifyOnCreated` and `notifyOnCancelled` are the same global event preferences that My Profile
+edits, so either page can change them. `emailDelivery` is the effective My Profile email preference;
+it is read-only here and a PUT containing it is rejected as an unknown field.
 
 Item responses contain `configurationId`, `enabled`, `version`, `createdEnabled`,
 `cancelledEnabled` and `emailEnabled`. An absent saved row is off and has version `-1`;
@@ -113,10 +118,19 @@ human-readable in the recipient's configured timezone.
 
 Older rows have no structured data. The dashboard reformats the final ISO interval only when both
 trailing values match the booking message shape. Existing rows remain readable without migration.
-The legacy notification UI decodes the booking message once as text, preserving literal instrument
-names without interpreting them as HTML. Email delivery also respects
-`BROADCAST_NOTIFICATIONS_BY_EMAIL`.
+Email delivery also respects `BROADCAST_NOTIFICATIONS_BY_EMAIL`.
 
+Cancellation notifications include the optional reason as HTML-escaped text. The complete formatted
+message is stored without abbreviation so a maximum-length reason remains intact in email even when
+escaping expands its length.
+
+Messages are HTML. The booking ID links to `/booking/calendar/bookings/{id}`, and the instrument
+name and global ID link to `/booking/bookable-items/{globalId}`. User-controlled values are
+HTML-escaped and link identifiers are path-encoded. In-app lists re-format structured data with
+root-relative links; the saved message, which is also the email body, uses absolute links built from
+`server.urls.prefix`, like the rest of the notification email. The legacy notification UI leaves
+booking messages as the browser decoded them, so the escaped instrument name stays literal text and
+the links stay clickable.
 ## Verification
 
 Run the database integration tests against a separate test database, never the live

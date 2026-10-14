@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.Hibernate;
 import org.hibernate.envers.Audited;
 import org.hibernate.envers.RelationTargetAuditMode;
 
@@ -80,6 +81,10 @@ public class TimeSlotBooking implements Serializable {
   @Setter
   private String purpose;
 
+  @Getter(onMethod_ = {@Column(length = 500), @AuditTrailProperty(name = "cancellationReason")})
+  @Setter
+  private String cancellationReason;
+
   @Getter(onMethod_ = {@Column(nullable = false)})
   @Setter
   private boolean deleted;
@@ -128,6 +133,19 @@ public class TimeSlotBooking implements Serializable {
   @AuditTrailProperty(name = "bookingConfigurationId")
   public String getAuditBookingConfigurationId() {
     return bookingConfiguration == null ? null : bookingConfiguration.getAuditTrailIdentifier();
+  }
+
+  /**
+   * The item booked at the time of the change, so the audit Name column can show it after the
+   * configuration moves or is deleted. Omitted when the configuration proxy was never loaded: audit
+   * rows are written after commit, where initializing it could fail and drop the row.
+   */
+  @Transient
+  @AuditTrailProperty(name = "target")
+  public BookableTargetReference getAuditTarget() {
+    return bookingConfiguration != null && Hibernate.isInitialized(bookingConfiguration)
+        ? bookingConfiguration.getTarget()
+        : null;
   }
 
   @Column(nullable = false)
@@ -235,6 +253,12 @@ public class TimeSlotBooking implements Serializable {
   @Transient
   public String getVisiblePurpose() {
     return preparedPrivacy == BookingPrivacy.FULL ? purpose : null;
+  }
+
+  /** Returns the cancellation reason only when the manager prepared a full response. */
+  @Transient
+  public String getVisibleCancellationReason() {
+    return preparedPrivacy == BookingPrivacy.FULL ? cancellationReason : null;
   }
 
   /** Returns a non-sensitive requester label only when the manager prepared a full response. */

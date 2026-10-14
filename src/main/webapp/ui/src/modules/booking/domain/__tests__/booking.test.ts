@@ -20,6 +20,7 @@ describe("booking response intervals", () => {
       canViewConfiguration: false,
       privacy: "full",
       purpose: "Retained requester details",
+      cancellationReason: null,
       bookedBy: "Ada Lovelace (ada)",
       createdBy: "Grace Hopper (grace)",
       canEdit: false,

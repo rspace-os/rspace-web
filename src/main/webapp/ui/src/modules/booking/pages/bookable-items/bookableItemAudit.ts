@@ -195,6 +195,8 @@ function parsedArray(value: unknown): unknown {
 
 /** Recorded schedules as weekday names and scheduling-zone ranges; otherwise undefined. */
 function openingValue(key: string, value: unknown, locale: string): string | undefined {
+  // A midnight close is stored as 24:00 and shown as 00:00, as everywhere else.
+  if (key === "openingEnd" && value === "24:00") return "00:00";
   if (key === "openDays") {
     const days = v.safeParse(HistoricalOpenDaysSchema, parsedArray(value));
     if (days.success)
@@ -259,24 +261,26 @@ export function recordedValues(
   words?: RecordedValueWords,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): Array<[string, string]> {
-  return Object.entries(payload).map(([key, value]) => {
-    if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
-      const date = new Date(value);
-      if (Number.isFinite(date.getTime())) {
-        return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+  return Object.entries(payload)
+    .filter(([key, value]) => !(key === "cancellationReason" && value === null))
+    .map(([key, value]) => {
+      if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
+        const date = new Date(value);
+        if (Number.isFinite(date.getTime())) {
+          return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+        }
       }
-    }
-    const opening = openingValue(key, value, locale);
-    if (opening !== undefined) return [key, opening];
-    const word = words && wordValue(key, value, words);
-    if (word !== undefined) return [key, word];
-    return [
-      key,
-      value === null || value === undefined
-        ? "—"
-        : typeof value === "object"
-          ? JSON.stringify(value)
-          : String(value as string | number | boolean),
-    ];
-  });
+      const opening = openingValue(key, value, locale);
+      if (opening !== undefined) return [key, opening];
+      const word = words && wordValue(key, value, words);
+      if (word !== undefined) return [key, word];
+      return [
+        key,
+        value === null || value === undefined
+          ? "—"
+          : typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value as string | number | boolean),
+      ];
+    });
 }
