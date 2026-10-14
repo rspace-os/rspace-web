@@ -253,6 +253,25 @@ class ApiV2AuditLogTest {
   }
 
   @Test
+  void oversizedPageOffsetReturnsNoEventsAndPreservesTheSnapshot() {
+    when(strictSearch.search(any()))
+        .thenReturn(List.of(result("Visible", Instant.parse("2026-01-02T12:00:00Z"))));
+    var first = auditLog.search(resource, "7", rangeQuery(), actor);
+    ApiV2AuditQuery query = rangeQuery();
+    query.setPage(Integer.MAX_VALUE);
+    query.setLimit(100);
+    query.setSnapshotDate(first.snapshotDate());
+    query.setSnapshotFingerprint(first.snapshotFingerprint());
+
+    var page = auditLog.search(resource, "7", query, actor);
+
+    assertTrue(page.docs().isEmpty());
+    assertEquals(1, page.totalDocs());
+    assertEquals(first.snapshotDate(), page.snapshotDate());
+    assertEquals(first.snapshotFingerprint(), page.snapshotFingerprint());
+  }
+
+  @Test
   void defaultAndClampedStartStayFixedWhenClockAdvancesPastSnapshot() {
     Clock movingClock = mock(Clock.class);
     when(movingClock.instant())
