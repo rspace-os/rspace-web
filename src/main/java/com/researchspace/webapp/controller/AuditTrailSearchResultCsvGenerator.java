@@ -7,7 +7,6 @@ import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.audittrail.AuditAction;
-import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.io.IOException;
@@ -99,7 +98,13 @@ public class AuditTrailSearchResultCsvGenerator {
           id = data.getOrDefault("id", "n/a").toString();
           name = data.getOrDefault("name", "n/a").toString();
           String desc2 = auditEntry.getData().getDescription();
-          if (!StringUtils.isBlank(desc2)) {
+          if (BookingAuditDetails.isBookingEvent(auditEntry.getEvent(), data)) {
+            desc =
+                StringUtils.defaultIfBlank(
+                    BookingAuditDetails.combine(
+                        BookingAuditDetails.format(data, messages, CSV_LOCALE), desc2),
+                    desc);
+          } else if (!StringUtils.isBlank(desc2)) {
             desc = desc2;
           } else {
             desc = generateDescription(auditEntry, data);
@@ -155,9 +160,7 @@ public class AuditTrailSearchResultCsvGenerator {
   }
 
   private boolean isBookingEvent(AuditTrailSearchResult auditEntry, Map<String, Object> data) {
-    AuditDomain domain = auditEntry.getEvent().getDomain();
-    return AuditDomain.BOOKING.equals(
-        AuditDomain.normalizeLegacyBookingDomain(domain, data.get("id")));
+    return BookingAuditDetails.isBookingEvent(auditEntry.getEvent(), data);
   }
 
   private String generateDescription(AuditTrailSearchResult auditEntry, Map<String, Object> data) {
