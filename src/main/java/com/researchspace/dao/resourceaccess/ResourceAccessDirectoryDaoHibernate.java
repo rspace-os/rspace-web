@@ -1,17 +1,21 @@
 package com.researchspace.dao.resourceaccess;
 
+import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
@@ -19,6 +23,19 @@ import org.springframework.stereotype.Repository;
 /** Hibernate implementation that performs one bounded query per principal type. */
 @Repository
 public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirectoryDao {
+
+  private static final String USER_MEMBERSHIP_SCOPE =
+      "exists (select candidateMembership.id from UserGroup candidateMembership "
+          + "where candidateMembership.user.id = user.id and candidateMembership.group.id "
+          + "in (select ownMembership.group.id from UserGroup ownMembership "
+          + "where ownMembership.user.id = :subjectId))";
+  private static final String GROUP_HAS_ENABLED_MEMBERS =
+      "exists (select enabledMembership.id from UserGroup enabledMembership "
+          + "where enabledMembership.group.id = accessGroup.id "
+          + "and enabledMembership.user.enabled = true)";
+  private static final String GROUP_MEMBERSHIP_SCOPE =
+      "exists (select membership.id from UserGroup membership "
+          + "where membership.group.id = accessGroup.id and membership.user.id = :subjectId)";
 
   private final SessionFactory sessionFactory;
 
@@ -28,22 +45,17 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
 
   @Override
   public List<ResourceAccessDirectoryRow> search(String query, int limit, User subject) {
-    String pattern = "%" + escapeLike(query.toLowerCase(Locale.ROOT)) + "%";
+    String pattern = "%" + LikeEscaper.escape(query.toLowerCase(Locale.ROOT)) + "%";
     Session session = sessionFactory.getCurrentSession();
     boolean sysadmin = subject.hasSysadminRole();
     StringBuilder userQuery =
         new StringBuilder("select user from User user where user.enabled = true ")
-            .append("and (lower(user.username) like :query escape '\\' ")
-            .append("or lower(user.firstName) like :query escape '\\' ")
-            .append("or lower(user.lastName) like :query escape '\\' ")
-            .append(
-                "or lower(concat(user.firstName, ' ', user.lastName)) like :query escape '\\')");
+            .append("and (lower(user.username) like :query escape '!' ")
+            .append("or lower(user.firstName) like :query escape '!' ")
+            .append("or lower(user.lastName) like :query escape '!' ")
+            .append("or lower(concat(user.firstName, ' ', user.lastName)) like :query escape '!')");
     if (!sysadmin) {
-      userQuery
-          .append(" and exists (select candidateMembership.id from UserGroup candidateMembership ")
-          .append("where candidateMembership.user.id = user.id and candidateMembership.group.id ")
-          .append("in (select ownMembership.group.id from UserGroup ownMembership ")
-          .append("where ownMembership.user.id = :subjectId))");
+      userQuery.append(" and ").append(USER_MEMBERSHIP_SCOPE);
     }
     userQuery.append(" order by lower(user.lastName), lower(user.firstName), lower(user.username)");
     var users =
@@ -56,17 +68,12 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
     }
 
     StringBuilder groupQuery =
-        new StringBuilder("select accessGroup from Group accessGroup ")
-            .append("where exists (select enabledMembership.id from UserGroup enabledMembership ")
-            .append("where enabledMembership.group.id = accessGroup.id ")
-            .append("and enabledMembership.user.enabled = true) ")
-            .append("and (lower(accessGroup.displayName) like :query escape '\\' ")
-            .append("or lower(accessGroup.uniqueName) like :query escape '\\')");
+        new StringBuilder("select accessGroup from Group accessGroup where ")
+            .append(GROUP_HAS_ENABLED_MEMBERS)
+            .append(" and (lower(accessGroup.displayName) like :query escape '!' ")
+            .append("or lower(accessGroup.uniqueName) like :query escape '!')");
     if (!sysadmin) {
-      groupQuery
-          .append(" and exists (select membership.id from UserGroup membership ")
-          .append("where membership.group.id = accessGroup.id ")
-          .append("and membership.user.id = :subjectId)");
+      groupQuery.append(" and ").append(GROUP_MEMBERSHIP_SCOPE);
     }
     groupQuery.append(" order by lower(accessGroup.displayName), accessGroup.id");
     var groups =
@@ -78,14 +85,9 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
       groups.setParameter("subjectId", subject.getId());
     }
 
-    List<ResourceAccessDirectoryRow> result = new ArrayList<>();
-    users.getResultList().stream()
-        .map(ResourceAccessDirectoryDaoHibernate::user)
-        .forEach(result::add);
-    groups.getResultList().stream()
-        .map(ResourceAccessDirectoryDaoHibernate::group)
-        .forEach(result::add);
-    return result.stream()
+    return Stream.concat(
+            users.getResultList().stream().map(ResourceAccessDirectoryDaoHibernate::user),
+            groups.getResultList().stream().map(ResourceAccessDirectoryDaoHibernate::group))
         .sorted(
             Comparator.comparing(ResourceAccessDirectoryRow::name, String.CASE_INSENSITIVE_ORDER))
         .limit(limit)
@@ -97,8 +99,8 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
     if (keys.isEmpty() || subject == null || !subject.isEnabled()) {
       return Map.of();
     }
-    Set<Long> userIds = ids(keys, "user:");
-    Set<Long> groupIds = ids(keys, "group:");
+    Set<Long> userIds = ids(keys, ResourceGranteeKeys::parseUserId);
+    Set<Long> groupIds = ids(keys, ResourceGranteeKeys::parseGroupId);
     boolean sysadmin = subject.hasSysadminRole();
     Session session = sessionFactory.getCurrentSession();
     List<User> users =
@@ -125,10 +127,7 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
         new StringBuilder(
             "select user from User user where user.id in :ids and user.enabled = true");
     if (!sysadmin) {
-      hql.append(" and exists (select candidateMembership.id from UserGroup candidateMembership ")
-          .append("where candidateMembership.user.id = user.id and candidateMembership.group.id ")
-          .append("in (select ownMembership.group.id from UserGroup ownMembership ")
-          .append("where ownMembership.user.id = :subjectId))");
+      hql.append(" and ").append(USER_MEMBERSHIP_SCOPE);
     }
     var query = session.createQuery(hql.toString(), User.class);
     query.setParameter("ids", ids);
@@ -142,13 +141,10 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
       Session session, Set<Long> ids, Long subjectId, boolean sysadmin) {
     StringBuilder hql =
         new StringBuilder("select accessGroup from Group accessGroup where accessGroup.id in :ids ")
-            .append("and exists (select enabledMembership.id from UserGroup enabledMembership ")
-            .append("where enabledMembership.group.id = accessGroup.id ")
-            .append("and enabledMembership.user.enabled = true)");
+            .append("and ")
+            .append(GROUP_HAS_ENABLED_MEMBERS);
     if (!sysadmin) {
-      hql.append(" and exists (select membership.id from UserGroup membership ")
-          .append("where membership.group.id = accessGroup.id ")
-          .append("and membership.user.id = :subjectId)");
+      hql.append(" and ").append(GROUP_MEMBERSHIP_SCOPE);
     }
     var query = session.createQuery(hql.toString(), Group.class);
     query.setParameter("ids", ids);
@@ -158,22 +154,11 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
     return query.getResultList();
   }
 
-  private static Set<Long> ids(Set<String> keys, String prefix) {
-    Set<Long> ids = new LinkedHashSet<>();
-    for (String key : keys) {
-      if (key == null || !key.startsWith(prefix)) {
-        continue;
-      }
-      try {
-        long id = Long.parseLong(key.substring(prefix.length()));
-        if (id != 0) {
-          ids.add(id);
-        }
-      } catch (NumberFormatException ignored) {
-        // Invalid keys remain unresolved and receive the same response as out-of-scope keys.
-      }
-    }
-    return ids;
+  private static Set<Long> ids(Set<String> keys, Function<String, Long> parseId) {
+    return keys.stream()
+        .map(parseId)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   private static ResourceAccessDirectoryRow user(User user) {
@@ -192,9 +177,5 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
         ResourceGranteeKeys.group(group.getId()),
         group.getDisplayName(),
         group.getUniqueName());
-  }
-
-  private static String escapeLike(String value) {
-    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
   }
 }

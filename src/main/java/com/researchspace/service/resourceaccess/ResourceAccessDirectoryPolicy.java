@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /** Shared principal-directory policy used by access searches and assignment writes. */
@@ -28,9 +29,7 @@ public class ResourceAccessDirectoryPolicy {
   public Map<String, ResourceGranteeDirectoryEntry> resolveAssignable(
       Set<String> keys, User subject) {
     return directory.resolveAssignable(keys, subject).entrySet().stream()
-        .collect(
-            java.util.stream.Collectors.toUnmodifiableMap(
-                Map.Entry::getKey, row -> entry(row.getValue())));
+        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, row -> entry(row.getValue())));
   }
 
   private static ResourceGranteeDirectoryEntry entry(ResourceAccessDirectoryRow row) {

@@ -11,15 +11,14 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
-import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +29,7 @@ class ResourceAccessResolverTest {
   private static final String CONTRIBUTOR = "CONTRIBUTOR";
   private static final String READER = "READER";
 
-  private final TestScheme scheme = new TestScheme();
+  private final TestScheme scheme = TestScheme.resolverFixture();
   private final ResourceAccessResolver resolver =
       new ResourceAccessResolver(new ResourceRoleSchemeRegistry(List.of(scheme)));
 
@@ -64,9 +63,7 @@ class ResourceAccessResolverTest {
             ResourceRoleSourceKind.DIRECT,
             ResourceRoleSourceKind.GROUP,
             ResourceRoleSourceKind.AUDIENCE),
-        resolved.roleSources().stream()
-            .map(ResourceRoleSource::kind)
-            .collect(java.util.stream.Collectors.toSet()));
+        resolved.roleSources().stream().map(ResourceRoleSource::kind).collect(Collectors.toSet()));
   }
 
   @Test
@@ -143,47 +140,5 @@ class ResourceAccessResolverTest {
     when(group.getUniqueName()).thenReturn(name.toLowerCase().replace(' ', '-'));
     when(group.getEnabledMemberSize()).thenReturn(enabledMembers);
     return group;
-  }
-
-  private static final class TestScheme implements ResourceRoleScheme {
-
-    private static final List<ResourceRole> ROLES =
-        List.of(
-            new ResourceRole(OWNER, 40),
-            new ResourceRole(MANAGER, 30),
-            new ResourceRole(CONTRIBUTOR, 20),
-            new ResourceRole(READER, 10));
-    private static final Map<String, Set<String>> CAPABILITIES =
-        Map.of(
-            OWNER, Set.of("READ_RESOURCE", "CONTRIBUTE", "MANAGE", "OWN"),
-            MANAGER, Set.of("READ_RESOURCE", "CONTRIBUTE", "MANAGE"),
-            CONTRIBUTOR, Set.of("READ_RESOURCE", "CONTRIBUTE"),
-            READER, Set.of("READ_RESOURCE"));
-
-    @Override
-    public String key() {
-      return "test-resources";
-    }
-
-    @Override
-    public List<ResourceRole> roles() {
-      return ROLES;
-    }
-
-    @Override
-    public Set<String> capabilities(String roleKey) {
-      return CAPABILITIES.get(roleKey);
-    }
-
-    @Override
-    public Set<ResourceGranteeKind> allowedGranteeKinds(String roleKey) {
-      return Set.of(
-          ResourceGranteeKind.USER, ResourceGranteeKind.GROUP, ResourceGranteeKind.AUDIENCE);
-    }
-
-    @Override
-    public Optional<String> implicitRole(User subject) {
-      return subject.hasSysadminRole() ? Optional.of(OWNER) : Optional.empty();
-    }
   }
 }

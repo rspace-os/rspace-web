@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Defines the ordered roles and capabilities for one protected resource type. */
 public interface ResourceRoleScheme {
@@ -27,7 +28,7 @@ public interface ResourceRoleScheme {
     return roles().stream()
         .map(ResourceRole::key)
         .filter(role -> capabilities(role).contains(capability))
-        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   Set<ResourceGranteeKind> allowedGranteeKinds(String roleKey);
