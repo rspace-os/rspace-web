@@ -1,5 +1,6 @@
 package com.researchspace.api.v2.model;
 
+import com.researchspace.model.collection.PageOffsets;
 import java.util.List;
 
 public record ApiV2ListResult<T>(
@@ -24,7 +25,7 @@ public record ApiV2ListResult<T>(
         totalDocs,
         limit,
         page,
-        ((long) page - 1) * limit + 1,
+        PageOffsets.offset(page, limit) + 1,
         totalPages,
         hasPrev,
         hasNext,
