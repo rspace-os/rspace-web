@@ -180,17 +180,7 @@ class BookingConfigurationResourceOperationsTest {
     BookingConfiguration configuration = new BookingConfiguration();
     BookingSchedulingSettings.Patch schedulingPatch =
         new BookingSchedulingSettings.Patch(
-            1440L,
-            BookingIncrementUnit.DAYS,
-            false,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
+            1440L, BookingIncrementUnit.DAYS, false, null, null, null, null, null);
     when(manager.updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor))
         .thenReturn(Optional.of(configuration));
 

@@ -96,11 +96,14 @@ class BookingIncrementUnitMVCIT {
             "{\"incrementUnit\":\"WEEKS\"}",
             "{\"incrementUnit\":1}",
             "{\"slotGranularityMinutes\":720}",
-            "{\"openDays\":[1,2,3,4,5]}",
+            "{\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"00:00\",\"end\":\"24:00\"}]}",
             "{\"maxBookingDurationMinutes\":1380}")) {
       patchConfiguration(path, "\"3\"", invalid).andExpect(status().isBadRequest());
     }
-    patchConfiguration(path, "\"3\"", "{\"openingStart\":\"06:00\"}")
+    patchConfiguration(
+            path,
+            "\"3\"",
+            "{\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"06:00\",\"end\":\"24:00\"}]}")
         .andExpect(status().isBadRequest())
         .andExpect(
             jsonPath("$.code").value("errors.api.v2.bookingConfiguration.granularity.invalid"));

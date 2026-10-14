@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingIncrementUnit;
-import com.researchspace.model.booking.BookingOpeningException;
+import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,19 +72,7 @@ class BookingIncrementScenariosTest {
             vector.get("slotGranularityMinutes").asLong(),
             BookingIncrementUnit.valueOf(vector.get("incrementUnit").asText()),
             vector.get("alignToIncrement").asBoolean(),
-            vector.get("openingStart").asText(),
-            vector.get("openingEnd").asText(),
-            StreamSupport.stream(vector.get("openDays").spliterator(), false)
-                .map(JsonNode::asInt)
-                .toList(),
-            StreamSupport.stream(vector.get("openingExceptions").spliterator(), false)
-                .map(
-                    exception ->
-                        new BookingOpeningException(
-                            exception.get("dayOfWeek").asInt(),
-                            exception.get("start").asText(),
-                            exception.get("end").asText()))
-                .toList(),
+            BookingOpeningHoursCodec.openingHours(vector.get("openingHours")),
             0,
             0,
             vector.get("maxBookingDurationMinutes").asLong(),
