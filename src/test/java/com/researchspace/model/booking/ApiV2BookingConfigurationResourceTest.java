@@ -529,8 +529,8 @@ class ApiV2BookingConfigurationResourceTest {
         parseUpdate(
             mapper.readTree(
                 """
-            {"openingHours":[{"dayOfWeek":6,"start":"10:00","end":"16:00"},
-                             {"dayOfWeek":1,"start":"00:00","end":"24:00"}]}
+                {"openingHours":[{"dayOfWeek":6,"start":"10:00","end":"16:00"},
+                                 {"dayOfWeek":1,"start":"00:00","end":"24:00"}]}
                 """));
     BookingConfiguration configuration = new BookingConfiguration();
     ApiV2BookingConfigurationResource.DESCRIPTION.apply(
