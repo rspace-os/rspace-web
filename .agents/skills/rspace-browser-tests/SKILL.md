@@ -34,8 +34,10 @@ Paths below are relative to `src/main/webapp/ui/`.
 
 - `src/__tests__/browserWorkerRegistration.ts`: renews Firefox's MSW
   registration per file; runs before `browserSetup.ts`.
-- `src/__tests__/browserSetup.ts`: file-local `worker`, start/reset lifecycle,
-  CDP media reset, `suppressFireAndForget404(...)`.
+- `src/__tests__/browserMocks.ts`: per-file MSW `worker` and
+  `suppressFireAndForget404(...)`. Import helpers here rather than from setup.
+- `src/__tests__/browserSetup.ts`: starts that client, resets handlers,
+  storage and CDP media. Vitest loads it through `setupFiles`.
 - `src/__tests__/mswAppShellHandlers.ts`: default whoami, navigation, analytics,
   and livechat handlers; survive `resetHandlers()`.
 - `src/__tests__/mocks/inventoryMocks.ts`: `oauthTokenHandler`, `OAUTH_TOKEN`.
@@ -46,11 +48,14 @@ Paths below are relative to `src/main/webapp/ui/`.
 - `src/__tests__/pageObjects/viewport.ts`: `isFullyInViewport`,
   `moveToastStackIntoViewport`, `clickWhenInViewport`.
 
-Handlers are file-local; the worker registration is origin-global in every
-engine. Don't call `worker.stop()` in teardown; the context cleans up. Keep
-`fileParallelism: false` so Firefox's renewal never overlaps another file,
-setup files in list order, and `retry: 2`. The `browserLifecycle` regression
-runs first in every engine, unretried.
+Each file has an isolated iframe and MSW client; the worker registration is
+origin-global in every engine. Setup awaits start before tests. Don't call
+`worker.stop()` in teardown; the context cleans up. Do not import the setup file
+from specs, which registers lifecycle hooks again. A synthetic `beforeunload`
+stops MSW, so restart the client before subsequent tests. Keep
+`fileParallelism: false` so Firefox's renewal never overlaps another file, setup
+files in list order, and `retry: 2`. The `browserLifecycle` regression runs
+first in every engine, unretried.
 
 ## Run and verify
 

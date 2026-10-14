@@ -1,6 +1,8 @@
 import * as v from "valibot";
 import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { formatIsoWeekday, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -29,6 +31,27 @@ export type AuditDateError = "required" | "invalid" | "inverted" | "tooWide";
 export type AuditDateValidation =
   | { valid: true; range: AuditDateRange }
   | { valid: false; fields: Partial<Record<AuditDateField, AuditDateError>> };
+
+export const AUDIT_ACTIONS = [
+  "CREATE",
+  "DELETE",
+  "DOWNLOAD",
+  "DUPLICATE",
+  "EXPORT",
+  "MOVE",
+  "READ",
+  "RENAME",
+  "RESTORE",
+  "SEARCH",
+  "SHARE",
+  "SIGN",
+  "TRANSFER",
+  "UNSHARE",
+  "VIEW",
+  "WITNESSED",
+  "WRITE",
+] as const;
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
 const AuditPageSchema = v.object({
   docs: v.array(AuditEventSchema),
@@ -101,6 +124,8 @@ export async function fetchBookingConfigurationAudit(input: {
   configurationId: number;
   dateFrom?: string;
   dateTo?: string;
+  search?: string;
+  actions?: readonly AuditAction[];
   page: number;
   snapshot?: AuditSnapshot;
   token: string;
@@ -120,6 +145,8 @@ export async function fetchBookingConfigurationAudit(input: {
   });
   if (input.dateFrom !== undefined) parameters.set("dateFrom", input.dateFrom);
   if (input.dateTo !== undefined) parameters.set("dateTo", input.dateTo);
+  if (input.search !== undefined && input.search.trim() !== "") parameters.set("search", input.search.trim());
+  for (const action of input.actions ?? []) parameters.append("actions", action);
   if (input.snapshot !== undefined) {
     parameters.set("snapshotDate", input.snapshot.snapshotDate);
     parameters.set("snapshotFingerprint", input.snapshot.snapshotFingerprint);
@@ -148,14 +175,50 @@ export async function fetchBookingConfigurationAudit(input: {
   };
 }
 
-/** Recorded values for one event. Nested values are JSON-encoded, never dropped. */
-export function recordedValues(payload: AuditEvent["payload"]): Array<[string, string]> {
-  return Object.entries(payload).map(([key, value]) => [
-    key,
-    value === null || value === undefined
-      ? "—"
-      : typeof value === "object"
-        ? JSON.stringify(value)
-        : String(value as string | number | boolean),
-  ]);
+/** The snapshot may hold the array itself or its JSON text. */
+function parsedArray(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
+
+/** Recorded values for one event. Unknown nested values retain their JSON representation. */
+export function recordedValues(payload: AuditEvent["payload"], locale: string): Array<[string, string]> {
+  const dateFormat = new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "long",
+    timeZone: "UTC",
+  });
+  return Object.entries(payload).map(([key, value]) => {
+    if (key === "openingHours") {
+      const hours = v.safeParse(OpeningHoursSchema, parsedArray(value));
+      if (hours.success) {
+        return [
+          key,
+          formatList(
+            hours.output.map(
+              (entry) => `${formatIsoWeekday(entry.dayOfWeek, "long", locale)} ${entry.start}–${entry.end}`,
+            ),
+            locale,
+            { type: "unit" },
+          ),
+        ];
+      }
+    }
+    if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
+      const date = new Date(value);
+      if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
+    }
+    return [
+      key,
+      value === null || value === undefined
+        ? "—"
+        : typeof value === "object"
+          ? JSON.stringify(value)
+          : String(value as string | number | boolean),
+    ];
+  });
 }

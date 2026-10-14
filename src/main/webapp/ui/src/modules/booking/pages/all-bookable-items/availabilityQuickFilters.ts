@@ -183,6 +183,7 @@ export function useAvailabilityQuickFilterIndex(
     queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal),
     enabled,
     staleTime: 60_000,
+    retry: (failureCount, error) => !(error instanceof AvailabilityCandidateLimitError) && failureCount < 3,
   });
   const signature = candidates.data
     ?.flatMap((candidate) =>
@@ -228,7 +229,7 @@ export function useAvailabilityQuickFilterIndex(
   return {
     data: enabled ? index.data : undefined,
     now: new Date(minute),
-    isPending: enabled && (candidates.isPending || index.isPending),
+    isPending: enabled && !candidates.isError && (candidates.isPending || index.isPending),
     isError: enabled && (candidates.isError || index.isError),
     error: candidates.error ?? index.error,
     refetch: candidates.isError ? candidates.refetch : index.refetch,
