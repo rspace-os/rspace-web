@@ -4,7 +4,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Radio from "@mui/material/Radio";
-import { ThemeProvider } from "@mui/material/styles";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -13,17 +12,13 @@ import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { InternalLinkInsertParams, RevisionIdentifier, TinyMceEditor } from "@/tinyMCE/types";
 import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import UserDetails from "../components/UserDetails";
-import materialTheme from "../theme";
 import { getSorting, paginationOptions } from "../util/table";
 import type { Order } from "../util/types";
 
@@ -50,18 +45,9 @@ interface InternalLinkProps {
   version?: RevisionVersion | null;
   initialEl?: RemovableElement | null;
 }
-type InsertRevisionDetail = {
-  id: RevisionIdentifier;
-  version?: RevisionVersion | null;
-  el?: RemovableElement | ArrayLike<RemovableElement | undefined> | null;
-};
-type InsertRevisionEvent = CustomEvent<InsertRevisionDetail>;
-type RemovableElement = {
+export type RemovableElement = {
   remove: () => unknown;
 };
-function isRemovableElement(value: unknown): value is RemovableElement {
-  return typeof value === "object" && value !== null && "remove" in value && typeof value.remove === "function";
-}
 declare const tinymce: {
   activeEditor: TinyMceEditor;
 };
@@ -82,21 +68,6 @@ function isLatestSelection(selection: RevisionSelection | null): selection is ty
 }
 function createAuditUrl(id: RevisionIdentifier, revision: RevisionIdentifier): string {
   return `/workspace/editor/structuredDocument/audit/view?recordId=${String(id)}&revision=${String(revision)}`;
-}
-function normalizeInitialElement(initialEl: InsertRevisionDetail["el"]): RemovableElement | null {
-  if (!initialEl) {
-    return null;
-  }
-  if (typeof initialEl === "object" && "0" in initialEl) {
-    const firstElement = initialEl[0];
-    if (isRemovableElement(firstElement)) {
-      return firstElement;
-    }
-  }
-  if (isRemovableElement(initialEl)) {
-    return initialEl;
-  }
-  return null;
 }
 export default function InternalLink(props: InternalLinkProps): React.ReactElement {
   const [open, setOpen] = React.useState(true);
@@ -372,26 +343,3 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
     </Dialog>
   );
 }
-
-document.addEventListener("tinymce-insert-revision", (event: Event): void => {
-  const detail = (event as InsertRevisionEvent).detail;
-  if (!detail) {
-    return;
-  }
-  const container = document.createElement("span");
-  container.className = "revision-dialog";
-  document.body.appendChild(container);
-  const root = createRoot(container);
-  // StyledEngineProvider + ThemeProvider wrapping is required because as of
-  // MUI v5 useStyles cannot be used in the same component as the root
-  // MuiThemeProvider.
-  root.render(
-    <I18nRoot namespaces={["workspace", "common"]}>
-      <StyledEngineProvider injectFirst enableCssLayer>
-        <ThemeProvider theme={materialTheme}>
-          <InternalLink id={detail.id} version={detail.version} initialEl={normalizeInitialElement(detail.el)} />
-        </ThemeProvider>
-      </StyledEngineProvider>
-    </I18nRoot>,
-  );
-});

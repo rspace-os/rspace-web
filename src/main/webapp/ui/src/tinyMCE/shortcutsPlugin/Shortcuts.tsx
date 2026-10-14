@@ -12,10 +12,7 @@ import Tabs from "@mui/material/Tabs";
 import Tooltip from "@mui/material/Tooltip";
 import { produce } from "immer";
 import React from "react";
-import { createRoot } from "react-dom/client";
-import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import {
   arraysEqual,
@@ -410,14 +407,4 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const domContainer = document.getElementById("tinymce-shortcuts");
-  const root = createRoot(domContainer as HTMLElement);
-  root.render(
-    <I18nRoot namespaces={["workspace", "common"]}>
-      <MuiCssLayerProvider>
-        <Shortcuts />
-      </MuiCssLayerProvider>
-    </I18nRoot>,
-  );
-});
+export default Shortcuts;

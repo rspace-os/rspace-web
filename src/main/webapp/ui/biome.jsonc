@@ -52,6 +52,17 @@
   },
   "overrides": [
     {
+      // Bundle entries mount React at load; a component defined here breaks Fast Refresh and re-mounts on HMR.
+      "includes": ["**/*Entrypoint.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useComponentExportOnlyModules": "error"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/*.stories.tsx"],
       "linter": {
         "rules": {

@@ -34,6 +34,7 @@ vi.mock("@/common/axios", () => ({
 }));
 
 import KetcherTinyMce from "../KetcherTinyMce";
+import "../KetcherTinyMceEntrypoint";
 
 vi.mock("../../../components/Ketcher/KetcherDialog", () => ({
   default: ({
