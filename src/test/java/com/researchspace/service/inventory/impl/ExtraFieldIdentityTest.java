@@ -4,47 +4,53 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.researchspace.dao.ExtraFieldDao.ExtraFieldRow;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity;
+import com.researchspace.model.inventory.field.ExtraFieldIdentity.Definition;
 import org.junit.jupiter.api.Test;
 
 class ExtraFieldIdentityTest {
 
-  private static ExtraFieldRow roundTrip(String name, FieldType type) {
-    return ExtraFieldRuntimeManagerImpl.decode(
-        ExtraFieldRuntimeManagerImpl.encode(new ExtraFieldRow(name, type)));
-  }
-
-  @Test
-  void recoversTheNameAndTypeFromTheId() {
-    assertEquals(new ExtraFieldRow("Room", FieldType.TEXT), roundTrip("Room", FieldType.TEXT));
+  private static Definition roundTrip(String name, FieldType type) {
+    return ExtraFieldIdentity.decode(ExtraFieldIdentity.encode(name, type));
   }
 
   @Test
   void survivesCharactersTheQueryGrammarWouldOtherwiseTreatAsSyntax() {
     for (String name :
         new String[] {
-          "Room, floor", "a=b", "it's", "50% full", "a;b", "(x)", "a b", "naïve", "温度", "a/b\\c"
+          "Room",
+          "Room, floor",
+          "a=b",
+          "it's",
+          "50% full",
+          "a;b",
+          "(x)",
+          "a b",
+          "naïve",
+          "温度",
+          "a/b\\c",
+          "x".repeat(129)
         }) {
-      assertEquals(new ExtraFieldRow(name, FieldType.TEXT), roundTrip(name, FieldType.TEXT));
+      assertEquals(new Definition(name, FieldType.TEXT), roundTrip(name, FieldType.TEXT));
     }
   }
 
   @Test
   void keepsOneNameOfTwoTypesApart() {
-    String asText = ExtraFieldRuntimeManagerImpl.encode(new ExtraFieldRow("V", FieldType.TEXT));
-    String asNumber = ExtraFieldRuntimeManagerImpl.encode(new ExtraFieldRow("V", FieldType.NUMBER));
+    String asText = ExtraFieldIdentity.encode("V", FieldType.TEXT);
+    String asNumber = ExtraFieldIdentity.encode("V", FieldType.NUMBER);
 
     assertNotEquals(asText, asNumber);
-    assertEquals(FieldType.TEXT, ExtraFieldRuntimeManagerImpl.decode(asText).type());
-    assertEquals(FieldType.NUMBER, ExtraFieldRuntimeManagerImpl.decode(asNumber).type());
+    assertEquals(FieldType.TEXT, ExtraFieldIdentity.decode(asText).type());
+    assertEquals(FieldType.NUMBER, ExtraFieldIdentity.decode(asNumber).type());
   }
 
   @Test
   void distinguishesNamesThatDifferOnlyByCase() {
     assertNotEquals(
-        ExtraFieldRuntimeManagerImpl.encode(new ExtraFieldRow("room", FieldType.TEXT)),
-        ExtraFieldRuntimeManagerImpl.encode(new ExtraFieldRow("Room", FieldType.TEXT)));
+        ExtraFieldIdentity.encode("room", FieldType.TEXT),
+        ExtraFieldIdentity.encode("Room", FieldType.TEXT));
   }
 
   @Test
@@ -53,19 +59,12 @@ class ExtraFieldIdentityTest {
         new String[] {
           null, "", "XF", "SF104", "XFt", "XFx4142", "XFt41424", "XFtZZ", "customFields.SF1"
         }) {
-      assertNull(ExtraFieldRuntimeManagerImpl.decode(id), id);
+      assertNull(ExtraFieldIdentity.decode(id), id);
     }
   }
 
   @Test
   void refusesMalformedUtf8InsteadOfReplacingIt() {
-    assertNull(ExtraFieldRuntimeManagerImpl.decode("XFt80"));
-  }
-
-  @Test
-  void roundTripsNamesLongerThanTheFormerRuntimeFieldLimit() {
-    String longName = "x".repeat(129);
-
-    assertEquals(new ExtraFieldRow(longName, FieldType.TEXT), roundTrip(longName, FieldType.TEXT));
+    assertNull(ExtraFieldIdentity.decode("XFt80"));
   }
 }

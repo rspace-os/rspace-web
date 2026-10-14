@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import com.researchspace.dao.query.LookAheadPagination.Result;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import java.util.List;
@@ -32,14 +33,6 @@ public interface InstrumentCustomFieldDao {
       String sourceName) {}
 
   /**
-   * One page of the definitions used by at least one instrument the caller may read.
-   *
-   * @param total exact count, or null when the page stopped short of the end and only {@code
-   *     hasMore} is known
-   */
-  record DefinitionPage(List<DefinitionRow> rows, Long total, boolean hasMore) {}
-
-  /**
    * One stored value, without hydrating its field, template or instrument associations.
    *
    * <p>A row with null data is applicable but empty; an inapplicable definition has no row.
@@ -56,7 +49,7 @@ public interface InstrumentCustomFieldDao {
    *     caller so that a page holds the number of rows it asked for and the total counts only rows
    *     the caller can be shown.
    */
-  DefinitionPage readableDefinitions(
+  Result<DefinitionRow> readableDefinitions(
       QueryConstraint constraint,
       String search,
       Set<Long> ids,

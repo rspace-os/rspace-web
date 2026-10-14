@@ -31,10 +31,6 @@ import java.util.Set;
 /** Parses bounded RSQL into a typed, persistence-neutral filter tree. */
 public final class RsqlFilterParser {
 
-  static final int MAX_COMPARISONS = CollectionQueryLimits.MAX_COMPARISONS;
-  static final int MAX_DEPTH = CollectionQueryLimits.MAX_FILTER_NESTING;
-  static final int MAX_ARGUMENTS = CollectionQueryLimits.MAX_ARGUMENTS;
-
   private static final ComparisonOperator CONTAINS =
       new ComparisonOperator("=contains=", Arity.of(1, 1));
   private static final ComparisonOperator LIKE = new ComparisonOperator("=like=", Arity.of(1, 1));
@@ -157,6 +153,11 @@ public final class RsqlFilterParser {
             .orElse(null);
   }
 
+  private FilterSelector<?> relatedSelector(String name) {
+    FilterSelector<?> runtimeField = relationshipRuntimeSelector(name);
+    return runtimeField == null ? relationshipFieldSelector(name) : runtimeField;
+  }
+
   public FilterExpression parse(String rsql) {
     if (rsql == null || rsql.isBlank()) {
       return null;
@@ -253,7 +254,7 @@ public final class RsqlFilterParser {
       } else if (current == '\'' || current == '"') {
         quote = current;
       } else if (current == '(') {
-        if (++depth > MAX_DEPTH) {
+        if (++depth > CollectionQueryLimits.MAX_FILTER_NESTING) {
           throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
         }
       } else if (current == ')') {
@@ -278,17 +279,11 @@ public final class RsqlFilterParser {
     public FilterExpression visit(ComparisonNode node, State state) {
       state.recordComparison();
       FilterSelector<?> runtimeField = runtimeFieldSelector(node.getSelector());
-      if (runtimeField == null) {
-        runtimeField = relationshipRuntimeSelector(node.getSelector());
-      }
-      FilterSelector<?> relationshipField =
-          runtimeField != null ? null : relationshipFieldSelector(node.getSelector());
       FilterSelector<?> selector =
-          runtimeField != null
-              ? runtimeField
-              : relationshipField != null
-                  ? relationshipField
-                  : description.requirePublicFilterSelector(node.getSelector());
+          runtimeField != null ? runtimeField : relatedSelector(node.getSelector());
+      if (selector == null) {
+        selector = description.requirePublicFilterSelector(node.getSelector());
+      }
       Operator operator = toOperator(node.getOperator());
       if (!selector.operators().contains(operator)) {
         throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
@@ -311,11 +306,10 @@ public final class RsqlFilterParser {
       }
 
       String rawValue = arguments.get(0);
-      if ((operator == Operator.LIKE || operator == Operator.CONTAINS)
-          && rawValue.trim().isEmpty()) {
-        throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
-      }
       if (operator == Operator.CONTAINS || operator == Operator.LIKE) {
+        if (rawValue.trim().isEmpty()) {
+          throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
+        }
         state.recordLikeComparison();
         return comparison(selector, operator, List.of(rawValue), false);
       }
@@ -404,13 +398,13 @@ public final class RsqlFilterParser {
     private int likeComparisons;
 
     private void recordComparison() {
-      if (++comparisons > MAX_COMPARISONS) {
+      if (++comparisons > CollectionQueryLimits.MAX_COMPARISONS) {
         throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
       }
     }
 
     private void enter() {
-      if (++depth > MAX_DEPTH) {
+      if (++depth > CollectionQueryLimits.MAX_FILTER_NESTING) {
         throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
       }
     }
@@ -421,7 +415,7 @@ public final class RsqlFilterParser {
 
     private void recordArguments(int count) {
       arguments += count;
-      if (arguments > MAX_ARGUMENTS) {
+      if (arguments > CollectionQueryLimits.MAX_ARGUMENTS) {
         throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
       }
     }

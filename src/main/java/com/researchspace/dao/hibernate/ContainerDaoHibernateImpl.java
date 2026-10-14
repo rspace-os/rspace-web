@@ -178,27 +178,16 @@ public class ContainerDaoHibernateImpl extends InventoryDaoHibernate<Container, 
     if (containerIds.isEmpty()) {
       return Set.of();
     }
-    if (actor.hasSysadminRole()) {
-      return new LinkedHashSet<>(
-          sessionFactory
-              .getCurrentSession()
-              .createQuery(
-                  "select container.id from Container container "
-                      + "where container.id in (:containerIds) and container.deleted=false",
-                  Long.class)
-              .setParameterList("containerIds", containerIds)
-              .list());
-    }
     InventoryReadQueryContext context = readQueryContext(actor);
     String readableContainerPredicate = context.readableContainerPredicate(this, "container");
-    StringBuilder hql =
-        new StringBuilder("select container.id from Container container ")
-            .append("where container.id in (:containerIds) and container.deleted=false and ")
-            .append(readableContainerPredicate);
+    String hql =
+        "select container.id from Container container "
+            + "where container.id in (:containerIds) and container.deleted=false and "
+            + readableContainerPredicate;
     Query<Long> query =
         sessionFactory
             .getCurrentSession()
-            .createQuery(hql.toString(), Long.class)
+            .createQuery(hql, Long.class)
             .setParameterList("containerIds", containerIds);
     context.bind(query, null);
     return new LinkedHashSet<>(query.list());
