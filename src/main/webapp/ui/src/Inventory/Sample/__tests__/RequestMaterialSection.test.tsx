@@ -185,7 +185,7 @@ describe("RequestMaterialSection", () => {
     const { container } = renderWithProviders(<RequestMaterialSection activeResult={sample} />);
 
     const cancelButton = await screen.findByRole("button", {
-      name: "inventory:sample.requestMaterialSection.cancelRequestButton",
+      name: "common:actions.cancel",
     });
     await expectAccessible(container);
     await user.click(cancelButton);

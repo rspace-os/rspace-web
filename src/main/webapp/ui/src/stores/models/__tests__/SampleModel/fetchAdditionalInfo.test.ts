@@ -91,6 +91,48 @@ describe("fetchAdditionalInfo", () => {
     // which was already correct before the fix; this is the path that was actually broken.
     expect(sample.template).toEqual(template);
   });
+  test("Discards a stale refresh, with a warning, if editing starts while the fetch is in flight (RSDEV-1309).", async () => {
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const sample = makeMockSample({ name: "My in-progress edit" });
+    let resolveQuery:
+      | ((value: {
+          data: unknown;
+          status: number;
+          statusText: string;
+          headers: object;
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          config: any;
+        }) => void)
+      | undefined;
+    vi.spyOn(InvApiService, "query").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveQuery = resolve;
+        }),
+    );
+
+    const fetchPromise = sample.fetchAdditionalInfo();
+    // The record starts being edited while the fetch is still in flight - the exact race the
+    // guard at InventoryBaseRecord.tsx's fetchAdditionalInfo (the "if (this.editing)" check) exists
+    // for.
+    sample.editing = true;
+    resolveQuery?.({
+      data: { ...sampleAttrs(), name: "Stale server name" },
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+      config: {} as any,
+    });
+    await fetchPromise;
+
+    // The in-flight edit must not be silently discarded by a snapshot fetched before editing
+    // began.
+    expect(sample.name).toBe("My in-progress edit");
+    expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining("Discarding a stale additional-info refresh"));
+    consoleWarnSpy.mockRestore();
+  });
+
   test("Calls made on a sample without a template should resolve.", async () => {
     const sample = makeMockSample();
     vi.spyOn(InvApiService, "query").mockImplementation(() =>

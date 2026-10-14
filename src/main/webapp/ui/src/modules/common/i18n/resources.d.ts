@@ -4372,6 +4372,7 @@ export default interface Resources {
         "status": "Status",
         "submitted": "Date Submitted"
       },
+      "deepLinkError": "This request could not be found, or you do not have permission to view it.",
       "detail": {
         "approveButton": "Approve",
         "approvedButton": "✓ Approved",
@@ -4400,6 +4401,7 @@ export default interface Resources {
           "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
           "sampleLocationTooltip": "Samples are located via their subsamples",
           "sampleRequested": "Requested Sample",
+          "selectSubsampleGroupLabel": "Select a subsample",
           "selectSubsampleLabel": "Select {subsample}",
           "status": "Status",
           "submitted": "Submitted",
@@ -4408,7 +4410,8 @@ export default interface Resources {
         },
         "fulfilDialog": {
           "fulfilButton": "Fulfil",
-          "message": "Are you sure you want to fulfil this request without transferring any materials?"
+          "message": "Are you sure you want to fulfil this request without transferring any materials?",
+          "title": "Confirm fulfilment"
         },
         "history": {
           "columns": {
@@ -4428,7 +4431,6 @@ export default interface Resources {
         "prepareDialog": {
           "body": "Preparing {subsample} for transfer.",
           "comingSoon": "Coming soon",
-          "nextButton": "Next",
           "title": "Operations Wizard Step"
         },
         "prepareSampleButton": "Prepare Sample",
@@ -4466,23 +4468,22 @@ export default interface Resources {
         "transferSampleButton": "Transfer Sample",
         "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
       },
-      "feedback": "{count} sample requests found.",
+      "feedback": "{count, plural, one {# sample request found.} other {# sample requests found.}}",
       "filters": {
         "requests": {
           "all": "All",
-          "label": "Requests",
           "received": "Received",
           "sent": "Sent"
         },
         "status": {
           "active": "Open",
           "all": "All",
-          "label": "Show",
           "past": "Closed"
         }
       },
       "helpTitle": "Info on sample requests.",
       "landmark": "Requests",
+      "loadError": "Failed to load your sample requests.",
       "noResults": "No requests found.",
       "noSelection": "Select a request to see its details.",
       "pageTitle": "Requests",
@@ -4613,7 +4614,6 @@ export default interface Resources {
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
       "requestMaterialSection": {
-        "cancelRequestButton": "Cancel",
         "compactDescription": "{owner} reviews each request before producing material.",
         "compactTitle": "Request this sample",
         "dialogTitle": "Request {sampleName}",

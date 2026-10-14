@@ -51,11 +51,13 @@ export default function RequestsSearchbar({
             sx={{ flexGrow: 1 }}
             slotProps={{
               input: {
+                // A plain (decorative, not interactive) icon - unlike the main Inventory
+                // search bar's own version of this adornment, there's no onSearch here to
+                // wire up (see this component's own doc comment), so an IconButton would just
+                // be a focusable control that does nothing.
                 startAdornment: (
                   <InputAdornment position="start">
-                    <IconButton aria-label={t("search.controls.searchbar.search")} size="small" edge="start">
-                      <SearchOutlinedIcon />
-                    </IconButton>
+                    <SearchOutlinedIcon fontSize="small" sx={{ ml: 1, color: "action.active" }} />
                   </InputAdornment>
                 ),
                 ...(value

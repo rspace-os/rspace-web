@@ -1,5 +1,6 @@
 import Alert, { alertClasses } from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import ListItemText from "@mui/material/ListItemText";
@@ -112,7 +113,7 @@ export default function RequestsList({
   selectedRequestId: number | null;
   onSelect: (request: ApiSampleRequestListItem) => void;
 }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const [requestsFilter, setRequestsFilter] = useState<RequestsFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [fromDropdown, setFromDropdown] = useState<HTMLElement | null>(null);
@@ -127,7 +128,12 @@ export default function RequestsList({
   // Refetches on its own whenever a mutation elsewhere invalidates sampleRequestsQueryKeys (e.g.
   // approved/rejected from the detail pane), since the active filters may mean it should appear,
   // disappear, or just show a different status - no manual refresh-counter/event wiring needed.
-  const { data: requests = [], isLoading: loading } = useSampleRequestsListQuery(requestsFilter, statusFilter);
+  const {
+    data: requests = [],
+    isLoading: loading,
+    isError,
+    refetch,
+  } = useSampleRequestsListQuery(requestsFilter, statusFilter);
 
   // A page number left over from a longer list would otherwise point past the end of a shorter
   // one once the filters, search, sort, or page size change what "the list" even is.
@@ -203,7 +209,7 @@ export default function RequestsList({
       </Stack>
       <Grid container direction="row" spacing={1} sx={{ pt: 1 }}>
         <DropdownButton
-          name={`${t("requestsManagement.filters.requests.label")}: ${requestsFilterLabel}`}
+          name={t("requestsManagement.chips.requests", { value: requestsFilterLabel })}
           onClick={({ target }) => setFromDropdown(target as HTMLElement)}
         >
           <StyledMenu anchorEl={fromDropdown} open={Boolean(fromDropdown)} onClose={() => setFromDropdown(null)}>
@@ -237,7 +243,7 @@ export default function RequestsList({
           </StyledMenu>
         </DropdownButton>
         <DropdownButton
-          name={`${t("requestsManagement.filters.status.label")}: ${statusLabel}`}
+          name={t("requestsManagement.chips.status", { value: statusLabel })}
           onClick={({ target }) => setStatusDropdown(target as HTMLElement)}
         >
           <StyledMenu anchorEl={statusDropdown} open={Boolean(statusDropdown)} onClose={() => setStatusDropdown(null)}>
@@ -275,98 +281,123 @@ export default function RequestsList({
         <RequestsParameterChips requestsFilter={requestsFilter} statusFilter={statusFilter} />
       </Box>
       <Divider orientation="horizontal" sx={{ my: 0.75 }} />
-      <Alert
-        sx={(theme) => ({
-          p: `${theme.spacing(0.5)} ${theme.spacing(2)}`,
-          backgroundColor: theme.palette.primary.background,
-          color: theme.palette.primary.contrastText,
-          minHeight: theme.spacing(4),
-          [`& .${alertClasses.message}`]: { p: 0, alignSelf: "center" },
-        })}
-        icon={false}
-        severity="info"
-        role="status"
-      >
-        {t("requestsManagement.feedback", { count: searchedRequests.length })}
-      </Alert>
-      <Box sx={{ flexGrow: 1, overflow: "auto" }}>
-        <TableContainer>
-          <Table size="small" stickyHeader>
-            <RequestsTableHead
-              sortBy={sortBy}
-              sortDirection={sortDirection}
-              onSort={handleSort}
-              adjustableColumn={adjustableColumn}
-              onAdjustableColumnChange={handleAdjustableColumnChange}
-            />
-            <TableBody>
-              {pagedRequests.map((request) => (
-                <TableRow
-                  key={request.id}
-                  hover
-                  selected={request.id === selectedRequestId}
-                  aria-selected={request.id === selectedRequestId}
-                  // Makes each row its own Tab stop, in document order, so a keyboard user can
-                  // reach any request without a mouse; Enter/Space below then opens it, mirroring
-                  // the onClick handler rather than requiring a separate keyboard-only code path.
-                  tabIndex={0}
-                  aria-label={t("requestsManagement.rowLabel", {
-                    sampleGlobalId: request.sample.globalId,
-                    requester: `${request.requester.firstName} ${request.requester.lastName}`,
-                    status: requestStatusLabel(request.status, t),
-                  })}
-                  onClick={() => onSelect(request)}
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter" && e.key !== " ") return;
-                    // Space would otherwise scroll the page, as it does for any other focused,
-                    // non-form element.
-                    e.preventDefault();
-                    onSelect(request);
-                  }}
-                  sx={(theme) => ({
-                    cursor: "pointer",
-                    "&:focus-visible": {
-                      outline: `2px solid ${theme.palette.primary.main}`,
-                      outlineOffset: "-2px",
-                    },
-                  })}
-                >
-                  <TableCell>{renderColumnCell(request, "sample")}</TableCell>
-                  <TableCell>{renderColumnCell(request, "requester")}</TableCell>
-                  <TableCell>{renderColumnCell(request, adjustableColumn)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        {!loading && searchedRequests.length === 0 && (
-          <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
-            {t("requestsManagement.noResults")}
-          </Typography>
-        )}
-      </Box>
-      {searchedRequests.length > 0 && (
-        <nav>
-          <TablePagination
-            sx={{ overflow: "unset" }}
-            labelRowsPerPage=""
-            component="div"
-            count={searchedRequests.length}
-            rowsPerPageOptions={paginationOptions(searchedRequests.length, REQUEST_PAGE_SIZES, REQUEST_ALL_THRESHOLD)}
-            rowsPerPage={Math.min(pageSize, searchedRequests.length)}
-            page={pageNumber}
-            onPageChange={(_event: unknown, page: number) => setPageNumber(page)}
-            onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
-            slotProps={{
-              select: {
-                renderValue: (value: unknown) =>
-                  typeof value === "number" && value < searchedRequests.length
-                    ? value
-                    : t("search.resultsTable.allRows", { count: String(value) }),
-              },
-            }}
-          />
-        </nav>
+      {isError ? (
+        <Alert
+          severity="error"
+          role="alert"
+          action={
+            <Button color="inherit" size="small" onClick={() => void refetch()}>
+              {t("common:actions.retry")}
+            </Button>
+          }
+        >
+          {t("requestsManagement.loadError")}
+        </Alert>
+      ) : (
+        <>
+          <Alert
+            sx={(theme) => ({
+              p: `${theme.spacing(0.5)} ${theme.spacing(2)}`,
+              backgroundColor: theme.palette.primary.background,
+              color: theme.palette.primary.contrastText,
+              minHeight: theme.spacing(4),
+              [`& .${alertClasses.message}`]: { p: 0, alignSelf: "center" },
+            })}
+            icon={false}
+            severity="info"
+            role="status"
+          >
+            {t("requestsManagement.feedback", { count: searchedRequests.length })}
+          </Alert>
+          <Box sx={{ flexGrow: 1, overflow: "auto" }}>
+            <TableContainer>
+              <Table size="small" stickyHeader>
+                <RequestsTableHead
+                  sortBy={sortBy}
+                  sortDirection={sortDirection}
+                  onSort={handleSort}
+                  adjustableColumn={adjustableColumn}
+                  onAdjustableColumnChange={handleAdjustableColumnChange}
+                />
+                <TableBody>
+                  {pagedRequests.map((request) => (
+                    <TableRow
+                      key={request.id}
+                      hover
+                      selected={request.id === selectedRequestId}
+                      // aria-selected is only meaningful on a row inside a grid/treegrid (i.e. an
+                      // ARIA interactive widget); on a row of a plain table - which is what this
+                      // is, structurally - screen readers ignore it. aria-current marks "the
+                      // current item in a set" and is valid anywhere, which is the actual
+                      // relationship this row has to the rest of the list.
+                      aria-current={request.id === selectedRequestId ? "true" : undefined}
+                      // Makes each row its own Tab stop, in document order, so a keyboard user can
+                      // reach any request without a mouse; Enter/Space below then opens it, mirroring
+                      // the onClick handler rather than requiring a separate keyboard-only code path.
+                      tabIndex={0}
+                      aria-label={t("requestsManagement.rowLabel", {
+                        sampleGlobalId: request.sample.globalId,
+                        requester: `${request.requester.firstName} ${request.requester.lastName}`,
+                        status: requestStatusLabel(request.status, t),
+                      })}
+                      onClick={() => onSelect(request)}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter" && e.key !== " ") return;
+                        // Space would otherwise scroll the page, as it does for any other focused,
+                        // non-form element.
+                        e.preventDefault();
+                        onSelect(request);
+                      }}
+                      sx={(theme) => ({
+                        cursor: "pointer",
+                        "&:focus-visible": {
+                          outline: `2px solid ${theme.palette.primary.main}`,
+                          outlineOffset: "-2px",
+                        },
+                      })}
+                    >
+                      <TableCell>{renderColumnCell(request, "sample")}</TableCell>
+                      <TableCell>{renderColumnCell(request, "requester")}</TableCell>
+                      <TableCell>{renderColumnCell(request, adjustableColumn)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {!loading && searchedRequests.length === 0 && (
+              <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
+                {t("requestsManagement.noResults")}
+              </Typography>
+            )}
+          </Box>
+          {searchedRequests.length > 0 && (
+            <nav>
+              <TablePagination
+                sx={{ overflow: "unset" }}
+                labelRowsPerPage=""
+                component="div"
+                count={searchedRequests.length}
+                rowsPerPageOptions={paginationOptions(
+                  searchedRequests.length,
+                  REQUEST_PAGE_SIZES,
+                  REQUEST_ALL_THRESHOLD,
+                )}
+                rowsPerPage={Math.min(pageSize, searchedRequests.length)}
+                page={pageNumber}
+                onPageChange={(_event: unknown, page: number) => setPageNumber(page)}
+                onRowsPerPageChange={(e) => setPageSize(Number(e.target.value))}
+                slotProps={{
+                  select: {
+                    renderValue: (value: unknown) =>
+                      typeof value === "number" && value < searchedRequests.length
+                        ? value
+                        : t("search.resultsTable.allRows", { count: String(value) }),
+                  },
+                }}
+              />
+            </nav>
+          )}
+        </>
       )}
     </Box>
   );

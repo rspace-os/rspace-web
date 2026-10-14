@@ -177,16 +177,20 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   const otherActiveRequestsCount = otherActiveRequests?.length ?? null;
 
-  // Guards every top-level action below (approve/reject/cancel/fulfil) against double-clicks and
-  // cross-action races - at most one is ever genuinely legitimate at a time, since each needs the
-  // previous one's resulting status change to even become clickable again.
+  // Guards every top-level action below (approve/reject/cancel/fulfil/transfer) against
+  // double-clicks and cross-action races - at most one is ever genuinely legitimate at a time,
+  // since each needs the previous one's resulting status change to even become clickable again.
   const approveMutation = useApproveSampleRequestMutation();
   const rejectMutation = useRejectSampleRequestMutation();
   const fulfilMutation = useFulfilSampleRequestMutation();
   const cancelMutation = useCancelSampleRequestMutation();
   const transferMutation = useTransferSampleOwnershipMutation();
   const isProcessingAction =
-    approveMutation.isPending || rejectMutation.isPending || fulfilMutation.isPending || cancelMutation.isPending;
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    fulfilMutation.isPending ||
+    cancelMutation.isPending ||
+    transferMutation.isPending;
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -195,17 +199,6 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
       null,
     )?.reason;
-
-  // Falls back to the originally requested sample when the fulfilling transition didn't
-  // record a transferredSample (e.g. handled outside of RSpace, via the "Fulfil" dialog).
-  const transferredSampleGlobalId =
-    statusChanges
-      .filter((change) => change.status === "FULFILLED")
-      .reduce<ApiSampleRequestStatusChangeItem | null>(
-        (latest, change) =>
-          !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
-        null,
-      )?.transferredSample?.globalId ?? request?.sample.globalId;
 
   if (!request) {
     return (
@@ -225,6 +218,18 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
       </Box>
     );
   }
+
+  // Falls back to the originally requested sample when the fulfilling transition didn't
+  // record a transferredSample (e.g. handled outside of RSpace, via the "Fulfil" dialog) - always
+  // a real globalId, since request.sample.globalId (unlike the lookup above) can't be absent.
+  const transferredSampleGlobalId =
+    statusChanges
+      .filter((change) => change.status === "FULFILLED")
+      .reduce<ApiSampleRequestStatusChangeItem | null>(
+        (latest, change) =>
+          !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
+        null,
+      )?.transferredSample?.globalId ?? request.sample.globalId;
 
   // Shared by every top-level action below: each hits the same "silent failure" shape, so the
   // user sees nothing go wrong while the UI quietly stays in its pre-click state.
@@ -306,7 +311,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     // has loaded, PeopleField's restrictToUser is unset and so searches everyone (see
     // openTransferDialog's comment), meaning transferRecipient could be any user, not just the
     // requester this dialog exists to hand the sample to.
-    if (!transferRecipient || !transferRequesterPerson) return;
+    if (!transferRecipient || !transferRequesterPerson || isProcessingAction) return;
     transferMutation.mutate(
       { requestId: request.id, sampleId: request.sample.id, newOwnerUsername: transferRecipient.username },
       {
@@ -415,9 +420,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.sections.details")}</Typography>
           <IconButton
             size="small"
-            aria-label={t(detailsExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed", {
-              section: t("requestsManagement.detail.sections.details"),
-            })}
+            aria-label={
+              detailsExpanded
+                ? t("formSections.collapseSectionNamed", { section: t("requestsManagement.detail.sections.details") })
+                : t("formSections.expandSectionNamed", { section: t("requestsManagement.detail.sections.details") })
+            }
             aria-expanded={detailsExpanded}
             aria-controls={detailsSectionId}
             sx={{
@@ -465,10 +472,15 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approvalResult")}</Typography>
           <IconButton
             size="small"
-            aria-label={t(
-              approvalResultExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed",
-              { section: t("requestsManagement.detail.sections.approvalResult") },
-            )}
+            aria-label={
+              approvalResultExpanded
+                ? t("formSections.collapseSectionNamed", {
+                    section: t("requestsManagement.detail.sections.approvalResult"),
+                  })
+                : t("formSections.expandSectionNamed", {
+                    section: t("requestsManagement.detail.sections.approvalResult"),
+                  })
+            }
             aria-expanded={approvalResultExpanded}
             aria-controls={approvalResultSectionId}
             sx={{
@@ -493,11 +505,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               </DetailField>
               {status === "FULFILLED" ? (
                 <DetailField label={t("requestsManagement.detail.fields.transferredSample")}>
-                  {transferredSampleGlobalId ? (
-                    <GlobalId record={new LinkableRecordFromGlobalId(transferredSampleGlobalId)} onClick={() => {}} />
-                  ) : (
-                    <NoValue label={t("requestsManagement.detail.fields.noComment")} />
-                  )}
+                  <GlobalId record={new LinkableRecordFromGlobalId(transferredSampleGlobalId)} onClick={() => {}} />
                 </DetailField>
               ) : (
                 <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
@@ -629,7 +637,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
                   }}
                   onClick={cancelRequest}
                 >
-                  {t("sample.requestMaterialSection.cancelRequestButton")}
+                  {t("common:actions.cancel")}
                 </Button>
               </Box>
             </Box>
@@ -653,10 +661,15 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               </CustomTooltip>
               <IconButton
                 size="small"
-                aria-label={t(
-                  sampleLocationsExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed",
-                  { section: t("requestsManagement.detail.fields.sampleLocation") },
-                )}
+                aria-label={
+                  sampleLocationsExpanded
+                    ? t("formSections.collapseSectionNamed", {
+                        section: t("requestsManagement.detail.fields.sampleLocation"),
+                      })
+                    : t("formSections.expandSectionNamed", {
+                        section: t("requestsManagement.detail.fields.sampleLocation"),
+                      })
+                }
                 aria-expanded={sampleLocationsExpanded}
                 aria-controls={sampleLocationsSectionId}
                 sx={{
@@ -697,10 +710,15 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.history.sectionTitle")}</Typography>
           <IconButton
             size="small"
-            aria-label={t(
-              requestHistoryExpanded ? "formSections.collapseSectionNamed" : "formSections.expandSectionNamed",
-              { section: t("requestsManagement.detail.history.sectionTitle") },
-            )}
+            aria-label={
+              requestHistoryExpanded
+                ? t("formSections.collapseSectionNamed", {
+                    section: t("requestsManagement.detail.history.sectionTitle"),
+                  })
+                : t("formSections.expandSectionNamed", {
+                    section: t("requestsManagement.detail.history.sectionTitle"),
+                  })
+            }
             aria-expanded={requestHistoryExpanded}
             aria-controls={requestHistorySectionId}
             sx={{
@@ -761,6 +779,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         </DialogActions>
       </Dialog>
       <Dialog open={fulfilDialogOpen} onClose={() => setFulfilDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{t("requestsManagement.detail.fulfilDialog.title")}</DialogTitle>
         <DialogContent>
           <Typography variant="body2">{t("requestsManagement.detail.fulfilDialog.message")}</Typography>
         </DialogContent>
@@ -854,7 +873,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         <DialogActions>
           <Button onClick={() => setPrepareDialogOpen(false)}>{t("common:actions.cancel")}</Button>
           <Button variant="contained" onClick={openTransferDialog}>
-            {t("requestsManagement.detail.prepareDialog.nextButton")}
+            {t("common:actions.next")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -929,8 +948,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             // transferRequesterPerson === null also disables this: until the requester lookup
             // in openTransferDialog resolves, PeopleField's restrictToUser is unset and the field
             // searches every user, not just the requester - submitting before then could hand
-            // the sample to whoever was picked during that window instead.
-            disabled={transferRecipient === null || transferRequesterPerson === null}
+            // the sample to whoever was picked during that window instead. isProcessingAction
+            // disables it while the transfer itself is in flight, so a double-click can't submit
+            // the same transfer twice.
+            disabled={transferRecipient === null || transferRequesterPerson === null || isProcessingAction}
             onClick={submitTransfer}
             sx={{
               backgroundColor: darken(theme.palette.primary.main, 0.5),

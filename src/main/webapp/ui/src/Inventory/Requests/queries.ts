@@ -69,10 +69,12 @@ export function useSampleRequestsListQuery(requestsFilter: RequestsFilter, statu
   });
 }
 
-export type SampleRequestDetail = {
-  status: string;
+// A superset of ApiSampleRequestListItem (same GET sampleRequests/{id} endpoint) - letting
+// RequestsPage's deep-link lookup reuse this same query (and its cache entry, and its error
+// state) rather than issuing its own, separate GET for the same resource.
+export type SampleRequestDetail = ApiSampleRequestListItem & {
   statusChanges: Array<ApiSampleRequestStatusChangeItem>;
-  sample: { owner: { firstName: string; lastName: string } };
+  sample: ApiSampleRequestListItem["sample"] & { owner: { firstName: string; lastName: string } };
 };
 
 /** A single request's current status, status history, and sample owner - the detail pane's core data. */

@@ -27,7 +27,7 @@ import useStores from "../../stores/use-stores";
 import { getErrorMessage } from "../../util/error";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parser from "../../util/parsers";
-import { capitaliseJustFirstChar } from "../../util/Util";
+import { capitaliseJustFirstChar, isoToLocale } from "../../util/Util";
 import AccessPermissions from "../components/Fields/AccessPermissions";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
 import BarcodesField from "../components/Fields/Barcodes/FormField";
@@ -328,12 +328,12 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
                       },
                     }}
                   >
-                    {t("sample.requestMaterialSection.cancelRequestButton")}
+                    {t("common:actions.cancel")}
                   </Button>
                 </Box>
                 <Typography variant="body2">
                   {t("sample.requestMaterialSection.pendingSentText", {
-                    date: new Date(existingRequest.created).toLocaleDateString(),
+                    date: isoToLocale(existingRequest.created, { dateOnly: true }),
                     owner: activeResult.owner?.fullName ?? "",
                   })}
                 </Typography>

@@ -3,6 +3,7 @@ import Breadcrumbs from "@mui/material/Breadcrumbs";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
 import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -114,7 +115,7 @@ export default function RequestSampleLocations({
     return <NoValue label={t("requestsManagement.detail.fields.noSubsamples")} />;
   }
 
-  return (
+  const table = (
     <TableContainer>
       <Table size="small" stickyHeader>
         <TableHead>
@@ -173,5 +174,16 @@ export default function RequestSampleLocations({
         </TableBody>
       </Table>
     </TableContainer>
+  );
+
+  // Groups the rows' radios into one native radio group (shared name, implicit via RadioGroup's
+  // context) so a screen reader announces "radio button, 2 of 3" etc. instead of each radio
+  // standing alone as its own unnamed, unsized group ("1 of 1"). Each Radio's own explicit
+  // `checked`/`onChange` stay authoritative - RadioGroup only ever fills in a `name` here, since
+  // none is passed on the individual Radios.
+  return selectable ? (
+    <RadioGroup aria-label={t("requestsManagement.detail.fields.selectSubsampleGroupLabel")}>{table}</RadioGroup>
+  ) : (
+    table
   );
 }

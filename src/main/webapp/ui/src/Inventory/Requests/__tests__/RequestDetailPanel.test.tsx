@@ -269,9 +269,7 @@ describe("RequestDetailPanel", () => {
     await waitForInitialFetches();
 
     expect(screen.queryByRole("button", { name: "inventory:requestsManagement.detail.approveButton" })).toBeNull();
-    expect(
-      screen.getByRole("button", { name: "inventory:sample.requestMaterialSection.cancelRequestButton" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "common:actions.cancel" })).toBeInTheDocument();
   });
 
   it("cancels the request as a non-owner and notifies listeners", async () => {
@@ -280,9 +278,7 @@ describe("RequestDetailPanel", () => {
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
-    await user.click(
-      screen.getByRole("button", { name: "inventory:sample.requestMaterialSection.cancelRequestButton" }),
-    );
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     await waitFor(() =>
       expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "CANCELLED" }),
@@ -303,9 +299,7 @@ describe("RequestDetailPanel", () => {
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
-    await user.click(
-      screen.getByRole("button", { name: "inventory:sample.requestMaterialSection.cancelRequestButton" }),
-    );
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     await waitFor(() => expect(addAlert).toHaveBeenCalled());
     expect(addAlert.mock.calls[0][0]).toMatchObject({
@@ -461,7 +455,8 @@ describe("RequestDetailPanel", () => {
     await waitForInitialFetches();
 
     await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.markAsFulfilledButton" }));
-    const dialog = screen.getByRole("dialog");
+    // Gives a screen reader user a meaningful announcement on open, rather than just "dialog".
+    const dialog = screen.getByRole("dialog", { name: "inventory:requestsManagement.detail.fulfilDialog.title" });
     await user.click(
       within(dialog).getByRole("button", { name: "inventory:requestsManagement.detail.fulfilDialog.fulfilButton" }),
     );
@@ -850,6 +845,43 @@ describe("RequestDetailPanel", () => {
 
       resolveGetUser?.({ username: REQUESTER.username });
       await waitFor(() => expect(transferButton).toBeEnabled());
+    });
+
+    it("disables the Transfer button while the transfer is in flight, preventing a duplicate submission", async () => {
+      const user = userEvent.setup();
+      let resolveFulfil: (() => void) | undefined;
+      server.use(
+        http.put(SAMPLE_REQUEST_STATUS_URL, async ({ params, request }) => {
+          const body = (await request.json()) as { status: string };
+          apiUpdate("sampleRequests", `${params.id}/status`, body);
+          await new Promise<void>((resolve) => {
+            resolveFulfil = resolve;
+          });
+          return HttpResponse.json({ status: body.status });
+        }),
+      );
+      const dialog = await openTransferDialog(user);
+      await user.click(within(dialog).getByRole("button", { name: "mock-pick-recipient" }));
+
+      const transferButton = within(dialog).getByRole("button", { name: "common:actions.transfer" });
+      await waitFor(() => expect(transferButton).toBeEnabled());
+      await user.click(transferButton);
+      await waitFor(() => expect(transferButton).toBeDisabled());
+      // A disabled button is a no-op click as far as a real user is concerned; userEvent enforces
+      // that by refusing the interaction outright, so a raw DOM event stands in for "clicked again
+      // while disabled" here.
+      fireEvent.click(transferButton);
+
+      expect(apiUpdate).toHaveBeenCalledTimes(1);
+      resolveFulfil?.();
+      await waitFor(() =>
+        expect(apiUpdate).toHaveBeenCalledWith("samples", "55/actions/changeOwner", {
+          owner: { username: "manual-pick" },
+        }),
+      );
+      // Exactly the fulfil call plus the one changeOwner call - not a third from the blocked
+      // second click.
+      expect(apiUpdate).toHaveBeenCalledTimes(2);
     });
 
     it("adds the multiple-subsamples bullet when the sample has more than one subsample", async () => {

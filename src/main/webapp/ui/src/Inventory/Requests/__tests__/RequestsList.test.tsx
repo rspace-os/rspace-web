@@ -50,6 +50,7 @@ function makeRequests(count: number): Array<ApiSampleRequestListItem> {
 function renderList(
   requests: Array<ApiSampleRequestListItem>,
   onSelect: (request: ApiSampleRequestListItem) => void = () => {},
+  selectedRequestId: number | null = null,
 ) {
   server.use(
     http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
@@ -59,7 +60,7 @@ function renderList(
   );
   return renderWithProviders(
     <ThemeProvider theme={materialTheme}>
-      <RequestsList selectedRequestId={null} onSelect={onSelect} />
+      <RequestsList selectedRequestId={selectedRequestId} onSelect={onSelect} />
     </ThemeProvider>,
   );
 }
@@ -142,7 +143,7 @@ describe("RequestsList pagination", () => {
     await user.click(screen.getByRole("button", { name: "Go to next page" }));
     expect(screen.getByText("SA1")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /inventory:requestsManagement\.filters\.requests\.label/ }));
+    await user.click(screen.getByRole("button", { name: /inventory:requestsManagement\.chips\.requests/ }));
     await user.click(screen.getByRole("menuitem", { name: "inventory:requestsManagement.filters.requests.sent" }));
 
     await waitFor(() => expect(screen.getByText("SA30")).toBeInTheDocument());
@@ -208,6 +209,24 @@ describe("RequestsList keyboard selection", () => {
       // The header row has no selection behaviour and so is excluded from this.
       if (within(row).queryAllByRole("columnheader").length > 0) continue;
       expect(row).toHaveAttribute("tabindex", "0");
+    }
+  });
+
+  test("marks the selected row with aria-current, not aria-selected, since this is a plain table rather than a grid", async () => {
+    renderList(makeRequests(3), () => {}, 2);
+    await waitFor(() => expect(screen.getByText("SA3")).toBeInTheDocument());
+
+    const selectedRow = screen.getByText("SA2").closest("tr");
+    const otherRows = screen
+      .getAllByRole("row")
+      .filter((row) => within(row).queryAllByRole("columnheader").length === 0 && row !== selectedRow);
+    expect(otherRows).toHaveLength(2);
+
+    expect(selectedRow).toHaveAttribute("aria-current", "true");
+    expect(selectedRow).not.toHaveAttribute("aria-selected");
+    for (const row of otherRows) {
+      expect(row).not.toHaveAttribute("aria-current");
+      expect(row).not.toHaveAttribute("aria-selected");
     }
   });
 
@@ -333,5 +352,35 @@ describe("RequestsList search filtering", () => {
     await user.type(screen.getByRole("searchbox"), "SA");
 
     await waitFor(() => expect(screen.getByText("SA30")).toBeInTheDocument());
+  });
+});
+
+describe("RequestsList error handling", () => {
+  test("shows a retryable error, instead of a false 'no results' message, when the request fails", async () => {
+    const user = userEvent.setup();
+    let succeed = false;
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () =>
+        succeed
+          ? HttpResponse.json({ requests: makeRequests(3), totalHits: 3 })
+          : HttpResponse.json({ message: "Backend unavailable" }, { status: 500 }),
+      ),
+    );
+    renderWithProviders(
+      <ThemeProvider theme={materialTheme}>
+        <RequestsList selectedRequestId={null} onSelect={() => {}} />
+      </ThemeProvider>,
+    );
+
+    // The bug this guards against: data silently falling back to [], showing "No requests found"
+    // (or the owner's own empty "nothing pending" state) with no indication anything went wrong.
+    expect(await screen.findByRole("alert")).toHaveTextContent("inventory:requestsManagement.loadError");
+    expect(screen.queryByText("inventory:requestsManagement.noResults")).not.toBeInTheDocument();
+
+    succeed = true;
+    await user.click(screen.getByRole("button", { name: "common:actions.retry" }));
+
+    await waitFor(() => expect(screen.getByText("SA3")).toBeInTheDocument());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
