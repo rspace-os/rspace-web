@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "inventory": {
+      "field": {
+        "numberInvalid": "JSON test locale: {0}"
+      }
+    }
+  }
+}
