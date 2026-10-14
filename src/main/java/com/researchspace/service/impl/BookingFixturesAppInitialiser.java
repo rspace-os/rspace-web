@@ -16,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Container;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.IntStream;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -47,7 +49,15 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final ZoneId FIXTURE_DATE_ZONE = ZoneId.of("Europe/Berlin");
   private static final Locale FIXTURE_LOCALE = Locale.forLanguageTag("en-US");
   private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
-      new BookingSchedulingSettings.Patch(null, "08:00", "17:00", null, null, null, null);
+      new BookingSchedulingSettings.Patch(
+          null,
+          IntStream.rangeClosed(1, 7)
+              .mapToObj(day -> new BookingOpeningHoursEntry(day, "08:00", "17:00"))
+              .toList(),
+          null,
+          null,
+          null,
+          null);
 
   @Value("${default.user.password}")
   private String devUserPassword;
