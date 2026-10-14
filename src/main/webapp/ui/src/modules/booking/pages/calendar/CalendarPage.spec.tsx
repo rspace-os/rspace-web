@@ -77,6 +77,51 @@ describe("Calendar page", () => {
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
   });
 
+  test("filters Calendar events by target fields and target custom fields", async () => {
+    render(<CalendarPageStory history={history} />);
+    await calendar.filters.click();
+
+    await page.getByRole("button", { name: "Add filter", exact: true }).click();
+    const targetNameField = page.getByRole("combobox", { name: "Field for filter 1" });
+    await targetNameField.fill("Instrument name");
+    await page.getByRole("option", { name: /Instrument name/ }).click();
+    const targetNameValue = page.getByRole("textbox", { name: "Value for filter 1" });
+    await targetNameValue.fill("Confocal microscope");
+
+    await page.getByRole("button", { name: "Add filter", exact: true }).click();
+    const customFieldGroup = page.getByRole("combobox", { name: "Field for filter 2" });
+    await customFieldGroup.click();
+    const bookableItemFieldGroup = page.getByRole("group", { name: "Bookable item" });
+    await bookableItemFieldGroup.getByRole("option", { name: /Custom field/ }).click();
+    const customFieldSearch = page.getByRole("combobox", {
+      name: "Search Bookable item custom fields for filter 2",
+    });
+    await customFieldSearch.fill("Hazard class");
+    await page.getByRole("option", { name: /Hazard class/ }).click();
+    await page.getByRole("textbox", { name: "Value for filter 2" }).fill("BSL-2");
+    await page.getByRole("button", { name: "Apply filters" }).click();
+
+    const savedFilter = () => new URLSearchParams(history.location.search).get("calendar-events.where") ?? "";
+    await expect.poll(savedFilter).toContain("target.customFields.SF152==BSL-2");
+    expect(savedFilter()).toContain("target.name==");
+    await expect
+      .poll(() =>
+        bookingPageRequests.calendarBookingRequests.some((url) => {
+          const where = url.searchParams.get("where") ?? "";
+          return where.includes("target.name==") && where.includes("target.customFields.SF152==BSL-2");
+        }),
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        bookingPageRequests.collectionQueries.some((query) => {
+          const eventWhere = new URLSearchParams(query).get("eventWhere") ?? "";
+          return eventWhere.includes("target.name==") && eventWhere.includes("target.customFields.SF152==BSL-2");
+        }),
+      )
+      .toBe(true);
+  });
+
   test("focuses the resource list on the target from the route", async () => {
     history.replace("/booking/calendar?date=2026-08-17&target=IN124");
     render(<CalendarPageStory history={history} />);
@@ -265,6 +310,8 @@ describe("Calendar page", () => {
     await calendar.mine.click();
     await calendar.filters.click();
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
+    await page.getByRole("combobox", { name: "Field for filter 1" }).fill("Purpose");
+    await page.getByRole("option", { name: "Purpose", exact: true }).click();
     await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
