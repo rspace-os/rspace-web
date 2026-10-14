@@ -118,7 +118,13 @@ class CollectionFieldTypesTest {
         () -> CollectionFieldTypes.constrained(CollectionFieldTypes.object(), minLength(1)));
     assertThrows(
         IllegalArgumentException.class,
-        () -> CollectionFieldTypes.constrained(CollectionFieldTypes.array(), minLength(1)));
+        () ->
+            CollectionFieldTypes.constrained(
+                CollectionFieldTypes.array(
+                    Item.class,
+                    List.of(Field.embedded("name", CollectionFieldTypes.text(), Item::name)),
+                    values -> new Item(null, (String) values.get("name"))),
+                minLength(1)));
     assertThrows(
         IllegalArgumentException.class,
         () ->
