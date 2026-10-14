@@ -247,13 +247,18 @@ That table must change in the same commit as any limit, default, message or rout
   user's signature confirmation answer busy until it stops. Setting or changing a verification
   password while signed in takes no anonymous-encode permit, by design: that gate bounds
   anonymous callers only.
-- Reauthentication, including verification password checks, has no per-account rate limit beyond
-  one check in flight at a time. The anonymous OAuth password grant (`/oauth/token`) checks the
-  user's password before validating the client, so an unregistered client can try on the order of
-  10 to 40 passwords per second against one account, bounded only by Argon2 cost and the
-  per-username lock, and can tell a right password from a wrong one by the error it gets. On
-  `main` the same route hashed every guess with no limit. Validating the client before the
-  password closes it and is RSDEV-1557, against `main`.
+- Reauthentication, including verification password checks, has no per-account rate limit beyond one check in flight at a time, except on
+  the anonymous OAuth password grant (`/oauth/token`). Before RSDEV-1546 that route checked the
+  user's password before validating the client, so an unregistered client could try on the order
+  of 10 to 40 passwords per second against one account, bounded only by Argon2 cost and the
+  per-username lock, and could tell a right password from a wrong one by the error it got.
+  RSDEV-1546 (PR #1210, in `main`) validates the client first and refuses a username after
+  `oauth.passwordGrant.maxFailures` wrong passwords in `oauth.passwordGrant.failureWindowSeconds`,
+  counting each admitted attempt before its check. Its unknown-name and refused-name padding runs
+  through the same `SentinelPasswordCheck` as the login page, keyed on the submitted username. A
+  busy refusal on that route still returns the invalid-credentials answer and still counts as a
+  guess; both are addressed with the other busy answers (fix plan of 2026-10-14). The per-account
+  key, which lets anyone who knows a username keep it refused on this route, is RSDEV-1557.
 - Usernames must not leak from unauthenticated endpoints. Argon2's cost would make the login
   page answer an existing username measurably slower than an unknown one, so `ShiroRealm` runs
   an unknown name (and, when LDAP is off, an LDAP-source user) through `SentinelPasswordCheck`, an

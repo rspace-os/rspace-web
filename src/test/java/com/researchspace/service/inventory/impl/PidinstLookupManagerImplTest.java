@@ -89,6 +89,13 @@ class PidinstLookupManagerImplTest {
 
   private static final String HANDLE = "21.T11975/abcde-12345";
 
+  private static final String MICROSCOPE_TERM = "/.*[Mm][Ii][Cc][Rr][Oo][Ss][Cc][Oo][Pp][Ee].*/";
+
+  private static final String ZEISS_TERM = "/.*[Zz][Ee][Ii][Ss][Ss].*/";
+
+  private static final String INSTR1_PROVA_COPY_TERM =
+      "/.*[Ii][Nn][Ss][Tt][Rr]1 [Pp][Rr][Oo][Vv][Aa]_[Cc][Oo][Pp][Yy].*/";
+
   @Mock private B2instConnector b2instConnector;
   @Mock private DataCiteConnector dataCiteConnector;
   @Mock private DigitalObjectIdentifierDao doiDao;
@@ -238,30 +245,9 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * RSDEV-1522 follow-up. Unescaped, the query does not reach the registry as one term:
-   * Elasticsearch parses it before the wildcards apply and splits it on whitespace itself, leaving
-   * {@code *Instr1} and {@code prova_COPY*}, which B2INST joins with OR - so a record named {@code
-   * Instr1 prova 123} came back on its {@code instr1} token alone. Escaping the space keeps it one
-   * term, and a real substring match.
-   */
-  @Test
-  void aMultiWordQueryDoesNotMatchARecordHoldingOnlyOneOfTheWords() {
-    B2instDraftRecord wanted = publishedRecord();
-    wanted.getMetadata().setName("Instr1 prova_COPY");
-    when(b2instConnector.searchPublicRecords("*Instr1\\ prova_COPY*", 0, 50))
-        .thenReturn(searchResultOf(wanted, 1));
-
-    ApiPidinstSearchResult result =
-        manager.search("Instr1 prova_COPY", List.of("PIDINST_B2INST"), 0, user);
-
-    assertEquals(1, result.getHits().size());
-    verify(b2instConnector).searchPublicRecords("*Instr1\\ prova_COPY*", 0, 50);
-  }
-
-  /**
    * One search with both registries ticked gives each its own shape for the same words: B2INST one
-   * wildcard term with the space escaped, so it matches a substring of the whole name; DataCite the
-   * words as typed, so it answers what its own portal answers (ADR 0009 decision 8).
+   * regular expression matching a substring of the whole name ignoring case; DataCite the words as
+   * typed, so it answers what its own portal answers (ADR 0009 decision 8).
    */
   @Test
   void theTwoRegistriesGetDifferentlyShapedMultiWordQueries() {
@@ -272,68 +258,113 @@ class PidinstLookupManagerImplTest {
 
     manager.search("Instr1 prova_COPY", BOTH, 0, user);
 
-    verify(b2instConnector).searchPublicRecords("*Instr1\\ prova_COPY*", 0, 50);
+    verify(b2instConnector).searchPublicRecords(INSTR1_PROVA_COPY_TERM, 0, 50);
     verify(dataCiteConnector).searchPublicInstrumentDois("Instr1 prova_COPY", 0, 50);
   }
 
-  /** RSDEV-1522: both registries match whole analysed tokens, so a bare substring found nothing. */
+  /** RSDEV-1522: B2INST matches whole analysed tokens, so a bare substring found nothing. */
   @Test
-  void freeTextSearchWrapsTheQueryInWildcardsSoASubstringOfATokenMatches() {
-    when(b2instConnector.searchPublicRecords("*microscope*", 0, 50))
+  void freeTextSearchSendsASubstringTermSoPartOfATokenMatches() {
+    when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 3));
 
     ApiPidinstSearchResult result =
         manager.search("  microscope ", List.of("PIDINST_B2INST"), 0, user);
 
     assertEquals(1, result.getHits().size());
-    verify(b2instConnector).searchPublicRecords("*microscope*", 0, 50);
+    verify(b2instConnector).searchPublicRecords(MICROSCOPE_TERM, 0, 50);
   }
 
   /**
-   * One pair of wildcards around the whole query, its spaces escaped so it stays a single term and
-   * matches a substring of the whole name. Leaving the spaces raw lets B2INST's OR return records
-   * holding only one of the words (ADR 0009 decision 8). B2INST only: DataCite gets the query
-   * unwildcarded.
-   */
-  @Test
-  void aMultiWordB2instQueryIsOneTermWithItsSpacesEscaped() {
-    when(b2instConnector.searchPublicRecords("*electro\\ micro\\ stub*", 0, 50))
-        .thenReturn(searchResultOf(publishedRecord(), 1));
-
-    manager.search("electro micro stub", List.of("PIDINST_B2INST"), 0, user);
-
-    verify(b2instConnector).searchPublicRecords("*electro\\ micro\\ stub*", 0, 50);
-  }
-
-  static Stream<Arguments> b2instQueriesCarryingQuerySyntax() {
-    return Stream.of(
-        arguments("\"Instr1 prova_COPY\"", "*Instr1\\ prova_COPY*"),
-        arguments("\"Instr1", "*Instr1*"),
-        arguments("Instr\"1", "*Instr1*"),
-        arguments("Instr1 > 2", "*Instr1\\ 2*"),
-        arguments("Instr1<=2", "*Instr1\\=2*"),
-        arguments("(Instr1)", "*\\(Instr1\\)*"),
-        arguments("Instr1~2", "*Instr1\\~2*"),
-        arguments("Instr1^2", "*Instr1\\^2*"),
-        arguments("Name:Instr1", "*Name\\:Instr1*"),
-        arguments("T11975/97g70-tsv60", "*T11975\\/97g70\\-tsv60*"),
-        arguments("Ins*1", "*Ins*1*"),
-        // U+3000 is whitespace to Lucene's query parser but not to Java's \s, and left raw it split
-        // the query back into clauses: *Instr1<U+3000>OR<U+3000>** matched all 810 records
-        arguments("abcd\u3000OR\u3000*", "*abcd\\ OR\\ **"),
-        arguments("Instr1\u3000prova_COPY", "*Instr1\\ prova_COPY*"));
-  }
-
-  /**
-   * The wildcards turn unescaped syntax into operators around them: {@code *"a\ b"*} is {@code *}
-   * OR a phrase OR {@code *}, and matched all 810 records on b2inst-test.gwdg.de where the quoted
-   * phrase alone matched 1 (2026-09-25). So quotes are dropped, the whole query already being one
-   * phrase ({@code *Instr1\ prova_COPY*} answers that same 1), the other syntax is escaped to a
-   * literal, and {@code *}/{@code ?} stay live. This also ends the 400 on a pasted partial Handle.
+   * RSDEV-1542. A term holding a space can only match the unanalysed copy of a field, which keeps
+   * the record's case, so every cased letter goes out as a class of both its cases (ADR 0009
+   * decision 8).
    */
   @ParameterizedTest
-  @MethodSource("b2instQueriesCarryingQuerySyntax")
-  void b2instQuerySyntaxIsNeutralisedBeforeTheWildcardsGoOn(String typed, String sent) {
+  @ValueSource(strings = {"Nicos first", "nicos first", "NICOS FIRST", "nIcOs FiRsT"})
+  void aB2instTermIsTheSameWhateverCaseTheQueryWasTypedIn(String typed) {
+    when(b2instConnector.searchPublicRecords(anyString(), eq(0), eq(50)))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+
+    manager.search(typed, List.of("PIDINST_B2INST"), 0, user);
+
+    verify(b2instConnector)
+        .searchPublicRecords("/.*[Nn][Ii][Cc][Oo][Ss] [Ff][Ii][Rr][Ss][Tt].*/", 0, 50);
+  }
+
+  static Stream<Arguments> b2instQueriesCarryingSyntax() {
+    return Stream.of(
+        // quotes, < and > are removed before the term is built
+        arguments("\"Instr1 prova_COPY\"", INSTR1_PROVA_COPY_TERM),
+        arguments("\"Instr1", "/.*[Ii][Nn][Ss][Tt][Rr]1.*/"),
+        arguments("Instr\"1", "/.*[Ii][Nn][Ss][Tt][Rr]1.*/"),
+        arguments("Instr1 > 2", "/.*[Ii][Nn][Ss][Tt][Rr]1 2.*/"),
+        arguments("Instr1<=2", "/.*[Ii][Nn][Ss][Tt][Rr]1=2.*/"),
+        // regular-expression operators become literals, and an unescaped / would close the term
+        arguments("(Instr1)", "/.*\\([Ii][Nn][Ss][Tt][Rr]1\\).*/"),
+        arguments("Instr1~2", "/.*[Ii][Nn][Ss][Tt][Rr]1\\~2.*/"),
+        arguments("[a-z]+", "/.*\\[[Aa]-[Zz]\\]\\+.*/"),
+        arguments("ab|cd", "/.*[Aa][Bb]\\|[Cc][Dd].*/"),
+        arguments("a&b@c#d", "/.*[Aa]\\&[Bb]\\@[Cc]\\#[Dd].*/"),
+        arguments("a.b{1,2}", "/.*[Aa]\\.[Bb]\\{1,2\\}.*/"),
+        arguments("a\\b\\", "/.*[Aa]\\\\[Bb]\\\\.*/"),
+        arguments("T11975/97g70-tsv60", "/.*[Tt]11975\\/97[Gg]70-[Tt][Ss][Vv]60.*/"),
+        // query-parser syntax that is not regular-expression syntax stays as typed
+        arguments("Instr1^2", "/.*[Ii][Nn][Ss][Tt][Rr]1^2.*/"),
+        arguments("Name:Instr1", "/.*[Nn][Aa][Mm][Ee]:[Ii][Nn][Ss][Tt][Rr]1.*/"),
+        arguments("Bruker's", "/.*[Bb][Rr][Uu][Kk][Ee][Rr]'[Ss].*/"),
+        // typed wildcards stay live
+        arguments("Ins*1", "/.*[Ii][Nn][Ss].*1.*/"),
+        arguments("nic* fir?t", "/.*[Nn][Ii][Cc].* [Ff][Ii][Rr].[Tt].*/"),
+        // every whitespace run is one space; U+3000 is whitespace to Lucene's parser, not to \s
+        arguments("abcd\u3000OR\u3000*", "/.*[Aa][Bb][Cc][Dd] [Oo][Rr] .*.*/"),
+        arguments("Instr1\u3000prova_COPY", INSTR1_PROVA_COPY_TERM),
+        arguments(
+            "electro   micro\tstub",
+            "/.*[Ee][Ll][Ee][Cc][Tt][Rr][Oo] [Mm][Ii][Cc][Rr][Oo] [Ss][Tt][Uu][Bb].*/"),
+        // letters outside ASCII fold too; characters without a case stay literal, a supplementary
+        // code point (U+1F600, a surrogate pair in Java) whole
+        arguments("émile çà", "/.*[Éé][Mm][Ii][Ll][Ee] [Çç][Àà].*/"),
+        arguments("日本語 顕微鏡", "/.*日本語 顕微鏡.*/"),
+        arguments("359072067792099", "/.*359072067792099.*/"),
+        arguments("\uD83D\uDE00 test", "/.*\uD83D\uDE00 [Tt][Ee][Ss][Tt].*/"));
+  }
+
+  /**
+   * Inside the term only regular-expression syntax is syntax, and a {@code /} would close it, so
+   * those are escaped to literals; what the query parser reserves outside a term is plain text
+   * here. Quotes, {@code <} and {@code >} are removed first: {@code Instr"1} must find {@code
+   * Instr1}. {@code *} and {@code ?} stay live. Nothing the user types can make B2INST answer 400
+   * (ADR 0009 decision 8, amended 2026-10-12).
+   */
+  @ParameterizedTest
+  @MethodSource("b2instQueriesCarryingSyntax")
+  void b2instSyntaxIsEscapedInsideTheTermAndTypedWildcardsStayLive(String typed, String sent) {
+    when(b2instConnector.searchPublicRecords(anyString(), eq(0), eq(50)))
+        .thenReturn(searchResultOf(publishedRecord(), 1));
+
+    manager.search(typed, List.of("PIDINST_B2INST"), 0, user);
+
+    verify(b2instConnector).searchPublicRecords(sent, 0, 50);
+  }
+
+  static Stream<Arguments> queriesPastTheLimit() {
+    return Stream.of(
+        arguments("a".repeat(240) + " dropped tail", "/.*" + "[Aa]".repeat(240) + ".*/"),
+        // the 240th code point is a surrogate pair, kept whole: the cap counts code points
+        arguments(
+            "a".repeat(239) + "\uD83D\uDE00 tail", "/.*" + "[Aa]".repeat(239) + "\uD83D\uDE00.*/"),
+        // a cased letter outside the BMP is six characters in the term, so the term stops at
+        // the last whole class that fits
+        arguments(
+            "\uD83A\uDD22".repeat(240), "/.*" + "[\uD83A\uDD00\uD83A\uDD22]".repeat(165) + ".*/"));
+  }
+
+  /** Elasticsearch's default {@code index.max_regex_length} is 1000 (ADR 0009 decision 8). */
+  @ParameterizedTest
+  @MethodSource("queriesPastTheLimit")
+  void aB2instTermIsBuiltFromTheFirstTwoHundredAndFortyCodePointsOnly(String typed, String sent) {
+    assertTrue(sent.length() <= 1000, "the longest term this builds must stay within the limit");
     when(b2instConnector.searchPublicRecords(anyString(), eq(0), eq(50)))
         .thenReturn(searchResultOf(publishedRecord(), 1));
 
@@ -344,7 +375,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void freeTextSearchGoesToTheTickedRegistryOnlyAndFlagsAlreadyLinkedPids() {
-    when(b2instConnector.searchPublicRecords("*microscope*", 0, 50))
+    when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 3));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -501,7 +532,7 @@ class PidinstLookupManagerImplTest {
   /** The same gap on the search path: the hit must come back already flagged as linked. */
   @Test
   void searchFlagsAHitWhosePidThisDeploymentMintedItself() {
-    when(b2instConnector.searchPublicRecords("*microscope*", 0, 50))
+    when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("abcde-12345", "Test microscope", "suffix1234567890");
@@ -521,7 +552,7 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: defensive, but it decides a disclosure, so it is pinned rather than asserted. */
   @Test
   void aLinkedRowHoldingNoInstrumentIsHiddenRatherThanUnlinked() {
-    when(b2instConnector.searchPublicRecords("*microscope*", 0, 50))
+    when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier orphan =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -540,7 +571,7 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: the registry record is public, so the PID is; the RSpace instrument is not. */
   @Test
   void searchMarksAHitLinkedWithoutNamingAnInstrumentTheCallerCannotOpen() {
-    when(b2instConnector.searchPublicRecords("*microscope*", 0, 50))
+    when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier(HANDLE, "Test microscope", "suffix1234567890");
@@ -596,7 +627,7 @@ class PidinstLookupManagerImplTest {
         .setIdentifier(new B2instIdentifier("Handle", "21.T11975/anaf6-fk223"));
     B2instSearchResult page = searchResultOf(publishedRecord(), 3);
     page.getHits().getHits().add(unpublished);
-    when(b2instConnector.searchPublicRecords("*microscope*", 0, 50)).thenReturn(page);
+    when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50)).thenReturn(page);
 
     ApiPidinstSearchResult result =
         manager.search("microscope", List.of("PIDINST_B2INST"), 0, user);
@@ -946,13 +977,19 @@ class PidinstLookupManagerImplTest {
     verify(dataCiteConnector, never()).searchPublicInstrumentDois(anyString(), anyInt(), anyInt());
   }
 
+  static Stream<String> queriesBelowTheB2instMinimum() {
+    return Stream.of(
+        "<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b", "a   *", "*".repeat(240) + "abcd");
+  }
+
   /**
    * The minimum is checked again on what B2INST would actually search: removing syntax could shrink
-   * an accepted query to one wildcarded letter, and {@code <<<a} sent as {@code *a*} matched all
-   * 810 records on b2inst-test.gwdg.de (2026-09-25). Wildcards the user typed do not count either.
+   * an accepted query to one wildcarded letter, and {@code <<<a} sent as a one-letter term matched
+   * all 810 records on b2inst-test.gwdg.de (2026-09-25). Wildcards the user typed do not count
+   * either, and neither does anything past the code points the term is built from.
    */
   @ParameterizedTest
-  @ValueSource(strings = {"<<<a", "\"\"\"\"", "a\"<>", "***a", "?a?b"})
+  @MethodSource("queriesBelowTheB2instMinimum")
   void aB2instQueryBelowTheMinimumOnceItsSyntaxIsGoneFindsNothing(String typed) {
     ApiPidinstSearchResult result = manager.search(typed, List.of("PIDINST_B2INST"), 0, user);
 
@@ -1211,7 +1248,7 @@ class PidinstLookupManagerImplTest {
     second.setUpdated("2026-09-01T00:00:00+00:00");
     B2instSearchResult page = searchResultOf(publishedRecord(), 2);
     page.getHits().getHits().add(second);
-    when(b2instConnector.searchPublicRecords("*microscope*", 0, 50)).thenReturn(page);
+    when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50)).thenReturn(page);
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("21.T11975/fghij-67890", "Another microscope", "suffix123456");
     Instrument owner = new Instrument();
@@ -1238,7 +1275,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void hitsFromBothRegistriesFormOneListNewestUpdateFirstWithTiesInTheOrderAsked() {
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(
             searchResultOf(
                 2,
@@ -1276,7 +1313,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void aHitWithNoOrAnUnreadableUpdateTimeSortsAfterADatedOne() {
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(
             searchResultOf(
                 3,
@@ -1293,9 +1330,9 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void pageOneIsBuiltFromTheFirstTwoPagesOfEachRegistryAndHoldsFiftyHits() {
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(fullB2instPage(120, "2026-05-01T00:00:00+00:00"));
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 1, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 1, 50))
         .thenReturn(fullB2instPage(120, "2026-04-01T00:00:00+00:00"));
     when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
         .thenReturn(
@@ -1311,7 +1348,7 @@ class PidinstLookupManagerImplTest {
     assertEquals(1, result.getPageNumber());
     // the DataCite page was short, so its second page was never asked for
     verify(dataCiteConnector, never()).searchPublicInstrumentDois("Zeiss", 1, 50);
-    verify(b2instConnector).searchPublicRecords("*Zeiss*", 1, 50);
+    verify(b2instConnector).searchPublicRecords(ZEISS_TERM, 1, 50);
   }
 
   @Test
@@ -1323,10 +1360,10 @@ class PidinstLookupManagerImplTest {
           publishedRecord(
               "21.T11975/first-" + i, "first-" + i, sameUpdate, "2025-01-01T00:00:00+00:00");
     }
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(searchResultOf(51, firstPage));
     // the registry orders by update time only, so its page 2 may hold a newer creation
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 1, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 1, 50))
         .thenReturn(
             searchResultOf(
                 51,
@@ -1346,7 +1383,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void aRegistryWhosePageIsShortIsNotAskedForTheNextOne() {
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(
             searchResultOf(
                 3,
@@ -1418,7 +1455,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void aRegistryNameIsMatchedIgnoringCaseAndPadding() {
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
 
     assertEquals(
@@ -1428,7 +1465,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void theLookupNeedsNoEnabledProvider() {
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
 
     assertEquals(1, manager.search("Zeiss", List.of("PIDINST_B2INST"), 0, user).getHits().size());
@@ -1453,7 +1490,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void linkedHitsAreAnnotatedWithOneQueryPerRegistry() {
-    when(b2instConnector.searchPublicRecords("*Zeiss*", 0, 50))
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
         .thenReturn(dataCitePage(1, dataCiteInstrument(DOI, "findable", "Instrument")));

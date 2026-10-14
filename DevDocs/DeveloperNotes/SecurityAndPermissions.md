@@ -105,10 +105,14 @@ The design and its trade-offs are in
   considered options). Failed reauthentication is not counted toward the
   login-form lockout and has no other per-account rate limit; the
   per-username lock is the only bound, for verification password checks
-  too. The anonymous OAuth password grant is the exposed case and is
-  tracked as a separate ticket. Signing and witnessing go through
-  `IReauthenticator#reauthenticate`. Changing a verification password
-  checks the current one through
+  too. The one exception is the anonymous OAuth password grant, where
+  RSDEV-1546 validates the client before the password and refuses a
+  username after `oauth.passwordGrant.maxFailures` wrong guesses within
+  `oauth.passwordGrant.failureWindowSeconds` (`PasswordGrantGuessLimiter`);
+  its padding for unknown or refused names uses the same
+  `SentinelPasswordCheck` as the login page. Signing and witnessing go
+  through `IReauthenticator#reauthenticate`. Changing a verification
+  password checks the current one through
   `IReauthenticator#reauthenticateWithVerificationPassword`, which applies
   the same busy handling and security logging but never substitutes an
   operating-as sysadmin.
