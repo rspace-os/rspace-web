@@ -22,13 +22,36 @@ const target = {
   name: "Confocal microscope",
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
-  openingStart: "00:00",
-  openingEnd: "24:00",
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };
+
+it("shows every independently configured weekday and the scheduling timezone", async () => {
+  renderForm(
+    <BookingForm
+      mode="add"
+      token="token"
+      pending={false}
+      eventKind="BOOKING"
+      initialTarget={{
+        ...target,
+        openingHours: [
+          { dayOfWeek: 1, start: "08:00", end: "17:00" },
+          { dayOfWeek: 2, start: "10:00", end: "16:00" },
+        ],
+      }}
+      initialDate="2026-08-17"
+      onSubmit={vi.fn(async () => undefined)}
+    />,
+  );
+  expect(await screen.findByText("08:00–17:00")).toBeVisible();
+  expect(screen.getByText("10:00–16:00")).toBeVisible();
+  expect(screen.getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(5);
+  expect(screen.getByText(target.timezone)).toBeVisible();
+});
 
 const editableBooking = {
   id: 41,
@@ -553,7 +576,11 @@ describe("BookingForm", () => {
         mode="add"
         displayTimezone="UTC"
         eventKind="MAINTENANCE"
-        initialTarget={{ ...target, timezone: "UTC", openingStart: "08:00", openingEnd: "18:00" }}
+        initialTarget={{
+          ...target,
+          timezone: "UTC",
+          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+        }}
         initialWindow={{
           startDate: "2026-08-17",
           startTime: "22:00",

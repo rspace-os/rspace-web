@@ -1,6 +1,7 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { coversInterval, type OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
   resolveWallClock,
@@ -65,8 +66,7 @@ export type BookingWindowPolicy = {
   schedulingTimezone: string;
   slotGranularityMinutes: number;
   maxBookingDurationMinutes: number;
-  openingStart: string;
-  openingEnd: string;
+  openingHours: readonly OpeningHoursEntry[];
   enforceOpeningHours?: boolean;
   allowPolicyMismatch?: boolean;
 };
@@ -79,8 +79,7 @@ export function validateBookingWindow(
     schedulingTimezone: resolvedSchedulingTimezone,
     slotGranularityMinutes,
     maxBookingDurationMinutes,
-    openingStart,
-    openingEnd,
+    openingHours,
     enforceOpeningHours = true,
     allowPolicyMismatch = false,
   }: BookingWindowPolicy,
@@ -95,22 +94,9 @@ export function validateBookingWindow(
   const granularityInvalid =
     (startMinute !== undefined && startMinute % slotGranularityMinutes !== 0) ||
     (endMinute !== undefined && endMinute % slotGranularityMinutes !== 0);
-  const endAtMidnight = Boolean(schedulingEnd && schedulingEnd.hour === 0 && schedulingEnd.minute === 0);
-  const openingEndDate = schedulingEnd
-    ?.toPlainDate()
-    .subtract({ days: endAtMidnight ? 1 : 0 })
-    .toString();
-  const openingEndTime = endAtMidnight
-    ? "24:00"
-    : `${String(schedulingEnd?.hour).padStart(2, "0")}:${String(schedulingEnd?.minute).padStart(2, "0")}`;
   const openingInvalid =
     enforceOpeningHours &&
-    !(openingStart === "00:00" && openingEnd === "24:00") &&
-    Boolean(result.window && schedulingStart && schedulingEnd) &&
-    (schedulingStart?.toPlainDate().toString() !== openingEndDate ||
-      `${String(schedulingStart?.hour).padStart(2, "0")}:${String(schedulingStart?.minute).padStart(2, "0")}` <
-        openingStart ||
-      (openingEnd !== "24:00" && openingEndTime > openingEnd));
+    Boolean(result.window && !coversInterval({ openingHours }, resolvedSchedulingTimezone, result.window));
   const maximumDurationInvalid =
     Boolean(result.window) &&
     maxBookingDurationMinutes > 0 &&
@@ -135,8 +121,7 @@ export function ZonedBookingWindowFields({
   timezone,
   slotGranularityMinutes,
   maxBookingDurationMinutes,
-  openingStart,
-  openingEnd,
+  openingHours,
   enforceOpeningHours = true,
   value,
   onChange,
@@ -151,8 +136,7 @@ export function ZonedBookingWindowFields({
   timezone?: string;
   slotGranularityMinutes: number;
   maxBookingDurationMinutes: number;
-  openingStart: string;
-  openingEnd: string;
+  openingHours: readonly OpeningHoursEntry[];
   enforceOpeningHours?: boolean;
   value: BookingWindowDraft;
   onChange: (value: BookingWindowDraft) => void;
@@ -172,8 +156,7 @@ export function ZonedBookingWindowFields({
         schedulingTimezone: resolvedSchedulingTimezone,
         slotGranularityMinutes,
         maxBookingDurationMinutes,
-        openingStart,
-        openingEnd,
+        openingHours,
         enforceOpeningHours,
         allowPolicyMismatch,
       }),
@@ -183,8 +166,7 @@ export function ZonedBookingWindowFields({
       resolvedSchedulingTimezone,
       slotGranularityMinutes,
       maxBookingDurationMinutes,
-      openingStart,
-      openingEnd,
+      openingHours,
       enforceOpeningHours,
       allowPolicyMismatch,
     ],

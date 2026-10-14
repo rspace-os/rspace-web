@@ -125,3 +125,14 @@ export function openingIntervals(
   }
   return merged.map((opening) => ({ start: opening.start.toString(), end: opening.end.toString() }));
 }
+
+/** Every instant of a non-empty booking window must be open. */
+export function coversInterval(settings: OpeningSchedule, timezone: string, interval: OpeningInterval): boolean {
+  if (Temporal.Instant.compare(interval.start, interval.end) >= 0) return false;
+  const openings = openingIntervals(settings, timezone, interval);
+  return (
+    openings.length === 1 &&
+    Temporal.Instant.compare(openings[0].start, interval.start) === 0 &&
+    Temporal.Instant.compare(openings[0].end, interval.end) === 0
+  );
+}

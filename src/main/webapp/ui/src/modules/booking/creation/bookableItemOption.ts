@@ -1,3 +1,5 @@
+import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
+
 export type BookableItemOption = {
   configurationId: number;
   targetId: number;
@@ -5,8 +7,7 @@ export type BookableItemOption = {
   name: string;
   timezone: string;
   slotGranularityMinutes: number;
-  openingStart: string;
-  openingEnd: string;
+  openingHours: OpeningHoursEntry[];
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
   maxBookingDurationMinutes: number;
@@ -37,8 +38,7 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     !source.target ||
     source.timezone === undefined ||
     source.slotGranularityMinutes === undefined ||
-    source.openingStart === undefined ||
-    source.openingEnd === undefined ||
+    source.openingHours === undefined ||
     source.bufferBeforeMinutes === undefined ||
     source.bufferAfterMinutes === undefined ||
     source.maxBookingDurationMinutes === undefined ||
@@ -53,8 +53,7 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     name: source.target.value.name,
     timezone: source.timezone,
     slotGranularityMinutes: source.slotGranularityMinutes,
-    openingStart: source.openingStart,
-    openingEnd: source.openingEnd,
+    openingHours: source.openingHours,
     bufferBeforeMinutes: source.bufferBeforeMinutes,
     bufferAfterMinutes: source.bufferAfterMinutes,
     maxBookingDurationMinutes: source.maxBookingDurationMinutes,

@@ -2,6 +2,7 @@ import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronDownIcon } from "lucide-react";
 import { Suspense, useCallback, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -22,7 +23,7 @@ import { Heading } from "@/modules/common/ui/typography";
 function BookingRulesList({ item }: { item: BookableItemOption }) {
   const { t } = useTranslation("booking");
   const rules = [
-    [t("bookableItemDetails.fields.openingHours"), `${item.openingStart}–${item.openingEnd}`],
+    ...openingHoursFacts(item, t),
     [t("bookableItemDetails.fields.timezone"), item.timezone],
     [
       t("bookableItemDetails.fields.granularity"),
