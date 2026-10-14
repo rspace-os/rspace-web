@@ -97,6 +97,65 @@ class DeclaredArrayFieldTest {
   }
 
   @Test
+  void rejectsRequiredCreateOnlyChildrenWhenEitherModifierIsApplied() {
+    Field<Row, String> optionalName =
+        Field.embedded("name", CollectionFieldTypes.text(10), Row::name);
+    Field<Row, String> createOnlyName = optionalName.writeOnlyOn(WriteOperation.CREATE);
+    IllegalArgumentException requiredFirst =
+        assertThrows(IllegalArgumentException.class, () -> NAME.writeOnlyOn(WriteOperation.CREATE));
+    IllegalArgumentException createOnlyFirst =
+        assertThrows(IllegalArgumentException.class, createOnlyName::required);
+    assertEquals(
+        "Required embedded child must be writable on update for complete replacements",
+        requiredFirst.getMessage());
+    assertEquals(requiredFirst.getMessage(), createOnlyFirst.getMessage());
+    assertTrue(
+        Field.writable("name", "name", CollectionFieldTypes.text(10), Row::name, (row, name) -> {})
+            .required()
+            .writeOnlyOn(WriteOperation.CREATE)
+            .isRequiredOnCreate());
+  }
+
+  @Test
+  void optionalCreateOnlyChildrenStillPermitNestedReplacementUpdatesAndReadOnlyParents()
+      throws Exception {
+    DeclaredFieldType<Row> detail =
+        CollectionFieldTypes.object(
+            Row.class,
+            List.of(
+                NAME,
+                Field.embedded("number", CollectionFieldTypes.integer(), Row::number)
+                    .writeOnlyOn(WriteOperation.CREATE)),
+            DeclaredArrayFieldTest::row);
+    DeclaredFieldType<List<Group>> groups =
+        CollectionFieldTypes.array(
+            Group.class,
+            List.of(Field.embedded("detail", detail, Group::detail).required()),
+            values -> new Group((Row) values.get("detail")));
+    var replacement = JSON.readTree("[{\"detail\":{\"name\":\"first\"}}]");
+    assertEquals(
+        List.of(new Group(new Row("first", null, "private"))),
+        groups.parse(replacement, WriteOperation.UPDATE));
+    var withCreateOnlyChild = JSON.readTree("[{\"detail\":{\"name\":\"first\",\"number\":3}}]");
+    assertEquals(
+        List.of(new Group(new Row("first", 3, "private"))),
+        groups.parse(withCreateOnlyChild, WriteOperation.CREATE));
+    EmbeddedFieldException failure =
+        assertThrows(
+            EmbeddedFieldException.class,
+            () -> groups.parse(withCreateOnlyChild, WriteOperation.UPDATE));
+    assertEquals("[0].detail.number", failure.path());
+    assertEquals(DocumentValidationException.Reason.READ_ONLY, failure.reason());
+    Field<GroupItem, List<Group>> readOnly =
+        Field.readOnly("roleSources", "groups", groups, GroupItem::groups);
+    assertEquals(
+        List.of(Map.of("detail", Map.of("name", "first", "number", 3))),
+        readOnly.documentValue(
+            new GroupItem(1L, List.of(new Group(new Row("first", 3, "private")))),
+            new AccessContext(null, AccessContext.Operation.READ, "groups")));
+  }
+
+  @Test
   void normalAndOverrideReadsProjectDtoRowsAndNarrowChildAccess() {
     DeclaredFieldType<List<Row>> hiddenNumbers =
         CollectionFieldTypes.array(
