@@ -13,6 +13,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
@@ -76,6 +77,23 @@ class ResourceAccessControllerMVCIT {
         .andExpect(jsonPath("$.caller.capabilities.canManageOwners").value(false))
         .andExpect(jsonPath("$.caller.capabilities.canLeave").value(false))
         .andExpect(jsonPath("$.caller.granteeKey").value("user:" + owner.getId()));
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configurations/" + configurationId)
+                .header("apiKey", fixture.userKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.openingHours.length()").value(7))
+        .andExpect(jsonPath("$.roleSources.length()").value(1))
+        .andExpect(jsonPath("$.roleSources[0]").value(Map.of("kind", "IMPLICIT", "role", "OWNER")))
+        .andExpect(jsonPath("$.ownerHealth").doesNotExist());
+
+    mockMvc
+        .perform(
+            get("/api/v2/booking-configurations/" + configurationId)
+                .header("apiKey", fixture.sysadminKey()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.ownerHealth").value(Map.of()));
   }
 
   @Test

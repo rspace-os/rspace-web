@@ -24,6 +24,7 @@ import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipInputForm;
+import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer;
@@ -34,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
@@ -416,6 +418,49 @@ class ApiV2BookingConfigurationResourceTest {
       assertFalse(source.has("nameSnapshot"));
     }
     assertEquals(4, sources.get(2).get("grantee").size());
+  }
+
+  @Test
+  void inheritedRoleProjectionKeepsOwnerHealthRestrictedToSysadmins() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.prepareAccessProjection(
+        "OWNER", List.of(ResourceRoleSource.implicit("OWNER")), null, null);
+    User owner = mock(User.class);
+    User sysadmin = mock(User.class);
+    when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    ResourceRenderer renderer =
+        new ResourceRenderer(
+            new ResourceRegistry(
+                List.of(
+                    ApiV2BookingConfigurationResource.DESCRIPTION,
+                    ApiV2UserResource.DESCRIPTION,
+                    ApiV2BookingInstrumentResource.DESCRIPTION)));
+    var selection =
+        ResourceFieldSelections.root(FieldSelection.include(Set.of("roleSources", "ownerHealth")));
+
+    Map<String, Object> ownerDocument =
+        renderer.render(
+            configuration,
+            ApiV2BookingConfigurationResource.DESCRIPTION,
+            selection,
+            IncludeTree.empty(),
+            (resourceName, id) -> java.util.Optional.empty(),
+            Map.of(),
+            new AccessContext(owner, Operation.READ, "booking-configurations"));
+    assertEquals(
+        List.of(Map.of("kind", "IMPLICIT", "role", "OWNER")), ownerDocument.get("roleSources"));
+    assertFalse(ownerDocument.containsKey("ownerHealth"));
+
+    Map<String, Object> sysadminDocument =
+        renderer.render(
+            configuration,
+            ApiV2BookingConfigurationResource.DESCRIPTION,
+            selection,
+            IncludeTree.empty(),
+            (resourceName, id) -> java.util.Optional.empty(),
+            Map.of(),
+            new AccessContext(sysadmin, Operation.READ, "booking-configurations"));
+    assertEquals(Map.of(), sysadminDocument.get("ownerHealth"));
   }
 
   private DocumentValidationException updateViolation(JsonNode body) {
