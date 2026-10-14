@@ -280,7 +280,9 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
       requested.forEach(
           (provider, ids) -> {
             Map<Object, Map<String, Object>> values =
-                provider.valuesForAuthorizedIds(resourceIds, ids, caller);
+                provider.projectsThroughRelationship()
+                    ? provider.valuesForIds(resourceIds, ids, caller)
+                    : provider.valuesForAuthorizedIds(resourceIds, ids, caller);
             for (int index = 0; index < resourceIds.size(); index++) {
               documents
                   .get(index)
