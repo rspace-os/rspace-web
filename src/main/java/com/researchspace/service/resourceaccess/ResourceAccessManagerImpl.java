@@ -9,12 +9,15 @@ import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.MessageSourceUtils;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -154,17 +157,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     }
 
     applyReplacement(locked.access(), before, after);
-    java.time.Instant changedAt = clock.instant();
+    Instant changedAt = clock.instant();
     locked.access().touch(actor, Date.from(changedAt));
     gateway.flush();
     publishDeltas(
-        auditTarget(resource, locked.resource()),
-        actor,
-        locked.subject(),
-        before,
-        after,
-        scheme,
-        changedAt);
+        locked.resource(), actor, locked.subject(), before, after, scheme, changedAt, null);
     return document(
         resource,
         locked.access(),
@@ -180,8 +177,8 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       User incomingOwner,
       User subject,
       User actor) {
-    java.util.Objects.requireNonNull(outgoingOwner, "outgoingOwner");
-    java.util.Objects.requireNonNull(incomingOwner, "incomingOwner");
+    Objects.requireNonNull(outgoingOwner, "outgoingOwner");
+    Objects.requireNonNull(incomingOwner, "incomingOwner");
     if (!resource.featureEnabled(subject)) {
       throw failure(ResourceAccessException.Reason.FORBIDDEN);
     }
@@ -219,11 +216,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     }
 
     applyReplacement(locked.access(), before, after);
-    java.time.Instant changedAt = clock.instant();
+    Instant changedAt = clock.instant();
     locked.access().touch(actor, Date.from(changedAt));
     gateway.flush();
     publishDeltas(
-        auditTarget(resource, locked.resource()),
+        locked.resource(),
         actor,
         locked.subject(),
         before,
@@ -256,17 +253,16 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       return;
     }
     resource.beforeAccessMutation(protectedEntity);
-    resource.beforeSelfRemoval(protectedEntity, lockedSubject, actor);
     Map<String, ResourceRoleAssignment> remaining = assignmentsByKey(access);
     remaining.remove(subjectKey);
     requirePersistedRoles(remaining.values(), schemes.getRequired(access.getSchemeKey()));
     access.removeAssignment(direct);
-    java.time.Instant changedAt = clock.instant();
+    Instant changedAt = clock.instant();
     access.touch(actor, Date.from(changedAt));
     gateway.flush();
     events.publishEvent(
         new ResourceAccessAuditDelta(
-            auditTarget(resource, protectedEntity),
+            protectedEntity,
             actor,
             lockedSubject,
             AuditAction.UNSHARE,
@@ -278,12 +274,6 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             ResourceAccessAuditReason.DIRECT_LEAVE));
   }
 
-  private static <T, ID> Object auditTarget(
-      ProtectedResourceAccess<T, ID> resource, T protectedEntity) {
-    Object target = resource.auditTarget(protectedEntity);
-    return target == null ? protectedEntity : target;
-  }
-
   private void publishDeltas(
       Object auditTarget,
       User actor,
@@ -291,49 +281,41 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       Map<String, ResourceRoleAssignment> before,
       Map<String, ResourceRoleAssignment> after,
       ResourceRoleScheme scheme,
-      java.time.Instant changedAt) {
-    publishDeltas(auditTarget, actor, subject, before, after, scheme, changedAt, null);
-  }
-
-  private void publishDeltas(
-      Object auditTarget,
-      User actor,
-      User subject,
-      Map<String, ResourceRoleAssignment> before,
-      Map<String, ResourceRoleAssignment> after,
-      ResourceRoleScheme scheme,
-      java.time.Instant changedAt,
+      Instant changedAt,
       ResourceAccessAuditReason reasonOverride) {
-    Set<String> keys = new java.util.LinkedHashSet<>(before.keySet());
+    Set<String> keys = new LinkedHashSet<>(before.keySet());
     keys.addAll(after.keySet());
     for (String key : keys) {
       ResourceRoleAssignment oldAssignment = before.get(key);
       ResourceRoleAssignment newAssignment = after.get(key);
       String oldRole = oldAssignment == null ? null : oldAssignment.getRoleKey();
       String newRole = newAssignment == null ? null : newAssignment.getRoleKey();
-      if (java.util.Objects.equals(oldRole, newRole)) {
+      if (Objects.equals(oldRole, newRole)) {
         continue;
       }
       ResourceRoleAssignment snapshot = newAssignment == null ? oldAssignment : newAssignment;
-      boolean audience = key.equals("audience:all-users");
-      ResourceAccessAuditReason reason =
-          reasonOverride != null
-              ? reasonOverride
-              : audience && oldAssignment != null && newAssignment != null
-                  ? scheme
-                          .capabilities(newRole)
-                          .contains(ResourceRoleScheme.READ_RESOURCE_CAPABILITY)
-                      ? ResourceAccessAuditReason.ALL_USERS_ON
-                      : ResourceAccessAuditReason.ALL_USERS_OFF
-                  : oldAssignment == null
-                      ? audience
-                          ? ResourceAccessAuditReason.ALL_USERS_ON
-                          : ResourceAccessAuditReason.ASSIGNMENT_ADD
-                      : newAssignment == null
-                          ? audience
-                              ? ResourceAccessAuditReason.ALL_USERS_OFF
-                              : ResourceAccessAuditReason.ASSIGNMENT_REMOVE
-                          : ResourceAccessAuditReason.ASSIGNMENT_CHANGE;
+      boolean audience = ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS).equals(key);
+      ResourceAccessAuditReason reason = reasonOverride;
+      if (reason == null) {
+        if (audience && oldAssignment != null && newAssignment != null) {
+          reason =
+              scheme.capabilities(newRole).contains(ResourceRoleScheme.READ_RESOURCE_CAPABILITY)
+                  ? ResourceAccessAuditReason.ALL_USERS_ON
+                  : ResourceAccessAuditReason.ALL_USERS_OFF;
+        } else if (oldAssignment == null) {
+          reason =
+              audience
+                  ? ResourceAccessAuditReason.ALL_USERS_ON
+                  : ResourceAccessAuditReason.ASSIGNMENT_ADD;
+        } else if (newAssignment == null) {
+          reason =
+              audience
+                  ? ResourceAccessAuditReason.ALL_USERS_OFF
+                  : ResourceAccessAuditReason.ASSIGNMENT_REMOVE;
+        } else {
+          reason = ResourceAccessAuditReason.ASSIGNMENT_CHANGE;
+        }
+      }
       AuditAction action =
           oldAssignment == null
               ? AuditAction.SHARE
@@ -406,7 +388,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
                 })
             .map(ResourceAccessGrant::granteeKey)
             .filter(key -> !audienceKey.equals(key))
-            .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     if (!directory.resolveAssignable(keys, subject).keySet().containsAll(keys)) {
       throw failure(ResourceAccessException.Reason.FORBIDDEN);
     }
@@ -430,9 +412,9 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   }
 
   private ResourceRoleAssignment resolveAvailable(String granteeKey, String role) {
-    return ("audience:" + ResourceAudience.ALL_USERS.key()).equals(granteeKey)
+    return ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS).equals(granteeKey)
         ? gateway.resolveAvailable(granteeKey, role, audienceNameSnapshot())
-        : gateway.resolveAvailable(granteeKey, role);
+        : gateway.resolveAvailable(granteeKey, role, null);
   }
 
   private static void requirePersistedRoles(

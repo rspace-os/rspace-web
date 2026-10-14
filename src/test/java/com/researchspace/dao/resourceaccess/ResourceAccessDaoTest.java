@@ -14,11 +14,8 @@ import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
 class ResourceAccessDaoTest extends SpringTransactionalTest {
 
   @Autowired private ResourceAccessDao resourceAccessDao;
@@ -57,7 +54,7 @@ class ResourceAccessDaoTest extends SpringTransactionalTest {
 
     ResourceRoleAssignment resolved =
         resourceAccessDao.resolveAvailable(
-            "user:" + owner.getId(), BookingResourceRoleScheme.BOOKER);
+            "user:" + owner.getId(), BookingResourceRoleScheme.BOOKER, null);
 
     assertEquals(owner.getId(), resolved.getUser().getId());
     assertEquals(BookingResourceRoleScheme.BOOKER, resolved.getRoleKey());
@@ -67,7 +64,8 @@ class ResourceAccessDaoTest extends SpringTransactionalTest {
             .resolveAvailable("audience:all-users", BookingResourceRoleScheme.VIEWER, "All users")
             .getGranteeKey());
     assertNull(
-        resourceAccessDao.resolveAvailable("user:not-an-id", BookingResourceRoleScheme.BOOKER));
+        resourceAccessDao.resolveAvailable(
+            "user:not-an-id", BookingResourceRoleScheme.BOOKER, null));
 
     User seededSysadmin =
         sessionFactory
@@ -79,7 +77,8 @@ class ResourceAccessDaoTest extends SpringTransactionalTest {
     assertEquals(
         seededSysadmin.getId(),
         resourceAccessDao
-            .resolveAvailable("user:" + seededSysadmin.getId(), BookingResourceRoleScheme.MANAGER)
+            .resolveAvailable(
+                "user:" + seededSysadmin.getId(), BookingResourceRoleScheme.MANAGER, null)
             .getUser()
             .getId());
   }

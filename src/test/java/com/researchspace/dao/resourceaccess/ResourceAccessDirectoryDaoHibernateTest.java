@@ -40,8 +40,9 @@ class ResourceAccessDirectoryDaoHibernateTest {
     verify(session).createQuery(hql.capture(), eq(User.class));
     assertTrue(
         hql.getValue().contains("lower(concat(user.firstName, ' ', user.lastName)) like :query"));
+    assertTrue(hql.getValue().contains("like :query escape '!'"));
     assertTrue(hql.getValue().contains("ownMembership.user.id = :subjectId"));
-    verify(users).setParameter("query", "%user first\\%\\_%");
+    verify(users).setParameter("query", "%user first!%!_%");
     verify(users).setParameter("subjectId", 42L);
     verify(users).setMaxResults(20);
   }

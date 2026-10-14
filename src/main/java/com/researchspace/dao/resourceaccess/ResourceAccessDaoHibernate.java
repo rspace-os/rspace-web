@@ -7,6 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserGroup;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
+import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import jakarta.persistence.LockModeType;
 import java.util.Collection;
@@ -17,25 +18,23 @@ import java.util.Map;
 import java.util.Set;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /** Hibernate persistence for the generic resource-access aggregate. */
 @Repository
 public class ResourceAccessDaoHibernate implements ResourceAccessDao {
 
-  private static final String USER_PREFIX = "user:";
-  private static final String GROUP_PREFIX = "group:";
-  private static final String ALL_USERS_KEY = "audience:all-users";
-
   private final SessionFactory sessionFactory;
-
-  @org.springframework.beans.factory.annotation.Autowired
-  private CriteriaBuilderFactory criteriaBuilderFactory;
+  private final CriteriaBuilderFactory criteriaBuilderFactory;
 
   public record UserGroupRow(Long userId, Long groupId) {}
 
-  public ResourceAccessDaoHibernate(SessionFactory sessionFactory) {
+  @Autowired
+  public ResourceAccessDaoHibernate(
+      SessionFactory sessionFactory, CriteriaBuilderFactory criteriaBuilderFactory) {
     this.sessionFactory = sessionFactory;
+    this.criteriaBuilderFactory = criteriaBuilderFactory;
   }
 
   @Override
@@ -91,30 +90,27 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
       return null;
     }
     Session session = sessionFactory.getCurrentSession();
-    if (granteeKey.startsWith(USER_PREFIX)) {
-      Long id = parseNonZeroId(granteeKey, USER_PREFIX);
-      User user = id == null ? null : session.find(User.class, id);
+    Long userId = ResourceGranteeKeys.parseUserId(granteeKey);
+    if (userId != null) {
+      User user = session.find(User.class, userId);
       return user != null && user.isEnabled()
           ? ResourceRoleAssignment.forUser(roleKey, user)
           : null;
     }
-    if (granteeKey.startsWith(GROUP_PREFIX)) {
-      Long id = parseNonZeroId(granteeKey, GROUP_PREFIX);
-      if (id == null) {
-        return null;
-      }
+    Long groupId = ResourceGranteeKeys.parseGroupId(granteeKey);
+    if (groupId != null) {
       Long enabledMembers =
           session
               .createQuery(
                   "select count(membership) from UserGroup membership "
                       + "where membership.group.id = :groupId and membership.user.enabled = true",
                   Long.class)
-              .setParameter("groupId", id)
+              .setParameter("groupId", groupId)
               .getSingleResult();
-      Group group = enabledMembers > 0 ? session.find(Group.class, id) : null;
+      Group group = enabledMembers > 0 ? session.find(Group.class, groupId) : null;
       return group == null ? null : ResourceRoleAssignment.forGroup(roleKey, group);
     }
-    if (!ALL_USERS_KEY.equals(granteeKey)) {
+    if (!ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS).equals(granteeKey)) {
       return null;
     }
     if (audienceNameSnapshot == null || audienceNameSnapshot.isBlank()) {
@@ -184,14 +180,5 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
   @Override
   public void flush() {
     sessionFactory.getCurrentSession().flush();
-  }
-
-  private static Long parseNonZeroId(String key, String prefix) {
-    try {
-      long id = Long.parseLong(key.substring(prefix.length()));
-      return id != 0 ? id : null;
-    } catch (NumberFormatException ignored) {
-      return null;
-    }
   }
 }

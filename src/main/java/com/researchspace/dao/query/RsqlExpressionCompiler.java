@@ -12,7 +12,7 @@ import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /** Traverses filter and trusted-constraint trees and routes selectors to their storage compiler. */
@@ -35,10 +35,10 @@ final class RsqlExpressionCompiler {
       return compileComparison(comparison, state);
     }
     if (filter instanceof FilterExpression.And and) {
-      return compileLogical(and.children(), " AND ", state);
+      return compileLogical(and.children(), " AND ", child -> compile(child, state));
     }
     if (filter instanceof FilterExpression.Or or) {
-      return compileLogical(or.children(), " OR ", state);
+      return compileLogical(or.children(), " OR ", child -> compile(child, state));
     }
     throw new IllegalStateException("Unsupported filter expression " + filter.getClass());
   }
@@ -48,10 +48,10 @@ final class RsqlExpressionCompiler {
       return compile(filter, state);
     }
     if (constraint instanceof QueryConstraint.And and) {
-      return compileConstraintLogical(and.children(), " AND ", state);
+      return compileLogical(and.children(), " AND ", child -> compileConstraint(child, state));
     }
     if (constraint instanceof QueryConstraint.Or or) {
-      return compileConstraintLogical(or.children(), " OR ", state);
+      return compileLogical(or.children(), " OR ", child -> compileConstraint(child, state));
     }
     if (constraint instanceof ResourceRoleMembershipConstraint membership) {
       return compileResourceRoleMembership(membership, state);
@@ -96,25 +96,9 @@ final class RsqlExpressionCompiler {
                 ResourceRoleAssignment.class, assignment, where.toString()));
   }
 
-  private String compileConstraintLogical(
-      List<QueryConstraint> children, String separator, RsqlCompilationState state) {
-    if (children.isEmpty()) {
-      throw new NoSuchElementException();
-    }
-    return "("
-        + children.stream()
-            .map(child -> compileConstraint(child, state))
-            .collect(Collectors.joining(separator))
-        + ")";
-  }
-
-  private String compileLogical(
-      List<FilterExpression> children, String separator, RsqlCompilationState state) {
-    return "("
-        + children.stream()
-            .map(child -> compile(child, state))
-            .collect(Collectors.joining(separator))
-        + ")";
+  private <T> String compileLogical(
+      List<T> children, String separator, Function<T, String> compileChild) {
+    return "(" + children.stream().map(compileChild).collect(Collectors.joining(separator)) + ")";
   }
 
   private String compileComparison(

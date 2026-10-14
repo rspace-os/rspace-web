@@ -5,6 +5,7 @@ import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.service.resourceaccess.ResourceRole;
 import com.researchspace.service.resourceaccess.ResourceRoleScheme;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,30 +46,16 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
   private static final Set<String> VIEWER_CAPABILITIES =
       Set.of(READ_RESOURCE, CREATE_CALENDAR_SUBSCRIPTION);
   private static final Set<String> BOOKER_CAPABILITIES =
-      Set.of(READ_RESOURCE, CREATE_CALENDAR_SUBSCRIPTION, CREATE_BOOKING, MANAGE_OWN_BOOKINGS);
+      plus(VIEWER_CAPABILITIES, CREATE_BOOKING, MANAGE_OWN_BOOKINGS);
   private static final Set<String> MANAGER_CAPABILITIES =
-      Set.of(
-          READ_RESOURCE,
-          CREATE_CALENDAR_SUBSCRIPTION,
-          CREATE_BOOKING,
-          MANAGE_OWN_BOOKINGS,
+      plus(
+          BOOKER_CAPABILITIES,
           EDIT_CONFIGURATION,
           VIEW_AUDIT,
           MANAGE_ALL_EVENTS,
           CREATE_BLOCKOUT,
           MANAGE_ASSIGNMENTS);
-  private static final Set<String> OWNER_CAPABILITIES =
-      Set.of(
-          READ_RESOURCE,
-          CREATE_CALENDAR_SUBSCRIPTION,
-          CREATE_BOOKING,
-          MANAGE_OWN_BOOKINGS,
-          EDIT_CONFIGURATION,
-          VIEW_AUDIT,
-          MANAGE_ALL_EVENTS,
-          CREATE_BLOCKOUT,
-          MANAGE_ASSIGNMENTS,
-          MANAGE_OWNERS);
+  private static final Set<String> OWNER_CAPABILITIES = plus(MANAGER_CAPABILITIES, MANAGE_OWNERS);
 
   private static final Map<String, Set<String>> CAPABILITIES =
       Map.of(
@@ -84,6 +71,14 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
       Set.of(ResourceGranteeKind.USER, ResourceGranteeKind.GROUP, ResourceGranteeKind.AUDIENCE);
   private static final Set<ResourceGranteeKind> AUDIENCE_GRANTEES =
       Set.of(ResourceGranteeKind.AUDIENCE);
+
+  private static Set<String> plus(Set<String> capabilities, String... additions) {
+    Set<String> result = new HashSet<>(capabilities);
+    for (String capability : additions) {
+      result.add(capability);
+    }
+    return Set.copyOf(result);
+  }
 
   @Override
   public String key() {
