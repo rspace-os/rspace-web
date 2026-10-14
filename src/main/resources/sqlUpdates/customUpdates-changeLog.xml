@@ -11,5 +11,7 @@
     <include relativeToChangelogFile="true"
       file="rsdev-1219-create-default-instrument-template.xml"/>
     <include relativeToChangelogFile="true" file="rsdev-894-wrap-password-hashes.xml"/>
+    <include relativeToChangelogFile="true"
+      file="rsdev-894-prefix-bcrypt-verification-passwords.xml"/>
 
 </databaseChangeLog>

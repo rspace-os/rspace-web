@@ -1,5 +1,7 @@
 package com.researchspace.auth;
 
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.BCRYPT_HASH;
+import static com.researchspace.testutils.LegacyVerificationPasswordFixture.PLAIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -112,5 +115,13 @@ class UsernamePasswordCredentialsMatcherTest {
     assertTrue(matcher.doCredentialsMatch(new UsernamePasswordToken("legacy", "sysWisc23!"), info));
     assertFalse(matcher.doCredentialsMatch(new UsernamePasswordToken("legacy", "x"), info));
     assertEquals(LEGACY, info.getCredentials());
+  }
+
+  @Test
+  void bcryptIsRefusedForLoginPasswords() {
+    User user = TestFactory.createAnyUser("bcrypt");
+    user.setPassword("{bcrypt}" + BCRYPT_HASH);
+    assertFalse(matcher.verify(user, PLAIN));
+    verify(verifier, never()).verify(anyString(), any(), anyString());
   }
 }

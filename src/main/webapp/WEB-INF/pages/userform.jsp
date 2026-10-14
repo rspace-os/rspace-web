@@ -416,7 +416,7 @@
 					</td>
 					<td style="display: flex; flex-direction: column;">
 						<input type="password" value="" id="newPasswordInput" class="form-control"
-							   pattern="[ -~]{8,50}"
+							   pattern="[ -~]{8,128}"
 							   title="${userformPasswordCharsTitle}"
 						/>
 						<p><spring:message code="userform.passwordCharsHint"/></p>
@@ -459,7 +459,7 @@
                     </td>
                     <td style="display: flex; flex-direction: column;">
                         <input type="password" value="" id="newVerificationPasswordInput" class="form-control"
-                               pattern="[ -~]{8,50}"
+                               pattern="[ -~]{8,128}"
                                title="${userformPasswordCharsTitle}"
                         />
                         <p><spring:message code="userform.passwordCharsHint"/></p>
@@ -494,7 +494,7 @@
 				</td>
                 <td style="display: flex; flex-direction: column;">
                     <input type="password" value="" id="newSetVerificationPasswordInput" class="form-control"
-                           pattern="[ -~]{8,50}"
+                           pattern="[ -~]{8,128}"
                            title="${userformPasswordCharsTitle}"
                     />
                     <p><spring:message code="userform.passwordCharsHint"/></p>
