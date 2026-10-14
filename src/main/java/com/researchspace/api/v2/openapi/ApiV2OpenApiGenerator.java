@@ -28,7 +28,6 @@ import com.researchspace.model.collection.ResourceSchema;
 import com.researchspace.model.collection.RuntimeCollectionFields;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.WriteOperation;
-import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
@@ -112,12 +111,16 @@ public final class ApiV2OpenApiGenerator {
                     description.schema(),
                     componentNames,
                     routableNames.contains(description.resourceName())));
+    Set<String> declaredComponents = new LinkedHashSet<>();
     catalog
         .routableResources()
         .forEach(
             resource ->
                 applyRegisteredAccessFieldSchemas(
-                    schemas, resource, componentNames.get(resource.resourceName())));
+                    schemas,
+                    resource,
+                    componentNames.get(resource.resourceName()),
+                    declaredComponents));
     catalog
         .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
@@ -199,7 +202,6 @@ public final class ApiV2OpenApiGenerator {
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ResourceRoleSource.class, schemas);
     schemas.put(
         "ResourceAccessReplacement",
         ordered(
@@ -214,15 +216,25 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static void applyRegisteredAccessFieldSchemas(
-      Map<String, Object> schemas, ApiV2ResourceRegistration<?, ?> resource, String component) {
+      Map<String, Object> schemas,
+      ApiV2ResourceRegistration<?, ?> resource,
+      String component,
+      Set<String> declaredComponents) {
     ResourceAccessSpec<?, ?> access = resource.resourceAccess().orElse(null);
     if (access == null || component == null) {
       return;
     }
     Map<String, Object> read = mutableObjectMap(schemas.get(component + "Read"));
     Map<String, Object> properties = mutableObjectMap(read.get("properties"));
-    replaceFieldShape(
-        properties, "roleSources", ordered("type", "array", "items", ref("ResourceRoleSource")));
+    Object roleSources = properties.get("roleSources");
+    if (roleSources instanceof Map<?, ?> array && array.get("items") instanceof Map<?, ?> items) {
+      if (!declaredComponents.add("ResourceRoleSource")
+          && !Objects.equals(schemas.get("ResourceRoleSource"), items)) {
+        throw new IllegalArgumentException("Inconsistent declared ResourceRoleSource children");
+      }
+      schemas.put("ResourceRoleSource", items);
+      mutableObjectMap(roleSources).put("items", ref("ResourceRoleSource"));
+    }
     access
         .capabilitiesType()
         .ifPresent(
@@ -1204,6 +1216,15 @@ public final class ApiV2OpenApiGenerator {
       // Only body properties carry write constraints: where literals are never checked against
       // them, so the shared scalar schema must not publish them.
       schema.putAll(scalar.writeConstraints());
+      if (!scalar.fields().isEmpty()) {
+        Map<String, Object> object = embeddedObjectSchema(scalar.fields(), names, writeOperation);
+        if ("array".equals(scalar.type().jsonType())) {
+          schema.put("items", object);
+        } else {
+          schema.putAll(object);
+        }
+        schema.put("x-rspace-fields", scalar.fields());
+      }
     } else if (field instanceof RelationshipSchema relationship) {
       schema =
           new LinkedHashMap<>(
@@ -1214,6 +1235,43 @@ public final class ApiV2OpenApiGenerator {
       throw new IllegalStateException("Unsupported resource field schema " + field.getClass());
     }
     return nullable(schema, writeOperation == null ? field.nullableOnRead() : field.nullable());
+  }
+
+  private static Map<String, Object> embeddedObjectSchema(
+      List<FieldSchema> fields, Map<String, String> names, WriteOperation operation) {
+    Map<String, Object> properties = new LinkedHashMap<>();
+    List<String> required = new ArrayList<>();
+    for (FieldSchema child : fields) {
+      if (operation != null && !child.writeOperations().contains(operation)) {
+        continue;
+      }
+      Map<String, Object> property = documentFieldSchema(child, names, operation);
+      applyDocumentation(property, child.openApi());
+      if (operation != null && child.defaultValue() != null) {
+        property.put("default", child.defaultValue());
+      }
+      if (operation == null && child.readOnly()) {
+        property.put("readOnly", true);
+      }
+      property.put(
+          "x-rspace-access",
+          accessExtension(
+              operation == null
+                  ? child.readAccess()
+                  : operation == WriteOperation.CREATE
+                      ? child.createAccess()
+                      : child.updateAccess()));
+      properties.put(child.name(), property);
+      if (operation != null && child.requiredOnCreate()) {
+        required.add(child.name());
+      }
+    }
+    Map<String, Object> schema =
+        ordered("type", "object", "additionalProperties", false, "properties", properties);
+    if (!required.isEmpty()) {
+      schema.put("required", required);
+    }
+    return schema;
   }
 
   private static Map<String, Object> relationshipOutput(
