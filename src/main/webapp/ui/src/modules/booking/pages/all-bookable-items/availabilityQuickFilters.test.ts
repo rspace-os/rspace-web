@@ -28,8 +28,7 @@ const candidate = (id: number, globalId: string, timezone: string): BookingConfi
   state: "ACTIVE",
   timezone,
   slotGranularityMinutes: 5,
-  openingStart: "00:00",
-  openingEnd: "24:00",
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -112,7 +111,7 @@ describe("availability quick filters", () => {
     expect(requests[0].searchParams.get("limit")).toBe("100");
     expect(requests[0].searchParams.get("depth")).toBe("1");
     expect(requests[0].searchParams.get("fields[booking-configurations]")).toBe(
-      "target,timezone,slotGranularityMinutes,openingStart,openingEnd,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
+      "target,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking",
     );
   });
 
@@ -175,8 +174,7 @@ describe("availability quick filters", () => {
     );
     const restricted = {
       ...candidate(1, "IN1", "UTC"),
-      openingStart: "08:00",
-      openingEnd: "18:00",
+      openingHours: [{ dayOfWeek: 1, start: "08:00", end: "18:00" }],
     };
 
     for (const [time, expected] of [
@@ -233,6 +231,36 @@ describe("availability quick filters", () => {
     expect(bookingRequests).toBe(1);
   });
 
+  it.each([
+    ["2026-08-17T12:00:00Z", "available-now"],
+    ["2026-08-18T12:00:00Z", "free-later-today"],
+    ["2026-08-19T12:00:00Z", "unavailable-today"],
+  ])("classifies the independent hours at %s", async (time, category) => {
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false }),
+      ),
+    );
+    const result = await loadAvailabilityQuickIndex(
+      [
+        {
+          ...candidate(1, "IN1", "UTC"),
+          openingHours: [
+            { dayOfWeek: 1, start: "08:00", end: "17:00" },
+            { dayOfWeek: 2, start: "14:00", end: "16:00" },
+          ],
+        },
+      ],
+      new Date(time),
+      "UTC",
+      "00:00",
+      "24:00",
+      "token",
+      new AbortController().signal,
+    );
+    expect(result.get("IN1")?.category).toBe(category);
+  });
+
   it("refreshes bookings, but not fresh candidates, at the next minute", async () => {
     vi.useFakeTimers();
     vi.setSystemTime("2026-08-17T09:00:30Z");
@@ -257,5 +285,36 @@ describe("availability quick filters", () => {
     await act(async () => vi.waitFor(() => expect(bookingRequests).toBe(2)));
     expect(candidateRequests).toBe(1);
     vi.useRealTimers();
+  });
+
+  it("recomputes availability when the weekday schedule changes within the same minute", async () => {
+    let configuration = {
+      ...candidate(1, "IN1", "UTC"),
+      openingHours: [{ dayOfWeek: 1, start: "08:00", end: "17:00" }],
+    };
+    let bookingRequests = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(page([configuration]))),
+      http.get("/api/v2/bookings", () => {
+        bookingRequests += 1;
+        return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
+      }),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: queryClient }, children);
+    const clock = () => new Date("2026-08-17T09:00:00Z");
+    const { result } = renderHook(() => useAvailabilityQuickFilterIndex("token", "UTC", "00:00", "24:00", clock), {
+      wrapper,
+    });
+    await waitFor(() => expect(result.current.data?.get("IN1")?.category).toBe("available-now"));
+
+    configuration = { ...configuration, openingHours: [{ dayOfWeek: 1, start: "12:00", end: "18:00" }] };
+    await act(() =>
+      queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "availability-candidates"] }),
+    );
+
+    await waitFor(() => expect(result.current.data?.get("IN1")?.category).toBe("free-later-today"));
+    expect(bookingRequests).toBe(2);
   });
 });

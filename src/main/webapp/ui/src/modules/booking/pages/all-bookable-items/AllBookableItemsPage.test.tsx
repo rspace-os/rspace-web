@@ -149,8 +149,7 @@ describe("AllBookableItemsPage", () => {
     const candidates = bookableItemFixtures.slice(0, 2).map((item) => ({
       ...item,
       timezone: "UTC",
-      openingStart: "00:00",
-      openingEnd: "24:00",
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
     }));
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(candidates))),
