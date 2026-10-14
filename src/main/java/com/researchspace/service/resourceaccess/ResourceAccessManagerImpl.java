@@ -80,6 +80,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   }
 
   @Override
+  public ResolvedResourceAccess resolveForMutation(ResourceAccess access, User subject) {
+    return resolver.resolve(access, gateway.lockAuthorizationFacts(access, subject));
+  }
+
+  @Override
   public Map<Long, ResolvedResourceAccess> resolveAll(
       Collection<ResourceAccess> accesses, User subject) {
     if (accesses.stream().anyMatch(access -> access.getId() == null)) {

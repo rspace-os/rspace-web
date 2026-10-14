@@ -32,3 +32,8 @@ revision leaves `openingHours` null. Historical audit snapshot JSON is unchanged
 Deploy application nodes and API clients together. After this cutover, the old
 schedule columns are retained for history and are no longer synchronized. Older
 application nodes cannot safely write schedules to the upgraded database.
+
+Permanent user deletion removes live booking rows through
+`UserDeletionDaoHibernate.table2UserIdColumn`, keyed by `TimeSlotBooking.requester_id`.
+Keep that cleanup mapping aligned if the requester column or table changes; booking audit history
+is retained.

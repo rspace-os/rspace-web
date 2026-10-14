@@ -44,12 +44,15 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
       throw new IllegalArgumentException("Persisted access and subject are required");
     }
     Session session = sessionFactory.getCurrentSession();
+    // A cached aggregate is version-checked here; an uncached one is read current.
     session.find(ResourceAccess.class, access.getId(), LockModeType.PESSIMISTIC_WRITE);
+    // Fetching through the aggregate initializes not-yet-loaded assignments from this locking read
+    // rather than from the transaction's older consistent snapshot.
     session
         .createQuery(
-            "select assignment from ResourceRoleAssignment assignment "
-                + "where assignment.resourceAccess.id = :accessId",
-            ResourceRoleAssignment.class)
+            "select access from ResourceAccess access "
+                + "left join fetch access.assignments where access.id = :accessId",
+            ResourceAccess.class)
         .setParameter("accessId", access.getId())
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .getResultList();
