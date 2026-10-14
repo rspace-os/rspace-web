@@ -55,6 +55,7 @@ const booking = (id: number, target: string, start: string, end: string) => ({
 
 const schedule = {
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   allowDoubleBooking: false,
@@ -248,6 +249,7 @@ describe("calendar availability", () => {
           globalId: "IN1",
           timezone: "America/Los_Angeles",
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+
           bufferBeforeMinutes: 0,
           bufferAfterMinutes: 0,
           allowDoubleBooking: false,
@@ -276,13 +278,15 @@ describe("calendar availability", () => {
     ]);
   });
 
-  it("closes omitted weekdays while supplied weekdays are open all day", async () => {
+  it("closes whole unselected weekdays even when the shared hours are all day", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
     const row = {
       ...schedule,
       globalId: "IN1",
       timezone: "UTC",
-      openingHours: schedule.openingHours.filter((entry) => entry.dayOfWeek <= 5),
+      openingHours: schedule.openingHours.filter((entry) =>
+        [1, 2, 3, 4, 5].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+      ),
     };
     // Saturday 2026-08-22 through the end of Monday 2026-08-24.
     const interval = { ...displayInterval("2026-08-22", "UTC", "00:00", "24:00"), end: "2026-08-25T00:00:00Z" };
@@ -305,11 +309,12 @@ describe("calendar availability", () => {
       ...schedule,
       globalId: "IN1",
       timezone: "UTC",
-      openingHours: schedule.openingHours.map((entry) => ({
-        ...entry,
-        start: entry.dayOfWeek === 2 ? "10:00" : "09:00",
-        end: entry.dayOfWeek === 2 ? "16:00" : "17:00",
-      })),
+      openingHours: schedule.openingHours
+        .map((entry) => ({ ...entry, start: "09:00", end: "17:00" }))
+        .map(
+          (entry) =>
+            [{ dayOfWeek: 2, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
     };
     // Monday 2026-08-17 and Tuesday 2026-08-18.
     const interval = { ...displayInterval("2026-08-17", "UTC", "00:00", "24:00"), end: "2026-08-19T00:00:00Z" };
@@ -329,7 +334,7 @@ describe("calendar availability", () => {
     ).toBeUndefined();
   });
 
-  it("recomputes closures when one weekday's interval changes", async () => {
+  it("recomputes closures when only one exception changes", async () => {
     server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
@@ -341,8 +346,9 @@ describe("calendar availability", () => {
               globalId: "IN1",
               timezone: "UTC",
               ...schedule,
-              openingHours: schedule.openingHours.map((entry) =>
-                entry.dayOfWeek === 1 ? { ...entry, start: "09:00", end } : entry,
+              openingHours: schedule.openingHours.map(
+                (entry) =>
+                  [{ dayOfWeek: 1, start: "09:00", end }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
               ),
             },
           ],
@@ -371,6 +377,7 @@ describe("calendar availability", () => {
       globalId: "IN1",
       timezone: "UTC",
       openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+
       bufferBeforeMinutes: 10,
       bufferAfterMinutes: 20,
       allowDoubleBooking: false,
@@ -432,11 +439,12 @@ describe("calendar availability", () => {
     const schedule = {
       globalId: "IN1",
       timezone: "Europe/Berlin",
-      openingHours: [1, 2, 3, 4, 5].map((dayOfWeek) => ({
-        dayOfWeek,
-        start: dayOfWeek === 5 ? "10:00" : "09:00",
-        end: dayOfWeek === 5 ? "16:00" : "17:00",
-      })),
+      openingHours: [1, 2, 3, 4, 5]
+        .map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" }))
+        .map(
+          (entry) =>
+            [{ dayOfWeek: 5, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
     };
     expect(closedDayRanges(schedule, "2026-09-21", "Europe/Berlin")).toEqual([
       { startMinute: 0, endMinute: 9 * 60 },

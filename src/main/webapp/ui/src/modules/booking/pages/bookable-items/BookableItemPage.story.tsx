@@ -13,6 +13,7 @@ import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHisto
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { BookingNoticesProvider } from "@/modules/booking/feedback/BookingNotices";
 import { type CurrentUser, currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
 import { createBookableItemRoute, createBookableItemsRoute } from "./routes";
@@ -59,7 +60,15 @@ export function BookableItemPageStory({
       </NuqsAdapter>
     ),
   });
-  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
+  const bookingRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/booking",
+    component: () => (
+      <BookingNoticesProvider>
+        <Outlet />
+      </BookingNoticesProvider>
+    ),
+  });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([createBookableItemRoute(bookingRoute), createBookableItemsRoute(bookingRoute)]),

@@ -14,6 +14,7 @@ import {
   bookingDateTimeLocaleFor,
   formatWallClockTime,
 } from "@/modules/booking/domain/bookingTime";
+import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 
@@ -48,6 +49,8 @@ export function BookingDisplaySettingsFields({
     () => bookingTimeZoneOptions(browserTimezone, institutionTimezone, value.customTimezone),
     [browserTimezone, institutionTimezone, value.customTimezone],
   );
+  const allDay = value.availabilityWindowStart === "00:00" && value.availabilityWindowEnd === "24:00";
+  const previousWindow = useRef({ availabilityWindowStart: "08:00", availabilityWindowEnd: "18:00" });
   const patch = (next: Partial<BookingDisplayPreferencesInput>) => onChange({ ...value, ...next });
   // Outside Custom mode the submitted value must be null, so the last custom zone is kept here and
   // restored if the user switches back to Custom before saving.
@@ -65,12 +68,30 @@ export function BookingDisplaySettingsFields({
       <fieldset className="space-y-3" disabled={disabled}>
         <legend className="font-medium">{t("preferences.availabilityWindow.legend")}</legend>
         <p className="text-sm text-muted-foreground">{t("preferences.availabilityWindow.description")}</p>
+        <Label className="flex items-center gap-2" htmlFor={`${id}-all-day`}>
+          <Checkbox
+            id={`${id}-all-day`}
+            checked={allDay}
+            disabled={disabled}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                previousWindow.current = {
+                  availabilityWindowStart: value.availabilityWindowStart,
+                  availabilityWindowEnd: value.availabilityWindowEnd,
+                };
+                patch({ availabilityWindowStart: "00:00", availabilityWindowEnd: "24:00" });
+              } else patch(previousWindow.current);
+            }}
+          />
+          {t("preferences.availabilityWindow.allDay")}
+        </Label>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`${id}-start`}>{t("preferences.availabilityWindow.start")}</Label>
             <Input
               id={`${id}-start`}
               type="time"
+              disabled={disabled || allDay}
               required
               aria-invalid={Boolean(errors?.availabilityWindowStart)}
               aria-describedby={errors?.availabilityWindowStart ? errorId : undefined}
@@ -83,6 +104,7 @@ export function BookingDisplaySettingsFields({
             <Input
               id={`${id}-end`}
               type="time"
+              disabled={disabled || allDay}
               required
               aria-invalid={Boolean(errors?.availabilityWindowEnd)}
               aria-describedby={`${endTimeDescriptionId}${errors?.availabilityWindowEnd ? ` ${errorId}` : ""}`}

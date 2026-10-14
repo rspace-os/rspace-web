@@ -74,6 +74,8 @@ export function bookingProblemKey(
   | "bookings.errors.maximumDuration"
   | "bookings.errors.overlap"
   | "bookings.errors.granularity"
+  | "bookings.errors.alignmentRejected"
+  | "bookings.errors.dayEndMissingRejected"
   | "bookings.errors.openingHours"
   | "bookings.errors.targetUnavailable"
   | "bookings.errors.concurrentModification"
@@ -87,6 +89,8 @@ export function bookingProblemKey(
   // Key-only callers get the nearest overlap text; bookingProblemMessage describes the buffer precisely.
   if (isBookingConflictError(error)) return "bookings.errors.overlap";
   if (error.code === "errors.api.v2.booking.granularity") return "bookings.errors.granularity";
+  if (error.code === "errors.api.v2.booking.alignment") return "bookings.errors.alignmentRejected";
+  if (error.code === "errors.api.v2.booking.dayEndMissing") return "bookings.errors.dayEndMissingRejected";
   if (error.code === "errors.api.v2.booking.openingHours") return "bookings.errors.openingHours";
   if (error.code === "errors.api.v2.booking.target.unavailable") return "bookings.errors.targetUnavailable";
   if (error.status === 412 || error.code === "errors.api.v2.booking.concurrentModification") {

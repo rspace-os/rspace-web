@@ -1,41 +1,33 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException.Reason;
-import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
-import java.util.List;
 
 final class BookingSettingsValidation {
 
   private BookingSettingsValidation() {}
 
+  /** Validates one complete, merged settings value and whether the increment fits opening hours. */
   static void requireValid(BookingSchedulingSettings settings) {
-    requireValid(
-        settings.slotGranularityMinutes(),
-        settings.openingHours(),
-        settings.bufferBeforeMinutes(),
-        settings.bufferAfterMinutes(),
-        settings.maxBookingDurationMinutes());
-  }
-
-  static void requireValid(
-      long granularity,
-      List<BookingOpeningHoursEntry> openingHours,
-      long before,
-      long after,
-      long maximumDuration) {
-    if (!BookingSchedulingSettings.isGranularityValid(granularity)) {
+    if (!BookingSchedulingSettings.isGranularityValid(
+        settings.slotGranularityMinutes(), settings.incrementUnit())) {
       throw new InvalidBookingSchedulingSettingsException(Reason.GRANULARITY);
     }
-    if (!BookingSchedulingSettings.areOpeningHoursValid(openingHours)) {
-      throw new InvalidBookingSchedulingSettingsException(Reason.OPENING_HOURS);
-    }
-    if (!BookingSchedulingSettings.isBufferValid(before)
-        || !BookingSchedulingSettings.isBufferValid(after)) {
+    if (!BookingSchedulingSettings.isBufferValid(settings.bufferBeforeMinutes())
+        || !BookingSchedulingSettings.isBufferValid(settings.bufferAfterMinutes())) {
       throw new InvalidBookingSchedulingSettingsException(Reason.BUFFER);
     }
-    if (!BookingSchedulingSettings.isMaximumDurationValid(maximumDuration, granularity)) {
+    if (!BookingSchedulingSettings.isMaximumDurationValid(
+        settings.maxBookingDurationMinutes(),
+        settings.slotGranularityMinutes(),
+        settings.incrementUnit())) {
       throw new InvalidBookingSchedulingSettingsException(Reason.MAXIMUM_DURATION);
+    }
+    if (!BookingSchedulingSettings.areOpeningHoursValid(settings.openingHours())) {
+      throw new InvalidBookingSchedulingSettingsException(Reason.OPENING_HOURS);
+    }
+    if (!settings.incrementFitsOpeningHours()) {
+      throw new InvalidBookingSchedulingSettingsException(Reason.GRANULARITY);
     }
   }
 }

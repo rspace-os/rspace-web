@@ -100,7 +100,8 @@ function validateDeclaredChildren<TDocument>(field: FieldConfig<TDocument>, ance
   const queryCapabilities =
     field.capabilities?.sortable ||
     field.capabilities?.filterOperators?.length ||
-    field.capabilities?.supportsWildcards;
+    field.capabilities?.supportsWildcards ||
+    field.filterPicker;
   if (ancestors.size && queryCapabilities) {
     throw new Error(`Embedded field ${field.name} cannot be filtered or sorted`);
   }

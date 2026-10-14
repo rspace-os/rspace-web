@@ -26,7 +26,10 @@ const target: BookableItemOption = {
   name: "Confocal microscope",
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
+  alignToIncrement: true,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "06:00", end: "22:00" })),
+
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -200,7 +203,12 @@ describe("BookingDayTimelineAside acceptance", () => {
     ],
     [
       "a closed weekday",
-      { ...target, openingHours: target.openingHours.filter((entry) => [2, 3, 4, 5, 6, 7].includes(entry.dayOfWeek)) },
+      {
+        ...target,
+        openingHours: target.openingHours.filter((entry) =>
+          [2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
+        ),
+      },
       [{ top: "0px", height: "1344px" }],
     ],
   ])("shades the closed periods of %s on the draft day", async (_, selectedTarget, expected) => {
@@ -327,7 +335,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     expect(requestedTargets).toContain("IN124");
   });
 
-  it("keeps a cross-day draft visible without day-canvas adjustment handles", async () => {
+  it("keeps a cross-day draft movable and explains why its later end cannot snap to midnight", async () => {
     server.use(http.get("/api/v2/bookings", emptyPage));
     const crossDayDraft: BookingWindowDraft = {
       startDate: "2026-08-17",
@@ -339,9 +347,16 @@ describe("BookingDayTimelineAside acceptance", () => {
     render(asideTree({ client, selectedDraft: crossDayDraft }));
 
     expect(screen.getByTestId("vertical-day-timeline-draft")).toBeVisible();
-    expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.resizeStart/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ })).toBeInTheDocument();
+    // The item closes at 22:00, so no other start keeps the draft valid.
+    expect(screen.getByRole("button", { name: /booking:dayTimeline.vertical.resizeStart/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.resizeEnd/ })).not.toBeInTheDocument();
+    const continuation = screen.getByRole("button", { name: "booking:timelineEdit.endAtMidnight" });
+    expect(continuation).toHaveAttribute("aria-disabled", "true");
+    expect(continuation).toHaveAccessibleDescription("booking:timelineEdit.unavailable.openingHours");
   });
 
   it("the floating schedule button opens and closes the sheet without changing the draft or refetching", async () => {

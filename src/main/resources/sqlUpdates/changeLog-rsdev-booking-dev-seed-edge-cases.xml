@@ -13,7 +13,7 @@
         SELECT COUNT(*) FROM BookingConfiguration
         WHERE openingStart = '00:00' AND openingEnd = '24:00'
           AND openDays = '[1,2,3,4,5,6,7]' AND openingExceptions = '[]'
-          AND slotGranularityMinutes = 5
+          AND slotGranularityMinutes = 15 AND incrementUnit = 'MINUTES'
           AND ((id = 910100002 AND timeZone = 'Europe/Berlin')
             OR (id IN (910100003, 910100004) AND timeZone = 'UTC')
             OR (id IN (910100005, 910100006) AND timeZone = 'America/New_York')

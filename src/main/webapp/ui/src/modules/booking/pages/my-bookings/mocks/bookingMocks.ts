@@ -5,15 +5,6 @@ export const bookingsOpenApi = {
   paths: {
     "/api/v2/bookings": {
       get: {
-        responses: {
-          "200": {
-            content: {
-              "application/json": {
-                schema: { properties: { docs: { items: { properties: {} } } } },
-              },
-            },
-          },
-        },
         parameters: [
           {
             name: "sort",
@@ -121,6 +112,15 @@ export const bookingsOpenApi = {
             },
           },
         ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: { properties: { docs: { items: { properties: {} } } } },
+              },
+            },
+          },
+        },
       },
     },
   },

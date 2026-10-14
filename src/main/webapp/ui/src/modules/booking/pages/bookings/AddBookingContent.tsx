@@ -16,6 +16,7 @@ import {
   withBookingProblemConflict,
 } from "@/modules/booking/creation/useCreateBooking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { Heading } from "@/modules/common/ui/typography";
 
@@ -25,7 +26,9 @@ export function AddBookingContent() {
   const transferredDraft = useLocation({
     select: (location) => bookingCreationDraftFromHistoryState(location.state, search.target),
   });
+  const searchStr = useLocation({ select: (location) => location.searchStr });
   const navigate = useNavigate({ from: "/booking/calendar/bookings/add" });
+  const notices = useBookingNotices();
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const initialTarget = useBookableItem(search.target, token);
@@ -65,7 +68,18 @@ export function AddBookingContent() {
     creation: true,
   });
   const submit = async (submission: BookingFormSubmission) => {
-    await mutation.mutateAsync(submission);
+    const created = await mutation.mutateAsync(submission);
+    notices.notify(
+      "calendar",
+      createBookingEventNotice({
+        event: created,
+        message: t("bookings.feedback.eventAdded", {
+          itemName: submission.target.name,
+        }),
+        timeZone: preferences.timeZone,
+        searchStr,
+      }),
+    );
     await navigate({
       to: "/booking/calendar",
       search: { date: submission.returnDate, target: submission.target.globalId },

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { Profiler, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import { proposeDayRange, timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
@@ -368,6 +369,17 @@ describe("DayTimeline table row", () => {
       defaultNS: "common",
     });
     const onRangeSelect = vi.fn();
+    const policy = timelinePolicy({
+      timezone: "Europe/Berlin",
+      slotGranularityMinutes: 15,
+      incrementUnit: "MINUTES",
+      alignToIncrement: true,
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
+      maxBookingDurationMinutes: 0,
+    });
+    const proposeQuarterHours = (range: { startMinute: number; endMinute: number }) =>
+      proposeDayRange(range, "2026-08-17", "Europe/Berlin", policy);
     const { rerender } = render(
       <DayTimeline
         date="2026-08-17"
@@ -376,7 +388,7 @@ describe("DayTimeline table row", () => {
         startWindow={0}
         endWindow={24 * 60}
         variant="table-row"
-        snapIncrementMinutes={15}
+        proposeSelection={proposeQuarterHours}
         onRangeSelect={onRangeSelect}
       />,
       { wrapper },
@@ -411,7 +423,7 @@ describe("DayTimeline table row", () => {
         startWindow={0}
         endWindow={24 * 60}
         variant="table-row"
-        snapIncrementMinutes={15}
+        proposeSelection={proposeQuarterHours}
         creationDisabled
         onRangeSelect={onRangeSelect}
       />,

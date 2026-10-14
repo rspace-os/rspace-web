@@ -214,6 +214,7 @@
       "records": "Research records",
       "relationships": "Relationships"
     },
+    "fieldHelp": "About {label}",
     "relationship": {
       "empty": "No options found",
       "remove": "Remove {item} from {field}",

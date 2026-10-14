@@ -90,15 +90,6 @@ export const bookableItemsOpenApi = {
   paths: {
     "/api/v2/booking-configurations": {
       get: {
-        responses: {
-          "200": {
-            content: {
-              "application/json": {
-                schema: { properties: { docs: { items: { $ref: "#/components/schemas/BookingConfigurationRead" } } } },
-              },
-            },
-          },
-        },
         parameters: [
           {
             name: "sort",
@@ -222,6 +213,15 @@ export const bookableItemsOpenApi = {
             },
           },
         ],
+        responses: {
+          "200": {
+            content: {
+              "application/json": {
+                schema: { properties: { docs: { items: { $ref: "#/components/schemas/BookingConfigurationRead" } } } },
+              },
+            },
+          },
+        },
       },
     },
   },
@@ -248,6 +248,7 @@ export const bookableItemFixtures = [
     timezone: "Europe/Berlin",
     ...DEFAULT_SCHEDULING_SETTINGS,
     openingHours: DEFAULT_SCHEDULING_SETTINGS.openingHours.map((entry) => ({ ...entry, start: "08:00", end: "17:00" })),
+
     createdAt: "2026-08-01T09:00:00Z",
     createdByName: "Grace Hopper (grace)",
     updatedAt: "2026-08-10T10:00:00Z",
@@ -588,6 +589,8 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
           name: fixture.target.value.name,
           timezone: fixture.timezone,
           slotGranularityMinutes: fixture.slotGranularityMinutes,
+          incrementUnit: fixture.incrementUnit,
+          alignToIncrement: fixture.alignToIncrement,
           openingHours: fixture.openingHours,
           bufferBeforeMinutes: fixture.bufferBeforeMinutes,
           bufferAfterMinutes: fixture.bufferAfterMinutes,

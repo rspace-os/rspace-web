@@ -728,7 +728,14 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             setup,
             owner,
             new BookingSchedulingSettings.Patch(
-                null, hours("00:00", "24:00", 2, 3, 4, 5, 6, 7), null, null, null, null),
+                null,
+                null,
+                null,
+                hours("00:00", "24:00", 2, 3, 4, 5, 6, 7),
+                null,
+                null,
+                null,
+                null),
             () -> bookingManager.createBooking(command, owner, owner));
 
     assertTrue(
@@ -772,6 +779,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             setup,
             owner,
             new BookingSchedulingSettings.Patch(
+                null,
+                null,
                 null,
                 List.of(
                     new BookingOpeningHoursEntry(1, "00:00", "24:00"),
@@ -877,8 +886,9 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
                 true,
                 "UTC",
                 new ResolvedBookableTarget(target, instrument),
+                // Five-minute increments keep the buffer boundaries below on the grid.
                 new BookingSchedulingSettings.Patch(
-                    null, null, bufferBeforeMinutes, bufferAfterMinutes, null, allowDoubleBooking)),
+                    5L, null, bufferBeforeMinutes, bufferAfterMinutes, null, allowDoubleBooking)),
             owner,
             owner);
     return new Setup(configuration.getId(), target, instrument);

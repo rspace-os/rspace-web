@@ -29,6 +29,11 @@ function renderPopover(archived = false) {
   };
 }
 
+function expectNoAlert(message: string) {
+  const matchingAlerts = screen.getAllByRole("alert").filter((alert) => alert.textContent === message);
+  expect(matchingAlerts).toHaveLength(0);
+}
+
 describe("CalendarSubscriptionPopover", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -63,7 +68,11 @@ describe("CalendarSubscriptionPopover", () => {
     expect(
       await screen.findByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.apple" }),
     ).toHaveAttribute("href", expect.stringMatching(/^webcal:/));
-    expect(screen.getByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.google" })).toHaveFocus();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.google" }),
+      ).toHaveFocus(),
+    );
     expect(
       screen.getByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.other" }),
     ).toHaveAttribute("href", expect.stringMatching(/^webcal:/));
@@ -129,9 +138,17 @@ describe("CalendarSubscriptionPopover", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
 
-    expect(
-      await screen.findByText("booking:bookableItemDetails.calendarSubscription.archivedUnavailable"),
-    ).toBeVisible();
+    await waitFor(() => {
+      const matchingStatuses = screen
+        .getAllByRole("status")
+        .filter(
+          (status) => status.textContent === "booking:bookableItemDetails.calendarSubscription.archivedUnavailable",
+        );
+      expect(matchingStatuses).toHaveLength(1);
+      expect(matchingStatuses[0]).toHaveTextContent(
+        "booking:bookableItemDetails.calendarSubscription.archivedUnavailable",
+      );
+    });
     expect(posts).toBe(0);
   });
 
@@ -161,12 +178,14 @@ describe("CalendarSubscriptionPopover", () => {
     );
     renderPopover();
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "booking:bookableItemDetails.calendarSubscription.statusError",
+    expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.statusError")).toHaveAttribute(
+      "role",
+      "alert",
     );
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.retry" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "booking:bookableItemDetails.calendarSubscription.generateError",
+    expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.generateError")).toHaveAttribute(
+      "role",
+      "alert",
     );
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.retry" }));
     expect(
@@ -200,7 +219,7 @@ describe("CalendarSubscriptionPopover", () => {
       await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
     ).toHaveValue(urlFor("w"));
     expect(posts).toBe(1);
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectNoAlert("booking:bookableItemDetails.calendarSubscription.generateError");
   });
 
   it("replaces the link only after confirmation", async () => {
@@ -240,6 +259,12 @@ describe("CalendarSubscriptionPopover", () => {
       expect(
         screen.getByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
       ).toHaveValue(urlFor("r")),
+    );
+    expect(screen.getByText("booking:bookableItemDetails.calendarSubscription.replaced")).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.google" }),
+      ).toHaveFocus(),
     );
     expect(rotations).toEqual(['"current"']);
   });
@@ -323,14 +348,71 @@ describe("CalendarSubscriptionPopover", () => {
       screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.replaceConfirm" }),
     );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "booking:bookableItemDetails.calendarSubscription.replaceConflict",
+    expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.replaceConflict")).toHaveAttribute(
+      "role",
+      "alert",
     );
     await waitFor(() =>
       expect(
         screen.getByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
       ).toHaveValue(urlFor("x")),
     );
+  });
+
+  it("keeps focus where the user moves while a replace conflict refreshes", async () => {
+    const user = userEvent.setup();
+    const refreshResponse = Promise.withResolvers<Response>();
+    const refreshStarted = Promise.withResolvers<void>();
+    let gets = 0;
+    server.use(
+      http.get(path, async () => {
+        gets += 1;
+        if (gets === 1) {
+          return HttpResponse.json(
+            { active: true, updatedAt, subscriptionUrl: urlFor("b") },
+            { headers: { ETag: '"current"' } },
+          );
+        }
+        refreshStarted.resolve();
+        return refreshResponse.promise;
+      }),
+      http.post(`${path}/rotate`, () =>
+        HttpResponse.json({ status: 409, code: "errors.api.v2.bookingCalendar.subscriptionConflict" }, { status: 409 }),
+      ),
+    );
+    renderPopover();
+    const refreshedStatus = HttpResponse.json(
+      { active: true, updatedAt, subscriptionUrl: urlFor("x") },
+      { headers: { ETag: '"elsewhere"' } },
+    );
+    try {
+      await user.click(
+        screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
+      );
+      const replace = await screen.findByRole("button", {
+        name: "booking:bookableItemDetails.calendarSubscription.replace",
+      });
+      await user.click(replace);
+      const confirm = screen.getByRole("button", {
+        name: "booking:bookableItemDetails.calendarSubscription.replaceConfirm",
+      });
+      await user.click(confirm);
+      await refreshStarted.promise;
+
+      expect(confirm).toHaveFocus();
+      const linkField = screen.getByRole("textbox", {
+        name: "booking:bookableItemDetails.calendarSubscription.copyPrompt",
+      });
+      await user.click(linkField);
+      refreshResponse.resolve(refreshedStatus);
+
+      expect(
+        await screen.findByText("booking:bookableItemDetails.calendarSubscription.replaceConflict"),
+      ).toHaveAttribute("role", "alert");
+      expect(linkField).toHaveFocus();
+    } finally {
+      refreshResponse.resolve(refreshedStatus);
+    }
   });
 
   it("offers to add the item again after a replace finds the link removed elsewhere", async () => {
@@ -370,9 +452,19 @@ describe("CalendarSubscriptionPopover", () => {
       screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.replaceConfirm" }),
     );
 
-    expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.disconnected")).toBeVisible();
+    const dialog = screen.getByRole("dialog");
+    const status = within(dialog).getByRole("status");
+    await waitFor(() =>
+      expect(status).toHaveTextContent("booking:bookableItemDetails.calendarSubscription.disconnected"),
+    );
+    expect(within(dialog).getByRole("status")).toBe(status);
+    expect(
+      within(dialog).getByRole("button", {
+        name: "booking:bookableItemDetails.calendarSubscription.trigger",
+      }),
+    ).toHaveFocus();
     await user.click(
-      within(screen.getByRole("dialog")).getByRole("button", {
+      within(dialog).getByRole("button", {
         name: "booking:bookableItemDetails.calendarSubscription.trigger",
       }),
     );
@@ -380,7 +472,7 @@ describe("CalendarSubscriptionPopover", () => {
     expect(
       await screen.findByRole("textbox", { name: "booking:bookableItemDetails.calendarSubscription.copyPrompt" }),
     ).toHaveValue(urlFor("n"));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectNoAlert("booking:bookableItemDetails.calendarSubscription.generateError");
   });
 
   it("disconnects the link and can add the item again", async () => {
@@ -416,14 +508,19 @@ describe("CalendarSubscriptionPopover", () => {
     );
     // Disconnecting breaks subscribed calendars, so it waits for confirmation.
     expect(screen.getByText("booking:bookableItemDetails.calendarSubscription.disconnectWarning")).toBeVisible();
-    expect(screen.queryByText("booking:bookableItemDetails.calendarSubscription.disconnected")).not.toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+    const status = within(dialog).getByRole("status");
+    expect(status).toBeEmptyDOMElement();
     await user.click(
       screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.disconnectConfirm" }),
     );
 
-    expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.disconnected")).toBeVisible();
+    expect(status).toHaveClass("sr-only");
+    await waitFor(() =>
+      expect(status).toHaveTextContent("booking:bookableItemDetails.calendarSubscription.disconnected"),
+    );
+    expect(within(dialog).getByRole("status")).toBe(status);
     expect(posts).toBe(0);
-    const dialog = screen.getByRole("dialog");
     await user.click(
       within(dialog).getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
     );
@@ -432,6 +529,42 @@ describe("CalendarSubscriptionPopover", () => {
     ).toHaveValue(urlFor("n"));
     expect(posts).toBe(1);
   });
+
+  it.each(["fails", "still returns the link"] as const)(
+    "restores focus to a visible calendar link when a disconnect refresh %s",
+    async (refreshResult) => {
+      const user = userEvent.setup();
+      let gets = 0;
+      server.use(
+        http.get(path, () => {
+          gets += 1;
+          if (gets > 1 && refreshResult === "fails") return HttpResponse.json({ status: 503 }, { status: 503 });
+          return HttpResponse.json(
+            { active: true, updatedAt, subscriptionUrl: urlFor("b") },
+            { headers: { ETag: '"current"' } },
+          );
+        }),
+        http.delete(path, () => new HttpResponse(null, { status: 204 })),
+      );
+      renderPopover();
+
+      await user.click(
+        screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
+      );
+      const google = await screen.findByRole("link", {
+        name: "booking:bookableItemDetails.calendarSubscription.google",
+      });
+      await user.click(
+        screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.disconnect" }),
+      );
+      await user.click(
+        screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.disconnectConfirm" }),
+      );
+
+      await waitFor(() => expect(google).toHaveFocus());
+      expect(document.activeElement).not.toBe(document.body);
+    },
+  );
 
   it("copies the link and reports a clipboard failure without moving focus", async () => {
     const user = userEvent.setup();
@@ -446,18 +579,25 @@ describe("CalendarSubscriptionPopover", () => {
     renderPopover();
     await user.click(screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }));
     const copy = await screen.findByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.copy" });
+    const status = screen.getByRole("status");
+    const alert = screen.getByRole("alert");
+    expect(status).toHaveClass("sr-only");
+    expect(status).toBeEmptyDOMElement();
 
     await user.click(copy);
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "booking:bookableItemDetails.calendarSubscription.copied",
-    );
+    await waitFor(() => expect(status).toHaveTextContent("booking:bookableItemDetails.calendarSubscription.copied"));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("booking:bookableItemDetails.calendarSubscription.copied");
     expect(copy).toHaveFocus();
 
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValueOnce(new Error("denied"));
     await user.click(copy);
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "booking:bookableItemDetails.calendarSubscription.copyError",
+    expect(await screen.findByText("booking:bookableItemDetails.calendarSubscription.copyError")).toHaveAttribute(
+      "role",
+      "alert",
     );
+    expect(screen.getByRole("status")).toBe(status);
+    expect(screen.getByRole("alert")).toBe(alert);
     expect(copy).toHaveFocus();
   });
 });

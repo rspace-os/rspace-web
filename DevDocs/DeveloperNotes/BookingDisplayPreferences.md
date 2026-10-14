@@ -39,6 +39,87 @@ creation and time edits validate against the locked current configuration, so a 
 settings change is serialized with them. Existing bookings are not moved or cancelled when the
 schedule changes.
 
+The opening-hours editor keeps each start/end pair on one row, including weekday
+exceptions. On narrow screens, Open all day wraps onto a separate row.
+
+The time increment is stored as `slotGranularityMinutes` plus `incrementUnit`
+(`MINUTES`, `HOURS` or `DAYS`) and `alignToIncrement`. The unit is persisted, so 24 hours
+and 1 day stay distinct after a save. All arithmetic goes through a typed rule: the
+frontend's `domain/bookingIncrement.ts` and `BookingSchedulingSettings` on the server
+implement the same contract, pinned by the shared vectors in
+`src/test/resources/booking/incrementScenarios.json`, which both the JUnit and Vitest
+suites read.
+
+- Minutes and hours are elapsed time. A booking's elapsed length must be a positive whole
+  multiple of the increment, so a 90-minute booking across the spring change still lasts
+  90 minutes.
+- Days are calendar days in the item's timezone and must be whole numbers;
+  `slotGranularityMinutes` holds the day count times 1440 as a nominal value only. A Day
+  booking ends at the same local time as it starts, a whole number of increments of local
+  dates later, so noon to noon may last 23, 24 or 25 hours. When that same local time does
+  not exist on the end date, the booking is rejected with
+  `errors.api.v2.booking.dayEndMissing` instead of being moved through the gap. Day
+  increments require every weekday to be open from 00:00 to 24:00.
+- With "Start on clock intervals" on, the start's local minute of day must also be a
+  multiple of the increment, counted from midnight in the item's timezone
+  (`errors.api.v2.booking.alignment`). The end only follows the duration rule, so a
+  17-minute aligned booking from 23:48 ends at 00:05. Earlier versions required both
+  endpoints on the grid; that is the one semantic change for existing aligned items.
+- Alignment is effective only below 1440 minutes and never for Days. The stored flag is
+  not rewritten, so returning to a shorter increment restores the user's choice.
+
+The fallback for new configurations is 15 minutes, aligned. Maintenance is exempt from
+the increment and alignment, as it is from opening hours and the maximum duration.
+
+Settings validation checks the structure of the weekly schedule. An unaligned increment
+must fit one continuous opening period; touching periods merge across midnight and
+across Sunday into Monday. An aligned increment also needs a grid start inside such a
+period with room for a whole increment, so a 60-minute aligned increment cannot fit
+09:15 to 10:15. Actual bookings must still fit the opening periods on their dates.
+
+The maximum booking duration is always elapsed minutes. For minutes and hours it is 0
+or a whole multiple of the increment. For Days it is 0 or at least the nominal increment
+(`days × 1440`) with no divisibility check, because a calendar day across the autumn
+change lasts 25 hours; a 1440-minute maximum therefore rejects that booking, and 1500
+accepts it. The absolute cap is 527,040 elapsed minutes (8,784 hours), which some
+366-calendar-day intervals exceed.
+
+Booking forms snap an aligned start to the scheduling-zone grid on blur and snap the end
+to the start plus the nearest whole number of increments (calendar days for Days),
+announcing each adjustment. Both timelines use `creation/timelineRange.ts`: moves keep
+the duration basis, resizes keep the other endpoint fixed, and every candidate is a
+complete interval checked against increment, alignment, opening hours and maxima. An
+endpoint on another day shows a striped continuation; double-click or Enter/Space moves
+it to the displayed day's midnight when the result is valid, and a single click only
+focuses it. Drag-to-create and the calendar's Add button produce proposals through the
+same helper, so a Day proposal can extend past the displayed day.
+
+Create and edit forms and the booking details page show a non-blocking note when an
+event crosses a clock change in its scheduling timezone (`components/ClockChangeWarning.tsx`,
+`domain/bookingClockChange.ts`). Detection finds the zone's offset transitions with
+`start < transition <= end`, so two changes with equal offsets at both ends are still
+found and a change exactly at the end counts. Offsets are sampled every six hours and
+bisected, because the Temporal polyfill's own transition search steps by two weeks and
+skips a change that is reversed within that step, such as Gaza's Ramadan suspensions.
+Bookings and maintenance share the 527,040-minute cap, so a longer draft is already
+rejected and gets no note. A booking
+ending at its start's local time on a later date reads as calendar days against elapsed
+hours ("It spans 2 calendar days but lasts 47 hours"); maintenance and any other booking
+show their local range and elapsed duration. A
+single shift is called a daylight-saving change when the zone's own English names show
+daylight or summer time on exactly one side; anything else, including a permanent
+standard-time change or a zone with generic names, uses "clock change" wording. The
+note never replaces a validation error, nothing is stored, and an event whose scheduling
+timezone is withheld from the viewer shows no note rather than a guessed one. A visually
+hidden live region announces a changed interval, or changed wording such as a new time
+format, once.
+
+The Open all day checkbox selects full-day availability for the applicable open days.
+Shared hours and weekday overrides use the same control. Full-day hours retain the
+API representation `00:00`–`24:00`; users do not need to enter those values. A partial
+day ending at midnight remains distinct from a full day. The Show all day checkbox
+in display preferences changes the visible calendar window, not the item's availability.
+
 Day timelines position events and drag selections by elapsed minutes from midnight in the display
 timezone. Clock-change days therefore have 23 or 25 hours, with UTC offsets distinguishing repeated
 local times. Availability-window preferences remain wall-clock values and are converted to the
@@ -109,9 +190,9 @@ module-level mutable state, and rendering one page cannot change another page's 
 gives the locale for a particular choice, as the preference examples use. Browsers do not let a page change a native
 `type="time"` input's clock, so those inputs keep the browser region's format; with an explicit
 choice that differs from the region, text beside an input, such as the snapped-time note, can show
-14:00 while the input shows 2:00 PM. The availability bar keeps a 24-hour clock for its compact axis. Time inputs still snap to the
-item's time increment on blur, and the form announces the adjusted value instead of changing it
-silently.
+14:00 while the input shows 2:00 PM. The availability bar keeps a 24-hour clock for its compact axis. Time inputs
+snap on blur as described above, and the form announces the adjusted value instead of changing
+it silently.
 
 The Time grid week view lays seven day columns on one wall-clock hour axis. An overlap group shows
 at most two lanes (`WEEK_GRID_MAX_LANES`); the rest collapse into a “+N more” slot that opens that
@@ -232,11 +313,34 @@ while filtered display results remain available.
 
 Calendar Reset clears the date URL parameter, restoring today in the display timezone,
 clears both filter groups and Search, and restores Day, Resources, and My calendar off.
-Layout and period remain local React state. Item filters and Search use
+View, layout, and the Mine/My items quick filters use nuqs-backed URL parameters.
+Item filters and Search use
 `calendar-resources.where` and `calendar-resources.q`;
 event filters use `calendar-events.where`.
 The page coordinates date navigation and display-state reset, pausing event
 fetching until they settle to avoid requests for an intermediate date/period.
+
+Focus on calendar uses the event's saved start date in the display timezone and
+its target item. It preserves the selected view and layout, clears calendar
+where/q filters and Mine/My items, then focuses the matching event occurrence
+identified by date and event ID. A week-grid event hidden in +N more falls back
+to the Time grid day view; Resources falls back there when the target has no
+enabled resource row. Multi-day events focus their start-date occurrence. The
+focus request waits for an active event refresh before using cached results.
+Focus is scheduled after the DOM commits and does not depend on animation
+frames, which embedded or background browsers can suspend.
+Its 15-second timeout runs only while the display and event reads are ready;
+loading, refreshes, and read errors pause it. Focus or an unavailable result
+removes the request. Further keyboard/pointer input cancels it, while browser
+history navigation preserves the destination entry and cleans up pending work.
+A missing or inaccessible event is reported in a mounted status region. Retry
+clears that result, refreshes the events, and requests focus again; date, layout,
+and filter changes clear the old result. Failed reads retain the calendar's
+existing Retry control. Resources and week-overflow fallbacks announce the
+view change, and consecutive focus requests remove the previous highlight.
+On booking details, refreshed item permissions control the notice's calendar
+action. Losing access or the target removes the action and retains the saved
+success message.
 
 Booking routes own their Suspense fallbacks so their preference and token reads
 stay inside Booking once the app shell has mounted. Calendar event

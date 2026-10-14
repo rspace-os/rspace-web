@@ -66,7 +66,10 @@ it("invalidates every booking view after creation, including the item list and a
         name: "Microscope",
         timezone: "UTC",
         slotGranularityMinutes: 5,
+        incrementUnit: "MINUTES",
+        alignToIncrement: true,
         openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
         bufferBeforeMinutes: 0,
         bufferAfterMinutes: 0,
         maxBookingDurationMinutes: 0,
@@ -101,7 +104,10 @@ it("treats a lost create response as uncertain and refreshes booking queries", a
           name: "Microscope",
           timezone: "UTC",
           slotGranularityMinutes: 5,
+          incrementUnit: "MINUTES",
+          alignToIncrement: true,
           openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
           bufferBeforeMinutes: 0,
           bufferAfterMinutes: 0,
           maxBookingDurationMinutes: 0,
@@ -249,7 +255,10 @@ it("refreshes bookings after a buffer rejection", async () => {
           name: "Microscope",
           timezone: "UTC",
           slotGranularityMinutes: 5,
+          incrementUnit: "MINUTES",
+          alignToIncrement: true,
           openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
           bufferBeforeMinutes: 15,
           bufferAfterMinutes: 15,
           maxBookingDurationMinutes: 0,
