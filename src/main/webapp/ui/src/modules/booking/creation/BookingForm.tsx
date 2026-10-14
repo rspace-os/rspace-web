@@ -7,6 +7,7 @@ import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "rea
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { ClockChangeWarning } from "@/modules/booking/components/ClockChangeWarning";
 import { openingWindowsOnDate } from "@/modules/booking/components/DayTimelineEvent";
 import { BookableItemPicker } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingFormAlerts } from "@/modules/booking/creation/BookingFormAlerts";
@@ -14,6 +15,7 @@ import { BookingItemInformationCard } from "@/modules/booking/creation/BookingIt
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
+import type { IncrementSettings } from "@/modules/booking/domain/bookingIncrement";
 import {
   ALL_ISO_WEEKDAYS,
   ALWAYS_OPEN,
@@ -47,6 +49,7 @@ import {
   endpointTimezones,
   type ResolvedBookingWindow,
   resolveBookingWindow,
+  UNRESTRICTED_INCREMENT,
   validateBookingWindow,
   ZonedBookingWindowFields,
 } from "./ZonedBookingWindowFields";
@@ -248,6 +251,16 @@ function sameWindowDraft(left: BookingWindowDraft, right: BookingWindowDraft): b
   );
 }
 
+/** The target's increment rule; maintenance and an unselected target are unrestricted. */
+function incrementSettings(eventKind: BookingEventKind, target: BookableItemOption | undefined): IncrementSettings {
+  if (eventKind === "MAINTENANCE" || !target) return UNRESTRICTED_INCREMENT;
+  return {
+    slotGranularityMinutes: target.slotGranularityMinutes,
+    incrementUnit: target.incrementUnit,
+    alignToIncrement: target.alignToIncrement,
+  };
+}
+
 export function BookingForm(props: BookingFormProps) {
   const { t } = useTranslation("booking");
   const editing = props.mode === "edit";
@@ -335,7 +348,7 @@ export function BookingForm(props: BookingFormProps) {
       target
         ? validateBookingWindow(draft, formTimezones, {
             schedulingTimezone: target.timezone,
-            slotGranularityMinutes: target.slotGranularityMinutes,
+            ...incrementSettings(eventKind, target),
             maxBookingDurationMinutes: eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes,
             ...(eventKind === "MAINTENANCE" ? ALWAYS_OPEN : openingSchedule(target)),
             enforceOpeningHours: eventKind !== "MAINTENANCE",
@@ -416,27 +429,37 @@ export function BookingForm(props: BookingFormProps) {
     setTimezoneChoice(next);
     applyTimezones({ start: next, end: endTimezoneChoice ?? next });
   };
+  // A flex column spaces the note only when it shows; its visually hidden live region takes no gap.
   const windowFields = (
-    <ZonedBookingWindowFields
-      displayTimezone={formTimezones.start}
-      endTimezone={formTimezones.end}
-      onTimezoneChange={props.fixedTimezone ? undefined : changeTimezone}
-      schedulingTimezone={target?.timezone ?? formTimezone}
-      slotGranularityMinutes={target?.slotGranularityMinutes ?? 1}
-      maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : (target?.maxBookingDurationMinutes ?? 0)}
-      {...(eventKind === "MAINTENANCE" || !target ? ALWAYS_OPEN : openingSchedule(target))}
-      enforceOpeningHours={Boolean(target) && eventKind !== "MAINTENANCE"}
-      value={draft}
-      onChange={(next) => {
-        props.onDraftChange?.(convertDraft(next, formTimezones, displayTimezone), target?.globalId);
-        setDraft(next);
-      }}
-      allowPolicyMismatch={allowPolicyMismatch}
-      disabled={busy}
-      density={props.density}
-      // Once both endpoints are entered the times are checked, so a rule they break shows before submission.
-      showErrors={attempted || Boolean(draft.startDate && draft.startTime && draft.endDate && draft.endTime)}
-    />
+    <div className="flex flex-col gap-4">
+      <ZonedBookingWindowFields
+        displayTimezone={formTimezones.start}
+        endTimezone={formTimezones.end}
+        onTimezoneChange={props.fixedTimezone ? undefined : changeTimezone}
+        schedulingTimezone={target?.timezone ?? formTimezone}
+        {...incrementSettings(eventKind, target)}
+        maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : (target?.maxBookingDurationMinutes ?? 0)}
+        {...(eventKind === "MAINTENANCE" || !target ? ALWAYS_OPEN : openingSchedule(target))}
+        enforceOpeningHours={Boolean(target) && eventKind !== "MAINTENANCE"}
+        value={draft}
+        onChange={(next) => {
+          props.onDraftChange?.(convertDraft(next, formTimezones, displayTimezone), target?.globalId);
+          setDraft(next);
+        }}
+        allowPolicyMismatch={allowPolicyMismatch}
+        disabled={busy}
+        density={props.density}
+        // Once both endpoints are entered the times are checked, so a rule they break shows before submission.
+        showErrors={attempted || Boolean(draft.startDate && draft.startTime && draft.endDate && draft.endTime)}
+      />
+      {/* Informational only: shown alongside, never instead of, the window's validation errors. */}
+      <ClockChangeWarning
+        start={enteredWindow?.start}
+        end={enteredWindow?.end}
+        timezone={target?.timezone}
+        kind={eventKind}
+      />
+    </div>
   );
 
   return (

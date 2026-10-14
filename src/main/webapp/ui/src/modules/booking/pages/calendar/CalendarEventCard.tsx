@@ -28,5 +28,15 @@ export function CalendarEventCard({
       renderBlockoutActions={() => <BookingActions event={event} timezone={timezone} />}
     />
   );
-  return overlay ? <div className={cn("relative", compact ? "min-h-18" : "min-h-14")}>{card}</div> : card;
+  return (
+    <div
+      data-calendar-event-focus={`${date}:${event.id}`}
+      className={cn(
+        "relative data-[calendar-event-focus-highlight=true]:ring-4 data-[calendar-event-focus-highlight=true]:ring-ring data-[calendar-event-focus-highlight=true]:ring-offset-2",
+        overlay && (compact ? "min-h-18" : "min-h-14"),
+      )}
+    >
+      {card}
+    </div>
+  );
 }

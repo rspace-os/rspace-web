@@ -11,6 +11,7 @@ import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
@@ -77,6 +78,8 @@ public final class BookingSettingsController {
 
   public record SettingsDocument(
       long slotGranularityMinutes,
+      BookingIncrementUnit incrementUnit,
+      boolean alignToIncrement,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
@@ -92,6 +95,8 @@ public final class BookingSettingsController {
     static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
       return new SettingsDocument(
           defaults.getSlotGranularityMinutes(),
+          defaults.getIncrementUnit(),
+          defaults.isAlignToIncrement(),
           defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
@@ -108,6 +113,8 @@ public final class BookingSettingsController {
 
   public record AdminSettingsDocument(
       long slotGranularityMinutes,
+      BookingIncrementUnit incrementUnit,
+      boolean alignToIncrement,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
@@ -127,6 +134,8 @@ public final class BookingSettingsController {
         BookingConfigurationDefaults defaults, Clock institutionClock) {
       return new AdminSettingsDocument(
           defaults.getSlotGranularityMinutes(),
+          defaults.getIncrementUnit(),
+          defaults.isAlignToIncrement(),
           defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
@@ -146,8 +155,18 @@ public final class BookingSettingsController {
 
   public record SettingsPatch(
       @Min(value = 1, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
-          @Max(value = 15, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
+          @Max(value = 527040, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
           Long slotGranularityMinutes,
+      @Schema(
+              description =
+                  "Unit of the time increment. DAYS counts calendar days in the item's timezone"
+                      + " and needs slotGranularityMinutes to be a whole number of days.")
+          BookingIncrementUnit incrementUnit,
+      @Schema(
+              description =
+                  "Whether booking starts follow the increment from local midnight. Ignored for"
+                      + " DAYS and for increments of 1440 minutes or more.")
+          Boolean alignToIncrement,
       @ArraySchema(
               arraySchema =
                   @Schema(
@@ -211,6 +230,8 @@ public final class BookingSettingsController {
     BookingSchedulingSettings.Patch schedulingPatch() {
       return new BookingSchedulingSettings.Patch(
           slotGranularityMinutes,
+          incrementUnit,
+          alignToIncrement,
           decode(
               openingHours,
               BookingOpeningHoursCodec::openingHours,

@@ -1,19 +1,28 @@
 import * as React from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { formatMinuteWithDayOffset } from "@/modules/booking/components/DayTimelineEvent";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   dayMinuteToZonedTime,
   instantToDayMinute,
-  wallClockDraftFromInstants,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { cn } from "@/modules/common/utils/cn";
-import { closestSchedulingTimelineSlot } from "./schedulingTimelineGrid";
+import { hiddenEdgeDescription, hiddenEdgeLabel, resizeDisabledReason } from "./timelineEditText";
+import {
+  type TimelineEdge,
+  type TimelinePolicy,
+  type TimelineRange,
+  timelineAdjuster,
+  timelineRangeToDraft,
+} from "./timelineRange";
 import { resolveBookingWindow } from "./ZonedBookingWindowFields";
 
-type TimelineRange = { startMinute: number; endMinute: number };
-type AdjustmentMode = "move" | "start" | "end";
+const STRIPES =
+  "bg-[repeating-linear-gradient(135deg,var(--primary)_0_3px,color-mix(in_srgb,var(--primary)_15%,var(--background))_3px_7px)]";
 
 function canvasFor(anchor: HTMLElement | null): HTMLElement | null {
   if (!anchor) return null;
@@ -24,38 +33,17 @@ function canvasFor(anchor: HTMLElement | null): HTMLElement | null {
   );
 }
 
-export function adjustTimelineRange(
-  range: TimelineRange,
-  mode: AdjustmentMode,
-  deltaOrMinute: number,
-  dayMinutes: number,
-  increment: number,
-): TimelineRange {
-  if (mode === "move") {
-    const duration = Math.min(dayMinutes, Math.max(increment, range.endMinute - range.startMinute));
-    const startMinute = Math.min(dayMinutes - duration, Math.max(0, range.startMinute + deltaOrMinute));
-    return { startMinute, endMinute: startMinute + duration };
-  }
-  if (mode === "start") {
-    return {
-      startMinute: Math.min(Math.max(0, deltaOrMinute), range.endMinute - increment),
-      endMinute: range.endMinute,
-    };
-  }
-  return {
-    startMinute: range.startMinute,
-    endMinute: Math.max(range.startMinute + increment, Math.min(dayMinutes, deltaOrMinute)),
-  };
-}
-
+/**
+ * A draft's editable rectangle on a horizontal day timeline. Every pointer, keyboard and midnight action produces a
+ * complete interval that satisfies the item's policy; an endpoint off the displayed day shows a striped continuation.
+ */
 export function TimelineWindowEditor({
   anchor,
   verticalAnchor,
   date,
   timezone,
-  schedulingTimezone = timezone,
   draft,
-  snapIncrementMinutes,
+  policy,
   onChange,
   tone = "booking",
   testId = "timeline-window-editor",
@@ -65,83 +53,67 @@ export function TimelineWindowEditor({
   verticalAnchor?: HTMLElement | null;
   date: string;
   timezone: string;
-  schedulingTimezone?: string;
   draft: BookingWindowDraft;
-  snapIncrementMinutes: number;
+  policy: TimelinePolicy;
   onChange?: (draft: BookingWindowDraft) => void;
   tone?: "booking" | "maintenance";
   testId?: string;
   abovePopovers?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
+  const descriptionId = React.useId();
   const canvas = canvasFor(anchor);
   const dayMinutes = zonedDayBounds(date, timezone).elapsedMinutes;
   const resolved = resolveBookingWindow(draft, timezone).window;
-  const range = resolved
-    ? {
-        startMinute: instantToDayMinute(resolved.start, date, timezone),
-        endMinute: instantToDayMinute(resolved.end, date, timezone),
-      }
-    : undefined;
+  const policyKey = JSON.stringify(policy);
+  const adjuster = React.useMemo(
+    () => (resolved ? timelineAdjuster(resolved, { date, displayTimezone: timezone, policy }) : undefined),
+    [resolved?.start, resolved?.end, date, timezone, policyKey],
+  );
   const [preview, setPreview] = React.useState<TimelineRange | null>(null);
   const interaction = React.useRef<{
-    mode: AdjustmentMode;
+    edge: TimelineEdge;
     pointerId: number;
     originMinute: number;
-    range: TimelineRange;
+    startMinute: number;
   } | null>(null);
-  const activeRange = preview ?? range;
+  const activeRange = preview ?? resolved;
 
-  if (!canvas || !activeRange || activeRange.endMinute <= activeRange.startMinute) return null;
+  if (!canvas || !activeRange || !resolved || !adjuster) return null;
 
-  const snapMinute = (minute: number) =>
-    Math.min(dayMinutes, Math.max(0, Math.round(minute / snapIncrementMinutes) * snapIncrementMinutes));
-  const minuteAt = (clientX: number) => {
+  const minuteOf = (instant: string) => instantToDayMinute(instant, date, timezone);
+  const instantAt = (minute: number) => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString();
+  const pointerMinute = (clientX: number) => {
     const bounds = canvas.getBoundingClientRect();
-    return snapMinute(((clientX - bounds.left) / bounds.width) * dayMinutes);
+    return Math.min(dayMinutes, Math.max(0, ((clientX - bounds.left) / bounds.width) * dayMinutes));
   };
-  const resizeMinuteAt = (clientX: number) => {
-    const bounds = canvas.getBoundingClientRect();
-    const minute = Math.min(dayMinutes, Math.max(0, Math.round(((clientX - bounds.left) / bounds.width) * dayMinutes)));
-    const target = dayMinuteToZonedTime(date, timezone, minute).toInstant().toString();
-    const slot = closestSchedulingTimelineSlot(target, {
-      date,
-      displayTimezone: timezone,
-      schedulingTimezone,
-      slotGranularityMinutes: snapIncrementMinutes,
-    });
-    return slot ? instantToDayMinute(slot, date, timezone) : snapMinute(minute);
-  };
-  const changedDraft = (next: TimelineRange) =>
-    wallClockDraftFromInstants(
-      dayMinuteToZonedTime(date, timezone, next.startMinute).toInstant().toString(),
-      dayMinuteToZonedTime(date, timezone, next.endMinute).toInstant().toString(),
-      timezone,
-    );
-  const adjustedAt = (clientX: number) => {
+  const adjustedAt = (clientX: number): TimelineRange => {
     const active = interaction.current;
     if (!active) return activeRange;
-    const minute = active.mode === "move" ? minuteAt(clientX) : resizeMinuteAt(clientX);
-    return adjustTimelineRange(
-      active.range,
-      active.mode,
-      active.mode === "move" ? minute - active.originMinute : minute,
-      dayMinutes,
-      snapIncrementMinutes,
-    );
+    const minute = pointerMinute(clientX);
+    // A move follows the pointer's delta, so a start before the displayed day is not pulled into it.
+    const target =
+      active.edge === "move" ? instantAt(active.startMinute + minute - active.originMinute) : instantAt(minute);
+    return adjuster.adjust(active.edge, target) ?? resolved;
   };
-  const begin = (mode: AdjustmentMode, event: React.PointerEvent<HTMLButtonElement>) => {
+  const commit = (next: TimelineRange) => {
+    if (next.start !== resolved.start || next.end !== resolved.end) onChange?.(timelineRangeToDraft(next, timezone));
+  };
+  const resizeReason = (edge: "start" | "end") => resizeDisabledReason(edge, adjuster, policy, t);
+  const begin = (edge: TimelineEdge, event: React.PointerEvent<HTMLButtonElement>) => {
     if (!onChange) return;
     event.preventDefault();
     event.stopPropagation();
+    if (edge !== "move" && resizeReason(edge)) return;
     if (event.nativeEvent.isTrusted) event.currentTarget.setPointerCapture(event.pointerId);
     interaction.current = {
-      mode,
+      edge,
       pointerId: event.pointerId,
-      originMinute: minuteAt(event.clientX),
-      range: activeRange,
+      originMinute: pointerMinute(event.clientX),
+      startMinute: minuteOf(resolved.start),
     };
-    setPreview(activeRange);
+    setPreview(resolved);
   };
   const move = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (interaction.current?.pointerId !== event.pointerId) return;
@@ -156,33 +128,106 @@ export function TimelineWindowEditor({
     const next = adjustedAt(event.clientX);
     interaction.current = null;
     setPreview(null);
-    onChange?.(changedDraft(next));
+    commit(next);
   };
-  const changeByKeyboard = (mode: AdjustmentMode, event: React.KeyboardEvent<HTMLButtonElement>) => {
+  const cancel = () => {
+    interaction.current = null;
+    setPreview(null);
+  };
+  const changeByKeyboard = (edge: TimelineEdge, event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (!onChange || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
     event.preventDefault();
     event.stopPropagation();
-    const delta = event.key === "ArrowLeft" ? -snapIncrementMinutes : snapIncrementMinutes;
-    const next = adjustTimelineRange(
-      activeRange,
-      mode,
-      mode === "move" ? delta : mode === "start" ? activeRange.startMinute + delta : activeRange.endMinute + delta,
-      dayMinutes,
-      snapIncrementMinutes,
-    );
-    onChange(changedDraft(next));
+    const next = adjuster.step(edge, event.key === "ArrowLeft" ? "previous" : "next");
+    if (next) commit(next);
   };
-  const visibleStart = Math.max(0, activeRange.startMinute);
-  const visibleEnd = Math.min(dayMinutes, activeRange.endMinute);
+  const locale = bookingDateTimeLocale(timeFormat);
+  // Double-click or Enter/Space applies; a single click only focuses, so a stray click never changes the draft.
+  const hiddenEdgeHandle = (edge: "start" | "end") => {
+    const action = adjuster.hiddenEdge(edge);
+    if (!action) return null;
+    const apply = () => {
+      if (action.kind === "enabled") commit(action.range);
+    };
+    const id = `${descriptionId}-${edge}-continuation`;
+    const description = hiddenEdgeDescription(edge, action, date, timezone, t, locale);
+    return (
+      <>
+        <button
+          type="button"
+          data-testid={`${testId}-${edge}-continuation`}
+          aria-label={hiddenEdgeLabel(edge, date, t, locale)}
+          aria-describedby={id}
+          aria-disabled={action.kind === "disabled" || undefined}
+          title={description}
+          className={cn(
+            "absolute inset-y-0 w-4 touch-none focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring",
+            STRIPES,
+            edge === "start" ? "left-0" : "right-0",
+            action.kind === "enabled" ? "cursor-pointer" : "cursor-not-allowed opacity-70",
+          )}
+          onPointerDown={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            apply();
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (!event.repeat) apply();
+          }}
+          onKeyUp={(event) => {
+            if (event.key === " ") event.preventDefault();
+          }}
+        />
+        <span id={id} className="sr-only">
+          {description}
+        </span>
+      </>
+    );
+  };
+  const resizeHandle = (edge: "start" | "end") => {
+    const reason = resizeReason(edge);
+    const id = `${descriptionId}-${edge}-resize`;
+    return (
+      <>
+        <button
+          type="button"
+          aria-label={t(edge === "start" ? "calendar.windowEditor.start" : "calendar.windowEditor.end")}
+          aria-disabled={reason ? true : undefined}
+          aria-describedby={reason ? id : undefined}
+          title={reason}
+          className={cn(
+            "absolute inset-y-0 w-3 touch-none border-primary bg-background/80",
+            edge === "start" ? "left-0 border-r" : "right-0 border-l",
+            reason ? "cursor-not-allowed" : "cursor-ew-resize",
+          )}
+          onPointerDown={(event) => begin(edge, event)}
+          onPointerMove={move}
+          onPointerUp={finish}
+          onPointerCancel={cancel}
+          onKeyDown={(event) => changeByKeyboard(edge, event)}
+        />
+        {reason ? (
+          <span id={id} className="sr-only">
+            {reason}
+          </span>
+        ) : null}
+      </>
+    );
+  };
+
+  const startMinute = minuteOf(activeRange.start);
+  const endMinute = minuteOf(activeRange.end);
+  const visibleStart = Math.max(0, startMinute);
+  const visibleEnd = Math.min(dayMinutes, endMinute);
   if (visibleEnd <= visibleStart) return null;
   const verticalStyle = verticalAnchor
     ? { top: verticalAnchor.offsetTop, height: verticalAnchor.offsetHeight }
     : { top: 32, bottom: 0 };
-  const period = `${dayMinuteToZonedTime(date, timezone, activeRange.startMinute)
-    .toPlainTime()
-    .toString({ smallestUnit: "minute" })}–${dayMinuteToZonedTime(date, timezone, activeRange.endMinute)
-    .toPlainTime()
-    .toString({ smallestUnit: "minute" })}`;
+  const period = `${formatMinuteWithDayOffset(date, timezone, startMinute, timeFormat)}–${formatMinuteWithDayOffset(date, timezone, endMinute, timeFormat)}`;
 
   return createPortal(
     <div
@@ -202,7 +247,7 @@ export function TimelineWindowEditor({
         width: `${((visibleEnd - visibleStart) / dayMinutes) * 100}%`,
       }}
     >
-      <span className="pointer-events-none absolute top-1 left-1 z-10 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
+      <span className="pointer-events-none absolute top-1 left-5 z-10 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
         {period}
       </span>
       {onChange ? (
@@ -210,42 +255,15 @@ export function TimelineWindowEditor({
           <button
             type="button"
             aria-label={t("calendar.windowEditor.move")}
-            className="absolute inset-y-0 right-3 left-3 cursor-grab touch-none"
+            className="absolute inset-y-0 right-4 left-4 cursor-grab touch-none"
             onPointerDown={(event) => begin("move", event)}
             onPointerMove={move}
             onPointerUp={finish}
-            onPointerCancel={() => {
-              interaction.current = null;
-              setPreview(null);
-            }}
+            onPointerCancel={cancel}
             onKeyDown={(event) => changeByKeyboard("move", event)}
           />
-          <button
-            type="button"
-            aria-label={t("calendar.windowEditor.start")}
-            className="absolute inset-y-0 left-0 w-3 cursor-ew-resize touch-none border-primary border-r bg-background/80"
-            onPointerDown={(event) => begin("start", event)}
-            onPointerMove={move}
-            onPointerUp={finish}
-            onPointerCancel={() => {
-              interaction.current = null;
-              setPreview(null);
-            }}
-            onKeyDown={(event) => changeByKeyboard("start", event)}
-          />
-          <button
-            type="button"
-            aria-label={t("calendar.windowEditor.end")}
-            className="absolute inset-y-0 right-0 w-3 cursor-ew-resize touch-none border-primary border-l bg-background/80"
-            onPointerDown={(event) => begin("end", event)}
-            onPointerMove={move}
-            onPointerUp={finish}
-            onPointerCancel={() => {
-              interaction.current = null;
-              setPreview(null);
-            }}
-            onKeyDown={(event) => changeByKeyboard("end", event)}
-          />
+          {adjuster.visible.start ? resizeHandle("start") : hiddenEdgeHandle("start")}
+          {adjuster.visible.end ? resizeHandle("end") : hiddenEdgeHandle("end")}
         </>
       ) : null}
     </div>,

@@ -197,6 +197,9 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
                 : "notificationSubscriptions.preferences.save",
           )}
         </Button>
+        <p role="status" className="sr-only">
+          {saved ? t("preferences.actions.saved") : null}
+        </p>
       </Form>
       <div className="space-y-3 rounded-sm border p-4">
         <p className="text-sm text-muted-foreground">
@@ -207,11 +210,11 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             {t("notificationSubscriptions.preferences.unsubscribeError")}
           </p>
         ) : null}
-        {unsubscribeCount !== undefined ? (
-          <p role="status" className="text-sm text-muted-foreground">
-            {t("notificationSubscriptions.preferences.unsubscribed", { count: unsubscribeCount })}
-          </p>
-        ) : null}
+        <p role="status" className={unsubscribeCount !== undefined ? "text-sm text-muted-foreground" : "sr-only"}>
+          {unsubscribeCount !== undefined
+            ? t("notificationSubscriptions.preferences.unsubscribed", { count: unsubscribeCount })
+            : null}
+        </p>
         <Button
           type="button"
           variant="outline"

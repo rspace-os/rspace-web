@@ -28,7 +28,7 @@ it.each([true, false])(
     render(
       <QueryClientProvider client={queryClient}>
         <BookingCreationStoreProvider store={store}>
-          <BookingCreationButtonGroup ownerId="test" target={target} />
+          <BookingCreationButtonGroup ownerId="test" target={target} originHost="item-detail" />
         </BookingCreationStoreProvider>
       </QueryClientProvider>,
     );
@@ -40,6 +40,10 @@ it.each([true, false])(
     expect(menu).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:bookings.actions.moreCreationOptions" }));
     await user.click(await screen.findByRole("menuitem", { name: "booking:bookings.actions.newMaintenance" }));
-    expect(store.getState().activeCreation).toMatchObject({ eventKind: "MAINTENANCE", target });
+    expect(store.getState().activeCreation).toMatchObject({
+      eventKind: "MAINTENANCE",
+      originHost: "item-detail",
+      target,
+    });
   },
 );

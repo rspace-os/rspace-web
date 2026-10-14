@@ -55,6 +55,8 @@ final class BookingAuditDetails {
           entry("openDays", "openDays"),
           entry("openingExceptions", "openingExceptions"),
           entry("slotGranularityMinutes", "increment"),
+          entry("incrementUnit", "incrementUnit"),
+          entry("alignToIncrement", "alignToIncrement"),
           entry("maxBookingDurationMinutes", "maximumDuration"),
           entry("bufferBeforeMinutes", "bufferBefore"),
           entry("bufferAfterMinutes", "bufferAfter"),

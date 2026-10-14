@@ -24,6 +24,8 @@ import com.researchspace.service.resourceaccess.ResourceAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
@@ -189,11 +191,26 @@ public class ApiV2ControllerAdvice {
   @ExceptionHandler(BookingPolicyException.class)
   public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
     String code = ex.reason().errorCode();
+    Locale locale = LocaleContextHolder.getLocale();
+    if (ex.missingDayEnd().isPresent()) {
+      BookingPolicyException.MissingDayEnd missing = ex.missingDayEnd().get();
+      String detail =
+          messages.getMessage(
+              code,
+              new Object[] {
+                missing.time().format(DateTimeFormatter.ofPattern("HH:mm")),
+                missing
+                    .date()
+                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG).withLocale(locale)),
+                missing.zone().getId()
+              },
+              locale);
+      return ApiV2Problem.response(HttpStatus.BAD_REQUEST, detail, code, detail);
+    }
     if (ex.maximumDurationMinutes().isEmpty()) {
       return problem(HttpStatus.BAD_REQUEST, code);
     }
     long maximumMinutes = ex.maximumDurationMinutes().getAsLong();
-    Locale locale = LocaleContextHolder.getLocale();
     String detail =
         messages.getMessage(
             code,

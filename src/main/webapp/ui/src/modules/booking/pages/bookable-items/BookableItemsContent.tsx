@@ -1,13 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { PlusIcon } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import * as v from "valibot";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
+import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import { buttonVariants } from "@/modules/common/ui/button";
@@ -16,6 +20,7 @@ import { ArchiveBookableItemDialog } from "./ArchiveBookableItemDialog";
 import { BookableItemActionTriggers } from "./BookableItemActionTriggers";
 import { BookableItemsBulkActions } from "./BookableItemsBulkActions";
 import { calendarSubscriptionQueryKey } from "./bookableItemCalendarSubscription";
+import { bookableItemBulkNotice, bookableItemLifecycleNotice, useBookableItemNoticeIds } from "./bookableItemFeedback";
 import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "./bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "./bookableItemsAdministrationAccess";
 import {
@@ -53,7 +58,7 @@ export async function mutateBookableItems(
   action: BookableItemsBulkAction,
   selectedRowIds: readonly string[],
   token: string,
-): Promise<void> {
+): Promise<readonly { id: number }[] | null> {
   if (selectedRowIds.length === 0) throw new Error("A bulk booking action requires at least one row ID");
   if (selectedRowIds.length > maximumBookableItemsSelection) {
     throw new Error(`A bulk booking action cannot contain more than ${maximumBookableItemsSelection} row IDs`);
@@ -76,7 +81,16 @@ export async function mutateBookableItems(
     },
     ...(isDelete ? {} : { body: JSON.stringify({ enabled: action === "enable" }) }),
   });
-  if (!response.ok) throw new Error(`Bulk booking ${action} failed with status ${response.status}`);
+  if (!response.ok) throw await parseApiV2Problem(response);
+  // The server has committed a successful response even if its receipt cannot be read.
+  try {
+    return parseOrThrow(
+      v.object({ docs: v.array(v.object({ id: v.pipe(v.number(), v.integer(), v.minValue(1)) })) }),
+      await response.json(),
+    ).docs;
+  } catch {
+    return null;
+  }
 }
 
 export async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
@@ -122,6 +136,18 @@ export function BookableItemsContent() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
   const queryClient = useQueryClient();
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("bookable-items", deliverNotice, alertsReady);
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
   const request = useMemo(
@@ -140,6 +166,7 @@ export function BookableItemsContent() {
     request,
     query: { keepPreviousData: true },
   });
+  const itemNoticeIds = useBookableItemNoticeIds(table.tableProps.rows);
   const onArchive = useCallback(
     (id: number, version: number) => archiveBookingConfiguration(id, version, token),
     [token],
@@ -175,7 +202,10 @@ export function BookableItemsContent() {
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration), token),
-    onSuccess: (_data, configuration) => onChanged(configuration.id),
+    onSuccess: async (_data, configuration) => {
+      alertsRef.current?.push(bookableItemLifecycleNotice("restored", configuration, t));
+      await onChanged(configuration.id);
+    },
   });
   const onRestore = useCallback(
     (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
@@ -185,7 +215,13 @@ export function BookableItemsContent() {
   const bulkMutation = useMutation({
     mutationFn: ({ action, selectedRowIds: mutationRowIds }: BookableItemsBulkMutation) =>
       mutateBookableItems(action, mutationRowIds, token),
-    onSuccess: async (_data, variables) => {
+    onSuccess: async (docs, variables) => {
+      if (variables.action !== "enable") {
+        for (const id of docs?.map((doc) => doc.id) ?? variables.selectedRowIds.map(Number)) {
+          alertsRef.current?.dismiss(itemNoticeIds.get(id) ?? `bookable-item-${id}`);
+        }
+      }
+      alertsRef.current?.push(bookableItemBulkNotice(variables.action, docs?.length ?? null, t));
       setSelectedRowIds(new Set());
       setFailedBulkAction(null);
       await Promise.all([
@@ -229,13 +265,24 @@ export function BookableItemsContent() {
       ),
       renderInteraction: ({ actionId, row, close }) =>
         actionId === "archive" ? (
-          <ArchiveBookableItemDialog configuration={row} close={close} onArchive={onArchive} onArchived={onChanged} />
+          <ArchiveBookableItemDialog
+            configuration={row}
+            close={close}
+            onArchive={onArchive}
+            onArchived={async (id) => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("archived", row, t));
+              await onChanged(id);
+            }}
+          />
         ) : actionId === "permanent-delete" ? (
           <PermanentDeleteBookableItemDialog
             configuration={row}
             close={close}
             onDelete={onPermanentDelete}
-            onDeleted={onPermanentlyDeleted}
+            onDeleted={async () => {
+              alertsRef.current?.push(bookableItemLifecycleNotice("deleted", row, t));
+              await onPermanentlyDeleted(row.id);
+            }}
           />
         ) : null,
     }),
@@ -251,6 +298,7 @@ export function BookableItemsContent() {
       ) : null}
       <TableList
         {...table.tableProps}
+        alertsRef={attachAlerts}
         headingClassName="text-2xl font-semibold"
         rowActions={rowActions}
         selection={{

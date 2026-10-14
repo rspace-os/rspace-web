@@ -20,6 +20,9 @@ import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Locale;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,9 +123,44 @@ class TimeSlotBookingProblemContractTest {
     assertEquals(
         json.readTree(
             """
-            {"title":"Start and end must align with this bookable item's slot granularity.",
+            {"title":"The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start.",
              "status":400,"code":"errors.api.v2.booking.granularity",
-             "detail":"Start and end must align with this bookable item's slot granularity."}
+             "detail":"The booking must start and end on whole minutes and last a whole number of this bookable item's time increments. Day increments must end at the same local time as they start."}
+            """),
+        body);
+  }
+
+  @Test
+  void alignmentHasItsOwnCodeAndNoExtensionMembers() throws Exception {
+    JsonNode body =
+        body(
+            advice.handleBookingPolicy(
+                new BookingPolicyException(BookingPolicyException.Reason.ALIGNMENT)));
+
+    assertEquals(
+        json.readTree(
+            """
+            {"title":"The start time must fall on this bookable item's time increment, counted from midnight in its timezone.",
+             "status":400,"code":"errors.api.v2.booking.alignment",
+             "detail":"The start time must fall on this bookable item's time increment, counted from midnight in its timezone."}
+            """),
+        body);
+  }
+
+  @Test
+  void aMissingDayEndNamesTheLocalTimeDateAndZoneInTheDetail() throws Exception {
+    JsonNode body =
+        body(
+            advice.handleBookingPolicy(
+                BookingPolicyException.dayEndMissing(
+                    LocalTime.of(2, 30), LocalDate.of(2026, 3, 29), ZoneId.of("Europe/Berlin"))));
+
+    assertEquals(
+        json.readTree(
+            """
+            {"title":"This booking would end at 02:30 on March 29, 2026, but that local time does not exist in Europe/Berlin. Change the start time or choose another duration.",
+             "status":400,"code":"errors.api.v2.booking.dayEndMissing",
+             "detail":"This booking would end at 02:30 on March 29, 2026, but that local time does not exist in Europe/Berlin. Change the start time or choose another duration."}
             """),
         body);
   }

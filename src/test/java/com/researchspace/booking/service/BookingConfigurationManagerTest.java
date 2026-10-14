@@ -37,6 +37,7 @@ import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingEventKind;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
@@ -331,19 +332,32 @@ class BookingConfigurationManagerTest {
 
   @Test
   void validatesMaximumDurationAgainstTheSystemCapAndGranularity() {
-    assertTrue(BookingSchedulingSettings.isGranularityValid(1));
-    assertTrue(BookingSchedulingSettings.isGranularityValid(5));
-    assertTrue(BookingSchedulingSettings.isGranularityValid(10));
-    assertTrue(BookingSchedulingSettings.isGranularityValid(15));
-    assertFalse(BookingSchedulingSettings.isGranularityValid(7));
-    assertTrue(BookingSchedulingSettings.isMaximumDurationValid(0, 5));
-    assertTrue(BookingSchedulingSettings.isMaximumDurationValid(5, 5));
-    assertTrue(BookingSchedulingSettings.isMaximumDurationValid(527_040, 15));
-    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(-1, 5));
-    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(4, 5));
-    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(7, 5));
-    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(527_041, 1));
-    assertFalse(BookingSchedulingSettings.isMaximumDurationValid(5, 0));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(1, BookingIncrementUnit.MINUTES));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(5, BookingIncrementUnit.MINUTES));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(10, BookingIncrementUnit.MINUTES));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(15, BookingIncrementUnit.MINUTES));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(7, BookingIncrementUnit.MINUTES));
+    assertTrue(BookingSchedulingSettings.isGranularityValid(527_040, BookingIncrementUnit.MINUTES));
+    assertFalse(BookingSchedulingSettings.isGranularityValid(0, BookingIncrementUnit.MINUTES));
+    assertFalse(
+        BookingSchedulingSettings.isGranularityValid(527_041, BookingIncrementUnit.MINUTES));
+    assertTrue(
+        BookingSchedulingSettings.isMaximumDurationValid(0, 5, BookingIncrementUnit.MINUTES));
+    assertTrue(
+        BookingSchedulingSettings.isMaximumDurationValid(5, 5, BookingIncrementUnit.MINUTES));
+    assertTrue(
+        BookingSchedulingSettings.isMaximumDurationValid(
+            527_040, 15, BookingIncrementUnit.MINUTES));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(-1, 5, BookingIncrementUnit.MINUTES));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(4, 5, BookingIncrementUnit.MINUTES));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(7, 5, BookingIncrementUnit.MINUTES));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(527_041, 1, BookingIncrementUnit.MINUTES));
+    assertFalse(
+        BookingSchedulingSettings.isMaximumDurationValid(5, 0, BookingIncrementUnit.MINUTES));
 
     InvalidBookingSchedulingSettingsException failure =
         assertThrows(

@@ -1,5 +1,5 @@
 import { createContext, type Dispatch, type ReactNode, type RefObject, type SetStateAction, useContext } from "react";
-import type { BookingDetails } from "@/modules/booking/domain/booking";
+import type { BookingDetails, BookingMutation } from "@/modules/booking/domain/booking";
 import { type BookingTimeFormat, formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 
 export type BookingEventContextValue = {
@@ -9,6 +9,7 @@ export type BookingEventContextValue = {
   formId: string;
   editButtonRef: RefObject<HTMLAnchorElement | null>;
   announce: Dispatch<SetStateAction<string>>;
+  reportBookingUpdated: (event: BookingMutation, itemName: string) => void;
   setDirty: Dispatch<SetStateAction<boolean>>;
   refreshBooking: () => Promise<void>;
 };

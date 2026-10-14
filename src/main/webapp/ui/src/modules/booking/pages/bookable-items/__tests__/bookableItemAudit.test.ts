@@ -44,6 +44,7 @@ it("retains unknown and historical audit schedule values", () => {
     ["openingStart", "09:00"],
     ["openDays", "Monday, Tuesday"],
   ]);
+  expect(recordedValues({ openingHours: null }, "en-US")).toEqual([["openingHours", "—"]]);
 });
 
 describe("recorded audit values", () => {
@@ -76,6 +77,17 @@ describe("recorded audit values", () => {
     ]);
     // An unknown state is left as recorded rather than hidden.
     expect(recordedValues({ state: "PENDING" }, "en-US", words)).toEqual([["state", "PENDING"]]);
+  });
+
+  it("reads the recorded increment unit and clock alignment as words", () => {
+    const words = { yes: "Yes", no: "No", values: { DAYS: "Days" } };
+    expect(
+      recordedValues({ slotGranularityMinutes: 2880, incrementUnit: "DAYS", alignToIncrement: "true" }, "en-US", words),
+    ).toEqual([
+      ["slotGranularityMinutes", "2880"],
+      ["incrementUnit", "Days"],
+      ["alignToIncrement", "Yes"],
+    ]);
   });
 
   it("formats open days and exceptions as weekdays and scheduling-zone hours", () => {

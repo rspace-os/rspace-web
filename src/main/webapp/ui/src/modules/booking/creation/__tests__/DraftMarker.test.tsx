@@ -26,7 +26,7 @@ it("retains the elapsed width of a booking across the repeated hour", () => {
   expect(screen.getByTestId("compact-booking-draft-marker")).toHaveStyle({ left: "11%", width: "2%" });
 });
 
-it("snaps an overnight booking to the timeline edge when moved", async () => {
+it("moves an overnight booking by one minute without pulling its end into the day", async () => {
   const user = userEvent.setup();
   const onChange = vi.fn();
   render(
@@ -53,8 +53,39 @@ it("snaps an overnight booking to the timeline edge when moved", async () => {
 
   expect(onChange).toHaveBeenCalledWith({
     startDate: "2026-08-17",
-    startTime: "20:00",
+    startTime: "21:59",
     endDate: "2026-08-18",
-    endTime: "00:00",
+    endTime: "01:59",
   });
+});
+
+it("ends an overnight booking at midnight on double-click or Enter, but not on a single click", async () => {
+  const user = userEvent.setup();
+  const onChange = vi.fn();
+  render(
+    <section id="timeline">
+      <div data-testid="day-timeline-canvas" />
+    </section>,
+  );
+  render(
+    <DraftMarker
+      creation={{ ownerId: "test", triggerId: "timeline", initialDate: "2026-08-17", eventKind: "BOOKING" }}
+      timeZone="UTC"
+      draft={{ startDate: "2026-08-17", startTime: "22:00", endDate: "2026-08-18", endTime: "02:00" }}
+      onChange={onChange}
+    />,
+  );
+  const continuation = screen.getByRole("button", { name: "booking:timelineEdit.endAtMidnight" });
+  expect(screen.queryByRole("button", { name: "booking:calendar.windowEditor.end" })).not.toBeInTheDocument();
+
+  await user.click(continuation);
+  expect(onChange).not.toHaveBeenCalled();
+  expect(continuation).toHaveFocus();
+
+  await user.keyboard("{Enter}");
+  await user.dblClick(continuation);
+  const midnight = { startDate: "2026-08-17", startTime: "22:00", endDate: "2026-08-18", endTime: "00:00" };
+  expect(onChange).toHaveBeenNthCalledWith(1, midnight);
+  expect(onChange).toHaveBeenNthCalledWith(2, midnight);
+  expect(onChange).toHaveBeenCalledTimes(2);
 });

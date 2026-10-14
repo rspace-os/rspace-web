@@ -719,7 +719,7 @@ class ApiV2FilterExpansionMVCIT {
 
   private static Instant alignedStart() {
     Instant candidate = Instant.now().plus(7, ChronoUnit.DAYS);
-    return Instant.ofEpochSecond(((candidate.getEpochSecond() + 299) / 300) * 300);
+    return Instant.ofEpochSecond(((candidate.getEpochSecond() + 899) / 900) * 900);
   }
 
   private void assertBadRequest(String where) throws Exception {

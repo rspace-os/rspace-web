@@ -8,9 +8,15 @@ public interface BookingSchedulingPolicy {
 
   record ConflictInterval(Date start, Date end) {}
 
-  /** Validates granularity, duration, and opening coverage, then returns the conflict interval. */
+  /**
+   * Validates whole-minute endpoints, the time increment and its start alignment, the item maximum
+   * and opening coverage, then returns the conflict interval.
+   */
   ConflictInterval validate(BookingConfiguration configuration, Date start, Date end);
 
-  /** Validates maintenance granularity and returns its buffer-expanded conflict interval. */
+  /**
+   * Returns the buffer-expanded conflict interval for maintenance, which is exempt from the
+   * increment.
+   */
   ConflictInterval validateMaintenance(BookingConfiguration configuration, Date start, Date end);
 }

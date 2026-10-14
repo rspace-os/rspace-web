@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { DayTimeline, type DayTimelineRange } from "@/modules/booking/components/DayTimeline";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { proposeDayRange, timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
@@ -76,7 +77,9 @@ export function CalendarTimeGrid({
               showZoomControls={false}
               renderEventActions={actionsFor(events, timezone, date)}
               renderBlockoutActions={blockoutActionsFor(events, timezone, date)}
-              snapIncrementMinutes={schedule?.slotGranularityMinutes}
+              proposeSelection={
+                schedule ? (range) => proposeDayRange(range, date, timezone, timelinePolicy(schedule)) : undefined
+              }
               creationDisabled={isLoading || creationDisabled || !canCreateBooking}
               onRangeSelect={
                 canCreateBooking && schedule && onRangeSelect

@@ -78,7 +78,7 @@ class TimeSlotBookingConflictMVCIT {
           configuration.setBufferAfterMinutes(30);
         });
 
-    create(instrumentId, end.plus(10, ChronoUnit.MINUTES), end.plus(1, ChronoUnit.HOURS))
+    create(instrumentId, end.plus(15, ChronoUnit.MINUTES), end.plus(1, ChronoUnit.HOURS))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("errors.api.v2.booking.buffer"))
         .andExpect(

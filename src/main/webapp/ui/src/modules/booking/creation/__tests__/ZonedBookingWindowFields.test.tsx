@@ -20,6 +20,10 @@ function StatefulFields({
   return <ZonedBookingWindowFields {...props} value={value} onChange={setValue} />;
 }
 
+const ALL_DAY = {
+  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+} satisfies OpeningSchedule;
+
 describe("ZonedBookingWindowFields", () => {
   it.each(["compact", "comfortable"] as const)(
     "keeps the %s date input focused while its date is replaced",
@@ -126,6 +130,8 @@ describe("ZonedBookingWindowFields", () => {
         validateBookingWindow({ startDate: "2026-08-17", startTime, endDate: "2026-08-17", endTime }, displayTimezone, {
           schedulingTimezone,
           slotGranularityMinutes: 5,
+          incrementUnit: "MINUTES" as const,
+          alignToIncrement: true,
           maxBookingDurationMinutes: 0,
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" })),
         }).window,
@@ -184,7 +190,7 @@ describe("ZonedBookingWindowFields", () => {
       await user.tab();
 
       expect(startTime).toHaveValue("15:15");
-      expect(screen.getByRole("status")).toHaveTextContent("booking:bookings.form.timeSnapped");
+      expect(screen.getByRole("status")).toHaveTextContent("booking:bookings.form.startSnapped");
       expect(screen.getByRole("status").parentElement).toHaveAttribute("aria-live", "polite");
 
       await user.clear(startTime);
@@ -221,7 +227,14 @@ describe("ZonedBookingWindowFields", () => {
         initial={{ startDate: "2026-08-17", startTime: "15:28", endDate: "2026-08-17", endTime: "16:00" }}
       />,
       {
-        resources: { booking: { bookings: { form: { timeSnapped: bookingEnglish.bookings.form.timeSnapped } } } },
+        resources: {
+          booking: {
+            bookings: {
+              form: { startSnapped: bookingEnglish.bookings.form.startSnapped },
+              increment: bookingEnglish.bookings.increment,
+            },
+          },
+        },
         defaultNS: "booking",
       },
     );
@@ -231,8 +244,352 @@ describe("ZonedBookingWindowFields", () => {
     await user.tab();
 
     expect(within(start).getByRole("status")).toHaveTextContent(
-      "Adjusted to 03:30 PM to match the 5-minute time increment.",
+      "Start adjusted to 03:30 PM to match the clock intervals of 5 minutes.",
     );
+  });
+
+  it("snaps the end to whole increments after the start and announces it", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        timezone="UTC"
+        slotGranularityMinutes={15}
+        alignToIncrement={false}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-08-17", startTime: "09:07", endDate: "2026-08-17", endTime: "09:30" }}
+      />,
+    );
+    const start = screen.getByLabelText("booking:bookings.form.startTime");
+    const end = screen.getByLabelText("booking:bookings.form.endTime");
+    expect(start).toHaveAttribute("step", "60");
+    expect(screen.getByText("booking:bookings.errors.durationMultiple")).toBeVisible();
+
+    await user.click(start);
+    await user.tab();
+    expect(start).toHaveValue("09:07");
+    await user.click(end);
+    await user.tab();
+
+    expect(end).toHaveValue("09:37");
+    expect(screen.getByRole("status")).toHaveTextContent("booking:bookings.form.endSnapped");
+    expect(screen.queryByText("booking:bookings.errors.durationMultiple")).not.toBeInTheDocument();
+  });
+
+  it("reports an aligned start off the scheduling-zone grid until it snaps", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        timezone="UTC"
+        slotGranularityMinutes={15}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-08-17", startTime: "09:07", endDate: "2026-08-17", endTime: "09:22" }}
+      />,
+    );
+    const start = screen.getByLabelText("booking:bookings.form.startTime");
+    expect(start).toHaveAttribute("step", "900");
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toHaveAttribute("step", "60");
+    expect(screen.getByText("booking:bookings.errors.alignment")).toBeVisible();
+
+    await user.click(start);
+    await user.tab();
+
+    expect(start).toHaveValue("09:00");
+    expect(screen.getByText("booking:bookings.errors.durationMultiple")).toBeVisible();
+  });
+
+  it("keeps the start's local time for a Day end and picks the nearest whole increment", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={2880}
+        incrementUnit="DAYS"
+        alignToIncrement={false}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-03-30", startTime: "12:00", endDate: "2026-04-02", endTime: "13:00" }}
+      />,
+    );
+    expect(screen.getByText("booking:bookings.errors.dayIncrement")).toBeVisible();
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2026-04-03");
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toHaveValue("12:00");
+    expect(screen.queryByText("booking:bookings.errors.dayIncrement")).not.toBeInTheDocument();
+  });
+
+  it("names the missing local end time instead of moving a Day booking across the spring gap", async () => {
+    const user = userEvent.setup();
+    await renderWithRealI18n(
+      <StatefulFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={1440}
+        incrementUnit="DAYS"
+        alignToIncrement={false}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-03-28", startTime: "02:30", endDate: "2026-03-29", endTime: "05:00" }}
+      />,
+      {
+        resources: { booking: { bookings: { errors: bookingEnglish.bookings.errors } } },
+        defaultNS: "booking",
+      },
+    );
+    const end = screen.getByLabelText("bookings.form.endTime");
+
+    await user.click(end);
+    await user.tab();
+
+    expect(end).toHaveValue("05:00");
+    expect(
+      screen.getByText(
+        /This booking would end at 02:30 AM on .*, but that local time does not exist in Europe\/Berlin\./,
+      ),
+    ).toBeVisible();
+  });
+
+  it("does not choose an occurrence for a repeated time when snapping", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <ZonedBookingWindowFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={15}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        value={{ startDate: "2026-10-25", startTime: "02:30", endDate: "2026-10-25", endTime: "04:00" }}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("booking:bookings.form.startTime"));
+    await user.tab();
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText("booking:bookings.errors.occurrenceRequired")).toBeVisible();
+  });
+
+  it("leaves the occurrence open when a snap lands on a repeated time", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <ZonedBookingWindowFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={30}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        value={{ startDate: "2026-10-25", startTime: "01:00", endDate: "2026-10-25", endTime: "01:50" }}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      // One hour after 01:00 is 02:00 summer time, the first of the two 02:00s; the form asks which one.
+      expect.objectContaining({ endDate: "2026-10-25", endTime: "02:00", endOccurrence: undefined }),
+    );
+  });
+
+  it("names a missing Day end that the snap chose on another date", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={2880}
+        incrementUnit="DAYS"
+        alignToIncrement={false}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2027-03-26", startTime: "02:30", endDate: "2027-03-27", endTime: "20:00" }}
+      />,
+    );
+    expect(screen.getByText("booking:bookings.errors.dayIncrement")).toBeVisible();
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+
+    // Two days on is 28 March at 02:30, which the spring change skips.
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2027-03-27");
+    expect(screen.getByText("booking:bookings.errors.dayEndMissing")).toBeVisible();
+    expect(screen.queryByText("booking:bookings.errors.dayIncrement")).not.toBeInTheDocument();
+  });
+
+  it("asks which occurrence of a repeated Day end to use when the form shows another zone", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        displayTimezone="UTC"
+        schedulingTimezone="Europe/Berlin"
+        slotGranularityMinutes={1440}
+        incrementUnit="DAYS"
+        alignToIncrement={false}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-10-24", startTime: "00:30", endDate: "2026-10-25", endTime: "03:00" }}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+    const choice = screen.getByRole("group", { name: "booking:bookings.form.repeatedEnd" });
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toHaveValue("03:00");
+
+    await user.click(within(choice).getByRole("radio", { name: "booking:bookings.form.laterOccurrence" }));
+
+    // 02:30 winter time in Berlin is 01:30 UTC.
+    expect(screen.getByLabelText("booking:bookings.form.endTime")).toHaveValue("01:30");
+    expect(screen.queryByRole("group", { name: "booking:bookings.form.repeatedEnd" })).not.toBeInTheDocument();
+    expect(screen.queryByText("booking:bookings.errors.dayIncrement")).not.toBeInTheDocument();
+  });
+
+  it("keeps the chosen occurrence when the display zone repeats the same time", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    function Fields() {
+      const [value, setValue] = useState<BookingWindowDraft>({
+        startDate: "2026-10-24",
+        startTime: "02:30",
+        endDate: "2026-10-25",
+        endTime: "03:00",
+      });
+      return (
+        <ZonedBookingWindowFields
+          displayTimezone="Europe/Paris"
+          schedulingTimezone="Europe/Berlin"
+          slotGranularityMinutes={1440}
+          incrementUnit="DAYS"
+          alignToIncrement={false}
+          maxBookingDurationMinutes={0}
+          {...ALL_DAY}
+          value={value}
+          onChange={(next) => {
+            onChange(next);
+            setValue(next);
+          }}
+        />
+      );
+    }
+    render(<Fields />);
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+    const choice = screen.getByRole("group", { name: "booking:bookings.form.repeatedEnd" });
+    await user.click(within(choice).getByRole("radio", { name: "booking:bookings.form.laterOccurrence" }));
+
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ endDate: "2026-10-25", endTime: "02:30", endOccurrence: "later" }),
+    );
+    expect(screen.queryByText("booking:bookings.errors.occurrenceRequired")).not.toBeInTheDocument();
+  });
+
+  it("snaps an aligned start once its repeated time's occurrence is chosen", async () => {
+    const user = userEvent.setup();
+    render(
+      <StatefulFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={60}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        initial={{ startDate: "2026-10-25", startTime: "02:30", endDate: "2026-10-25", endTime: "05:00" }}
+      />,
+    );
+    const start = screen.getByRole("group", { name: "booking:bookings.form.start" });
+
+    await user.click(within(start).getByRole("radio", { name: "booking:bookings.form.laterOccurrence" }));
+
+    // 02:30 winter time is equidistant from 02:00 and 03:00 winter time; the earlier wins and stays "later".
+    expect(within(start).getByLabelText("booking:bookings.form.startTime")).toHaveValue("02:00");
+    expect(within(start).getByRole("radio", { name: "booking:bookings.form.laterOccurrence" })).toBeChecked();
+    expect(screen.queryByText("booking:bookings.errors.alignment")).not.toBeInTheDocument();
+  });
+
+  it("does not carry an occurrence chosen for the typed end over to a different snapped end", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <ZonedBookingWindowFields
+        timezone="Europe/Berlin"
+        slotGranularityMinutes={60}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        value={{
+          startDate: "2026-10-25",
+          startTime: "01:00",
+          endDate: "2026-10-25",
+          endTime: "02:40",
+          endOccurrence: "earlier",
+        }}
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+
+    // The nearest whole hour is 02:00 winter time; the earlier choice was for 02:40, so the form asks again.
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ endTime: "02:00", endOccurrence: undefined }));
+  });
+
+  it("retires a missing Day end message when the item's rule changes", async () => {
+    const user = userEvent.setup();
+    const props = {
+      timezone: "Europe/Berlin",
+      maxBookingDurationMinutes: 0,
+      ...ALL_DAY,
+      value: { startDate: "2027-03-26", startTime: "02:30", endDate: "2027-03-27", endTime: "20:00" },
+      onChange: vi.fn(),
+    };
+    const { rerender } = render(
+      <ZonedBookingWindowFields
+        {...props}
+        slotGranularityMinutes={2880}
+        incrementUnit="DAYS"
+        alignToIncrement={false}
+      />,
+    );
+    await user.click(screen.getByLabelText("booking:bookings.form.endTime"));
+    await user.tab();
+    expect(screen.getByText("booking:bookings.errors.dayEndMissing")).toBeVisible();
+
+    rerender(
+      <ZonedBookingWindowFields
+        {...props}
+        slotGranularityMinutes={15}
+        incrementUnit="MINUTES"
+        alignToIncrement={false}
+      />,
+    );
+
+    expect(screen.queryByText("booking:bookings.errors.dayEndMissing")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["a draft across midnight", "MINUTES" as const, 15, "2026-08-18"],
+    ["a Day increment", "DAYS" as const, 1440, "2026-08-18"],
+  ])("shows both dates in compact density for %s", (_, incrementUnit, slotGranularityMinutes, endDate) => {
+    render(
+      <StatefulFields
+        timezone="UTC"
+        slotGranularityMinutes={slotGranularityMinutes}
+        incrementUnit={incrementUnit}
+        alignToIncrement={false}
+        maxBookingDurationMinutes={0}
+        {...ALL_DAY}
+        density="compact"
+        initial={{ startDate: "2026-08-17", startTime: "23:00", endDate, endTime: "23:00" }}
+      />,
+    );
+
+    expect(screen.getByLabelText("booking:bookings.form.startDate")).toHaveValue("2026-08-17");
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue(endDate);
   });
 
   it("allows an always-open interval across the scheduling timezone's local date boundary", () => {
@@ -261,6 +618,8 @@ describe("ZonedBookingWindowFields", () => {
         {
           schedulingTimezone: "America/New_York",
           slotGranularityMinutes: 5,
+          incrementUnit: "MINUTES" as const,
+          alignToIncrement: true,
           maxBookingDurationMinutes: 0,
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         },
@@ -272,33 +631,33 @@ describe("ZonedBookingWindowFields", () => {
     ["00:00", "24:00", 0, true],
     ["09:00", "17:00", 0, false],
     ["00:00", "24:00", 60, false],
-  ])(
-    "validates multiday windows against %s–%s and duration %i",
-    (openingStart, openingEnd, maxBookingDurationMinutes, valid) => {
-      render(
-        <ZonedBookingWindowFields
-          timezone="UTC"
-          slotGranularityMinutes={5}
-          openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: openingStart, end: openingEnd }))}
-          maxBookingDurationMinutes={maxBookingDurationMinutes}
-          value={{ startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" }}
-          onChange={vi.fn()}
-        />,
-      );
-      expect(
-        validateBookingWindow(
-          { startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" },
-          "UTC",
-          {
-            schedulingTimezone: "UTC",
-            slotGranularityMinutes: 5,
-            openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: openingStart, end: openingEnd })),
-            maxBookingDurationMinutes,
-          },
-        ).window,
-      ).toEqual(valid ? { start: "2026-10-19T10:00:00Z", end: "2026-10-21T11:00:00Z" } : undefined);
-    },
-  );
+  ])("validates multiday windows against %s–%s and duration %i", (start, end, maxBookingDurationMinutes, valid) => {
+    render(
+      <ZonedBookingWindowFields
+        timezone="UTC"
+        slotGranularityMinutes={5}
+        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start, end }))}
+        maxBookingDurationMinutes={maxBookingDurationMinutes}
+        value={{ startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" }}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(
+      validateBookingWindow(
+        { startDate: "2026-10-19", startTime: "10:00", endDate: "2026-10-21", endTime: "11:00" },
+        "UTC",
+        {
+          schedulingTimezone: "UTC",
+          slotGranularityMinutes: 5,
+          incrementUnit: "MINUTES" as const,
+          alignToIncrement: true,
+          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start, end })),
+
+          maxBookingDurationMinutes,
+        },
+      ).window,
+    ).toEqual(valid ? { start: "2026-10-19T10:00:00Z", end: "2026-10-21T11:00:00Z" } : undefined);
+  });
 
   it("blocks a nonexistent spring-forward time", () => {
     render(
@@ -394,6 +753,8 @@ describe("ZonedBookingWindowFields", () => {
         {
           schedulingTimezone: "Europe/Berlin",
           slotGranularityMinutes: 1,
+          incrementUnit: "MINUTES" as const,
+          alignToIncrement: true,
           maxBookingDurationMinutes: 60,
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         },
@@ -458,6 +819,8 @@ describe("ZonedBookingWindowFields", () => {
         {
           schedulingTimezone: "Europe/Berlin",
           slotGranularityMinutes: 1,
+          incrementUnit: "MINUTES" as const,
+          alignToIncrement: true,
           maxBookingDurationMinutes: 60,
           openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         },
@@ -495,8 +858,11 @@ describe("validateBookingWindow weekly opening hours", () => {
     validateBookingWindow(draft, displayTimezone, {
       schedulingTimezone,
       slotGranularityMinutes: 1,
+      incrementUnit: "MINUTES" as const,
+      alignToIncrement: true,
       maxBookingDurationMinutes: 0,
       openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
       ...schedule,
       ...policy,
     });
@@ -509,7 +875,7 @@ describe("validateBookingWindow weekly opening hours", () => {
       ),
   };
 
-  it("uses each weekday's own hours", () => {
+  it("uses a weekday exception instead of the shared hours", () => {
     expect(validate(window("2026-06-01", "09:30", "2026-06-01", "10:00"), officeHours).openingInvalid).toBe(false);
     const tuesday = validate(window("2026-06-02", "09:30", "2026-06-02", "10:00"), officeHours);
     expect(tuesday.openingInvalid).toBe(true);
@@ -519,12 +885,16 @@ describe("validateBookingWindow weekly opening hours", () => {
   it("lets a Monday-only all-day booking end at Tuesday midnight but not one minute later", () => {
     expect(
       validate(window("2026-06-01", "00:00", "2026-06-02", "00:00"), {
-        openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+        openingHours: [1, 2, 3, 4, 5, 6, 7]
+          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
       }).openingInvalid,
     ).toBe(false);
     expect(
       validate(window("2026-06-01", "00:00", "2026-06-02", "00:01"), {
-        openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+        openingHours: [1, 2, 3, 4, 5, 6, 7]
+          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
       }).openingInvalid,
     ).toBe(true);
   });
@@ -534,12 +904,26 @@ describe("validateBookingWindow weekly opening hours", () => {
     const draft = window("2026-05-31", "10:00", "2026-05-31", "11:00");
     const zones = { displayTimezone: "America/Los_Angeles", schedulingTimezone: "Asia/Tokyo" };
     expect(
-      validate(draft, { openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) }, zones)
-        .openingInvalid,
+      validate(
+        draft,
+        {
+          openingHours: [1, 2, 3, 4, 5, 6, 7]
+            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+            .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+        },
+        zones,
+      ).openingInvalid,
     ).toBe(false);
     expect(
-      validate(draft, { openingHours: [7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) }, zones)
-        .openingInvalid,
+      validate(
+        draft,
+        {
+          openingHours: [1, 2, 3, 4, 5, 6, 7]
+            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+            .filter((entry) => [7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+        },
+        zones,
+      ).openingInvalid,
     ).toBe(true);
   });
 
@@ -554,7 +938,9 @@ describe("validateBookingWindow weekly opening hours", () => {
 
     // A multi-century draft would otherwise walk tens of thousands of dates, or throw from the enumerator.
     const centuries = validate(window("2026-06-01", "10:00", "2426-06-01", "10:00"), {
-      openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+      openingHours: [1, 2, 3, 4, 5, 6, 7]
+        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+        .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
     });
     expect(centuries.maximumDurationInvalid).toBe(true);
     expect(centuries.openingInvalid).toBe(false);
@@ -564,7 +950,11 @@ describe("validateBookingWindow weekly opening hours", () => {
   it("checks a smaller item limit first", () => {
     const result = validate(
       window("2026-06-06", "10:00", "2026-06-06", "12:00"),
-      { openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) },
+      {
+        openingHours: [1, 2, 3, 4, 5, 6, 7]
+          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      },
       {
         maxBookingDurationMinutes: 60,
       },
@@ -578,7 +968,11 @@ describe("validateBookingWindow weekly opening hours", () => {
     const maintenance = { enforceOpeningHours: false };
     const closedSaturday = validate(
       window("2026-06-06", "10:00", "2026-06-06", "12:00"),
-      { openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) },
+      {
+        openingHours: [1, 2, 3, 4, 5, 6, 7]
+          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      },
       maintenance,
     );
     expect(closedSaturday.openingInvalid).toBe(false);
@@ -586,7 +980,11 @@ describe("validateBookingWindow weekly opening hours", () => {
     expect(
       validate(
         window("2026-06-01", "00:00", "2027-06-02", "00:01"),
-        { openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) },
+        {
+          openingHours: [1, 2, 3, 4, 5, 6, 7]
+            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+            .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+        },
         maintenance,
       ).maximumDurationInvalid,
     ).toBe(true);
@@ -595,7 +993,11 @@ describe("validateBookingWindow weekly opening hours", () => {
   it("keeps an unchanged booking outside the current schedule through the policy-mismatch flow", () => {
     const result = validate(
       window("2026-06-06", "10:00", "2026-06-06", "11:00"),
-      { openingHours: [1].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) },
+      {
+        openingHours: [1, 2, 3, 4, 5, 6, 7]
+          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      },
       {
         allowPolicyMismatch: true,
       },
