@@ -2,6 +2,7 @@ import { GlobeIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
+import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { type WeekdayOpening, weeklyOpeningHours } from "@/modules/booking/configuration/openingHoursFacts";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -151,27 +152,24 @@ export function BookingItemInformationContent({
   const timeFormat = useBookingTimeFormat();
   const referenceDate =
     date && isPlainDate(date) ? date : currentWallClock(new Date().toISOString(), displayTimezone).date;
+  const allDayLabel = t("settings.openingHours.openAllDay");
+  const week = (timezone: string) =>
+    weeklyOpeningHours(item, timezone, referenceDate, bookingDateTimeLocale(timeFormat), allDayLabel);
   const facts: Array<[string, ReactNode]> = [
     [
       t("bookings.itemInformation.open"),
       <WeeklyOpeningHours
         key="open"
-        days={weeklyOpeningHours(item, displayTimezone, referenceDate, bookingDateTimeLocale(timeFormat))}
+        days={week(displayTimezone)}
         displayTimezone={displayTimezone}
         itemDays={
           sameTimeZone(item.timezone, displayTimezone)
             ? undefined
-            : {
-                timezone: item.timezone,
-                days: weeklyOpeningHours(item, item.timezone, referenceDate, bookingDateTimeLocale(timeFormat)),
-              }
+            : { timezone: item.timezone, days: week(item.timezone) }
         }
       />,
     ],
-    [
-      t("bookableItemDetails.fields.granularity"),
-      t("bookableItemDetails.minutes", { count: item.slotGranularityMinutes }),
-    ],
+    [t("bookableItemDetails.fields.granularity"), formatIncrement(item, t)],
     [
       t("bookableItemDetails.fields.maximumDuration"),
       item.maxBookingDurationMinutes === 0

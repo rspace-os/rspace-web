@@ -14,6 +14,7 @@ import {
   isValidTimeZone,
   useBookingTimeFormat,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { validIncrementForSchedule } from "@/modules/booking/domain/bookingIncrement";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
@@ -95,9 +96,7 @@ export const BookingConfigurationSchema = v.pipe(
     ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.optional(v.boolean()) })),
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((configuration) => validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -120,10 +119,12 @@ export const BookingConfigurationInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((configuration) => validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration)),
     ["maxBookingDurationMinutes"],
+  ),
+  v.forward(
+    v.check((settings) => validIncrementForSchedule(settings)),
+    ["slotGranularityMinutes"],
   ),
 );
 
@@ -135,10 +136,12 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((configuration) => validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration)),
     ["maxBookingDurationMinutes"],
+  ),
+  v.forward(
+    v.check((settings) => validIncrementForSchedule(settings)),
+    ["slotGranularityMinutes"],
   ),
 );
 
@@ -178,7 +181,7 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
 }
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
-  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
+  "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,incrementUnit,alignToIncrement,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
 export const bookingConfigurationTargetQueryKey = (globalId: string) =>
   ["api-v2", "booking-configurations", "target", globalId] as const;

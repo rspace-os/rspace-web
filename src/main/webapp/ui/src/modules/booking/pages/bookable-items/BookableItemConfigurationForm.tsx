@@ -55,7 +55,7 @@ export function BookableItemConfigurationForm({
 }) {
   const { t } = useTranslation("booking");
   const [version, setVersion] = useState(configuration.configurationVersion);
-  // Remount on discard so remembered weekday hours do not outlive the draft.
+  // Remount on discard so remembered day hours do not outlive the draft.
   const [draftGeneration, setDraftGeneration] = useState(0);
   const form = useForm({
     schema: BookingConfigurationUpdateInputSchema,

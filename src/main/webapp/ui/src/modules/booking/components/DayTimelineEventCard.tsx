@@ -234,10 +234,15 @@ export function DayTimelineEventCard({
     <Popover
       open={isExpanded}
       onOpenChange={(nextOpen, eventDetails) => {
+        // Pressing or focusing a timeline editor handle, such as a midnight continuation, is not leaving the card;
+        // Escape and the close button still close it from there.
+        const destination =
+          eventDetails.event instanceof FocusEvent ? eventDetails.event.relatedTarget : eventDetails.event.target;
         if (
           !nextOpen &&
-          eventDetails.event.target instanceof Element &&
-          eventDetails.event.target.closest("[data-timeline-window-editor]")
+          (eventDetails.reason === "outside-press" || eventDetails.reason === "focus-out") &&
+          destination instanceof Element &&
+          destination.closest("[data-timeline-window-editor]")
         ) {
           eventDetails.cancel();
           return;

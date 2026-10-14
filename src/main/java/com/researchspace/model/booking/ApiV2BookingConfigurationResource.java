@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 @ApiV2ResourceDefinition(
     name = "booking-configurations",
@@ -57,9 +56,26 @@ public record ApiV2BookingConfigurationResource(
             example = "Europe/Berlin")
         String timezone,
     @ApiV2ResourceField(
-            description = "Allowed wall-clock booking increment in minutes.",
-            example = "5")
+            description =
+                "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number"
+                    + " of increments. For DAYS it is the day count times 1440 and must be a whole"
+                    + " number of days. Defaults to the institution defaults on create.",
+            example = "15")
         long slotGranularityMinutes,
+    @ApiV2ResourceField(
+            description =
+                "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts"
+                    + " calendar days in the scheduling timezone, so a booking ends at its start's"
+                    + " local time; it requires the item to be open 00:00 to 24:00 on all seven"
+                    + " weekdays.",
+            example = "MINUTES")
+        BookingIncrementUnit incrementUnit,
+    @ApiV2ResourceField(
+            description =
+                "Whether booking starts must fall on the increment counted from local midnight."
+                    + " The stored value is ignored for DAYS and for increments of 1440 minutes or"
+                    + " more.")
+        boolean alignToIncrement,
     @ApiV2ResourceField(description = "Unavailable minutes before a booking.", example = "15")
         long bufferBeforeMinutes,
     @ApiV2ResourceField(description = "Unavailable minutes after a booking.", example = "15")
@@ -244,14 +260,15 @@ public record ApiV2BookingConfigurationResource(
             List.of(new Sort("id", true)),
             access);
     List<Field<BookingConfiguration, ?>> fields = new ArrayList<>(base.fields());
-    int afterGranularity =
-        IntStream.range(0, fields.size())
-                .filter(index -> fields.get(index).name().equals("slotGranularityMinutes"))
-                .findFirst()
-                .orElseThrow()
+    int afterAlignment =
+        fields.indexOf(
+                fields.stream()
+                    .filter(field -> field.name().equals("alignToIncrement"))
+                    .findFirst()
+                    .orElseThrow())
             + 1;
     fields.add(
-        afterGranularity,
+        afterAlignment,
         Field.writable(
                 "openingHours",
                 "openingHours",

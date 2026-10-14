@@ -3,11 +3,11 @@ import { CalendarDays, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import {
-  adjustVerticalTimelineRange,
-  canAdjustVerticalTimelineRange,
-  stepVerticalTimelineRange,
-  verticalTimelineRangeToDraft,
-} from "@/modules/booking/creation/verticalTimelineRange";
+  hiddenEdgeDescription,
+  hiddenEdgeLabel,
+  resizeDisabledReason,
+} from "@/modules/booking/creation/timelineEditText";
+import { type TimelinePolicy, timelineAdjuster, timelineRangeToDraft } from "@/modules/booking/creation/timelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
@@ -15,6 +15,7 @@ import {
   addCalendarDays,
   type BookingTimeFormat,
   type BookingWindowDraft,
+  bookingDateTimeLocale,
   currentWallClock,
   dayMinuteToZonedTime,
   instantToDayMinute,
@@ -45,16 +46,6 @@ const MOVE_HANDLE_MINIMUM_HEIGHT = 44;
 type IsoRange = { start: string; end: string };
 type AdjustmentEdge = "move" | "start" | "end";
 type Direction = "previous" | "next";
-type TimelineInteraction = {
-  edge: AdjustmentEdge;
-  pointerId: number;
-  handle: HTMLButtonElement;
-  originalRange: IsoRange;
-  pointerOffsetMinutes: number;
-  contextKey: string;
-  width: number;
-  height: number;
-};
 export type VerticalDayTimelineScheduleWindow = OpeningSchedule & { timezone: string };
 
 export type VerticalDayTimelineSchedule =
@@ -65,8 +56,8 @@ export type VerticalDayTimelineSchedule =
 
 export type VerticalDayTimelineEditing = {
   draft: BookingWindowDraft;
-  schedulingTimeZone: string;
-  slotGranularityMinutes: number;
+  /** The item's rules for this event kind; every adjustment is a complete valid interval. */
+  policy: TimelinePolicy;
   onChange: (draft: BookingWindowDraft) => void;
   onInteractionChange?: (active: boolean) => void;
   disabledReason?: string;
@@ -191,25 +182,15 @@ export function VerticalDayTimeline({
   const editingRange = React.useMemo(() => resolveRange(editing?.draft, timezone), [editing?.draft, timezone]);
   const activeRange = preview ?? editingRange;
   const activePeriod = activeRange ? timeRange(activeRange, date, timezone, timeFormat) : undefined;
-  const context = React.useMemo(
+  const policyKey = editing ? JSON.stringify(editing.policy) : "";
+  const adjuster = React.useMemo(
     () =>
-      editing
-        ? {
-            date,
-            displayTimezone: timezone,
-            schedulingTimezone: editing.schedulingTimeZone,
-            slotGranularityMinutes: editing.slotGranularityMinutes,
-          }
+      editing && editingRange && !editing.disabledReason
+        ? timelineAdjuster(editingRange, { date, displayTimezone: timezone, policy: editing.policy })
         : undefined,
-    [date, timezone, editing?.schedulingTimeZone, editing?.slotGranularityMinutes],
+    [editingRange, date, timezone, policyKey, editing?.disabledReason],
   );
-  const directAdjustmentAllowed = Boolean(
-    editing &&
-      editingRange &&
-      context &&
-      !editing.disabledReason &&
-      canAdjustVerticalTimelineRange(editingRange, context),
-  );
+  const directAdjustmentAllowed = Boolean(adjuster);
   const positionedEvents = React.useMemo(() => layoutVerticalTimelineEvents(events, dayMinutes), [events, dayMinutes]);
   const dayEvents = schedule.status === "success" ? positionedEvents : [];
   const denseLanes = dayEvents.some(({ laneCount }) => canvasWidth > 0 && canvasWidth / laneCount < MINIMUM_LANE_WIDTH);
@@ -234,8 +215,7 @@ export function VerticalDayTimeline({
     editing?.targetKey ?? "",
     editingRange?.start ?? "",
     editingRange?.end ?? "",
-    editing?.schedulingTimeZone ?? "",
-    editing?.slotGranularityMinutes ?? "",
+    policyKey,
     editing?.disabledReason ?? "",
   ].join("|");
 
@@ -251,14 +231,6 @@ export function VerticalDayTimeline({
     (minute: number): string => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString(),
     [date, timezone],
   );
-  const adjustInteractionRange = React.useCallback(
-    (active: TimelineInteraction, clientY: number, adjustmentContext: NonNullable<typeof context>) => {
-      const minute = minuteAt(clientY) - active.pointerOffsetMinutes;
-      const target = rangeAtMinute(minute);
-      return adjustVerticalTimelineRange(active.originalRange, active.edge, target, adjustmentContext);
-    },
-    [minuteAt, rangeAtMinute],
-  );
 
   const cancelInteraction = React.useCallback(() => {
     const active = interactionRef.current;
@@ -270,27 +242,33 @@ export function VerticalDayTimeline({
       if (active.handle.hasPointerCapture(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
     }
   }, []);
+  const abortInteraction = React.useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
+    },
+    [cancelInteraction],
+  );
 
   const commitRange = React.useCallback(
     (next: IsoRange) => {
       if (!editing || !editingRange || rangesEqual(next, editingRange)) return;
-      editing.onChange(verticalTimelineRangeToDraft(next, timezone));
+      editing.onChange(timelineRangeToDraft(next, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
           period: timeRange(next, date, timezone, timeFormat),
         }),
       );
     },
-    [date, editing, editingRange, t, timezone],
+    [date, editing, editingRange, t, timeFormat, timezone],
   );
 
   const changeByStep = React.useCallback(
     (edge: AdjustmentEdge, direction: Direction) => {
-      if (!editing || !context || !activeRange || !directAdjustmentAllowed || interactionRef.current) return;
-      const next = stepVerticalTimelineRange(activeRange, edge, direction, context);
+      if (!editing || !adjuster || interactionRef.current) return;
+      const next = adjuster.step(edge, direction);
       if (next) commitRange(next);
     },
-    [activeRange, commitRange, context, directAdjustmentAllowed, editing],
+    [adjuster, commitRange, editing],
   );
 
   const onDraftHandleKeyDown = (edge: AdjustmentEdge, event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -305,7 +283,8 @@ export function VerticalDayTimeline({
   };
 
   const startInteraction = (edge: AdjustmentEdge, event: React.PointerEvent<HTMLButtonElement>) => {
-    if (interactionRef.current || !directAdjustmentAllowed || !editingRange || !context || !event.isPrimary) return;
+    if (interactionRef.current || !adjuster || !editingRange || !event.isPrimary) return;
+    if (edge !== "move" && !adjuster.canResize(edge)) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect || rect.height === 0) return;
@@ -332,29 +311,29 @@ export function VerticalDayTimeline({
 
   const updateInteraction = (event: React.PointerEvent<HTMLButtonElement>) => {
     const active = interactionRef.current;
-    if (!active || active.pointerId !== event.pointerId || !context) return;
+    if (!active || active.pointerId !== event.pointerId || !adjuster) return;
     event.preventDefault();
     event.stopPropagation();
-    const next = adjustInteractionRange(active, event.clientY, context);
+    const minute = minuteAt(event.clientY) - active.pointerOffsetMinutes;
+    const target = rangeAtMinute(minute);
+    const next = adjuster.adjust(active.edge, target);
     setPreview(next ?? active.originalRange);
   };
 
   const finishInteraction = (event: React.PointerEvent<HTMLButtonElement>) => {
     const active = interactionRef.current;
-    if (!active || active.pointerId !== event.pointerId || !context) return;
+    if (!active || active.pointerId !== event.pointerId || !adjuster) return;
     event.preventDefault();
     event.stopPropagation();
-    const next = adjustInteractionRange(active, event.clientY, context);
+    const minute = minuteAt(event.clientY) - active.pointerOffsetMinutes;
+    const target = rangeAtMinute(minute);
+    const next = adjuster.adjust(active.edge, target);
     interactionRef.current = null;
     setGestureActive(false);
     setPreview(null);
     interactionCallbackRef.current?.(false);
     if (active.handle.hasPointerCapture(active.pointerId)) active.handle.releasePointerCapture(active.pointerId);
     if (next) commitRange(next);
-  };
-
-  const cancelCapturedPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
   };
 
   React.useEffect(() => {
@@ -462,6 +441,52 @@ export function VerticalDayTimeline({
   const canvasMoveVisible = committedDraftHeight >= MOVE_HANDLE_MINIMUM_HEIGHT && directAdjustmentAllowed;
   // A one-hour draft at 56px/hour leaves a usable center between the 12px resize strips.
   const canvasResizeVisible = committedDraftHeight >= HANDLE_HEIGHT * 2 + 24 && directAdjustmentAllowed;
+
+  // An endpoint on another day shows a striped continuation; double-click or Enter/Space moves it to this day's
+  // midnight when that keeps the booking valid. A single click only focuses it.
+  const hiddenEdgeHandle = (edge: "start" | "end") => {
+    const action = adjuster?.hiddenEdge(edge);
+    if (!action) return null;
+    const locale = bookingDateTimeLocale(timeFormat);
+    const description = hiddenEdgeDescription(edge, action, date, timezone, t, locale);
+    const apply = () => {
+      if (action.kind === "enabled") commitRange(action.range);
+    };
+    return (
+      <React.Fragment key={`continuation-${edge}`}>
+        <button
+          type="button"
+          data-testid={`vertical-day-timeline-${edge}-continuation`}
+          aria-label={hiddenEdgeLabel(edge, date, t, locale)}
+          aria-describedby={`${instructionsId}-${edge}-continuation`}
+          aria-disabled={action.kind === "disabled" || undefined}
+          title={description}
+          className={cn(
+            "pointer-events-auto absolute inset-x-0 z-20 h-3 touch-none focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring",
+            "bg-[repeating-linear-gradient(135deg,var(--primary)_0_3px,color-mix(in_srgb,var(--primary)_15%,var(--background))_3px_7px)]",
+            action.kind === "enabled" ? "cursor-pointer" : "cursor-not-allowed opacity-70",
+          )}
+          style={edge === "start" ? { top: 0 } : { bottom: 0 }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => {
+            event.preventDefault();
+            apply();
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" && event.key !== " ") return;
+            event.preventDefault();
+            if (!event.repeat) apply();
+          }}
+          onKeyUp={(event) => {
+            if (event.key === " ") event.preventDefault();
+          }}
+        />
+        <span id={`${instructionsId}-${edge}-continuation`} className="sr-only">
+          {description}
+        </span>
+      </React.Fragment>
+    );
+  };
 
   const openDetails = (eventId: string, expanded: boolean) => {
     setExpandedEventId((current) => expandedEventIdAfterChange(current, eventId, expanded));
@@ -720,43 +745,55 @@ export function VerticalDayTimeline({
                             onPointerDown={(event) => startInteraction("move", event)}
                             onPointerMove={updateInteraction}
                             onPointerUp={finishInteraction}
-                            onPointerCancel={cancelCapturedPointer}
-                            onLostPointerCapture={cancelCapturedPointer}
+                            onPointerCancel={abortInteraction}
+                            onLostPointerCapture={abortInteraction}
                             onKeyDown={(event) => onDraftHandleKeyDown("move", event)}
                           />
-                          {canvasResizeVisible
-                            ? (["start", "end"] as const).map((edge) => (
-                                <button
-                                  key={edge}
-                                  type="button"
-                                  aria-describedby={instructionsId}
-                                  aria-label={
-                                    edge === "start"
-                                      ? t("dayTimeline.vertical.resizeStart", {
-                                          period: activePeriod,
-                                        })
-                                      : t("dayTimeline.vertical.resizeEnd", {
-                                          period: activePeriod,
-                                        })
-                                  }
-                                  className={cn(
-                                    "pointer-events-auto absolute inset-x-0 z-20 h-3 cursor-ns-resize touch-none bg-background/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring",
-                                    edge === "start"
-                                      ? "rounded-t-md border-t border-primary/60"
-                                      : "rounded-b-md border-b border-primary/60",
-                                  )}
-                                  style={edge === "start" ? { top: 0 } : { bottom: 0 }}
-                                  onPointerDown={(event) => startInteraction(edge, event)}
-                                  onPointerMove={updateInteraction}
-                                  onPointerUp={finishInteraction}
-                                  onPointerCancel={cancelCapturedPointer}
-                                  onLostPointerCapture={cancelCapturedPointer}
-                                  onKeyDown={(event) => onDraftHandleKeyDown(edge, event)}
-                                />
-                              ))
+                          {canvasResizeVisible && adjuster
+                            ? (["start", "end"] as const)
+                                .filter((edge) => adjuster.visible[edge])
+                                .map((edge) => {
+                                  const reason = editing
+                                    ? resizeDisabledReason(edge, adjuster, editing.policy, t)
+                                    : undefined;
+                                  return (
+                                    <button
+                                      key={edge}
+                                      type="button"
+                                      aria-describedby={reason ? `${instructionsId}-${edge}-reason` : instructionsId}
+                                      aria-disabled={reason ? true : undefined}
+                                      title={reason}
+                                      aria-label={
+                                        edge === "start"
+                                          ? t("dayTimeline.vertical.resizeStart", {
+                                              period: activePeriod ?? "",
+                                            })
+                                          : t("dayTimeline.vertical.resizeEnd", {
+                                              period: activePeriod ?? "",
+                                            })
+                                      }
+                                      className={cn(
+                                        "pointer-events-auto absolute inset-x-0 z-20 h-3 touch-none bg-background/80 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring",
+                                        reason ? "cursor-not-allowed" : "cursor-ns-resize",
+                                        edge === "start"
+                                          ? "rounded-t-md border-t border-primary/60"
+                                          : "rounded-b-md border-b border-primary/60",
+                                      )}
+                                      style={edge === "start" ? { top: 0 } : { bottom: 0 }}
+                                      onPointerDown={(event) => startInteraction(edge, event)}
+                                      onPointerMove={updateInteraction}
+                                      onPointerUp={finishInteraction}
+                                      onPointerCancel={abortInteraction}
+                                      onLostPointerCapture={abortInteraction}
+                                      onKeyDown={(event) => onDraftHandleKeyDown(edge, event)}
+                                    />
+                                  );
+                                })
                             : null}
                         </>
                       ) : null}
+                      {/* Continuations stay available however short the visible part of the draft is. */}
+                      {adjuster ? (["start", "end"] as const).map((edge) => hiddenEdgeHandle(edge)) : null}
                     </div>
                   ) : null}
                 </div>
@@ -805,6 +842,16 @@ export function VerticalDayTimeline({
       <p id={instructionsId} className="sr-only">
         {t("dayTimeline.vertical.keyboardInstructions")}
       </p>
+      {adjuster && editing
+        ? (["start", "end"] as const).map((edge) => {
+            const reason = adjuster.visible[edge] ? resizeDisabledReason(edge, adjuster, editing.policy, t) : undefined;
+            return reason ? (
+              <p key={edge} id={`${instructionsId}-${edge}-reason`} className="sr-only">
+                {reason}
+              </p>
+            ) : null;
+          })
+        : null}
     </section>
   );
 }

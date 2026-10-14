@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import type {
   FieldName,
   FilterOperator,
@@ -7,6 +7,7 @@ import type {
   SortRule,
 } from "@/modules/common/collection/collectionConfig";
 import type { RuntimeFieldDefinition } from "./adapters/apiV2/runtimeFieldCatalog";
+import type { TableListAlertsApi } from "./components/TableListAlerts";
 
 export type FilterValue = string | number | boolean | Date | readonly (string | number | boolean | Date)[];
 
@@ -207,6 +208,8 @@ export type TableListRestoredViewIssue = {
 
 export type TableListProps<TDocument extends Record<string, unknown>> = {
   restoredViewIssue?: TableListRestoredViewIssue;
+  /** Imperative access for an owner that reports action results outside TableList context. */
+  alertsRef?: Ref<TableListAlertsApi>;
   /** Adapter-owned persistence reader, mounted before query-string synchronization. */
   stateSync?: ReactNode;
   runtimeFieldAuthScope?: string | number;
