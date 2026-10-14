@@ -1064,7 +1064,9 @@ paths:
 
 
         Any sample request against the sample that is still PENDING or APPROVED
-        is rejected, with a reason naming the new owner.
+        is closed: a request raised by the new owner is fulfilled, recording the
+        sample as the transferred sample; any other is rejected, with a reason
+        naming the new owner.
 
 
         ## Examples of the request body
@@ -1248,8 +1250,9 @@ paths:
         raised, returned as `originalOwner`, so it stays with the person who was
         asked even after the sample changes hands. Approving, rejecting and
         fulfilling remain reserved for the sample's current owner. Transferring a
-        sample rejects every request against it that is still PENDING or
-        APPROVED. Requests against a deleted sample are excluded.
+        sample closes every request against it that is still PENDING or
+        APPROVED: the new owner's own requests are fulfilled, all others are
+        rejected. Requests against a deleted sample are excluded.
 
         | Request | Explanation |
 
@@ -1280,6 +1283,12 @@ paths:
             says otherwise. These do not carry the
             `statusChanges` history; fetch a single request to get it. Each
             summary carries `requester` and `originalOwner` as user objects.
+        "400":
+          description: >-
+            A query parameter is not valid: `role`, `status` or `orderBy` has an
+            unknown value, or `sampleId` is not a number.
+        "404":
+          description: Sample requests are not enabled on this instance.
     post:
       summary: Raise a request for material from a Sample
       description: >
@@ -1308,21 +1317,28 @@ paths:
                 note: Need 2ml for the binding assay
         description: >-
           The global id of the sample to request from, and a free-text note
-          describing what is needed. Both are required.
+          describing what is needed, at most 2000 characters. Both are required.
         required: true
       tags:
         - Sample Requests
       responses:
         "201":
           description: The created request, in PENDING state.
+        "400":
+          description: >-
+            The body is malformed, or `note` is missing, blank or longer than
+            2000 characters.
         "404":
           description: >-
-            The sample does not exist, is not visible to the current user, or
-            sample requests are not enabled on this instance.
+            The sample does not exist, is in the trash, or sample requests are
+            not enabled on this instance.
+        "409":
+          $ref: "#/components/responses/ConcurrentChange"
         "422":
           description: >-
-            The request is not valid: the sample is not marked requestable, is
-            owned by the current user, or the global id does not name a sample.
+            The request is not valid: the sample is not marked requestable,
+            sample requests are not enabled for its owner, it is owned by the
+            current user, or the global id does not name a sample.
   "/sampleRequests/{id}/status":
     put:
       summary: Move a sample request to a new status
@@ -1350,14 +1366,17 @@ paths:
 
         REJECTED, CANCELLED and FULFILLED are terminal. PENDING is written only
         when the request is raised and cannot be set here. Transferring the
-        requested sample to a new owner also rejects the request if it is still
-        PENDING or APPROVED, recording a reason that names the new owner.
+        requested sample to a new owner also closes the request if it is still
+        PENDING or APPROVED: it is fulfilled if the new owner is the requester,
+        and rejected otherwise, with a reason that names the new owner.
 
         `transferredSampleGlobalId` optionally gives the global id of the sample
         the request was fulfilled with: the requested sample itself, or a new
-        sample created from it. It is only accepted when setting FULFILLED, and
-        the caller must be able to read that sample. It is recorded on the new
-        `statusChanges` entry, as `transferredSample`.
+        sample created from it. It is only accepted when setting FULFILLED, the
+        caller must have full read access to that sample (limited read, e.g.
+        through a shared container, is not enough), and it must not be in the
+        trash. It is recorded on the new `statusChanges` entry, as
+        `transferredSample`.
 
         ## Examples of the request body
 
@@ -1380,18 +1399,23 @@ paths:
                 status: REJECTED
                 reason: Insufficient material left
         description: >-
-          The target status, a reason when rejecting, and optionally the sample
-          the request was fulfilled with.
+          The target status, a reason of at most 2000 characters when rejecting,
+          and optionally the sample the request was fulfilled with.
         required: true
       responses:
         "200":
           description: The updated request, including its extended status history.
+        "400":
+          description: >-
+            The body is malformed, `status` is missing or not a known status, or
+            `reason` is longer than 2000 characters.
         "404":
           description: >-
             No such request, the caller is neither its requester, the sample's
             current owner, nor its owner when the request was raised, a supplied
-            `transferredSampleGlobalId` does not exist or cannot be read by the
-            caller, or sample requests are not enabled on this instance.
+            `transferredSampleGlobalId` does not exist, is in the trash or cannot
+            be fully read by the caller, or sample requests are not enabled on
+            this instance.
         "409":
           $ref: "#/components/responses/ConcurrentChange"
         "422":
@@ -1421,13 +1445,17 @@ paths:
             the request's creation, so a client never has to reconstruct it from
             `created` and `requester`. Each entry is
             `{ id, status, created, createdBy, reason, transferredSample }`,
-            where `reason` is populated for a rejection, and `transferredSample`
+            where `reason` is populated for a rejection and for a fulfilment made
+            by transferring the sample to its requester, and `transferredSample`
             summarises the sample the request was fulfilled with, if one was
             recorded, limited to what the current user may read. `requester`,
-            `originalOwner` and each `createdBy` are user objects; a user deleted
-            since keeps their username, with a null id.
+            `originalOwner` and each `createdBy` are user objects with public
+            details only (no email, home folder or roles); a user deleted since
+            keeps their username, with a null id.
         "404":
-          $ref: "#/components/responses/NotFound"
+          description: >-
+            No such request, the caller is not a party to it, or sample requests
+            are not enabled on this instance.
   /subSamples:
     get:
       summary: Get all SubSamples visible to the current User
@@ -4570,6 +4598,15 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    ConcurrentChange:
+      description: >
+        The same data was changed by someone else at the same time (MariaDB "record has changed
+        since last read", or a deadlock between two concurrent changes). Nothing was saved;
+        reload and try again.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     PidAlreadyLinked:
       description: >
         An Instrument in this deployment already carries a linked identifier for this PID. The
@@ -4884,10 +4921,12 @@ components:
               description: >-
                 Whether other users may request material from this sample. Always
                 false on a new sample: it can only be set by updating an existing
-                sample, and only by its owner; a change sent by anyone else is
-                ignored. Turning it on is refused with 422 while sample requests
-                are not enabled for the owner; turning it off is always allowed.
-                Visible in every view of the sample, including the public view.
+                sample, by whoever may transfer it (its owner, or a PI or Lab Admin
+                of the owner's group); a change sent by anyone else is refused
+                with 422. Turning it on is also refused with 422 while sample
+                requests are not enabled for the caller; turning it off is always
+                allowed. Requests always go to the sample's owner. Visible in every
+                view of the sample, including the public view; null for templates.
               example: false
             revisionId:
               type: number

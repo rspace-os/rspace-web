@@ -215,6 +215,65 @@ and API field names were ported instead.
    clauses, and `*Instr1<U+3000>OR<U+3000>**` matched all 810 records. For the same reason the
    minimum strips Unicode whitespace rather than trimming ASCII only, so padding cannot pass it.
 
+   *Amended 2026-10-12 (RSDEV-1542): the B2INST term is now a regular expression, and the
+   "contains" ignores case.* The escaped-space term matched the record's case only. A wildcard
+   term that holds a space can never match the analysed copy of a field, whose tokens carry no
+   spaces, so it was matching the unanalysed `.keyword` copy, which keeps the record's case:
+   `metadata.Name.keyword:*Nicos\ first*` answers 1 and `metadata.Name.keyword:*nicos\ first*`
+   answers 0 on b2inst-test.gwdg.de, while a one-word term matches the analysed copy, whose tokens
+   are lowercased, so `*Nico*`, `*nico*` and `*NICO*` all answer 16. The same held for every
+   character the tokenizer splits on inside one word (`*Nico\-PIDINST*` 3 and `*nico\-pidinst*`
+   0, `*T11975\/zax2y*` 1 and `*t11975\/zax2y*` 0, and on b2inst.gwdg.de `*F041.B00.003*` 29 and
+   `*f041.b00.003*` 0); only `_` stayed case-insensitive, being a word character. Lowercasing the
+   query cannot help, and the `q` parameter exposes no case flag.
+
+   The term is now one Lucene regular expression, `/.*<text>.*/`, with every cased letter written
+   as a class of its upper and lower case: `nicos first`, `Nicos first` and `NICOS FIRST` all go
+   out as `/.*[Nn][Ii][Cc][Oo][Ss] [Ff][Ii][Rr][Ss][Tt].*/`. Whitespace runs collapse to one
+   space, typed `*` and `?` stay live as `.*` and `.`, and the regular-expression syntax
+   (`. + | { } [ ] ( ) " \ # @ & < > ~`, and `/`, which closes the term) is escaped to
+   literals; quotes, `<` and `>` are still removed first, as before. What matches is unchanged:
+   the text as typed, as a substring of one field value, spaces and punctuation included, so
+   `first nicos` still answers 0 where `nicos first` answers 1. Verified 2026-10-12 on
+   b2inst-test.gwdg.de and b2inst.gwdg.de: the three casings answer 1 (`UMMS PMM` and `umms pmm`
+   on the production registry), `Instr1 prova_COPY` still answers 1 and not `Instr1 prova 123`,
+   `nstr1 prova_co` still finds `Instr1 prova_COPY`, the hyphen, slash and dot words above answer
+   the same in either case, and 40 hostile shapes (the RSDEV-1524 sweep, every regular-expression
+   operator, CJK, an emoji, a trailing backslash, 150 characters) all answer 200.
+
+   Cost, measured side by side on b2inst.gwdg.de at 50 hits a page, median of three runs: a query
+   of one to five words answers within 0.1 s of the escaped-space term (`umms pmm` 0.20 s against
+   0.22 s, `structured light microscope tesm` 0.33 s against 0.44 s); a full page of 56 hits is 0.80 s
+   against 0.97 s, the 275 KB page being most of it (0.29 s against 0.31 s at 3 hits a page); a
+   100-character query 0.71 s against 0.89 s, and a 240-character one 0.93 s against 2.29 s, the
+   cap's worst case. Both terms start with a wildcard and scan every field's term dictionary
+   alike; what grows with the length of the query is the registry compiling the regular
+   expression into an automaton, which the cap bounds. The registry's own load varies: a single
+   240-letter run on b2inst-test.gwdg.de took 6 s earlier the same day. The registry call runs
+   inside the manager's transaction, so a pooled connection is held for as long as B2INST takes.
+
+   Elasticsearch refuses a regular expression longer than `index.max_regex_length`, 1000 by
+   default (963 characters answered 200 and 1043 answered 400 on both registries), and a class
+   is four characters per letter, so the term is built from the first 240 code points of the
+   query only. A longer paste is searched by its first 240 characters: still a substring match
+   that finds the record, answering at most a superset; nothing errors and nothing is refused.
+   The 4-character minimum is checked on those 240 code points, after whitespace runs are
+   collapsed, since `*` x 240 followed by `abcd` would otherwise pass it and go out as a term
+   matching every record, and `a   *` would count its spaces. A cased letter
+   outside the Basic Multilingual Plane is six characters in the term (a surrogate pair per
+   case), so 240 of them would reach 1446 characters: 240 Adlam letters answered 400 on
+   b2inst-test.gwdg.de, and the term therefore also ends at the last whole piece that fits in
+   1000 characters.
+
+   A wildcard per word joined with `AND` (`*nicos* AND *first*`) was measured as the alternative
+   and rejected. It ignores case, because each word then matches the analysed copy, but it drops
+   word order and adjacency (`umms pmm` answers 2 on b2inst.gwdg.de where the phrase answers 1),
+   and both registries answer 500 from the fifth clause of any `AND` query, plain or wildcarded,
+   where four answer 200, which would have forced a cap on words. Clauses scoped to named fields
+   do not hit that ceiling, but scoping would change which fields a search covers, a separate
+   product decision. Case-folding the escaped-space term is not available: lowercasing it answers
+   0 against the keyword copy, and the escaped space cannot reach the analysed one.
+
 9. **The record's Measurement Technique and Calibration related identifiers become links only
    when they name an item in this RSpace; every other one is skipped and reported** (RSDEV-1528,
    decided with Nico on 2026-09-25).
@@ -370,9 +429,11 @@ and API field names were ported instead.
   registries and depends on no provider setting; the eviction on reload is harmless and stays.
 - A registry failure during a lookup stays an error (decided 2026-09-25, closing RSDEV-1524,
   which had asked whether a 400 should read as "no results"). Since decision 8 nothing the user
-  types can make B2INST answer 400, so a 400 there can only be a request RSpace built wrongly or
-  a changed registry API, and an empty page would hide it. The error still reaches the client as
-  a 500 carrying the connector's developer text, through the catch-all in rspace-rest-api-utils,
+  types can make B2INST answer 400 (still so with the regular-expression term of 2026-10-12: its
+  syntax is escaped and its length capped), so a 400 there can only be a request RSpace built
+  wrongly or a changed registry API, and an empty page would hide it. The error still reaches the
+  client as a 500 carrying the connector's developer text, through the catch-all in
+  rspace-rest-api-utils,
   because `ApiControllerAdvice` has no handler for either connector's exception; a localized
   502 would be a separate, small change and was not asked for.
 - DataCite's `searchDois` and typed `contributors`/`identifiers` live in

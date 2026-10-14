@@ -61,7 +61,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                 sessionFactory
                     .getCurrentSession()
                     .createQuery("select count(req) from SampleRequest req" + where, Long.class),
-                hasStatusFilter ? statuses : null,
+                statuses,
                 sampleId,
                 user)
             .uniqueResult();
@@ -73,14 +73,15 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
                 sessionFactory
                     .getCurrentSession()
                     .createQuery(
-                        "from SampleRequest req"
+                        // fetched with the page: every row's sample is shown
+                        "from SampleRequest req join fetch req.sample"
                             + where
                             + " order by req.created "
                             + dir
                             + ", req.id "
                             + dir,
                         SampleRequest.class),
-                hasStatusFilter ? statuses : null,
+                statuses,
                 sampleId,
                 user)
             .setFirstResult(pgCrit.getFirstResultIndex())
@@ -109,7 +110,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
         .getCurrentSession()
         .createQuery(
             "from SampleRequest req where req.sample.id = :sampleId"
-                + " and req.status in (:statuses) and req.sample.deleted = false",
+                + " and req.status in (:statuses)",
             SampleRequest.class)
         .setParameter("sampleId", sampleId)
         .setParameterList(

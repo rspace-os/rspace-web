@@ -318,4 +318,12 @@ class ApiInventoryDOITest {
         "https://rspace.example.org/public/inventory/suffix1234567890",
         created.getOtherData(DigitalObjectIdentifier.IdentifierOtherProperty.LOCAL_URL));
   }
+
+  @Test
+  void publicUrlFallsBackToDoiOrgForAResolvingDataCiteDoiStoredWithoutOne() {
+    DigitalObjectIdentifier entity = new DigitalObjectIdentifier("10.82316/abc", "a title");
+    entity.setState("findable");
+
+    assertEquals("https://doi.org/10.82316/abc", new ApiInventoryDOI(entity).getPublicUrl());
+  }
 }

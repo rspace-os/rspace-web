@@ -127,6 +127,27 @@ describe("ElnFolderBrowser", () => {
     });
   });
 
+  it("labels the Gallery exports system folder as it is named in the Gallery", async () => {
+    mockGetFolderTree.mockResolvedValue({
+      totalHits: 1,
+      pageNumber: 0,
+      records: [{ id: 500, globalId: "GF500", name: "PdfDocuments", type: "FOLDER", systemFolder: true }],
+    });
+    renderBrowser(vi.fn());
+    expect(await screen.findByRole("treeitem", { name: "gallery:sections.pdfDocuments" })).toBeInTheDocument();
+    expect(screen.queryByText("PdfDocuments")).not.toBeInTheDocument();
+  });
+
+  it("keeps the name of a user's own folder that matches a Gallery section name", async () => {
+    mockGetFolderTree.mockResolvedValue({
+      totalHits: 1,
+      pageNumber: 0,
+      records: [{ id: 501, globalId: "FL501", name: "PdfDocuments", type: "FOLDER", systemFolder: false }],
+    });
+    renderBrowser(vi.fn());
+    expect(await screen.findByRole("treeitem", { name: "PdfDocuments" })).toBeInTheDocument();
+  });
+
   it("offers exactly the global-id prefixes the server accepts as a documentation target", async () => {
     const onSelectionChange = vi.fn();
     renderBrowser(onSelectionChange);

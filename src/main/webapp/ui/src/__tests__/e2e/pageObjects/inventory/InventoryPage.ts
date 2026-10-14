@@ -6,6 +6,7 @@ import { InventoryCreateMenu } from "@/__tests__/e2e/components/inventory/Invent
 import { InventoryDetailsPanel } from "@/__tests__/e2e/components/inventory/InventoryDetailsPanel";
 import { InventorySearchPanel } from "@/__tests__/e2e/components/inventory/InventorySearchPanel";
 import { InventorySidebar } from "@/__tests__/e2e/components/inventory/InventorySidebar";
+import { isWholeNumberSegment } from "@/__tests__/e2e/pathSegments";
 import { FieldmarkDialogComponent } from "@/modules/fieldmark/__tests__/pageObjects/FieldmarkDialogComponent";
 import { BasePage } from "../BasePage";
 import { InventoryImportPage, type InventoryImportRecordType } from "./InventoryImportPage";
@@ -53,6 +54,25 @@ export class InventoryPage extends BasePage {
   async openInstrument(id: string | number): Promise<void> {
     await this.page.goto(`${this.path}/instrument/${id}`);
     await this.isLoaded();
+  }
+
+  /**
+   * Runs `trigger` and waits for it to land on a different instrument's page than the current one -
+   * the new id isn't known ahead of time - then returns that id. Recording the URL first keeps a
+   * caller already on an instrument page from getting the old id back.
+   */
+  async waitForNewInstrumentPage(trigger: () => Promise<void>): Promise<number> {
+    const instrumentPrefix = `${this.path}/instrument/`;
+    const instrumentIdOf = (pathname: string): number | undefined => {
+      const id = pathname.startsWith(instrumentPrefix) ? pathname.slice(instrumentPrefix.length) : "";
+      return isWholeNumberSegment(id) ? Number(id) : undefined;
+    };
+    const before = new URL(this.page.url()).pathname;
+    await trigger();
+    await this.page.waitForURL((url) => url.pathname !== before && instrumentIdOf(url.pathname) !== undefined);
+    const id = instrumentIdOf(new URL(this.page.url()).pathname);
+    if (id === undefined) throw new Error(`Expected an instrument page, got ${this.page.url()}`);
+    return id;
   }
 
   async openNewContainerForm() {

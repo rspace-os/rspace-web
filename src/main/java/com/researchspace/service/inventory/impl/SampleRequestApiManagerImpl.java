@@ -25,10 +25,13 @@ import com.researchspace.model.inventory.SampleRequestStatusChange;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SampleRequestApiManager;
 import jakarta.ws.rs.NotFoundException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
@@ -42,6 +45,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   private @Autowired SampleRequestDao sampleRequestDao;
   private @Autowired SampleDao sampleDao;
   private @Autowired SampleApiManager sampleApiManager;
+  private @Autowired InventoryPermissionUtils invPermissions;
   private @Autowired MessageSourceUtils messages;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
   private @Autowired UserDao userDao;
@@ -64,8 +68,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
    * Every transition a user can make. PENDING is absent: it is written only when a request is
    * raised. FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a
    * separate approval step), or after already approving the request. REJECTED likewise: an owner
-   * can withdraw an approval, and a sample transfer rejects PENDING and APPROVED requests through
-   * the same entries, see autoRejectActiveRequestsForTransferredSample.
+   * can withdraw an approval. A sample transfer closes PENDING and APPROVED requests through the
+   * same entries, see closeActiveRequestsForTransferredSample.
    */
   private static final List<Transition> TRANSITIONS =
       List.of(
@@ -84,8 +88,13 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest createRequest(ApiSampleRequestPost post, User user) {
+    GlobalIdentifier oid = sampleOid(post.getSampleGlobalId());
+    // share-locked as the transaction's first read (ADR D10), so a transfer running at the same
+    // time waits for the new request and then closes it. No read permission is needed: requestable
+    // is the gate (ADR D3).
+    Sample locked = sampleDao.getWithSharedLock(oid.getDbId());
     assertSampleRequestsEnabled(user);
-    Sample sample = readRequestedSample(post.getSampleGlobalId());
+    Sample sample = untrashed(locked, oid);
     assertNotOwnSample(sample, user);
     assertRequestable(sample);
     SampleRequest request = new SampleRequest(sample, user, post.getNote());
@@ -107,9 +116,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     ISearchResults<SampleRequest> dbRequests =
         sampleRequestDao.getRequestsForUser(pgCrit, role, statuses, sampleId, user);
 
+    // the same few users appear on most rows, so each is looked up once per page
+    Map<String, ApiUser> usersByName = new HashMap<>();
     List<ApiSampleRequestInfo> requests =
         dbRequests.getResults().stream()
-            .map(request -> toInfo(request, user))
+            .map(request -> toInfo(request, user, usersByName))
             .collect(Collectors.toList());
 
     ApiSampleRequestSearchResult apiSearchResult = new ApiSampleRequestSearchResult();
@@ -196,10 +207,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return supplied ? post.getReason() : null;
   }
 
-  private ApiSampleRequestInfo toInfo(SampleRequest request, User user) {
+  private ApiSampleRequestInfo toInfo(
+      SampleRequest request, User user, Map<String, ApiUser> usersByName) {
     ApiSampleRequestInfo info = new ApiSampleRequestInfo(request);
-    info.setRequester(toApiUser(request.getRequesterUsername()));
-    info.setOriginalOwner(toApiUser(request.getOriginalOwner()));
+    info.setRequester(usersByName.computeIfAbsent(request.getRequesterUsername(), this::toApiUser));
+    info.setOriginalOwner(usersByName.computeIfAbsent(request.getOriginalOwner(), this::toApiUser));
     return applyOutgoingSampleRules(info, request, user);
   }
 
@@ -219,11 +231,14 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return applyOutgoingSampleRules(detail, request, user);
   }
 
-  /** A deleted user keeps their username in the record, with no id or name to resolve. */
+  /**
+   * Public details only: the parties are often in different groups. A deleted user keeps their
+   * username in the record, with no id or name to resolve.
+   */
   private ApiUser toApiUser(String username) {
     return userDao
         .getOptionalUserByUsername(username)
-        .map(ApiUser::new)
+        .map(found -> new ApiUser(found, true))
         .orElseGet(
             () -> {
               ApiUser deleted = new ApiUser();
@@ -244,21 +259,12 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return apiRequest;
   }
 
-  /**
-   * Loads the requested sample, rejecting a global id that is malformed or names something other
-   * than a sample, and treating a sample in the trash as not found. Read permission is not
-   * required: marking a sample requestable is the owner's opt-in to being asked by anyone, and the
-   * requestable search is instance-wide, so requestable is the gate rather than readability.
-   */
-  private Sample readRequestedSample(String sampleGlobalId) {
-    GlobalIdentifier oid = sampleOid(sampleGlobalId);
-    return sampleDao
-        .getSafeNull(oid.getDbId())
-        .filter(sample -> !sample.isDeleted())
-        .orElseThrow(
-            () ->
-                new NotFoundException(
-                    messages.getResourceNotFoundMessage("Sample", oid.getDbId())));
+  /** A missing sample and one in the trash are both not found. */
+  private Sample untrashed(Sample sample, GlobalIdentifier oid) {
+    if (sample == null || sample.isDeleted()) {
+      throw new NotFoundException(messages.getResourceNotFoundMessage("Sample", oid.getDbId()));
+    }
+    return sample;
   }
 
   /** Rejects a global id that is malformed or names something other than a sample. */
@@ -273,7 +279,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   /**
    * Absent when none was supplied. A supplied one is only accepted when fulfilling, and must be a
-   * sample the fulfiller can read, so a request's history cannot be made to carry a stranger's.
+   * sample the fulfiller can fully read, so a request's history cannot be made to carry a
+   * stranger's: limited read, e.g. through a shared container, is not enough.
    */
   private Sample resolveTransferredSample(ApiSampleRequestStatusPut post, User user) {
     String globalId = post.getTransferredSampleGlobalId();
@@ -284,20 +291,31 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       throw new ApiRuntimeException(
           "errors.inventory.sampleRequest.transferredSampleNotAllowed", post.getStatus());
     }
-    return sampleApiManager.assertUserCanReadSample(sampleOid(globalId).getDbId(), user);
+    GlobalIdentifier oid = sampleOid(globalId);
+    Sample sample = untrashed(sampleDao.getSafeNull(oid.getDbId()).orElse(null), oid);
+    if (!invPermissions.canUserReadInventoryRecord(sample, user)) {
+      throw new NotFoundException(messages.getResourceNotFoundMessage("Sample", sample.getId()));
+    }
+    return sample;
   }
 
   @Override
-  public void autoRejectActiveRequestsForTransferredSample(
-      Long sampleId, User actor, User newOwner) {
-    String reason =
+  public void closeActiveRequestsForTransferredSample(Long sampleId, User actor, User newOwner) {
+    String rejectedReason =
         messages.getMessage(
-            "inventory.sampleRequest.autoRejectedReason",
-            new Object[] {newOwner.getFirstName() + " " + newOwner.getLastName()});
+            "inventory.sampleRequest.autoRejectedReason", new Object[] {newOwner.getFullName()});
+    String fulfilledReason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
     for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
+      boolean toRequester = request.getRequesterUsername().equals(newOwner.getUsername());
+      SampleRequestStatus target =
+          toRequester ? SampleRequestStatus.FULFILLED : SampleRequestStatus.REJECTED;
       // a PI or admin of the owner's group may transfer too, so only legality is checked
-      legalFrom(transitionsTo(SampleRequestStatus.REJECTED), request.getStatus());
-      request.recordStatus(actor, SampleRequestStatus.REJECTED, reason);
+      legalFrom(transitionsTo(target), request.getStatus());
+      if (toRequester) {
+        request.recordStatus(actor, target, fulfilledReason, request.getSample());
+      } else {
+        request.recordStatus(actor, target, rejectedReason);
+      }
       SampleRequest saved = sampleRequestDao.save(request);
       publisher.publishEvent(new SampleRequestStatusEvent(saved, actor));
     }
@@ -328,9 +346,14 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     }
   }
 
-  /** Only a sample its owner has published for requests may be asked for. */
+  /**
+   * Only a sample marked requestable may be asked for, and only while sample requests are on for
+   * its owner too: a community that switches them off must not receive requests it cannot act on.
+   */
   private void assertRequestable(Sample sample) {
-    if (!sample.isRequestable()) {
+    if (!sample.isRequestable()
+        || !systemPropertyPermissions.isPropertyAllowed(
+            sample.getOwner(), SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE)) {
       throw new ApiRuntimeException(
           "errors.inventory.sampleRequest.notRequestable", sample.getOid().getIdString());
     }

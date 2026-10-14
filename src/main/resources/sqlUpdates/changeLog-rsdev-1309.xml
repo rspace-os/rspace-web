@@ -30,9 +30,17 @@
 
     <changeSet id="2026-09-29b" context="run" author="mrowe-tan">
         <comment>Add requestable column to Sample (RSDEV-1365)</comment>
+        <!-- never null: the mapped field is a primitive boolean, and sample templates (same table,
+             no such field) rely on the default -->
         <addColumn tableName="Sample">
-            <column name="requestable" type="bit" defaultValueNumeric="0"/>
+            <column name="requestable" type="bit" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
         </addColumn>
+        <!-- the instance-wide requestable search filters on it -->
+        <createIndex tableName="Sample" indexName="idx_sample_requestable">
+            <column name="requestable"/>
+        </createIndex>
         <addColumn tableName="Sample_AUD">
             <column name="requestable" type="bit" defaultValueNumeric="0">
                 <constraints nullable="true"/>
