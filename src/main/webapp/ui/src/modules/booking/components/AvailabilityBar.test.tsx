@@ -16,6 +16,7 @@ vi.unmock("react-i18next");
 
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
 const { AvailabilityBar } = await import("./AvailabilityBar");
+const { BookingSummaryAccordion } = await import("./BookingSummaryAccordion");
 
 const resources = {
   booking: {
@@ -133,6 +134,28 @@ async function renderRoutedAvailabilityBar(props: Partial<React.ComponentProps<t
 }
 
 describe("AvailabilityBar", () => {
+  it("renders a booking summary without availability-bar context", async () => {
+    const user = userEvent.setup();
+    await renderWithRealI18n(
+      <BookingSummaryAccordion
+        accordionName="dashboard-bookings"
+        heading="Confocal microscope"
+        period="09:00–10:00"
+        purpose="Cell imaging"
+      />,
+      { resources, defaultNS: "booking" },
+    );
+
+    expect(screen.getByText("Confocal microscope")).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Details" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open inventory record IN123" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByLabelText("Show details for Confocal microscope, 09:00–10:00"));
+
+    expect(screen.getByText("Cell imaging")).toBeVisible();
+    expect(screen.queryByText("None provided")).not.toBeInTheDocument();
+  });
+
   it("explains an empty DST display window without drawing a misleading availability bar", async () => {
     await renderAvailabilityBar({ periodEnd: periodStart });
     expect(
