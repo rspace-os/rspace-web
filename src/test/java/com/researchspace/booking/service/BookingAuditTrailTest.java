@@ -179,10 +179,10 @@ class BookingAuditTrailTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(42L);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L));
-    configuration.setOpenDays(java.util.List.of(1, 6));
-    configuration.setOpeningExceptions(
+    configuration.setOpeningHours(
         java.util.List.of(
-            new com.researchspace.model.booking.BookingOpeningException(6, "10:00", "16:00")));
+            new com.researchspace.model.booking.BookingOpeningHoursEntry(6, "10:00", "16:00"),
+            new com.researchspace.model.booking.BookingOpeningHoursEntry(1, "00:00", "24:00")));
 
     SavedRecord saved =
         savedRecord(
@@ -192,11 +192,13 @@ class BookingAuditTrailTest {
     String json = saved.historicData().getData().toJson();
     AuditData parsed = saved.data();
     assertTrue(json.contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":7}"), json);
-    assertTrue(json.contains("\"openDays\":[1,6]"), json);
     assertTrue(
         json.contains(
-            "\"openingExceptions\":[{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}]"),
+            "\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"00:00\",\"end\":\"24:00\"},"
+                + "{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}]"),
         json);
+    org.junit.jupiter.api.Assertions.assertFalse(json.contains("\"openDays\""), json);
+    org.junit.jupiter.api.Assertions.assertFalse(json.contains("\"openingExceptions\""), json);
     assertEquals("booking-configurations:42", parsed.getData().get("id"));
     assertTrue(parsed.getData().get("target").toString().contains("INSTRUMENT"));
     assertEquals(AuditDomain.BOOKING, saved.historicData().getDomain());

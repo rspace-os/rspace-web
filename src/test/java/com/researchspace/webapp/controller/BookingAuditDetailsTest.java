@@ -33,6 +33,26 @@ class BookingAuditDetailsTest {
   }
 
   @Test
+  void formatsIndependentHoursAndKeepsUnknownHistoricalSchedulesVisible() {
+    MessageSourceUtils scheduleMessages = org.mockito.Mockito.spy(messages);
+    org.mockito.Mockito.doReturn("Opening hours")
+        .when(scheduleMessages)
+        .getMessageForLocale("booking:bookableItemDetails.audit.values.openingHours", Locale.US);
+    AuditData data =
+        AuditData.fromJson(
+            "{\"data\":{\"openingHours\":["
+                + "{\"dayOfWeek\":1,\"start\":\"09:00\",\"end\":\"17:00\"},"
+                + "{\"dayOfWeek\":3,\"start\":\"00:00\",\"end\":\"24:00\"}]}}");
+    assertEquals(
+        "Opening hours: Monday 09:00–17:00, Wednesday 00:00–00:00",
+        BookingAuditDetails.format(data.getData(), scheduleMessages, Locale.US));
+    AuditData unknown = AuditData.fromJson("{\"data\":{\"openingHours\":null}}");
+    assertEquals(
+        "Opening hours: —",
+        BookingAuditDetails.format(unknown.getData(), scheduleMessages, Locale.US));
+  }
+
+  @Test
   void configurationSnapshotReadsAsLabelledOpeningHours() {
     // A logged booking configuration write, as LogLineParser reads it.
     AuditData data =
