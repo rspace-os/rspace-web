@@ -1117,7 +1117,7 @@ export default interface Resources {
         "menu": "Actions for {item}",
         "repairAccess": "Repair access for {item}",
         "restore": "Restore",
-        "save": "Save changes",
+        "save": "Save",
         "submit": "Submit",
         "viewDetails": "View details for {item}",
         "viewInventory": "View {globalId} in Inventory"
@@ -5318,11 +5318,19 @@ export default interface Resources {
     },
     "instrument": {
       "booking": {
+        "archived": {
+          "description": "This instrument's booking configuration is archived, so it cannot be booked. Open Booking to view it.",
+          "title": "Booking archived"
+        },
         "configured": {
           "book": "Book",
           "description": "Open Booking to view this instrument's calendar and booking configuration.",
           "open": "Open booking page",
           "title": "Booking configured"
+        },
+        "disabled": {
+          "description": "Booking is turned off for this instrument, so it cannot be booked. Open Booking to view its configuration.",
+          "title": "Booking disabled"
         },
         "notConfigured": {
           "action": "Set up booking",
