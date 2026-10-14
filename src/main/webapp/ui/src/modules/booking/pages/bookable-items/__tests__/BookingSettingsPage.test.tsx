@@ -6,13 +6,12 @@ import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import { validMaximumBookingDuration, validOpeningHours } from "@/modules/booking/configuration/schedulingSettings";
+import { validMaximumBookingDuration } from "@/modules/booking/configuration/schedulingSettings";
 import BookingSettingsPage from "../BookingSettingsPage";
 
 const settings = {
   slotGranularityMinutes: 5,
-  openingStart: "08:00",
-  openingEnd: "18:00",
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
   bufferBeforeMinutes: 3,
   bufferAfterMinutes: 7,
   maxBookingDurationMinutes: 0,
@@ -57,18 +56,21 @@ describe("BookingSettingsPage", () => {
       name: "booking:settings.fields.allowDoubleBooking",
     });
     await user.click(doubleBooking);
-    current = { ...settings, configurationVersion: 1, openingEnd: "20:00" };
+    current = {
+      ...settings,
+      configurationVersion: 1,
+      openingHours: settings.openingHours.map((entry) => ({ ...entry, end: "20:00" })),
+    };
     await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-settings", "admin"] }));
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
     expect(await screen.findByText("booking:settings.errors.stale")).toBeVisible();
-    expect(submitted).toMatchObject({ configurationVersion: 0, openingEnd: "18:00", allowDoubleBooking: true });
+    expect(submitted).toMatchObject({
+      configurationVersion: 0,
+      openingHours: settings.openingHours,
+      allowDoubleBooking: true,
+    });
     expect(doubleBooking).toBeChecked();
-  });
-
-  it("reserves 24:00 for the full-day interval", () => {
-    expect(validOpeningHours("00:00", "24:00")).toBe(true);
-    expect(validOpeningHours("08:00", "24:00")).toBe(false);
   });
 
   it("validates maximum duration against the selected increment", () => {
@@ -144,8 +146,7 @@ describe("BookingSettingsPage", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
     expect(body).toEqual({
       slotGranularityMinutes: 5,
-      openingStart: "08:00",
-      openingEnd: "18:00",
+      openingHours: settings.openingHours,
       bufferBeforeMinutes: 3,
       bufferAfterMinutes: 7,
       maxBookingDurationMinutes: 0,
