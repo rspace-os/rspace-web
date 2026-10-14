@@ -43,6 +43,47 @@ export const bookerBookingAccess = {
 } as const;
 
 export const bookableItemsOpenApi = {
+  components: {
+    schemas: {
+      BookingConfigurationRead: {
+        type: "object",
+        properties: {
+          openingHours: {
+            type: "array",
+            minItems: 1,
+            maxItems: 7,
+            "x-rspace-fields": [
+              {
+                name: "dayOfWeek",
+                type: { jsonType: "integer", structure: {} },
+                requiredOnCreate: true,
+                nullable: false,
+                readOnly: false,
+                writeConstraints: { minimum: 1, maximum: 7 },
+                openApi: { title: "Day of week" },
+                fields: [],
+              },
+              ...["start", "end"].map((name) => ({
+                name,
+                type: { jsonType: "string", format: "time", maxLength: 5, structure: {} },
+                requiredOnCreate: true,
+                nullable: false,
+                readOnly: false,
+                writeConstraints: {
+                  pattern:
+                    name === "end"
+                      ? "^(?:(?:[01][0-9]|2[0-3]):[0-5][0-9]|24:00)$"
+                      : "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$",
+                },
+                openApi: { title: name === "start" ? "Start" : "End" },
+                fields: [],
+              })),
+            ],
+          },
+        },
+      },
+    },
+  },
   paths: {
     "/api/v2/booking-configurations": {
       get: {
@@ -50,7 +91,7 @@ export const bookableItemsOpenApi = {
           "200": {
             content: {
               "application/json": {
-                schema: { properties: { docs: { items: { properties: {} } } } },
+                schema: { properties: { docs: { items: { $ref: "#/components/schemas/BookingConfigurationRead" } } } },
               },
             },
           },
@@ -203,8 +244,7 @@ export const bookableItemFixtures = [
     enabled: true,
     timezone: "Europe/Berlin",
     ...DEFAULT_SCHEDULING_SETTINGS,
-    openingStart: "08:00",
-    openingEnd: "17:00",
+    openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "17:00" })),
     createdAt: "2026-08-01T09:00:00Z",
     createdByName: "Grace Hopper (grace)",
     updatedAt: "2026-08-10T10:00:00Z",
