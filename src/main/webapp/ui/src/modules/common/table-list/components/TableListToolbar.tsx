@@ -1,5 +1,5 @@
 import { ArrowDownUpIcon, Columns3Icon, ListFilterIcon, RotateCcwIcon, SearchIcon, XIcon } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { Button } from "@/modules/common/ui/button";
@@ -191,22 +191,7 @@ export function TableListToolbar<TDocument>({
           <fieldset className="flex min-w-0 flex-wrap items-center gap-2">
             <legend className="sr-only">{filterButtons.legend}</legend>
             {filterButtons.buttons.map((button) => (
-              <Button
-                key={button.id}
-                type="button"
-                aria-pressed={button.pressed}
-                disabled={button.disabled}
-                variant={button.pressed ? "secondary" : "outline"}
-                onClick={button.onClick}
-              >
-                {button.icon}
-                {button.label}
-                {button.count === undefined ? null : (
-                  <span aria-hidden="true" className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
-                    {button.count}
-                  </span>
-                )}
-              </Button>
+              <FilterButton key={button.id} button={button} />
             ))}
           </fieldset>
         ) : null}
@@ -219,6 +204,8 @@ export function TableListToolbar<TDocument>({
             }
             aria-controls="table-list-control-panel"
             aria-expanded={activePanel === "filters"}
+            // Lets rows that remove a filter (such as a filter chip) hand focus back to this control.
+            data-table-list-filters
             variant={activePanel === "filters" || filterCount > 0 ? "secondary" : "outline"}
             onClick={() => onPanelChange("filters")}
           >
@@ -306,5 +293,40 @@ export function TableListToolbar<TDocument>({
         ) : null}
       </div>
     </div>
+  );
+}
+
+function FilterButton({ button }: { button: TableListFilterButtons["buttons"][number] }) {
+  const descriptionId = useId();
+  const props = {
+    type: "button",
+    "aria-pressed": button.pressed,
+    disabled: button.disabled,
+    variant: button.pressed ? "secondary" : "outline",
+    onClick: button.onClick,
+  } as const;
+  const content = (
+    <>
+      {button.icon}
+      {button.label}
+      {button.count === undefined ? null : (
+        <span aria-hidden="true" className="ml-0.5 rounded-sm bg-foreground px-1 text-[10px] text-background">
+          {button.count}
+        </span>
+      )}
+    </>
+  );
+  if (!button.description) return <Button {...props}>{content}</Button>;
+  return (
+    <Tooltip>
+      <TooltipTrigger render={<Button {...props} aria-describedby={descriptionId} />}>{content}</TooltipTrigger>
+      <TooltipContent side="bottom" className="rounded-sm">
+        {button.description}
+      </TooltipContent>
+      {/* Base UI tooltips are visual only, so screen readers get the description through aria-describedby. */}
+      <span id={descriptionId} className="sr-only">
+        {button.description}
+      </span>
+    </Tooltip>
   );
 }
