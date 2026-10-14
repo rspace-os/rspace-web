@@ -1,6 +1,6 @@
 "use client";
 
-import { Autocomplete as AutocompletePrimitive, Combobox as ComboboxPrimitive } from "@base-ui/react";
+import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/modules/common/ui/button";
@@ -9,24 +9,8 @@ import { cn } from "@/modules/common/utils/cn";
 
 const Combobox = ComboboxPrimitive.Root;
 
-/** Free-form text input with optional suggestions. Use `filter={null}` for server-ranked results. */
-const Autocomplete = AutocompletePrimitive.Root;
-
 function ComboboxValue({ ...props }: ComboboxPrimitive.Value.Props) {
   return <ComboboxPrimitive.Value data-slot="combobox-value" {...props} />;
-}
-
-function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Trigger.Props) {
-  return (
-    <ComboboxPrimitive.Trigger
-      data-slot="combobox-trigger"
-      className={cn("[&_svg:not([class*='size-'])]:size-4", className)}
-      {...props}
-    >
-      {children}
-      <ChevronDownIcon className="pointer-events-none size-4 text-muted-foreground" />
-    </ComboboxPrimitive.Trigger>
-  );
 }
 
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
@@ -271,7 +255,6 @@ function useComboboxAnchor() {
 }
 
 export {
-  Autocomplete,
   Combobox,
   ComboboxChip,
   ComboboxChips,
@@ -286,7 +269,6 @@ export {
   ComboboxList,
   ComboboxSeparator,
   ComboboxStatus,
-  ComboboxTrigger,
   ComboboxValue,
   useComboboxAnchor,
 };
