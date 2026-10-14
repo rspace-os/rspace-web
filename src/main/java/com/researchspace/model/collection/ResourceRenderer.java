@@ -235,6 +235,43 @@ public final class ResourceRenderer {
         .toList();
   }
 
+  /**
+   * Selects scalar read documents without invoking entity field readers.
+   *
+   * <p>Every supplied declared object or array is validated before selection or caller access can
+   * hide malformed values. Collections with relationships retain the entity rendering path.
+   */
+  public List<Map<String, Object>> renderReadDocuments(
+      List<Map<String, Object>> documents,
+      CollectionDescription<?> description,
+      Function<Object, FieldSelection> fieldsForId,
+      AccessContext context) {
+    if (!description.relationships().isEmpty()) {
+      throw new IllegalArgumentException("Scalar read documents do not bind relationships");
+    }
+    return documents.stream()
+        .map(
+            document -> {
+              Object id =
+                  Objects.requireNonNull(document.get(description.idField()), "Read document ID");
+              AccessContext rowContext = context.forRead(description.resourceName(), id);
+              for (Field<?, ?> field : description.fields()) {
+                if (field.type() instanceof DeclaredFieldType<?> declared
+                    && document.containsKey(field.name())) {
+                  Object value = document.get(field.name());
+                  if (value == null) {
+                    field.projectReadValue(null, rowContext);
+                  } else {
+                    EmbeddedObjects.validateValue(declared, value);
+                  }
+                }
+              }
+              return selectReadDocument(
+                  document, description, fieldsForId.apply(id), rowContext, false);
+            })
+        .toList();
+  }
+
   /** Owns page-local resolution state so batching works with every resolver adapter. */
   private static final class CachingTargetResolver implements TargetResolver {
 
@@ -460,6 +497,15 @@ public final class ResourceRenderer {
       CollectionDescription<?> description,
       FieldSelection fields,
       AccessContext context) {
+    return selectReadDocument(document, description, fields, context, true);
+  }
+
+  private static Map<String, Object> selectReadDocument(
+      Map<String, Object> document,
+      CollectionDescription<?> description,
+      FieldSelection fields,
+      AccessContext context,
+      boolean included) {
     Map<String, Object> selected = new LinkedHashMap<>();
     description.fields().stream()
         .filter(field -> fields.includes(field.name(), description.idField()))
@@ -472,7 +518,9 @@ public final class ResourceRenderer {
             field ->
                 selected.put(
                     field.name(),
-                    field.projectIncludedReadValue(document.get(field.name()), context)));
+                    included
+                        ? field.projectIncludedReadValue(document.get(field.name()), context)
+                        : field.projectReadValue(document.get(field.name()), context)));
     return selected;
   }
 
