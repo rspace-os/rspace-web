@@ -43,8 +43,7 @@ const booking = (id: number, target: string, start: string, end: string) => ({
 });
 
 const schedule = {
-  openingStart: "00:00",
-  openingEnd: "24:00",
+  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   allowDoubleBooking: false,
@@ -208,8 +207,7 @@ describe("calendar availability", () => {
         {
           globalId: "IN1",
           timezone: "America/Los_Angeles",
-          openingStart: "08:00",
-          openingEnd: "18:00",
+          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
           bufferBeforeMinutes: 0,
           bufferAfterMinutes: 0,
           allowDoubleBooking: false,
@@ -223,25 +221,16 @@ describe("calendar availability", () => {
     expect(interval).toMatchObject({ start: "2026-08-17T12:00:00Z", end: "2026-08-18T12:00:00Z" });
     expect(result.get("IN1")).toEqual([
       sourced(
-        closureId("IN1", "2026-08-17T07:00:00Z", "2026-08-17T15:00:00Z"),
+        closureId("IN1", "2026-08-17T12:00:00Z", "2026-08-17T15:00:00Z"),
         "blockout",
         "2026-08-17T12:00:00Z",
         "2026-08-17T15:00:00Z",
-        "2026-08-17T07:00:00Z",
       ),
       sourced(
-        closureId("IN1", "2026-08-18T01:00:00Z", "2026-08-18T07:00:00Z"),
+        closureId("IN1", "2026-08-18T01:00:00Z", "2026-08-18T12:00:00Z"),
         "blockout",
         "2026-08-18T01:00:00Z",
-        "2026-08-18T07:00:00Z",
-      ),
-      sourced(
-        closureId("IN1", "2026-08-18T07:00:00Z", "2026-08-18T15:00:00Z"),
-        "blockout",
-        "2026-08-18T07:00:00Z",
         "2026-08-18T12:00:00Z",
-        "2026-08-18T07:00:00Z",
-        "2026-08-18T15:00:00Z",
       ),
     ]);
   });
@@ -255,8 +244,7 @@ describe("calendar availability", () => {
     const restricted = {
       globalId: "IN1",
       timezone: "UTC",
-      openingStart: "08:00",
-      openingEnd: "18:00",
+      openingHours: [{ dayOfWeek: 1, start: "08:00", end: "18:00" }],
       bufferBeforeMinutes: 10,
       bufferAfterMinutes: 20,
       allowDoubleBooking: false,
@@ -312,5 +300,38 @@ describe("calendar availability", () => {
         controller.signal,
       ),
     ).rejects.toThrow();
+  });
+
+  it.each([
+    {
+      date: "2026-08-17",
+      closures: [
+        ["2026-08-17T00:00:00Z", "2026-08-17T08:00:00Z"],
+        ["2026-08-17T17:00:00Z", "2026-08-18T00:00:00Z"],
+      ],
+    },
+    { date: "2026-08-18", closures: [["2026-08-18T00:00:00Z", "2026-08-18T10:00:00Z"]] },
+    { date: "2026-08-19", closures: [["2026-08-19T00:00:00Z", "2026-08-20T00:00:00Z"]] },
+  ])("uses the independent weekday schedule on $date", async ({ date, closures }) => {
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    const result = await loadCalendarAvailability(
+      [
+        {
+          globalId: "IN1",
+          timezone: "UTC",
+          ...schedule,
+          openingHours: [
+            { dayOfWeek: 1, start: "08:00", end: "17:00" },
+            { dayOfWeek: 2, start: "10:00", end: "24:00" },
+          ],
+        },
+      ],
+      date,
+      "token",
+      new AbortController().signal,
+    );
+    expect(result.get("IN1")).toEqual(
+      closures.map(([start, end]) => sourced(closureId("IN1", start, end), "blockout", start, end)),
+    );
   });
 });
