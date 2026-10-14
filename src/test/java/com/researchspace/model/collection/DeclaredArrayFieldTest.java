@@ -363,6 +363,22 @@ class DeclaredArrayFieldTest {
   }
 
   @Test
+  void stringChildExamplesKeepTheRawTextPublishedByOpenApi() {
+    Field<Row, String> text = Field.embedded("name", CollectionFieldTypes.text(4), Row::name);
+    for (String example : List.of("123", "true", "null")) {
+      assertEquals(
+          example,
+          text.documented(OpenApiSchemaDocumentation.builder().example(example).build())
+              .schema(AccessPolicy.authenticated())
+              .openApi()
+              .example());
+    }
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> text.documented(OpenApiSchemaDocumentation.builder().example("\"abc\"").build()));
+  }
+
+  @Test
   void normalAndIncludedReadDocumentsKeepTheIdentifierDespiteItsFieldGate() {
     CollectionDescription<Item> items =
         new CollectionDescription<>(
