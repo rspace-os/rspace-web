@@ -82,6 +82,9 @@ entries. Touching openings permit a booking across midnight; any closed gap reje
 Maintenance keeps its explicit opening-hours bypass. Non-uniform schedules appear as a weekly
 readout alongside the item's scheduling timezone.
 
+Catalogue availability projections and cache signatures include the full `openingHours` schedule.
+Changing any weekday recalculates the quick-filter category, including within the current minute.
+
 ## Loading layouts
 
 The Booking index redirects to Calendar. Date picker buttons show the selected
