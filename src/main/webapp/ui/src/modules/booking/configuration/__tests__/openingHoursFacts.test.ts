@@ -56,6 +56,29 @@ describe("weeklyOpeningHours", () => {
     );
   });
 
+  it("labels whole-day openings only where they stay whole local days", () => {
+    const allDay = {
+      ...berlin,
+      openingHours: berlin.openingHours.map((entry) => ({ ...entry, start: "00:00", end: "24:00" })),
+    };
+    expect(hours(weeklyOpeningHours(allDay, "Pacific/Auckland", "2026-10-07", undefined, "Open all day"))).toEqual(
+      Array(7).fill("Open all day"),
+    );
+    const mondayAllDay = {
+      ...berlin,
+      openingHours: berlin.openingHours.map(
+        (entry) =>
+          [{ dayOfWeek: 1, start: "00:00", end: "24:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+      ),
+    };
+    expect(weeklyOpeningHours(mondayAllDay, "Europe/Berlin", "2026-10-07", undefined, "Open all day")[0]?.hours).toBe(
+      "Open all day",
+    );
+    expect(
+      weeklyOpeningHours(mondayAllDay, "America/New_York", "2026-10-07", undefined, "Open all day")[0]?.hours,
+    ).toBe("06:00 PM (-1) - 06:00 PM");
+  });
+
   it("converts each day of the selected week with that day's clock offsets", () => {
     // Berlin leaves summer time on Sunday 25 October 2026.
     const week = hours(weeklyOpeningHours(berlin, "UTC", "2026-10-21"));

@@ -5,7 +5,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
-import { renderPage, useDefaultBookingPreferencesHandlers } from "./bookingPreferencesPageTestUtils";
+import {
+  expectNoAlertMessage,
+  expectStatusMessage,
+  renderPage,
+  useDefaultBookingPreferencesHandlers,
+} from "./bookingPreferencesPageTestUtils";
 
 describe("BookingPreferencesPage", () => {
   beforeEach(() => useDefaultBookingPreferencesHandlers());
@@ -64,7 +69,7 @@ describe("BookingPreferencesPage", () => {
     expect(await screen.findByLabelText("booking:preferences.calendarSubscription.copyPrompt")).toHaveValue(
       "https://example.test/public/booking/calendars/feed.ics?token=existing",
     );
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expectNoAlertMessage("booking:preferences.calendarSubscription.createError");
   });
 
   it("replaces the private link only after the user confirms", async () => {

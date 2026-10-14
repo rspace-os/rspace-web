@@ -1,6 +1,7 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { createMemoryHistory, createRootRoute, createRouter } from "@tanstack/react-router";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -12,6 +13,7 @@ import { bookingTarget, collectionResponse, ownBooking } from "@/modules/booking
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { bookableItemFixtures, collectionPage } from "../../bookable-items/mocks/bookableItemsMocks";
 import { InlineBookingEditor } from "../InlineBookingEditor";
+import { renderBookingTestPage } from "./calendarTestHarness";
 
 function editableEvent(kind: "BOOKING" | "MAINTENANCE"): BookingListDocument & EditableBooking {
   return {
@@ -63,11 +65,13 @@ describe("InlineBookingEditor", () => {
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
-    render(
-      <QueryClientProvider client={queryClient}>
+    const root = createRootRoute({
+      component: () => (
         <InlineBookingEditor event={event} timezone="UTC" token="test-token" onClose={() => undefined} />
-      </QueryClientProvider>,
-    );
+      ),
+    });
+    const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
+    await renderBookingTestPage(router, { queryClient, realI18n: false });
 
     const endTime = await screen.findByLabelText("booking:bookings.form.endTime");
     await user.clear(endTime);

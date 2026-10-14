@@ -232,6 +232,25 @@ describe("BookingEventPage", () => {
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });
 
+  it.each([
+    ["its scheduling timezone is visible", "Europe/Berlin", true],
+    ["its scheduling timezone is withheld", null, false],
+  ])("warns about a clock change in the details only when %s", async (_, timezone, warned) => {
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({ ...document, timezone, start: "2026-10-24T10:00:00Z", end: "2026-10-25T11:00:00Z" }),
+      ),
+    );
+    renderPage();
+
+    expect(await screen.findByText("Cell imaging")).toBeVisible();
+    if (warned) {
+      expect(screen.getByRole("note")).toHaveTextContent("booking:bookings.clockChange.daylightSavingDays");
+    } else {
+      expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    }
+  });
+
   it("cancels in place and keeps the same readable URL", async () => {
     let current: BookingDetails = { ...bookingEventFixture };
     server.use(
@@ -272,6 +291,7 @@ describe("BookingEventPage", () => {
     expect(hiddenAtFocus).toEqual([false]);
     expect(screen.getByText("booking:bookings.details.cancellationReason")).toBeVisible();
     expect(screen.getByText("Instrument needs recalibration")).toBeVisible();
+    expect(within(screen.getByRole("main")).getByText("booking:bookings.details.bookingCancelled")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41");
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });

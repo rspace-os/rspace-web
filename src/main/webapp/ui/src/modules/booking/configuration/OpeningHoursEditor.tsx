@@ -17,9 +17,14 @@ import { Checkbox } from "@/modules/common/ui/checkbox";
 import { FieldDescription, FieldError } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 
+// Mirrors FormField's inline row: the label keeps a 36px line at the top, and the control column is at
+// least one 36px line, so single-line controls centre against the label and taller ones grow downward.
 const LABEL_CLASS_NAME = "text-sm font-medium @md:flex @md:min-h-9 @md:items-center @md:self-start";
+
 const OPEN_ALL_DAY: OpeningInterval = { start: "00:00", end: "24:00" };
+/** Unchecking Open all day with no remembered custom hours opens this range. */
 const FALLBACK_HOURS: OpeningInterval = { start: "09:00", end: "17:00" };
+
 type Layout = "stacked" | "inline";
 
 function SettingRow({ layout, label, children }: { layout: Layout; label: ReactNode; children: ReactNode }) {
@@ -31,6 +36,11 @@ function SettingRow({ layout, label, children }: { layout: Layout; label: ReactN
   );
 }
 
+/**
+ * Start and end times with Open all day beside the end. The checkbox reflects the exact `00:00`-`24:00` pair, however
+ * it was reached; unchecking restores `remembered`, the last valid custom pair, or 09:00-17:00. Every change reports
+ * its newest valid custom pair through `onRemember`, including the pair just before typing selects the whole day.
+ */
 function TimeRange({
   labelledBy,
   hours,
@@ -47,6 +57,7 @@ function TimeRange({
   remembered: OpeningInterval | undefined;
   onChange: (hours: OpeningInterval) => void;
   onRemember: (hours: OpeningInterval) => void;
+  /** Whether a typed change has just selected the whole day, for a polite announcement. */
   onTypedAllDay: (selected: boolean) => void;
   disabled: boolean;
   invalid: boolean;
@@ -59,7 +70,8 @@ function TimeRange({
   const allDayRef = useRef<HTMLElement>(null);
   const focusAllDay = useRef(false);
 
-  // Typing the whole day disables the edited input; loading and resetting must never move focus.
+  // Typing the whole day disables the input being edited, so focus moves to the checkbox that now owns the mode.
+  // Only a typed change sets the flag, so loading or resetting the values never moves focus.
   useEffect(() => {
     if (focusAllDay.current && allDay) allDayRef.current?.focus();
     focusAllDay.current = false;
@@ -127,7 +139,7 @@ function TimeRange({
 
 /** Seven independent weekday intervals. Closing a day retains its hours for this edit session. */
 export function OpeningHoursEditor({ form, disabled, layout }: { form: FormStore; disabled: boolean; layout: Layout }) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const id = useId();
   const field = useField(form, { path: ["openingHours"] });
   const entries = Array.isArray(field.input) ? (field.input as OpeningHoursEntry[]) : [];
@@ -160,7 +172,7 @@ export function OpeningHoursEditor({ form, disabled, layout }: { form: FormStore
       >
         {ALL_ISO_WEEKDAYS.map((day) => {
           const entry = entries.find((candidate) => candidate.dayOfWeek === day);
-          const dayName = formatIsoWeekday(day, "long", i18n.language === "cimode" ? "en-US" : i18n.language);
+          const dayName = formatIsoWeekday(day);
           return (
             <li key={day} className="flex flex-wrap items-start gap-x-4 gap-y-2 px-3 py-3">
               <div className="flex min-h-9 w-28 shrink-0 items-center gap-2">

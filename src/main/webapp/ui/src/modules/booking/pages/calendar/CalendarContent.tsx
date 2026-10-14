@@ -44,6 +44,9 @@ export function CalendarContent() {
     targetName,
     replaceSearch,
     targetOption,
+    focusFallback,
+    focusUnavailableRequest,
+    setFocusUnavailableRequest,
   } = useCalendarContentData();
 
   return (
@@ -52,6 +55,8 @@ export function CalendarContent() {
       view={view}
       layout={layout}
       timezone={preferences.timeZone}
+      focusUnavailable={focusUnavailableRequest !== undefined}
+      focusFallback={focusFallback}
       availabilityStartMinute={preferences.availabilityWindow.startMinute}
       availabilityEndMinute={preferences.availabilityWindow.endMinute}
       events={displayReady ? (events.data ?? []) : []}
@@ -90,12 +95,12 @@ export function CalendarContent() {
       }}
       mineOnly={mineOnly}
       onMineChange={(next) => {
-        setMineOnly(next);
+        void setMineOnly(next);
         resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
       }}
       myItemsOnly={myItemsOnly}
       onMyItemsChange={(next) => {
-        setMyItemsOnly(next);
+        void setMyItemsOnly(next);
         resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
       }}
       isLoading={
@@ -105,6 +110,13 @@ export function CalendarContent() {
       }
       isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
       onRetry={() => {
+        if (focusUnavailableRequest) {
+          const search = new URLSearchParams(window.location.search);
+          search.set("focus", String(focusUnavailableRequest.id));
+          search.set("focusRequest", `${focusUnavailableRequest.request}-retry`);
+          setFocusUnavailableRequest(undefined);
+          void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true, resetScroll: false });
+        }
         if (layout === "resources" && resourceTable.tableProps.status === "error") {
           void resourceTable.refetch();
         } else {
@@ -117,9 +129,13 @@ export function CalendarContent() {
         setResettingControls(true);
         try {
           await navigate({ search: (current) => ({ ...current, date: undefined, target: undefined }), replace: true });
-          await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
-          setMineOnly(false);
-          setMyItemsOnly(false);
+          await Promise.all([
+            setCalendarSearch(null),
+            setItemWhere(null),
+            setEventWhere(null),
+            setMineOnly(false),
+            setMyItemsOnly(false),
+          ]);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
           React.startTransition(() => {
             setView("day");

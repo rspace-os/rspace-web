@@ -15,15 +15,17 @@ import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } fr
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
+import { Suspense, useCallback, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { ApiV2ProblemError, createBooking } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
+import { BookingNoticesProvider, useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
+import type { TableListAlert } from "@/modules/common/table-list/TableList";
 import { ActiveBookingCreationDialog } from "../ActiveBookingCreationDialog";
 import type { BookableItemOption } from "../bookableItemOption";
 import type { BookingCreationContext } from "../bookingCreationStore";
@@ -86,6 +88,22 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE", privacy: "full" | "bu
   };
 }
 
+function CalendarNoticeHost() {
+  const [alerts, setAlerts] = useState<readonly TableListAlert[]>([]);
+  const deliver = useCallback((alert: TableListAlert) => {
+    setAlerts((current) => [alert, ...current]);
+    return true;
+  }, []);
+  useBookingNoticeHost("calendar", deliver);
+  return (
+    <div>
+      {alerts.map((alert) => (
+        <p key={alert.id}>{alert.message}</p>
+      ))}
+    </div>
+  );
+}
+
 function renderDialog(dialogCreation: BookingCreationContext = creation, events: readonly unknown[] = []) {
   server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse(events))));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -98,12 +116,15 @@ function renderDialog(dialogCreation: BookingCreationContext = creation, events:
   });
   const root = createRootRoute({
     component: () => (
-      <BookingCreationStoreProvider>
-        <button type="button" id={creation.triggerId}>
-          {"Create"}
-        </button>
-        <ActiveBookingCreationDialog creation={dialogCreation} />
-      </BookingCreationStoreProvider>
+      <BookingNoticesProvider>
+        <BookingCreationStoreProvider>
+          <button type="button" id={creation.triggerId}>
+            {"Create"}
+          </button>
+          <ActiveBookingCreationDialog creation={dialogCreation} />
+          <CalendarNoticeHost />
+        </BookingCreationStoreProvider>
+      </BookingNoticesProvider>
     ),
   });
   const router = createRouter({ routeTree: root, history: createMemoryHistory({ initialEntries: ["/"] }) });
@@ -117,6 +138,43 @@ function renderDialog(dialogCreation: BookingCreationContext = creation, events:
 }
 
 describe("ActiveBookingCreationDialog", () => {
+  it("reports a confirmed compact create to the captured calendar host", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/bookings", () =>
+        HttpResponse.json(
+          {
+            id: 84,
+            version: 1,
+            target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" },
+            timezone: "UTC",
+            start: "2026-09-28T10:00:00Z",
+            end: "2026-09-28T11:00:00Z",
+            state: "CONFIRMED",
+            kind: "BOOKING",
+            privacy: "full",
+            purpose: null,
+            cancellationReason: null,
+            bookedBy: "Ada Lovelace",
+            canEdit: true,
+            canCancel: true,
+            createdAt: "2026-09-01T09:00:00Z",
+            updatedAt: "2026-09-01T09:00:00Z",
+          },
+          { status: 201 },
+        ),
+      ),
+    );
+    renderDialog({ ...creation, originHost: "calendar" });
+
+    const dialog = await screen.findByTestId("compact-booking-dialog");
+    const submit = within(dialog).getByRole("button", { name: "booking:bookings.form.submit" });
+    await vi.waitFor(() => expect(submit).toBeEnabled());
+    await user.click(submit);
+
+    expect(await screen.findByText("booking:bookings.feedback.eventAdded")).toBeVisible();
+  });
+
   it("prevents dismissal while a creation request is pending", async () => {
     const user = userEvent.setup();
     let release: () => void = () => {};
@@ -151,6 +209,7 @@ describe("ActiveBookingCreationDialog", () => {
     const dialog = await screen.findByTestId("compact-booking-dialog");
     const alert = await within(dialog).findByRole("alert");
     expect(alert).toMatchTextContent("booking:bookings.errors.overlapSummary");
+    expect(within(alert).getByRole("listitem")).toMatchTextContent("Private purpose");
     expect(within(dialog).getByRole("button", { name: "booking:bookings.form.submitMaintenance" })).toBeDisabled();
   });
 

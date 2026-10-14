@@ -1,20 +1,28 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
-import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
+import {
+  bookingCatalogueKeys,
+  bookingConfigurationKeys,
+  bookingKeys,
+  bookingTargetKeys,
+} from "@/modules/booking/domain/bookingKeys";
+import { useBookingLocalNotices, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
+import { calendarSubscriptionQueryKey } from "@/modules/booking/pages/bookable-items/bookableItemCalendarSubscription";
 import { apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
+import { buttonVariants } from "@/modules/common/ui/button";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import type { BookingConfigurationLifecycleAction } from "./BookingConfigurationActionsMenu";
-import { calendarSubscriptionQueryKey } from "./bookableItemCalendarSubscription";
 import {
   archiveBookingConfiguration,
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
   bookingConfigurationTargetQueryKey,
-  invalidateBookingCatalogueQueries,
   permanentlyDeleteBookingConfiguration,
   restoreBookingConfiguration,
 } from "./bookingConfiguration";
@@ -52,10 +60,15 @@ export function useLoadedBookableItemPageActions({
   tab,
   token,
 }: LoadedBookableItemPageActionsOptions) {
+  const { t } = useTranslation("booking");
+  const { t: commonT } = useTranslation("common");
+  const target = configuration.target;
   const { edit = false } = useSearch({ from: "/booking/bookable-items/$globalId/{-$tab}/" });
   const navigate = useNavigate({ from: "/booking/bookable-items/$globalId/{-$tab}/" });
   const queryClient = useQueryClient();
-  const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
+  const notices = useBookingNotices();
+  const localNotices = useBookingLocalNotices();
+  const [saveAnnouncement, setSaveAnnouncement] = useState<"archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
   // The server version loaded after a conflict; the next Save of the kept draft targets it.
   const [conflictVersion, setConflictVersion] = useState<number | null>(null);
@@ -86,17 +99,26 @@ export function useLoadedBookableItemPageActions({
       resetScroll: false,
     });
 
-  const updateMutation = useMutation({
+  const updateMutation = useApiV2Mutation({
+    meta: { invalidates: [bookingConfigurationKeys.all, bookingCatalogueKeys.all, bookingKeys.catalogue()] },
     mutationFn: ({ input, version }: { input: BookingConfigurationUpdateInput; version: number }) =>
       updateBookingConfiguration(configuration.id, version, input, token),
     onMutate: () => setSaveAnnouncement(null),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        invalidateBookingCatalogueQueries(queryClient),
-      ]);
-      setSaveAnnouncement("saved");
+    onSuccess: async (_data, { input }) => {
+      localNotices.notify({
+        id: `bookable-item-${globalId}`,
+        tone: "success",
+        message: t("bookableItemDetails.update.saved"),
+        actions: input.enabled ? (
+          <Link
+            to="/booking/calendar"
+            search={{ target: globalId }}
+            className={buttonVariants({ variant: "outline", size: "sm" })}
+          >
+            {t("bookableItems.feedback.viewCalendar")}
+          </Link>
+        ) : undefined,
+      });
       setStaleEdit(false);
       setConflictVersion(null);
       setEdit(false);
@@ -106,23 +128,25 @@ export function useLoadedBookableItemPageActions({
         setStaleEdit(true);
         const queryKey = bookingConfigurationTargetQueryKey(globalId);
         await queryClient.refetchQueries({ queryKey });
-        const latest = queryClient.getQueryData<BookingConfiguration>(queryKey);
+        const latest = queryClient.getQueryData(queryKey);
         if (latest) setConflictVersion(latest.configurationVersion);
       }
     },
   });
-  const archiveMutation = useMutation({
+  const archiveMutation = useApiV2Mutation({
+    meta: {
+      invalidates: [
+        bookingConfigurationKeys.all,
+        bookingKeys.all,
+        bookingCatalogueKeys.all,
+        calendarSubscriptionQueryKey(configuration.id),
+      ],
+    },
+    onMutate: () => setSaveAnnouncement(null),
     mutationFn: () => archiveBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
-        queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
-        queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
-      ]);
       setArchiveOpen(false);
+      localNotices.clear();
       setSaveAnnouncement("archived");
     },
     onError: async (error) => {
@@ -133,17 +157,18 @@ export function useLoadedBookableItemPageActions({
       }
     },
   });
-  const restoreMutation = useMutation({
+  const restoreMutation = useApiV2Mutation({
+    meta: {
+      invalidates: [
+        bookingConfigurationKeys.all,
+        bookingKeys.all,
+        bookingCatalogueKeys.all,
+        calendarSubscriptionQueryKey(configuration.id),
+      ],
+    },
+    onMutate: () => setSaveAnnouncement(null),
     mutationFn: () => restoreBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
-        queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
-        queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
-      ]);
       setSaveAnnouncement("restored");
     },
     onError: async (error) => {
@@ -154,17 +179,19 @@ export function useLoadedBookableItemPageActions({
       }
     },
   });
-  const permanentDeleteMutation = useMutation({
+  const permanentDeleteMutation = useApiV2Mutation({
+    meta: { invalidates: [bookingConfigurationKeys.all, bookingTargetKeys.all] },
     mutationFn: () =>
       permanentlyDeleteBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
-      // The deleted configuration's instrument becomes an eligible target again.
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
-      ]);
       setPermanentDeleteOpen(false);
+      notices.notify("bookable-items", {
+        id: `bookable-item-${globalId}`,
+        tone: "success",
+        message: t("bookableItems.feedback.deleted", {
+          item: target?.value.name ?? commonT("values.unknownItem"),
+        }),
+      });
       void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
@@ -175,14 +202,10 @@ export function useLoadedBookableItemPageActions({
       }
     },
   });
-  const leaveMutation = useMutation({
+  const leaveMutation = useApiV2Mutation({
+    meta: { invalidates: [bookingConfigurationKeys.all, bookingCatalogueKeys.all, bookingKeys.catalogue()] },
     mutationFn: () => leaveResource("booking-configurations", configuration.id, token),
     onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        invalidateBookingCatalogueQueries(queryClient),
-      ]);
       void navigate({ to: "/booking", ignoreBlocker: true });
     },
   });
@@ -271,5 +294,6 @@ export function useLoadedBookableItemPageActions({
     setRulesSaveBlocked,
     conflictVersion,
     discardConflictedDraft,
+    localNotices,
   };
 }

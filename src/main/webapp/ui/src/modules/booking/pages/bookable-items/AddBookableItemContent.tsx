@@ -28,6 +28,7 @@ export function AddBookableItemContent() {
       defaults={defaults}
       token={token}
       initialTargetId={initialTarget?.id}
+      initialTargetName={initialTarget?.name}
     />
   );
 }

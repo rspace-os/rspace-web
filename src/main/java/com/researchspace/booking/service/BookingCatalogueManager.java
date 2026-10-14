@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.collection.ResourceRequest;
 import java.time.Instant;
@@ -30,6 +31,8 @@ public interface BookingCatalogueManager {
       String name,
       String timezone,
       long slotGranularityMinutes,
+      BookingIncrementUnit incrementUnit,
+      boolean alignToIncrement,
       List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,

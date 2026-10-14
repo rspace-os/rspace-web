@@ -1,7 +1,6 @@
 package com.researchspace.booking.service;
 
 import static com.researchspace.testutils.BookingTestSchedules.hours;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -41,6 +40,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InOrder;
 import org.springframework.context.ApplicationEventPublisher;
@@ -55,7 +55,6 @@ class TimeSlotBookingSchedulingTest {
   private TimeSlotBookingDao bookingDao;
   private BookingConfigurationDao configurationDao;
   private ApplicationEventPublisher events;
-  private BookingSchedulingPolicy schedulingPolicy;
   private User actor;
   private BookingItemPermissions accessManager;
   private TimeSlotBookingManager manager;
@@ -67,7 +66,6 @@ class TimeSlotBookingSchedulingTest {
     bookingDao = fixture.bookingDao;
     configurationDao = fixture.configurationDao;
     events = fixture.events;
-    schedulingPolicy = fixture.schedulingPolicy;
     actor = fixture.actor;
     accessManager = fixture.accessManager;
     manager = fixture.manager;
@@ -253,48 +251,6 @@ class TimeSlotBookingSchedulingTest {
   }
 
   @Test
-  void requiresBothEndpointsToAlignToConfiguredGranularity() {
-    BookingConfiguration configuration = configuration(4L, 12L, true);
-    configuration.setTimeZone("UTC");
-    configuration.setSlotGranularityMinutes(15);
-
-    for (String instant : List.of("2026-08-17T10:01:00Z", "2026-08-17T10:00:01Z")) {
-      BookingPolicyException failure =
-          assertThrows(
-              BookingPolicyException.class,
-              () ->
-                  schedulingPolicy.validate(
-                      configuration,
-                      Date.from(Instant.parse(instant)),
-                      instant("2026-08-17T11:00:00Z")));
-      assertEquals(BookingPolicyException.Reason.GRANULARITY, failure.reason());
-    }
-  }
-
-  @Test
-  void maximumDurationUsesElapsedInstantsAndAcceptsTheExactBoundary() {
-    BookingConfiguration configuration = configuration(4L, 12L, true);
-    configuration.setSlotGranularityMinutes(1);
-    configuration.setMaxBookingDurationMinutes(60);
-
-    assertDoesNotThrow(
-        () ->
-            schedulingPolicy.validate(
-                configuration, instant("2026-10-25T00:30:00Z"), instant("2026-10-25T01:30:00Z")));
-
-    BookingPolicyException failure =
-        assertThrows(
-            BookingPolicyException.class,
-            () ->
-                schedulingPolicy.validate(
-                    configuration,
-                    instant("2026-10-25T00:30:00Z"),
-                    instant("2026-10-25T01:31:00Z")));
-    assertEquals(BookingPolicyException.Reason.MAXIMUM_DURATION, failure.reason());
-    assertEquals(java.util.OptionalLong.of(60), failure.maximumDurationMinutes());
-  }
-
-  @Test
   void maximumDurationAppliesToCreateAndTimeChangingUpdatesEvenWithDoubleBooking() {
     ResolvedBookableTarget target = target(12L);
     BookingConfiguration configuration = configuration(4L, 12L, true);
@@ -313,6 +269,7 @@ class TimeSlotBookingSchedulingTest {
 
     TimeSlotBooking existing = booking(41L, 12L, actor);
     existing.getBookingConfiguration().setMaxBookingDurationMinutes(60);
+    existing.getBookingConfiguration().setSlotGranularityMinutes(5);
     stubReadableBookingAndConfigurationLock(existing);
 
     BookingPolicyException failure =
@@ -541,8 +498,9 @@ class TimeSlotBookingSchedulingTest {
     verify(bookingDao, never()).saveAndFlush(any());
   }
 
-  @Test
-  void rejectsExcessiveDurationsBeforeTakingTheConfigurationLock() {
+  @ParameterizedTest
+  @EnumSource(value = BookingEventKind.class, names = "MAINTENANCE")
+  void rejectsExcessiveDurationsBeforeTakingTheConfigurationLock(BookingEventKind kind) {
     ResolvedBookableTarget target = target(12L);
 
     assertThrows(
@@ -550,7 +508,11 @@ class TimeSlotBookingSchedulingTest {
         () ->
             manager.createBooking(
                 new TimeSlotBookingManager.Create(
-                    target, instant("2026-01-01T00:00:00Z"), instant("2027-01-03T00:00:00Z"), null),
+                    target,
+                    instant("2026-01-01T00:00:00Z"),
+                    instant("2027-01-03T00:00:00Z"),
+                    null,
+                    kind),
                 actor,
                 actor));
 

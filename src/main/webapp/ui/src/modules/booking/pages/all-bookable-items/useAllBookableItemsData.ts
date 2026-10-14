@@ -1,18 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
+import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
+import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterState } from "@/modules/common/table-list/types";
 import { mutateBookableItems } from "../bookable-items/BookableItemsContent";
 import { calendarSubscriptionQueryKey } from "../bookable-items/bookableItemCalendarSubscription";
+import { bookableItemBulkNotice, useBookableItemNoticeIds } from "../bookable-items/bookableItemFeedback";
 import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
@@ -71,6 +74,18 @@ export function useAllBookableItemsData({
   );
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
+  const alertsRef = useRef<TableListAlertsApi | null>(null);
+  const [alertsReady, setAlertsReady] = useState(false);
+  const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
+    alertsRef.current = api;
+    setAlertsReady(api !== null);
+  }, []);
+  const deliverNotice = useCallback((alert: Parameters<TableListAlertsApi["push"]>[0]) => {
+    if (!alertsRef.current) return false;
+    alertsRef.current.push(alert);
+    return true;
+  }, []);
+  useBookingNoticeHost("bookable-items", deliverNotice, alertsReady);
   const [selectedRowIds, setSelectedRowIds] = useState<ReadonlySet<string>>(new Set());
   const clearSelection = useCallback(() => {
     setSelectedRowIds((current) => (current.size ? new Set() : current));
@@ -200,6 +215,7 @@ export function useAllBookableItemsData({
   });
   const catalogueItems = catalogue.data?.items ?? [];
   const rows = runtimeFilterBlocked ? [] : catalogueItems.map(catalogueItemAsConfiguration);
+  const itemNoticeIds = useBookableItemNoticeIds(rows);
   // An unfiltered empty catalogue means the user has no bookable items yet, not that a filter hid them.
   const hasNoBookableItems =
     catalogue.isSuccess &&
@@ -237,7 +253,15 @@ export function useAllBookableItemsData({
     mutationFn: ({ action, rowIds }: { action: BookableItemsBulkAction; rowIds: readonly string[] }) =>
       mutateBookableItems(action, rowIds, token),
     onMutate: () => setFailedBulkAction(null),
-    onSuccess: (_data, { rowIds }) => onLifecycleChanged(rowIds.map(Number)),
+    onSuccess: async (docs, { action, rowIds }) => {
+      if (action !== "enable") {
+        for (const id of docs?.map((doc) => doc.id) ?? rowIds.map(Number)) {
+          alertsRef.current?.dismiss(itemNoticeIds.get(id) ?? `bookable-item-${id}`);
+        }
+      }
+      alertsRef.current?.push(bookableItemBulkNotice(action, docs?.length ?? null, t));
+      await onLifecycleChanged(rowIds.map(Number));
+    },
     onError: (_error, { action }) => setFailedBulkAction(action),
   });
   const selectionPending = bulkMutation.isPending;
@@ -279,5 +303,7 @@ export function useAllBookableItemsData({
     setFailedBulkAction,
     token,
     quickFilterText,
+    alertsRef,
+    attachAlerts,
   };
 }

@@ -7,10 +7,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.booking.service.BookingPolicyException.Reason;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingIncrementUnit;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class BookingSchedulingPolicyImplTest {
@@ -114,7 +119,7 @@ class BookingSchedulingPolicyImplTest {
         Reason.GRANULARITY,
         assertThrows(
                 BookingPolicyException.class,
-                () -> policy.validateMaintenance(configuration, date("2026-10-14T08:01:00Z"), end))
+                () -> policy.validateMaintenance(configuration, date("2026-10-14T08:01:01Z"), end))
             .reason());
   }
 
@@ -131,6 +136,7 @@ class BookingSchedulingPolicyImplTest {
       String zone, List<BookingOpeningHoursEntry> openingHours) {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setTimeZone(zone);
+    configuration.setSlotGranularityMinutes(5);
     configuration.setOpeningHours(openingHours);
     return configuration;
   }
@@ -200,5 +206,73 @@ class BookingSchedulingPolicyImplTest {
     assertEquals(
         Reason.OPENING_HOURS,
         rejection(allDaySunday, "2026-10-24T21:55:00Z", "2026-10-25T23:00:00Z"));
+  }
+
+  @Test
+  void anAlignedIncrementChecksTheLocalStartAndTheElapsedLengthOnly() {
+    // Europe/Berlin is UTC+2 in August.
+    BookingConfiguration item = configuration("Europe/Berlin", hours("00:00", "24:00"));
+    item.setSlotGranularityMinutes(120);
+    allowed(item, "2026-08-17T08:00:00Z", "2026-08-17T10:00:00Z");
+    failsWith(Reason.ALIGNMENT, item, "2026-08-17T07:00:00Z", "2026-08-17T09:00:00Z");
+    failsWith(Reason.GRANULARITY, item, "2026-08-17T08:00:00Z", "2026-08-17T09:00:00Z");
+
+    item.setAlignToIncrement(false);
+    allowed(item, "2026-08-17T07:00:00Z", "2026-08-17T09:00:00Z");
+    failsWith(Reason.GRANULARITY, item, "2026-08-17T07:00:00Z", "2026-08-17T08:00:00Z");
+  }
+
+  @Test
+  void aMissingDayEndNamesTheLocalEndDateAndZone() {
+    BookingConfiguration item = configuration("Europe/Berlin", hours("00:00", "24:00"));
+    item.setSlotGranularityMinutes(1440);
+    item.setIncrementUnit(BookingIncrementUnit.DAYS);
+
+    // 02:30 on Saturday 2026-03-28; 02:30 is skipped on Sunday 2026-03-29.
+    BookingPolicyException failure =
+        assertThrows(
+            BookingPolicyException.class,
+            () ->
+                policy.validate(item, date("2026-03-28T01:30:00Z"), date("2026-03-29T01:30:00Z")));
+
+    assertEquals(Reason.DAY_END_MISSING, failure.reason());
+    assertEquals(
+        Optional.of(
+            new BookingPolicyException.MissingDayEnd(
+                LocalTime.of(2, 30), LocalDate.of(2026, 3, 29), ZoneId.of("Europe/Berlin"))),
+        failure.missingDayEnd());
+    assertThrows(
+        IllegalArgumentException.class, () -> new BookingPolicyException(Reason.DAY_END_MISSING));
+  }
+
+  @Test
+  void maintenanceIsExemptFromTheTimeIncrement() {
+    BookingConfiguration item = configuration("UTC", hours("00:00", "24:00"));
+    item.setSlotGranularityMinutes(1440);
+    item.setIncrementUnit(BookingIncrementUnit.DAYS);
+    assertDoesNotThrow(
+        () ->
+            policy.validateMaintenance(
+                item, date("2026-08-17T09:07:00Z"), date("2026-08-17T11:08:00Z")));
+    Date start = date("2026-08-17T09:07:00Z");
+    Date subMinuteEnd = date("2026-08-17T11:07:30Z");
+    BookingPolicyException failure =
+        assertThrows(
+            BookingPolicyException.class,
+            () -> policy.validateMaintenance(item, start, subMinuteEnd));
+    assertEquals(BookingPolicyException.Reason.GRANULARITY, failure.reason());
+  }
+
+  private void allowed(BookingConfiguration configuration, String start, String end) {
+    assertDoesNotThrow(() -> policy.validate(configuration, date(start), date(end)));
+  }
+
+  private void failsWith(
+      Reason reason, BookingConfiguration configuration, String start, String end) {
+    BookingPolicyException failure =
+        assertThrows(
+            BookingPolicyException.class,
+            () -> policy.validate(configuration, date(start), date(end)));
+    assertEquals(reason, failure.reason());
   }
 }

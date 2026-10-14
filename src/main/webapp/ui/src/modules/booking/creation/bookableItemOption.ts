@@ -1,3 +1,4 @@
+import type { IncrementUnit } from "@/modules/booking/domain/bookingIncrement";
 import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 
 export type BookableItemOption = {
@@ -7,6 +8,8 @@ export type BookableItemOption = {
   name: string;
   timezone: string;
   slotGranularityMinutes: number;
+  incrementUnit: IncrementUnit;
+  alignToIncrement: boolean;
   openingHours: OpeningHoursEntry[];
   bufferBeforeMinutes: number;
   bufferAfterMinutes: number;
@@ -42,6 +45,8 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     !source.target ||
     source.timezone === undefined ||
     source.slotGranularityMinutes === undefined ||
+    source.incrementUnit === undefined ||
+    source.alignToIncrement === undefined ||
     source.openingHours === undefined ||
     source.bufferBeforeMinutes === undefined ||
     source.bufferAfterMinutes === undefined ||
@@ -57,6 +62,8 @@ export function bookableItemOption(source: BookableItemOptionSource): BookableIt
     name: source.target.value.name,
     timezone: source.timezone,
     slotGranularityMinutes: source.slotGranularityMinutes,
+    incrementUnit: source.incrementUnit,
+    alignToIncrement: source.alignToIncrement,
     openingHours: source.openingHours,
     bufferBeforeMinutes: source.bufferBeforeMinutes,
     bufferAfterMinutes: source.bufferAfterMinutes,

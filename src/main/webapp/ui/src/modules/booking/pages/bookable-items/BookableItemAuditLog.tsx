@@ -3,6 +3,7 @@ import { AlertTriangleIcon, CalendarRangeIcon, RefreshCwIcon, SearchIcon } from 
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import { bookingConfigurationAuditQuery } from "@/modules/booking/pages/bookable-items/bookableItemAudit";
 import type { CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -22,7 +23,6 @@ import {
   type AuditSnapshot,
   auditPresetRange,
   auditRangeToQuery,
-  fetchBookingConfigurationAudit,
   validateAuditDateRange,
 } from "./bookableItemAudit";
 
@@ -139,32 +139,10 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   };
 
   const audit = useQuery({
-    queryKey: [
-      "api-v2",
-      "booking-configurations",
-      configurationId,
-      "audit",
-      applied.from,
-      applied.to,
-      search,
-      action,
-      page,
-      snapshot?.snapshotDate ?? null,
-      snapshot?.snapshotFingerprint ?? null,
+    ...bookingConfigurationAuditQuery(
+      { configurationId, ...bounds, q: search, actions: action === "" ? undefined : [action], page, snapshot, token },
       generation,
-    ],
-    queryFn: ({ signal }) =>
-      fetchBookingConfigurationAudit({
-        configurationId,
-        ...bounds,
-        q: search,
-        actions: action === "" ? undefined : [action],
-        page,
-        snapshot,
-        token,
-        signal,
-      }),
-    retry: false,
+    ),
   });
   const errorMessages = {
     unavailable: {
