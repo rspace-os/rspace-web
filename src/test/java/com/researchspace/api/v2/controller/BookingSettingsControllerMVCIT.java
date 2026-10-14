@@ -59,8 +59,7 @@ class BookingSettingsControllerMVCIT {
     settingsManager.updateDefaults(
         new BookingSchedulingSettings.Patch(
             originalSettings.slotGranularityMinutes(),
-            originalSettings.openingStart(),
-            originalSettings.openingEnd(),
+            originalSettings.openingHours(),
             originalSettings.bufferBeforeMinutes(),
             originalSettings.bufferAfterMinutes(),
             originalSettings.maxBookingDurationMinutes(),
@@ -105,7 +104,7 @@ class BookingSettingsControllerMVCIT {
   }
 
   @Test
-  void validatesTheBoundRequestBeforeCallingTheManager() throws Exception {
+  void rejectsInvalidOpeningHoursThroughTheSharedCodec() throws Exception {
     long version = settingsManager.getDefaults(sysadmin).getConfigurationVersion();
 
     mockMvc
@@ -115,11 +114,13 @@ class BookingSettingsControllerMVCIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
                     """
-                    {"openingStart":"8:00","configurationVersion":%d}
+                    {"openingHours":[{"dayOfWeek":1,"start":"8:00","end":"17:00"}],
+                     "configurationVersion":%d}
                     """
                         .formatted(version)))
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+        .andExpect(
+            jsonPath("$.code").value("errors.api.v2.bookingConfiguration.openingHours.invalid"));
   }
 
   @Test
