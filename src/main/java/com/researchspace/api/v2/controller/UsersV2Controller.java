@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.Date;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -79,7 +78,7 @@ public class UsersV2Controller {
         orcid(user),
         capabilities(user),
         liveChat(),
-        session(user, caller.actor()));
+        session(user, caller));
   }
 
   @GetMapping(value = "/me/profile-image", produces = MediaType.IMAGE_PNG_VALUE)
@@ -132,10 +131,10 @@ public class UsersV2Controller {
         user.hasAdminRole());
   }
 
-  private Session session(User user, User actor) {
+  private Session session(User user, ApiV2Caller caller) {
     Date lastLogin = user.getLastLogin();
-    boolean operatedAs = actor != null && !Objects.equals(actor.getId(), user.getId());
-    return new Session(operatedAs, lastLogin == null ? null : lastLogin.toInstant().toString());
+    return new Session(
+        caller.isDelegated(), lastLogin == null ? null : lastLogin.toInstant().toString());
   }
 
   private LiveChat liveChat() {

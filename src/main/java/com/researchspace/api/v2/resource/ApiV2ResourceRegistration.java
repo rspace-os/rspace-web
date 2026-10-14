@@ -199,20 +199,7 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
   }
 
   public RuntimeFieldContext runtimeFieldContext(User caller) {
-    return runtimeFieldContext(caller, name -> null);
-  }
-
-  /**
-   * As above, but able to reach another resource's provider for a relationship hop.
-   *
-   * <p>A bookable item has no custom fields of its own; the instrument it points at does. The
-   * lookup is supplied by the caller because a registration knows the resource graph but not the
-   * other registrations.
-   */
-  public RuntimeFieldContext runtimeFieldContext(
-      User caller,
-      java.util.function.Function<String, List<RuntimeCollectionFields<?>>> byResource) {
-    return new RuntimeFieldContext(providers(), caller, byResource);
+    return new RuntimeFieldContext(providers(), caller, providersByResource);
   }
 
   public List<RuntimeCollectionFields<?>> providers() {
