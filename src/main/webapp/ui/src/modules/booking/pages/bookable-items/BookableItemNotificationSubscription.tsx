@@ -1,6 +1,6 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BellIcon, CheckIcon } from "lucide-react";
+import { BellIcon, CheckIcon, SaveIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
@@ -119,7 +119,7 @@ function ItemNotificationEditor({
                   : undefined
               }
             >
-              {saved ? <CheckIcon aria-hidden="true" /> : null}
+              {saved ? <CheckIcon aria-hidden="true" /> : <SaveIcon aria-hidden="true" />}
               {t(saved ? "preferences.actions.saved" : "preferences.actions.save")}
             </Button>
             <Button
@@ -132,6 +132,7 @@ function ItemNotificationEditor({
                 setFeedback(null);
               }}
             >
+              <XIcon aria-hidden="true" />
               {t("bookableItemDetails.cancelEdit")}
             </Button>
           </div>

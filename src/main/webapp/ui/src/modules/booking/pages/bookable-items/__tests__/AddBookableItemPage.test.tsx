@@ -139,6 +139,44 @@ describe("AddBookableItemPage", () => {
     expect(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toHaveValue("");
   });
 
+  it("lists eligible instruments on open and only sends a query of at least two characters", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler((url) => requests.push(url)),
+    );
+    renderPage();
+
+    const picker = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+    expect(await screen.findByRole("option", { name: /Confocal microscope/ })).toBeVisible();
+    expect(screen.queryByText("common:relationshipPicker.enterSearchTerm")).not.toBeInTheDocument();
+    expect(requests[0]?.searchParams.has("query")).toBe(false);
+    expect(requests[0]?.searchParams.get("limit")).toBe("20");
+
+    await user.type(picker, "C");
+    // One character is not searched, so the list asks for another rather than reporting no matches.
+    expect(await screen.findByText("common:relationshipPicker.searchTooShort")).toBeVisible();
+    expect(screen.queryByText("common:relationshipPicker.empty")).not.toBeInTheDocument();
+    await user.type(picker, "o");
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("query")).toBe("Co"));
+    expect(requests.some((url) => url.searchParams.get("query") === "C")).toBe(false);
+  });
+
+  it("explains how to make an instrument eligible when none can be configured", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(undefined, []),
+    );
+    renderPage();
+
+    await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+    expect(await screen.findByText("booking:bookableItems.targetSearch.noEligible")).toBeVisible();
+  });
+
   it("treats a blank relationship control as an empty selection", async () => {
     const user = userEvent.setup();
     server.use(

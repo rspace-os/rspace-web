@@ -3,7 +3,7 @@ import { createLoader, parseAsBoolean } from "nuqs";
 import AddBookableItemPage from "./AddBookableItemPage";
 import BookableItemPage from "./BookableItemPage";
 import BookableItemsPage from "./BookableItemsPage";
-import BookingSettingsPage from "./BookingSettingsPage";
+import BookingSettingsRoutePage from "./BookingSettingsRoutePage";
 
 export function createBookableItemsRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({
@@ -17,7 +17,8 @@ export function createBookingSettingsRoute<TParentRoute extends AnyRoute>(bookin
   return createRoute({
     getParentRoute: () => bookingRoute,
     path: "/config/settings",
-    component: BookingSettingsPage,
+    // Guards in the component: the router has no current-user context to check in beforeLoad.
+    component: BookingSettingsRoutePage,
   });
 }
 
