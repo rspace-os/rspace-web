@@ -63,6 +63,10 @@ also bounds document size, string size, token count and nesting depth.
 callers. Relationship fallback lookups split larger ID sets into pages of at most 100 and
 combine the readable results before applying read overrides.
 
+`PageOffsets` supplies shared overflow-safe arithmetic for one-based pages. Collection
+requests, runtime-field catalogs and response metadata keep their own validation and limits;
+sharing offset math does not give them a common pagination contract.
+
 Inventory API v1 requests may use a REST API v2 UI token only when the matching authenticated
 browser session is present. The v1 OAuth authenticator delegates these tokens to the v2 validator,
 which checks the live subject, run-as actor, and session context; it does not create a second
