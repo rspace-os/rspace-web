@@ -6,6 +6,7 @@ import {
   assertBookingCataloguePage,
   type BookingCatalogueItem,
   BookingCatalogueRequestTooLargeError,
+  type BookingCatalogueSearch,
   bookingCatalogueRequestFits,
   fetchAllBookingCataloguePages,
   fetchBookingCataloguePageWithinSafeBudget,
@@ -259,7 +260,7 @@ function serializeScopedFilter(filter: SimplifiedAvailabilityFilter, targetIds: 
 type CatalogueTargetScope = "where" | "parameter";
 
 function catalogueSearchForTargets(
-  q: string | undefined,
+  search: Pick<BookingCatalogueSearch, "q" | "types">,
   filter: SimplifiedAvailabilityFilter,
   targetIds: readonly string[],
   scope: CatalogueTargetScope,
@@ -272,9 +273,9 @@ function catalogueSearchForTargets(
     if (targetId === undefined || targetId.trim() === "") {
       throw new Error("Catalogue target parameter scope requires a target ID");
     }
-    return { ...catalogueSearch(q, serializeAvailabilityFilter(filter)), target: targetId };
+    return { ...catalogueSearch(search, serializeAvailabilityFilter(filter)), target: targetId };
   }
-  return catalogueSearch(q, serializeScopedFilter(filter, targetIds));
+  return catalogueSearch(search, serializeScopedFilter(filter, targetIds));
 }
 
 function targetScopeForFilters(
@@ -343,8 +344,8 @@ function availabilityTargetGroups(
     .toSorted(([left], [right]) => left.localeCompare(right));
 }
 
-function catalogueSearch(q: string | undefined, where: string | undefined) {
-  return { q, where, page: 1, pageSize: CATALOGUE_PAGE_SIZE };
+function catalogueSearch(search: Pick<BookingCatalogueSearch, "q" | "types">, where: string | undefined) {
+  return { ...search, where, page: 1, pageSize: CATALOGUE_PAGE_SIZE };
 }
 
 type ResidualChunk = {
@@ -357,13 +358,13 @@ async function fetchResidualChunk(
   specializedFilter: SimplifiedAvailabilityFilter,
   baselineFilter: SimplifiedAvailabilityFilter,
   targetScope: CatalogueTargetScope,
-  q: string | undefined,
+  search: Pick<BookingCatalogueSearch, "q" | "types">,
   token: string,
   signal: AbortSignal,
 ): Promise<ResidualChunk> {
   throwIfAborted(signal);
-  const specializedSearch = catalogueSearchForTargets(q, specializedFilter, targetIds, targetScope);
-  const baselineSearch = catalogueSearchForTargets(q, baselineFilter, targetIds, targetScope);
+  const specializedSearch = catalogueSearchForTargets(search, specializedFilter, targetIds, targetScope);
+  const baselineSearch = catalogueSearchForTargets(search, baselineFilter, targetIds, targetScope);
   try {
     const specialized = await fetchAllBookingCataloguePages(specializedSearch, token, signal, targetIds.length);
     const baseline = await fetchAllBookingCataloguePages(baselineSearch, token, signal, targetIds.length);
@@ -385,7 +386,7 @@ async function fetchResidualChunk(
       specializedFilter,
       baselineFilter,
       targetScope,
-      q,
+      search,
       token,
       signal,
     );
@@ -394,7 +395,7 @@ async function fetchResidualChunk(
       specializedFilter,
       baselineFilter,
       targetScope,
-      q,
+      search,
       token,
       signal,
     );
@@ -406,7 +407,7 @@ async function mergeBaselineAndResiduals(
   firstBaselinePage: BookingCataloguePage,
   baselineWhere: string | undefined,
   residuals: readonly BookingCatalogueItem[],
-  q: string | undefined,
+  search: Pick<BookingCatalogueSearch, "q" | "types">,
   page: number,
   pageSize: number,
   token: string,
@@ -427,7 +428,7 @@ async function mergeBaselineAndResiduals(
     if (baselineIndex >= baselinePage.items.length && baselinePageNumber < baselinePageCount) {
       baselinePageNumber += 1;
       baselinePage = await fetchBookingCataloguePageWithinSafeBudget(
-        { ...catalogueSearch(q, baselineWhere), page: baselinePageNumber },
+        { ...catalogueSearch(search, baselineWhere), page: baselinePageNumber },
         token,
         signal,
       );
@@ -465,7 +466,7 @@ async function mergeBaselineAndResiduals(
 export async function fetchAvailabilityFilteredCatalogue(
   expression: FilterExpression<AllBookableItem>,
   index: ReadonlyMap<string, AvailabilityQuickIndexEntry>,
-  search: { q?: string; page: number; pageSize: number },
+  search: Pick<BookingCatalogueSearch, "q" | "types"> & { page: number; pageSize: number },
   token: string,
   signal: AbortSignal,
 ): Promise<BookingCataloguePage> {
@@ -491,7 +492,7 @@ export async function fetchAvailabilityFilteredCatalogue(
   const baselineFilter = simplifyAvailabilityFilter(expression, () => false);
   const baselineWhere = serializeAvailabilityFilter(baselineFilter);
   const firstBaselinePage = await fetchBookingCataloguePageWithinSafeBudget(
-    { ...catalogueSearch(search.q, baselineWhere), page: 1 },
+    { ...catalogueSearch(search, baselineWhere), page: 1 },
     token,
     signal,
   );
@@ -508,8 +509,8 @@ export async function fetchAvailabilityFilteredCatalogue(
     const batches = partitionCatalogueTargets(targetIds, (batch) => {
       if (targetScope === "parameter" && batch.length !== 1) return false;
       try {
-        const specializedSearch = catalogueSearchForTargets(search.q, specializedFilter, batch, targetScope);
-        const scopedBaselineSearch = catalogueSearchForTargets(search.q, baselineFilter, batch, targetScope);
+        const specializedSearch = catalogueSearchForTargets(search, specializedFilter, batch, targetScope);
+        const scopedBaselineSearch = catalogueSearchForTargets(search, baselineFilter, batch, targetScope);
         return (
           bookingCatalogueRequestFits(specializedSearch, token) &&
           bookingCatalogueRequestFits(scopedBaselineSearch, token)
@@ -526,7 +527,7 @@ export async function fetchAvailabilityFilteredCatalogue(
         specializedFilter,
         baselineFilter,
         targetScope,
-        search.q,
+        search,
         token,
         signal,
       );
@@ -550,7 +551,7 @@ export async function fetchAvailabilityFilteredCatalogue(
           firstBaselinePage,
           baselineWhere,
           residuals,
-          search.q,
+          search,
           search.page,
           search.pageSize,
           token,
@@ -674,6 +675,7 @@ export function useAvailabilityQuickFilterIndex(
     queryFn: ({ signal }) => fetchAvailabilityCandidates(token, signal),
     enabled,
     staleTime: 60_000,
+    retry: (failureCount, error) => !(error instanceof AvailabilityCandidateLimitError) && failureCount < 3,
   });
   const signature = candidates.data
     ?.flatMap((candidate) =>
@@ -719,7 +721,7 @@ export function useAvailabilityQuickFilterIndex(
   return {
     data: enabled ? index.data : undefined,
     now: new Date(minute),
-    isPending: enabled && (candidates.isPending || index.isPending),
+    isPending: enabled && !candidates.isError && (candidates.isPending || index.isPending),
     isError: enabled && (candidates.isError || index.isError),
     error: candidates.error ?? index.error,
     refetch: candidates.isError ? candidates.refetch : index.refetch,

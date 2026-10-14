@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
 import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
 import {
@@ -48,7 +49,13 @@ function catalogueItem(configuration: (typeof bookableItemFixtures)[number]) {
 }
 
 async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
-  const rootRoute = createRootRoute({ component: Outlet });
+  const rootRoute = createRootRoute({
+    component: () => (
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
+    ),
+  });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
   const router = createRouter({
     routeTree: rootRoute.addChildren([
@@ -132,30 +139,31 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(router.state.location.search.where).toBe(original));
   });
 
-  it.each(["availability=available-now&pageSize=50", "date=2026-08-18&target=IN123&q=microscope&page=2&pageSize=50"])(
-    "resets the full controlled view with one navigation: %s",
-    async (search) => {
-      const user = userEvent.setup();
-      server.use(
-        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-        http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))),
-        ...bookableItemsHandlers(() => undefined),
-        http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
-      );
-      const { router } = await renderPage(`/booking/all-items?${search}`);
-      const reset = await screen.findByRole("button", { name: "Reset filters, sorting, and columns to defaults" });
-      const navigate = vi.spyOn(router, "navigate");
-      try {
-        await user.click(reset);
-        await waitFor(() => expect(router.state.location.search).toEqual({ pageSize: 50 }));
-        expect(navigate).toHaveBeenCalledOnce();
-      } finally {
-        navigate.mockRestore();
-      }
-    },
-  );
+  it.each([
+    "availability=available-now&pageSize=50",
+    "types=NOTATYPE&pageSize=50",
+    "date=2026-08-18&target=IN123&q=microscope&page=2&pageSize=50&types=INSTRUMENT",
+  ])("resets the full controlled view with one navigation: %s", async (search) => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))),
+      ...bookableItemsHandlers(() => undefined),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+    );
+    const { router } = await renderPage(`/booking/all-items?${search}`);
+    const reset = await screen.findByRole("button", { name: "Reset filters, sorting, and columns to defaults" });
+    const navigate = vi.spyOn(router, "navigate");
+    try {
+      await user.click(reset);
+      await waitFor(() => expect(router.state.location.search).toEqual({ pageSize: 50 }));
+      expect(navigate).toHaveBeenCalledOnce();
+    } finally {
+      navigate.mockRestore();
+    }
+  });
 
-  it("keeps the selected page size in the URL and catalogue request", async () => {
+  it("keeps type filters and the selected page size in the URL and catalogue request", async () => {
     const user = userEvent.setup();
     const requests: URL[] = [];
     server.use(
@@ -167,15 +175,67 @@ describe("AllBookableItemsPage", () => {
         return HttpResponse.json(bookingCataloguePage([], 1, Number(url.searchParams.get("limit")), 0));
       }),
     );
-    const { router } = await renderPage();
+    const { router } = await renderPage("/booking/all-items?types=INSTRUMENT");
     const size = await screen.findByRole("combobox", { name: "Rows per page" });
     await user.selectOptions(size, "50");
     await waitFor(() => expect(size).toHaveValue("50"));
-    expect(router.state.location.search).toMatchObject({ pageSize: 50 });
+    expect(router.state.location.search).toMatchObject({ pageSize: 50, types: ["INSTRUMENT"] });
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("limit")).toBe("50"));
+    expect(requests.at(-1)?.searchParams.getAll("type")).toEqual(["INSTRUMENT"]);
     await user.selectOptions(size, "10");
     await waitFor(() => expect(size).toHaveValue("10"));
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("limit")).toBe("10"));
+  });
+
+  it("retains selected types across availability residual retries and baseline pagination", async () => {
+    const candidates = allDayBookableItemCandidates();
+    const candidateItems = bookableItemFixtures.slice(0, 2).map(catalogueItem);
+    const baselineItems = Array.from({ length: 101 }, (_, index) => ({
+      ...catalogueItem(bookableItemFixtures[2]),
+      configurationId: 1000 + index,
+      targetId: 2000 + index,
+      globalId: `IN${2000 + index}`,
+      name: `Scoped baseline ${1000 + index}`,
+    }));
+    const requests: URL[] = [];
+    let oversizedRequests = 0;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(candidates))),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        const where = url.searchParams.get("where") ?? "";
+        const targetIds = where.split("target=in=(")[1]?.split(")")[0]?.split(",") ?? [];
+        if (targetIds.length === 2 && !where.includes("id=ge=1000")) {
+          oversizedRequests += 1;
+          return new HttpResponse(null, { status: 414 });
+        }
+        const items =
+          targetIds.length === 0
+            ? baselineItems
+            : where.includes("id=ge=1000")
+              ? []
+              : candidateItems.filter((item) => targetIds.includes(item.globalId));
+        const page = Number(url.searchParams.get("page"));
+        const pageSize = Number(url.searchParams.get("limit"));
+        return HttpResponse.json(
+          bookingCataloguePage(items.slice((page - 1) * pageSize, page * pageSize), page, pageSize, items.length),
+        );
+      }),
+    );
+
+    await renderPage(
+      `/booking/all-items?types=INSTRUMENT&page=3&pageSize=50&where=${encodeURIComponent("availability==available-now,id=ge=1000")}`,
+    );
+
+    expect((await screen.findAllByText("Scoped baseline 1100"))[0]).toBeVisible();
+    expect(oversizedRequests).toBe(1);
+    expect(requests.some((url) => url.searchParams.get("page") === "2")).toBe(true);
+    expect(requests.some((url) => url.searchParams.get("where") === "id=ge=1000;target=in=(IN123)")).toBe(true);
+    expect(requests.some((url) => url.searchParams.get("where") === "target=in=(IN124)")).toBe(true);
+    expect(requests.every((url) => url.searchParams.getAll("type").join(",") === "INSTRUMENT")).toBe(true);
   });
 
   it("preserves saved OR matches outside the availability index when catalogue requests are bounded", async () => {
@@ -314,7 +374,7 @@ describe("AllBookableItemsPage", () => {
           "enabled==true;state==ACTIVE;target.deleted==false"
         ) {
           candidateRequests += 1;
-          if (candidateRequests === 1) return new HttpResponse(null, { status: 500 });
+          if (candidateRequests <= 4) return new HttpResponse(null, { status: 500 });
           return HttpResponse.json(collectionPage(bookableItemFixtures));
         }
         return HttpResponse.json(collectionPage([]));
@@ -325,12 +385,14 @@ describe("AllBookableItemsPage", () => {
     );
     const { router } = await renderPage("/booking/all-items?date=2026-08-17&availability=free-later-today");
 
-    expect(await screen.findByRole("alert")).toMatchTextContent("Could not find available items.");
+    expect(await screen.findByRole("alert", {}, { timeout: 10_000 })).toMatchTextContent(
+      "Could not find available items.",
+    );
     expect(screen.queryByText("Finding bookable items…")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    await waitFor(() => expect(candidateRequests).toBe(2));
+    await waitFor(() => expect(candidateRequests).toBe(5));
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(router.state.location.search.availability).toBe("free-later-today");
-  });
+  }, 15_000);
 });

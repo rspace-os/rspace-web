@@ -7,10 +7,9 @@ import {
   createRouter,
   Outlet,
   RouterProvider,
-  redirect,
   useMatches,
 } from "@tanstack/react-router";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -19,7 +18,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { currentUser as currentUserFixture } from "@/__tests__/helpers/currentUserFixture";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
-import BookingPage from "@/modules/booking/pages/BookingPage";
+import BookingPage, { BookingDashboard } from "@/modules/booking/pages/BookingPage";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { ownerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
@@ -82,13 +81,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
-        createRoute({
-          getParentRoute: () => bookingRoute,
-          path: "/",
-          beforeLoad: () => {
-            throw redirect({ to: "/booking/calendar", replace: true });
-          },
-        }),
+        createRoute({ getParentRoute: () => bookingRoute, path: "/", component: BookingDashboard }),
         createRoute({
           getParentRoute: () => bookingRoute,
           path: "/calendar/",
@@ -97,6 +90,11 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
               <h1>{"Calendar destination"}</h1>
             </main>
           ),
+        }),
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/calendar/bookings/add/",
+          component: () => <main>{"Add booking destination"}</main>,
         }),
         createRoute({
           getParentRoute: () => bookingRoute,
@@ -118,7 +116,30 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
   );
 }
 
-describe("booking sidebar", () => {
+describe("booking layout", () => {
+  it("omits breadcrumbs from the Booking root", async () => {
+    renderAt("/booking");
+
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
+    expect(screen.queryByRole("navigation", { name: "booking:breadcrumbs.label" })).not.toBeInTheDocument();
+  });
+
+  it("shows linked ancestors and the current page on nested Booking routes", async () => {
+    const { container } = renderAt("/booking/calendar/bookings/add");
+
+    const breadcrumbs = await screen.findByRole("navigation", { name: "booking:breadcrumbs.label" });
+    expect(within(breadcrumbs).getByRole("link", { name: "booking:sidebar.label" })).toHaveAttribute(
+      "href",
+      "/booking",
+    );
+    expect(within(breadcrumbs).getByRole("link", { name: "booking:calendar.title" })).toHaveAttribute(
+      "href",
+      "/booking/calendar",
+    );
+    expect(within(breadcrumbs).getByText("booking:bookings.addTitle")).toHaveAttribute("aria-current", "page");
+    await expectAccessible(container);
+  });
+
   it("keeps the shell mounted while preferences suspend the sidebar and inactive creation dialog", async () => {
     const preferences = Promise.withResolvers<void>();
     const { container } = renderAt("/booking", false, preferences.promise);
@@ -135,14 +156,17 @@ describe("booking sidebar", () => {
 
   it("is supplied to the shell by the booking route", async () => {
     const { container } = renderAt("/booking");
-    expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toHaveClass(
+      "text-2xl",
+      "font-semibold",
+    );
     expect(screen.getAllByRole("main")).toHaveLength(1);
 
     // i18next runs in cimode under vitest, so t() renders "<namespace>:<key>"
     for (const key of ["administration", "approvalQueue"]) {
       expect(await screen.findByRole("button", { name: `booking:sidebar.${key}` })).toBeInTheDocument();
     }
-    expect(screen.queryByRole("button", { name: "booking:sidebar.dashboard" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "booking:sidebar.dashboard" })).toHaveAttribute("href", "/booking");
 
     expect(await screen.findByRole("link", { name: "booking:sidebar.myBookings" })).toHaveAttribute(
       "href",
@@ -175,6 +199,20 @@ describe("booking sidebar", () => {
     );
 
     await expectAccessible(container);
+  });
+
+  it("returns to Dashboard from Calendar for non-sysadmins", async () => {
+    const user = userEvent.setup();
+    renderAt("/booking/calendar?calendar-resources.q=Confocal", false);
+    expect(await screen.findByRole("heading", { name: "Calendar destination" })).toBeVisible();
+    const dashboard = await screen.findByRole("link", { name: "booking:sidebar.dashboard" });
+    expect(dashboard).not.toHaveAttribute("aria-current", "page");
+
+    await user.click(dashboard);
+
+    expect(await screen.findByRole("heading", { name: "booking:sidebar.dashboard" })).toBeVisible();
+    expect(dashboard).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("heading", { name: "Calendar destination" })).not.toBeInTheDocument();
   });
 
   it("collapses the Administration sub-items", async () => {
