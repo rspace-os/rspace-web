@@ -18,6 +18,7 @@ import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
+import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
@@ -25,11 +26,14 @@ import com.researchspace.service.MessageSourceUtils;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -84,7 +88,7 @@ class ResourceAccessManagerTest {
     when(gateway.lockAuthorizationFacts(access, owner)).thenReturn(owner);
     ResourceRoleAssignment otherBooker =
         ResourceRoleAssignment.forUser(BookingResourceRoleScheme.BOOKER, other);
-    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.BOOKER))
+    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.BOOKER, null))
         .thenReturn(otherBooker);
     ResourceGranteeDirectoryEntry assignableOther = directoryEntry(other);
     when(directory.resolveAssignable(Set.of("user:13"), owner))
@@ -107,7 +111,7 @@ class ResourceAccessManagerTest {
         Set.of("user:12", "user:13", "audience:all-users"),
         access.getAssignments().stream()
             .map(ResourceRoleAssignment::getGranteeKey)
-            .collect(java.util.stream.Collectors.toSet()));
+            .collect(Collectors.toSet()));
     // Twice: once after the removals so a re-used grantee key is free before its replacement row is
     // inserted, then once for the whole change.
     verify(gateway, times(2)).flush();
@@ -188,7 +192,7 @@ class ResourceAccessManagerTest {
     when(gateway.lockAuthorizationFacts(access, managerUser)).thenReturn(managerUser);
     ResourceRoleAssignment otherOwner =
         ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, other);
-    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.OWNER))
+    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.OWNER, null))
         .thenReturn(otherOwner);
     ResourceGranteeDirectoryEntry assignableOther = directoryEntry(other);
     when(directory.resolveAssignable(Set.of("user:13"), managerUser))
@@ -238,7 +242,7 @@ class ResourceAccessManagerTest {
             9L, 7L, grants(new ResourceAccessGrant("user:12", BookingResourceRoleScheme.BOOKER)));
     ResourceRoleAssignment ownerBooker =
         ResourceRoleAssignment.forUser(BookingResourceRoleScheme.BOOKER, owner);
-    when(gateway.resolveAvailable("user:12", BookingResourceRoleScheme.BOOKER))
+    when(gateway.resolveAvailable("user:12", BookingResourceRoleScheme.BOOKER, null))
         .thenReturn(ownerBooker);
     ResourceGranteeDirectoryEntry assignableOwner = directoryEntry(owner);
     when(directory.resolveAssignable(Set.of("user:12"), owner))
@@ -268,7 +272,7 @@ class ResourceAccessManagerTest {
 
     assertEquals(ResourceAccessException.Reason.FORBIDDEN, error.reason());
     assertEquals(7L, access.getVersion());
-    verify(gateway, never()).resolveAvailable("user:13", BookingResourceRoleScheme.BOOKER);
+    verify(gateway, never()).resolveAvailable("user:13", BookingResourceRoleScheme.BOOKER, null);
     verify(gateway, never()).flush();
   }
 
@@ -287,7 +291,7 @@ class ResourceAccessManagerTest {
   void ownershipTransferPromotesIncomingUserAndRemovesOutgoingOwner() {
     ResourceRoleAssignment incomingOwner =
         ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, other);
-    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.OWNER))
+    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.OWNER, null))
         .thenReturn(incomingOwner);
 
     manager.transferDirectOwnership(resource, 9L, owner, other, owner, owner);
@@ -296,10 +300,7 @@ class ResourceAccessManagerTest {
         Map.of(
             "user:13", BookingResourceRoleScheme.OWNER,
             "audience:all-users", BookingResourceRoleScheme.BOOKER),
-        access.getAssignments().stream()
-            .collect(
-                java.util.stream.Collectors.toMap(
-                    ResourceRoleAssignment::getGranteeKey, ResourceRoleAssignment::getRoleKey)));
+        roles(access));
     verify(gateway, times(2)).flush();
   }
 
@@ -335,7 +336,7 @@ class ResourceAccessManagerTest {
         .thenReturn(existingOwner);
     ResourceRoleAssignment incomingOwner =
         ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, other);
-    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.OWNER))
+    when(gateway.resolveAvailable("user:13", BookingResourceRoleScheme.OWNER, null))
         .thenReturn(incomingOwner);
 
     manager.transferDirectOwnership(resource, 9L, owner, other, existingOwner, existingOwner);
@@ -346,10 +347,7 @@ class ResourceAccessManagerTest {
             "user:13", BookingResourceRoleScheme.OWNER,
             "user:14", BookingResourceRoleScheme.OWNER,
             "audience:all-users", BookingResourceRoleScheme.BOOKER),
-        accessWithLowerOutgoing.getAssignments().stream()
-            .collect(
-                java.util.stream.Collectors.toMap(
-                    ResourceRoleAssignment::getGranteeKey, ResourceRoleAssignment::getRoleKey)));
+        roles(accessWithLowerOutgoing));
   }
 
   @Test
@@ -391,7 +389,7 @@ class ResourceAccessManagerTest {
             ResourceRoleSourceKind.AUDIENCE),
         otherDocument.roleSources().stream()
             .map(ResourceRoleSource::kind)
-            .collect(java.util.stream.Collectors.toSet()));
+            .collect(Collectors.toSet()));
     assertFalse(
         otherDocument.roleSources().stream()
             .anyMatch(source -> source.kind() == ResourceRoleSourceKind.IMPLICIT));
@@ -430,10 +428,18 @@ class ResourceAccessManagerTest {
   }
 
   private static List<ResourceAccessGrant> grants(ResourceAccessGrant... named) {
-    java.util.ArrayList<ResourceAccessGrant> grants =
-        new java.util.ArrayList<>(java.util.Arrays.asList(named));
-    grants.add(new ResourceAccessGrant("audience:all-users", BookingResourceRoleScheme.BOOKER));
-    return List.copyOf(grants);
+    return Stream.concat(
+            Arrays.stream(named),
+            Stream.of(
+                new ResourceAccessGrant("audience:all-users", BookingResourceRoleScheme.BOOKER)))
+        .toList();
+  }
+
+  private static Map<String, String> roles(ResourceAccess access) {
+    return access.getAssignments().stream()
+        .collect(
+            Collectors.toMap(
+                ResourceRoleAssignment::getGranteeKey, ResourceRoleAssignment::getRoleKey));
   }
 
   private static Group group(long id, String name) {
@@ -447,7 +453,7 @@ class ResourceAccessManagerTest {
 
   private static ResourceGranteeDirectoryEntry directoryEntry(User user) {
     return new ResourceGranteeDirectoryEntry(
-        com.researchspace.model.resourceaccess.ResourceGranteeKind.USER,
+        ResourceGranteeKind.USER,
         user.getId(),
         "user:" + user.getId(),
         user.getDisplayName(),

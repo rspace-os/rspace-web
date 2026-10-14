@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /** Resolves dynamic direct, group, audience, and implicit roles into one effective role. */
@@ -89,7 +90,7 @@ public class ResourceAccessResolver {
     return subject.getGroups().stream()
         .filter(group -> group.getId() != null)
         .map(Group::getId)
-        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   private static void validateAssignment(

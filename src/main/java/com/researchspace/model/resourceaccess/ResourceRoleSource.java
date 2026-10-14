@@ -3,6 +3,7 @@ package com.researchspace.model.resourceaccess;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /** One persisted or implicit source contributing to a subject's effective resource access. */
@@ -31,12 +32,12 @@ public record ResourceRoleSource(
     Map<String, Object> grantee = new LinkedHashMap<>();
     grantee.put("kind", kind.name());
     grantee.put("key", granteeKey);
-    if (granteeKey != null && granteeKey.contains(":")) {
-      String rawId = granteeKey.substring(granteeKey.indexOf(':') + 1);
+    String rawId = ResourceGranteeKeys.parseIdentifier(granteeKey);
+    if (rawId != null) {
       try {
         grantee.put("id", Long.valueOf(rawId));
       } catch (NumberFormatException ignored) {
-        grantee.put("id", rawId.toUpperCase(java.util.Locale.ROOT).replace('-', '_'));
+        grantee.put("id", rawId.toUpperCase(Locale.ROOT).replace('-', '_'));
       }
     }
     grantee.put("name", nameSnapshot);
