@@ -8,8 +8,6 @@ import { Input } from "@/modules/common/ui/input";
 import { MultiSelect } from "@/modules/common/ui/multi-select";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { FilterSelect } from "./FilterSelect";
-import { SuggestedValueInput } from "./SuggestedValueInput";
-import { useTargetScalarValues } from "./useTargetScalarValues";
 
 type FilterValue = string | readonly string[];
 
@@ -23,56 +21,29 @@ function listValue(value: FilterValue): readonly string[] {
   return trimmed === "" ? [] : [trimmed];
 }
 
-function targetFieldSource<TDocument>(
-  name: string,
-  fields: readonly ResolvedFieldConfig<TDocument>[],
+function identitySourceFor<TDocument>(
+  field: ResolvedFieldConfig<TDocument>,
   sources: Readonly<Record<string, RelationshipSource>>,
-): RelationshipSource | null {
-  const dot = name.indexOf(".");
-  if (dot <= 0) return null;
-  const owner = fields.find((candidate) => candidate.name === name.slice(0, dot));
-  if (owner?.type !== "relationship") return null;
-  const field = fields.find((candidate) => candidate.name === name);
-  if (field?.origin?.kind === "runtimeField") return null;
-  return sources[owner.relationTo] ?? null;
-}
-
-function TargetScalarValue({
-  source,
-  ariaLabel,
-  value,
-  onChange,
-  idLinkLabel,
-}: {
-  source: RelationshipSource;
-  ariaLabel: string;
-  value: string;
-  onChange: (value: string) => void;
-  idLinkLabel: (globalId: string) => string;
-}) {
-  return (
-    <SuggestedValueInput
-      ariaLabel={ariaLabel}
-      value={value}
-      onChange={onChange}
-      minimumLength={2}
-      useSuggestions={(term, open) => useTargetScalarValues({ source, term, enabled: open, idLinkLabel })}
-    />
-  );
+): RelationshipSource | undefined {
+  if (field.filterPicker) {
+    const source = sources[field.filterPicker.resource];
+    return source?.globalIdPrefix === field.filterPicker.globalIdPrefix ? source : undefined;
+  }
+  return field.type === "relationship" ? sources[field.relationTo] : undefined;
 }
 
 export function FilterValueInput<TDocument>({
   field,
-  fields,
   sources,
+  authScope,
   operator,
   value,
   number,
   onChange,
 }: {
   field: ResolvedFieldConfig<TDocument>;
-  fields: readonly ResolvedFieldConfig<TDocument>[];
   sources?: Readonly<Record<string, RelationshipSource>>;
+  authScope?: string | number;
   operator: FilterOperator;
   value: FilterValue;
   number: number;
@@ -82,7 +53,7 @@ export function FilterValueInput<TDocument>({
   const ariaLabel = t("tableList.filters.value", { number });
   const multiple = operator === "in" || operator === "notIn";
   const availableSources = { ...relationshipSources, ...sources };
-  const targetSource = targetFieldSource(field.name, fields, availableSources);
+  const identitySource = identitySourceFor(field, availableSources);
   const selectLabels = {
     placeholder: t("tableList.filters.placeholders.value"),
     noMatch: t("tableList.filters.valueSearch.noMatch"),
@@ -90,11 +61,12 @@ export function FilterValueInput<TDocument>({
     trigger: t("tableList.filters.valueSearch.trigger"),
   };
 
-  if (operator !== "exists" && field.type === "relationship" && availableSources[field.relationTo]) {
+  if (operator !== "exists" && identitySource) {
     return (
       <Suspense fallback={<Skeleton className="h-8 rounded-sm" />}>
         <RelationshipPicker
-          source={availableSources[field.relationTo]}
+          source={identitySource}
+          authScope={authScope}
           ariaLabel={ariaLabel}
           className="rounded-sm"
           compact
@@ -165,20 +137,6 @@ export function FilterValueInput<TDocument>({
         labels={selectLabels}
         onChange={onChange}
       />
-    );
-  }
-
-  if (targetSource) {
-    return (
-      <Suspense fallback={<Skeleton className="h-8 rounded-sm" />}>
-        <TargetScalarValue
-          source={targetSource}
-          ariaLabel={ariaLabel}
-          value={scalarValue(value)}
-          onChange={onChange}
-          idLinkLabel={(globalId) => t("tableList.filters.openRecord", { globalId })}
-        />
-      </Suspense>
     );
   }
 
