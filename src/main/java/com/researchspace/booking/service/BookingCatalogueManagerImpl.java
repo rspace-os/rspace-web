@@ -45,7 +45,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
   private static final String CONFIGURATION_TARGET = "bookingConfiguration.target";
 
   /** Configurations classified per availability batch, and so event query bind values. */
-  static final int AVAILABILITY_BATCH_SIZE = 500;
+  static final int AVAILABILITY_BATCH_SIZE = 100;
 
   private final BookingConfigurationManager configurations;
   private final InstrumentDao instruments;
