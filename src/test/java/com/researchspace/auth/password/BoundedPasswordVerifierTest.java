@@ -184,6 +184,29 @@ class BoundedPasswordVerifierTest {
   }
 
   @Test
+  void busyMessageEscapesControlCharactersSoItCannotForgeLogLines() throws Exception {
+    BoundedPasswordVerifier verifier =
+        new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofMillis(50));
+    String key = "\0sentinel:evil\r\nFORGED line";
+    CountDownLatch held = new CountDownLatch(1);
+    CountDownLatch release = new CountDownLatch(1);
+    Future<Object> holder =
+        pool.submit(() -> verifier.runExclusive(key, () -> awaitWhileHeld(held, release)));
+    held.await(5, TimeUnit.SECONDS);
+
+    LoginVerificationBusyException busy =
+        assertThrows(
+            LoginVerificationBusyException.class, () -> verifier.runExclusive(key, () -> "x"));
+
+    assertEquals(
+        "Password verification for [\\0sentinel:evil\\r\\nFORGED line] refused: another login"
+            + " for this username is still running",
+        busy.getMessage());
+    release.countDown();
+    holder.get(5, TimeUnit.SECONDS);
+  }
+
+  @Test
   void runExclusiveBusyWhileAnotherThreadHoldsTheUsername() throws Exception {
     BoundedPasswordVerifier verifier =
         new BoundedPasswordVerifier(encoder, PERMITS, NO_QUEUE_CAP, Duration.ofMillis(200));
