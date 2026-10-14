@@ -2,19 +2,25 @@ package com.researchspace.api.v2.controller;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
+import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingOpeningHoursCodec;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -69,8 +75,7 @@ public final class BookingSettingsController {
 
   public record SettingsDocument(
       long slotGranularityMinutes,
-      String openingStart,
-      String openingEnd,
+      List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
       long maxBookingDurationMinutes,
@@ -84,8 +89,7 @@ public final class BookingSettingsController {
     static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
       return new SettingsDocument(
           defaults.getSlotGranularityMinutes(),
-          defaults.getOpeningStart(),
-          defaults.getOpeningEnd(),
+          defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
           defaults.getMaxBookingDurationMinutes(),
@@ -100,8 +104,7 @@ public final class BookingSettingsController {
 
   public record AdminSettingsDocument(
       long slotGranularityMinutes,
-      String openingStart,
-      String openingEnd,
+      List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
       long maxBookingDurationMinutes,
@@ -119,8 +122,7 @@ public final class BookingSettingsController {
         BookingConfigurationDefaults defaults, Clock institutionClock) {
       return new AdminSettingsDocument(
           defaults.getSlotGranularityMinutes(),
-          defaults.getOpeningStart(),
-          defaults.getOpeningEnd(),
+          defaults.getOpeningHours(),
           defaults.getBufferBeforeMinutes(),
           defaults.getBufferAfterMinutes(),
           defaults.getMaxBookingDurationMinutes(),
@@ -140,14 +142,17 @@ public final class BookingSettingsController {
       @Min(value = 1, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
           @Max(value = 15, message = "{errors.api.v2.bookingConfiguration.granularity.invalid}")
           Long slotGranularityMinutes,
-      @Pattern(
-              regexp = "(?:[01]\\d|2[0-3]):[0-5]\\d",
-              message = "{errors.api.v2.bookingConfiguration.openingHours.invalid}")
-          String openingStart,
-      @Pattern(
-              regexp = "(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)",
-              message = "{errors.api.v2.bookingConfiguration.openingHours.invalid}")
-          String openingEnd,
+      @ArraySchema(
+              arraySchema =
+                  @Schema(
+                      description =
+                          "Independent opening interval for each listed ISO weekday; omitted days"
+                              + " are closed."),
+              schema = @Schema(implementation = BookingOpeningHoursEntry.class),
+              minItems = 1,
+              maxItems = 7,
+              uniqueItems = false)
+          JsonNode openingHours,
       @Min(value = 0, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
           @Max(value = 10_080, message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
           Long bufferBeforeMinutes,
@@ -195,12 +200,23 @@ public final class BookingSettingsController {
     BookingSchedulingSettings.Patch schedulingPatch() {
       return new BookingSchedulingSettings.Patch(
           slotGranularityMinutes,
-          openingStart,
-          openingEnd,
+          decodeOpeningHours(openingHours),
           bufferBeforeMinutes,
           bufferAfterMinutes,
           maxBookingDurationMinutes,
           allowDoubleBooking);
+    }
+
+    private static List<BookingOpeningHoursEntry> decodeOpeningHours(JsonNode node) {
+      if (node == null || node.isNull()) {
+        return null;
+      }
+      try {
+        return BookingOpeningHoursCodec.openingHours(node);
+      } catch (IllegalArgumentException ex) {
+        throw new InvalidBookingSchedulingSettingsException(
+            InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS);
+      }
     }
 
     BookingDisplaySettings.Patch displayPatch() {
