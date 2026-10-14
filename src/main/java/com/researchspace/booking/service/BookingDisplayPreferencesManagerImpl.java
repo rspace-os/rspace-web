@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
@@ -31,12 +32,17 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
       LoggerFactory.getLogger(BookingDisplayPreferencesManagerImpl.class);
   private static final int CURRENT_VERSION = 1;
 
+  /**
+   * The stored override. {@code timeFormat} was added within version 1: a document without it reads
+   * as {@link BookingTimeFormat#AUTOMATIC}, the behaviour it was saved under.
+   */
   private record StoredPreference(
       int version,
       String availabilityWindowStart,
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
-      String customTimezone) {
+      String customTimezone,
+      BookingTimeFormat timeFormat) {
 
     static StoredPreference from(BookingDisplaySettings settings) {
       return new StoredPreference(
@@ -44,12 +50,13 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
           settings.availabilityWindowStart(),
           settings.availabilityWindowEnd(),
           settings.timezoneMode(),
-          settings.customTimezone());
+          settings.customTimezone(),
+          settings.timeFormat());
     }
 
     BookingDisplaySettings settings() {
       return new BookingDisplaySettings(
-          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone);
+          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, timeFormat);
     }
   }
 
@@ -118,7 +125,8 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
             settings.availabilityWindowStart(),
             settings.availabilityWindowEnd(),
             settings.timezoneMode(),
-            settings.customTimezone());
+            settings.customTimezone(),
+            settings.timeFormat());
     BookingConfigurationDefaultsManagerImpl.requireValid(normalized);
     try {
       userManager.setPreference(
@@ -184,6 +192,7 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
         settings.availabilityWindowEnd(),
         settings.timezoneMode(),
         settings.customTimezone(),
+        settings.timeFormat(),
         institutionClock.getZone().getId(),
         overridden);
   }

@@ -26,12 +26,14 @@ function inputFrom(document: {
   availabilityWindowEnd: string;
   timezoneMode: BookingDisplayPreferencesInput["timezoneMode"];
   customTimezone: string | null;
+  timeFormat?: BookingDisplayPreferencesInput["timeFormat"];
 }): BookingDisplayPreferencesInput {
   return {
     availabilityWindowStart: document.availabilityWindowStart,
     availabilityWindowEnd: document.availabilityWindowEnd,
     timezoneMode: document.timezoneMode,
     customTimezone: document.customTimezone,
+    timeFormat: document.timeFormat ?? "AUTOMATIC",
   };
 }
 

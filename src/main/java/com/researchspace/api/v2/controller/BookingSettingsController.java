@@ -14,6 +14,7 @@ import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
@@ -85,6 +86,7 @@ public final class BookingSettingsController {
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
       String customTimezone,
+      BookingTimeFormat timeFormat,
       String institutionTimezone) {
 
     static SettingsDocument from(BookingConfigurationDefaults defaults, Clock institutionClock) {
@@ -99,6 +101,7 @@ public final class BookingSettingsController {
           defaults.getAvailabilityWindowEnd(),
           defaults.getTimezoneMode(),
           defaults.getCustomTimezone(),
+          defaults.getTimeFormat(),
           institutionClock.getZone().getId());
     }
   }
@@ -114,6 +117,7 @@ public final class BookingSettingsController {
       String availabilityWindowEnd,
       BookingTimezoneMode timezoneMode,
       String customTimezone,
+      BookingTimeFormat timeFormat,
       String institutionTimezone,
       BookingDefaultSharedWith defaultSharedWith,
       List<SelectedAccessGrantee> selectedAccessGrantees,
@@ -132,6 +136,7 @@ public final class BookingSettingsController {
           defaults.getAvailabilityWindowEnd(),
           defaults.getTimezoneMode(),
           defaults.getCustomTimezone(),
+          defaults.getTimeFormat(),
           institutionClock.getZone().getId(),
           defaults.getDefaultSharedWith(),
           defaults.getSelectedAccessGrantees().stream().map(SelectedAccessGrantee::from).toList(),
@@ -177,6 +182,7 @@ public final class BookingSettingsController {
       BookingTimezoneMode timezoneMode,
       @Size(max = 255, message = "{errors.api.v2.bookingDisplayPreferences.timeZone.invalid}")
           String customTimezone,
+      BookingTimeFormat timeFormat,
       BookingDefaultSharedWith defaultSharedWith,
       List<String> selectedGranteeKeys,
       @NotNull @Min(value = 0, message = "{errors.api.v2.invalidRequest}")
@@ -231,7 +237,7 @@ public final class BookingSettingsController {
 
     BookingDisplaySettings.Patch displayPatch() {
       return new BookingDisplaySettings.Patch(
-          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone);
+          availabilityWindowStart, availabilityWindowEnd, timezoneMode, customTimezone, timeFormat);
     }
   }
 

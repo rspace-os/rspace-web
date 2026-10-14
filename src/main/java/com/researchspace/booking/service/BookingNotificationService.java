@@ -76,7 +76,11 @@ public class BookingNotificationService {
           null,
           config,
           messageFormatter.formatForEmail(
-              notificationType, data, recipient.displayZone(), LocaleContextHolder.getLocale()));
+              notificationType,
+              data,
+              recipient.displayZone(),
+              LocaleContextHolder.getLocale(),
+              recipient.timeFormat()));
     }
   }
 
