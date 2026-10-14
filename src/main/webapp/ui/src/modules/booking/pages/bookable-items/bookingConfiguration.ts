@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { createElement } from "react";
+import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
   schedulingSettingsEntries,
@@ -7,7 +8,11 @@ import {
 } from "@/modules/booking/configuration/schedulingSettings";
 import { bookingApiV2Headers, bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
-import { bookingTimeZoneOptions, isValidTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingTimeZoneOptions,
+  isValidTimeZone,
+  useBookingTimeFormat,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
@@ -179,15 +184,14 @@ const bookingConfigurationReadParameters = {
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
-/** The booking configuration API answered with an error status. */
 export class BookingConfigurationRequestError extends Error {
   constructor(readonly status: number) {
     super(`Booking configuration request failed with status ${status}`);
   }
 }
 
-/** No readable booking configuration exists for a target. */
-class BookingConfigurationNotFoundError extends Error {
+/** No readable booking configuration exists for a target: it is unconfigured, missing, or not visible. */
+export class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
 }
 
@@ -329,12 +333,12 @@ export const bookingConfigurationConfig = {
       name: "state",
       type: "select",
       options: ["ACTIVE", "ARCHIVED"],
-      labelKey: "booking:bookableItems.fields.state",
+      // The column header and the columns panel both read this label.
+      labelKey: "booking:bookableItems.fields.status",
       form: false,
       list: {
         dependencies: ["enabled"],
         // One status column: an archived item is Archived; an active one is Enabled or Disabled.
-        renderHeader: () => i18n.t("booking:bookableItems.fields.status"),
         renderCell: ({ row }) =>
           row.state === "ARCHIVED"
             ? i18n.t("booking:bookableItemDetails.archived")
@@ -357,14 +361,7 @@ export const bookingConfigurationConfig = {
       labelKey: "booking:bookableItems.fields.updatedAt",
       form: false,
       list: {
-        renderCell: ({ row }) =>
-          row.updatedAt
-            ? new Intl.DateTimeFormat(i18n.language, {
-                dateStyle: "medium",
-                timeStyle: "short",
-                hourCycle: bookingHourCycle(),
-              }).format(new Date(row.updatedAt))
-            : i18n.t("booking:bookableItemDetails.notAvailable"),
+        renderCell: ({ row }) => createElement(ConfigurationUpdatedAt, { value: row.updatedAt }),
       },
     },
     {
@@ -441,3 +438,15 @@ export const bookingConfigurationConfig = {
 export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" | "target">;
 
 export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
+
+function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
+  const { i18n, t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
+  return value
+    ? new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        hourCycle: bookingHourCycle(timeFormat),
+      }).format(new Date(value))
+    : t("bookableItemDetails.notAvailable");
+}

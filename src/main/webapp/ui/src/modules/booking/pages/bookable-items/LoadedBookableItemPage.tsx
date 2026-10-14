@@ -1,7 +1,7 @@
 import { Tabs } from "@base-ui/react/tabs";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { PencilIcon } from "lucide-react";
+import { PencilIcon, SaveIcon, XIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -109,6 +109,8 @@ export function LoadedBookableItemPage({
   const [cutoff] = useState(() => new Date().toISOString());
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
+  // The server version loaded after a conflict; the next Save of the kept draft targets it.
+  const [conflictVersion, setConflictVersion] = useState<number | null>(null);
   const [rulesSaveBlocked, setRulesSaveBlocked] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
@@ -151,14 +153,16 @@ export function LoadedBookableItemPage({
       ]);
       setSaveAnnouncement("saved");
       setStaleEdit(false);
+      setConflictVersion(null);
       setEdit(false);
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         setStaleEdit(true);
-        await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
-        });
+        const queryKey = ["api-v2", "booking-configurations", "target", globalId];
+        await queryClient.refetchQueries({ queryKey });
+        const latest = queryClient.getQueryData<BookingConfiguration>(queryKey);
+        if (latest) setConflictVersion(latest.configurationVersion);
       }
     },
   });
@@ -205,7 +209,11 @@ export function LoadedBookableItemPage({
     mutationFn: () =>
       permanentlyDeleteBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      // The deleted configuration's instrument becomes an eligible target again.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
+      ]);
       setPermanentDeleteOpen(false);
       void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
@@ -265,7 +273,14 @@ export function LoadedBookableItemPage({
   const cancelEdit = () => {
     setSaveAnnouncement(null);
     setStaleEdit(false);
+    setConflictVersion(null);
     setEdit(false);
+  };
+
+  const discardConflictedDraft = () => {
+    updateMutation.reset();
+    setStaleEdit(false);
+    setConflictVersion(null);
   };
 
   const handleLifecycleAction = (action: BookingConfigurationLifecycleAction) => {
@@ -391,6 +406,7 @@ export function LoadedBookableItemPage({
                               disabled={updateMutation.isPending || rulesSaveBlocked}
                               aria-busy={updateMutation.isPending}
                             >
+                              <SaveIcon aria-hidden="true" />
                               {t("bookableItems.actions.save")}
                             </Button>
                             <Button
@@ -400,6 +416,7 @@ export function LoadedBookableItemPage({
                               disabled={updateMutation.isPending}
                               onClick={cancelEdit}
                             >
+                              <XIcon aria-hidden="true" />
                               {t("bookableItemDetails.cancelEdit")}
                             </Button>
                           </>
@@ -427,8 +444,10 @@ export function LoadedBookableItemPage({
                         formId={formId}
                         pending={updateMutation.isPending}
                         staleEdit={staleEdit}
+                        conflictVersion={conflictVersion}
                         failed={updateMutation.isError}
                         onSubmit={(input, version) => updateMutation.mutateAsync({ input, version })}
+                        onDiscardConflictedDraft={discardConflictedDraft}
                         onSaveBlockedChange={setRulesSaveBlocked}
                       />
                     ) : (
