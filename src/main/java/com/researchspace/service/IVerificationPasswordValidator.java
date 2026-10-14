@@ -18,11 +18,10 @@ public interface IVerificationPasswordValidator {
    *
    * @param passwordOwner The password owner - can be the subject or an operating-as sysadmin
    * @param password Candidate password
-   * @return true if password matches hashed value, false otherwise
-   * @throws com.researchspace.auth.password.LoginVerificationBusyException if no verification slot
-   *     is free in time
+   * @return {@link ReauthenticationResult#BUSY} if no verification slot is free in time; the busy
+   *     refusal never leaves this method, so it cannot mark the caller's transaction rollback-only
    */
-  boolean authenticateVerificationPassword(User passwordOwner, String password);
+  ReauthenticationResult authenticateVerificationPassword(User passwordOwner, String password);
 
   /**
    * Hashes verification password for storage.

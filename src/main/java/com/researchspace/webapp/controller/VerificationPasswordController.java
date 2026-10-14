@@ -134,13 +134,21 @@ public class VerificationPasswordController extends BaseController {
           verificationPasswordValidator.hashVerificationPassword(newPass));
       userManager.saveUser(current);
       SECURITY_LOG.info("User [{}] successfully set verification password", username);
-    } else if (!verificationPasswordValidator.authenticateVerificationPassword(current, newPass)) {
-      SECURITY_LOG.warn(
-          "User [{}] attempted to set verification password, from {}, but it had just been set"
-              + " with a different value",
-          username,
-          RequestUtil.remoteAddr(request));
-      return failure(getText("verificationPassword.set.errors.alreadySet"));
+    } else {
+      switch (verificationPasswordValidator.authenticateVerificationPassword(current, newPass)) {
+        case OK -> {}
+        case BUSY -> {
+          return failure(getText("verificationPassword.set.errors.busy"));
+        }
+        case WRONG -> {
+          SECURITY_LOG.warn(
+              "User [{}] attempted to set verification password, from {}, but it had just been set"
+                  + " with a different value",
+              username,
+              RequestUtil.remoteAddr(request));
+          return failure(getText("verificationPassword.set.errors.alreadySet"));
+        }
+      }
     }
     return new AjaxReturnObject<>(getText("verificationPassword.set.success"), null);
   }

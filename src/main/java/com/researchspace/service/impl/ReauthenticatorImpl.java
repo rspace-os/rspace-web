@@ -10,7 +10,7 @@ import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserManager;
-import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,21 +49,24 @@ public class ReauthenticatorImpl implements IReauthenticator {
         () -> verificationPasswordValidator.authenticateVerificationPassword(passwordOwner, pwd));
   }
 
-  private ReauthenticationResult logged(User subject, BooleanSupplier passwordCheck) {
-    boolean authenticated;
+  private ReauthenticationResult logged(
+      User subject, Supplier<ReauthenticationResult> passwordCheck) {
+    ReauthenticationResult result;
     try {
-      authenticated = passwordCheck.getAsBoolean();
+      result = passwordCheck.get();
     } catch (LoginVerificationBusyException e) {
       SECURITY_LOG.warn("Reauthentication refused: {}", e.getMessage());
       return ReauthenticationResult.BUSY;
     }
-    if (!authenticated) {
+    if (result == ReauthenticationResult.BUSY) {
+      SECURITY_LOG.warn("Reauthentication as [{}] refused as busy", subject.getUsername());
+    } else if (result == ReauthenticationResult.WRONG) {
       SECURITY_LOG.warn("Failed reauthentication as [{}]", subject.getUsername());
     }
-    return ReauthenticationResult.of(authenticated);
+    return result;
   }
 
-  private boolean checkPassword(User subject, String pwd) {
+  private ReauthenticationResult checkPassword(User subject, String pwd) {
     // If in single sign-on mode or Community Google, check the user's verification
     // password
     if (verificationPasswordValidator.isVerificationPasswordRequired(subject)) {
@@ -71,17 +74,17 @@ public class ReauthenticatorImpl implements IReauthenticator {
       if (verificationPasswordValidator.isVerificationPasswordSet(subject)) {
         return verificationPasswordValidator.authenticateVerificationPassword(subject, pwd);
       } else {
-        return false;
+        return ReauthenticationResult.WRONG;
       }
     }
 
     // for LDAP users re-authenticate with LDAP
     if (SignupSource.LDAP.equals(subject.getSignupSource())) {
       User foundLdapUser = userLdapRepo.authenticate(subject.getUsername(), pwd);
-      return foundLdapUser != null;
+      return ReauthenticationResult.of(foundLdapUser != null);
     }
 
     // check provided password against default realm
-    return credentialsMatcher.verify(subject, pwd);
+    return ReauthenticationResult.of(credentialsMatcher.verify(subject, pwd));
   }
 }

@@ -18,6 +18,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.VerificationPasswordValidatorImpl;
 import com.researchspace.testutils.TestFactory;
@@ -117,7 +118,7 @@ public class VerificationPasswordControllerTest {
               return "hashedPW";
             });
     when(verificationPasswordValidator.authenticateVerificationPassword(anyUser, OK_PWD))
-        .thenReturn(true);
+        .thenReturn(ReauthenticationResult.OK);
     ExecutorService pool = Executors.newFixedThreadPool(2);
     try {
       Future<AjaxReturnObject<String>> first = pool.submit(this::setOkPassword);
@@ -224,9 +225,22 @@ public class VerificationPasswordControllerTest {
     stubConcurrentSet(sessionCopy);
     anyUser.setVerificationPassword("setByAnotherSignIn");
     when(verificationPasswordValidator.authenticateVerificationPassword(anyUser, OK_PWD))
-        .thenReturn(false);
+        .thenReturn(ReauthenticationResult.WRONG);
 
     assertFailure(getText("verificationPassword.set.errors.alreadySet"), setOkPassword());
+    verify(verificationPasswordValidator, never()).hashVerificationPassword(any());
+    assertUserPasswordNotSaved();
+  }
+
+  @Test
+  public void losingSetWhoseCheckIsBusyIsToldItIsBusyNotAlreadySet() {
+    User sessionCopy = TestFactory.createAnyUser("any");
+    stubConcurrentSet(sessionCopy);
+    anyUser.setVerificationPassword("setByAnotherSignIn");
+    when(verificationPasswordValidator.authenticateVerificationPassword(anyUser, OK_PWD))
+        .thenReturn(ReauthenticationResult.BUSY);
+
+    assertFailure(getText("verificationPassword.set.errors.busy"), setOkPassword());
     verify(verificationPasswordValidator, never()).hashVerificationPassword(any());
     assertUserPasswordNotSaved();
   }

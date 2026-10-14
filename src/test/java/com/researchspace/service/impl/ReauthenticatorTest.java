@@ -69,11 +69,11 @@ public class ReauthenticatorTest {
   @Test
   void ownVerificationPasswordCheckSkipsOperateAsSubstitution() {
     when(verificationPasswordValidator.authenticateVerificationPassword(user, "wrong"))
-        .thenReturn(false);
+        .thenReturn(WRONG);
     when(verificationPasswordValidator.authenticateVerificationPassword(user, "right"))
-        .thenReturn(true);
+        .thenReturn(OK);
     when(verificationPasswordValidator.authenticateVerificationPassword(user, "busy"))
-        .thenThrow(new LoginVerificationBusyException("busy"));
+        .thenReturn(BUSY);
 
     assertEquals(BUSY, reauthenticator.reauthenticateWithVerificationPassword(user, "busy"));
     assertEquals(WRONG, reauthenticator.reauthenticateWithVerificationPassword(user, "wrong"));
@@ -97,7 +97,7 @@ public class ReauthenticatorTest {
     when(verificationPasswordValidator.isVerificationPasswordRequired(user)).thenReturn(true);
     when(verificationPasswordValidator.isVerificationPasswordSet(user)).thenReturn(true);
     when(verificationPasswordValidator.authenticateVerificationPassword(user, ANY_PWD))
-        .thenReturn(true);
+        .thenReturn(OK);
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
 
     assertEquals(OK, reauthenticator.reauthenticate(user, ANY_PWD));
@@ -137,7 +137,7 @@ public class ReauthenticatorTest {
     when(verificationPasswordValidator.isVerificationPasswordRequired(sysadmin)).thenReturn(true);
     when(verificationPasswordValidator.isVerificationPasswordSet(sysadmin)).thenReturn(true);
     when(verificationPasswordValidator.authenticateVerificationPassword(sysadmin, ANY_PWD))
-        .thenReturn(true);
+        .thenReturn(OK);
     assertEquals(OK, reauthenticator.reauthenticate(user, ANY_PWD));
   }
 }

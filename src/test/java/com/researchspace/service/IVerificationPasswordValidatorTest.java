@@ -1,10 +1,12 @@
 package com.researchspace.service;
 
+import static com.researchspace.service.ReauthenticationResult.BUSY;
+import static com.researchspace.service.ReauthenticationResult.OK;
+import static com.researchspace.service.ReauthenticationResult.WRONG;
 import static com.researchspace.testutils.LegacyVerificationPasswordFixture.BCRYPT_HASH;
 import static com.researchspace.testutils.LegacyVerificationPasswordFixture.PLAIN;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -79,7 +81,7 @@ public class IVerificationPasswordValidatorTest {
     String plaintextPw = "pass";
     String hashedPw = verificationValidator.hashVerificationPassword(plaintextPw);
     anyUser.setVerificationPassword(hashedPw);
-    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, plaintextPw));
+    assertEquals(OK, verificationValidator.authenticateVerificationPassword(anyUser, plaintextPw));
   }
 
   @Test
@@ -93,28 +95,27 @@ public class IVerificationPasswordValidatorTest {
     String legacy = "{bcrypt}" + BCRYPT_HASH;
     anyUser.setVerificationPassword(legacy);
 
-    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, "verify12345"));
-    assertTrue(verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
+    assertEquals(
+        WRONG, verificationValidator.authenticateVerificationPassword(anyUser, "verify12345"));
+    assertEquals(OK, verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
     assertEquals(legacy, anyUser.getVerificationPassword());
   }
 
   @Test
   public void bareBcryptOrMissingVerificationPasswordDoesNotMatch() {
     anyUser.setVerificationPassword(BCRYPT_HASH);
-    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
+    assertEquals(WRONG, verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
     anyUser.setVerificationPassword(null);
-    assertFalse(verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
+    assertEquals(WRONG, verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
   }
 
   @Test
-  public void busyVerificationPropagates() {
+  public void busyVerificationIsReportedAsBusyWithoutLeavingTheTransactionProxy() {
     anyUser.setVerificationPassword("{bcrypt}" + BCRYPT_HASH);
     doThrow(new LoginVerificationBusyException("busy"))
         .when(verifier)
         .verify(anyString(), any(), anyString());
 
-    assertThrows(
-        LoginVerificationBusyException.class,
-        () -> verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
+    assertEquals(BUSY, verificationValidator.authenticateVerificationPassword(anyUser, PLAIN));
   }
 }

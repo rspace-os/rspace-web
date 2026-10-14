@@ -3,11 +3,13 @@ package com.researchspace.service.impl;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.auth.password.BoundedPasswordVerifier;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.auth.password.RSpacePasswordEncoder;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.ReauthenticationResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -42,13 +44,19 @@ public class VerificationPasswordValidatorImpl implements IVerificationPasswordV
   }
 
   @Override
-  public boolean authenticateVerificationPassword(User passwordOwner, String password) {
+  public ReauthenticationResult authenticateVerificationPassword(
+      User passwordOwner, String password) {
     String username = passwordOwner.getUsername();
     try {
-      return verifier.verify(username, password, passwordOwner.getVerificationPassword());
+      return ReauthenticationResult.of(
+          verifier.verify(username, password, passwordOwner.getVerificationPassword()));
+    } catch (LoginVerificationBusyException e) {
+      // caught here, inside this bean's transaction advice, so the caller's transaction can commit
+      log.warn("Verification password check of [{}] refused: {}", username, e.getMessage());
+      return ReauthenticationResult.BUSY;
     } catch (IllegalArgumentException e) {
       log.error("Stored verification password of [{}] cannot be verified", username, e);
-      return false;
+      return ReauthenticationResult.WRONG;
     }
   }
 

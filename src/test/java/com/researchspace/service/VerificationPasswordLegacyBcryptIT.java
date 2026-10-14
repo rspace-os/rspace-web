@@ -42,8 +42,11 @@ class VerificationPasswordLegacyBcryptIT extends RealTransactionSpringTestBase {
     runPrefixMigration();
     assertEquals("{bcrypt}" + BCRYPT_HASH, stored(u));
 
-    assertFalse(validator.authenticateVerificationPassword(reload(u), "verify1234x"));
-    assertTrue(validator.authenticateVerificationPassword(reload(u), PLAIN));
+    assertEquals(
+        ReauthenticationResult.WRONG,
+        validator.authenticateVerificationPassword(reload(u), "verify1234x"));
+    assertEquals(
+        ReauthenticationResult.OK, validator.authenticateVerificationPassword(reload(u), PLAIN));
     assertEquals("{bcrypt}" + BCRYPT_HASH, stored(u));
 
     assertTrue(runPrefixMigration().getConfirmationMessage().startsWith("Prefixed 0 "));
@@ -83,7 +86,9 @@ class VerificationPasswordLegacyBcryptIT extends RealTransactionSpringTestBase {
   private String assertArgon2AndVerifies(User u, String verificationPassword) {
     String stored = stored(u);
     assertTrue(stored.startsWith("{" + RSpacePasswordEncoder.ARGON2_ID + "}"), stored);
-    assertTrue(validator.authenticateVerificationPassword(reload(u), verificationPassword));
+    assertEquals(
+        ReauthenticationResult.OK,
+        validator.authenticateVerificationPassword(reload(u), verificationPassword));
     return stored;
   }
 
