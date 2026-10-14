@@ -103,7 +103,6 @@ public final class ResourceRenderer {
     return render(
         entity,
         description,
-        fields,
         ResourceFieldSelections.root(fields),
         includes,
         targetResolver,
@@ -126,6 +125,25 @@ public final class ResourceRenderer {
       IncludeTree includes,
       TargetResolver targetResolver,
       Map<String, Object> readOverrides) {
+    return render(
+        entity,
+        description,
+        selections,
+        includes,
+        targetResolver,
+        readOverrides,
+        new AccessContext(null, AccessContext.Operation.READ, description.resourceName()));
+  }
+
+  /** Renders with request-local caller context, including every embedded child. */
+  public <T> Map<String, Object> render(
+      T entity,
+      CollectionDescription<T> description,
+      ResourceFieldSelections selections,
+      IncludeTree includes,
+      TargetResolver targetResolver,
+      Map<String, Object> readOverrides,
+      AccessContext context) {
     return renderAll(
             List.of(entity),
             description,
@@ -133,7 +151,8 @@ public final class ResourceRenderer {
             ignored -> readOverrides,
             selections,
             includes,
-            targetResolver)
+            targetResolver,
+            context)
         .get(0);
   }
 
@@ -164,6 +183,27 @@ public final class ResourceRenderer {
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver) {
+    return renderAll(
+        entities,
+        description,
+        fieldsForEntity,
+        readOverridesForEntity,
+        selections,
+        includes,
+        targetResolver,
+        new AccessContext(null, AccessContext.Operation.READ, description.resourceName()));
+  }
+
+  /** Uses one caller context for this page and its included documents. */
+  public <T> List<Map<String, Object>> renderAll(
+      List<T> entities,
+      CollectionDescription<T> description,
+      Function<T, FieldSelection> fieldsForEntity,
+      Function<T, Map<String, Object>> readOverridesForEntity,
+      ResourceFieldSelections selections,
+      IncludeTree includes,
+      TargetResolver targetResolver,
+      AccessContext context) {
     TargetResolver requestResolver =
         targetResolver == NO_TARGETS ? NO_TARGETS : new CachingTargetResolver(targetResolver);
     if (targetResolver != NO_TARGETS) {
@@ -185,7 +225,8 @@ public final class ResourceRenderer {
                     selections,
                     includes,
                     requestResolver,
-                    readOverridesForEntity.apply(entity)))
+                    readOverridesForEntity.apply(entity),
+                    context.forRead(description.resourceName(), description.idValue(entity))))
         .toList();
   }
 
@@ -299,11 +340,15 @@ public final class ResourceRenderer {
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver,
-      Map<String, Object> readOverrides) {
+      Map<String, Object> readOverrides,
+      AccessContext context) {
     Map<String, Object> document =
         new LinkedHashMap<>(
             description.toDocument(
-                entity, field -> fields.includes(field, description.idField()), readOverrides));
+                entity,
+                field -> fields.includes(field, description.idField()),
+                readOverrides,
+                context));
     description
         .relationships()
         .forEach(
@@ -316,7 +361,8 @@ public final class ResourceRenderer {
                     selections,
                     includes,
                     targetResolver,
-                    document));
+                    document,
+                    context));
     return document;
   }
 
@@ -328,7 +374,8 @@ public final class ResourceRenderer {
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver,
-      Map<String, Object> document) {
+      Map<String, Object> document,
+      AccessContext context) {
     if (!fields.includes(relationship.name(), description.idField())) {
       return;
     }
@@ -343,7 +390,8 @@ public final class ResourceRenderer {
     }
     document.put(
         relationship.name(),
-        renderReference(relationship, reference, child, selections, targetResolver).orElse(null));
+        renderReference(relationship, reference, child, selections, targetResolver, context)
+            .orElse(null));
   }
 
   private <T> Optional<Object> renderReference(
@@ -351,7 +399,8 @@ public final class ResourceRenderer {
       ResourceReference<?, ?> reference,
       Optional<IncludeTree> includes,
       ResourceFieldSelections selections,
-      TargetResolver targetResolver) {
+      TargetResolver targetResolver,
+      AccessContext context) {
     RelationshipTarget<?> target = relationship.targetForKind(reference.kind());
     CollectionDescription<?> targetDescription = registry.requireResource(target.resourceName());
     FieldSelection requestedFields = selections.forResource(target.resourceName());
@@ -381,13 +430,15 @@ public final class ResourceRenderer {
                               selections,
                               includes.orElseThrow(),
                               targetResolver,
-                              targetEntity.readOverrides())
+                              targetEntity.readOverrides(),
+                              context.forRead(target.resourceName(), reference.id()))
                           : selectReadDocument(
                               targetEntity.readDocument(),
                               targetDescription,
                               targetEntity
                                   .fields()
-                                  .intersect(requestedFields, targetDescription.idField())))
+                                  .intersect(requestedFields, targetDescription.idField()),
+                              context.forRead(target.resourceName(), reference.id())))
               .orElse(renderedValue);
     }
     Map<String, Object> referenceDocument = new LinkedHashMap<>();
@@ -400,13 +451,20 @@ public final class ResourceRenderer {
   }
 
   private static Map<String, Object> selectReadDocument(
-      Map<String, Object> document, CollectionDescription<?> description, FieldSelection fields) {
+      Map<String, Object> document,
+      CollectionDescription<?> description,
+      FieldSelection fields,
+      AccessContext context) {
     Map<String, Object> selected = new LinkedHashMap<>();
     description.fields().stream()
-        .map(Field::name)
-        .filter(field -> fields.includes(field, description.idField()))
-        .filter(document::containsKey)
-        .forEach(field -> selected.put(field, document.get(field)));
+        .filter(field -> fields.includes(field.name(), description.idField()))
+        .filter(field -> field.readAccess().allowsField(context))
+        .filter(field -> document.containsKey(field.name()))
+        .forEach(
+            field ->
+                selected.put(
+                    field.name(),
+                    field.projectIncludedReadValue(document.get(field.name()), context)));
     return selected;
   }
 
@@ -421,9 +479,10 @@ public final class ResourceRenderer {
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver,
-      Map<String, Object> readOverrides) {
+      Map<String, Object> readOverrides,
+      AccessContext context) {
     return renderCaptured(
-        entity, description, fields, selections, includes, targetResolver, readOverrides);
+        entity, description, fields, selections, includes, targetResolver, readOverrides, context);
   }
 
   private <T> Map<String, Object> renderCaptured(
@@ -433,9 +492,17 @@ public final class ResourceRenderer {
       ResourceFieldSelections selections,
       IncludeTree includes,
       TargetResolver targetResolver,
-      Map<String, Object> readOverrides) {
+      Map<String, Object> readOverrides,
+      AccessContext context) {
     T typedEntity = description.entityType().cast(entity);
     return render(
-        typedEntity, description, fields, selections, includes, targetResolver, readOverrides);
+        typedEntity,
+        description,
+        fields,
+        selections,
+        includes,
+        targetResolver,
+        readOverrides,
+        context);
   }
 }

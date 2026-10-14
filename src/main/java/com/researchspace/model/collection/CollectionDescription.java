@@ -100,6 +100,11 @@ public final class CollectionDescription<T> {
             throw new IllegalArgumentException("Duplicate resource member " + member.name());
           }
           if (member instanceof Field<T, ?> field) {
+            if (field.embedded()) {
+              throw new IllegalArgumentException(
+                  "Embedded fields must belong to an object or array");
+            }
+            field.validateConfiguration();
             fieldsByName.put(field.name(), field);
           } else if (member instanceof Relationship<T> relationship) {
             relationshipsByName.put(relationship.name(), relationship);
@@ -313,6 +318,15 @@ public final class CollectionDescription<T> {
   public Map<String, Object> toDocument(
       T entity, Predicate<String> selection, Map<String, Object> readOverrides) {
     return entityMapper.toDocument(entity, selection, readOverrides);
+  }
+
+  /** Reads selected fields and embedded children with one request's access context. */
+  public Map<String, Object> toDocument(
+      T entity,
+      Predicate<String> selection,
+      Map<String, Object> readOverrides,
+      AccessContext context) {
+    return entityMapper.toDocument(entity, selection, readOverrides, context);
   }
 
   /** Returns the serialized identifier value used for row-specific access decisions. */
