@@ -34,7 +34,7 @@ it.each([
   { openingHours: '[{"dayOfWeek":2,"start":"10:00","end":"24:00"},{"dayOfWeek":1,"start":"09:00","end":"17:00"}]' },
 ])("formats independent hours in weekday order from an audit snapshot", ({ openingHours }) => {
   expect(recordedValues({ openingHours }, "en-US")).toEqual([
-    ["openingHours", "Monday 09:00–17:00, Tuesday 10:00–24:00"],
+    ["openingHours", "Monday 09:00–17:00, Tuesday 10:00–00:00"],
   ]);
 });
 
@@ -42,11 +42,67 @@ it("retains unknown and historical audit schedule values", () => {
   expect(recordedValues({ openingHours: { legacy: true }, openingStart: "09:00", openDays: [1, 2] }, "en-US")).toEqual([
     ["openingHours", '{"legacy":true}'],
     ["openingStart", "09:00"],
-    ["openDays", "[1,2]"],
+    ["openDays", "Monday, Tuesday"],
   ]);
 });
 
 describe("recorded audit values", () => {
+  it("reads booleans, states, kinds and the bookable-item target as words", () => {
+    const words = {
+      yes: "Yes",
+      no: "No",
+      values: { ACTIVE: "Active", CANCELLED: "Cancelled", MAINTENANCE: "Maintenance" },
+    };
+    expect(
+      recordedValues(
+        {
+          enabled: true,
+          allowDoubleBooking: "false",
+          state: "ACTIVE",
+          kind: "MAINTENANCE",
+          target: '{"type":"INSTRUMENT","id":504}',
+          timezone: "Australia/Sydney",
+        },
+        "en-US",
+        words,
+      ),
+    ).toEqual([
+      ["enabled", "Yes"],
+      ["allowDoubleBooking", "No"],
+      ["state", "Active"],
+      ["kind", "Maintenance"],
+      ["target", "IN504"],
+      ["timezone", "Australia/Sydney"],
+    ]);
+    // An unknown state is left as recorded rather than hidden.
+    expect(recordedValues({ state: "PENDING" }, "en-US", words)).toEqual([["state", "PENDING"]]);
+  });
+
+  it("formats open days and exceptions as weekdays and scheduling-zone hours", () => {
+    expect(
+      recordedValues(
+        {
+          openDays: [6, 1],
+          openingExceptions:
+            '[{"dayOfWeek":6,"start":"10:00","end":"16:00"},{"dayOfWeek":1,"start":"00:00","end":"24:00"}]',
+        },
+        "en-US",
+      ),
+    ).toEqual([
+      ["openDays", "Monday, Saturday"],
+      ["openingExceptions", "Monday 00:00\u201300:00, Saturday 10:00\u201316:00"],
+    ]);
+    expect(recordedValues({ openDays: "[1,2,3,4,5,6,7]", openingExceptions: [] }, "en-US")).toEqual([
+      ["openDays", "Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday"],
+      ["openingExceptions", "\u2014"],
+    ]);
+    // An unrecognised shape keeps the raw snapshot rather than a misleading reading.
+    expect(recordedValues({ openDays: [0], openingExceptions: "not json" }, "en-US")).toEqual([
+      ["openDays", "[0]"],
+      ["openingExceptions", "not json"],
+    ]);
+  });
+
   it("formats booking instants in UTC while preserving unknown and invalid values", () => {
     const instant = "2026-10-09T08:00:00Z";
     const values = Object.fromEntries(

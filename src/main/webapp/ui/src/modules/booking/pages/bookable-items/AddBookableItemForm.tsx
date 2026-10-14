@@ -132,7 +132,7 @@ export function AddBookableItemForm({
       enabled: true,
       timezone: defaults.institutionTimezone,
       slotGranularityMinutes: defaults.slotGranularityMinutes,
-      openingHours: defaults.openingHours.map((entry) => ({ ...entry })),
+      openingHours: defaults.openingHours,
       bufferBeforeMinutes: defaults.bufferBeforeMinutes,
       bufferAfterMinutes: defaults.bufferAfterMinutes,
       maxBookingDurationMinutes: defaults.maxBookingDurationMinutes,

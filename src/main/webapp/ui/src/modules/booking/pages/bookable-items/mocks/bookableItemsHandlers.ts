@@ -222,6 +222,16 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
 
 export function bookableItemDetailsHandlers(): RequestHandler[] {
   return [
+    http.get("/api/v2/booking-configurations/:id/notification-subscription", ({ params }) =>
+      HttpResponse.json({
+        configurationId: Number(params.id),
+        enabled: false,
+        version: -1,
+        createdEnabled: true,
+        cancelledEnabled: true,
+        emailEnabled: false,
+      }),
+    ),
     http.get("/api/inventory/v1/instruments/123", () =>
       HttpResponse.json({
         sharingMode: "WHITELIST",

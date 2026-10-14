@@ -1,10 +1,29 @@
 import * as v from "valibot";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
-import { formatIsoWeekday, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  formatIsoWeekday,
+  formatOpeningRange,
+  OpeningHoursEntrySchema,
+  OpeningHoursSchema,
+} from "@/modules/booking/domain/bookingOpeningHours";
+import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+
+// Old snapshots retain the schedule contract of their revision.
+const HistoricalOpenDaysSchema = v.pipe(
+  v.array(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7))),
+  v.minLength(1),
+  v.maxLength(7),
+  v.check((days) => new Set(days).size === days.length),
+);
+const HistoricalExceptionsSchema = v.pipe(
+  v.array(OpeningHoursEntrySchema),
+  v.maxLength(7),
+  v.check((entries) => new Set(entries.map((entry) => entry.dayOfWeek)).size === entries.length),
+);
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SNAPSHOT_FINGERPRINT = /^[0-9a-f]{64}$/;
@@ -33,26 +52,23 @@ type AuditDateValidation =
   | { valid: true; range: AuditDateRange; dates: { from: Date; to: Date } }
   | { valid: false; fields: Partial<Record<AuditDateField, AuditDateError>> };
 
-export const AUDIT_ACTIONS = [
-  "CREATE",
-  "DELETE",
-  "DOWNLOAD",
-  "DUPLICATE",
-  "EXPORT",
-  "MOVE",
-  "READ",
-  "RENAME",
-  "RESTORE",
-  "SEARCH",
-  "SHARE",
-  "SIGN",
-  "TRANSFER",
-  "UNSHARE",
-  "VIEW",
-  "WITNESSED",
-  "WRITE",
-] as const;
+/**
+ * The audit actions Booking records: bookings are created (CREATE) and edited or cancelled (WRITE);
+ * configurations are also deleted (DELETE) and restored (RESTORE).
+ */
+export const AUDIT_ACTIONS = ["CREATE", "WRITE", "DELETE", "RESTORE"] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+/** A Booking-level reading of an audit event. A WRITE that sets the state to CANCELLED is a cancellation. */
+export type AuditEventKind = "created" | "changed" | "cancelled" | "deleted" | "restored";
+
+export function auditEventKind(event: Pick<AuditEvent, "action" | "payload">): AuditEventKind | null {
+  if (event.action === "CREATE") return "created";
+  if (event.action === "WRITE") return event.payload.state === "CANCELLED" ? "cancelled" : "changed";
+  if (event.action === "DELETE") return "deleted";
+  if (event.action === "RESTORE") return "restored";
+  return null;
+}
 
 const AuditPageSchema = v.intersect([
   v2ListEnvelope(AuditEventSchema),
@@ -177,33 +193,86 @@ function parsedArray(value: unknown): unknown {
   }
 }
 
-/** Recorded values for one event. Unknown nested values retain their JSON representation. */
-export function recordedValues(payload: AuditEvent["payload"], locale: string): Array<[string, string]> {
+/** Recorded schedules as weekday names and scheduling-zone ranges; otherwise undefined. */
+function openingValue(key: string, value: unknown, locale: string): string | undefined {
+  if (key === "openDays") {
+    const days = v.safeParse(HistoricalOpenDaysSchema, parsedArray(value));
+    if (days.success)
+      return formatList(
+        days.output.toSorted((left, right) => left - right).map((day) => formatIsoWeekday(day, "long", locale)),
+        locale,
+        { type: "unit" },
+      );
+  }
+  if (key === "openingHours" || key === "openingExceptions") {
+    const exceptions = v.safeParse(
+      key === "openingHours" ? OpeningHoursSchema : HistoricalExceptionsSchema,
+      parsedArray(value),
+    );
+    if (exceptions.success) {
+      if (exceptions.output.length === 0) return "—";
+      return formatList(
+        exceptions.output
+          .toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)
+          .map(
+            (exception) => `${formatIsoWeekday(exception.dayOfWeek, "long", locale)} ${formatOpeningRange(exception)}`,
+          ),
+        locale,
+        { type: "unit" },
+      );
+    }
+  }
+  return undefined;
+}
+
+/** Translated words for recorded booleans and enumerated values, so they read as the rest of the UI does. */
+export type RecordedValueWords = { yes: string; no: string; values: Readonly<Record<string, string>> };
+
+const BOOLEAN_KEYS = new Set(["enabled", "allowDoubleBooking"]);
+
+/** Booleans as Yes/No, states and kinds by their labels, and a bookable-item target by its global ID. */
+function wordValue(key: string, value: unknown, words: RecordedValueWords): string | undefined {
+  if (typeof value === "boolean" || (BOOLEAN_KEYS.has(key) && (value === "true" || value === "false"))) {
+    return value === true || value === "true" ? words.yes : words.no;
+  }
+  if ((key === "state" || key === "kind") && typeof value === "string") return words.values[value];
+  if (key === "target") {
+    const target = parsedArray(value);
+    if (
+      typeof target === "object" &&
+      target !== null &&
+      "type" in target &&
+      "id" in target &&
+      target.type === "INSTRUMENT" &&
+      typeof target.id === "number"
+    ) {
+      return `IN${target.id}`;
+    }
+  }
+  return undefined;
+}
+
+/** Recorded values for one event. Nested values are JSON-encoded, never dropped. */
+export function recordedValues(
+  payload: AuditEvent["payload"],
+  locale: string,
+  words?: RecordedValueWords,
+): Array<[string, string]> {
   const dateFormat = new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "long",
+    hourCycle: bookingHourCycle(),
     timeZone: "UTC",
   });
   return Object.entries(payload).map(([key, value]) => {
-    if (key === "openingHours") {
-      const hours = v.safeParse(OpeningHoursSchema, parsedArray(value));
-      if (hours.success) {
-        return [
-          key,
-          formatList(
-            hours.output.map(
-              (entry) => `${formatIsoWeekday(entry.dayOfWeek, "long", locale)} ${entry.start}–${entry.end}`,
-            ),
-            locale,
-            { type: "unit" },
-          ),
-        ];
-      }
-    }
     if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
       const date = new Date(value);
       if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
     }
+    const opening = openingValue(key, value, locale);
+    if (opening !== undefined) return [key, opening];
+    const word = words && wordValue(key, value, words);
+    if (word !== undefined) return [key, word];
     return [
       key,
       value === null || value === undefined
