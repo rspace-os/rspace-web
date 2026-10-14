@@ -491,15 +491,10 @@ public final class Field<T, V> implements ResourceMember<T> {
           .forEach(
               example -> {
                 try {
-                  com.fasterxml.jackson.databind.JsonNode node;
-                  try {
-                    node = new ObjectMapper().readTree(example);
-                  } catch (IOException ex) {
-                    if (type.inputKind() != CollectionFieldType.InputKind.STRING) {
-                      throw ex;
-                    }
-                    node = com.fasterxml.jackson.databind.node.TextNode.valueOf(example);
-                  }
+                  var node =
+                      type.inputKind() == CollectionFieldType.InputKind.STRING
+                          ? com.fasterxml.jackson.databind.node.TextNode.valueOf(example)
+                          : new ObjectMapper().readTree(example);
                   if (node != null && node.isNull() && nullable) {
                     return;
                   }
