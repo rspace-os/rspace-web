@@ -59,6 +59,10 @@ Errors use localized RFC 9457 problem responses. Query validation rejects unsupp
 operators, values and excessive complexity before querying the database. Spring's JSON reader
 also bounds document size, string size, token count and nesting depth.
 
+`ResourceRequest.Page` enforces a size between 1 and 100 for every adapter, including direct Java
+callers. Relationship fallback lookups split larger ID sets into pages of at most 100 and
+combine the readable results before applying read overrides.
+
 Inventory API v1 requests may use a REST API v2 UI token only when the matching authenticated
 browser session is present. The v1 OAuth authenticator delegates these tokens to the v2 validator,
 which checks the live subject, run-as actor, and session context; it does not create a second
