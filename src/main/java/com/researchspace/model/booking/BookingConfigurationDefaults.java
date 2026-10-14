@@ -5,6 +5,7 @@ import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -19,6 +20,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import lombok.Getter;
@@ -46,16 +48,12 @@ public class BookingConfigurationDefaults implements Serializable {
 
   @Getter(
       onMethod_ = {
-        @Column(nullable = false, length = 5),
-        @AuditTrailProperty(name = "openingStart")
+        @Convert(converter = BookingOpeningHoursConverter.class),
+        @Column(nullable = false, length = 1024),
+        @AuditTrailProperty(name = "openingHours")
       })
-  @Setter
-  private String openingStart;
-
-  @Getter(
-      onMethod_ = {@Column(nullable = false, length = 5), @AuditTrailProperty(name = "openingEnd")})
-  @Setter
-  private String openingEnd;
+  private List<BookingOpeningHoursEntry> openingHours =
+      BookingSchedulingSettings.DEFAULT_OPENING_HOURS;
 
   @Getter(
       onMethod_ = {@Column(nullable = false), @AuditTrailProperty(name = "bufferBeforeMinutes")})
@@ -181,7 +179,19 @@ public class BookingConfigurationDefaults implements Serializable {
   @Transient
   @AssertTrue(message = "{errors.api.v2.bookingConfiguration.openingHours.invalid}")
   public boolean isOpeningHoursValid() {
-    return BookingSchedulingSettings.areOpeningHoursValid(openingStart, openingEnd);
+    return BookingSchedulingSettings.areOpeningHoursValid(openingHours);
+  }
+
+  /** Replaces the complete schedule, stored in ascending weekday order. */
+  public void setOpeningHours(List<BookingOpeningHoursEntry> openingHours) {
+    this.openingHours =
+        openingHours == null
+            ? null
+            : openingHours.stream()
+                .sorted(
+                    java.util.Comparator.nullsLast(
+                        java.util.Comparator.comparingInt(BookingOpeningHoursEntry::dayOfWeek)))
+                .toList();
   }
 
   @Transient

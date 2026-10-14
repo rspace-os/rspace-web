@@ -1,5 +1,7 @@
 package com.researchspace.testutils;
 
+import com.researchspace.model.booking.BookingOpeningHoursCodec;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -87,10 +89,10 @@ public class DatabaseCleaner {
     jdbcTemplate.update("delete from BookingDefaultAccessGrantee");
     jdbcTemplate.update("delete from BookingConfigurationDefaults_AUD");
     jdbcTemplate.update(
-        "update BookingConfigurationDefaults set slotGranularityMinutes = 5, openingStart ="
-            + " '00:00', openingEnd = '24:00', bufferBeforeMinutes = 0, bufferAfterMinutes = 0,"
-            + " maxBookingDurationMinutes = 0, allowDoubleBooking = 0, defaultSharedWith ="
-            + " 'ALL_USERS', configurationVersion = 0");
+        "update BookingConfigurationDefaults set slotGranularityMinutes = 5, openingHours = ?,"
+            + " bufferBeforeMinutes = 0, bufferAfterMinutes = 0, maxBookingDurationMinutes = 0,"
+            + " allowDoubleBooking = 0, defaultSharedWith = 'ALL_USERS', configurationVersion = 0",
+        BookingOpeningHoursCodec.openingHoursJson(BookingSchedulingSettings.DEFAULT_OPENING_HOURS));
 
     jdbcTemplate.update("delete from OAuthApp where id > 0");
 

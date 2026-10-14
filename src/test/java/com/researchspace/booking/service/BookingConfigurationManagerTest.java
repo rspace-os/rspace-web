@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -35,6 +36,7 @@ import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -191,8 +193,7 @@ class BookingConfigurationManagerTest {
     assertSame(actor, created.getUpdatedBy());
     assertEquals(created.getCreatedAt(), created.getUpdatedAt());
     assertEquals(5, created.getSlotGranularityMinutes());
-    assertEquals("00:00", created.getOpeningStart());
-    assertEquals("24:00", created.getOpeningEnd());
+    assertEquals(BookingSchedulingSettings.DEFAULT_OPENING_HOURS, created.getOpeningHours());
     assertEquals(BookingResourceRoleScheme.SCHEME_KEY, created.getResourceAccess().getSchemeKey());
     assertEquals(2, created.getResourceAccess().getAssignments().size());
     assertTrue(
@@ -213,8 +214,13 @@ class BookingConfigurationManagerTest {
 
   @Test
   void copiesOneDefaultsSnapshotForBulkCreateAndHonoursExplicitOverrides() {
+    BookingConfigurationDefaults defaults = defaults(15, "08:00", "18:00", 10, 20, 120, true);
+    defaults.setOpeningHours(
+        List.of(
+            new BookingOpeningHoursEntry(1, "09:00", "17:00"),
+            new BookingOpeningHoursEntry(2, "10:00", "16:00")));
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
-        .thenReturn(Optional.of(defaults(15, "08:00", "18:00", 10, 20, 120, true)));
+        .thenReturn(Optional.of(defaults));
     when(dao.saveAndFlush(any(BookingConfiguration.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -226,22 +232,30 @@ class BookingConfigurationManagerTest {
                     true,
                     "UTC",
                     target(13L),
-                    new BookingSchedulingSettings.Patch(1L, null, null, 2L, null, 60L, false))),
+                    new BookingSchedulingSettings.Patch(
+                        1L, hours("18:00", "24:00", 5), 2L, null, 60L, false))),
             actor,
             actor);
 
     assertEquals(15, created.get(0).getSlotGranularityMinutes());
-    assertEquals("08:00", created.get(0).getOpeningStart());
+    assertEquals(defaults.getOpeningHours(), created.get(0).getOpeningHours());
     assertEquals(10, created.get(0).getBufferBeforeMinutes());
     assertEquals(120, created.get(0).getMaxBookingDurationMinutes());
     assertTrue(created.get(0).isAllowDoubleBooking());
     assertEquals(1, created.get(1).getSlotGranularityMinutes());
-    assertEquals("18:00", created.get(1).getOpeningEnd());
+    assertEquals(hours("18:00", "24:00", 5), created.get(1).getOpeningHours());
     assertEquals(2, created.get(1).getBufferBeforeMinutes());
     assertEquals(20, created.get(1).getBufferAfterMinutes());
     assertEquals(60, created.get(1).getMaxBookingDurationMinutes());
     assertFalse(created.get(1).isAllowDoubleBooking());
     verify(defaultsDao, times(1)).getSafeNull(BookingConfigurationDefaults.SINGLETON_ID);
+
+    defaults.setOpeningHours(hours("00:00", "24:00"));
+    assertEquals(
+        List.of(
+            new BookingOpeningHoursEntry(1, "09:00", "17:00"),
+            new BookingOpeningHoursEntry(2, "10:00", "16:00")),
+        created.get(0).getOpeningHours());
   }
 
   @Test
@@ -257,24 +271,25 @@ class BookingConfigurationManagerTest {
         manager.createConfiguration(new Create(true, "UTC", target(13L)), actor, actor);
 
     assertEquals(5, first.getSlotGranularityMinutes());
-    assertEquals("24:00", first.getOpeningEnd());
+    assertEquals(BookingSchedulingSettings.DEFAULT_OPENING_HOURS, first.getOpeningHours());
     assertFalse(first.isAllowDoubleBooking());
     assertEquals(0, first.getMaxBookingDurationMinutes());
     assertEquals(15, second.getSlotGranularityMinutes());
-    assertEquals("18:00", second.getOpeningEnd());
+    assertEquals(hours("08:00", "18:00"), second.getOpeningHours());
     assertTrue(second.isAllowDoubleBooking());
     assertEquals(120, second.getMaxBookingDurationMinutes());
   }
 
   @Test
   void rejectsInvalidSchedulingSettingsBeforeSaving() {
-    assertFalse(BookingSchedulingSettings.areOpeningHoursValid("08:00", "24:00"));
+    assertTrue(BookingSchedulingSettings.isOpeningIntervalValid("08:00", "24:00"));
     Create invalid =
         new Create(
             true,
             "UTC",
             target(12L),
-            new BookingSchedulingSettings.Patch(7L, "18:00", "08:00", -1L, 10_081L, 8L, false));
+            new BookingSchedulingSettings.Patch(
+                7L, hours("18:00", "08:00"), -1L, 10_081L, 8L, false));
 
     InvalidBookingSchedulingSettingsException failure =
         assertThrows(
@@ -310,8 +325,7 @@ class BookingConfigurationManagerTest {
                         true,
                         "UTC",
                         target(12L),
-                        new BookingSchedulingSettings.Patch(
-                            null, null, null, null, null, 7L, null)),
+                        new BookingSchedulingSettings.Patch(null, null, null, null, 7L, null)),
                     actor,
                     actor));
 
@@ -424,6 +438,8 @@ class BookingConfigurationManagerTest {
   @Test
   void directServicePatchesPreserveFieldsThatWereNotProvided() {
     BookingConfiguration configuration = configuration(42L, 12L);
+    List<BookingOpeningHoursEntry> openingHours = hours("09:00", "17:00", 1, 3);
+    configuration.setOpeningHours(openingHours);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
     when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
@@ -431,6 +447,7 @@ class BookingConfigurationManagerTest {
         manager.updateConfiguration(42L, new Patch(true, null), actor, actor).orElseThrow();
 
     assertTrue(updated.isEnabled());
+    assertEquals(openingHours, updated.getOpeningHours());
     assertEquals("UTC", updated.getTimeZone());
     assertEquals(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), updated.getTarget());
@@ -801,8 +818,8 @@ class BookingConfigurationManagerTest {
 
   private static BookingConfigurationDefaults defaults(
       long granularity,
-      String openingStart,
-      String openingEnd,
+      String start,
+      String end,
       long before,
       long after,
       long maximumDuration,
@@ -810,8 +827,7 @@ class BookingConfigurationManagerTest {
     BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
     defaults.setId(BookingConfigurationDefaults.SINGLETON_ID);
     defaults.setSlotGranularityMinutes(granularity);
-    defaults.setOpeningStart(openingStart);
-    defaults.setOpeningEnd(openingEnd);
+    defaults.setOpeningHours(hours(start, end));
     defaults.setBufferBeforeMinutes(before);
     defaults.setBufferAfterMinutes(after);
     defaults.setMaxBookingDurationMinutes(maximumDuration);

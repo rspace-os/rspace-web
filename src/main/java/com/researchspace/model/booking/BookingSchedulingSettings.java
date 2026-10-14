@@ -4,20 +4,33 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /** One complete set of scheduling rules shared by booking configuration services. */
 public record BookingSchedulingSettings(
     long slotGranularityMinutes,
-    String openingStart,
-    String openingEnd,
+    List<BookingOpeningHoursEntry> openingHours,
     long bufferBeforeMinutes,
     long bufferAfterMinutes,
     long maxBookingDurationMinutes,
     boolean allowDoubleBooking) {
 
   public static final long DEFAULT_SLOT_GRANULARITY_MINUTES = 5;
-  public static final String DEFAULT_OPENING_START = "00:00";
-  public static final String DEFAULT_OPENING_END = "24:00";
+  public static final String MIDNIGHT = "00:00";
+  public static final String END_OF_DAY = "24:00";
+  public static final List<BookingOpeningHoursEntry> DEFAULT_OPENING_HOURS =
+      List.of(
+          new BookingOpeningHoursEntry(1, MIDNIGHT, END_OF_DAY),
+          new BookingOpeningHoursEntry(2, MIDNIGHT, END_OF_DAY),
+          new BookingOpeningHoursEntry(3, MIDNIGHT, END_OF_DAY),
+          new BookingOpeningHoursEntry(4, MIDNIGHT, END_OF_DAY),
+          new BookingOpeningHoursEntry(5, MIDNIGHT, END_OF_DAY),
+          new BookingOpeningHoursEntry(6, MIDNIGHT, END_OF_DAY),
+          new BookingOpeningHoursEntry(7, MIDNIGHT, END_OF_DAY));
   public static final long DEFAULT_BUFFER_MINUTES = 0;
   public static final long DEFAULT_MAX_BOOKING_DURATION_MINUTES = 0;
   public static final boolean DEFAULT_ALLOW_DOUBLE_BOOKING = false;
@@ -27,17 +40,31 @@ public record BookingSchedulingSettings(
   private static final DateTimeFormatter WALL_TIME =
       DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
 
+  /** One weekday's opening interval. */
+  public record DailyHours(String start, String end) {}
+
+  public BookingSchedulingSettings {
+    openingHours =
+        openingHours == null
+            ? null
+            : openingHours.stream()
+                .sorted(
+                    Comparator.nullsLast(
+                        Comparator.comparingInt(BookingOpeningHoursEntry::dayOfWeek)))
+                .toList();
+  }
+
+  /** Partial rules. Each null leaves its current value; openingHours replaces the complete week. */
   public record Patch(
       Long slotGranularityMinutes,
-      String openingStart,
-      String openingEnd,
+      List<BookingOpeningHoursEntry> openingHours,
       Long bufferBeforeMinutes,
       Long bufferAfterMinutes,
       Long maxBookingDurationMinutes,
       Boolean allowDoubleBooking) {
 
     public static Patch empty() {
-      return new Patch(null, null, null, null, null, null, null);
+      return new Patch(null, null, null, null, null, null);
     }
 
     /** Returns one complete value using {@code current} for every omitted field. */
@@ -46,8 +73,7 @@ public record BookingSchedulingSettings(
           slotGranularityMinutes == null
               ? current.slotGranularityMinutes()
               : slotGranularityMinutes,
-          openingStart == null ? current.openingStart() : openingStart,
-          openingEnd == null ? current.openingEnd() : openingEnd,
+          openingHours == null ? current.openingHours() : openingHours,
           bufferBeforeMinutes == null ? current.bufferBeforeMinutes() : bufferBeforeMinutes,
           bufferAfterMinutes == null ? current.bufferAfterMinutes() : bufferAfterMinutes,
           maxBookingDurationMinutes == null
@@ -58,8 +84,7 @@ public record BookingSchedulingSettings(
 
     public boolean isEmpty() {
       return slotGranularityMinutes == null
-          && openingStart == null
-          && openingEnd == null
+          && openingHours == null
           && bufferBeforeMinutes == null
           && bufferAfterMinutes == null
           && maxBookingDurationMinutes == null
@@ -70,8 +95,7 @@ public record BookingSchedulingSettings(
   public static BookingSchedulingSettings from(BookingConfiguration configuration) {
     return new BookingSchedulingSettings(
         configuration.getSlotGranularityMinutes(),
-        configuration.getOpeningStart(),
-        configuration.getOpeningEnd(),
+        configuration.getOpeningHours(),
         configuration.getBufferBeforeMinutes(),
         configuration.getBufferAfterMinutes(),
         configuration.getMaxBookingDurationMinutes(),
@@ -81,8 +105,7 @@ public record BookingSchedulingSettings(
   public static BookingSchedulingSettings from(BookingConfigurationDefaults defaults) {
     return new BookingSchedulingSettings(
         defaults.getSlotGranularityMinutes(),
-        defaults.getOpeningStart(),
-        defaults.getOpeningEnd(),
+        defaults.getOpeningHours(),
         defaults.getBufferBeforeMinutes(),
         defaults.getBufferAfterMinutes(),
         defaults.getMaxBookingDurationMinutes(),
@@ -91,8 +114,7 @@ public record BookingSchedulingSettings(
 
   public void applyTo(BookingConfiguration configuration) {
     configuration.setSlotGranularityMinutes(slotGranularityMinutes);
-    configuration.setOpeningStart(openingStart);
-    configuration.setOpeningEnd(openingEnd);
+    configuration.setOpeningHours(openingHours);
     configuration.setBufferBeforeMinutes(bufferBeforeMinutes);
     configuration.setBufferAfterMinutes(bufferAfterMinutes);
     configuration.setMaxBookingDurationMinutes(maxBookingDurationMinutes);
@@ -101,8 +123,7 @@ public record BookingSchedulingSettings(
 
   public void applyTo(BookingConfigurationDefaults defaults) {
     defaults.setSlotGranularityMinutes(slotGranularityMinutes);
-    defaults.setOpeningStart(openingStart);
-    defaults.setOpeningEnd(openingEnd);
+    defaults.setOpeningHours(openingHours);
     defaults.setBufferBeforeMinutes(bufferBeforeMinutes);
     defaults.setBufferAfterMinutes(bufferAfterMinutes);
     defaults.setMaxBookingDurationMinutes(maxBookingDurationMinutes);
@@ -113,12 +134,39 @@ public record BookingSchedulingSettings(
     return minutes == 1 || minutes == 5 || minutes == 10 || minutes == 15;
   }
 
-  public static boolean areOpeningHoursValid(String start, String end) {
+  /** Returns one ISO weekday's interval, or empty when that day is closed. */
+  public Optional<DailyHours> effectiveHours(int dayOfWeek) {
+    return openingHours.stream()
+        .filter(entry -> entry.dayOfWeek() == dayOfWeek)
+        .findFirst()
+        .map(entry -> new DailyHours(entry.start(), entry.end()));
+  }
+
+  /** Whether a schedule contains one to seven unique ISO weekdays with valid intervals. */
+  public static boolean areOpeningHoursValid(List<BookingOpeningHoursEntry> openingHours) {
+    if (openingHours == null || openingHours.isEmpty() || openingHours.size() > 7) {
+      return false;
+    }
+    Set<Integer> days = new HashSet<>();
+    for (BookingOpeningHoursEntry entry : openingHours) {
+      if (entry == null
+          || entry.dayOfWeek() < 1
+          || entry.dayOfWeek() > 7
+          || !days.add(entry.dayOfWeek())
+          || !isOpeningIntervalValid(entry.start(), entry.end())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /** Canonical HH:mm interval with an exclusive end; 24:00 is the next local midnight. */
+  public static boolean isOpeningIntervalValid(String start, String end) {
     if (!isCanonicalWallTime(start) || end == null) {
       return false;
     }
-    if (DEFAULT_OPENING_END.equals(end)) {
-      return DEFAULT_OPENING_START.equals(start);
+    if (END_OF_DAY.equals(end)) {
+      return true;
     }
     if (!isCanonicalWallTime(end)) {
       return false;

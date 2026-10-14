@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.collection.FilterExpression;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +26,7 @@ public interface BookingCatalogueManager {
       String name,
       String timezone,
       long slotGranularityMinutes,
-      String openingStart,
-      String openingEnd,
+      List<BookingOpeningHoursEntry> openingHours,
       long bufferBeforeMinutes,
       long bufferAfterMinutes,
       long maxBookingDurationMinutes,

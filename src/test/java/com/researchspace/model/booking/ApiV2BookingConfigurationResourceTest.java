@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.resource.ApiV2DocumentParser;
 import com.researchspace.model.Role;
@@ -17,6 +18,7 @@ import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.DocumentValidationException;
+import com.researchspace.model.collection.FieldSchema;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterSelector;
 import com.researchspace.model.collection.IncludeTree;
@@ -26,6 +28,8 @@ import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRenderer;
 import com.researchspace.model.collection.WriteOperation;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
+import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -41,7 +45,7 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void definesScalarFieldsAndTheCreateOnlyTargetRelationship() {
+  void definesSchedulingFieldsAndTheCreateOnlyTargetRelationship() {
     assertEquals(
         List.of(
             "id",
@@ -49,8 +53,7 @@ class ApiV2BookingConfigurationResourceTest {
             "state",
             "timezone",
             "slotGranularityMinutes",
-            "openingStart",
-            "openingEnd",
+            "openingHours",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
             "maxBookingDurationMinutes",
@@ -71,8 +74,7 @@ class ApiV2BookingConfigurationResourceTest {
             "enabled",
             "state",
             "slotGranularityMinutes",
-            "openingStart",
-            "openingEnd",
+            "openingHours",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
             "maxBookingDurationMinutes",
@@ -181,8 +183,7 @@ class ApiV2BookingConfigurationResourceTest {
                 {
                   "enabled": true,
                   "slotGranularityMinutes": 15,
-                  "openingStart": "08:00",
-                  "openingEnd": "18:00",
+                  "openingHours": [{"dayOfWeek": 1, "start": "08:00", "end": "18:00"}],
                   "bufferBeforeMinutes": 10,
                   "bufferAfterMinutes": 20,
                   "maxBookingDurationMinutes": 120,
@@ -204,10 +205,8 @@ class ApiV2BookingConfigurationResourceTest {
             true,
             "slotGranularityMinutes",
             15L,
-            "openingStart",
-            "08:00",
-            "openingEnd",
-            "18:00",
+            "openingHours",
+            List.of(new BookingOpeningHoursEntry(1, "08:00", "18:00")),
             "bufferBeforeMinutes",
             10L,
             "bufferAfterMinutes",
@@ -230,8 +229,7 @@ class ApiV2BookingConfigurationResourceTest {
             "state",
             "timezone",
             "slotGranularityMinutes",
-            "openingStart",
-            "openingEnd",
+            "openingHours",
             "bufferBeforeMinutes",
             "bufferAfterMinutes",
             "maxBookingDurationMinutes",
@@ -241,7 +239,6 @@ class ApiV2BookingConfigurationResourceTest {
             "effectiveRole",
             "roleSources",
             "capabilities",
-            "ownerHealth",
             "createdAt",
             "updatedAt"),
         List.copyOf(rendered.keySet()));
@@ -250,8 +247,9 @@ class ApiV2BookingConfigurationResourceTest {
     assertEquals("ACTIVE", rendered.get("state"));
     assertEquals("Europe/Berlin", rendered.get("timezone"));
     assertEquals(15L, rendered.get("slotGranularityMinutes"));
-    assertEquals("08:00", rendered.get("openingStart"));
-    assertEquals("18:00", rendered.get("openingEnd"));
+    assertEquals(
+        List.of(Map.of("dayOfWeek", 1, "start", "08:00", "end", "18:00")),
+        rendered.get("openingHours"));
     assertEquals(10L, rendered.get("bufferBeforeMinutes"));
     assertEquals(20L, rendered.get("bufferAfterMinutes"));
     assertEquals(120L, rendered.get("maxBookingDurationMinutes"));
@@ -367,5 +365,97 @@ class ApiV2BookingConfigurationResourceTest {
                 WriteOperation.UPDATE,
                 "errors.api.v2.bookingConfiguration.patch",
                 new AccessContext(null, Operation.UPDATE, "booking-configurations", 42L)));
+  }
+
+  @Test
+  void declaresSchedulingAndRoleSourceChildrenWithoutQueryOperators() {
+    FieldSchema hours =
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .requireField("openingHours")
+            .schema(ApiV2BookingConfigurationResource.DESCRIPTION.accessPolicy());
+    assertEquals(
+        List.of("dayOfWeek", "start", "end"),
+        hours.fields().stream().map(FieldSchema::name).toList());
+    assertTrue(hours.fields().stream().allMatch(FieldSchema::requiredOnCreate));
+    assertTrue(hours.filterOperators().isEmpty());
+    assertFalse(hours.sortable());
+    assertFalse(hours.nullable());
+    FieldSchema sources =
+        ApiV2BookingConfigurationResource.DESCRIPTION
+            .requireField("roleSources")
+            .schema(ApiV2BookingConfigurationResource.DESCRIPTION.accessPolicy());
+    assertEquals(
+        List.of("kind", "role", "grantee"),
+        sources.fields().stream().map(FieldSchema::name).toList());
+    FieldSchema grantee =
+        sources.fields().stream()
+            .filter(field -> field.name().equals("grantee"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        List.of("kind", "key", "id", "name"),
+        grantee.fields().stream().map(FieldSchema::name).toList());
+  }
+
+  @Test
+  void replacementRowsRequireEveryChildAndCollectionsRejectExplicitNull() throws Exception {
+    JsonNode missingEnd =
+        mapper.readTree("{\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\"}]}");
+    JsonNode explicitNull = mapper.readTree("{\"openingHours\":null}");
+    DocumentValidationException missing =
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(missingEnd));
+    assertEquals("openingHours[0].end", missing.getViolations().get(0).field());
+    assertEquals(
+        DocumentValidationException.Reason.REQUIRED, missing.getViolations().get(0).reason());
+    DocumentValidationException nullValue =
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(explicitNull));
+    assertEquals(
+        DocumentValidationException.Reason.NULL_NOT_ALLOWED,
+        nullValue.getViolations().get(0).reason());
+    JsonNode legacy = mapper.readTree("{\"openingStart\":\"09:00\"}");
+    assertEquals(
+        DocumentValidationException.Reason.UNKNOWN_FIELD,
+        assertThrows(DocumentValidationException.class, () -> parseUpdate(legacy))
+            .getViolations()
+            .get(0)
+            .reason());
+  }
+
+  @Test
+  void roleSourceProjectionPreservesGranteeIdsAndOmitsInternalProperties() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    configuration.prepareAccessProjection(
+        "BOOKER",
+        List.of(
+            ResourceRoleSource.implicit("BOOKER"),
+            new ResourceRoleSource(ResourceRoleSourceKind.DIRECT, "BOOKER", "user:1", "Person"),
+            new ResourceRoleSource(ResourceRoleSourceKind.GROUP, "BOOKER", "group:12", "Lab"),
+            new ResourceRoleSource(
+                ResourceRoleSourceKind.AUDIENCE, "BOOKER", "audience:all-users", "All users")),
+        null,
+        null);
+    JsonNode sources =
+        mapper.valueToTree(
+            ApiV2BookingConfigurationResource.DESCRIPTION
+                .toDocument(configuration)
+                .get("roleSources"));
+    assertFalse(sources.get(0).has("grantee"));
+    assertFalse(sources.get(1).has("grantee"));
+    assertEquals(12, sources.get(2).get("grantee").get("id").asLong());
+    assertEquals("ALL_USERS", sources.get(3).get("grantee").get("id").asText());
+    for (JsonNode source : sources) {
+      assertFalse(source.has("granteeKey"));
+      assertFalse(source.has("nameSnapshot"));
+    }
+    assertEquals(4, sources.get(2).get("grantee").size());
+  }
+
+  private ParsedDocument parseUpdate(JsonNode body) {
+    return ApiV2DocumentParser.parse(
+        body,
+        ApiV2BookingConfigurationResource.DESCRIPTION,
+        WriteOperation.UPDATE,
+        "errors.api.v2.bookingConfiguration.patch",
+        new AccessContext(null, Operation.UPDATE, "booking-configurations", 42L));
   }
 }

@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import com.researchspace.booking.service.BookingPolicyException.Reason;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingSchedulingSettings;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -24,7 +25,8 @@ public final class BookingSchedulingPolicyImpl implements BookingSchedulingPolic
     requireAligned(startInstant.atZone(zone), configuration.getSlotGranularityMinutes());
     requireAligned(endInstant.atZone(zone), configuration.getSlotGranularityMinutes());
     requireMaximumDuration(startInstant, endInstant, configuration.getMaxBookingDurationMinutes());
-    requireOpeningCoverage(configuration, startInstant, endInstant, zone);
+    requireOpeningCoverage(
+        BookingSchedulingSettings.from(configuration), startInstant, endInstant, zone);
     return conflictInterval(configuration, startInstant, endInstant);
   }
 
@@ -61,25 +63,27 @@ public final class BookingSchedulingPolicyImpl implements BookingSchedulingPolic
     }
   }
 
+  /**
+   * Requires every instant of {@code [start, end)} to fall in its scheduling-zone day's effective
+   * opening hours. Walks calendar dates, so the number of iterations is bounded by the absolute
+   * booking-length limit that callers enforce before scheduling validation.
+   */
   private static void requireOpeningCoverage(
-      BookingConfiguration configuration, Instant start, Instant end, ZoneId zone) {
-    if ("00:00".equals(configuration.getOpeningStart())
-        && "24:00".equals(configuration.getOpeningEnd())) {
-      return;
-    }
+      BookingSchedulingSettings settings, Instant start, Instant end, ZoneId zone) {
     LocalDate firstDate = start.atZone(zone).toLocalDate();
     LocalDate lastDate = end.minusNanos(1).atZone(zone).toLocalDate();
     Instant cursor = start;
     for (LocalDate date = firstDate; !date.isAfter(lastDate); date = date.plusDays(1)) {
-      Instant openingStart =
-          date.atTime(LocalTime.parse(configuration.getOpeningStart())).atZone(zone).toInstant();
-      Instant openingEnd = openingEnd(configuration, date, zone);
+      BookingSchedulingSettings.DailyHours hours =
+          settings
+              .effectiveHours(date.getDayOfWeek().getValue())
+              .orElseThrow(() -> new BookingPolicyException(Reason.OPENING_HOURS));
+      Instant openingStart = date.atTime(LocalTime.parse(hours.start())).atZone(zone).toInstant();
+      Instant openingEnd = openingEnd(hours.end(), date, zone);
       if (openingStart.isAfter(cursor) || !openingEnd.isAfter(cursor)) {
         throw new BookingPolicyException(Reason.OPENING_HOURS);
       }
-      if (openingEnd.isAfter(cursor)) {
-        cursor = openingEnd;
-      }
+      cursor = openingEnd;
       if (!cursor.isBefore(end)) {
         return;
       }
@@ -87,11 +91,10 @@ public final class BookingSchedulingPolicyImpl implements BookingSchedulingPolic
     throw new BookingPolicyException(Reason.OPENING_HOURS);
   }
 
-  private static Instant openingEnd(
-      BookingConfiguration configuration, LocalDate date, ZoneId zone) {
-    if ("24:00".equals(configuration.getOpeningEnd())) {
+  private static Instant openingEnd(String end, LocalDate date, ZoneId zone) {
+    if (BookingSchedulingSettings.END_OF_DAY.equals(end)) {
       return date.plusDays(1).atStartOfDay(zone).toInstant();
     }
-    return date.atTime(LocalTime.parse(configuration.getOpeningEnd())).atZone(zone).toInstant();
+    return date.atTime(LocalTime.parse(end)).atZone(zone).toInstant();
   }
 }

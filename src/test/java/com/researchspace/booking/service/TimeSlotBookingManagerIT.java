@@ -631,13 +631,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
                 "UTC",
                 new ResolvedBookableTarget(target, instrument),
                 new BookingSchedulingSettings.Patch(
-                    null,
-                    null,
-                    null,
-                    bufferBeforeMinutes,
-                    bufferAfterMinutes,
-                    null,
-                    allowDoubleBooking)),
+                    null, null, bufferBeforeMinutes, bufferAfterMinutes, null, allowDoubleBooking)),
             owner,
             owner);
     return new Setup(configuration.getId(), target, instrument);

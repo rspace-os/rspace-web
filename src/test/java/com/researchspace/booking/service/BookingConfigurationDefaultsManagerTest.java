@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -66,15 +67,14 @@ class BookingConfigurationDefaultsManagerTest {
     assertSame(defaults, manager.getDefaults(sysadmin));
     BookingConfigurationDefaults updated =
         manager.updateDefaults(
-            new BookingSchedulingSettings.Patch(15L, "08:00", "18:00", 10L, 20L, 120L, true),
+            new BookingSchedulingSettings.Patch(15L, hours("08:00", "18:00"), 10L, 20L, 120L, true),
             new BookingDisplaySettings.Patch("09:00", "17:00", null, null),
             0,
             sysadmin,
             sysadmin);
 
     assertEquals(15, updated.getSlotGranularityMinutes());
-    assertEquals("08:00", updated.getOpeningStart());
-    assertEquals("18:00", updated.getOpeningEnd());
+    assertEquals(hours("08:00", "18:00"), updated.getOpeningHours());
     assertEquals(10, updated.getBufferBeforeMinutes());
     assertEquals(20, updated.getBufferAfterMinutes());
     assertEquals(120, updated.getMaxBookingDurationMinutes());
@@ -114,7 +114,7 @@ class BookingConfigurationDefaultsManagerTest {
                 () ->
                     manager.updateDefaults(
                         new BookingSchedulingSettings.Patch(
-                            null, "18:00", "08:00", null, null, null, null),
+                            null, hours("18:00", "08:00"), null, null, null, null),
                         BookingDisplaySettings.Patch.empty(),
                         0,
                         sysadmin,
@@ -127,7 +127,7 @@ class BookingConfigurationDefaultsManagerTest {
                 InvalidBookingSchedulingSettingsException.class,
                 () ->
                     manager.updateDefaults(
-                        new BookingSchedulingSettings.Patch(null, null, null, null, null, 7L, null),
+                        new BookingSchedulingSettings.Patch(null, null, null, null, 7L, null),
                         BookingDisplaySettings.Patch.empty(),
                         0,
                         sysadmin,
@@ -147,7 +147,7 @@ class BookingConfigurationDefaultsManagerTest {
     when(dao.saveAndFlush(defaults)).thenReturn(defaults);
 
     manager.updateDefaults(
-        new BookingSchedulingSettings.Patch(null, null, null, null, null, null, true),
+        new BookingSchedulingSettings.Patch(null, null, null, null, null, true),
         BookingDisplaySettings.Patch.empty(),
         1,
         firstAdmin,
@@ -158,7 +158,7 @@ class BookingConfigurationDefaultsManagerTest {
         StaleBookingSettingsException.class,
         () ->
             manager.updateDefaults(
-                new BookingSchedulingSettings.Patch(null, null, null, null, null, null, false),
+                new BookingSchedulingSettings.Patch(null, null, null, null, null, false),
                 BookingDisplaySettings.Patch.empty(),
                 1,
                 secondAdmin,
@@ -352,8 +352,7 @@ class BookingConfigurationDefaultsManagerTest {
     BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
     defaults.setId(BookingConfigurationDefaults.SINGLETON_ID);
     defaults.setSlotGranularityMinutes(5);
-    defaults.setOpeningStart("00:00");
-    defaults.setOpeningEnd("24:00");
+    defaults.setOpeningHours(hours("00:00", "24:00"));
     BookingDisplaySettings.defaults().applyTo(defaults);
     return defaults;
   }

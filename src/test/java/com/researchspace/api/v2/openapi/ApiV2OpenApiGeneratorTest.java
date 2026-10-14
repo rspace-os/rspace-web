@@ -27,6 +27,7 @@ import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationCapabilities;
+import com.researchspace.model.booking.BookingOpeningHoursCodec;
 import com.researchspace.model.booking.BookingOwnerHealth;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ApiV2UserResource;
@@ -223,6 +224,53 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/ResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+  }
+
+  @Test
+  void publishesIndependentBookingHoursAndDeclaredRoleSourceChildren() {
+    Map<String, Object> schemas = schemas(document());
+    for (String variant : List.of("Read", "Create", "Update")) {
+      Map<String, Object> properties =
+          objectMap(objectMap(schemas.get("BookingConfigurations" + variant)).get("properties"));
+      assertFalse(properties.containsKey("openingStart"));
+      assertFalse(properties.containsKey("openingEnd"));
+      Map<String, Object> hours = objectMap(properties.get("openingHours"));
+      assertEquals("array", hours.get("type"), variant);
+      assertEquals(1, hours.get("minItems"), variant);
+      assertEquals(7, hours.get("maxItems"), variant);
+      Map<String, Object> row = objectMap(hours.get("items"));
+      assertEquals(false, row.get("additionalProperties"), variant);
+      Map<String, Object> children = objectMap(row.get("properties"));
+      assertEquals(Set.of("dayOfWeek", "start", "end"), children.keySet(), variant);
+      assertEquals("integer", objectMap(children.get("dayOfWeek")).get("type"), variant);
+      assertEquals(BigDecimal.ONE, objectMap(children.get("dayOfWeek")).get("minimum"), variant);
+      assertEquals(
+          BigDecimal.valueOf(7), objectMap(children.get("dayOfWeek")).get("maximum"), variant);
+      assertEquals(
+          BookingOpeningHoursCodec.WALL_TIME_PATTERN,
+          objectMap(children.get("start")).get("pattern"),
+          variant);
+      assertEquals(
+          BookingOpeningHoursCodec.CLOSING_TIME_PATTERN,
+          objectMap(children.get("end")).get("pattern"),
+          variant);
+      if (!variant.equals("Read")) {
+        assertEquals(
+            Set.of("dayOfWeek", "start", "end"),
+            Set.copyOf((List<?>) row.get("required")),
+            variant);
+      }
+    }
+
+    Map<String, Object> roleSource = objectMap(schemas.get("ResourceRoleSource"));
+    assertEquals(false, roleSource.get("additionalProperties"));
+    Map<String, Object> children = objectMap(roleSource.get("properties"));
+    assertEquals(Set.of("kind", "role", "grantee"), children.keySet());
+    Map<String, Object> grantee = objectMap(children.get("grantee"));
+    assertEquals(false, grantee.get("additionalProperties"));
+    Map<String, Object> granteeChildren = objectMap(grantee.get("properties"));
+    assertEquals(Set.of("kind", "key", "id", "name"), granteeChildren.keySet());
+    assertEquals(List.of("integer", "string"), objectMap(granteeChildren.get("id")).get("type"));
   }
 
   @Test
