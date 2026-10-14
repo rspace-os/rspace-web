@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import java.math.BigDecimal;
 import java.util.List;
@@ -125,6 +126,16 @@ class CollectionFieldTypesTest {
                     List.of(Field.embedded("name", CollectionFieldTypes.text(), Item::name)),
                     values -> new Item(null, (String) values.get("name"))),
                 minLength(1)));
+    CollectionFieldType<String> structured =
+        CollectionFieldTypes.structured(
+            String.class,
+            CollectionFieldType.InputKind.OBJECT,
+            Map.of(),
+            JsonNode::toString,
+            value -> value);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> CollectionFieldTypes.constrained(structured, minLength(1)));
     assertThrows(
         IllegalArgumentException.class,
         () ->

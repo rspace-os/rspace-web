@@ -16,6 +16,21 @@ Booking keeps presentation choices separate from scheduling rules:
   the process timezone. This agrees with legacy RSpace code paths when their browser/session zone
   is absent; a valid legacy session zone can still differ.
 
+Opening hours are scheduling settings on each `BookingConfiguration`, copied from
+`BookingConfigurationDefaults` when an item is configured. `openingHours` contains independent
+`dayOfWeek`, `start` and `end` entries. Omitted ISO weekdays are closed. A supplied schedule replaces
+the complete week; omission preserves it on update and copies the complete defaults on create.
+`BookingSchedulingSettings.effectiveHours(dayOfWeek)` resolves that day's interval. The weekday
+comes from the scheduling timezone, never the display timezone.
+`BookingSchedulingPolicyImpl` requires every instant of a regular booking's `[start, end)` to fall in
+its day's effective hours, walking calendar dates so a closed middle day rejects a multi-day booking
+and an end at midnight consumes no time on the next day; failures use the `errors.api.v2.booking.openingHours` problem
+code. Maintenance keeps its exemption. Changing the schedule advances the configuration
+version and needs the same `EDIT_CONFIGURATION` capability as other scheduling settings; booking
+creation and time edits validate against the locked current configuration, so a concurrent
+settings change is serialized with them. Existing bookings are not moved or cancelled when the
+schedule changes.
+
 Day timelines position events and drag selections by elapsed minutes from midnight in the display
 timezone. Clock-change days therefore have 23 or 25 hours, with UTC offsets distinguishing repeated
 local times. Availability-window preferences remain wall-clock values and are converted to the

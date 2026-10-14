@@ -317,7 +317,7 @@ class BookingConfigurationManagerTest {
             "UTC",
             target(12L),
             new BookingSchedulingSettings.Patch(
-                7L, hours("18:00", "08:00"), -1L, 10_081L, 8L, false));
+                0L, hours("18:00", "08:00"), -1L, 10_081L, 8L, false));
 
     InvalidBookingSchedulingSettingsException failure =
         assertThrows(
@@ -863,5 +863,21 @@ class BookingConfigurationManagerTest {
     defaults.setMaxBookingDurationMinutes(maximumDuration);
     defaults.setAllowDoubleBooking(doubleBooking);
     return defaults;
+  }
+
+  @Test
+  void rejectsAnEmptyReplacementBeforeSaving() {
+    Create invalid =
+        new Create(
+            true,
+            "UTC",
+            target(12L),
+            new BookingSchedulingSettings.Patch(null, List.of(), null, null, null, null));
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> manager.createConfiguration(invalid, actor, actor));
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS, failure.reason());
+    verify(dao, never()).saveAndFlush(any(BookingConfiguration.class));
   }
 }

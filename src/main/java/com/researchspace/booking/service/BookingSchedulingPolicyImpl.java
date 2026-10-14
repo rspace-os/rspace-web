@@ -59,7 +59,7 @@ public final class BookingSchedulingPolicyImpl implements BookingSchedulingPolic
   private static void requireMaximumDuration(Instant start, Instant end, long maximumMinutes) {
     if (maximumMinutes > 0
         && Duration.between(start, end).compareTo(Duration.ofMinutes(maximumMinutes)) > 0) {
-      throw new BookingPolicyException(Reason.MAXIMUM_DURATION);
+      throw BookingPolicyException.maximumDuration(maximumMinutes);
     }
   }
 

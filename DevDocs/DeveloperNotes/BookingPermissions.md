@@ -58,3 +58,17 @@ Inventory's Booking links perform a full page navigation, which creates a new
 Booking query cache. Returning to an already open Booking tab uses normal
 React Query refetching on focus. Changes made in another session are not pushed
 to the UI; server authorization remains authoritative on every request.
+
+Booking scheduling settings use a complete `openingHours` week. Each entry has a
+unique ISO `dayOfWeek` from 1 through 7 and its own `start` and `end` in `HH:mm`.
+`end` may be `24:00`, and start must precede end. A week requires one through seven
+entries; disabling bookings closes all days. Entries are returned in weekday
+order, and omitted weekdays are closed. Bookings must remain covered by the
+schedule in the item's scheduling timezone; maintenance keeps its exemptions.
+
+A supplied week replaces all entries. Omitted collection updates preserve the
+week; creates copy the complete institution defaults. Collection writes reject
+explicit null. The singleton settings PATCH treats null and omission as no
+change. Initial defaults have seven independent `00:00` to `24:00` entries.
+Increment units, local midnight alignment, duration limits, permissions and
+locking retain their existing rules.

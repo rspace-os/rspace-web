@@ -560,6 +560,49 @@ This setting prevents the query layer from sending the property to Hibernate.
 Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
 writer or row-specific field access.
 
+Every ARRAY field declares a non-empty list of uniquely named child fields directly. Use
+`CollectionFieldTypes.array(Row.class, fields, adapter)` and `Field.embedded(name, type, reader)`.
+The adapter constructs a row only after child parsing and validation. An overload accepts row and
+whole-array validators plus inclusive minimum/maximum row counts. Use
+`CollectionFieldTypes.object(Row.class, fields, adapter)` for nested groups. Neither embedded values
+nor their children are filterable or sortable. Relationship children and cyclic declarations are
+unsupported. The no-argument array factory and opaque structured ARRAY decoders are removed.
+Array fields cannot be inferred from `@ApiV2ResourceField`; declare them programmatically with their
+children. Annotation inference fails with that guidance rather than creating an opaque placeholder.
+
+Each supplied array replaces the entire value. Unknown and non-writable child keys, null/scalar
+rows, and direct array rows fail with indexed paths such as `openingHours[2].start`. Required
+children apply on CREATE and UPDATE. Child defaults fill omitted keys only, without inventing rows.
+Child write access runs after the complete parent input enters the caller context.
+Required embedded children must support both write operations. Combining `required()` with
+`writeOnlyOn(CREATE)` fails when the field is declared because no complete replacement UPDATE could
+satisfy that child. Optional create-only children and read-only parent arrays remain supported.
+
+Only declared readable properties are serialized, including DTO rows, caller-specific overrides,
+and pre-rendered included documents. The parent gates the whole value and child restrictions narrow
+that access. Entity values, overrides, defaults, examples, and fresh custom serializer results must
+contain required children before access filtering. A custom serializer returns the complete declared
+value; the shared field renderer applies child read access afterward.
+
+Pre-rendered included documents have already passed validation and caller projection. They may omit
+unreadable required children. Reprojection validates every supplied child and every required readable
+child, plus row-count bounds. Row and whole-array rules run when all values needed to reconstruct the
+rows remain available; those rules cannot be rerun after projection removes their input. Producers
+must validate complete values before creating such an included document. This exception does not
+apply to readOverrides or fresh serializer output.
+
+Defaults and published examples pass declared-child validation, including scalar child constraints.
+OpenAPI publishes object and array examples as JSON values, including additional examples.
+STRING examples retain their raw text, even when that text looks like JSON.
+Recursive `fields` metadata and OpenAPI object `items` come from those definitions, including constraints,
+required keys on CREATE and replacement UPDATE, and `additionalProperties: false`. Read properties
+may be omitted by child access, so read item schemas do not require those keys. Each declared
+property also publishes `x-rspace-fields` for custom frontend renderers. Scalar `hasMany` and generic array row editors
+remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are unchanged.
+
+`CollectionFieldTypes.object()` remains available for read-only opaque objects. Writable non-array
+structured values can still use `structured(...)`; ARRAY values always use declared children.
+
 A writable field can supply a fixed value when a create document omits it: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
 including an allowed `null`, takes precedence. The framework applies this default only on create and
@@ -593,8 +636,9 @@ Startup fails in these cases:
 - An example or a default breaks the field's own rules.
 
 A programmatic field uses `CollectionFieldTypes.constrained(type, constraints)`. One decorator holds
-all of a field's rules, so it cannot wrap another constrained type or a read-only opaque type. Its
-`Pattern` must have no flags, because the published pattern cannot carry them.
+all of a scalar field's rules, so it cannot wrap another constrained type, a structured type or a
+read-only opaque type. Declare constraints on embedded children using the same scalar types. A
+constraint `Pattern` must have no flags, because the published pattern cannot carry them.
 
 These are wire rules for one field. The manager must still enforce all domain rules.
 
@@ -619,7 +663,7 @@ Before it calls the operations class, the parser rejects these inputs:
 - An unknown field.
 - A read-only field.
 - A missing required field.
-- An invalid scalar value.
+- An invalid scalar value, or an invalid declared object or array child.
 - A relationship with an invalid form.
 
 ### Bulk create
@@ -1242,6 +1286,22 @@ REST API v2 returns errors as RFC 9457 problem details. The response content typ
 `title`, `status`, and `code` are always present. `detail` and `invalidParams` are present when the
 error has that information.
 
+Some problems add RFC 9457 extension members. Each is present only on the codes that document it:
+
+| Code | Status | Extension members |
+| --- | --- | --- |
+| `errors.api.v2.booking.overlap` | 409 | `conflict` |
+| `errors.api.v2.booking.buffer` | 409 | `conflict`, `bufferBeforeMinutes`, `bufferAfterMinutes` |
+| `errors.api.v2.booking.maximumDuration` | 400 | `maximumDurationMinutes` |
+
+`conflict` is `{"id": 59, "kind": "BOOKING", "start": "2026-09-28T08:00:00Z", "end":
+"2026-09-28T10:00:00Z"}`: the first event that blocks the requested interval, as UTC instants.
+`kind` is `BOOKING` or `MAINTENANCE`. It never contains a purpose, requester, or other private
+field, and the server does not format its times into `detail`. The server checks the requested
+interval first; only when that is free does it check the interval widened by the item's buffers,
+so `buffer` means that moving the booking slightly would resolve the conflict. Both checks apply to
+create, time-changing edits, and maintenance, and respect the item's double-booking setting.
+
 The `code` value is stable. The server resolves `title` and `detail` from the message catalog.
 Authentication errors also contain `WWW-Authenticate: Bearer`.
 
@@ -1284,6 +1344,10 @@ Declare each non-standard error in the resource spec. An error mapping has these
 - It converts the mapped domain exception to the specified HTTP response for that operation.
 - It resolves the response detail from the stable message key.
 - It adds the error response to OpenAPI.
+
+The six-argument `ApiV2ErrorMapping.of` also extracts `ApiV2Problem.Extensions` from the exception,
+for problems whose body carries typed extension members. Add a new member to `ApiV2Problem` as a
+nullable component so OpenAPI documents it.
 
 When exception classes overlap, the most specific matching class applies. An unmapped exception
 continues through the normal controller-advice chain. Startup fails if a mapping refers to an
