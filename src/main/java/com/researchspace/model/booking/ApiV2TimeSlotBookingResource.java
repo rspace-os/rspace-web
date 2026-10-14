@@ -114,7 +114,7 @@ public final class ApiV2TimeSlotBookingResource {
     return new CollectionDescription<>(
         "bookings",
         TimeSlotBooking.class,
-        List.<Field<TimeSlotBooking, ?>>of(
+        List.of(
             Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TimeSlotBooking::getId),
             Field.readOnly(
                     "timezone",
@@ -173,8 +173,8 @@ public final class ApiV2TimeSlotBookingResource {
                 CollectionFieldTypes.instant(),
                 TimeSlotBooking::getStartTime),
             Field.readOnly(
-                "end", "endTime", CollectionFieldTypes.instant(), TimeSlotBooking::getEndTime)),
-        List.of(TARGET),
+                "end", "endTime", CollectionFieldTypes.instant(), TimeSlotBooking::getEndTime),
+            TARGET),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(readAccess));
