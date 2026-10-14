@@ -18,6 +18,7 @@ import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.WriteOperation;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -187,6 +188,17 @@ class ApiV2DeclaredArrayDocumentParserTest {
 
   private static CollectionDescription<Item> items(DeclaredFieldType<List<Row>> type) {
     return description(Field.writable("rows", "rows", type, Item::rows, (item, value) -> {}));
+  }
+
+  @Test
+  void parentDefaultsAreRevalidatedBeforeEnteringTheParsedDocument() throws Exception {
+    List<Row> defaults = new ArrayList<>(List.of(new Row("initial", 2)));
+    CollectionDescription<Item> items =
+        description(
+            Field.writable("rows", "rows", ROWS, Item::rows, (item, value) -> {})
+                .defaultValue(defaults));
+    defaults.set(0, new Row(null, 2));
+    assertViolation("{}", items, WriteOperation.CREATE, "rows[0].name", Reason.REQUIRED);
   }
 
   private static CollectionDescription<Item> description(Field<Item, List<Row>> rows) {
