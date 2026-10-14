@@ -30,4 +30,8 @@ describe("My Bookings route", () => {
   ])("normalizes the $period period from the matched route", async ({ path, search }) => {
     await expect(matchedSearch(path)).resolves.toEqual(search);
   });
+
+  it("keeps the cancelled period", async () => {
+    await expect(matchedSearch("/booking/my-bookings?period=cancelled")).resolves.toEqual({ period: "cancelled" });
+  });
 });

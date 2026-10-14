@@ -21,7 +21,7 @@ import {
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader } from "@/modules/common/ui/card";
 import { cn } from "@/modules/common/utils/cn";
-import { type DayTimelineEvent, formatMinuteWithDayOffset, period } from "./DayTimelineEvent";
+import { CLOSED_HOURS_CLASS_NAME, type DayTimelineEvent, formatMinuteWithDayOffset, period } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { expandedEventIdAfterChange } from "./expandedEvent";
 import { layoutVerticalTimelineEvents } from "./verticalTimelineLayout";
@@ -585,7 +585,7 @@ export function VerticalDayTimeline({
                       <div
                         key={`closed-${index}`}
                         data-testid="vertical-day-timeline-closed-hours"
-                        className="absolute inset-x-0 bg-muted/35"
+                        className={`absolute inset-x-0 ${CLOSED_HOURS_CLASS_NAME}`}
                         style={{
                           top: segment.startMinute * PIXELS_PER_MINUTE,
                           height: (segment.endMinute - segment.startMinute) * PIXELS_PER_MINUTE,
@@ -622,6 +622,8 @@ export function VerticalDayTimeline({
                                   date={date}
                                   timezone={timezone}
                                   compactCards={false}
+                                  truncateTitle
+                                  fitHeight={height}
                                   variant="timeline"
                                   expanded={expandedEventId === event.id}
                                   onExpandedChange={(expanded) => openDetails(event.id, expanded)}
@@ -751,6 +753,7 @@ export function VerticalDayTimeline({
                     date={date}
                     timezone={timezone}
                     compactCards={false}
+                    truncateTitle
                     expanded={expandedEventId === event.id}
                     onExpandedChange={(expanded) => openDetails(event.id, expanded)}
                     portalContainer={portalContainer}

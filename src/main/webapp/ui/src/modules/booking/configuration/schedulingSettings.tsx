@@ -10,7 +10,12 @@ import {
   BookingDisplayPreferencesInputSchema,
   BookingTimezoneModeSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { ALL_ISO_WEEKDAYS, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  ALL_ISO_WEEKDAYS,
+  MAX_BOOKING_DURATION_MINUTES,
+  OpeningHoursSchema,
+  validOpeningHours,
+} from "@/modules/booking/domain/bookingOpeningHours";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -22,7 +27,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/commo
 import { Input } from "@/modules/common/ui/input";
 
 export const MAX_BUFFER_MINUTES = 10_080;
-export const MAX_BOOKING_DURATION_MINUTES = 527_040;
+export { MAX_BOOKING_DURATION_MINUTES, validOpeningHours };
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "openingHours",
