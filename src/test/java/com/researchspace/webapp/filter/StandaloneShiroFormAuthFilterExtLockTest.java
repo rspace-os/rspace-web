@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -146,6 +147,20 @@ class StandaloneShiroFormAuthFilterExtLockTest {
     verify(sentinelCheck).pad("user1a", "wrong");
     assertEquals(
         AuthenticationException.class.getName(), request.getAttribute("shiroLoginFailure"));
+    verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
+  }
+
+  @Test
+  void lockedAccountWhosePadIsBusyIsRefusedAsBusyLikeAnyOtherName() throws Exception {
+    useVerifierWaiting(Duration.ofSeconds(1));
+    lockUser();
+    doThrow(new LoginVerificationBusyException("busy")).when(sentinelCheck).pad("user1a", "wrong");
+
+    MockHttpServletRequest request = loginSubmission("user1a");
+    assertTrue(filter.onAccessDenied(request, new MockHttpServletResponse()));
+
+    assertEquals(
+        LoginVerificationBusyException.class.getName(), request.getAttribute("shiroLoginFailure"));
     verify(lockoutPolicy, never()).handleLockoutOnFailure(any());
   }
 

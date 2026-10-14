@@ -1,6 +1,7 @@
 package com.researchspace.auth.password;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -37,12 +38,12 @@ class SentinelPasswordCheckTest {
   }
 
   @Test
-  void busyPadIsSwallowed() {
+  void busyPadIsReportedSoAnUnknownNameAnswersBusyLikeARealOne() {
     when(verifier.verify(anyString(), any(), anyString()))
         .thenThrow(new LoginVerificationBusyException("busy"));
     SentinelPasswordCheck check = new SentinelPasswordCheck(new RSpacePasswordEncoder(), verifier);
 
-    check.pad("bob", "guess");
+    assertThrows(LoginVerificationBusyException.class, () -> check.pad("bob", "guess"));
   }
 
   @Test

@@ -57,18 +57,20 @@ public interface RecordSigningManager {
    *
    * @param username
    * @param password
-   * @return
+   * @return whether the password is right, wrong, or could not be checked because the verifier was
+   *     busy
    */
-  boolean hasPermission(String username, String password);
+  ReauthenticationResult hasPermission(String username, String password);
 
   /**
    * Check if the user has permission.
    *
    * @param user
    * @param password
-   * @return
+   * @return whether the password is right, wrong, or could not be checked because the verifier was
+   *     busy
    */
-  boolean isReauthenticated(User user, String password);
+  ReauthenticationResult isReauthenticated(User user, String password);
 
   /**
    * Get a list of potential witnesses (PublicUserInfo)

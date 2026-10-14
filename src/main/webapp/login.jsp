@@ -132,6 +132,11 @@
                   ${requestScope.checkedExceptionMessage}
                 </div>
               </c:when>
+              <c:when test="${requestScope.shiroLoginFailure eq 'com.researchspace.auth.password.LoginVerificationBusyException'}">
+                <div class="rs-tooltip">
+                  <spring:message code="errors.login.busy"/>
+                </div>
+              </c:when>
               <c:otherwise>
                 <div class="rs-tooltip">
                   <spring:message code="errors.login.credentials.wrong"/>

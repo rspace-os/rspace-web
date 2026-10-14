@@ -1,8 +1,9 @@
 package com.researchspace.service.impl;
 
+import static com.researchspace.service.ReauthenticationResult.BUSY;
+import static com.researchspace.service.ReauthenticationResult.OK;
+import static com.researchspace.service.ReauthenticationResult.WRONG;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -47,12 +48,12 @@ public class ReauthenticatorTest {
   }
 
   @Test
-  void busyVerificationIsRefused() {
+  void busyVerificationIsReportedAsBusyNotWrong() {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
     when(credentialsMatcher.verify(user, "any"))
         .thenThrow(new LoginVerificationBusyException("busy"));
 
-    assertFalse(reauthenticator.reauthenticate(user, "any"));
+    assertEquals(BUSY, reauthenticator.reauthenticate(user, "any"));
   }
 
   @Test
@@ -60,7 +61,7 @@ public class ReauthenticatorTest {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
     when(credentialsMatcher.verify(user, "wrong")).thenReturn(false);
 
-    assertFalse(reauthenticator.reauthenticate(user, "wrong"));
+    assertEquals(WRONG, reauthenticator.reauthenticate(user, "wrong"));
     assertEquals(0, user.getNumConsecutiveLoginFailures());
     verify(userMgr, never()).save(any(User.class));
   }
@@ -70,7 +71,7 @@ public class ReauthenticatorTest {
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(sysadmin);
     when(credentialsMatcher.verify(sysadmin, "wrong")).thenReturn(false);
 
-    assertFalse(reauthenticator.reauthenticate(user, "wrong"));
+    assertEquals(WRONG, reauthenticator.reauthenticate(user, "wrong"));
     verify(credentialsMatcher, never()).verify(user, "wrong");
   }
 
@@ -83,7 +84,7 @@ public class ReauthenticatorTest {
         .thenReturn(true);
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
 
-    assertTrue(reauthenticator.reauthenticate(user, ANY_PWD));
+    assertEquals(OK, reauthenticator.reauthenticate(user, ANY_PWD));
   }
 
   @Test
@@ -93,7 +94,7 @@ public class ReauthenticatorTest {
     when(verificationPasswordValidator.isVerificationPasswordSet(user)).thenReturn(false);
     when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
 
-    assertFalse(reauthenticator.reauthenticate(user, ANY_PWD));
+    assertEquals(WRONG, reauthenticator.reauthenticate(user, ANY_PWD));
   }
 
   @Test
@@ -106,7 +107,7 @@ public class ReauthenticatorTest {
       final String ANY_PWD = "anypassword";
       when(userLdapRepo.authenticate(user.getUsername(), ANY_PWD)).thenReturn(user);
       when(userMgr.getOriginalUserForOperateAs(user)).thenReturn(user);
-      assertTrue(reauthenticator.reauthenticate(user, ANY_PWD));
+      assertEquals(OK, reauthenticator.reauthenticate(user, ANY_PWD));
     } finally {
       shiroUtils.clearSubject();
     }
@@ -121,6 +122,6 @@ public class ReauthenticatorTest {
     when(verificationPasswordValidator.isVerificationPasswordSet(sysadmin)).thenReturn(true);
     when(verificationPasswordValidator.authenticateVerificationPassword(sysadmin, ANY_PWD))
         .thenReturn(true);
-    assertTrue(reauthenticator.reauthenticate(user, ANY_PWD));
+    assertEquals(OK, reauthenticator.reauthenticate(user, ANY_PWD));
   }
 }

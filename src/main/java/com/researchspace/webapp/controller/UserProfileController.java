@@ -68,6 +68,7 @@ import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.IVerificationPasswordValidator;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserNotFoundException;
@@ -368,6 +369,29 @@ public class UserProfileController extends BaseController {
     return new AjaxReturnObject<>(msg, null);
   }
 
+  private String newEmailError(User user, String email, String emailConfirm) {
+    if (!email.equalsIgnoreCase(emailConfirm)) {
+      return getText("userProfile.email.errors.confirmationMismatch");
+    } else if (email.equals(user.getEmail())) {
+      return getText("userProfile.email.errors.unchanged");
+    } else if (CollectionUtils.isNotEmpty(userManager.getUserByEmail(email))) {
+      return getText("userProfile.email.errors.alreadyRegistered");
+    }
+    return null;
+  }
+
+  /** The message for a refused password on an email change, or null when it was right. */
+  private String emailChangePasswordError(HttpServletRequest request, User user, String password) {
+    return switch (reauthenticator.reauthenticate(user, password)) {
+      case OK -> null;
+      case BUSY -> getText("errors.reauthentication.busy");
+      case WRONG -> {
+        logAuthenticationFailureOnEmailChange(request, user);
+        yield getText("userProfile.email.errors.incorrectPassword");
+      }
+    };
+  }
+
   private void logAuthenticationFailureOnEmailChange(HttpServletRequest request, User user) {
     SECURITY_LOG.warn(
         "Unsuccessfully attempted to change email of user [{}], from {}",
@@ -457,15 +481,11 @@ public class UserProfileController extends BaseController {
         || checkInputString(emailConfirm)
         || checkInputString(password)) {
       errorMsg = getText("errors.allFields.required");
-    } else if (!reauthenticator.reauthenticate(user, password)) {
-      logAuthenticationFailureOnEmailChange(request, user);
-      errorMsg = getText("userProfile.email.errors.incorrectPassword");
-    } else if (!email.equalsIgnoreCase(emailConfirm)) {
-      errorMsg = getText("userProfile.email.errors.confirmationMismatch");
-    } else if (email.equals(user.getEmail())) {
-      errorMsg = getText("userProfile.email.errors.unchanged");
-    } else if (CollectionUtils.isNotEmpty(userManager.getUserByEmail(email))) {
-      errorMsg = getText("userProfile.email.errors.alreadyRegistered");
+    } else {
+      errorMsg = emailChangePasswordError(request, user, password);
+      if (errorMsg == null) {
+        errorMsg = newEmailError(user, email, emailConfirm);
+      }
     }
     if (errorMsg != null) {
       return new AjaxReturnObject<>(null, ErrorList.of(errorMsg));
@@ -732,7 +752,11 @@ public class UserProfileController extends BaseController {
     }
 
     User user = userManager.getAuthenticatedUserInSession();
-    if (!reauthenticator.reauthenticate(user, pwd)) {
+    ReauthenticationResult reauthentication = reauthenticator.reauthenticate(user, pwd);
+    if (reauthentication == ReauthenticationResult.BUSY) {
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("errors.reauthentication.busy")));
+    }
+    if (reauthentication != ReauthenticationResult.OK) {
       SECURITY_LOG.warn(
           "Failed attempt to authenticate creation of a new API Key for User [{}], from {}",
           user.getUsername(),

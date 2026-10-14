@@ -78,6 +78,14 @@ public class PasswordGrantGuessLimiter {
     return admitted[0];
   }
 
+  /**
+   * Gives back the attempt counted for {@code username} when its password was never checked because
+   * the verifier was busy, so a busy moment does not use up a guess.
+   */
+  public void uncount(String username) {
+    failures.asMap().computeIfPresent(username, (key, count) -> count > 1 ? count - 1 : null);
+  }
+
   /** Clears the count for {@code username} after a correct password. */
   public void recordSuccess(String username) {
     failures.invalidate(username);

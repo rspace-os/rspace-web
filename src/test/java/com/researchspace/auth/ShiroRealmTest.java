@@ -3,11 +3,14 @@ package com.researchspace.auth;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.SignupSource;
 import com.researchspace.model.User;
@@ -35,6 +38,19 @@ class ShiroRealmTest {
 
     assertNull(realm.doGetAuthenticationInfo(new UsernamePasswordToken("Nobody", "guess")));
     verify(sentinelCheck).pad("nobody-key", "guess");
+  }
+
+  @Test
+  void unknownUsernameWhosePadIsBusyIsRefusedAsBusyLikeAKnownOne() {
+    when(userMgr.findUsernameByUsernameOrAlias("Nobody")).thenReturn(null);
+    when(userMgr.loginLockKey("Nobody")).thenReturn("nobody-key");
+    doThrow(new LoginVerificationBusyException("busy"))
+        .when(sentinelCheck)
+        .pad("nobody-key", "guess");
+
+    assertThrows(
+        LoginVerificationBusyException.class,
+        () -> realm.doGetAuthenticationInfo(new UsernamePasswordToken("Nobody", "guess")));
   }
 
   @Test

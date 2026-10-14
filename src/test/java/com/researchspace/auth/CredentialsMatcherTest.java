@@ -1,10 +1,10 @@
 package com.researchspace.auth;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.User;
 import com.researchspace.service.IReauthenticator;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -21,7 +21,7 @@ public class CredentialsMatcherTest extends SpringTransactionalTest {
   public void testCredentialsMatch() throws UserExistsException {
     User u = createAndSaveRandomUser();
     RSpaceTestUtils.logoutCurrUserAndLoginAs(u.getUsername(), TESTPASSWD);
-    assertTrue(reauthenticator.reauthenticate(u, TESTPASSWD));
+    assertEquals(ReauthenticationResult.OK, reauthenticator.reauthenticate(u, TESTPASSWD));
   }
 
   // RSPAC-602
@@ -30,13 +30,14 @@ public class CredentialsMatcherTest extends SpringTransactionalTest {
     User anyUser = createAndSaveRandomUser();
     logoutAndLoginAsSysAdmin();
     runAsUser(anyUser);
-    assertTrue(reauthenticator.reauthenticate(anyUser, SYS_ADMIN_PWD));
+    assertEquals(ReauthenticationResult.OK, reauthenticator.reauthenticate(anyUser, SYS_ADMIN_PWD));
     releaseRunAs();
     // sysadmin can't do this by default
-    assertFalse(reauthenticator.reauthenticate(anyUser, SYS_ADMIN_PWD));
+    assertEquals(
+        ReauthenticationResult.WRONG, reauthenticator.reauthenticate(anyUser, SYS_ADMIN_PWD));
     // user can still reauthenticate
     logoutAndLoginAs(anyUser);
-    assertTrue(reauthenticator.reauthenticate(anyUser, TESTPASSWD));
+    assertEquals(ReauthenticationResult.OK, reauthenticator.reauthenticate(anyUser, TESTPASSWD));
   }
 
   private void releaseRunAs() {
