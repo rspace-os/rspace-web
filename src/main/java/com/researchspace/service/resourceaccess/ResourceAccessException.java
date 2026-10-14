@@ -6,6 +6,7 @@ public class ResourceAccessException extends RuntimeException {
   public enum Reason {
     NOT_FOUND,
     FORBIDDEN,
+    INHERITED_READ_ONLY,
     OWNER_REQUIRED,
     STALE,
     INVALID_GRANTEE,

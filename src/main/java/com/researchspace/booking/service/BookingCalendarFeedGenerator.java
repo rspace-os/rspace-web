@@ -178,10 +178,11 @@ public final class BookingCalendarFeedGenerator {
     if (itemName == null || itemName.isBlank()) {
       itemName = calendarItemName;
     }
-    return itemName == null || itemName.isBlank()
-        ? kind
-        : messages.getMessage(
-            "booking:calendar.feed.itemSummary", new Object[] {itemName, kind}, locale);
+    if (itemName == null || itemName.isBlank()) {
+      itemName = messages.getMessageForLocale("booking:calendar.feed.unknownItem", locale);
+    }
+    return messages.getMessage(
+        "booking:calendar.feed.itemSummary", new Object[] {itemName, kind}, locale);
   }
 
   private static Instant timestamp(CalendarEvent event) {

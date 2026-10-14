@@ -12,7 +12,6 @@ import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import { RoleSourceSchema } from "@/modules/common/resource-access/schemas";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
-import { Badge } from "@/modules/common/ui/badge";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 
@@ -80,7 +79,7 @@ export const BookingConfigurationSchema = v.pipe(
       }),
       NO_BOOKING_CAPABILITIES,
     ),
-    ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.boolean() })),
+    ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.optional(v.boolean()) })),
   }),
   v.forward(
     v.check((configuration) =>
@@ -312,13 +311,6 @@ export const bookingConfigurationConfig = {
               compact: true,
               size: "xs",
             }),
-            row.ownerHealth?.hasEffectiveOwner === false
-              ? createElement(
-                  Badge,
-                  { variant: "destructive", className: "w-fit" },
-                  i18n.t("booking:bookableItems.ownerHealth.needsOwner"),
-                )
-              : null,
           );
         },
       },
