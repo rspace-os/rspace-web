@@ -119,6 +119,11 @@ public final class AccessContext {
     return new AccessContext(user, operation, resourceName, targetId, inputs, memo);
   }
 
+  /** Shares request memoization while reading another resource or an included target. */
+  public AccessContext forRead(String resource, Object id) {
+    return new AccessContext(user, Operation.READ, resource, id, List.of(), memo);
+  }
+
   /**
    * Whether this request targets exactly the given row. False when the operation is not row-scoped.
    */
