@@ -153,7 +153,11 @@ class BookingFixturesAppInitialiserTest {
 
     assertClosed(settings, DayOfWeek.SUNDAY);
     assertClosed(settings, DayOfWeek.MONDAY);
-    assertEquals(List.of(2, 3, 4, 5, 6), settings.openDays());
+    assertEquals(
+        List.of(2, 3, 4, 5, 6),
+        settings.openingHours().stream()
+            .map(com.researchspace.model.booking.BookingOpeningHoursEntry::dayOfWeek)
+            .toList());
     assertHours(settings, DayOfWeek.TUESDAY, "00:00", "24:00");
   }
 
@@ -189,28 +193,18 @@ class BookingFixturesAppInitialiserTest {
         patch.merge(
             new BookingSchedulingSettings(
                 BookingSchedulingSettings.DEFAULT_SLOT_GRANULARITY_MINUTES,
-                BookingSchedulingSettings.DEFAULT_OPENING_START,
-                BookingSchedulingSettings.DEFAULT_OPENING_END,
-                BookingSchedulingSettings.DEFAULT_OPEN_DAYS,
-                BookingSchedulingSettings.DEFAULT_OPENING_EXCEPTIONS,
+                BookingSchedulingSettings.DEFAULT_OPENING_HOURS,
                 BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
                 BookingSchedulingSettings.DEFAULT_BUFFER_MINUTES,
                 BookingSchedulingSettings.DEFAULT_MAX_BOOKING_DURATION_MINUTES,
                 BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING));
     assertTrue(BookingSchedulingSettings.isGranularityValid(settings.slotGranularityMinutes()));
-    assertTrue(
-        BookingSchedulingSettings.areOpeningHoursValid(
-            settings.openingStart(), settings.openingEnd()));
+    assertTrue(BookingSchedulingSettings.areOpeningHoursValid(settings.openingHours()));
     assertTrue(BookingSchedulingSettings.isBufferValid(settings.bufferBeforeMinutes()));
     assertTrue(BookingSchedulingSettings.isBufferValid(settings.bufferAfterMinutes()));
     assertTrue(
         BookingSchedulingSettings.isMaximumDurationValid(
             settings.maxBookingDurationMinutes(), settings.slotGranularityMinutes()));
-    assertTrue(BookingSchedulingSettings.areOpenDaysValid(settings.openDays()));
-    assertTrue(BookingSchedulingSettings.areOpeningExceptionsValid(settings.openingExceptions()));
-    assertTrue(
-        BookingSchedulingSettings.areOpeningExceptionsOnOpenDays(
-            settings.openingExceptions(), settings.openDays()));
     return settings;
   }
 
