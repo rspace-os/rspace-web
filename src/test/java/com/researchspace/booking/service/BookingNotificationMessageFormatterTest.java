@@ -113,6 +113,23 @@ class BookingNotificationMessageFormatterTest {
   }
 
   @Test
+  void aRestoredBookingSaysRestoredRatherThanCreated() {
+    BookingNotificationData data = data("2026-11-01T05:30:00Z", "2026-11-01T06:30:00Z");
+    data.setRestored(true);
+
+    String message =
+        formatter.format(
+            NotificationType.NOTIFICATION_BOOKING_CREATED, data, ZoneId.of("UTC"), Locale.US);
+
+    assertTrue(
+        message.startsWith(
+            "Booking <a href=\"/booking/calendar/bookings/42\">42</a> for instrument"
+                + " <a href=\"/booking/bookable-items/IN12\">Microscope (IN12)</a> was restored."
+                + " It is scheduled from "),
+        message);
+  }
+
+  @Test
   void linkTargetsEncodeAndEscapeTheirIdentifiers() {
     BookingNotificationData data = data("2026-11-01T05:30:00Z", "2026-11-01T06:30:00Z");
     data.setBookingId("42\"><b>");
@@ -285,6 +302,23 @@ class BookingNotificationMessageFormatterTest {
             BookingTimeFormat.H24);
 
     assertTrue(message.contains("Oct 8, 2026, 00:00 (Europe/Berlin"), message);
+  }
+
+  @Test
+  void cancellationReasonIsEscapedAndSelectsTheReasonMessage() {
+    BookingNotificationData data = data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z");
+    data.setCancellationReason("<script>alert('x')</script> & \"repair\"");
+
+    String message =
+        formatter.format(
+            NotificationType.NOTIFICATION_BOOKING_CANCELLED,
+            data,
+            ZoneId.of("Europe/Berlin"),
+            Locale.US);
+
+    assertTrue(message.contains("Reason: &lt;script&gt;alert('x')&lt;/script&gt;"), message);
+    assertTrue(message.contains("&amp; &quot;repair&quot;"), message);
+    assertFalse(message.contains("<script>"), message);
   }
 
   @Test

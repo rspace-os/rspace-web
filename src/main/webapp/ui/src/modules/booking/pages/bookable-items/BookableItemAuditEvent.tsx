@@ -42,6 +42,7 @@ export function RecordedValues({ row }: { row: AuditRow }) {
     end: t("bookableItemDetails.audit.values.end"),
     kind: t("bookableItemDetails.audit.values.kind"),
     purpose: t("bookableItemDetails.audit.values.purpose"),
+    cancellationReason: t("bookableItemDetails.audit.values.cancellationReason"),
     state: t("bookableItemDetails.audit.values.state"),
     target: t("bookableItemDetails.audit.values.target"),
     bookingConfigurationId: t("bookableItemDetails.audit.values.configuration"),

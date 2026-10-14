@@ -7,6 +7,10 @@ import { server } from "@/__tests__/mswServer";
 import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents, useCalendarEvents } from "../calendarEvents";
 import { collectionResponse, otherBooking, ownBooking } from "./calendarTestHarness";
 
+// Calendar projections intentionally omit cancellation details.
+const { cancellationReason: _ownReason, ...ownCalendarBooking } = ownBooking;
+const { cancellationReason: _otherReason, ...otherCalendarBooking } = otherBooking;
+
 describe("calendar events", () => {
   it("sends complete item/event grouping and Search before the event limit", async () => {
     const where = "(target==IN1,target.customFields.SF152==BSL-2);kind==BOOKING";
@@ -27,7 +31,7 @@ describe("calendar events", () => {
         where,
         q: "purpose-only",
       }),
-    ).resolves.toEqual([ownBooking]);
+    ).resolves.toEqual([ownCalendarBooking]);
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("q")).toBe("purpose-only");
     expect(requests[0].searchParams.get("start")).toBe("2026-08-17T00:00:00Z");
@@ -57,7 +61,7 @@ describe("calendar events", () => {
 
     await expect(
       loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal),
-    ).resolves.toEqual([ownBooking, otherBooking]);
+    ).resolves.toEqual([ownCalendarBooking, otherCalendarBooking]);
 
     expect(requests).toHaveLength(2);
     expect(requests[0].searchParams.get("where")).toBe("start=lt=2026-08-23T22:00:00Z;end=gt=2026-08-16T22:00:00Z");
@@ -81,7 +85,7 @@ describe("calendar events", () => {
 
     await expect(
       loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal),
-    ).resolves.toEqual([ownBooking]);
+    ).resolves.toEqual([ownCalendarBooking]);
 
     expect(requests).toBe(1);
   });
