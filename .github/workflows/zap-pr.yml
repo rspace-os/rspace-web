@@ -1,4 +1,4 @@
-name: ZAP PR Security Scan
+name: ZAP Scan
 
 # Shift-left security scan: builds THIS PR's WAR, boots it, and runs the ZAP
 # quick-release plan against it before merge.
@@ -67,7 +67,7 @@ jobs:
       - name: Checkout rspace-pentest (pinned SHA)
         uses: actions/checkout@v7.0.0
         with:
-          repository: rspace-os/rspace-pentest
+          repository: ResearchSpace-ELN/rspace-pentest
           ref: ${{ env.PENTEST_REF }}
           ssh-key: ${{ secrets.PENTEST_DEPLOY_KEY }}
           path: pentest
