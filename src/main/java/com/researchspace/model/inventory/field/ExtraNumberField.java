@@ -2,15 +2,14 @@ package com.researchspace.model.inventory.field;
 
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.service.JsonMessageSource;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
-import java.text.MessageFormat;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 @Entity
 @Audited
@@ -21,8 +20,7 @@ public class ExtraNumberField extends ExtraField {
   private static final long serialVersionUID = 616794358851234028L;
   private static final String DEFAULT_NAME = "Numeric data";
   public static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
-  private static final ResourceBundle VALIDATION_MESSAGES =
-      ResourceBundle.getBundle("ValidationMessages", Locale.ENGLISH);
+  private static final JsonMessageSource VALIDATION_MESSAGES = new JsonMessageSource();
 
   public ExtraNumberField() {
     setName(DEFAULT_NAME);
@@ -61,7 +59,8 @@ public class ExtraNumberField extends ExtraField {
   }
 
   private static String formatValidationMessage(String key, String value) {
-    return MessageFormat.format(VALIDATION_MESSAGES.getString(key), value);
+    return VALIDATION_MESSAGES.getMessage(
+        key, new Object[] {value}, LocaleContextHolder.getLocale());
   }
 
   @Override
