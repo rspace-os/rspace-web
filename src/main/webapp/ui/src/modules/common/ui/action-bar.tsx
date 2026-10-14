@@ -4,7 +4,7 @@ import { Button } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/modules/common/ui/menu";
 import { cn } from "@/modules/common/utils/cn";
 
-export type ActionBarAction = {
+type ActionBarAction = {
   label: string;
   /**
    * Optional. Actions without one still get the slot reserved in the overflow menu, so labels stay
