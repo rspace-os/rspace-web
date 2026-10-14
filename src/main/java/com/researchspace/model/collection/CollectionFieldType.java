@@ -1,5 +1,7 @@
 package com.researchspace.model.collection;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,7 +61,28 @@ public interface CollectionFieldType<V> {
     };
   }
 
+  /** Declared fields of each embedded object, or empty for a scalar. */
+  default List<? extends Field<?, ?>> fields() {
+    return List.of();
+  }
+
   V parse(String value);
+
+  /** Checks the JSON kind before invoking scalar parsing. Union scalar types may narrow this. */
+  default boolean accepts(JsonNode value) {
+    return switch (inputKind()) {
+      case STRING -> value.isTextual();
+      case NUMBER -> value.isNumber();
+      case BOOLEAN -> value.isBoolean();
+      case OBJECT -> value.isObject();
+      case ARRAY -> value.isArray();
+    };
+  }
+
+  /** Parses one scalar, retaining its JSON kind when a custom union type needs it. */
+  default V parseScalar(JsonNode value) {
+    return parse(value.asText());
+  }
 
   Object serialize(V value);
 
