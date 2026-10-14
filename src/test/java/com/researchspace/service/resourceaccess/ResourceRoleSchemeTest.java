@@ -5,19 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ResourceRoleSchemeTest {
-
-  private static final Set<ResourceGranteeKind> PEOPLE =
-      Set.of(ResourceGranteeKind.USER, ResourceGranteeKind.GROUP);
 
   @Test
   void validatesGenericOwnerManagerContributorReaderScheme() {
@@ -32,7 +26,7 @@ class ResourceRoleSchemeTest {
   @Test
   void rejectsHigherRoleThatOmitsLowerRoleCapability() {
     ResourceRoleScheme scheme =
-        scheme(
+        new TestScheme(
             roles(),
             capabilities(
                 Set.of("READ_RESOURCE", "CONTRIBUTE", "MANAGE_ASSIGNMENTS", "MANAGE_OWNERS"),
@@ -50,7 +44,7 @@ class ResourceRoleSchemeTest {
   @Test
   void rejectsOwnerOrManagerInWrongPosition() {
     ResourceRoleScheme scheme =
-        scheme(
+        new TestScheme(
             List.of(
                 new ResourceRole("MANAGER", 40),
                 new ResourceRole("OWNER", 30),
@@ -68,7 +62,7 @@ class ResourceRoleSchemeTest {
   @Test
   void rejectsDuplicateRoleKeysAndRanks() {
     ResourceRoleScheme duplicateKey =
-        scheme(
+        new TestScheme(
             List.of(
                 new ResourceRole("OWNER", 40),
                 new ResourceRole("MANAGER", 30),
@@ -77,7 +71,7 @@ class ResourceRoleSchemeTest {
             validCapabilities(),
             Set.of("OWNER"));
     ResourceRoleScheme duplicateRank =
-        scheme(
+        new TestScheme(
             List.of(
                 new ResourceRole("OWNER", 40),
                 new ResourceRole("MANAGER", 30),
@@ -98,7 +92,8 @@ class ResourceRoleSchemeTest {
 
   @Test
   void rejectsUnknownRequiredPersistedRole() {
-    ResourceRoleScheme scheme = scheme(roles(), validCapabilities(), Set.of("OWNER", "AUDITOR"));
+    ResourceRoleScheme scheme =
+        new TestScheme(roles(), validCapabilities(), Set.of("OWNER", "AUDITOR"));
 
     IllegalArgumentException error = assertThrows(IllegalArgumentException.class, scheme::validate);
 
@@ -107,12 +102,11 @@ class ResourceRoleSchemeTest {
 
   @Test
   void rejectsRoleWithoutAllowedGranteeKinds() {
-    ResourceRoleScheme valid = validScheme();
     ResourceRoleScheme scheme =
-        new TestScheme(valid.roles(), validCapabilities(), Set.of("OWNER")) {
+        new TestScheme(roles(), validCapabilities(), Set.of("OWNER")) {
           @Override
           public Set<ResourceGranteeKind> allowedGranteeKinds(String roleKey) {
-            return roleKey.equals("READER") ? Set.of() : PEOPLE;
+            return roleKey.equals("READER") ? Set.of() : TestScheme.PEOPLE;
           }
         };
 
@@ -125,7 +119,7 @@ class ResourceRoleSchemeTest {
   @Test
   void rejectsOwnerOrManagerWithoutReadCapability() {
     ResourceRoleScheme scheme =
-        scheme(
+        new TestScheme(
             roles(),
             capabilities(
                 Set.of("CONTRIBUTE", "MANAGE_ASSIGNMENTS", "MANAGE_OWNERS"),
@@ -154,7 +148,7 @@ class ResourceRoleSchemeTest {
   }
 
   private static ResourceRoleScheme validScheme() {
-    return scheme(roles(), validCapabilities(), Set.of("OWNER"));
+    return new TestScheme(roles(), validCapabilities(), Set.of("OWNER"));
   }
 
   private static List<ResourceRole> roles() {
@@ -175,64 +169,10 @@ class ResourceRoleSchemeTest {
 
   private static Map<String, Set<String>> capabilities(
       Set<String> owner, Set<String> manager, Set<String> contributor, Set<String> reader) {
-    Map<String, Set<String>> result = new LinkedHashMap<>();
-    result.put("OWNER", owner);
-    result.put("MANAGER", manager);
-    result.put("CONTRIBUTOR", contributor);
-    result.put("READER", reader);
-    return result;
-  }
-
-  private static ResourceRoleScheme scheme(
-      List<ResourceRole> roles,
-      Map<String, Set<String>> capabilities,
-      Set<String> requiredPersistedRoles) {
-    return new TestScheme(roles, capabilities, requiredPersistedRoles);
-  }
-
-  private static class TestScheme implements ResourceRoleScheme {
-
-    private final List<ResourceRole> roles;
-    private final Map<String, Set<String>> capabilities;
-    private final Set<String> requiredPersistedRoles;
-
-    TestScheme(
-        List<ResourceRole> roles,
-        Map<String, Set<String>> capabilities,
-        Set<String> requiredPersistedRoles) {
-      this.roles = roles;
-      this.capabilities = capabilities;
-      this.requiredPersistedRoles = requiredPersistedRoles;
-    }
-
-    @Override
-    public String key() {
-      return "test-resources";
-    }
-
-    @Override
-    public List<ResourceRole> roles() {
-      return roles;
-    }
-
-    @Override
-    public Set<String> capabilities(String roleKey) {
-      return capabilities.get(roleKey);
-    }
-
-    @Override
-    public Set<ResourceGranteeKind> allowedGranteeKinds(String roleKey) {
-      return PEOPLE;
-    }
-
-    @Override
-    public Set<String> requiredPersistedRoles() {
-      return requiredPersistedRoles;
-    }
-
-    @Override
-    public Optional<String> implicitRole(User subject) {
-      return Optional.empty();
-    }
+    return Map.of(
+        "OWNER", owner,
+        "MANAGER", manager,
+        "CONTRIBUTOR", contributor,
+        "READER", reader);
   }
 }
