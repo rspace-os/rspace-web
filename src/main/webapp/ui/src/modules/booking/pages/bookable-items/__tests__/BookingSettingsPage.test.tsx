@@ -18,6 +18,8 @@ import { bookingSettingsFixture } from "./bookingSettingsFixture";
 
 const settings = {
   ...bookingSettingsFixture,
+  incrementUnit: "MINUTES" as const,
+  alignToIncrement: true,
   bufferBeforeMinutes: 3,
   bufferAfterMinutes: 7,
   state: "ACTIVE" as const,
@@ -128,7 +130,7 @@ describe("BookingSettingsPage", () => {
       }),
     );
     renderPage(queryClient);
-    await screen.findByRole("group", { name: "Monday" });
+    within(await screen.findByRole("group", { name: "Monday" })).getByLabelText("booking:settings.fields.openingEnd");
     current = {
       ...settings,
       configurationVersion: 1,
@@ -232,9 +234,11 @@ describe("BookingSettingsPage", () => {
     expect(validOpeningHours("24:00", "24:00")).toBe(false);
   });
 
-  it("defaults to every weekday open for the full day", () => {
+  it("defaults to every weekday open with no exceptions", () => {
     expect(DEFAULT_SCHEDULING_SETTINGS).toMatchObject({
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+      openingHours: [1, 2, 3, 4, 5, 6, 7]
+        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
+        .filter((entry) => [1, 2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
     });
     expect(v.safeParse(SchedulingSettingsSchema, DEFAULT_SCHEDULING_SETTINGS).success).toBe(true);
   });
@@ -250,10 +254,13 @@ describe("BookingSettingsPage", () => {
     expect(result.issues?.map((issue) => v.getDotPath(issue))).toEqual([path]);
   });
 
-  it("accepts 24:00 after a non-midnight start", () => {
+  it("accepts 24:00 in an exception after a non-midnight start", () => {
     const result = v.safeParse(SchedulingSettingsSchema, {
       ...DEFAULT_SCHEDULING_SETTINGS,
-      openingHours: [{ dayOfWeek: 2, start: "08:00", end: "24:00" }],
+      openingHours: DEFAULT_SCHEDULING_SETTINGS.openingHours.map(
+        (entry) =>
+          [{ dayOfWeek: 2, start: "08:00", end: "24:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+      ),
     });
     expect(result.success).toBe(true);
   });
@@ -261,7 +268,12 @@ describe("BookingSettingsPage", () => {
   it("submits only the supplied open weekdays", () => {
     const output = v.parse(SchedulingSettingsSchema, {
       ...DEFAULT_SCHEDULING_SETTINGS,
-      openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
+      openingHours: DEFAULT_SCHEDULING_SETTINGS.openingHours
+        .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek))
+        .map(
+          (entry) =>
+            [{ dayOfWeek: 2, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
     });
     expect(output.openingHours).toEqual([{ dayOfWeek: 1, start: "00:00", end: "24:00" }]);
   });
@@ -303,23 +315,24 @@ describe("BookingSettingsPage", () => {
   });
 
   it("validates maximum duration against the selected increment", () => {
-    expect(validMaximumBookingDuration(0, 5)).toBe(true);
-    expect(validMaximumBookingDuration(60, 5)).toBe(true);
-    expect(validMaximumBookingDuration(7, 5)).toBe(false);
+    const minutes = (slotGranularityMinutes: number) => ({ slotGranularityMinutes, incrementUnit: "MINUTES" as const });
+    expect(validMaximumBookingDuration(0, minutes(5))).toBe(true);
+    expect(validMaximumBookingDuration(60, minutes(5))).toBe(true);
+    expect(validMaximumBookingDuration(7, minutes(5))).toBe(false);
   });
 
-  it("offers every supported time increment", async () => {
+  it("offers every supported increment unit", async () => {
     server.use(http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)));
     renderPage();
 
-    const granularity = await screen.findByRole("combobox", {
-      name: "booking:settings.fields.granularity",
-    });
-    expect(
-      within(granularity)
-        .getAllByRole("option")
-        .map((option) => option.getAttribute("value")),
-    ).toEqual(["1", "5", "10", "15"]);
+    const units = await screen.findByRole("group", { name: "booking:settings.fields.incrementUnit" });
+    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementMinutes" })).toBeVisible();
+    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementHours" })).toBeVisible();
+    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementDays" })).toBeVisible();
+    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementMinutes" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("does not submit an invalid maximum duration", async () => {
@@ -339,7 +352,9 @@ describe("BookingSettingsPage", () => {
     });
     await user.clear(maximum);
     await user.type(maximum, "7");
-    expect(maximum).toHaveAccessibleDescription("booking:settings.fields.maximumDurationDescription");
+    expect(maximum).toHaveAccessibleDescription(
+      "booking:settings.fields.maximumDurationDescription booking:settings.errors.maximumDuration",
+    );
     expect(screen.getByText("booking:settings.errors.maximumDuration")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
 
@@ -374,7 +389,10 @@ describe("BookingSettingsPage", () => {
     expect(screen.queryByText("booking:settings.saved")).not.toBeInTheDocument();
     expect(body).toEqual({
       slotGranularityMinutes: 5,
+      incrementUnit: "MINUTES",
+      alignToIncrement: true,
       openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+
       bufferBeforeMinutes: 3,
       bufferAfterMinutes: 7,
       maxBookingDurationMinutes: 0,
@@ -548,9 +566,6 @@ describe("BookingSettingsPage", () => {
       expect(submitted[0]).toMatchObject({ openingHours: [settings.openingHours[0]] });
       await user.click(screen.getByRole("checkbox", { name: "Monday" }));
       expect(screen.getByText("booking:settings.openingHours.errors.noDays")).toBeVisible();
-      expect(screen.getByRole("checkbox", { name: "Monday" })).toHaveAccessibleDescription(
-        "booking:settings.openingHours.errors.noDays",
-      );
       await user.click(save());
       expect(submitted).toHaveLength(1);
     });

@@ -58,6 +58,28 @@ class BookingAuditDetailsTest {
   }
 
   @Test
+  void incrementUnitAndAlignmentAreLabelledAfterTheIncrement() {
+    AuditData data =
+        AuditData.fromJson(
+            "{\"data\":{\"alignToIncrement\":true,\"incrementUnit\":\"DAYS\","
+                + "\"maxBookingDurationMinutes\":0,\"slotGranularityMinutes\":1440}}");
+
+    // Both labels live in the booking namespace that the item's audit history also renders.
+    assertEquals(
+        "Time increment (minutes): 1440; "
+            + label("incrementUnit")
+            + ": DAYS; "
+            + label("alignToIncrement")
+            + ": true; Maximum duration (minutes): 0",
+        BookingAuditDetails.format(data.getData(), messages, Locale.US));
+  }
+
+  private String label(String key) {
+    return messages.getMessageForLocale(
+        "booking:bookableItemDetails.audit.values." + key, Locale.US);
+  }
+
+  @Test
   void closingMidnightReadsAsMidnightAndNoExceptionsAsDash() {
     AuditData allDay =
         AuditData.fromJson(

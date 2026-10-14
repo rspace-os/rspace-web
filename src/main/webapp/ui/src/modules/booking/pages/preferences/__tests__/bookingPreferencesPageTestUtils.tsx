@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render } from "@testing-library/react";
+
+import { render, screen, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
+import { expect } from "vitest";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { server } from "@/__tests__/mswServer";
 
@@ -38,4 +40,17 @@ export function renderPage() {
     </QueryClientProvider>,
   );
   return { ...rendered, queryClient };
+}
+
+export async function expectStatusMessage(message: string) {
+  await waitFor(() => {
+    const matchingStatuses = screen.getAllByRole("status").filter((status) => status.textContent === message);
+    expect(matchingStatuses).toHaveLength(1);
+    expect(matchingStatuses[0]).toHaveTextContent(message);
+  });
+}
+
+export function expectNoAlertMessage(message: string) {
+  const matchingAlerts = screen.getAllByRole("alert").filter((alert) => alert.textContent === message);
+  expect(matchingAlerts).toHaveLength(0);
 }

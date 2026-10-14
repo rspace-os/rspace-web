@@ -4,6 +4,7 @@ import {
   validMaximumBookingDuration,
 } from "@/modules/booking/configuration/schedulingSettings";
 import { isValidTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { validIncrementForSchedule } from "@/modules/booking/domain/bookingIncrement";
 import { RoleSourceSchema } from "@/modules/common/resource-access/schemas";
 
 const NO_BOOKING_CAPABILITIES = {
@@ -75,9 +76,7 @@ export const BookingConfigurationSchema = v.pipe(
     ownerHealth: v.optional(v.object({ hasEffectiveOwner: v.optional(v.boolean()) })),
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((configuration) => validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -95,10 +94,12 @@ export const BookingConfigurationInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((configuration) => validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration)),
     ["maxBookingDurationMinutes"],
+  ),
+  v.forward(
+    v.check((settings) => validIncrementForSchedule(settings)),
+    ["slotGranularityMinutes"],
   ),
 );
 
@@ -110,10 +111,12 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
     ...schedulingSettingsEntries,
   }),
   v.forward(
-    v.check((configuration) =>
-      validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration.slotGranularityMinutes),
-    ),
+    v.check((configuration) => validMaximumBookingDuration(configuration.maxBookingDurationMinutes, configuration)),
     ["maxBookingDurationMinutes"],
+  ),
+  v.forward(
+    v.check((settings) => validIncrementForSchedule(settings)),
+    ["slotGranularityMinutes"],
   ),
 );
 

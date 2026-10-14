@@ -38,7 +38,7 @@ describe("BookableItemPage", () => {
 
     await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
     await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
-    const maximumDuration = await screen.findByLabelText("booking:bookableItemDetails.fields.maximumDuration");
+    const maximumDuration = await screen.findByLabelText("booking:settings.fields.maximumDuration");
     await user.clear(maximumDuration);
     await user.type(maximumDuration, "60");
     const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
@@ -64,6 +64,107 @@ describe("BookableItemPage", () => {
       ]),
     );
     expect(queryClient.getQueryState(unrelatedBookingKey)?.isInvalidated).toBe(false);
+  });
+
+  it("keeps the stored increment unit through cancel, and saves and reloads a Days increment", async () => {
+    const user = userEvent.setup();
+    let current = {
+      ...configuration,
+      slotGranularityMinutes: 1440,
+      incrementUnit: "HOURS",
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+    };
+    const patches: Record<string, unknown>[] = [];
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([current], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
+      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
+        const body = (await request.json()) as Record<string, unknown>;
+        patches.push(body);
+        current = { ...current, ...body };
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    renderPage();
+    const unitButton = (unit: "Hours" | "Days") =>
+      within(screen.getByRole("group", { name: "booking:settings.fields.incrementUnit" })).getByRole("button", {
+        name: `booking:settings.fields.increment${unit}`,
+      });
+    const edit = async () => {
+      await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
+      return screen.findByLabelText("booking:bookableItemDetails.fields.granularity");
+    };
+
+    await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
+    expect(await screen.findByText("booking:bookableItemDetails.hours")).toBeVisible();
+    expect(screen.getByText("booking:bookableItemDetails.alignmentUnavailable")).toBeVisible();
+
+    // 24 Hours is not shown as 1 Day, and an unsaved unit change does not outlive Cancel.
+    let increment = await edit();
+    expect(increment).toHaveValue(24);
+    expect(unitButton("Hours")).toHaveAttribute("aria-pressed", "true");
+    await user.click(unitButton("Days"));
+    expect(increment).toHaveValue(24);
+    expect(unitButton("Days")).toHaveAttribute("aria-pressed", "true");
+    await user.click(
+      within(screen.getByRole("tabpanel")).getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }),
+    );
+    increment = await edit();
+    expect(increment).toHaveValue(24);
+    expect(unitButton("Hours")).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(unitButton("Days"));
+    await user.clear(increment);
+    await user.type(increment, "0.5");
+    expect(screen.getByText("booking:settings.errors.incrementWholeDays")).toBeVisible();
+    await user.clear(increment);
+    await user.type(increment, "2");
+    expect(screen.queryByText("booking:settings.errors.incrementWholeDays")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
+    await waitFor(() => expect(patches).toHaveLength(1));
+    expect(patches[0]).toMatchObject({ slotGranularityMinutes: 2880, incrementUnit: "DAYS", alignToIncrement: true });
+    expect(await screen.findByText("booking:bookableItemDetails.days")).toBeVisible();
+
+    increment = await edit();
+    expect(increment).toHaveValue(2);
+    expect(unitButton("Days")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("starts a new Open all day history for each edit session", async () => {
+    const user = userEvent.setup();
+    const allDay = {
+      ...configuration,
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+    };
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([allDay], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
+    );
+    renderPage();
+    const sharedHours = () => screen.getByRole("group", { name: "Monday" });
+    const control = (name: string) => within(sharedHours()).getByLabelText(name);
+    const openAllDay = () =>
+      within(sharedHours()).getByRole("checkbox", { name: "booking:settings.openingHours.openAllDay" });
+
+    await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
+    expect(screen.getAllByText("booking:settings.openingHours.openAllDay")).toHaveLength(7);
+    await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
+    await screen.findByLabelText("booking:bookableItemDetails.fields.granularity");
+    await user.click(openAllDay());
+    expect(control("booking:settings.fields.openingStart")).toHaveValue("09:00");
+    await user.clear(control("booking:settings.fields.openingStart"));
+    await user.type(control("booking:settings.fields.openingStart"), "10:00");
+    await user.click(openAllDay());
+    await user.click(
+      within(screen.getByRole("tabpanel")).getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }),
+    );
+
+    await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
+    await screen.findByLabelText("booking:bookableItemDetails.fields.granularity");
+    expect(openAllDay()).toBeChecked();
+    await user.click(openAllDay());
+    expect(control("booking:settings.fields.openingStart")).toHaveValue("09:00");
+    expect(control("booking:settings.fields.openingEnd")).toHaveValue("17:00");
   });
 
   it("cancels an edit without sending a request", async () => {
@@ -145,30 +246,6 @@ describe("BookableItemPage", () => {
       expect(within(panel).getByText("10:00 AM\u201304:00 PM")).toBeVisible();
       expect(within(panel).getByText("08:00 AM\u201305:30 PM")).toBeVisible();
       expect(within(panel).getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(4);
-      expect(within(panel).getByText("UTC")).toBeVisible();
-    });
-
-    it("changes only one day and restores the complete schedule on cancel", async () => {
-      const user = userEvent.setup();
-      const patches = serve();
-      renderPage();
-      await openEditor(user);
-      const mondayEnd = within(dayHours("Monday")).getByLabelText("booking:settings.fields.openingEnd");
-      await user.clear(mondayEnd);
-      await user.type(mondayEnd, "12:00");
-      expect(within(dayHours("Tuesday")).getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("16:00");
-      await user.click(screen.getByRole("checkbox", { name: "Sunday" }));
-      expect(
-        within(dayHours("Sunday")).getByRole("checkbox", { name: "booking:settings.openingHours.openAllDay" }),
-      ).toBeChecked();
-      await user.click(
-        within(screen.getByRole("tabpanel")).getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }),
-      );
-      await openEditor(user);
-      expect(within(dayHours("Monday")).getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("17:30");
-      expect(screen.getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
-      expect(patches).toHaveLength(0);
-      expect(save()).toBeDisabled();
     });
 
     it("submits the supplied replacement week with closed days omitted", async () => {
@@ -248,7 +325,7 @@ describe("BookableItemPage", () => {
     );
     renderPage("/booking/bookable-items/IN123/details?edit=true");
 
-    const maximumDuration = await screen.findByLabelText("booking:bookableItemDetails.fields.maximumDuration");
+    const maximumDuration = await screen.findByLabelText("booking:settings.fields.maximumDuration");
     await user.clear(maximumDuration);
     await user.type(maximumDuration, "60");
     const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(

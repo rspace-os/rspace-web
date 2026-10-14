@@ -59,6 +59,8 @@ final class BookingAuditDetails {
           "openDays",
           "openingExceptions",
           "slotGranularityMinutes",
+          "incrementUnit",
+          "alignToIncrement",
           "maxBookingDurationMinutes",
           "bufferBeforeMinutes",
           "bufferAfterMinutes",

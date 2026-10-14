@@ -69,9 +69,26 @@ public record ApiV2BookingConfigurationResource(
             example = "Europe/Berlin")
         String timezone,
     @ApiV2ResourceField(
-            description = "Allowed wall-clock booking increment in minutes.",
-            example = "5")
+            description =
+                "Booking time increment in minutes, from 1 to 527040. Bookings last a whole number"
+                    + " of increments. For DAYS it is the day count times 1440 and must be a whole"
+                    + " number of days. Defaults to the institution defaults on create.",
+            example = "15")
         long slotGranularityMinutes,
+    @ApiV2ResourceField(
+            description =
+                "Unit of the time increment. MINUTES and HOURS measure elapsed time. DAYS counts"
+                    + " calendar days in the scheduling timezone, so a booking ends at its start's"
+                    + " local time; it requires the item to be open 00:00 to 24:00 on all seven"
+                    + " weekdays.",
+            example = "MINUTES")
+        BookingIncrementUnit incrementUnit,
+    @ApiV2ResourceField(
+            description =
+                "Whether booking starts must fall on the increment counted from local midnight."
+                    + " The stored value is ignored for DAYS and for increments of 1440 minutes or"
+                    + " more.")
+        boolean alignToIncrement,
     @ApiV2ResourceMember(factory = "openingHoursField") List<BookingOpeningHoursEntry> openingHours,
     @ApiV2ResourceField(description = "Unavailable minutes before a booking.", example = "15")
         long bufferBeforeMinutes,

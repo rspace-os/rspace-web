@@ -6,6 +6,7 @@ import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/compon
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { proposeDayRange, timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
@@ -205,6 +206,35 @@ export function CalendarResourceSchedule({
       </Tooltip>
     );
   };
+  // Each row's Add proposal, computed when its inputs change rather than on every render.
+  const proposals = React.useMemo(() => {
+    const result = new Map<string, { startMinute: number; endMinute: number }>();
+    if (view !== "day") return result;
+    for (const resource of resourceRows) {
+      const configuration = configurationByTarget.get(resource.globalId);
+      if (!configuration) continue;
+      const policy = timelinePolicy(configuration);
+      const events = blockingEvents.filter((event) => event.target?.globalId === resource.globalId);
+      const closed = closedByTarget.get(resource.globalId);
+      const propose = (startMinute: number, endMinute: number) =>
+        nextFreeRange(events, date, timezone, startMinute, endMinute, policy, closed);
+      // Items open only outside the viewer's availability window still get the first open slot that day. A
+      // multi-day proposal opens a draft; the form checks the complete interval before it can be submitted.
+      const proposal = propose(availabilityStartMinute, availabilityEndMinute) ?? propose(0, 24 * 60);
+      if (proposal) result.set(resource.globalId, proposal);
+    }
+    return result;
+  }, [
+    view,
+    resourceRows,
+    configurationByTarget,
+    blockingEvents,
+    closedByTarget,
+    date,
+    timezone,
+    availabilityStartMinute,
+    availabilityEndMinute,
+  ]);
   return (
     <section aria-label={t("calendar.layout.resources")} className="py-3" aria-busy={isLoading}>
       <section
@@ -221,20 +251,9 @@ export function CalendarResourceSchedule({
               const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
               const configuration = configurationByTarget.get(resource.globalId);
               const canCreateBooking = configuration?.capabilities?.canCreateBooking === true;
-              const proposeRange = (startMinute: number, endMinute: number) =>
-                configuration &&
-                nextFreeRange(
-                  blockingEvents.filter((event) => event.target?.globalId === resource.globalId),
-                  date,
-                  timezone,
-                  startMinute,
-                  endMinute,
-                  configuration.slotGranularityMinutes,
-                  closedByTarget.get(resource.globalId),
-                );
-              // Items open only outside the viewer's availability window still get the first open slot that day.
-              const proposedRange =
-                proposeRange(availabilityStartMinute, availabilityEndMinute) || proposeRange(0, 24 * 60);
+              const policy = configuration ? timelinePolicy(configuration) : undefined;
+              const proposedRange = proposals.get(resource.globalId);
+              const renderActions = actionsFor(resourceEvents, timezone, date);
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="sticky left-0 z-10 border-r bg-muted/30 p-1">
@@ -257,9 +276,12 @@ export function CalendarResourceSchedule({
                         onViewStateChange={setTimelineViewState}
                         scrollSync={timelineScrollSync}
                         showScrollbar={index === resourceRows.length - 1}
-                        renderEventActions={actionsFor(resourceEvents, timezone, date)}
-                        renderBlockoutActions={actionsFor(resourceEvents, timezone, date)}
+                        renderEventActions={renderActions}
+                        renderBlockoutActions={renderActions}
                         snapIncrementMinutes={configuration?.slotGranularityMinutes}
+                        proposeSelection={
+                          policy ? (range) => proposeDayRange(range, date, timezone, policy) : undefined
+                        }
                         creationDisabled={isLoading || creationDisabled || !canCreateBooking}
                         onRangeSelect={
                           canCreateBooking && configuration && onResourceRangeSelect

@@ -8,37 +8,39 @@ import {
   formatIsoWeekday,
   formatOpeningRange,
   isOpenAllDay,
-  type OpeningHoursEntry,
+  type OpeningInterval,
   type OpeningSchedule,
   resolveSchedulingBoundary,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { bookingDateTimeLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
-import i18n from "@/modules/common/i18n";
+import { bookingDateTimeLocale, formatWallClockTime, sameTimeZone } from "@/modules/booking/domain/bookingTime";
 
 export type WeekdayOpening = { dayOfWeek: number; hours: string | null };
 
 /**
  * Each ISO weekday's effective hours shown in `timezone`, for the week containing `referenceDate` (daylight saving
  * makes the conversion depend on the date), as `start - end`. A boundary on another date than its weekday gets a
- * `(+1)`/`(-1)` offset; an end is read as the moment before it, so a closing midnight stays on its own day.
+ * `(+1)`/`(-1)` offset; an end is read as the moment before it, so a closing midnight stays on its own day. With
+ * `allDayLabel`, a day open from midnight to midnight reads as that label wherever it is still a whole local day.
  */
 export function weeklyOpeningHours(
   schedule: OpeningSchedule & { timezone: string },
   timezone: string,
   referenceDate: string,
   locale = bookingDateTimeLocale(),
+  allDayLabel?: string,
 ): WeekdayOpening[] {
   const reference = Temporal.PlainDate.from(referenceDate);
   const monday = reference.subtract({ days: reference.dayOfWeek - 1 });
-  const allDay = ALL_ISO_WEEKDAYS.every((day) => {
-    const hours = effectiveHours(schedule, day);
-    return hours?.start === "00:00" && hours.end === "24:00";
-  });
+  const allWeek = ALL_ISO_WEEKDAYS.every((day) => isOpenAllDay(effectiveHours(schedule, day)));
+  const sameZone = sameTimeZone(schedule.timezone, timezone);
   return ALL_ISO_WEEKDAYS.map((dayOfWeek) => {
     const hours = effectiveHours(schedule, dayOfWeek);
     if (!hours) return { dayOfWeek, hours: null };
+    if (allDayLabel !== undefined && isOpenAllDay(hours) && (allWeek || sameZone)) {
+      return { dayOfWeek, hours: allDayLabel };
+    }
     // Open around the clock reads the same in every timezone.
-    if (allDay)
+    if (allWeek)
       return { dayOfWeek, hours: `${formatWallClockTime("00:00", locale)} - ${formatWallClockTime("00:00", locale)}` };
     const date = monday.add({ days: dayOfWeek - 1 });
     const boundary = (time: string, end: boolean) => {
@@ -51,29 +53,26 @@ export function weeklyOpeningHours(
   });
 }
 
-/** Each weekday's independent opening hours in the item's scheduling timezone. */
+/** Each weekday's independently configured hours in the scheduling timezone. */
 export function openingHoursFacts(
-  schedule: { openingHours: readonly OpeningHoursEntry[] },
+  schedule: OpeningSchedule,
   t: TFunction<"booking">,
   timeLocale = bookingDateTimeLocale(),
 ): Array<[string, ReactNode]> {
-  const locale = i18n.language === "cimode" ? "en-US" : i18n.language;
+  const format = (hours: OpeningInterval) =>
+    isOpenAllDay(hours) ? t("settings.openingHours.openAllDay") : formatOpeningRange(hours, timeLocale);
   return [
     [
       t("bookableItemDetails.fields.openingHours"),
       <dl key="opening-hours" className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-        {ALL_ISO_WEEKDAYS.map((dayOfWeek) => {
-          const hours = schedule.openingHours.find((entry) => entry.dayOfWeek === dayOfWeek);
+        {ALL_ISO_WEEKDAYS.map((day) => {
+          const hours = effectiveHours(schedule, day);
           return (
-            <div key={dayOfWeek} className="contents">
-              <dt className="font-normal">{formatIsoWeekday(dayOfWeek, "long", locale)}</dt>
+            <div key={day} className="contents">
+              <dt className="font-normal">{formatIsoWeekday(day)}</dt>
               <dd>
                 {hours ? (
-                  isOpenAllDay(hours) ? (
-                    t("settings.openingHours.openAllDay")
-                  ) : (
-                    formatOpeningRange(hours, timeLocale)
-                  )
+                  format(hours)
                 ) : (
                   <span className="text-muted-foreground">{t("bookableItemDetails.openingHours.closed")}</span>
                 )}

@@ -77,7 +77,10 @@ const configuration = {
   enabled: true,
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
+  alignToIncrement: true,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -233,5 +236,28 @@ describe("booking configuration schedules", () => {
       { name: "start", required: true, writeConstraints: { format: "time" } },
       { name: "end", required: true, writeConstraints: { format: "time", allow24HourEnd: true } },
     ]);
+  });
+});
+
+describe("booking configuration Days maximum", () => {
+  // The floor is the nominal day count in minutes, whatever the timezone's shortest day is.
+  it.each(["UTC", "Australia/Lord_Howe", "Antarctica/Troll"])("applies the same floor in %s", (timezone) => {
+    const create = (maxBookingDurationMinutes: number) =>
+      v.safeParse(BookingConfigurationInputSchema, {
+        target: { relationTo: "booking-instruments", value: 123 },
+        enabled: true,
+        timezone,
+        slotGranularityMinutes: 1440,
+        incrementUnit: "DAYS",
+        alignToIncrement: true,
+        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
+        bufferBeforeMinutes: 0,
+        bufferAfterMinutes: 0,
+        maxBookingDurationMinutes,
+        allowDoubleBooking: false,
+      }).success;
+    expect([0, 1440, 1500].map(create)).toEqual([true, true, true]);
+    expect([1320, 1380, 1410].map(create)).toEqual([false, false, false]);
   });
 });

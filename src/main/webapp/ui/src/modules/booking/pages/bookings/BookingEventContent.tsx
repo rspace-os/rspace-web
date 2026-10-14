@@ -1,14 +1,25 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useParams, useRouterState } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
-import { ApiV2ProblemError, BookingUnavailableError, fetchBooking } from "@/modules/booking/domain/booking";
+import {
+  ApiV2ProblemError,
+  type BookingDetails,
+  type BookingMutation,
+  BookingUnavailableError,
+  fetchBooking,
+} from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { currentWallClock, formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
+import {
+  BookingLocalNotices,
+  createBookingEventNotice,
+  useBookingLocalNotices,
+} from "@/modules/booking/feedback/BookingNotices";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
@@ -30,12 +41,14 @@ export function BookingEventContent() {
   const { t } = useTranslation(["booking", "common"]);
   const { id } = useParams({ from: "/booking/calendar/bookings/$id" });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const searchStr = useRouterState({ select: (state) => state.location.searchStr });
   const bookingId = Number(id);
   const validBookingId = Number.isSafeInteger(bookingId) && bookingId > 0;
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const preferences = useBookingDisplayPreferences();
   const queryClient = useQueryClient();
   const [announcement, announce] = useState("");
+  const localNotices = useBookingLocalNotices();
   const [dirty, setDirty] = useState(false);
   const editButtonRef = useRef<HTMLAnchorElement>(null);
   const stateBadgeRef = useRef<HTMLSpanElement>(null);
@@ -46,6 +59,12 @@ export function BookingEventContent() {
     queryFn: ({ signal }) => fetchBooking(bookingId, token, signal),
     retry: (failureCount, error) => failureCount < 2 && !isPermanentBookingError(error),
   });
+  useEffect(() => {
+    const currentBooking = booking.data;
+    if (currentBooking?.state === "CANCELLED") {
+      localNotices.dismiss(`booking-${currentBooking.id}`);
+    }
+  }, [booking.data, localNotices.dismiss]);
   const editing = pathname.endsWith("/edit");
   const bookingItem = useBookableItemConfiguration(
     editing &&
@@ -110,10 +129,36 @@ export function BookingEventContent() {
     undefined,
     preferences.timeFormat,
   );
+  const reportBookingUpdated = (event: BookingMutation, itemName: string) => {
+    const latestBooking = queryClient.getQueryData<BookingDetails>(["api-v2", "bookings", bookingId]);
+    localNotices.notify(
+      createBookingEventNotice({
+        event,
+        message:
+          document.kind === "MAINTENANCE"
+            ? t("bookings.feedback.maintenanceUpdated", {
+                itemName,
+              })
+            : t("bookings.feedback.eventUpdated", {
+                itemName,
+              }),
+        timeZone: preferences.timeZone,
+        searchStr,
+        includeViewDetails: false,
+        includeFocusOnCalendar: Boolean(latestBooking?.canViewConfiguration && latestBooking.target),
+      }),
+    );
+  };
 
   return (
-    <main className={detailPageClassName}>
+    <main className={detailPageClassName} tabIndex={-1}>
       <DirtyNavigationGuard dirty={dirty} />
+      <BookingLocalNotices
+        alerts={
+          canViewItem ? localNotices.alerts : localNotices.alerts.map((notice) => ({ ...notice, actions: undefined }))
+        }
+        onDismiss={localNotices.dismiss}
+      />
       {canViewItem ? (
         <Link
           className={buttonVariants({ variant: "ghost", size: "sm" })}
@@ -185,7 +230,14 @@ export function BookingEventContent() {
               token={token}
               eventKind={document.kind}
               finalFocus={stateBadgeRef}
-              onDeleted={() => undefined}
+              onDeleted={() => {
+                localNotices.dismiss(`booking-${bookingId}`);
+                announce(
+                  document.kind === "MAINTENANCE"
+                    ? t("bookings.details.maintenanceCancelled")
+                    : t("bookings.details.bookingCancelled"),
+                );
+              }}
             />
           ) : null}
         </div>
@@ -210,6 +262,7 @@ export function BookingEventContent() {
           formId,
           editButtonRef,
           announce,
+          reportBookingUpdated,
           setDirty,
           refreshBooking,
         }}
@@ -231,7 +284,7 @@ export function BookingEventContent() {
         </div>
       </BookingEventContext.Provider>
 
-      <p role="status" aria-live="polite" className="sr-only">
+      <p role="status" className="sr-only">
         {announcement}
       </p>
     </main>
