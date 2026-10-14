@@ -138,6 +138,32 @@ export const experimentConfig = {
 
 The adapter replaces field capabilities with the generated API rules. The table cannot offer an unsupported sort or filter.
 
+### Declared object arrays
+
+Use `type: "array"` with a non-empty `fields` list of named child fields. Child fields reuse
+scalar metadata such as `required`, `nullable`, `readOnly`, `defaultValue` and
+`writeConstraints`. Embedded `type: "object"` and array children declare their own fields,
+so custom editors receive the complete recursive definition. Configuration resolution
+rejects duplicate names, cycles, missing children and embedded relationships.
+
+Arrays and embedded objects cannot be filtered or sorted. Set `form: false` for a dedicated
+editor outside `RenderFields`, or provide `form.component` for a custom editor that receives
+`form`, `disabled`, `fieldConfig` and the control's `id`, `describedBy` and `invalid` state.
+The shared field wrapper handles labels, errors and visibility conditions; read-only fields
+disable their custom editor. Embedded children use their parent editor and cannot
+declare query capabilities. There is no generic row editor. Relationship fields
+retain their existing `hasMany` behavior; scalar multiplicity remains deferred.
+
+The API v2 metadata reader follows the list response's `docs.items` reference to its Read
+component. Each declared array or object property publishes recursive backend `FieldSchema[]`
+directly in `x-rspace-fields`. The adapter uses these children for the configured field,
+including child types, titles, required/nullable/read-only flags, defaults and write constraints.
+The extension remains on the property when `items` uses a named reference, as `roleSources`
+does. The reader does not derive children from that reference or from a resource's name.
+Configured array/object fields must have this extension when using generated metadata;
+handwritten metadata can retain the configured child definitions. Invalid or empty recursive
+definitions fail before rendering. Array row bounds come from `minItems` and `maxItems`.
+
 ### Fields of a relationship target
 
 A collection config declares a relationship once. The adapter derives one optional field for each

@@ -1,4 +1,4 @@
-import type { FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
+import type { FieldConfig, FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
 
 export const apiV2FilterOperators = [
   "==",
@@ -26,6 +26,15 @@ export type ApiV2FilterLimits = {
 
 export type ApiV2PrimitiveFieldType = "text" | "number" | "boolean" | "dateTime";
 
+export type ApiV2StructuredField = {
+  type: "array" | "object";
+  fields: readonly FieldConfig<Record<string, unknown>>[];
+  nullable: boolean;
+  readOnly: boolean;
+  minRows?: number;
+  maxRows?: number;
+};
+
 export type ApiV2RuntimeFieldNamespace = {
   namespace: string;
   catalog: string;
@@ -45,6 +54,8 @@ export type ApiV2RuntimeFieldNamespace = {
 export type ApiV2CollectionMetadata<TDocument> = {
   resourceName: string;
   fields: readonly FieldName<TDocument>[];
+  /** Declared embedded fields from Read properties, separate from relationship multiplicity. */
+  structuredFields?: Readonly<Partial<Record<string, ApiV2StructuredField>>>;
   sorting: {
     fields: readonly FieldName<TDocument>[];
     default: readonly SortRule<TDocument>[];
@@ -103,6 +114,138 @@ function strings(value: unknown, role: string): string[] {
     throw new Error(`OpenAPI ${role} must be a string array`);
   }
   return value;
+}
+
+function boolean(value: unknown, role: string): boolean {
+  if (typeof value !== "boolean") throw new Error(`OpenAPI ${role} must be a boolean`);
+  return value;
+}
+
+function rowBounds(
+  constraints: Record<string, unknown>,
+  role: string,
+): Pick<ApiV2StructuredField, "minRows" | "maxRows"> {
+  const bound = (name: "minItems" | "maxItems") => {
+    if (constraints[name] === undefined) return undefined;
+    const value = number(constraints[name], `${name} for ${role}`);
+    if (!Number.isInteger(value) || value < 0)
+      throw new Error(`OpenAPI ${name} for ${role} must be a non-negative integer`);
+    return value;
+  };
+  const minRows = bound("minItems");
+  const maxRows = bound("maxItems");
+  if (minRows !== undefined && maxRows !== undefined && minRows > maxRows) {
+    throw new Error(`OpenAPI ${role} has invalid row bounds`);
+  }
+  return {
+    ...(minRows === undefined ? {} : { minRows }),
+    ...(maxRows === undefined ? {} : { maxRows }),
+  };
+}
+
+function declaredChildren(
+  input: unknown,
+  parent: string,
+  ancestors = new Set<object>(),
+): FieldConfig<Record<string, unknown>>[] {
+  if (!Array.isArray(input) || input.length === 0) {
+    throw new Error(`OpenAPI ${parent} must declare non-empty x-rspace-fields`);
+  }
+  const names = new Set<string>();
+  return input.map((value) => {
+    const child = object(value, `child field of ${parent}`);
+    const name = child.name;
+    if (typeof name !== "string" || name.trim() === "" || names.has(name)) {
+      throw new Error(`OpenAPI ${parent} has a duplicate or empty child field`);
+    }
+    names.add(name);
+    const path = `${parent}.${name}`;
+    if (ancestors.has(child)) throw new Error(`OpenAPI ${path} has cyclic child fields`);
+    const schema = object(child.type, `type for ${path}`);
+    const structure = object(schema.structure, `structure for ${path}`);
+    const writeConstraints = object(child.writeConstraints, `write constraints for ${path}`);
+    const documentation = object(child.openApi, `documentation for ${path}`);
+    const common = {
+      name,
+      labelKey: name,
+      label: typeof documentation.title === "string" ? documentation.title : name,
+      required: boolean(child.requiredOnCreate, `requiredOnCreate for ${path}`),
+      nullable: boolean(child.nullable, `nullable for ${path}`),
+      readOnly: boolean(child.readOnly, `readOnly for ${path}`),
+      ...(Object.hasOwn(child, "defaultValue") ? { defaultValue: child.defaultValue } : {}),
+      writeConstraints,
+    };
+    if (schema.jsonType === "array" || schema.jsonType === "object") {
+      return {
+        ...common,
+        type: schema.jsonType,
+        fields: declaredChildren(child.fields, path, new Set(ancestors).add(child)),
+        ...(schema.jsonType === "array" ? rowBounds(writeConstraints, path) : {}),
+      };
+    }
+    if (!Array.isArray(child.fields) || child.fields.length !== 0) {
+      throw new Error(`OpenAPI scalar field ${path} cannot declare child fields`);
+    }
+    switch (schema.jsonType) {
+      case "integer":
+      case "number":
+        return { ...common, type: "number" };
+      case "boolean":
+        return { ...common, type: "boolean" };
+      case "string": {
+        const allowed = writeConstraints.enum ?? structure.enum;
+        if (allowed !== undefined) {
+          const options = strings(allowed, `enum for ${path}`);
+          if (options.length === 0) throw new Error(`OpenAPI enum for ${path} must not be empty`);
+          return { ...common, type: "select", options };
+        }
+        if ((documentation.format ?? schema.format) === "date-time") return { ...common, type: "dateTime" };
+        const declaredMaximum = writeConstraints.maxLength ?? schema.maxLength;
+        const maximumLength = declaredMaximum == null ? undefined : number(declaredMaximum, `maxLength for ${path}`);
+        if (maximumLength !== undefined && (!Number.isInteger(maximumLength) || maximumLength < 0)) {
+          throw new Error(`OpenAPI maxLength for ${path} must be a non-negative integer`);
+        }
+        return { ...common, type: "text", ...(maximumLength === undefined ? {} : { maximumLength }) };
+      }
+      default:
+        throw new Error(`OpenAPI ${path} has an unsupported field type`);
+    }
+  });
+}
+
+function structuredFields(
+  document: Record<string, unknown>,
+  operation: Record<string, unknown>,
+): Record<string, ApiV2StructuredField> {
+  const response = object(object(operation.responses, "list responses")["200"], "list response");
+  const media = object(object(response.content, "list response content")["application/json"], "list response media");
+  const envelope = object(media.schema, "list response schema");
+  const docs = object(object(envelope.properties, "list response properties").docs, "list response docs");
+  let read = object(docs.items, "list response item schema");
+  if (read.$ref !== undefined) {
+    if (typeof read.$ref !== "string" || !/^#\/components\/schemas\/[^/]+$/.test(read.$ref)) {
+      throw new Error("OpenAPI list response item must reference a local component schema");
+    }
+    const schemas = object(object(document.components, "components").schemas, "component schemas");
+    read = object(schemas[read.$ref.slice("#/components/schemas/".length)], "Read component");
+  }
+  const fields: Record<string, ApiV2StructuredField> = {};
+  for (const [name, value] of Object.entries(object(read.properties, "Read properties"))) {
+    const property = object(value, `Read property ${name}`);
+    if (property["x-rspace-fields"] === undefined) continue;
+    const types = Array.isArray(property.type) ? property.type.filter((item) => item !== "null") : [property.type];
+    const type = types[0];
+    if (types.length !== 1) throw new Error(`OpenAPI ${name} must declare one structured type`);
+    if (type !== "array" && type !== "object") throw new Error(`OpenAPI ${name} has x-rspace-fields on a scalar field`);
+    fields[name] = {
+      type,
+      fields: declaredChildren(property["x-rspace-fields"], name),
+      nullable: Array.isArray(property.type) && property.type.includes("null"),
+      readOnly: property.readOnly === undefined ? false : boolean(property.readOnly, `readOnly for ${name}`),
+      ...(type === "array" ? rowBounds(property, name) : {}),
+    };
+  }
+  return fields;
 }
 
 function primitiveFieldType(schema: unknown): ApiV2PrimitiveFieldType | null {
@@ -184,7 +327,8 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
   document: unknown,
   resourceName: string,
 ): ApiV2CollectionMetadata<TDocument> {
-  const paths = object(object(document, "document").paths, "paths");
+  const root = object(document, "document");
+  const paths = object(root.paths, "paths");
   const operation = object(object(paths[`/api/v2/${resourceName}`], `${resourceName} path`).get, "list operation");
   const sort = object(queryParameter(operation, "sort")["x-rspace-sort"], "sort metadata");
   const whereParameter = queryParameter(operation, "where");
@@ -226,6 +370,7 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
   return {
     resourceName,
     fields: strings(allowedFields[resourceName], `allowed fields for ${resourceName}`) as FieldName<TDocument>[],
+    structuredFields: structuredFields(root, operation),
     sorting: {
       fields: strings(sort.fields, "sortable fields") as FieldName<TDocument>[],
       default: defaultSort,
