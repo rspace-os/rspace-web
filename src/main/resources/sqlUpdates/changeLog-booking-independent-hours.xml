@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+  <changeSet id="booking-independent-opening-hours" author="researchspace" context="run">
+    <comment>Materialize each open weekday's effective interval, including revision history, before retiring application writes to shared hours.</comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="openingHours" type="VARCHAR(1024)"/>
+    </addColumn>
+    <addColumn tableName="BookingConfigurationDefaults">
+      <column name="openingHours" type="VARCHAR(1024)"/>
+    </addColumn>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="openingHours" type="VARCHAR(1024)"/>
+    </addColumn>
+    <addColumn tableName="BookingConfigurationDefaults_AUD">
+      <column name="openingHours" type="VARCHAR(1024)"/>
+    </addColumn>
+    <sql><![CDATA[
+      UPDATE BookingConfiguration current
+      JOIN (
+        SELECT old.id, JSON_ARRAYAGG(JSON_OBJECT(
+            'dayOfWeek', days.dayOfWeek,
+            'start', COALESCE(exception.startTime, old.openingStart),
+            'end', COALESCE(exception.endTime, old.openingEnd)) ORDER BY days.dayOfWeek) AS hours
+        FROM BookingConfiguration old
+        JOIN (SELECT 1 AS dayOfWeek UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+              SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7) days
+          ON (JSON_CONTAINS(old.openDays, CAST(days.dayOfWeek AS CHAR)))
+        LEFT JOIN JSON_TABLE(COALESCE(old.openingExceptions, '[]'), '$[*]' COLUMNS (
+            dayOfWeek INT PATH '$.dayOfWeek',
+            startTime VARCHAR(5) PATH '$.start', endTime VARCHAR(5) PATH '$.end')) exception
+          ON exception.dayOfWeek = days.dayOfWeek
+        WHERE old.openingStart IS NOT NULL AND old.openingEnd IS NOT NULL
+        GROUP BY old.id
+      ) migrated ON migrated.id = current.id
+      SET current.openingHours = migrated.hours;
+      UPDATE BookingConfigurationDefaults current
+      JOIN (
+        SELECT old.id, JSON_ARRAYAGG(JSON_OBJECT(
+            'dayOfWeek', days.dayOfWeek,
+            'start', COALESCE(exception.startTime, old.openingStart),
+            'end', COALESCE(exception.endTime, old.openingEnd)) ORDER BY days.dayOfWeek) AS hours
+        FROM BookingConfigurationDefaults old
+        JOIN (SELECT 1 AS dayOfWeek UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+              SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7) days
+          ON (JSON_CONTAINS(old.openDays, CAST(days.dayOfWeek AS CHAR)))
+        LEFT JOIN JSON_TABLE(COALESCE(old.openingExceptions, '[]'), '$[*]' COLUMNS (
+            dayOfWeek INT PATH '$.dayOfWeek',
+            startTime VARCHAR(5) PATH '$.start', endTime VARCHAR(5) PATH '$.end')) exception
+          ON exception.dayOfWeek = days.dayOfWeek
+        WHERE old.openingStart IS NOT NULL AND old.openingEnd IS NOT NULL
+        GROUP BY old.id
+      ) migrated ON migrated.id = current.id
+      SET current.openingHours = migrated.hours;
+      UPDATE BookingConfiguration_AUD current
+      JOIN (
+        SELECT old.id, old.REV, JSON_ARRAYAGG(JSON_OBJECT(
+            'dayOfWeek', days.dayOfWeek,
+            'start', COALESCE(exception.startTime, old.openingStart),
+            'end', COALESCE(exception.endTime, old.openingEnd)) ORDER BY days.dayOfWeek) AS hours
+        FROM BookingConfiguration_AUD old
+        JOIN (SELECT 1 AS dayOfWeek UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+              SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7) days
+          ON (JSON_CONTAINS(old.openDays, CAST(days.dayOfWeek AS CHAR)) OR old.openDays IS NULL)
+        LEFT JOIN JSON_TABLE(COALESCE(old.openingExceptions, '[]'), '$[*]' COLUMNS (
+            dayOfWeek INT PATH '$.dayOfWeek',
+            startTime VARCHAR(5) PATH '$.start', endTime VARCHAR(5) PATH '$.end')) exception
+          ON exception.dayOfWeek = days.dayOfWeek
+        WHERE old.openingStart IS NOT NULL AND old.openingEnd IS NOT NULL AND COALESCE(old.REVTYPE, 0) <> 2
+        GROUP BY old.id, old.REV
+      ) migrated ON migrated.id = current.id AND migrated.REV = current.REV
+      SET current.openingHours = migrated.hours;
+      UPDATE BookingConfigurationDefaults_AUD current
+      JOIN (
+        SELECT old.id, old.REV, JSON_ARRAYAGG(JSON_OBJECT(
+            'dayOfWeek', days.dayOfWeek,
+            'start', COALESCE(exception.startTime, old.openingStart),
+            'end', COALESCE(exception.endTime, old.openingEnd)) ORDER BY days.dayOfWeek) AS hours
+        FROM BookingConfigurationDefaults_AUD old
+        JOIN (SELECT 1 AS dayOfWeek UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL
+              SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7) days
+          ON (JSON_CONTAINS(old.openDays, CAST(days.dayOfWeek AS CHAR)) OR old.openDays IS NULL)
+        LEFT JOIN JSON_TABLE(COALESCE(old.openingExceptions, '[]'), '$[*]' COLUMNS (
+            dayOfWeek INT PATH '$.dayOfWeek',
+            startTime VARCHAR(5) PATH '$.start', endTime VARCHAR(5) PATH '$.end')) exception
+          ON exception.dayOfWeek = days.dayOfWeek
+        WHERE old.openingStart IS NOT NULL AND old.openingEnd IS NOT NULL AND COALESCE(old.REVTYPE, 0) <> 2
+        GROUP BY old.id, old.REV
+      ) migrated ON migrated.id = current.id AND migrated.REV = current.REV
+      SET current.openingHours = migrated.hours;
+    ]]></sql>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="openingHours" columnDataType="VARCHAR(1024)"/>
+    <dropNotNullConstraint tableName="BookingConfiguration" columnName="openingStart" columnDataType="VARCHAR(5)"/>
+    <dropNotNullConstraint tableName="BookingConfiguration" columnName="openingEnd" columnDataType="VARCHAR(5)"/>
+    <dropNotNullConstraint tableName="BookingConfiguration" columnName="openDays" columnDataType="VARCHAR(64)"/>
+    <dropNotNullConstraint tableName="BookingConfiguration" columnName="openingExceptions" columnDataType="VARCHAR(1024)"/>
+    <addNotNullConstraint tableName="BookingConfigurationDefaults" columnName="openingHours" columnDataType="VARCHAR(1024)"/>
+    <dropNotNullConstraint tableName="BookingConfigurationDefaults" columnName="openingStart" columnDataType="VARCHAR(5)"/>
+    <dropNotNullConstraint tableName="BookingConfigurationDefaults" columnName="openingEnd" columnDataType="VARCHAR(5)"/>
+    <dropNotNullConstraint tableName="BookingConfigurationDefaults" columnName="openDays" columnDataType="VARCHAR(64)"/>
+    <dropNotNullConstraint tableName="BookingConfigurationDefaults" columnName="openingExceptions" columnDataType="VARCHAR(1024)"/>
+  </changeSet>
+</databaseChangeLog>
