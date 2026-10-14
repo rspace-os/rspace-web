@@ -1,0 +1,157 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { CalendarX2Icon } from "lucide-react";
+import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { ApiV2ProblemError, type BookingEventKind, cancelBooking } from "@/modules/booking/domain/booking";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/modules/common/ui/alert-dialog";
+import { Button } from "@/modules/common/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+
+type DeleteBookingDialogProps = {
+  bookingId: number;
+  bookingVersion: number;
+  itemName: string;
+  period: string;
+  token: string;
+  eventKind?: BookingEventKind;
+  disabled?: boolean;
+  iconOnly?: boolean;
+  onDeleted: () => void | Promise<void>;
+};
+
+type DeleteErrorKey =
+  | "bookings.errors.deleteGeneric"
+  | "bookings.errors.deleteForbidden"
+  | "bookings.errors.deleteStale";
+
+function deleteErrorKey(error: unknown): DeleteErrorKey {
+  if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.deleteGeneric";
+  if (error.status === 403 || error.code === "errors.api.v2.forbidden") {
+    return "bookings.errors.deleteForbidden";
+  }
+  if (
+    error.status === 412 ||
+    error.code === "errors.api.v2.booking.concurrentModification" ||
+    error.code === "errors.api.v2.booking.state.transition"
+  )
+    return "bookings.errors.deleteStale";
+  return "bookings.errors.deleteGeneric";
+}
+
+export function DeleteBookingDialog({
+  bookingId,
+  bookingVersion,
+  token,
+  eventKind = "BOOKING",
+  disabled = false,
+  iconOnly = false,
+  onDeleted,
+}: DeleteBookingDialogProps) {
+  const { t } = useTranslation(["booking", "common"]);
+  const queryClient = useQueryClient();
+  const activeRequest = useRef(false);
+  const [open, setOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [errorKey, setErrorKey] = useState<DeleteErrorKey | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const maintenance = eventKind === "MAINTENANCE";
+  const cancelLabel = maintenance ? t("bookings.details.cancelMaintenance") : t("bookings.actions.cancel");
+
+  const invalidateBookingQueries = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+  };
+
+  const handleDelete = async () => {
+    if (activeRequest.current) return;
+    activeRequest.current = true;
+    setIsDeleting(true);
+    setErrorKey(null);
+    try {
+      await cancelBooking(bookingId, bookingVersion, token);
+      await invalidateBookingQueries();
+      await onDeleted();
+      setAnnouncement(
+        maintenance ? t("bookings.details.maintenanceCancelled") : t("bookings.details.bookingCancelled"),
+      );
+      setOpen(false);
+    } catch (error) {
+      const nextErrorKey = deleteErrorKey(error);
+      setErrorKey(nextErrorKey);
+      if (nextErrorKey !== "bookings.errors.deleteGeneric") {
+        try {
+          await invalidateBookingQueries();
+        } catch {
+          setErrorKey("bookings.errors.deleteGeneric");
+        }
+      }
+    } finally {
+      activeRequest.current = false;
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <AlertDialog open={open} onOpenChange={(nextOpen) => !activeRequest.current && setOpen(nextOpen)}>
+      {iconOnly ? (
+        <Tooltip>
+          <TooltipTrigger render={<span className="inline-flex" tabIndex={-1} />}>
+            <AlertDialogTrigger
+              disabled={disabled || isDeleting}
+              render={<Button type="button" size="icon-lg" variant="destructive" aria-label={cancelLabel} />}
+            >
+              <CalendarX2Icon aria-hidden="true" />
+            </AlertDialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent role="tooltip">{cancelLabel}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <AlertDialogTrigger
+          disabled={disabled || isDeleting}
+          render={<Button type="button" size="sm" variant="destructive" />}
+        >
+          {cancelLabel}
+        </AlertDialogTrigger>
+      )}
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {maintenance ? t("bookings.details.cancelMaintenanceTitle") : t("bookings.cancelDialog.title")}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {maintenance ? t("bookings.details.cancelMaintenanceDescription") : t("bookings.details.cancelDescription")}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        {errorKey && (
+          <p role="alert" className="text-sm text-destructive">
+            {t(errorKey)}
+          </p>
+        )}
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isDeleting}>{t("common:actions.cancel")}</AlertDialogCancel>
+          <AlertDialogAction
+            type="button"
+            variant="destructive"
+            disabled={isDeleting}
+            aria-busy={isDeleting}
+            onClick={() => void handleDelete()}
+          >
+            {t("bookings.actions.cancel")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+    </AlertDialog>
+  );
+}

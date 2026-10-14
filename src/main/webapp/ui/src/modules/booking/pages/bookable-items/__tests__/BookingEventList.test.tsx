@@ -140,7 +140,15 @@ describe("BookingEventList", () => {
     expect(within(table).getByText("Cell imaging")).toBeVisible();
     expect(within(table).getByText("booking:bookableItemDetails.events.busy")).toBeVisible();
     expect(within(table).getAllByRole("time")).toHaveLength(2);
-    expect(within(table).queryByRole("link")).not.toBeInTheDocument();
+    expect(within(table).getByRole("link", { name: "booking:bookableItemDetails.events.edit" })).toHaveAttribute(
+      "href",
+      "/booking/calendar/bookings/41/edit",
+    );
+    expect(within(table).getByRole("link", { name: "booking:calendar.actions.viewDetails" })).toHaveAttribute(
+      "href",
+      "/booking/calendar/bookings/41",
+    );
+    expect(within(table).getAllByRole("link")).toHaveLength(2);
   });
 
   it("renders maintenance with its creator rather than as a busy booking", async () => {
