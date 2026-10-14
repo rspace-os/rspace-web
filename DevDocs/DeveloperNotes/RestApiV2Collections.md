@@ -639,6 +639,9 @@ Each supplied array replaces the entire value. Unknown and non-writable child ke
 rows, and direct array rows fail with indexed paths such as `openingHours[2].start`. Required
 children apply on CREATE and UPDATE. Child defaults fill omitted keys only, without inventing rows.
 Child write access runs after the complete parent input enters the caller context.
+Required embedded children must support both write operations. Combining `required()` with
+`writeOnlyOn(CREATE)` fails when the field is declared because no complete replacement UPDATE could
+satisfy that child. Optional create-only children and read-only parent arrays remain supported.
 
 Only declared readable properties are serialized, including DTO rows, caller-specific overrides,
 and pre-rendered included documents. The parent gates the whole value and child restrictions narrow
@@ -653,8 +656,10 @@ rows remain available; those rules cannot be rerun after projection removes thei
 must validate complete values before creating such an included document. This exception does not
 apply to readOverrides or fresh serializer output.
 
-Defaults and published examples pass declared-child validation, including scalar child constraints. Recursive
-`fields` metadata and OpenAPI object `items` come from those definitions, including constraints,
+Defaults and published examples pass declared-child validation, including scalar child constraints.
+OpenAPI publishes object and array examples as JSON values, including additional examples.
+STRING examples retain their raw text, even when that text looks like JSON.
+Recursive `fields` metadata and OpenAPI object `items` come from those definitions, including constraints,
 required keys on CREATE and replacement UPDATE, and `additionalProperties: false`. Read properties
 may be omitted by child access, so read item schemas do not require those keys. Each declared
 property also publishes `x-rspace-fields` for custom frontend renderers. Scalar `hasMany` and generic array row editors
