@@ -77,9 +77,10 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             HttpStatus.SERVICE_UNAVAILABLE,
             ApiErrorCodes.TOOMANY_REQUESTS.getCode(),
             messages.getMessage("oauth.errors.serverBusy"),
-            "");
+            List.of());
     HttpHeaders headers = new HttpHeaders();
-    headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(passwordWaitSeconds));
+    // 0 would ask clients to retry at once, in a hot loop
+    headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, passwordWaitSeconds)));
     return new ResponseEntity<Object>(apiError, headers, apiError.getStatus());
   }
 
