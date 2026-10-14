@@ -12,7 +12,11 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 class BookingInventoryFixtureFactory {
 
@@ -43,14 +47,15 @@ class BookingInventoryFixtureFactory {
         .filter(instrument -> !instrument.isDeleted())
         .filter(instrument -> fixtureDescription.equals(instrument.getDescription()))
         .findFirst()
-        .orElseGet(
-            () -> {
-              ApiInstrument request = new ApiInstrument();
-              request.setName(name);
-              request.setDescription(fixtureDescription);
-              ApiInstrument created = instrumentManager.createNewApiInstrument(request, owner);
-              return instrumentDao.get(created.getId());
-            });
+        .orElseGet(() -> createInstrument(name, fixtureDescription, owner));
+  }
+
+  private Instrument createInstrument(String name, String description, User owner) {
+    ApiInstrument request = new ApiInstrument();
+    request.setName(name);
+    request.setDescription(description);
+    ApiInstrument created = instrumentManager.createNewApiInstrument(request, owner);
+    return instrumentDao.get(created.getId());
   }
 
   Container ensureContainer(String name, User owner, boolean includeDeleted) {
@@ -91,5 +96,27 @@ class BookingInventoryFixtureFactory {
       instrument.removeFromCurrentParent();
       instrumentDao.save(instrument);
     }
+  }
+
+  List<Instrument> ensureBusyCalendarInstruments(User owner, int busyCalendarInstrumentCount) {
+    String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);
+    Map<String, Instrument> existingByName =
+        instrumentDao.getAll().stream()
+            .filter(instrument -> !instrument.isDeleted())
+            .filter(instrument -> owner.getId().equals(instrument.getOwner().getId()))
+            .filter(instrument -> fixtureDescription.equals(instrument.getDescription()))
+            .collect(
+                Collectors.toMap(
+                    Instrument::getName, instrument -> instrument, (first, duplicate) -> first));
+    List<Instrument> instruments = new ArrayList<>(busyCalendarInstrumentCount);
+    for (int index = 1; index <= busyCalendarInstrumentCount; index++) {
+      String name =
+          messages.getMessage(
+              "bookingFixtures.instruments.busyCalendar", new Object[] {index}, FIXTURE_LOCALE);
+      instruments.add(
+          existingByName.computeIfAbsent(
+              name, ignored -> createInstrument(name, fixtureDescription, owner)));
+    }
+    return instruments;
   }
 }
