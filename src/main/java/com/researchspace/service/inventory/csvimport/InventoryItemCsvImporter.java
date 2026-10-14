@@ -78,7 +78,7 @@ public abstract class InventoryItemCsvImporter {
     result.setRowsCount(result.getRows().size() - 1);
 
     result.convertRowsToFieldNameToValuesMap();
-    result.populateResultWithNonBlankColumns();
+    result.populateBlankValueColumns();
     Map<String, String> fieldMapping = null;
     if (apiHandler.isInventoryAndDataciteEnabled(user)) {
       for (String columnName : result.getColumnNames()) {

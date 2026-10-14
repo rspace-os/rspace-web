@@ -14,7 +14,7 @@ public class ApiInventoryImportParseResultTest {
     result.setRows(List.of(rows));
     result.populateColumnNames(rows[0], List.of(rows[0]));
     result.convertRowsToFieldNameToValuesMap();
-    result.populateResultWithNonBlankColumns();
+    result.populateBlankValueColumns();
     return result;
   }
 

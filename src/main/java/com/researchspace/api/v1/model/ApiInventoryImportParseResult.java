@@ -59,7 +59,7 @@ public class ApiInventoryImportParseResult {
     columnNameToValuesMap = fieldNameToValuesMap;
   }
 
-  public void populateResultWithNonBlankColumns() {
+  public void populateBlankValueColumns() {
     getColumnsWithoutBlankValue().clear();
     getBlankColumns().clear();
     for (String columnName : getColumnNames()) {
