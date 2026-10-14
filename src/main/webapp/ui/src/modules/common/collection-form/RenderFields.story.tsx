@@ -3,7 +3,7 @@ import { ArchiveIcon, CircleCheckIcon, FileTextIcon, MapPinIcon, ScanSearchIcon 
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Switch } from "@/modules/common/ui/switch";

@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import type { ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
+import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
+import { databaseId } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import { databaseId } from "@/modules/common/relationship-picker/relationshipOptionQueries";
-import { relationshipSources } from "@/modules/common/relationship-picker/relationshipSources";
+import { relationshipSources } from "@/modules/common/relationship-picker/sources";
 import {
   Combobox,
   ComboboxChip,

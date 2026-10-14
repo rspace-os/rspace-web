@@ -1,4 +1,4 @@
-import type { ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
+import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { Input } from "@/modules/common/ui/input";
 import { controlAttributes } from "../controlAttributes";
 import { FormField } from "../FormField";

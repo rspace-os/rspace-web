@@ -2,6 +2,7 @@ import { type FormStore, getInput, useField } from "@formisch/react";
 import type { ReactNode } from "react";
 import { FieldGroup } from "@/modules/common/ui/field";
 import { cn } from "@/modules/common/utils/cn";
+import { FormField } from "./FormField";
 import { BooleanField } from "./field-types/BooleanField";
 import { DateTimeField } from "./field-types/DateTimeField";
 import { NumberField } from "./field-types/NumberField";
@@ -74,6 +75,25 @@ function RenderField<TDocument extends Record<string, unknown>>({
       return <SelectField {...props} fieldConfig={fieldConfig} />;
     case "relationship":
       return <RelationshipField {...props} fieldConfig={fieldConfig} />;
+    case "array":
+    case "object": {
+      if (fieldConfig.form === false || !fieldConfig.form?.component) return null;
+      const Component = fieldConfig.form.component;
+      return (
+        <FormField {...props} fieldConfig={fieldConfig}>
+          {({ id, describedBy, invalid }) => (
+            <Component
+              form={form}
+              disabled={disabled || Boolean(fieldConfig.readOnly)}
+              fieldConfig={fieldConfig}
+              id={id}
+              describedBy={describedBy}
+              invalid={invalid}
+            />
+          )}
+        </FormField>
+      );
+    }
   }
   return null;
 }
