@@ -1,11 +1,15 @@
 package com.axiope.userimport;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.auth.LoginHelper;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.HistoricalEvent;
@@ -63,6 +67,38 @@ public class DefaultPostUserCreateTest {
     postUserCreate.postUserCreate(anyUser, mockRequest, "any");
     assertLoginAndNotifyCalled();
     assertGroupCreated();
+  }
+
+  @Test
+  public void busyLoginStillPromotesAndAuditsThenRethrows() {
+    LoginVerificationBusyException busy = new LoginVerificationBusyException("busy");
+    doThrow(busy).when(loginHelper).login(anyUser, "any", mockRequest);
+    when(properties.isPicreateGroupOnSignupEnabled()).thenReturn(Boolean.TRUE);
+    anyUser.setPicreateGroupOnSignup(true);
+    when(roleHandler.setNewlySignedUpUserAsPi(anyUser)).thenReturn(anyUser);
+
+    LoginVerificationBusyException thrown =
+        assertThrows(
+            LoginVerificationBusyException.class,
+            () -> postUserCreate.postUserCreate(anyUser, mockRequest, "any"));
+
+    assertSame(busy, thrown);
+    assertGroupCreated();
+    verify(auditService).notify(Mockito.any(HistoricalEvent.class));
+  }
+
+  @Test
+  public void otherLoginFailuresPropagateBeforePromotionAndAudit() {
+    doThrow(new IllegalStateException("disabled"))
+        .when(loginHelper)
+        .login(anyUser, "any", mockRequest);
+
+    assertThrows(
+        IllegalStateException.class,
+        () -> postUserCreate.postUserCreate(anyUser, mockRequest, "any"));
+
+    assertGroupNotCreated();
+    verify(auditService, never()).notify(Mockito.any(HistoricalEvent.class));
   }
 
   private void assertGroupCreated() {

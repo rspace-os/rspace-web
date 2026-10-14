@@ -4,13 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.google.common.base.Ticker;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,14 +39,14 @@ public class PasswordGrantGuessLimiterTest {
   }
 
   private FakeTicker ticker;
-  private UsernamePasswordCredentialsMatcher matcher;
+  private SentinelPasswordCheck sentinelCheck;
   private PasswordGrantGuessLimiter limiter;
 
   @BeforeEach
   public void setUp() {
     ticker = new FakeTicker();
-    matcher = mock(UsernamePasswordCredentialsMatcher.class);
-    limiter = new PasswordGrantGuessLimiter(5, WINDOW, 3, ticker, matcher);
+    sentinelCheck = mock(SentinelPasswordCheck.class);
+    limiter = new PasswordGrantGuessLimiter(5, WINDOW, 3, ticker, sentinelCheck);
   }
 
   private void acquire(String username, int times) {
@@ -61,7 +60,7 @@ public class PasswordGrantGuessLimiterTest {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new PasswordGrantGuessLimiter(0, WINDOW, 3, ticker, matcher));
+            () -> new PasswordGrantGuessLimiter(0, WINDOW, 3, ticker, sentinelCheck));
     assertEquals("oauth.passwordGrant.maxFailures must be at least 1", e.getMessage());
   }
 
@@ -70,8 +69,25 @@ public class PasswordGrantGuessLimiterTest {
     IllegalArgumentException e =
         assertThrows(
             IllegalArgumentException.class,
-            () -> new PasswordGrantGuessLimiter(5, Duration.ZERO, 3, ticker, matcher));
+            () -> new PasswordGrantGuessLimiter(5, Duration.ZERO, 3, ticker, sentinelCheck));
     assertEquals("oauth.passwordGrant.failureWindowSeconds must be at least 1", e.getMessage());
+  }
+
+  @Test
+  public void anAttemptRefusedAsBusyDoesNotUseUpAGuess() {
+    acquire("bob", 5);
+    limiter.uncount("bob");
+
+    assertTrue(limiter.tryAcquire("bob"));
+    assertFalse(limiter.tryAcquire("bob"));
+  }
+
+  @Test
+  public void uncountingAnAccountWithNoCountIsHarmless() {
+    limiter.uncount("bob");
+
+    acquire("bob", 5);
+    assertFalse(limiter.tryAcquire("bob"));
   }
 
   @Test
@@ -139,9 +155,8 @@ public class PasswordGrantGuessLimiterTest {
   }
 
   @Test
-  public void padWithSentinelCheckRunsOneCheckAgainstTheSentinel() {
-    limiter.padWithSentinelCheck("guess");
-    verify(matcher, times(1))
-        .test(argThat(u -> "oauth-sentinel".equals(u.getUsername())), eq("guess"));
+  public void padWithSentinelCheckRunsOneCheckKeyedOnTheSubmittedUsername() {
+    limiter.padWithSentinelCheck("nosuchuser", "guess");
+    verify(sentinelCheck, times(1)).pad("nosuchuser", "guess");
   }
 }

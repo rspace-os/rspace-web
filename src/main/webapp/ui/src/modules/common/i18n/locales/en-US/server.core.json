@@ -156,6 +156,7 @@
       "adminLogin": {
         "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
       },
+      "busy": "The server is busy and could not check your password. Please try again in a moment.",
       "credentials": {
         "wrong": "Invalid username or password, please try again."
       },
@@ -185,6 +186,12 @@
       }
     },
     "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
+    "passwordReset": {
+      "rateLimited": "Too many password resets are being processed right now. Please try again in a moment."
+    },
+    "signup": {
+      "rateLimited": "Too many sign-ups are being processed right now. Please try again in a moment."
+    },
     "composedId": {
       "missing": "No id to retrieve",
       "invalidFormat": "Incorrect id format - should be ''\\d+-\\d+'' but was ''{0}''"
@@ -214,6 +221,7 @@
       "notEqualUsername": "Please use a password other than your username."
     },
     "reauthentication": {
+      "busy": "The server is busy and could not check your password. Please try again in a moment. Nothing has been changed.",
       "failed": "Reauthentication failed, please try again."
     },
     "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",

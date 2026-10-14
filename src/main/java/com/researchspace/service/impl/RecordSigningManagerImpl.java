@@ -31,6 +31,7 @@ import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSpaceRequestManager;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.UserManager;
 import java.util.ArrayList;
@@ -160,13 +161,13 @@ public class RecordSigningManagerImpl implements RecordSigningManager {
   }
 
   @Override
-  public boolean hasPermission(String username, String password) {
+  public ReauthenticationResult hasPermission(String username, String password) {
     User user = userManager.getUserByUsername(username);
     return reauthenticator.reauthenticate(user, password);
   }
 
   @Override
-  public boolean isReauthenticated(User user, String password) {
+  public ReauthenticationResult isReauthenticated(User user, String password) {
     return reauthenticator.reauthenticate(user, password);
   }
 
