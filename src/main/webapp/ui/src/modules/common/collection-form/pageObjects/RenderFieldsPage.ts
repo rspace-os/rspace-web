@@ -9,10 +9,11 @@ export class RenderFieldsPage {
   readonly notesDescription: Locator = page.getByText("The human-readable name of the record.");
   readonly score: Locator = page.getByRole("spinbutton", { name: "Score" });
   readonly enabled: Locator = page.getByRole("checkbox", { name: "Enabled" });
-  readonly subscriptionGroup: Locator = page.getByRole("radiogroup", { name: "Status" }).nth(0);
+  readonly statusGroups: Locator = page.getByRole("radiogroup", { name: "Status" });
+  readonly subscriptionGroup: Locator = this.statusGroups.nth(0);
   readonly modifiedAt: Locator = page.getByLabelText("Modified");
   readonly status: Locator = page.getByRole("combobox", { name: "Status" });
-  readonly cardStatusGroup: Locator = page.getByRole("radiogroup", { name: "Status" });
+  readonly cardStatusGroup: Locator = this.statusGroups;
   readonly constantStatusOption: Locator = page.getByRole("option", { name: "draft" });
   readonly objectStatusOption: Locator = page.getByRole("option", { name: "In review" });
   readonly richStatusOption: Locator = page.getByText("Ready to publish");
@@ -38,9 +39,13 @@ export class RenderFieldsPage {
     await userEvent.click(this.enabled);
   }
 
-  async chooseStatus(label: string): Promise<void> {
-    await userEvent.click(this.status);
+  private async chooseOption(control: Locator, label: string): Promise<void> {
+    await userEvent.click(control);
     await userEvent.click(page.getByRole("option", { name: label }));
+  }
+
+  async chooseStatus(label: string): Promise<void> {
+    await this.chooseOption(this.status, label);
   }
 
   cardStatus(label: string): Locator {
@@ -77,8 +82,7 @@ export class RenderFieldsPage {
   }
 
   async chooseOwner(label: string): Promise<void> {
-    await userEvent.click(this.owner);
-    await userEvent.click(page.getByRole("option", { name: label }));
+    await this.chooseOption(this.owner, label);
   }
 
   async openOwner(): Promise<void> {
@@ -86,8 +90,7 @@ export class RenderFieldsPage {
   }
 
   async addCollaborator(label: string): Promise<void> {
-    await userEvent.click(this.collaborators);
-    await userEvent.click(page.getByRole("option", { name: label }));
+    await this.chooseOption(this.collaborators, label);
     await userEvent.keyboard("{Escape}");
   }
 

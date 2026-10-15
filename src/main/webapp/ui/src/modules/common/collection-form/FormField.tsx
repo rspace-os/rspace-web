@@ -6,14 +6,10 @@ import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@
 import type { ControlProps, FieldLayout, RelationshipOptions } from "./RenderFields.types";
 import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "./responsiveFieldLayout";
 
-function messageOf(error: unknown): string {
-  if (typeof error === "string") return error;
-  if (error instanceof Error) return error.message;
-  if (typeof error === "object" && error !== null && "message" in error) return String(error.message);
-  return String(error);
-}
-
-export function FormField<TDocument extends Record<string, unknown>>({
+export function FormField<
+  TDocument extends Record<string, unknown>,
+  TType extends ResolvedFieldConfig<TDocument>["type"] = ResolvedFieldConfig<TDocument>["type"],
+>({
   children,
   disabled,
   fieldConfig,
@@ -23,13 +19,13 @@ export function FormField<TDocument extends Record<string, unknown>>({
   relationshipOptionAvailability,
   relationshipOptions,
 }: {
-  children: (props: ControlProps<TDocument>) => ReactNode;
+  children: (props: ControlProps<TDocument, TType>) => ReactNode;
   disabled: boolean;
-  fieldConfig: ResolvedFieldConfig<TDocument>;
+  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: TType }>;
   form: FormStore;
   layout?: FieldLayout;
   orientation?: "horizontal" | "vertical";
-  relationshipOptionAvailability: ControlProps<TDocument>["relationshipOptionAvailability"];
+  relationshipOptionAvailability: ControlProps<TDocument, TType>["relationshipOptionAvailability"];
   relationshipOptions: RelationshipOptions;
 }) {
   const { t } = useTranslation("common");
@@ -49,11 +45,17 @@ export function FormField<TDocument extends Record<string, unknown>>({
   }
 
   const descriptionId = formConfig?.descriptionKey ? `${id}-description` : undefined;
-  const errors = fieldApi.errors?.map((error) => ({ message: messageOf(error) })) ?? [];
+  const errors = fieldApi.errors?.map((message) => ({ message })) ?? [];
   const invalid = errors.length > 0;
   const errorId = invalid ? `${id}-error` : undefined;
   const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
   const label = t(fieldConfig.labelKey as never);
+  const labelBody = (
+    <>
+      {label}
+      {fieldConfig.required ? <span aria-hidden="true">{"*"}</span> : null}
+    </>
+  );
   const control = children({
     describedBy,
     disabled,
@@ -89,8 +91,7 @@ export function FormField<TDocument extends Record<string, unknown>>({
             aligns the label with its first line rather than its middle. Stacked, the label sits
             directly above its control and needs no line box of its own. */}
         <FieldLabel htmlFor={id} className="@md:min-h-9 @md:items-center @md:self-start">
-          {label}
-          {fieldConfig.required ? <span aria-hidden="true">{"*"}</span> : null}
+          {labelBody}
         </FieldLabel>
         {/* min-h-9 matches an input's height, so a short control (a switch) keeps
             the row the same height as the read-out row it replaces. */}
@@ -112,10 +113,7 @@ export function FormField<TDocument extends Record<string, unknown>>({
     </Field>
   ) : (
     <Field data-disabled={disabled || fieldConfig.readOnly} data-invalid={invalid}>
-      <FieldLabel htmlFor={id}>
-        {label}
-        {fieldConfig.required ? <span aria-hidden="true">{"*"}</span> : null}
-      </FieldLabel>
+      <FieldLabel htmlFor={id}>{labelBody}</FieldLabel>
       {control}
       {details}
     </Field>

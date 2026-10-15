@@ -1,14 +1,10 @@
-import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { Input } from "@/modules/common/ui/input";
 import { controlAttributes } from "../controlAttributes";
 import { FormField } from "../FormField";
+import { emptyNullableValue } from "../fieldValues";
 import type { ControlProps, FieldRendererProps } from "../RenderFields.types";
 
-type NumberFieldControlProps<TDocument> = Omit<ControlProps<TDocument>, "fieldConfig"> & {
-  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "number" }>;
-};
-
-function NumberFieldControl<TDocument>(props: NumberFieldControlProps<TDocument>) {
+function NumberFieldControl<TDocument>(props: ControlProps<TDocument, "number">) {
   const { fieldApi, fieldConfig } = props;
   return (
     <Input
@@ -23,9 +19,7 @@ function NumberFieldControl<TDocument>(props: NumberFieldControlProps<TDocument>
       onChange={(event) =>
         fieldApi.onChange(
           event.currentTarget.value === ""
-            ? fieldConfig.nullable
-              ? null
-              : undefined
+            ? emptyNullableValue(fieldConfig.nullable)
             : event.currentTarget.valueAsNumber,
         )
       }

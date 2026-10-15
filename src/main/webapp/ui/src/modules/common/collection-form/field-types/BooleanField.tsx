@@ -1,14 +1,9 @@
-import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { controlAttributes } from "../controlAttributes";
 import { FormField } from "../FormField";
 import type { ControlProps, FieldRendererProps } from "../RenderFields.types";
 
-type BooleanFieldControlProps<TDocument> = Omit<ControlProps<TDocument>, "fieldConfig"> & {
-  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "boolean" }>;
-};
-
-function BooleanFieldControl<TDocument>(props: BooleanFieldControlProps<TDocument>) {
+function BooleanFieldControl<TDocument>(props: ControlProps<TDocument, "boolean">) {
   const { disabled, fieldApi, fieldConfig } = props;
   return (
     <Checkbox

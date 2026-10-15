@@ -1,16 +1,18 @@
-import { type FormStore, getInput } from "@formisch/react";
+import { getInput } from "@formisch/react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { type ResolvedFieldConfig, type SelectOption, selectOptionText } from "@/modules/common/collection/config";
+import { type SelectOption, selectOptionText } from "@/modules/common/collection/config";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/modules/common/ui/combobox";
 import { RadioGroup, RadioGroupItem } from "@/modules/common/ui/radio-group";
 import { controlAttributes } from "../controlAttributes";
 import { FormField } from "../FormField";
+import { emptyNullableValue } from "../fieldValues";
 import type { ControlProps, FieldRendererProps } from "../RenderFields.types";
 
-type SelectFieldControlProps<TDocument> = Omit<ControlProps<TDocument>, "fieldConfig"> & {
-  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "select" }>;
-  form: FormStore;
+type SelectFieldControlProps<TDocument> = ControlProps<TDocument, "select"> & {
+  data: Partial<TDocument>;
+  isOptionDisabled: ((option: SelectOption, data: Partial<TDocument>) => boolean) | undefined;
+  options: readonly NormalizedSelectOption[];
 };
 
 type NormalizedSelectOption = {
@@ -31,12 +33,7 @@ function normalizeOption(option: SelectOption): NormalizedSelectOption {
 }
 
 function CardSelectFieldControl<TDocument extends Record<string, unknown>>(props: SelectFieldControlProps<TDocument>) {
-  const { disabled, fieldApi, fieldConfig, form, label } = props;
-  if (Array.isArray(fieldApi.input)) throw new Error("Card select does not support multiple values");
-  const options = fieldConfig.options.map(normalizeOption);
-  const data = getInput(form) as Partial<TDocument>;
-  const formConfig = fieldConfig.form || undefined;
-  const isOptionDisabled = formConfig?.isOptionDisabled;
+  const { disabled, fieldApi, fieldConfig, isOptionDisabled, label, options, data } = props;
 
   return (
     <RadioGroup
@@ -65,12 +62,7 @@ function CardSelectFieldControl<TDocument extends Record<string, unknown>>(props
 }
 
 function RadioSelectFieldControl<TDocument extends Record<string, unknown>>(props: SelectFieldControlProps<TDocument>) {
-  const { disabled, fieldApi, fieldConfig, form, id, label } = props;
-  if (Array.isArray(fieldApi.input)) throw new Error("Radio select does not support multiple values");
-  const options = fieldConfig.options.map(normalizeOption);
-  const data = getInput(form) as Partial<TDocument>;
-  const formConfig = fieldConfig.form || undefined;
-  const isOptionDisabled = formConfig?.isOptionDisabled;
+  const { disabled, fieldApi, fieldConfig, id, isOptionDisabled, label, options, data } = props;
 
   return (
     <RadioGroup
@@ -113,12 +105,8 @@ function RadioSelectFieldControl<TDocument extends Record<string, unknown>>(prop
 function ComboboxSelectFieldControl<TDocument extends Record<string, unknown>>(
   props: SelectFieldControlProps<TDocument>,
 ) {
-  const { disabled, fieldApi, fieldConfig, form, label } = props;
+  const { data, disabled, fieldApi, fieldConfig, isOptionDisabled, label, options } = props;
   const { t } = useTranslation("common");
-  const options = fieldConfig.options.map(normalizeOption);
-  const data = getInput(form) as Partial<TDocument>;
-  const formConfig = fieldConfig.form || undefined;
-  const isOptionDisabled = formConfig?.isOptionDisabled;
   const selected = options.find((option) => option.value === fieldApi.input) ?? null;
 
   return (
@@ -130,7 +118,7 @@ function ComboboxSelectFieldControl<TDocument extends Record<string, unknown>>(
       disabled={disabled || fieldConfig.readOnly}
       isItemEqualToValue={(option, value) => option.value === value.value}
       itemToStringLabel={(option) => option.textValue}
-      onValueChange={(option) => fieldApi.onChange(option?.value ?? (fieldConfig.nullable ? null : undefined))}
+      onValueChange={(option) => fieldApi.onChange(option?.value ?? emptyNullableValue(fieldConfig.nullable))}
     >
       <ComboboxInput
         {...controlAttributes(props)}
@@ -164,15 +152,35 @@ function ComboboxSelectFieldControl<TDocument extends Record<string, unknown>>(
 export function SelectField<TDocument extends Record<string, unknown>>(props: FieldRendererProps<TDocument, "select">) {
   return (
     <FormField {...props}>
-      {(controlProps) =>
-        props.fieldConfig.form && props.fieldConfig.form.widget === "card" ? (
-          <CardSelectFieldControl {...controlProps} fieldConfig={props.fieldConfig} form={props.form} />
-        ) : props.fieldConfig.form && props.fieldConfig.form.widget === "radio" ? (
-          <RadioSelectFieldControl {...controlProps} fieldConfig={props.fieldConfig} form={props.form} />
-        ) : (
-          <ComboboxSelectFieldControl {...controlProps} fieldConfig={props.fieldConfig} form={props.form} />
-        )
-      }
+      {(controlProps) => {
+        const { fieldApi } = controlProps;
+        const { fieldConfig } = props;
+        const formConfig = fieldConfig.form || undefined;
+        const widget = formConfig?.widget ?? "select";
+
+        if (Array.isArray(fieldApi.input)) {
+          if (widget === "card") throw new Error("Card select does not support multiple values");
+          if (widget === "radio") throw new Error("Radio select does not support multiple values");
+        }
+
+        const options = fieldConfig.options.map(normalizeOption);
+        const data = getInput(props.form) as Partial<TDocument>;
+        const isOptionDisabled = formConfig?.isOptionDisabled;
+        const controlPropsWithOptions = {
+          ...controlProps,
+          fieldConfig,
+          options,
+          data,
+          isOptionDisabled,
+        };
+        const controls: Record<typeof widget, (props: SelectFieldControlProps<TDocument>) => ReactNode> = {
+          card: (controlProps) => <CardSelectFieldControl {...controlProps} />,
+          radio: (controlProps) => <RadioSelectFieldControl {...controlProps} />,
+          select: (controlProps) => <ComboboxSelectFieldControl {...controlProps} />,
+        };
+
+        return controls[widget](controlPropsWithOptions);
+      }}
     </FormField>
   );
 }

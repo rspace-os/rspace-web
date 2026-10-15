@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { databaseId } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
 import { relationshipSources } from "@/modules/common/relationship-picker/sources";
@@ -19,11 +18,8 @@ import {
 } from "@/modules/common/ui/combobox";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { FormField } from "../FormField";
+import { emptyNullableValue } from "../fieldValues";
 import type { ControlProps, FieldRendererProps, RelationshipOption } from "../RenderFields.types";
-
-function clearedValue(nullable: boolean | undefined): null | undefined {
-  return nullable ? null : undefined;
-}
 
 function relationshipIdentifiers(value: unknown): readonly (string | number)[] {
   if (typeof value === "string" || typeof value === "number") return [value];
@@ -55,6 +51,27 @@ function relationshipGlobalId(value: unknown, prefix: string): string {
   return id === undefined ? "" : `${prefix}${id}`;
 }
 
+function RelationshipOptionsContent({
+  anchor,
+  emptyMessage,
+}: {
+  anchor?: ReturnType<typeof useComboboxAnchor>;
+  emptyMessage: string;
+}) {
+  return (
+    <ComboboxContent anchor={anchor}>
+      <ComboboxList>
+        {(option: RelationshipOption) => (
+          <ComboboxItem key={option.value} value={option}>
+            {option.content ?? option.label}
+          </ComboboxItem>
+        )}
+      </ComboboxList>
+      <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
+    </ComboboxContent>
+  );
+}
+
 function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
   describedBy,
   disabled,
@@ -65,9 +82,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
   label,
   relationshipOptionAvailability,
   relationshipOptions,
-}: Omit<ControlProps<TDocument>, "fieldConfig"> & {
-  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "relationship" }>;
-}) {
+}: ControlProps<TDocument, "relationship">) {
   const { t } = useTranslation("common");
   const anchor = useComboboxAnchor();
   const options = relationshipOptions[fieldConfig.relationTo] ?? [];
@@ -75,11 +90,8 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
   const common = {
     id,
     name: fieldConfig.name,
-    "aria-label": label,
     disabled: isDisabled,
     required: fieldConfig.required,
-    "aria-describedby": describedBy,
-    "aria-invalid": invalid || undefined,
   };
 
   const source = relationshipSources[fieldConfig.relationTo];
@@ -93,13 +105,12 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
           onChange={(globalId) => {
             const id = databaseId(source, globalId);
             fieldApi.onChange(
-              id === null ? clearedValue(fieldConfig.nullable) : { relationTo: fieldConfig.relationTo, value: id },
+              id === null
+                ? emptyNullableValue(fieldConfig.nullable)
+                : { relationTo: fieldConfig.relationTo, value: id },
             );
           }}
-          disabled={isDisabled}
-          id={id}
-          name={fieldConfig.name}
-          required={fieldConfig.required}
+          {...common}
           autoFocus={fieldApi.props.autoFocus}
           ariaDescribedBy={describedBy}
           ariaInvalid={invalid}
@@ -126,12 +137,17 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
         itemToStringLabel={(option) => option.label}
         onValueChange={(option) =>
           fieldApi.onChange(
-            option ? { relationTo: fieldConfig.relationTo, value: option.value } : clearedValue(fieldConfig.nullable),
+            option
+              ? { relationTo: fieldConfig.relationTo, value: option.value }
+              : emptyNullableValue(fieldConfig.nullable),
           )
         }
       >
         <ComboboxInput
           {...common}
+          aria-label={label}
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
           className="rounded-sm"
           clearLabel={t("collectionForm.actions.clear", { field: label })}
           placeholder={t("collectionForm.relationship.search", { field: label })}
@@ -141,16 +157,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
           onFocus={fieldApi.props.onFocus}
           onBlur={fieldApi.props.onBlur}
         />
-        <ComboboxContent>
-          <ComboboxList>
-            {(option: RelationshipOption) => (
-              <ComboboxItem key={option.value} value={option}>
-                {option.content ?? option.label}
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-          <ComboboxEmpty>{t("collectionForm.relationship.empty")}</ComboboxEmpty>
-        </ComboboxContent>
+        <RelationshipOptionsContent emptyMessage={t("collectionForm.relationship.empty")} />
       </Combobox>
     );
   }
@@ -185,22 +192,16 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
         </ComboboxValue>
         <ComboboxChipsInput
           {...common}
+          aria-label={label}
+          aria-describedby={describedBy}
+          aria-invalid={invalid || undefined}
           placeholder={t("collectionForm.relationship.search", { field: label })}
           ref={fieldApi.props.ref}
           onFocus={fieldApi.props.onFocus}
           onBlur={fieldApi.props.onBlur}
         />
       </ComboboxChips>
-      <ComboboxContent anchor={anchor}>
-        <ComboboxList>
-          {(option: RelationshipOption) => (
-            <ComboboxItem key={option.value} value={option}>
-              {option.content ?? option.label}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-        <ComboboxEmpty>{t("collectionForm.relationship.empty")}</ComboboxEmpty>
-      </ComboboxContent>
+      <RelationshipOptionsContent anchor={anchor} emptyMessage={t("collectionForm.relationship.empty")} />
     </Combobox>
   );
 }

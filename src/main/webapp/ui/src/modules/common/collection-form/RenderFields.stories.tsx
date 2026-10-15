@@ -21,8 +21,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-export const SectionField: Story = {};
-
 export const TransparentSectionField: Story = {
   args: { sectionVariant: "transparent" },
   play: async ({ canvasElement }) => {
@@ -40,8 +38,6 @@ export const TransparentSectionField: Story = {
     );
   },
 };
-
-export const RowField: Story = {};
 
 // PROTOTYPE: Field-presentation variants, selected as separate Storybook stories.
 export const PrototypeCompactGrid: Story = {
