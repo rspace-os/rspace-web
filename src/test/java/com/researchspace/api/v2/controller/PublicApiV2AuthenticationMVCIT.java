@@ -1,10 +1,9 @@
 package com.researchspace.api.v2.controller;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -135,18 +133,8 @@ class PublicApiV2AuthenticationMVCIT {
           .andExpect(status().isUnauthorized())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON))
           .andExpect(jsonPath("$.status").value(401))
-          .andExpect(jsonPath("$.detail").isString());
-    }
-
-    @Test
-    @DisplayName("a 401 carries a WWW-Authenticate challenge")
-    void unauthorizedCarriesAChallenge() throws Exception {
-      MockHttpServletResponse response =
-          mockMvc.perform(get("/api/v2/users/me")).andReturn().getResponse();
-
-      assertAll(
-          () -> assertEquals(401, response.getStatus()),
-          () -> assertEquals("Bearer", response.getHeader(HttpHeaders.WWW_AUTHENTICATE)));
+          .andExpect(jsonPath("$.detail").isString())
+          .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"));
     }
   }
 }

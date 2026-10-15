@@ -215,14 +215,7 @@ class RsqlCollectionQueryTest {
 
     assertEquals(1, translated.subqueries().size());
     assertTrue(translated.expression().startsWith("EXISTS "));
-    assertTrue(
-        translated
-            .subqueries()
-            .values()
-            .iterator()
-            .next()
-            .whereExpression()
-            .contains("configuration.resourceAccess.id"));
+    assertTrue(where(translated).contains("configuration.resourceAccess.id"));
     assertTrue(translated.parameters().containsValue(12L));
     assertTrue(translated.parameters().containsValue(Set.of(41L, 42L)));
     assertTrue(translated.parameters().containsValue(Set.of("OWNER", "VIEWER")));
@@ -249,14 +242,7 @@ class RsqlCollectionQueryTest {
     assertEquals(1, translated.subqueries().size());
     assertTrue(translated.expression().contains(" OR "));
     assertTrue(translated.expression().contains("booking.requester.id"));
-    assertTrue(
-        translated
-            .subqueries()
-            .values()
-            .iterator()
-            .next()
-            .whereExpression()
-            .contains("booking.bookingConfiguration.resourceAccess.id"));
+    assertTrue(where(translated).contains("booking.bookingConfiguration.resourceAccess.id"));
   }
 
   @Test
@@ -553,6 +539,10 @@ class RsqlCollectionQueryTest {
 
   private static FilterExpression where(RsqlFilterParser parser, String expression) {
     return parser.parse(expression);
+  }
+
+  private static String where(Predicate predicate) {
+    return predicate.subqueries().values().iterator().next().whereExpression();
   }
 
   private Predicate translate(String rsql) {

@@ -34,6 +34,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
+import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfiguration;
 import com.researchspace.model.core.GlobalIdentifier;
@@ -427,27 +428,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     Instant start = Instant.now().plus(30, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
     Long confirmedId =
-        bookingManager
-            .createBooking(
-                new TimeSlotBookingManager.Create(
-                    resolvedTarget,
-                    Date.from(start),
-                    Date.from(start.plus(1, ChronoUnit.HOURS)),
-                    "Confirmed requester booking"),
-                toDelete,
-                toDelete)
-            .getId();
+        createBooking(resolvedTarget, start, 0, "Confirmed requester booking", toDelete).getId();
     Long cancelledId =
-        bookingManager
-            .createBooking(
-                new TimeSlotBookingManager.Create(
-                    resolvedTarget,
-                    Date.from(start.plus(2, ChronoUnit.HOURS)),
-                    Date.from(start.plus(3, ChronoUnit.HOURS)),
-                    "Cancelled requester booking"),
-                toDelete,
-                toDelete)
-            .getId();
+        createBooking(resolvedTarget, start, 2, "Cancelled requester booking", toDelete).getId();
     bookingManager
         .updateBooking(
             cancelledId,
@@ -456,16 +439,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
             toDelete)
         .orElseThrow();
     Long softDeletedId =
-        bookingManager
-            .createBooking(
-                new TimeSlotBookingManager.Create(
-                    resolvedTarget,
-                    Date.from(start.plus(4, ChronoUnit.HOURS)),
-                    Date.from(start.plus(5, ChronoUnit.HOURS)),
-                    "Soft-deleted requester booking"),
-                toDelete,
-                toDelete)
-            .getId();
+        createBooking(resolvedTarget, start, 4, "Soft-deleted requester booking", toDelete).getId();
     assertEquals(
         1,
         jdbcTemplate.update("UPDATE TimeSlotBooking SET deleted = 1 WHERE id = ?", softDeletedId));
@@ -481,26 +455,9 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
         Date.from(start.plus(7, ChronoUnit.HOURS)),
         "Unrelated requester booking");
 
-    assertEquals(
-        1,
-        jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM TimeSlotBooking WHERE id = ? AND state = 'CONFIRMED'"
-                + " AND deleted = 0",
-            Integer.class,
-            confirmedId));
-    assertEquals(
-        1,
-        jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM TimeSlotBooking WHERE id = ? AND state = 'CANCELLED'"
-                + " AND deleted = 0",
-            Integer.class,
-            cancelledId));
-    assertEquals(
-        1,
-        jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM TimeSlotBooking WHERE id = ? AND deleted = 1",
-            Integer.class,
-            softDeletedId));
+    assertEquals(1, count("id = ? AND state = 'CONFIRMED' AND deleted = 0", confirmedId));
+    assertEquals(1, count("id = ? AND state = 'CANCELLED' AND deleted = 0", cancelledId));
+    assertEquals(1, count("id = ? AND deleted = 1", softDeletedId));
     int confirmedHistoryCount = bookingAuditCount(confirmedId);
     int cancelledHistoryCount = bookingAuditCount(cancelledId);
     int softDeletedHistoryCount = bookingAuditCount(softDeletedId);
@@ -514,23 +471,37 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     assertTrue(report.isSucceeded(), report.getMessage());
     assertUserNotExist(toDelete);
-    assertEquals(
-        0,
-        jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM TimeSlotBooking WHERE requester_id = ?",
-            Integer.class,
-            toDelete.getId()));
+    assertEquals(0, count("requester_id = ?", toDelete.getId()));
     assertEquals(
         1,
-        jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ?"
-                + " AND requester_id = ?",
-            Integer.class,
+        count(
+            "bookingConfiguration_id = ? AND requester_id = ?",
             configuration.getId(),
             otherRequester.getId()));
     assertEquals(confirmedHistoryCount, bookingAuditCount(confirmedId));
     assertEquals(cancelledHistoryCount, bookingAuditCount(cancelledId));
     assertEquals(softDeletedHistoryCount, bookingAuditCount(softDeletedId));
+  }
+
+  private TimeSlotBooking createBooking(
+      ResolvedBookableTarget target,
+      Instant start,
+      int offsetHours,
+      String purpose,
+      User requester) {
+    return bookingManager.createBooking(
+        new TimeSlotBookingManager.Create(
+            target,
+            Date.from(start.plus(offsetHours, ChronoUnit.HOURS)),
+            Date.from(start.plus(offsetHours + 1L, ChronoUnit.HOURS)),
+            purpose),
+        requester,
+        requester);
+  }
+
+  private int count(String where, Object... args) {
+    return jdbcTemplate.queryForObject(
+        "SELECT COUNT(*) FROM TimeSlotBooking WHERE " + where, Integer.class, args);
   }
 
   private int bookingAuditCount(Long bookingId) {

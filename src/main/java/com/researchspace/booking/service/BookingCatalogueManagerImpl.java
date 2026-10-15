@@ -26,7 +26,9 @@ import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -93,7 +95,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       Set<Long> matchingTargetIds =
           new HashSet<>(instruments.searchBookingCatalogueTargetIds(query, caller));
       ResourceReference<BookableTargetType, Long> globalIdTarget =
-          instrumentReference(query.trim().toUpperCase(java.util.Locale.ROOT));
+          instrumentReference(query.trim().toUpperCase(Locale.ROOT));
       if (globalIdTarget != null) {
         matchingTargetIds.add(globalIdTarget.id());
       }
@@ -146,7 +148,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
                         configuration,
                         targets.get(configuration.getTarget().id()),
                         locations.get(configuration.getTarget().id())))
-            .flatMap(java.util.Optional::stream)
+            .flatMap(Optional::stream)
             .toList(),
         page,
         limit,
@@ -230,12 +232,12 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     }
   }
 
-  private java.util.Optional<Item> item(
+  private Optional<Item> item(
       BookingConfiguration configuration,
       Instrument instrument,
       InstrumentParentLocationSummary parent) {
     if (instrument == null || instrument.isDeleted()) {
-      return java.util.Optional.empty();
+      return Optional.empty();
     }
     Location location =
         parent == null
@@ -246,7 +248,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
                         : GlobalIdPrefix.IC)
                     + parent.containerId().toString(),
                 parent.containerName());
-    return java.util.Optional.of(
+    return Optional.of(
         new Item(
             configuration.getId(),
             configuration.getConfigurationVersion(),

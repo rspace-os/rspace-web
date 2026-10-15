@@ -1029,31 +1029,6 @@ session-bound REST API v2 UI tokens against the matching live browser session. A
 current token in session storage for legacy API clients; the query hooks keep theirs in memory.
 Every page initialization mints the token appropriate to its current authentication context.
 
-### Request metrics
-
-Every request that ran a collection query writes one line to the REST API v2 request log, on
-`com.researchspace.api.v2.requests.metrics`:
-
-```text
-GET /api/v2/booking-configurations status=200 queryMs=308.8 queryCalls=3 countMs=0.0 countCalls=0 \
-    projectionMs=0.0 projectionCalls=0 rows=20 total=3761 bytes=9709
-```
-
-The log separates four costs because each has a different remedy. A slow page can require an index
-or a narrower filter. A slow count can require bounded pagination. A slow projection can require
-batching. A large response can require a lower projection limit. The total request duration does
-not identify which remedy to apply.
-
-- `queryMs` covers reading the page. Blaze folds an exact total into that query. Therefore,
-  `countMs` covers only an explicit count from the `/count` route or an unpaged read.
-- `projectionMs` covers loading runtime-field values for the rows on the page.
-- `bytes` is what the handler wrote, measured rather than read from `Content-Length`, which a
-  chunked or compressed response does not carry.
-- `rows` and `total` describe the page that was answered, not any lookup the request made after it.
-
-Turn off this logger to disable the metrics. A request that runs no collection query produces no
-log entry. When the logger is off, the filter does not wrap the response.
-
 ### Rate limits
 
 REST API v2 has separate throttle beans from REST API v1. Both versions use the same deployment
@@ -1339,11 +1314,11 @@ class WidgetContractMVCIT {
 }
 ```
 
-Do not extend `MVCTestBase` for a v2 route. That chain bottoms out in
-`AbstractJUnit4SpringContextTests`, so the test runs on JUnit 4 and loses `@Nested`,
-`@ParameterizedTest`, and `@Tag`. `ApiV2Fixture` supplies what the base class would have: an API key
-for the system administrator, ordinary users, an authenticated `MockMvc` with the production servlet
-filters installed, and disposable rows.
+For API v2 integration tests, use `@ApiV2WebIntegrationTest` with `ApiV2Fixture`. `MVCTestBase`
+extends the JUnit Jupiter `RealTransactionSpringTestBase`; it is a valid base for MVC tests, but it
+does not provide the API v2 fixture's authenticated `MockMvc` and disposable rows. The fixture
+creates system-administrator and ordinary-user credentials and installs the production servlet
+filters.
 
 Two properties of this harness decide how a test must be written:
 

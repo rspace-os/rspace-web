@@ -557,25 +557,22 @@ _Avoid_: runtime-failing flag, startup blocker
 
 ## Booking
 
+Lifecycle details are in the [booking configuration lifecycle ADR](DevDocs/adr/0009-booking-configuration-lifecycle.md).
+Schedule rules are in [BookingScheduling.md](DevDocs/DeveloperNotes/BookingScheduling.md).
+
 - **Booking configuration** — the settings that make one inventory instrument
   bookable, including its scheduling timezone and booking rules.
-- **Booking configuration state** — the lifecycle condition of a booking
-  configuration, either Active or Archived.
+- **Booking configuration state** — whether a configuration is Active or Archived.
   _Avoid_: deleted flag, archive flag
-- **Active booking configuration** — a booking configuration that may
-  participate in booking operations. Whether users can create new bookings also
-  depends on whether the configuration is enabled.
-- **Archived booking configuration** — a readable booking configuration that
-  cannot receive settings, access, or booking changes until it is restored.
-- **Archive a booking configuration** — move an Active booking configuration to
-  Archived while retaining its settings, bookings, and audit history. Repeating
-  the archive command leaves it Archived.
+- **Active booking configuration** — a configuration available for use when enabled.
+- **Archived booking configuration** — a readable configuration unavailable for changes until restored.
+- **Archive a booking configuration** — move it to Archived while retaining its data; repeating the
+  command is safe.
   _Avoid_: delete a booking configuration
-- **Restore a booking configuration** — move an Archived booking configuration
-  back to Active without recreating revoked calendar subscriptions.
-- **Permanently delete a booking configuration** — irreversibly remove an
-  Active or Archived booking configuration and its live operational data. Audit history
-  remains. Only a system administrator acting as themselves may do this.
+- **Restore a booking configuration** — move an Archived configuration back to Active; revoked
+  subscriptions do not return.
+- **Permanently delete a booking configuration** — remove its live data while retaining audit history;
+  only a system administrator acting as themselves may do this.
 - **Booking access assignment**: one Booking role granted directly to one user
   or group for one booking configuration. The assignment governs the
   configuration and all of its bookings, blockouts, calendar views, audit
@@ -648,21 +645,15 @@ _Avoid_: runtime-failing flag, startup blocker
   booking configuration at creation time. Changing them does not alter an
   existing booking configuration.
   _Avoid_: inherited settings, live defaults
-- **Scheduling policy** — the rules stored on one booking configuration that
-  determine its valid time increments, opening hours, booking buffers, maximum
-  booking duration, and whether concurrent bookings are permitted.
+- **Scheduling policy** — per-configuration rules governing valid booking times and constraints.
   _Avoid_: global booking rules
-- **Opening interval** — the daily wall-clock period in a booking
-  configuration's timezone during which a booking may occur. `00:00–24:00`
-  denotes the complete local day; an interval never crosses a closed overnight
-  gap.
+- **Opening interval** — a daily wall-clock period when a booking may occur in the configuration's timezone.
   _Avoid_: business hours, availability event
 - **Booking buffer** — unavailable time immediately before or after a confirmed
   booking. The two persisted directions may differ even though the settings UI
   normally edits them as one value.
-- **Maximum booking duration** — the maximum elapsed time permitted for one
-  booking by one booking configuration. `0` disables this item-specific limit;
-  the 366-day system safety limit still applies.
+- **Maximum booking duration** — the per-configuration elapsed-time limit for one booking. `0`
+  disables this limit; the 366-day system limit remains.
   _Avoid_: maximum occupancy, booking buffer
 - **Double-booking** — permission for confirmed booking intervals on one
   bookable item to overlap. Opening intervals and time increments still apply.

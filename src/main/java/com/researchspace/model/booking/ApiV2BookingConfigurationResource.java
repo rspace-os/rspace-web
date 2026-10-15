@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 
 @ApiV2ResourceDefinition(
     name = "booking-configurations",
@@ -76,30 +78,37 @@ public record ApiV2BookingConfigurationResource(
       new CollectionMutationLimits(50, 1000);
 
   private static final Relationship<BookingConfiguration> TARGET =
-      Relationship.polymorphicToOne(
-              "target",
-              CollectionFieldTypes.longNumber(),
-              List.of(
-                  new RelationshipTarget<>(
-                      ApiV2BookingInstrumentResource.RESOURCE_NAME,
-                      BookableTargetType.INSTRUMENT,
-                      "IN",
-                      com.researchspace.model.inventory.Instrument.class)),
-              new SplitReferenceBinding<>(
-                  (BookingConfiguration configuration) ->
-                      configuration.getTarget() == null
-                          ? null
-                          : new ResourceReference<>(
-                              configuration.getTarget().type(), configuration.getTarget().id()),
-                  "target.type",
-                  "target.id"))
-          .required()
-          .writeOnlyOn(WriteOperation.CREATE)
+      instrumentTarget(
+              (BookingConfiguration configuration) -> {
+                BookableTargetReference target = configuration.getTarget();
+                return target == null ? null : new ResourceReference<>(target.type(), target.id());
+              },
+              "target.type",
+              "target.id")
           .documented(
               OpenApiSchemaDocumentation.of(
                   "Booking target",
                   "Instrument to which this booking configuration applies.",
                   null));
+
+  /** Creates the shared instrument relationship binding for booking resources. */
+  static <T> Relationship<T> instrumentTarget(
+      Function<T, ResourceReference<BookableTargetType, Long>> referenceReader,
+      String typeProperty,
+      String idProperty) {
+    return Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            List.of(
+                new RelationshipTarget<>(
+                    ApiV2BookingInstrumentResource.RESOURCE_NAME,
+                    BookableTargetType.INSTRUMENT,
+                    "IN",
+                    com.researchspace.model.inventory.Instrument.class)),
+            new SplitReferenceBinding<>(referenceReader, typeProperty, idProperty))
+        .required()
+        .writeOnlyOn(WriteOperation.CREATE);
+  }
 
   private record RoleSourceGrantee(String kind, String key, Object id, String name) {
     static RoleSourceGrantee from(ResourceRoleSource source) {
@@ -233,11 +242,10 @@ public record ApiV2BookingConfigurationResource(
             access);
     List<Field<BookingConfiguration, ?>> fields = new ArrayList<>(base.fields());
     int afterGranularity =
-        fields.indexOf(
-                fields.stream()
-                    .filter(field -> field.name().equals("slotGranularityMinutes"))
-                    .findFirst()
-                    .orElseThrow())
+        IntStream.range(0, fields.size())
+                .filter(index -> fields.get(index).name().equals("slotGranularityMinutes"))
+                .findFirst()
+                .orElseThrow()
             + 1;
     fields.add(
         afterGranularity,

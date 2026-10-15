@@ -436,7 +436,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       return true;
     }
     boolean bookable =
-        record instanceof com.researchspace.model.inventory.Instrument
+        record instanceof Instrument
             && searchConfig.getBookableInstrumentIds().contains(record.getId());
     return searchConfig.getBookable() == bookable;
   }
