@@ -48,6 +48,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.Getter;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -169,11 +170,11 @@ public final class ApiV2AuditStrictSearch {
       for (Path path : matches) {
         BasicFileAttributes attributes = attributes(path);
         if (!attributes.isRegularFile()) {
-          throw failure(path, 0);
+          throw failure(path.getFileName().toString(), 0, null);
         }
         Path canonical = path.toRealPath(LinkOption.NOFOLLOW_LINKS);
         if (!canonicalPaths.add(canonical)) {
-          throw failure(path, 0);
+          throw failure(path.getFileName().toString(), 0, null);
         }
         manifests.put(
             canonical,
@@ -205,7 +206,7 @@ public final class ApiV2AuditStrictSearch {
 
   private Optional<BoundaryLine> firstNonblankLine(FileManifest file) {
     try (FileChannel channel = open(file);
-        InputStream input = new BoundedInputStream(Channels.newInputStream(channel), file.size());
+        InputStream input = boundedInputStream(channel, file.size());
         BufferedReader reader =
             new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
       int lineNumber = 0;
@@ -220,13 +221,13 @@ public final class ApiV2AuditStrictSearch {
     } catch (StrictReadException ex) {
       throw ex;
     } catch (IOException | SecurityException ex) {
-      throw failure(file, 0, ex);
+      throw failure(file.safeName(), 0, ex);
     }
   }
 
   private BoundaryLine lastNonblankLine(FileManifest file) {
     if (file.size() == 0) {
-      throw failure(file, 1);
+      throw failure(file.safeName(), 1, null);
     }
     try (FileChannel channel = open(file)) {
       long position = file.size();
@@ -238,7 +239,7 @@ public final class ApiV2AuditStrictSearch {
         position -= blockSize;
         readBlock(channel, block, position, blockSize);
         if (firstBlock && block.get(blockSize - 1) != '\n') {
-          throw failure(file, 0);
+          throw failure(file.safeName(), 0, null);
         }
         firstBlock = false;
         for (int index = blockSize - 1; index >= 0; index--) {
@@ -259,11 +260,11 @@ public final class ApiV2AuditStrictSearch {
       if (!candidate.isBlank()) {
         return new BoundaryLine(candidate, 1);
       }
-      throw failure(file, 1);
+      throw failure(file.safeName(), 1, null);
     } catch (StrictReadException ex) {
       throw ex;
     } catch (IOException | SecurityException ex) {
-      throw failure(file, 0, ex);
+      throw failure(file.safeName(), 0, ex);
     }
   }
 
@@ -301,12 +302,12 @@ public final class ApiV2AuditStrictSearch {
   private Instant parseBoundaryTimestamp(BoundaryLine boundary, FileManifest file) {
     Matcher matcher = LOG_LINE_TIMESTAMP.matcher(boundary.content());
     if (!matcher.find()) {
-      throw failure(file, boundary.lineNumber());
+      throw failure(file.safeName(), boundary.lineNumber(), null);
     }
     try {
       return timestamp(matcher.group(1));
     } catch (DateTimeException ex) {
-      throw failure(file, boundary.lineNumber(), ex);
+      throw failure(file.safeName(), boundary.lineNumber(), ex);
     }
   }
 
@@ -316,7 +317,7 @@ public final class ApiV2AuditStrictSearch {
       AuditTrailSearchElement restricted,
       List<AuditTrailSearchResult> results) {
     try (FileChannel channel = open(file);
-        InputStream input = new BoundedInputStream(Channels.newInputStream(channel), file.size());
+        InputStream input = boundedInputStream(channel, file.size());
         BufferedReader reader =
             new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
       int lineNumber = 0;
@@ -337,7 +338,7 @@ public final class ApiV2AuditStrictSearch {
     } catch (StrictReadException ex) {
       throw ex;
     } catch (IOException | SecurityException ex) {
-      throw failure(file, 0, ex);
+      throw failure(file.safeName(), 0, ex);
     }
   }
 
@@ -345,7 +346,7 @@ public final class ApiV2AuditStrictSearch {
     Matcher matcher = AUDIT_LINE.matcher(line);
     if (!matcher.matches()) {
       if (AUDIT_PREFIX.matcher(line).find()) {
-        throw failure(file, lineNumber);
+        throw failure(file.safeName(), lineNumber, null);
       }
       return Optional.empty();
     }
@@ -357,7 +358,7 @@ public final class ApiV2AuditStrictSearch {
       AuditAction action = AuditAction.valueOf(actionValue);
       AuditData data = AuditData.fromJson(matcher.group(4));
       if (data == null) {
-        throw failure(file, lineNumber);
+        throw failure(file.safeName(), lineNumber, null);
       }
       HistoricData event =
           new HistoricData(domain, action, matcher.group(6), data, matcher.group(5));
@@ -373,7 +374,7 @@ public final class ApiV2AuditStrictSearch {
               matcher.group(5),
               new AuditTrailSearchResult(event, timestamp.toEpochMilli())));
     } catch (DateTimeException | IllegalArgumentException ex) {
-      throw failure(file, lineNumber, ex);
+      throw failure(file.safeName(), lineNumber, ex);
     }
   }
 
@@ -474,11 +475,11 @@ public final class ApiV2AuditStrictSearch {
       FileManifest before = entry.getValue();
       FileManifest after = current.get(entry.getKey());
       if (!sameIdentity(before, after) || after.size() < before.size()) {
-        throw failure(before, 0);
+        throw failure(before.safeName(), 0, null);
       }
       if (after.size() == before.size()) {
         if (after.modifiedMillis() != before.modifiedMillis()) {
-          throw failure(before, 0);
+          throw failure(before.safeName(), 0, null);
         }
         continue;
       }
@@ -490,8 +491,7 @@ public final class ApiV2AuditStrictSearch {
     try (FileChannel channel = open(after)) {
       channel.position(before.size());
       long appendedSize = after.size() - before.size();
-      try (InputStream input =
-              new BoundedInputStream(Channels.newInputStream(channel), appendedSize);
+      try (InputStream input = boundedInputStream(channel, appendedSize);
           BufferedReader reader =
               new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
         int lineNumber = 0;
@@ -503,7 +503,7 @@ public final class ApiV2AuditStrictSearch {
           }
           Optional<ParsedLine> parsed = parseAuditLine(line, after, lineNumber);
           if (parsed.isPresent() && parsed.get().timestamp().isBefore(request.toExclusive())) {
-            throw failure(after, lineNumber);
+            throw failure(after.safeName(), lineNumber, null);
           }
         }
       }
@@ -511,15 +511,15 @@ public final class ApiV2AuditStrictSearch {
       if (finalAttributes.size() != after.size()
           || finalAttributes.lastModifiedTime().toMillis() != after.modifiedMillis()
           || !Objects.equals(finalAttributes.fileKey(), after.fileKey())) {
-        throw failure(after, 0);
+        throw failure(after.safeName(), 0, null);
       }
       if (appendedSize > 0 && readByte(channel, after.size() - 1) != '\n') {
-        throw failure(after, 0);
+        throw failure(after.safeName(), 0, null);
       }
     } catch (StrictReadException ex) {
       throw ex;
     } catch (IOException | SecurityException ex) {
-      throw failure(after, 0, ex);
+      throw failure(after.safeName(), 0, ex);
     }
   }
 
@@ -548,16 +548,18 @@ public final class ApiV2AuditStrictSearch {
     return FileChannel.open(file.path(), READ_OPTIONS);
   }
 
-  private static StrictReadException failure(Path path, int lineNumber) {
-    return new StrictReadException(path.getFileName().toString(), lineNumber, null);
+  private static InputStream boundedInputStream(FileChannel channel, long maxCount)
+      throws IOException {
+    // validateAppend checks the channel's final byte after the reader closes.
+    return BoundedInputStream.builder()
+        .setInputStream(Channels.newInputStream(channel))
+        .setMaxCount(maxCount)
+        .setPropagateClose(false)
+        .get();
   }
 
-  private static StrictReadException failure(FileManifest file, int lineNumber) {
-    return new StrictReadException(file.safeName(), lineNumber, null);
-  }
-
-  private static StrictReadException failure(FileManifest file, int lineNumber, Throwable cause) {
-    return new StrictReadException(file.safeName(), lineNumber, cause);
+  private static StrictReadException failure(String safeName, int lineNumber, Throwable cause) {
+    return new StrictReadException(safeName, lineNumber, cause);
   }
 
   /** Exact filters for one bounded scan. */
@@ -746,40 +748,6 @@ public final class ApiV2AuditStrictSearch {
     @Override
     public String getOid() {
       return request.oid();
-    }
-  }
-
-  private static final class BoundedInputStream extends InputStream {
-    private final InputStream delegate;
-    private long remaining;
-
-    private BoundedInputStream(InputStream delegate, long remaining) {
-      this.delegate = delegate;
-      this.remaining = remaining;
-    }
-
-    @Override
-    public int read() throws IOException {
-      if (remaining == 0) {
-        return -1;
-      }
-      int value = delegate.read();
-      if (value >= 0) {
-        remaining--;
-      }
-      return value;
-    }
-
-    @Override
-    public int read(byte[] buffer, int offset, int length) throws IOException {
-      if (remaining == 0) {
-        return -1;
-      }
-      int read = delegate.read(buffer, offset, (int) Math.min(length, remaining));
-      if (read > 0) {
-        remaining -= read;
-      }
-      return read;
     }
   }
 }

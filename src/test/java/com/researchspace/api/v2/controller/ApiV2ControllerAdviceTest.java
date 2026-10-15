@@ -108,12 +108,7 @@ class ApiV2ControllerAdviceTest {
     assertEquals("Authentication detail", authentication.getBody().title());
     assertEquals("Bearer", authentication.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE));
     assertProblem(
-        advice.handleTypeMismatch(),
-        HttpStatus.BAD_REQUEST,
-        "errors.api.v2.invalidRequest",
-        "Invalid detail");
-    assertProblem(
-        advice.handleConstraintViolation(),
+        advice.handleInvalidRequest(),
         HttpStatus.BAD_REQUEST,
         "errors.api.v2.invalidRequest",
         "Invalid detail");
