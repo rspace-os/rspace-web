@@ -42,17 +42,6 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
       Long excludedBookingId,
       Set<BookingEventKind> includedKinds);
 
-  /** Finds the earliest overlapping row of either persisted event kind. */
-  default Optional<TimeSlotBooking> findFirstOverlap(
-      Long configurationId, Date start, Date end, Long excludedBookingId) {
-    return findFirstOverlap(
-        configurationId,
-        start,
-        end,
-        excludedBookingId,
-        Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
-  }
-
   /** Returns the ordered, fetch-complete rows used to build one calendar feed. */
   List<TimeSlotBooking> findCalendarBookings(Long configurationId, Date cutoff, int maximumRows);
 
