@@ -33,8 +33,6 @@ export type RelationshipSource = {
 
 export type RelationshipOptionWithSource = RelationshipOption & {
   sourceId: string;
-  /** Original validated source document, available to consumers needing domain metadata. */
-  sourceDocument?: unknown;
 };
 
 const InstrumentSchema = v.object({
@@ -42,6 +40,22 @@ const InstrumentSchema = v.object({
   name: v.string(),
   globalId: v.string(),
 });
+
+async function instrumentRequest(
+  url: string,
+  token: string | undefined,
+  signal: AbortSignal,
+  allowNotFound = false,
+): Promise<Response> {
+  const response = await fetch(url, {
+    headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    signal,
+  });
+  if (!response.ok && !(allowNotFound && response.status === 404)) {
+    throw new Error(`Relationship option request failed with status ${response.status}`);
+  }
+  return response;
+}
 
 const instruments: RelationshipSource = {
   id: "instruments",
@@ -58,11 +72,7 @@ const instruments: RelationshipSource = {
         ? cmp("name", new Operation(escapeValue(value), "=contains=")).toString()
         : cmp("id", eq(id)).toString(),
     );
-    const response = await fetch(`/api/v2/instruments?${params}`, {
-      headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      signal,
-    });
-    if (!response.ok) throw new Error(`Relationship option request failed with status ${response.status}`);
+    const response = await instrumentRequest(`/api/v2/instruments?${params}`, token, signal);
     const body = (await response.json()) as { docs?: unknown };
     return Array.isArray(body.docs) ? body.docs : [];
   },
@@ -70,12 +80,8 @@ const instruments: RelationshipSource = {
     const id = databaseIdFromGlobalId(value, "IN");
     if (id === null) return null;
     const params = new URLSearchParams({ "fields[instruments]": "id,name,globalId" });
-    const response = await fetch(`/api/v2/instruments/${id}?${params}`, {
-      headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      signal,
-    });
+    const response = await instrumentRequest(`/api/v2/instruments/${id}?${params}`, token, signal, true);
     if (response.status === 404) return null;
-    if (!response.ok) throw new Error(`Relationship option request failed with status ${response.status}`);
     return response.json();
   },
   ownsValue: (value) => databaseIdFromGlobalId(value, "IN") !== null,
@@ -101,38 +107,6 @@ const instruments: RelationshipSource = {
 function databaseIdFromGlobalId(value: string, prefix: string): number | null {
   const match = new RegExp(`^${prefix}(\\d+)$`, "i").exec(value.trim());
   return match ? Number(match[1]) : null;
-}
-
-const GranteeSchema = v.object({
-  kind: v.picklist(["USER", "GROUP", "AUDIENCE"]),
-  id: v.union([v.number(), v.string()]),
-  key: v.string(),
-  name: v.string(),
-  detail: v.optional(v.nullable(v.string())),
-});
-
-export function granteeRelationshipSource(resource: string, resourceId: number): RelationshipSource {
-  const id = `grantees:${resource}:${resourceId}`;
-  return {
-    id,
-    search: async (term, token, signal) => {
-      const query = term.trim();
-      if (query.length < 2) return [];
-      const params = new URLSearchParams({ query, limit: "20" });
-      const response = await fetch(`/api/v2/${resource}/${resourceId}/access/grantees?${params}`, {
-        headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        signal,
-      });
-      if (!response.ok) throw new Error(`Relationship option request failed with status ${response.status}`);
-      const body: unknown = await response.json();
-      return Array.isArray(body) ? body : [];
-    },
-    ownsValue: (value) => /^(user|group):\d+$/i.test(value),
-    toOption: (document) => {
-      const grantee = parseOrThrow(GranteeSchema, document);
-      return { value: grantee.key, label: grantee.name };
-    },
-  };
 }
 
 /**
