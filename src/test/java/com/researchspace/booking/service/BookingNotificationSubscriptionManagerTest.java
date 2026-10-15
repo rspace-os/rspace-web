@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookableItemNotificationSubscription;
@@ -26,15 +27,15 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.testutils.TestFactory;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 class BookingNotificationSubscriptionManagerTest {
@@ -80,7 +81,7 @@ class BookingNotificationSubscriptionManagerTest {
     when(instruments.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
     when(instruments.lockById(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
     when(itemPermissions.resolveAll(any(), eq(owner)))
-        .thenReturn(Map.of(CONFIGURATION_ID, readableAccess()));
+        .thenReturn(Map.of(CONFIGURATION_ID, BookingAccessTestFixtures.readableAccess()));
   }
 
   @Test
@@ -97,12 +98,12 @@ class BookingNotificationSubscriptionManagerTest {
 
     manager.initializeForInstrument(instrument);
 
-    var captor = org.mockito.ArgumentCaptor.forClass(BookableItemNotificationSubscription.class);
+    var captor = ArgumentCaptor.forClass(BookableItemNotificationSubscription.class);
     verify(subscriptions).saveAndFlush(captor.capture());
     assertFalse(captor.getValue().isEnabled());
 
     BookableItemNotificationSubscription optOut =
-        new BookableItemNotificationSubscription(owner, instrument, false, new java.util.Date());
+        new BookableItemNotificationSubscription(owner, instrument, false, new Date());
     when(subscriptions.findByUserAndInstrument(owner.getId(), INSTRUMENT_ID))
         .thenReturn(Optional.of(optOut));
     when(subscriptions.findByUserAndInstrumentForUpdate(owner.getId(), INSTRUMENT_ID))
@@ -115,14 +116,10 @@ class BookingNotificationSubscriptionManagerTest {
 
   @Test
   void statusSeparatesSavedSubscriptionFromGlobalEventAndEmailSettings() {
-    when(userManager.getPreferenceForUser(owner, Preference.NOTIFICATION_BOOKING_CREATED_PREF))
-        .thenReturn(preference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, true));
-    when(userManager.getPreferenceForUser(owner, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF))
-        .thenReturn(preference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, false));
-    when(userManager.getPreferenceForUser(owner, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL))
-        .thenReturn(preference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false));
-    var saved =
-        new BookableItemNotificationSubscription(owner, instrument, true, new java.util.Date());
+    stubPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, true);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, false);
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false);
+    var saved = new BookableItemNotificationSubscription(owner, instrument, true, new Date());
     when(subscriptions.findByUserAndInstruments(owner.getId(), List.of(INSTRUMENT_ID)))
         .thenReturn(List.of(saved));
 
@@ -136,8 +133,7 @@ class BookingNotificationSubscriptionManagerTest {
 
   @Test
   void staleSingleItemUpdatesConflictWithoutChangingTheSavedChoice() {
-    var saved =
-        new BookableItemNotificationSubscription(owner, instrument, false, new java.util.Date());
+    var saved = new BookableItemNotificationSubscription(owner, instrument, false, new Date());
     when(subscriptions.findByUserAndInstrument(owner.getId(), INSTRUMENT_ID))
         .thenReturn(Optional.of(saved));
     when(subscriptions.findByUserAndInstrumentForUpdate(owner.getId(), INSTRUMENT_ID))
@@ -155,11 +151,10 @@ class BookingNotificationSubscriptionManagerTest {
   void sysadminReadsOnlyTheirOwnAbsentSubscription() {
     User sysadmin = TestFactory.createAnyUser("notify-admin");
     sysadmin.setId(9L);
-    sysadmin.addRole(com.researchspace.model.Role.SYSTEM_ROLE);
+    sysadmin.addRole(Role.SYSTEM_ROLE);
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, sysadmin)).thenReturn(true);
-    when(configurations.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
     when(itemPermissions.resolveAll(any(), eq(sysadmin)))
-        .thenReturn(Map.of(CONFIGURATION_ID, readableAccess()));
+        .thenReturn(Map.of(CONFIGURATION_ID, BookingAccessTestFixtures.readableAccess()));
 
     var status = manager.get(CONFIGURATION_ID, sysadmin, sysadmin);
     assertFalse(status.enabled());
@@ -174,13 +169,13 @@ class BookingNotificationSubscriptionManagerTest {
     reader.setId(6L);
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, reader)).thenReturn(true);
     when(itemPermissions.resolveAll(any(), eq(reader)))
-        .thenReturn(Map.of(CONFIGURATION_ID, readableAccess()));
+        .thenReturn(Map.of(CONFIGURATION_ID, BookingAccessTestFixtures.readableAccess()));
     when(subscriptions.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
     var status = manager.replace(CONFIGURATION_ID, false, -1, reader, reader);
 
     assertFalse(status.enabled());
-    var captor = org.mockito.ArgumentCaptor.forClass(BookableItemNotificationSubscription.class);
+    var captor = ArgumentCaptor.forClass(BookableItemNotificationSubscription.class);
     verify(subscriptions).saveAndFlush(captor.capture());
     assertEquals(reader, captor.getValue().getUser());
     InOrder order = inOrder(instruments, freshAccess, subscriptions);
@@ -224,14 +219,8 @@ class BookingNotificationSubscriptionManagerTest {
     inOrder.verify(subscriptions).unsubscribeEnabledForUser(eq(owner.getId()), any());
   }
 
-  private static ResolvedResourceAccess readableAccess() {
-    return new ResolvedResourceAccess(
-        Optional.of(BookingResourceRoleScheme.VIEWER),
-        Set.of(BookingResourceRoleScheme.READ_RESOURCE),
-        List.of());
-  }
-
-  private UserPreference preference(Preference preference, boolean enabled) {
-    return new UserPreference(preference, owner, Boolean.toString(enabled));
+  private void stubPreference(Preference preference, boolean enabled) {
+    when(userManager.getPreferenceForUser(owner, preference))
+        .thenReturn(new UserPreference(preference, owner, Boolean.toString(enabled)));
   }
 }

@@ -274,6 +274,16 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
         snapshotFingerprint: "b".repeat(64),
       }),
     ),
+    http.get("/api/v2/booking-configurations/7/notification-subscription", () =>
+      HttpResponse.json({
+        configurationId: 7,
+        enabled: false,
+        version: 0,
+        createdEnabled: true,
+        cancelledEnabled: true,
+        emailEnabled: false,
+      }),
+    ),
     http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
       HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }, { headers: { ETag: '"inactive"' } }),
     ),

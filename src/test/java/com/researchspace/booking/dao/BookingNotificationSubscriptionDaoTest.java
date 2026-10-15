@@ -10,12 +10,9 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
 class BookingNotificationSubscriptionDaoTest extends SpringTransactionalTest {
 
   @Autowired private BookingNotificationSubscriptionDao subscriptions;

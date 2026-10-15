@@ -92,9 +92,7 @@ class BookingItemPermissionsTest {
 
   @Test
   void sysadminCannotManageAnotherOwnersPersonalSubscription() {
-    org.mockito.Mockito.reset(inventoryPermissions);
     when(subject.hasSysadminRole()).thenReturn(true);
-    when(instruments.getSafeNull(TARGET_ID)).thenReturn(Optional.of(instrument));
     ResolvedResourceAccess resolved = permissions.resolve(configuration, subject);
     assertTrue(resolved.hasCapability(BookingResourceRoleScheme.EDIT_CONFIGURATION));
     assertTrue(resolved.hasCapability(BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION));
@@ -154,7 +152,7 @@ class BookingItemPermissionsTest {
                 Optional.of(BookingResourceRoleScheme.VIEWER),
                 Set.of(
                     BookingResourceRoleScheme.READ_RESOURCE,
-                    "CREATE_CALENDAR_SUBSCRIPTION",
+                    BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION,
                     BookingItemPermissions.MANAGE_NOTIFICATION_SUBSCRIPTION),
                 List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.VIEWER))),
             24L,

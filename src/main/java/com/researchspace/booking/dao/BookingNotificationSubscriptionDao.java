@@ -16,8 +16,10 @@ public interface BookingNotificationSubscriptionDao
   List<BookableItemNotificationSubscription> findEnabledByInstrument(Long instrumentId);
 
   /** Loads one row with a current locking read after the instrument lock is held. */
-  Optional<BookableItemNotificationSubscription> findByUserAndInstrumentForUpdate(
-      Long userId, Long instrumentId);
+  default Optional<BookableItemNotificationSubscription> findByUserAndInstrumentForUpdate(
+      Long userId, Long instrumentId) {
+    return findByUserAndInstrumentsForUpdate(userId, List.of(instrumentId)).stream().findFirst();
+  }
 
   List<BookableItemNotificationSubscription> findByUserAndInstruments(
       Long userId, List<Long> instrumentIds);
