@@ -48,6 +48,7 @@ function BookingDashboardContent() {
         <DashboardQuickActions today={today} />
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
           <UpcomingBookingsWidget
+            key={currentUser.id}
             requesterId={currentUser.id}
             token={token}
             timeZone={preferences.timeZone}

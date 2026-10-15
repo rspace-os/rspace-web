@@ -2,14 +2,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { bookingListDocument } from "@/modules/booking/domain/bookingAgendaFixtures";
 import { BookingAgenda } from "./BookingAgenda";
 
 const privatePurpose = "PRIVATE_PURPOSE_SHOULD_NEVER_RENDER";
 
 function busyBooking(id: number): BookingListDocument {
-  return {
+  return bookingListDocument({
     id,
-    version: 1,
     target: {
       relationTo: "booking-instruments",
       value: {
@@ -21,22 +21,14 @@ function busyBooking(id: number): BookingListDocument {
       },
       globalId: "IN41",
     },
-    timezone: "Europe/Berlin",
     start: "2026-09-24T08:00:00.000Z",
     end: "2026-09-24T09:00:00.000Z",
-    state: "CONFIRMED",
-    kind: "BOOKING",
     privacy: "busy",
     purpose: privatePurpose,
-    bookedBy: null,
-    createdBy: null,
     canViewConfiguration: true,
-    requesterId: 7,
-    canEdit: false,
-    canCancel: false,
     createdAt: "2026-09-01T08:00:00.000Z",
     updatedAt: "2026-09-01T08:00:00.000Z",
-  };
+  });
 }
 
 describe("BookingAgenda", () => {

@@ -21,11 +21,13 @@ import {
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader } from "@/modules/common/ui/card";
 import { cn } from "@/modules/common/utils/cn";
-import { type DayTimelineEvent, formatMinuteWithDayOffset } from "./DayTimelineEvent";
+import { type DayTimelineEvent, formatMinuteWithDayOffset, period } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
+import { expandedEventIdAfterChange } from "./expandedEvent";
 import { layoutVerticalTimelineEvents } from "./verticalTimelineLayout";
 
 const PIXELS_PER_HOUR = 56;
+const PIXELS_PER_MINUTE = PIXELS_PER_HOUR / 60;
 const TIME_GUTTER_WIDTH = 64;
 const MINIMUM_LANE_WIDTH = 96;
 const MINIMUM_EVENT_CARD_HEIGHT = 44;
@@ -35,6 +37,16 @@ const MOVE_HANDLE_MINIMUM_HEIGHT = 44;
 type IsoRange = { start: string; end: string };
 type AdjustmentEdge = "move" | "start" | "end";
 type Direction = "previous" | "next";
+type TimelineInteraction = {
+  edge: AdjustmentEdge;
+  pointerId: number;
+  handle: HTMLButtonElement;
+  originalRange: IsoRange;
+  pointerOffsetMinutes: number;
+  contextKey: string;
+  width: number;
+  height: number;
+};
 export type VerticalDayTimelineScheduleWindow = OpeningSchedule & { timezone: string };
 
 export type VerticalDayTimelineSchedule =
@@ -70,7 +82,25 @@ function resolveRange(draft: BookingWindowDraft | undefined, timezone: string): 
 }
 
 function timeRange(range: IsoRange, date: string, timezone: string): string {
-  return `${formatMinuteWithDayOffset(date, timezone, instantToDayMinute(range.start, date, timezone))}–${formatMinuteWithDayOffset(date, timezone, instantToDayMinute(range.end, date, timezone))}`;
+  return period(
+    {
+      startMinute: instantToDayMinute(range.start, date, timezone),
+      endMinute: instantToDayMinute(range.end, date, timezone),
+    },
+    date,
+    timezone,
+  );
+}
+
+function clipRangeToDay(range: IsoRange, date: string, timezone: string, dayMinutes: number) {
+  return {
+    startMinute: Math.max(0, instantToDayMinute(range.start, date, timezone)),
+    endMinute: Math.min(dayMinutes, instantToDayMinute(range.end, date, timezone)),
+  };
+}
+
+function scrollTopForMinute(minute: number): number {
+  return Math.max(0, minute * PIXELS_PER_MINUTE - PIXELS_PER_HOUR * 2);
 }
 
 function rangesEqual(left: IsoRange, right: IsoRange): boolean {
@@ -129,16 +159,7 @@ export function VerticalDayTimeline({
   const [announcement, setAnnouncement] = React.useState("");
   const interactionCallbackRef = React.useRef(editing?.onInteractionChange);
   interactionCallbackRef.current = editing?.onInteractionChange;
-  const interactionRef = React.useRef<{
-    edge: AdjustmentEdge;
-    pointerId: number;
-    handle: HTMLButtonElement;
-    originalRange: IsoRange;
-    pointerOffsetMinutes: number;
-    contextKey: string;
-    width: number;
-    height: number;
-  } | null>(null);
+  const interactionRef = React.useRef<TimelineInteraction | null>(null);
   const lastAutoScrollContext = React.useRef("");
   const openSegments = React.useMemo(
     () => openingSegments(date, timezone, scheduleWindow),
@@ -147,6 +168,7 @@ export function VerticalDayTimeline({
   const closedHours = React.useMemo(() => closedSegments(openSegments, dayMinutes), [dayMinutes, openSegments]);
   const editingRange = React.useMemo(() => resolveRange(editing?.draft, timezone), [editing?.draft, timezone]);
   const activeRange = preview ?? editingRange;
+  const activePeriod = activeRange ? timeRange(activeRange, date, timezone) : undefined;
   const context = React.useMemo(
     () =>
       editing
@@ -170,17 +192,11 @@ export function VerticalDayTimeline({
   const dayEvents = schedule.status === "success" ? positionedEvents : [];
   const denseLanes = dayEvents.some(({ laneCount }) => canvasWidth > 0 && canvasWidth / laneCount < MINIMUM_LANE_WIDTH);
   const dateHeading = React.useMemo(
-    () =>
-      new Intl.DateTimeFormat(i18n.language, { dateStyle: "full", timeZone: "UTC" }).format(
-        new Date(`${date}T12:00:00Z`),
-      ),
+    () => Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "full" }),
     [date, i18n.language],
   );
   const compactDateHeading = React.useMemo(
-    () =>
-      new Intl.DateTimeFormat(i18n.language, { dateStyle: "medium", timeZone: "UTC" }).format(
-        new Date(`${date}T12:00:00Z`),
-      ),
+    () => Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "medium" }),
     [date, i18n.language],
   );
   const hourTicks = React.useMemo(
@@ -212,6 +228,14 @@ export function VerticalDayTimeline({
   const rangeAtMinute = React.useCallback(
     (minute: number): string => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString(),
     [date, timezone],
+  );
+  const adjustInteractionRange = React.useCallback(
+    (active: TimelineInteraction, clientY: number, adjustmentContext: NonNullable<typeof context>) => {
+      const minute = minuteAt(clientY) - active.pointerOffsetMinutes;
+      const target = rangeAtMinute(minute);
+      return adjustVerticalTimelineRange(active.originalRange, active.edge, target, adjustmentContext);
+    },
+    [minuteAt, rangeAtMinute],
   );
 
   const cancelInteraction = React.useCallback(() => {
@@ -289,9 +313,7 @@ export function VerticalDayTimeline({
     if (!active || active.pointerId !== event.pointerId || !context) return;
     event.preventDefault();
     event.stopPropagation();
-    const minute = minuteAt(event.clientY) - active.pointerOffsetMinutes;
-    const target = rangeAtMinute(minute);
-    const next = adjustVerticalTimelineRange(active.originalRange, active.edge, target, context);
+    const next = adjustInteractionRange(active, event.clientY, context);
     setPreview(next ?? active.originalRange);
   };
 
@@ -300,9 +322,7 @@ export function VerticalDayTimeline({
     if (!active || active.pointerId !== event.pointerId || !context) return;
     event.preventDefault();
     event.stopPropagation();
-    const minute = minuteAt(event.clientY) - active.pointerOffsetMinutes;
-    const target = rangeAtMinute(minute);
-    const next = adjustVerticalTimelineRange(active.originalRange, active.edge, target, context);
+    const next = adjustInteractionRange(active, event.clientY, context);
     interactionRef.current = null;
     setGestureActive(false);
     setPreview(null);
@@ -311,10 +331,7 @@ export function VerticalDayTimeline({
     if (next) commitRange(next);
   };
 
-  const handlePointerCancel = (event: React.PointerEvent<HTMLButtonElement>) => {
-    if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
-  };
-  const handleLostPointerCapture = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const cancelCapturedPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (interactionRef.current?.pointerId === event.pointerId) cancelInteraction();
   };
 
@@ -389,14 +406,14 @@ export function VerticalDayTimeline({
     const draftKey = `${contextKey}|draft`;
     if (editingRange && resolvedDraftDay === date && lastAutoScrollContext.current !== draftKey) {
       const start = Math.max(0, Math.min(dayMinutes, draftStartMinute));
-      scroller.scrollTop = Math.max(0, start * (PIXELS_PER_HOUR / 60) - PIXELS_PER_HOUR * 2);
+      scroller.scrollTop = scrollTopForMinute(start);
       lastAutoScrollContext.current = draftKey;
       return;
     }
     if (lastAutoScrollContext.current === contextKey || lastAutoScrollContext.current === draftKey) return;
     if (editing && !editingRange && !scheduleWindow) return;
     const start = openSegments[0]?.startMinute ?? 0;
-    scroller.scrollTop = Math.max(0, start * (PIXELS_PER_HOUR / 60) - PIXELS_PER_HOUR * 2);
+    scroller.scrollTop = scrollTopForMinute(start);
     lastAutoScrollContext.current = contextKey;
   }, [
     date,
@@ -412,46 +429,23 @@ export function VerticalDayTimeline({
     canvasWidth,
   ]);
 
-  const draftSegment = activeRange
-    ? {
-        startMinute: Math.max(0, instantToDayMinute(activeRange.start, date, timezone)),
-        endMinute: Math.min(dayMinutes, instantToDayMinute(activeRange.end, date, timezone)),
-      }
-    : undefined;
+  const draftSegment = activeRange ? clipRangeToDay(activeRange, date, timezone, dayMinutes) : undefined;
   const draftVisible = Boolean(draftSegment && draftSegment.endMinute > draftSegment.startMinute);
   const draftHeight =
-    draftVisible && draftSegment ? (draftSegment.endMinute - draftSegment.startMinute) * (PIXELS_PER_HOUR / 60) : 0;
-  const committedDraftHeight = editingRange
-    ? Math.max(
-        0,
-        Math.min(dayMinutes, instantToDayMinute(editingRange.end, date, timezone)) -
-          Math.max(0, instantToDayMinute(editingRange.start, date, timezone)),
-      ) *
-      (PIXELS_PER_HOUR / 60)
+    draftVisible && draftSegment ? (draftSegment.endMinute - draftSegment.startMinute) * PIXELS_PER_MINUTE : 0;
+  const committedDraftSegment = editingRange ? clipRangeToDay(editingRange, date, timezone, dayMinutes) : undefined;
+  const committedDraftHeight = committedDraftSegment
+    ? Math.max(0, committedDraftSegment.endMinute - committedDraftSegment.startMinute) * PIXELS_PER_MINUTE
     : 0;
   const canvasMoveVisible = committedDraftHeight >= MOVE_HANDLE_MINIMUM_HEIGHT && directAdjustmentAllowed;
   // A one-hour draft at 56px/hour leaves a usable center between the 12px resize strips.
   const canvasResizeVisible = committedDraftHeight >= HANDLE_HEIGHT * 2 + 24 && directAdjustmentAllowed;
 
   const openDetails = (eventId: string, expanded: boolean) => {
-    setExpandedEventId((current) => (expanded ? eventId : current === eventId ? null : current));
+    setExpandedEventId((current) => expandedEventIdAfterChange(current, eventId, expanded));
   };
 
   const renderScheduleStatus = () => {
-    if (schedule.status === "no-target") {
-      return (
-        <p role="status" className="rounded-sm bg-muted px-3 py-2 text-sm text-muted-foreground">
-          {t("dayTimeline.vertical.noTarget")}
-        </p>
-      );
-    }
-    if (schedule.status === "loading") {
-      return (
-        <p role="status" className="rounded-sm bg-muted px-3 py-2 text-sm text-muted-foreground">
-          {t("dayTimeline.vertical.loading")}
-        </p>
-      );
-    }
     if (schedule.status === "error") {
       return (
         <div
@@ -468,14 +462,19 @@ export function VerticalDayTimeline({
         </div>
       );
     }
-    if (events.length === 0) {
-      return (
-        <p role="status" className="rounded-sm bg-muted px-3 py-2 text-sm text-muted-foreground">
-          {t("dayTimeline.vertical.empty")}
-        </p>
-      );
-    }
-    return null;
+    const messageKey =
+      schedule.status === "no-target"
+        ? "dayTimeline.vertical.noTarget"
+        : schedule.status === "loading"
+          ? "dayTimeline.vertical.loading"
+          : events.length === 0
+            ? "dayTimeline.vertical.empty"
+            : null;
+    return messageKey ? (
+      <p role="status" className="rounded-sm bg-muted px-3 py-2 text-sm text-muted-foreground">
+        {t(messageKey)}
+      </p>
+    ) : null;
   };
 
   const compactEvents = dayEvents
@@ -493,14 +492,8 @@ export function VerticalDayTimeline({
     scrollerRef.current = node;
     setCollisionBoundary(node);
   }, []);
-  const setPortalContainerRef = React.useCallback((node: HTMLElement | null) => setPortalContainer(node), []);
-
   return (
-    <section
-      ref={setPortalContainerRef}
-      className="min-w-0 text-foreground"
-      aria-label={t("dayTimeline.vertical.title")}
-    >
+    <section ref={setPortalContainer} className="min-w-0 text-foreground" aria-label={t("dayTimeline.vertical.title")}>
       <Card size="sm" className="gap-0 py-0">
         <CardHeader className="border-b px-3 py-3">
           <nav
@@ -594,8 +587,8 @@ export function VerticalDayTimeline({
                         data-testid="vertical-day-timeline-closed-hours"
                         className="absolute inset-x-0 bg-muted/35"
                         style={{
-                          top: segment.startMinute * (PIXELS_PER_HOUR / 60),
-                          height: (segment.endMinute - segment.startMinute) * (PIXELS_PER_HOUR / 60),
+                          top: segment.startMinute * PIXELS_PER_MINUTE,
+                          height: (segment.endMinute - segment.startMinute) * PIXELS_PER_MINUTE,
                         }}
                       />
                     ))}
@@ -610,8 +603,8 @@ export function VerticalDayTimeline({
                   <ol className="absolute inset-y-0 right-2 left-0 m-0 list-none p-0">
                     {dayEvents.map(
                       ({ event, startMinute, endMinute, lane, laneCount, continuesBefore, continuesAfter }) => {
-                        const top = startMinute * (PIXELS_PER_HOUR / 60);
-                        const height = (endMinute - startMinute) * (PIXELS_PER_HOUR / 60);
+                        const top = startMinute * PIXELS_PER_MINUTE;
+                        const height = (endMinute - startMinute) * PIXELS_PER_MINUTE;
                         const showCard = !denseLanes && height >= MINIMUM_EVENT_CARD_HEIGHT;
                         return (
                           <li
@@ -669,13 +662,13 @@ export function VerticalDayTimeline({
                       },
                     )}
                   </ol>
-                  {draftVisible && draftSegment && activeRange ? (
+                  {draftVisible && draftSegment && activeRange && activePeriod ? (
                     <div
                       data-testid="vertical-day-timeline-draft"
                       data-timeline-window-editor
                       className="pointer-events-none absolute z-[60] overflow-hidden rounded-md border-2 border-primary bg-[color-mix(in_srgb,var(--primary)_25%,var(--background))] text-foreground shadow-lg ring-3 ring-ring/40"
                       style={{
-                        top: draftSegment.startMinute * (PIXELS_PER_HOUR / 60),
+                        top: draftSegment.startMinute * PIXELS_PER_MINUTE,
                         height: draftHeight,
                         left: 0,
                         right: 8,
@@ -688,9 +681,7 @@ export function VerticalDayTimeline({
                         )}
                       >
                         <span className="block">{t("dayTimeline.vertical.draftLabel")}</span>
-                        <span className="block whitespace-nowrap tabular-nums">
-                          {timeRange(activeRange, date, timezone)}
-                        </span>
+                        <span className="block whitespace-nowrap tabular-nums">{activePeriod}</span>
                       </span>
                       {canvasMoveVisible ? (
                         <>
@@ -698,15 +689,15 @@ export function VerticalDayTimeline({
                             type="button"
                             aria-describedby={instructionsId}
                             aria-label={t("dayTimeline.vertical.moveDraft", {
-                              period: timeRange(activeRange, date, timezone),
+                              period: activePeriod,
                             })}
                             className="pointer-events-auto absolute inset-x-0 z-10 cursor-grab touch-none bg-transparent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring"
                             style={canvasResizeVisible ? { top: HANDLE_HEIGHT, bottom: HANDLE_HEIGHT } : { inset: 0 }}
                             onPointerDown={(event) => startInteraction("move", event)}
                             onPointerMove={updateInteraction}
                             onPointerUp={finishInteraction}
-                            onPointerCancel={handlePointerCancel}
-                            onLostPointerCapture={handleLostPointerCapture}
+                            onPointerCancel={cancelCapturedPointer}
+                            onLostPointerCapture={cancelCapturedPointer}
                             onKeyDown={(event) => onDraftHandleKeyDown("move", event)}
                           />
                           {canvasResizeVisible
@@ -718,10 +709,10 @@ export function VerticalDayTimeline({
                                   aria-label={
                                     edge === "start"
                                       ? t("dayTimeline.vertical.resizeStart", {
-                                          period: timeRange(activeRange, date, timezone),
+                                          period: activePeriod,
                                         })
                                       : t("dayTimeline.vertical.resizeEnd", {
-                                          period: timeRange(activeRange, date, timezone),
+                                          period: activePeriod,
                                         })
                                   }
                                   className={cn(
@@ -734,8 +725,8 @@ export function VerticalDayTimeline({
                                   onPointerDown={(event) => startInteraction(edge, event)}
                                   onPointerMove={updateInteraction}
                                   onPointerUp={finishInteraction}
-                                  onPointerCancel={handlePointerCancel}
-                                  onLostPointerCapture={handleLostPointerCapture}
+                                  onPointerCancel={cancelCapturedPointer}
+                                  onLostPointerCapture={cancelCapturedPointer}
                                   onKeyDown={(event) => onDraftHandleKeyDown(edge, event)}
                                 />
                               ))
@@ -792,5 +783,3 @@ export function VerticalDayTimeline({
     </section>
   );
 }
-
-export default VerticalDayTimeline;

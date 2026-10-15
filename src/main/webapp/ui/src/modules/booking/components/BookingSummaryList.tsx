@@ -1,31 +1,14 @@
-import { CalendarClockIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
-import { type ReactNode, useEffect, useId, useState } from "react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
+import { BookingSourceRow } from "@/modules/booking/components/BookingSourceRow";
 import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 
 const PAGE_SIZE = 5;
-
-function RestrictedBookingRow({ heading, period, label }: { heading: string; period: ReactNode; label: string }) {
-  return (
-    <li className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5">
-      <span className="flex size-7 shrink-0 items-center justify-center rounded-sm bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
-        <CalendarClockIcon className="size-4" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-xs font-medium">{heading}</span>
-        <span className="block truncate text-[11px] text-muted-foreground">
-          {label}
-          {" · "}
-          {period}
-        </span>
-      </span>
-    </li>
-  );
-}
 
 /**
  * An invisible collapsed row. It fills a short last page to a full page's height, so the page buttons stay
@@ -86,7 +69,7 @@ export function BookingSummaryList({
           };
           if (booking.privacy === "busy") {
             return (
-              <RestrictedBookingRow
+              <BookingSourceRow
                 key={booking.id}
                 heading={itemName}
                 period={<BookingInstrumentTimeTooltip {...periodTooltip}>{period}</BookingInstrumentTimeTooltip>}

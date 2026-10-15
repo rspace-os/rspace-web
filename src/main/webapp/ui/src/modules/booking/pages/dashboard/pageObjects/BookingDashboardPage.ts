@@ -26,10 +26,6 @@ export class BookingDashboardPageObject {
     return summariesWithin(this.upcoming).filter({ hasText: name });
   }
 
-  upcomingDisclosure(name: string): Locator {
-    return this.upcomingInstrument(name);
-  }
-
   upcomingDetailsLink(name: string): Locator {
     return this.upcoming.getByRole("link", { name: new RegExp(name) });
   }
