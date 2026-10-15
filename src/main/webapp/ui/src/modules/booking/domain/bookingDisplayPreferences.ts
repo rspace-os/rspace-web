@@ -1,12 +1,13 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createContext, createElement, type ReactNode, useContext } from "react";
 import * as v from "valibot";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { apiV2Root } from "@/modules/common/queries/apiV2QueryKeys";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { parseApiV2Problem, requireSuccess } from "./booking";
-import { OpeningHoursEndSchema, OpeningHoursStartSchema } from "./bookingOpeningHours";
+import { minuteOfWallTime, OpeningHoursEndSchema, OpeningHoursStartSchema } from "./bookingOpeningHours";
 import type { BookingTimeFormat } from "./bookingTime";
 
 export const BookingTimezoneModeSchema = v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]);
@@ -99,7 +100,7 @@ export function BookingTimeFormatProvider({
   return createElement(BookingTimeFormatContext.Provider, { value: timeFormat }, children);
 }
 
-export const bookingDisplayPreferencesQueryKey = ["api-v2", "users", "me", "booking-preferences"] as const;
+export const bookingDisplayPreferencesQueryKey = [...apiV2Root("users"), "me", "booking-preferences"] as const;
 const path = "/api/v2/users/me/booking-preferences";
 
 export async function fetchBookingDisplayPreferences(
@@ -108,6 +109,14 @@ export async function fetchBookingDisplayPreferences(
 ): Promise<BookingDisplayPreferencesDocument> {
   const response = await requireSuccess(await fetchWithUiToken(path, { headers: apiV2Headers(token), signal }));
   return parseOrThrow(BookingDisplayPreferencesDocumentSchema, (await response.json()) as unknown);
+}
+
+/** Query options for callers that need the display preferences document directly. */
+export function bookingDisplayPreferencesQueryOptions(token: string) {
+  return queryOptions({
+    queryKey: bookingDisplayPreferencesQueryKey,
+    queryFn: ({ signal }) => fetchBookingDisplayPreferences(token, signal),
+  });
 }
 
 export async function replaceBookingDisplayPreferences(
@@ -131,9 +140,7 @@ export async function resetBookingDisplayPreferences(token: string): Promise<voi
 }
 
 export function minuteOfDay(value: string): number {
-  if (value === "24:00") return 24 * 60;
-  const [hour, minute] = value.split(":").map(Number);
-  return hour * 60 + minute;
+  return minuteOfWallTime(value);
 }
 
 export function isValidTimeZone(value: string): boolean {
@@ -181,8 +188,7 @@ export function resolveBookingDisplayPreferences(
 export function useBookingDisplayPreferences(): ResolvedBookingDisplayPreferences {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const document = useSuspenseQuery({
-    queryKey: bookingDisplayPreferencesQueryKey,
-    queryFn: ({ signal }) => fetchBookingDisplayPreferences(token, signal),
+    ...bookingDisplayPreferencesQueryOptions(token),
     staleTime: Infinity,
   }).data;
   return resolveBookingDisplayPreferences(document);
@@ -193,7 +199,7 @@ export function useReplaceBookingDisplayPreferences() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: BookingDisplayPreferencesInput) => replaceBookingDisplayPreferences(input, token),
-    onSuccess: (document) => queryClient.setQueryData(bookingDisplayPreferencesQueryKey, document),
+    onSuccess: (document) => queryClient.setQueryData(bookingDisplayPreferencesQueryOptions(token).queryKey, document),
   });
 }
 
@@ -205,7 +211,7 @@ export function useResetBookingDisplayPreferences() {
       await resetBookingDisplayPreferences(token);
       return fetchBookingDisplayPreferences(token);
     },
-    onSuccess: (document) => queryClient.setQueryData(bookingDisplayPreferencesQueryKey, document),
+    onSuccess: (document) => queryClient.setQueryData(bookingDisplayPreferencesQueryOptions(token).queryKey, document),
   });
 }
 

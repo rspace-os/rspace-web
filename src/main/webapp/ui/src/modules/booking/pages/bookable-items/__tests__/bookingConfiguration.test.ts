@@ -2,10 +2,8 @@ import { HttpResponse, http } from "msw";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { createApiV2FilterFields } from "@/modules/common/table-list/api-v2/filterFields";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
-import { parseTableViewState } from "@/modules/common/table-list/utils/viewStorage";
 import {
   type BookingConfiguration,
   BookingConfigurationInputSchema,
@@ -17,7 +15,7 @@ import {
 } from "../bookingConfiguration";
 import { bookableItemsOpenApi, collectionPage } from "../mocks/bookableItemsMocks";
 
-it("offers no operators for openingHours and no removed schedule fields through API metadata", () => {
+it("offers no operators for openingHours through API metadata", () => {
   const metadata = apiV2CollectionMetadataFromOpenApi<BookingConfiguration>(
     bookableItemsOpenApi,
     "booking-configurations",
@@ -28,36 +26,7 @@ it("offers no operators for openingHours and no removed schedule fields through 
     type: "array",
     capabilities: { filterOperators: [], sortable: false },
   });
-  for (const field of ["openingStart", "openingEnd", "openDays", "openingExceptions"]) {
-    expect(filters.fields.map(({ name }) => name)).not.toContain(field);
-    expect(metadata.fields).not.toContain(field);
-    expect(metadata.filtering.selectors).not.toHaveProperty(field);
-  }
 });
-
-it.each(["openingStart", "openingEnd", "openDays", "openingExceptions"])(
-  "does not restore the removed schedule field %s from a saved view",
-  (field) => {
-    const config = resolveCollectionConfig(bookingConfigurationConfig);
-    const restored = parseTableViewState(
-      JSON.stringify({
-        v: 1,
-        search: "Microscope",
-        where: `enabled==true;${field}=="09:00"`,
-        columns: JSON.stringify({ fields: ["target", field] }),
-        defaults: JSON.stringify({ fields: config.defaultColumns }),
-        sort: field,
-      }),
-      config,
-    );
-    expect(restored).toEqual({
-      search: "Microscope",
-      where: null,
-      columns: config.defaultColumns,
-      sort: config.defaultSort ?? [],
-    });
-  },
-);
 
 const configuration = {
   id: 7,

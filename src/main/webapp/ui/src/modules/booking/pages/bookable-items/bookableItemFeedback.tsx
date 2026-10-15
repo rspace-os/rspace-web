@@ -6,29 +6,30 @@ import { buttonVariants } from "@/modules/common/ui/button";
 import type { BookableItemsBulkAction } from "./bookableItemLifecycleHelpers";
 import type { BookingConfigurationRow } from "./bookingConfiguration";
 
+function bookableItemNoticeId(identifier: string | number): string {
+  return `bookable-item-${identifier}`;
+}
+
 export function bookableItemBulkNotice(
   action: BookableItemsBulkAction,
   count: number | null,
   t: TFunction<["booking", "common"]>,
 ): TableListAlert {
-  const message =
-    count === null
-      ? action === "archive"
-        ? t("booking:bookableItems.feedback.bulkArchivedUnknown", {})
-        : action === "enable"
-          ? t("booking:bookableItems.feedback.bulkEnabledUnknown", {})
-          : t("booking:bookableItems.feedback.bulkDisabledUnknown", {})
-      : action === "archive"
-        ? t("booking:bookableItems.feedback.bulkArchived", {
-            count,
-          })
-        : action === "enable"
-          ? t("booking:bookableItems.feedback.bulkEnabled", {
-              count,
-            })
-          : t("booking:bookableItems.feedback.bulkDisabled", {
-              count,
-            });
+  const messages = {
+    archive:
+      count === null
+        ? t("booking:bookableItems.feedback.bulkArchivedUnknown")
+        : t("booking:bookableItems.feedback.bulkArchived", { count }),
+    enable:
+      count === null
+        ? t("booking:bookableItems.feedback.bulkEnabledUnknown")
+        : t("booking:bookableItems.feedback.bulkEnabled", { count }),
+    disable:
+      count === null
+        ? t("booking:bookableItems.feedback.bulkDisabledUnknown")
+        : t("booking:bookableItems.feedback.bulkDisabled", { count }),
+  };
+  const message = messages[action];
   return { id: `bulk-${action}`, tone: action === "archive" ? "warning" : "success", message };
 }
 
@@ -38,18 +39,13 @@ export function bookableItemLifecycleNotice(
   t: TFunction<["booking", "common"]>,
 ): TableListAlert {
   const item = row.target?.value.name ?? t("common:values.unknownItem");
-  const message =
-    action === "archived"
-      ? t("booking:bookableItems.feedback.archived", {
-          item,
-        })
-      : action === "restored"
-        ? t("booking:bookableItems.feedback.restored", {
-            item,
-          })
-        : t("booking:bookableItems.feedback.deleted", { item });
+  const message = {
+    archived: t("booking:bookableItems.feedback.archived", { item }),
+    restored: t("booking:bookableItems.feedback.restored", { item }),
+    deleted: t("booking:bookableItems.feedback.deleted", { item }),
+  }[action];
   return {
-    id: `bookable-item-${row.target?.globalId ?? row.id}`,
+    id: bookableItemNoticeId(row.target?.globalId ?? row.id),
     tone: action === "archived" ? "warning" : "success",
     message,
     actions:
@@ -69,7 +65,7 @@ export function bookableItemLifecycleNotice(
 export function useBookableItemNoticeIds(rows: readonly BookingConfigurationRow[]) {
   const ids = useRef(new Map<number, string>());
   useEffect(() => {
-    for (const row of rows) ids.current.set(row.id, `bookable-item-${row.target?.globalId ?? row.id}`);
+    for (const row of rows) ids.current.set(row.id, bookableItemNoticeId(row.target?.globalId ?? row.id));
   }, [rows]);
   return ids.current;
 }

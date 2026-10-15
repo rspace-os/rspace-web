@@ -162,7 +162,7 @@ export function AllBookableItemsTable({
             onDelete={(id, version) => permanentlyDeleteBookingConfiguration(id, version, token)}
             onDeleted={async () => {
               alertsRef.current?.push(bookableItemLifecycleNotice("deleted", row, t));
-              await onLifecycleChanged([row.id], true);
+              await onLifecycleChanged([row.id]);
             }}
           />
         ) : null,

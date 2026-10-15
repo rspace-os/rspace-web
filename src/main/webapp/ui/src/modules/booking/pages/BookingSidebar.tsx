@@ -79,10 +79,6 @@ const items = (today: string, isSysAdmin: boolean, canOpenBookableItems: boolean
 /** Content for the shared AppShell sidebar. The shell owns the surrounding layout. */
 export function BookingSidebar() {
   const { t } = useTranslation("booking");
-  const { data: currentUser } = useCurrentUserQuery();
-  const preferences = useBookingDisplayPreferences();
-  const canOpenBookableItems = useCanOpenBookableItemsAdministration();
-  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole, canOpenBookableItems);
   const labels = {
     dashboard: t("sidebar.dashboard"),
     calendar: t("sidebar.calendar"),
@@ -94,6 +90,10 @@ export function BookingSidebar() {
     settings: t("sidebar.settings"),
     bookableItems: t("sidebar.bookableItems"),
   };
+  const { data: currentUser } = useCurrentUserQuery();
+  const preferences = useBookingDisplayPreferences();
+  const canOpenBookableItems = useCanOpenBookableItemsAdministration();
+  const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole, canOpenBookableItems);
 
   return (
     <SidebarGroup>
@@ -114,8 +114,7 @@ export function BookingSidebar() {
                   <SidebarMenuSub>
                     {item.children.map((child) => (
                       <SidebarMenuSubItem key={child.key}>
-                        {/* an <a> without href has no role, so unrouted sub-items render as buttons */}
-                        <SidebarMenuSubButton render={"link" in child ? child.link : <button type="button" />}>
+                        <SidebarMenuSubButton render={child.link}>
                           <span>{labels[child.key]}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
@@ -125,10 +124,7 @@ export function BookingSidebar() {
               </Collapsible>
             ) : (
               <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton
-                  tooltip={labels[item.key]}
-                  render={"link" in item ? item.link : <button type="button" />}
-                >
+                <SidebarMenuButton tooltip={labels[item.key]} render={item.link}>
                   <item.icon />
                   <span>{labels[item.key]}</span>
                 </SidebarMenuButton>

@@ -8,17 +8,12 @@ import {
   bookingDateTimeLocale,
   dayMinuteToZonedTime,
   instantToDayMinute,
+  wallClockDraftFromInstants,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { cn } from "@/modules/common/utils/cn";
 import { hiddenEdgeDescription, hiddenEdgeLabel, resizeDisabledReason } from "./timelineEditText";
-import {
-  type TimelineEdge,
-  type TimelinePolicy,
-  type TimelineRange,
-  timelineAdjuster,
-  timelineRangeToDraft,
-} from "./timelineRange";
+import { type TimelineEdge, type TimelinePolicy, type TimelineRange, timelineAdjuster } from "./timelineRange";
 import { resolveBookingWindow } from "./ZonedBookingWindowFields";
 
 const STRIPES =
@@ -98,7 +93,8 @@ export function TimelineWindowEditor({
     return adjuster.adjust(active.edge, target) ?? resolved;
   };
   const commit = (next: TimelineRange) => {
-    if (next.start !== resolved.start || next.end !== resolved.end) onChange?.(timelineRangeToDraft(next, timezone));
+    if (next.start !== resolved.start || next.end !== resolved.end)
+      onChange?.(wallClockDraftFromInstants(next.start, next.end, timezone));
   };
   const resizeReason = (edge: "start" | "end") => resizeDisabledReason(edge, adjuster, policy, t);
   const begin = (edge: TimelineEdge, event: React.PointerEvent<HTMLButtonElement>) => {

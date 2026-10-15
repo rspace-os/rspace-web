@@ -61,7 +61,7 @@ export async function fetchBookableItemEvents(input: {
 export const bookableItemEventsQuery = (input: Parameters<typeof fetchBookableItemEvents>[0]) => {
   const queryFn = async ({ signal }: { signal: AbortSignal }) => {
     const result = await fetchBookableItemEvents({ ...input, signal });
-    return { rows: result.docs, rowCount: result.totalDocs };
+    return { rows: result.docs, hasNextPage: result.hasNextPage };
   };
   return {
     ...queryOptions({

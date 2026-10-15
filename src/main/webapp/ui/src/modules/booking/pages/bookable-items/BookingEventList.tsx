@@ -6,15 +6,17 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import type { Booking } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
+import { bookableItemEventsQuery } from "@/modules/booking/pages/bookable-items/bookableItemEvents";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
+import type { CollectionQueryState } from "@/modules/common/table-list/types";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { UserBadge } from "@/modules/common/ui/user-badge";
-import { type BookingEventPeriod, fetchBookableItemEvents } from "./bookableItemEvents";
+import type { BookingEventPeriod } from "./bookableItemEvents";
 
 export type BookingEventListProps = {
   globalId: string;
@@ -149,32 +151,21 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       return result.totalDocs;
     },
   });
+  const eventsOptions = (state: CollectionQueryState<Booking>) =>
+    bookableItemEventsQuery({
+      globalId,
+      period,
+      cutoff,
+      page: state.page.pageIndex,
+      limit: state.page.pageSize,
+      token,
+    });
   const table = useTableList<Booking>({
     config,
     dataSource: {
       type: "remote",
-      queryKey: (state) => [
-        "api-v2",
-        "bookings",
-        "bookable-item-events",
-        globalId,
-        period,
-        cutoff,
-        state.page.pageIndex,
-        state.page.pageSize,
-      ],
-      fetch: async (state, { signal }) => {
-        const result = await fetchBookableItemEvents({
-          globalId,
-          period,
-          cutoff,
-          page: state.page.pageIndex,
-          limit: state.page.pageSize,
-          token,
-          signal,
-        });
-        return { rows: result.docs, hasNextPage: result.hasNextPage };
-      },
+      queryKey: (state) => eventsOptions(state).queryKey,
+      fetch: (state, { signal }) => eventsOptions(state).queryFn({ signal }),
       keepPreviousData: true,
       retry: false,
     },

@@ -17,6 +17,7 @@ import {
   bookingDisplayPreferencesQueryKey,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
+import { apiV2MetadataKey } from "@/modules/common/queries/apiV2QueryKeys";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/api-v2/metadata";
 import BookingPage from "../BookingPage";
@@ -47,7 +48,7 @@ export function BookingDashboardPageStory({
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
   queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
   queryClient.setQueryData(
-    ["api-v2", "openapi", "bookings"],
+    apiV2MetadataKey("bookings"),
     apiV2CollectionMetadataFromOpenApi(bookingsOpenApi, "bookings"),
   );
 

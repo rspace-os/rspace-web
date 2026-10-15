@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import {
   type BookingAdminSettings,
   BookingAdminSettingsSchema,
@@ -8,8 +9,10 @@ import {
 } from "@/modules/booking/configuration/schedulingSettingsSchema";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { BookingDisplayPreferencesInputSchema } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingSettingsKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 export async function loadBookingSettings(token: string, signal?: AbortSignal): Promise<BookingSettings> {
@@ -61,3 +64,13 @@ export async function saveBookingSettings(
   if (!etag) throw new Error("Booking settings response is missing ETag");
   return { ...parseOrThrow(BookingAdminSettingsSchema, await response.json()), etag };
 }
+
+export const bookingSettingsQuery = (token: string) =>
+  queryOptions({ queryKey: bookingSettingsKeys.all, queryFn: ({ signal }) => loadBookingSettings(token, signal) });
+
+export const bookingAdminSettingsQuery = (token: string) =>
+  queryOptions({
+    queryKey: [...bookingSettingsKeys.all, "admin"] as const,
+    queryFn: ({ signal }) => loadBookingAdminSettings(token, signal),
+    retry: retryUnlessClientError,
+  });

@@ -13,6 +13,7 @@ import {
   dateForMinute,
   formatDayDate,
   formatMinute,
+  formatMinuteWithDayOffset,
   period,
 } from "./DayTimelineEvent";
 import { ExpandedEventCard } from "./ExpandedEventCard";
@@ -80,7 +81,7 @@ export function DayTimelineEventCard({
       : title;
   const isBusy = event.kind === "booking" && event.privacy === "busy";
   const notes = event.kind === "booking" && event.privacy === "busy" ? undefined : event.notes;
-  const exactPeriod = period(event, date, timezone, "–", timeFormat);
+  const exactPeriod = period(event, date, timezone, timeFormat);
   const accessibleLabel = notes
     ? t("dayTimeline.event.labelWithNotes", { title: labelledTitle, period: exactPeriod, notes })
     : t("dayTimeline.event.label", { title: labelledTitle, period: exactPeriod });
@@ -102,7 +103,10 @@ export function DayTimelineEventCard({
           start: formatDayDate(startDate, timeFormat),
           end: formatDayDate(endDate, timeFormat),
         });
-  const compactPeriod = period(event, date, timezone, " - ", timeFormat);
+  const compactPeriod = t("time.openingRange", {
+    start: formatMinuteWithDayOffset(date, timezone, event.startMinute, timeFormat),
+    end: formatMinuteWithDayOffset(date, timezone, event.endMinute, timeFormat),
+  });
   const triggerClassName =
     "absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60";
   const toggleLabel = isExpanded

@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -21,7 +22,6 @@ import { bookableItemFixtures } from "../bookable-items/mocks/bookableItemsMocks
 import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { noParentBooking } from "./__tests__/calendarTestHarness";
 import { CalendarPageStory } from "./CalendarPage.story";
-import { currentUser } from "./calendarFixtures";
 import { calendar, registerHandlers } from "./calendarPageBrowserTestUtils";
 
 // Register before this file's browserSetup beforeAll starts the per-file worker. Firefox can

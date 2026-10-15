@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterAll, beforeAll, expect, it, vi } from "vitest";
 import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { VerticalDayTimeline } from "./VerticalDayTimeline";
 
 class ResizeObserverStub {
@@ -30,8 +31,7 @@ it("keeps the midnight continuation for a short visible part of an overnight dra
           slotGranularityMinutes: 15,
           incrementUnit: "MINUTES",
           alignToIncrement: true,
-          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-
+          openingHours: ALWAYS_OPEN.openingHours,
           maxBookingDurationMinutes: 0,
         }),
         onChange,
