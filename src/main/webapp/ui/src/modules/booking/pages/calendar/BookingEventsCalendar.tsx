@@ -7,7 +7,6 @@ import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { TableList, type TableListAlertsApi, type TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterExpression, FilterState } from "@/modules/common/table-list/types";
@@ -51,39 +50,6 @@ function additionalEventResourceCount(
   }
   return additionalResourceIds.size;
 }
-
-// This fallback keeps the presentational calendar usable from stories and small callers that do
-// not need the API metadata-backed filter panels. Production passes the enriched event config.
-const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>({
-  slug: "booking-events-calendar",
-  idField: "id",
-  useAsTitle: "purpose",
-  defaultColumns: ["purpose"],
-  listSearchableFields: ["target.name", "target.globalId", "purpose"],
-  labels: {
-    singularKey: "booking:calendar.event",
-    pluralKey: "booking:calendar.title",
-  },
-  fields: [
-    { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false, form: false },
-    {
-      name: "target",
-      type: "relationship",
-      relationTo: "booking-instruments",
-      hasMany: false,
-      labelKey: "booking:calendar.fields.target",
-      capabilities: { filterOperators: [] },
-    },
-    { name: "purpose", type: "text", maximumLength: 1_000, labelKey: "booking:calendar.fields.purpose" },
-    {
-      name: "bookedBy",
-      type: "text",
-      maximumLength: 255,
-      labelKey: "booking:calendar.fields.bookedBy",
-      capabilities: { filterOperators: [] },
-    },
-  ],
-});
 
 export function BookingEventsCalendar({
   date,
@@ -153,7 +119,7 @@ export function BookingEventsCalendar({
   resourceConfigurations?: readonly BookableItemOption[];
   resourceTableProps?: TableListProps<BookingConfiguration>;
   searchControl?: { value: string; onChange: (search: string) => void };
-  eventFilterConfig?: ResolvedCollectionConfig<BookingListDocument>;
+  eventFilterConfig: ResolvedCollectionConfig<BookingListDocument>;
   itemFilterExpression?: FilterExpression<BookingConfiguration> | null;
   eventFilterExpression?: FilterExpression<BookingListDocument> | null;
   itemFilterIssue?: CalendarFilterIssueState;
@@ -206,7 +172,6 @@ export function BookingEventsCalendar({
     }
     return [...byId.values()];
   }, [editors, events]);
-  const eventConfig = eventFilterConfig ?? calendarEventFallbackConfig;
   const eventFiltering:
     | false
     | { value: FilterState<BookingListDocument>; onChange: (value: FilterState<BookingListDocument>) => void } =
@@ -296,7 +261,7 @@ export function BookingEventsCalendar({
       </div>
       <TableList
         alertsRef={attachAlerts}
-        config={eventConfig}
+        config={eventFilterConfig}
         rows={displayedEvents}
         getRowId={(event) => String(event.id)}
         clientSide={false}

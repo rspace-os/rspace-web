@@ -58,9 +58,11 @@ public final class BookingSchedulingPolicy {
       BookingConfiguration configuration, Date start, Date end) {
     // Exempt from the increment, opening hours and maximum, but times are still whole minutes.
     ZoneId zone = ZoneId.of(configuration.getTimeZone());
-    requireWholeMinute(start.toInstant().atZone(zone));
-    requireWholeMinute(end.toInstant().atZone(zone));
-    return conflictInterval(configuration, start.toInstant(), end.toInstant());
+    Instant startInstant = start.toInstant();
+    Instant endInstant = end.toInstant();
+    requireWholeMinute(startInstant.atZone(zone));
+    requireWholeMinute(endInstant.atZone(zone));
+    return conflictInterval(configuration, startInstant, endInstant);
   }
 
   private static ConflictInterval conflictInterval(
