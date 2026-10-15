@@ -74,6 +74,14 @@ function SearchParameterChips(): React.ReactNode {
           }
         />
       )}
+      {search.fetcher.requestable === true && (
+        <ParameterChip
+          label={t("search.parameterChips.requestable")}
+          onDelete={() => {
+            search.setRequestable(null);
+          }}
+        />
+      )}
       {currentBasket && (
         <ParameterChip
           label={t("search.parameterChips.basket", {

@@ -29,13 +29,27 @@ const _transformObject = <T, U extends keyof T, V>(obj: T, map: { [K in U]: (t: 
  * Returns a value for the `pageSizeOptions` prop of pagination controls; the
  * list of various page sizes that we support. Any sizes from the standard list
  * that are larger than the total number of results are discarded. If the total
- * length is less than 100 (the largest standard page size) or the `all`
- * override is set, then a further option of all the available rows is also
- * included.
+ * length is no more than `allThreshold`, then a further option of all the
+ * available rows is also included.
+ *
+ * `pageSizes` defaults to the options used throughout the main Inventory
+ * search (5, 10, 25, 100); pass a different list for a table with its own
+ * standard sizes (e.g. the Requests list's 10, 25, 50).
+ *
+ * `allThreshold` defaults to the largest of `pageSizes`, since that's the
+ * point past which offering "every row at once" as an option stops being
+ * reasonable for the main Inventory search. Pass it explicitly when the
+ * selectable sizes are deliberately kept small (e.g. Requests' 50) but a
+ * bigger "All" is still a reasonable option to offer - otherwise "All" would
+ * end up disappearing far below the point it actually stops making sense.
  */
-export const paginationOptions = (resultsLength: number): Array<number | { value: number; label: string }> => [
-  ...[5, 10, 25, 100].filter((p) => p < resultsLength),
-  ...(resultsLength <= 100 ? [{ value: resultsLength, label: `${resultsLength} (All)` }] : []),
+export const paginationOptions = (
+  resultsLength: number,
+  pageSizes: ReadonlyArray<number> = [5, 10, 25, 100],
+  allThreshold: number = Math.max(...pageSizes),
+): Array<number | { value: number; label: string }> => [
+  ...pageSizes.filter((p) => p < resultsLength),
+  ...(resultsLength <= allThreshold ? [{ value: resultsLength, label: `${resultsLength} (All)` }] : []),
 ];
 
 export const DataGridColumn = {

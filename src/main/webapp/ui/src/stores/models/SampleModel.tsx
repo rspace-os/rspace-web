@@ -56,6 +56,7 @@ type SampleEditableFields = HasQuantityEditableFields &
     storageTempMin: Temperature | null;
     storageTempMax: Temperature | null;
     subSampleAlias: Alias;
+    requestable: boolean;
   };
 
 type SampleUneditableFields = HasQuantityUneditableFields & InventoryBaseRecordUneditableFields;
@@ -89,6 +90,7 @@ export type SampleAttrs = {
   tags: string | null;
   sampleSource: SampleSource;
   expiryDate: string | null;
+  requestable: boolean;
   iconId: number | null;
   owner: PersonAttrs | null;
   created: string | null;
@@ -125,6 +127,7 @@ const DEFAULT_SAMPLE: SampleAttrs = {
   tags: "",
   sampleSource: "LAB_CREATED",
   expiryDate: null,
+  requestable: false,
   iconId: null,
   owner: null,
   created: null,
@@ -152,6 +155,7 @@ const FIELDS: Set<string> = new Set([
   "expiryDate",
   "sampleSource",
   "subSampleAlias",
+  "requestable",
 ]);
 
 export { FIELDS as SAMPLE_FIELDS };
@@ -168,6 +172,10 @@ export default class SampleModel
   extends HasQuantityMixin(InventoryBaseRecord)
   implements Sample, HasEditableFields<SampleEditableFields>, HasUneditableFields<SampleUneditableFields>
 {
+  // Tracks a full (base info + template) fetchAdditionalInfo() call in progress, distinct from
+  // the base class's own fetchingAdditionalInfo (which only covers the base fetch itself) so a
+  // concurrent caller here waits for the template fetch too, not just the base fetch.
+  fetchingFullAdditionalInfo: Promise<void> | null = null;
   subSamplesCount: number = 0;
   subSamples: Array<SubSampleModel> = [];
   newSampleSubSamplesCount: number | null = 1;
@@ -183,6 +191,8 @@ export default class SampleModel
   template: Template | null;
   // @ts-expect-error sampleSource is initialised by populateFromJson
   sampleSource: SampleEditableFields["sampleSource"];
+  // @ts-expect-error requestable is initialised by populateFromJson
+  requestable: SampleEditableFields["requestable"];
   search: Search;
   // @ts-expect-error subSampleAlias is initialised by populateFromJson
   subSampleAlias: Alias;
@@ -225,6 +235,7 @@ export default class SampleModel
       expiryDate: observable,
       template: observable,
       sampleSource: observable,
+      requestable: observable,
       search: observable,
       subSampleAlias: observable,
       templateId: observable,
@@ -296,6 +307,7 @@ export default class SampleModel
     this.expiryDate = params.expiryDate;
     this.template = params.template || null;
     this.sampleSource = params.sampleSource;
+    this.requestable = params.requestable ?? false;
     this.subSampleAlias = params.subSampleAlias;
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;
@@ -335,34 +347,36 @@ export default class SampleModel
   }
 
   async fetchAdditionalInfo(silent: boolean = false): Promise<void> {
-    if (this.fetchingAdditionalInfo) {
-      await this.fetchingAdditionalInfo;
+    // This used to build its own wrapper Promise around super.fetchAdditionalInfo(), assign it to
+    // this.fetchingAdditionalInfo (the *base class's* field, also used internally by
+    // super.fetchAdditionalInfo() itself), then `return` without ever awaiting it (RSDEV-1309).
+    // Since an async function's returned promise resolves as soon as it hits that bare `return`,
+    // every caller's `await sample.fetchAdditionalInfo()` resolved almost immediately - long
+    // before the real fetch (and the template fetch below) had actually completed - racing ahead
+    // of code that correctly expected the data to be loaded by the time the await returned (e.g.
+    // setEditing(true), which flips `editing` to true right after this resolves).
+    if (this.fetchingFullAdditionalInfo) {
+      await this.fetchingFullAdditionalInfo;
       return;
     }
-    this.fetchingAdditionalInfo = new Promise((resolve, reject) => {
-      super
-        .fetchAdditionalInfo(silent)
-        .then(() => {
-          if (this.templateId) {
-            const templateId = this.templateId;
-            getRootStore()
-              .searchStore.getTemplate(templateId, this.templateVersion, this.factory.newFactory())
-              .then((template) => {
-                runInAction(() => {
-                  this.template = template;
-                });
-                // @ts-expect-error Not clear why this does not store the returned data
-                resolve();
-              })
-              .catch(reject);
-          } else {
-            // @ts-expect-error Not clear why this does not store the returned data
-            resolve();
-          }
-        })
-        .catch(reject);
-    });
-    return;
+    this.fetchingFullAdditionalInfo = (async () => {
+      await super.fetchAdditionalInfo(silent);
+      if (this.templateId) {
+        const template = await getRootStore().searchStore.getTemplate(
+          this.templateId,
+          this.templateVersion,
+          this.factory.newFactory(),
+        );
+        runInAction(() => {
+          this.template = template;
+        });
+      }
+    })();
+    try {
+      await this.fetchingFullAdditionalInfo;
+    } finally {
+      this.fetchingFullAdditionalInfo = null;
+    }
   }
 
   get minTempValue(): number | null {
@@ -409,6 +423,7 @@ export default class SampleModel
     if (this.currentlyEditableFields.has("fields")) params.fields = fields;
     if (this.currentlyEditableFields.has("expiryDate")) params.expiryDate = this.expiryDate;
     if (this.currentlyEditableFields.has("sampleSource")) params.sampleSource = this.sampleSource;
+    if (this.currentlyEditableFields.has("requestable")) params.requestable = this.requestable;
     if (this.currentlyEditableFields.has("quantity")) params.quantity = quantity;
     if (this.currentlyEditableFields.has("template") && this.template) params.templateId = this.template.id;
     return params;
@@ -768,6 +783,7 @@ export default class SampleModel
       storageTempMin: this.storageTempMin,
       storageTempMax: this.storageTempMax,
       subSampleAlias: this.subSampleAlias,
+      requestable: this.requestable,
     };
   }
 
@@ -785,6 +801,7 @@ export default class SampleModel
       storageTempMin: i18n.t("inventory:sample.fields.storageTemperature.unspecified"),
       storageTempMax: i18n.t("inventory:sample.fields.storageTemperature.unspecified"),
       subSampleAlias: null,
+      requestable: null,
     };
   }
 
@@ -955,8 +972,9 @@ export default class SampleModel
   }
 }
 
+// requestable is not currently supported for batch editing.
 type BatchSampleEditableFields = InventoryBaseRecordCollectionEditableFields &
-  Omit<SampleEditableFields, "name" | "identifiers">;
+  Omit<SampleEditableFields, "name" | "identifiers" | "requestable">;
 
 /*
  * This is a wrapper class around a set of Samples, making it easier to perform

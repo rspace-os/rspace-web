@@ -14,6 +14,7 @@ export interface Sample extends InventoryRecord {
   sampleSource: SampleSource;
   subSampleAlias: Alias;
   expiryDate: string | null;
+  requestable: boolean;
 
   setTemplate(template: Template): Promise<void>;
   sampleCreationParams(includeContentForFields: Set<Id>): Promise<object>;
