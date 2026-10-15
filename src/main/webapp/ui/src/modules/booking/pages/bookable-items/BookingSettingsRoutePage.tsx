@@ -10,7 +10,7 @@ import { cn } from "@/modules/common/utils/cn";
 import BookingSettingsPage, { SettingsSkeleton } from "./BookingSettingsPage";
 
 /** Shown in place of the institution-wide settings to users who cannot change them. */
-export function BookingSettingsNotPermitted() {
+function BookingSettingsNotPermitted() {
   const { t } = useTranslation("booking");
   return (
     <main className="p-4 sm:p-8">

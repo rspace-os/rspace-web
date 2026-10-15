@@ -308,11 +308,14 @@ export function LoadedBookableItemPage({
             </div>
             <div className="min-w-0 space-y-6 @2xl:sticky @2xl:top-4 @2xl:self-start">
               <BookableItemFactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
-              <BookableItemNotificationSubscription
-                configurationId={configuration.id}
-                globalId={globalId}
-                canManageNotificationSubscription={configuration.capabilities.canManageNotificationSubscription}
-              />
+              {configuration.capabilities.canManageNotificationSubscription ? (
+                <BookableItemNotificationSubscription
+                  key={`${currentUser.id}-${configuration.id}-${configuration.capabilities.canManageNotificationSubscription}`}
+                  configurationId={configuration.id}
+                  globalId={globalId}
+                  subjectId={currentUser.id}
+                />
+              ) : null}
             </div>
           </div>
         </Tabs.Root>
