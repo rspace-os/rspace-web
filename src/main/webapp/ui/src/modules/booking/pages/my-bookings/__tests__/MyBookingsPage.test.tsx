@@ -1,24 +1,17 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { NuqsTestingAdapter, type UrlUpdateEvent } from "nuqs/adapters/testing";
-import { Suspense } from "react";
+import type { UrlUpdateEvent } from "nuqs/adapters/testing";
 import { beforeEach, describe, expect, it } from "vitest";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import i18n from "@/modules/common/i18n";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import { renderBookingTestPage } from "../../calendar/__tests__/calendarTestHarness";
 import { currentUser } from "../../mocks/currentUserFixture";
 import {
   customNewYorkBookingPreferences,
@@ -38,15 +31,25 @@ const initialPath = `/booking/my-bookings?period=upcoming&my-bookings.q=confocal
 /** No column override, so the default columns, including the status chip, are shown. */
 const defaultColumnsPath = "/booking/my-bookings?period=upcoming";
 
-function renderPage(
+type RenderPageOptions = {
+  path?: string;
+  requesterId?: number;
+  onListRequest?: (url: URL) => void;
+  onCountRequest?: (url: URL) => void;
+  docs?: readonly unknown[];
+  openApi?: typeof bookingsOpenApi;
+  preferences?: typeof inheritedBrowserBookingPreferences | typeof customNewYorkBookingPreferences;
+};
+
+async function renderPage({
   path = initialPath,
   requesterId = 84,
-  onListRequest: (url: URL) => void = () => undefined,
-  onCountRequest: (url: URL) => void = () => undefined,
-  docs?: readonly unknown[],
-  openApi: typeof bookingsOpenApi = bookingsOpenApi,
+  onListRequest = () => undefined,
+  onCountRequest = () => undefined,
+  docs,
+  openApi = bookingsOpenApi,
   preferences = inheritedBrowserBookingPreferences,
-) {
+}: RenderPageOptions = {}) {
   const location = new URL(path, window.location.origin);
   server.use(
     http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
@@ -75,15 +78,11 @@ function renderPage(
     routeTree: root.addChildren([pageRoute, detailsRoute]),
     history: createMemoryHistory({ initialEntries: [`${location.pathname}${location.search}`] }),
   });
-  render(
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <NuqsTestingAdapter searchParams={location.search} hasMemory onUrlUpdate={onUrlUpdate}>
-          <RouterProvider router={router as never} />
-        </NuqsTestingAdapter>
-      </Suspense>
-    </QueryClientProvider>,
-  );
+  await renderBookingTestPage(router, {
+    queryClient,
+    realI18n: false,
+    testingNuqs: { searchParams: location.search, hasMemory: true, onUrlUpdate },
+  });
   return { searchParams: () => new URLSearchParams(search) };
 }
 
@@ -94,7 +93,11 @@ beforeEach(() => {
 describe("My Bookings page", () => {
   it("keeps TableList URL state while replacing only the period scope", async () => {
     const requests: URL[] = [];
-    const { searchParams } = renderPage(initialPath, 84, (url) => requests.push(url));
+    const { searchParams } = await renderPage({
+      path: initialPath,
+      requesterId: 84,
+      onListRequest: (url) => requests.push(url),
+    });
     const user = userEvent.setup();
 
     expect(await screen.findByRole("heading", { name: "Test user bookings" })).toHaveClass("text-2xl", "font-semibold");
@@ -143,12 +146,12 @@ describe("My Bookings page", () => {
   it("shows the full upcoming count independently of list filters and uses the same boundary", async () => {
     const lists: URL[] = [];
     const counts: URL[] = [];
-    renderPage(
-      initialPath,
-      84,
-      (url) => lists.push(url),
-      (url) => counts.push(url),
-    );
+    await renderPage({
+      path: initialPath,
+      requesterId: 84,
+      onListRequest: (url) => lists.push(url),
+      onCountRequest: (url) => counts.push(url),
+    });
 
     expect(await screen.findByLabelText("booking:myBookings.count.accessible")).toHaveTextContent("2");
     expect(await screen.findAllByText("Confocal microscope")).not.toHaveLength(0);
@@ -178,7 +181,11 @@ describe("My Bookings page", () => {
 
   it("lists cancelled bookings in their own period, whatever their end time", async () => {
     const requests: URL[] = [];
-    const { searchParams } = renderPage(defaultColumnsPath, 84, (url) => requests.push(url));
+    const { searchParams } = await renderPage({
+      path: defaultColumnsPath,
+      requesterId: 84,
+      onListRequest: (url) => requests.push(url),
+    });
     const user = userEvent.setup();
 
     const table = within(await screen.findByRole("table"));
@@ -202,7 +209,7 @@ describe("My Bookings page", () => {
   });
 
   it("shows each booking's status in its row", async () => {
-    renderPage(defaultColumnsPath);
+    await renderPage({ path: defaultColumnsPath });
     const user = userEvent.setup();
 
     const table = within(await screen.findByRole("table"));
@@ -220,7 +227,7 @@ describe("My Bookings page", () => {
   });
 
   it("formats booking times in the resolved display timezone", async () => {
-    renderPage();
+    await renderPage();
     const expectedStart = new Intl.DateTimeFormat(i18n.language, {
       dateStyle: "medium",
       timeStyle: "short",
@@ -234,7 +241,13 @@ describe("My Bookings page", () => {
   it("tells the two occurrences of a repeated hour apart with their offsets", async () => {
     // New York falls back on 2026-11-01: 05:30Z and 06:30Z are both 1:30 on the wall clock.
     const repeatedHour = { ...upcomingBooking, start: "2026-11-01T05:30:00Z", end: "2026-11-01T06:30:00Z" };
-    renderPage(initialPath, 84, undefined, undefined, [repeatedHour], bookingsOpenApi, customNewYorkBookingPreferences);
+    await renderPage({
+      path: initialPath,
+      requesterId: 84,
+      docs: [repeatedHour],
+      openApi: bookingsOpenApi,
+      preferences: customNewYorkBookingPreferences,
+    });
 
     await screen.findByRole("table");
     const times = () =>
@@ -244,7 +257,7 @@ describe("My Bookings page", () => {
   });
 
   it("shows an unknown item for a role-lost requester without item navigation", async () => {
-    renderPage(initialPath, 84, undefined, undefined, [roleLostBooking]);
+    await renderPage({ path: initialPath, requesterId: 84, docs: [roleLostBooking] });
 
     const table = within(await screen.findByRole("table"));
     expect(await table.findByText("common:values.unknownItem")).toBeVisible();
@@ -263,7 +276,7 @@ describe("My Bookings page", () => {
   });
 
   it("offers a calendar file for a confirmed booking the requester can still read", async () => {
-    renderPage();
+    await renderPage();
     const user = userEvent.setup();
 
     const table = within(await screen.findByRole("table"));
@@ -281,7 +294,7 @@ describe("My Bookings page", () => {
         return HttpResponse.json({});
       }),
     );
-    renderPage();
+    await renderPage();
     const user = userEvent.setup();
 
     const table = within(await screen.findByRole("table"));
@@ -302,7 +315,7 @@ describe("My Bookings page", () => {
   });
 
   it("keeps page actions accessible by name", async () => {
-    renderPage();
+    await renderPage();
 
     const upcoming = await screen.findByRole("button", { name: "booking:myBookings.period.upcoming" });
     const past = screen.getByRole("button", { name: "booking:myBookings.period.past" });
@@ -334,7 +347,7 @@ describe("My Bookings page", () => {
   });
 
   it("shows period-specific empty states", async () => {
-    renderPage(initialPath, 84, undefined, undefined, []);
+    await renderPage({ path: initialPath, requesterId: 84, docs: [] });
     const user = userEvent.setup();
 
     const table = within(await screen.findByRole("table"));

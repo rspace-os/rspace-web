@@ -1,13 +1,6 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -19,7 +12,8 @@ import { ApiV2ProblemError, updateBooking } from "@/modules/booking/domain/booki
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookableItemFixtures } from "../../bookable-items/mocks/bookableItemsMocks";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import { createBookingEventTestRouteTree } from "./bookingEventTestHarness";
+import { bookingEventFixture, createBookingEventTestRouter } from "./bookingEventTestHarness";
+import { bookingConfigurationResponse, bookingScheduleHandler, ResizeObserverStub } from "./bookingFormTestHarness";
 
 // Delegates to the real request unless a test rejects with a problem carrying its parsed body.
 vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
@@ -27,81 +21,26 @@ vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
   return { ...actual, updateBooking: vi.fn(actual.updateBooking) };
 });
 
-class ResizeObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-
 beforeAll(() => vi.stubGlobal("ResizeObserver", ResizeObserverStub));
 afterAll(() => vi.unstubAllGlobals());
 
 const document = {
-  id: 41,
+  ...bookingEventFixture,
   version: 7,
   target: {
-    relationTo: "booking-instruments",
+    ...bookingEventFixture.target,
     value: { id: 123, name: "Confocal microscope", deleted: false },
-    globalId: "IN123",
   },
-  canViewConfiguration: true,
-  timezone: "Europe/Berlin",
   start: "2026-10-19T08:00:00Z",
   end: "2026-10-19T10:00:00Z",
-  state: "CONFIRMED",
-  kind: "BOOKING",
-  privacy: "full",
-  cancellationReason: null,
-  purpose: "Cell imaging",
-  bookedBy: "Ada Lovelace (ada)",
-  createdBy: "Grace Hopper (grace)",
-  canEdit: true,
-  canCancel: true,
-  createdAt: "2026-08-01T09:00:00Z",
-  updatedAt: "2026-08-02T10:00:00Z",
-} as const;
-
-const configurationResponse = {
-  docs: [bookableItemFixtures[0]],
-  totalDocs: 1,
-  limit: 2,
-  page: 1,
-  pagingCounter: 1,
-  totalPages: 1,
-  hasPrevPage: false,
-  hasNextPage: false,
-  prevPage: null,
-  nextPage: null,
 };
 
 function renderEdit(scheduleBookings: readonly unknown[] = [], preferences = inheritedBrowserBookingPreferences) {
-  server.use(
-    oauthTokenHandler(true),
-    http.get("/api/v2/bookings", () =>
-      HttpResponse.json({
-        docs: scheduleBookings,
-        totalDocs: scheduleBookings.length,
-        totalPages: scheduleBookings.length ? 1 : 0,
-        page: 1,
-        hasNextPage: false,
-      }),
-    ),
-  );
+  server.use(oauthTokenHandler(true), bookingScheduleHandler(scheduleBookings));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
-  const root = createRootRoute({ component: Outlet });
-  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
-  const myBookings = createRoute({ getParentRoute: () => booking, path: "/my-bookings", component: Outlet });
-  const item = createRoute({
-    getParentRoute: () => booking,
-    path: "/bookable-items/$globalId/{-$tab}",
-    component: Outlet,
-  });
-  const router = createRouter({
-    routeTree: root.addChildren([booking.addChildren([myBookings, item, createBookingEventTestRouteTree(booking)])]),
-    history: createMemoryHistory({ initialEntries: ["/booking/calendar/bookings/41/edit"] }),
-  });
+  const router = createBookingEventTestRouter("/booking/calendar/bookings/41/edit");
   return {
     ...render(
       <QueryClientProvider client={queryClient}>
@@ -128,7 +67,9 @@ describe("BookingInlineEditForm", () => {
         reads += 1;
         return HttpResponse.json(current);
       }),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         patch = request.clone();
         current = { ...current, version: 8, purpose: "Updated imaging" };
@@ -160,7 +101,9 @@ describe("BookingInlineEditForm", () => {
     let patch: Request | undefined;
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         patch = request.clone();
         return HttpResponse.json({
@@ -205,7 +148,9 @@ describe("BookingInlineEditForm", () => {
         reads += 1;
         return HttpResponse.json(document);
       }),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
       http.patch("/api/v2/bookings/41", () =>
         HttpResponse.json(
           { status: 412, code: "errors.api.v2.booking.concurrentModification", detail: "stale" },
@@ -234,7 +179,9 @@ describe("BookingInlineEditForm", () => {
   ])("retains a %i save error until the draft changes", async (status, code, message) => {
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
       http.patch("/api/v2/bookings/41", () => HttpResponse.json({ status, code, detail: "save failed" }, { status })),
     );
     renderEdit();
@@ -265,7 +212,9 @@ describe("BookingInlineEditForm", () => {
     );
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(bookingConfigurationResponse(bookableItemFixtures[0])),
+      ),
     );
     renderEdit();
     const user = userEvent.setup();

@@ -46,10 +46,11 @@ Booking audit events unwrap Hibernate proxies before leaving the transaction so
 archive-triggered cancellations retain the entity's annotated audit fields.
 
 The Description column of a booking event starts with the recorded snapshot as
-`Label: value` pairs, using the item audit history's labels (open days as
-weekday names, a closing midnight as `00:00`, instants such as booking start
-and end or `deletedAt` in UTC to the second), followed by any logged
-description such as `subject=<username>`. `BookingAuditDetails` formats it on
+`Label: value` pairs, using the item audit history's labels (current opening-hours
+snapshots show independent weekday/time entries; older shared-hours snapshots
+show `openDays` as weekday names; a closing midnight is `00:00`; instants such as
+booking start and end or `deletedAt` appear in UTC to the second), followed by
+any logged description such as `subject=<username>`. `BookingAuditDetails` formats it on
 the server: the page receives it as `event.details` in the request locale, and
 the CSV always uses en-US. The logged `description` itself is not changed, so
 the permanent-deletion marker is still matched against the original text.

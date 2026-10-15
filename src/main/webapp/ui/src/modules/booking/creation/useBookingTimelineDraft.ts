@@ -14,12 +14,11 @@ export function useBookingTimelineDraft() {
 
   const onStateChange = useCallback((state: BookingFormState) => {
     setFormState(state);
-    setPendingAdjustment((pending) => {
-      if (!pending) return pending;
-      if (state.target?.globalId !== pending.targetGlobalId) return undefined;
-      if (!sameDraft(state.draft, pending.draft)) return pending;
-      return undefined;
-    });
+    setPendingAdjustment((pending) =>
+      pending && state.target?.globalId === pending.targetGlobalId && !sameDraft(state.draft, pending.draft)
+        ? pending
+        : undefined,
+    );
   }, []);
 
   const onDraftChange = useCallback((draft: BookingWindowDraft, targetGlobalId?: string) => {

@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
-import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
 
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.service.MessageSourceUtils;
@@ -16,6 +16,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -32,46 +33,92 @@ final class BookingAuditDetails {
   private static final Pattern ISO_INSTANT =
       Pattern.compile("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?Z");
 
+  private static final Pattern PERMANENT_DELETE =
+      Pattern.compile("(?:^|;)\\s*permanent=true(?:;|$)");
   private static final String LABEL_PREFIX = "booking:bookableItemDetails.audit.values.";
 
-  // Snapshot key to label key, in display order; other keys follow alphabetically, unlabelled.
-  private static final List<Map.Entry<String, String>> LABELS =
+  private static final List<String> LABEL_ORDER =
       List.of(
-          entry("start", "start"),
-          entry("end", "end"),
-          entry("kind", "kind"),
-          entry("purpose", "purpose"),
-          entry("state", "state"),
-          entry("cancellationReason", "cancellationReason"),
-          entry("target", "target"),
-          entry("targetName", "targetName"),
-          entry("bookingConfigurationId", "configuration"),
-          entry("enabled", "enabled"),
-          entry("timezone", "timezone"),
-          entry("openingHours", "openingHours"),
+          "start",
+          "end",
+          "kind",
+          "purpose",
+          "state",
+          "cancellationReason",
+          "target",
+          "targetName",
+          "bookingConfigurationId",
+          "enabled",
+          "timezone",
+          "openingHours",
           // Older snapshots retain the shared-hours representation.
-          entry("openingStart", "openingStart"),
-          entry("openingEnd", "openingEnd"),
-          entry("openDays", "openDays"),
-          entry("openingExceptions", "openingExceptions"),
-          entry("slotGranularityMinutes", "increment"),
-          entry("maxBookingDurationMinutes", "maximumDuration"),
-          entry("bufferBeforeMinutes", "bufferBefore"),
-          entry("bufferAfterMinutes", "bufferAfter"),
-          entry("allowDoubleBooking", "allowDoubleBooking"),
-          entry("availabilityWindowStart", "availabilityWindowStart"),
-          entry("availabilityWindowEnd", "availabilityWindowEnd"),
-          entry("timezoneMode", "timezoneMode"),
-          entry("customTimezone", "customTimezone"),
-          entry("timeFormat", "timeFormat"),
-          entry("defaultSharedWith", "defaultSharedWith"),
-          entry("configurationVersion", "configurationVersion"),
-          entry("removedBookings", "removedBookings"),
-          entry("removedSubscriptions", "removedSubscriptions"),
-          entry("removedAssignments", "removedAssignments"),
-          entry("deletedAt", "deletedAt"));
+          "openingStart",
+          "openingEnd",
+          "openDays",
+          "openingExceptions",
+          "slotGranularityMinutes",
+          "maxBookingDurationMinutes",
+          "bufferBeforeMinutes",
+          "bufferAfterMinutes",
+          "allowDoubleBooking",
+          "availabilityWindowStart",
+          "availabilityWindowEnd",
+          "timezoneMode",
+          "customTimezone",
+          "timeFormat",
+          "defaultSharedWith",
+          "configurationVersion",
+          "removedBookings",
+          "removedSubscriptions",
+          "removedAssignments",
+          "deletedAt");
+
+  private static final Map<String, String> RENAMED_LABELS =
+      Map.of(
+          "bookingConfigurationId", "configuration",
+          "slotGranularityMinutes", "increment",
+          "maxBookingDurationMinutes", "maximumDuration",
+          "bufferBeforeMinutes", "bufferBefore",
+          "bufferAfterMinutes", "bufferAfter");
+
+  private static final Set<String> LABEL_KEYS = Set.copyOf(LABEL_ORDER);
 
   private BookingAuditDetails() {}
+
+  static String displayAction(
+      AuditAction action,
+      String description,
+      Map<String, Object> data,
+      boolean bookingEvent,
+      MessageSourceUtils messages,
+      Locale locale) {
+    if (!bookingEvent) {
+      return action.toString();
+    }
+
+    if (AuditAction.DELETE.equals(action)
+        && description != null
+        && PERMANENT_DELETE.matcher(description).find()) {
+      return messages.getMessageForLocale(
+          "export.audit.csv.bookingActionPermanentlyDeleted", locale);
+    }
+
+    Object state = data.get("state");
+    if (AuditAction.WRITE.equals(action) && state != null && "CANCELLED".equals(state.toString())) {
+      return messages.getMessageForLocale("export.audit.csv.bookingActionCancelled", locale);
+    }
+    if (AuditAction.DELETE.equals(action) && state != null && "ARCHIVED".equals(state.toString())) {
+      return messages.getMessageForLocale("export.audit.csv.bookingActionArchived", locale);
+    }
+    String label =
+        switch (action) {
+          case CREATE -> "export.audit.csv.bookingActionCreated";
+          case WRITE -> "export.audit.csv.bookingActionChanged";
+          case RESTORE -> "export.audit.csv.bookingActionRestored";
+          default -> null;
+        };
+    return label == null ? action.toString() : messages.getMessageForLocale(label, locale);
+  }
 
   static boolean isBookingEvent(HistoricData event, Map<String, Object> data) {
     return AuditDomain.BOOKING.equals(
@@ -121,23 +168,20 @@ final class BookingAuditDetails {
   /** The recorded snapshot except its identifier, or an empty string when there is nothing else. */
   static String format(Map<String, Object> data, MessageSourceUtils messages, Locale locale) {
     Stream<String> known =
-        LABELS.stream()
-            .filter(
-                label ->
-                    data.containsKey(label.getKey())
-                        && (!"cancellationReason".equals(label.getKey())
-                            || data.get(label.getKey()) != null))
-            .map(
-                label ->
-                    messages.getMessageForLocale(LABEL_PREFIX + label.getValue(), locale)
-                        + ": "
-                        + value(label.getKey(), data.get(label.getKey()), locale));
-    Stream<String> other =
-        data.keySet().stream()
+        LABEL_ORDER.stream()
             .filter(
                 key ->
-                    !"id".equals(key)
-                        && LABELS.stream().noneMatch(label -> label.getKey().equals(key)))
+                    data.containsKey(key)
+                        && (!"cancellationReason".equals(key) || data.get(key) != null))
+            .map(
+                key ->
+                    messages.getMessageForLocale(
+                            LABEL_PREFIX + RENAMED_LABELS.getOrDefault(key, key), locale)
+                        + ": "
+                        + value(key, data.get(key), locale));
+    Stream<String> other =
+        data.keySet().stream()
+            .filter(key -> !"id".equals(key) && !LABEL_KEYS.contains(key))
             .sorted()
             .map(key -> key + ": " + value(key, data.get(key), locale));
     return Stream.concat(known, other).collect(joining("; "));

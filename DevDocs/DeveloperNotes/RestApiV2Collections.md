@@ -1778,7 +1778,7 @@ window, or another `availability` value is a 400 response.
 
 `BookingCurrentAvailability` classifies each item. Free time is the window's part inside the item's
 opening hours, evaluated per date in its scheduling time zone through
-`BookingSchedulingSettings.effectiveHours` (closed weekdays, per-day exceptions, a `24:00` close),
+`BookingSchedulingSettings.effectiveHours` (independent weekday entries, omitted weekdays closed, and a `24:00` close),
 less every confirmed, non-deleted event widened by the item's buffers. Maintenance always counts;
 bookings do unless the item allows double booking. Cancelled events never count. An item is
 available now when `now` is free inside the window, and free later today when it is busy now and

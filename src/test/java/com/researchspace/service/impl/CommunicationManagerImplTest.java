@@ -176,14 +176,9 @@ public class CommunicationManagerImplTest {
     when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
     mgr.setBroadcasters(Collections.singletonList(broadcaster1));
 
-    NotificationConfig config =
-        NotificationConfig.builder()
-            .notificationType(NotificationType.NOTIFICATION_BOOKING_CANCELLED)
-            .broadcast(true)
-            .policyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY)
-            .notificationEventPreferenceOverride(true)
-            .notificationTargetsOverride(new HashSet<>(Set.of(recipient)))
-            .build();
+    NotificationConfig config = notificationConfig(true, recipient);
+    config.setNotificationType(NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+    config.setNotificationEventPreferenceOverride(true);
 
     mgr.notify(originator, null, config, "message");
 

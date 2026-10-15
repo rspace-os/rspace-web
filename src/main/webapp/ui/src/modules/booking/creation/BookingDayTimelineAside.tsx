@@ -44,7 +44,6 @@ export function BookingDayTimelineAside({
   const [date, setDate] = useState(startDate ?? todayInTimeZone(timezone));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
-  const asideRef = useRef<HTMLElement>(null);
   const desktopTimelineRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     setDate(startDate ?? todayInTimeZone(timezone));
@@ -119,7 +118,7 @@ export function BookingDayTimelineAside({
     />
   );
   return (
-    <aside ref={asideRef} className="min-w-0 @4xl:sticky @4xl:top-4 @4xl:self-start">
+    <aside className="min-w-0 @4xl:sticky @4xl:top-4 @4xl:self-start">
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger
           render={
