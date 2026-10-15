@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -72,9 +73,7 @@ class BookingDisplayPreferencesManagerTest {
 
     verify(userManager)
         .setPreference(
-            eq(Preference.BOOKING_DISPLAY_PREFERENCES),
-            org.mockito.ArgumentMatchers.contains("\"version\":1"),
-            eq("subject"));
+            eq(Preference.BOOKING_DISPLAY_PREFERENCES), contains("\"version\":1"), eq("subject"));
     assertEquals("America/New_York", resolved.customTimezone());
     assertTrue(resolved.overridden());
   }
@@ -131,9 +130,6 @@ class BookingDisplayPreferencesManagerTest {
   }
 
   private static BookingConfigurationDefaults defaults() {
-    BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
-    defaults.setId(BookingConfigurationDefaults.SINGLETON_ID);
-    BookingDisplaySettings.defaults().applyTo(defaults);
-    return defaults;
+    return BookingSettingsTestFixtures.defaults();
   }
 }

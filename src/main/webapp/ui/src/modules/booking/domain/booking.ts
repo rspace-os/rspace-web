@@ -14,6 +14,25 @@ function endsAfterStart(booking: { start: string; end: string }): boolean {
   return Date.parse(booking.end) > Date.parse(booking.start);
 }
 
+type BookingTimeFields = { start: string; end: string };
+type EndPath<TOutput extends BookingTimeFields> = Parameters<
+  typeof v.forward<TOutput, v.CheckIssue<TOutput>, ["end"]>
+>[1];
+
+function withEndAfterStart<
+  TInput extends BookingTimeFields,
+  TOutput extends BookingTimeFields,
+  TIssue extends v.BaseIssue<unknown>,
+>(schema: v.BaseSchema<TInput, TOutput, TIssue>, path: EndPath<TOutput>) {
+  return v.pipe(
+    schema,
+    v.forward(
+      v.check((booking: TOutput) => endsAfterStart(booking)),
+      path,
+    ),
+  );
+}
+
 const BookingTargetSchema = v.object({
   relationTo: v.literal("booking-instruments"),
   value: v.object({
@@ -54,6 +73,18 @@ const BookingAvailabilityIdentitySchema = {
   state: v.picklist(["CONFIRMED", "CANCELLED"]),
   kind: v.optional(BookingEventKindSchema, "BOOKING"),
 };
+const BookingFullPrivacyEntries = {
+  purpose: v.nullable(v.string()),
+  bookedBy: v.nullable(v.string()),
+  createdBy: v.optional(v.nullable(v.string())),
+};
+
+const BookingFullManagementEntries = {
+  canEdit: v.boolean(),
+  canCancel: v.boolean(),
+  createdAt: v.string(),
+  updatedAt: v.string(),
+};
 
 function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(target: TTarget) {
   const identity = bookingIdentity(target);
@@ -61,13 +92,8 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
     v.object({
       ...identity,
       privacy: v.literal("full"),
-      purpose: v.nullable(v.string()),
-      bookedBy: v.nullable(v.string()),
-      createdBy: v.optional(v.nullable(v.string())),
-      canEdit: v.boolean(),
-      canCancel: v.boolean(),
-      createdAt: v.string(),
-      updatedAt: v.string(),
+      ...BookingFullPrivacyEntries,
+      ...BookingFullManagementEntries,
     }),
     v.object({
       ...identity,
@@ -85,78 +111,35 @@ function bookingSchema<TTarget extends v.BaseSchema<unknown, unknown, v.BaseIssu
 
 const BookingIdentitySchema = bookingIdentity(BookingTargetSchema);
 
-export const BookingSummarySchema = v.pipe(
-  v.object(BookingAvailabilityIdentitySchema),
-  v.forward(
-    v.check((booking) => endsAfterStart(booking)),
-    ["end"],
-  ),
-);
+export const BookingSummarySchema = withEndAfterStart(v.object(BookingAvailabilityIdentitySchema), ["end"]);
 
-export const BookingSchema = v.pipe(
-  bookingSchema(BookingTargetSchema),
-  v.forward(
-    v.check((booking) => endsAfterStart(booking)),
-    ["end"],
-  ),
-);
+export const BookingSchema = withEndAfterStart(bookingSchema(BookingTargetSchema), ["end"]);
 
-export const BookingDetailsSchema = v.pipe(
+export const BookingDetailsSchema = withEndAfterStart(
   v.object({
     ...BookingIdentitySchema,
     canViewConfiguration: v.boolean(),
     privacy: v.literal("full"),
-    purpose: v.nullable(v.string()),
-    bookedBy: v.nullable(v.string()),
-    createdBy: v.optional(v.nullable(v.string())),
-    canEdit: v.boolean(),
-    canCancel: v.boolean(),
-    createdAt: v.string(),
-    updatedAt: v.string(),
+    ...BookingFullPrivacyEntries,
+    ...BookingFullManagementEntries,
   }),
-  v.forward(
-    v.check((booking) => endsAfterStart(booking)),
-    ["end"],
-  ),
+  ["end"],
 );
 
-const BookingMutationSchema = v.pipe(
-  bookingSchema(MutationTargetSchema),
-  v.forward(
-    v.check((booking) => endsAfterStart(booking)),
-    ["end"],
-  ),
-);
+const BookingMutationSchema = withEndAfterStart(bookingSchema(MutationTargetSchema), ["end"]);
 
 const BookingListDocumentObjectSchema = v.object({
   ...BookingIdentitySchema,
   canViewConfiguration: v.boolean(),
   requesterId: v.number(),
-  purpose: v.nullable(v.string()),
-  bookedBy: v.nullable(v.string()),
-  createdBy: v.optional(v.nullable(v.string())),
+  ...BookingFullPrivacyEntries,
   privacy: v.picklist(["full", "busy"]),
-  canEdit: v.boolean(),
-  canCancel: v.boolean(),
-  createdAt: v.string(),
-  updatedAt: v.string(),
+  ...BookingFullManagementEntries,
 });
 
-export const BookingListDocumentSchema = v.pipe(
-  BookingListDocumentObjectSchema,
-  v.forward(
-    v.check((booking) => endsAfterStart(booking)),
-    ["end"],
-  ),
-);
+export const BookingListDocumentSchema = withEndAfterStart(BookingListDocumentObjectSchema, ["end"]);
 
-const BookingIntervalSchema = v.pipe(
-  v.object(BookingTimestampEntries),
-  v.forward(
-    v.check((booking) => endsAfterStart(booking)),
-    ["end"],
-  ),
-);
+const BookingIntervalSchema = withEndAfterStart(v.object(BookingTimestampEntries), ["end"]);
 
 function validateBookingIntervals(rows: readonly unknown[]): void {
   parseOrThrow(v.array(BookingIntervalSchema), rows);
@@ -228,17 +211,23 @@ export async function parseApiV2Problem(response: Response): Promise<ApiV2Proble
   return new ApiV2ProblemError(response.status, undefined, `Request failed (${response.status})`);
 }
 
-async function requestBooking<TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
+export async function requireSuccess(response: Response): Promise<Response> {
+  if (!response.ok) throw await parseApiV2Problem(response);
+  return response;
+}
+
+export async function requestBooking<TSchema extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
   url: string,
   token: string,
   schema: TSchema,
   init?: RequestInit,
 ): Promise<v.InferOutput<TSchema>> {
-  const response = await fetch(url, {
-    ...init,
-    headers: init?.body ? bookingApiV2JsonHeaders(token, init.headers) : bookingApiV2Headers(token, init?.headers),
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
+  const response = await requireSuccess(
+    await fetch(url, {
+      ...init,
+      headers: init?.body ? bookingApiV2JsonHeaders(token, init.headers) : bookingApiV2Headers(token, init?.headers),
+    }),
+  );
   return parseOrThrow(schema, await response.json());
 }
 

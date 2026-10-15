@@ -33,10 +33,7 @@ the subject owns the preference and the actor remains available for audit contex
 
 ## Weekly scheduling defaults
 
-Scheduling settings use `openingHours`, a complete replacement array of one to seven
-`{dayOfWeek, start, end}` entries. Weekdays are unique ISO numbers from Monday (1) to Sunday (7),
-and parsed output is sorted by weekday. Omitted weekdays are closed. Each day's start must precede
-its end; `24:00` is allowed only as an end and means midnight at the end of that day.
+The `openingHours` schema and weekday rules are defined in [BookingScheduling.md](BookingScheduling.md).
 
 The settings editor keeps each day's custom hours independently. Closing and reopening a day
 restores its draft during the same edit session. Open all day stores `00:00`–`24:00`; unchecking it

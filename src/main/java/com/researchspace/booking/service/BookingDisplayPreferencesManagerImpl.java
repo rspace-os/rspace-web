@@ -88,22 +88,16 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
   public ResolvedBookingDisplayPreferences replace(
       BookingDisplaySettings settings, User subject, User actor) {
     requireAccess(subject, actor);
-    BookingDisplaySettings normalized =
-        new BookingDisplaySettings(
-            settings.availabilityWindowStart(),
-            settings.availabilityWindowEnd(),
-            settings.timezoneMode(),
-            settings.customTimezone());
-    BookingConfigurationDefaultsManagerImpl.requireValid(normalized);
+    BookingConfigurationDefaultsManagerImpl.requireValid(settings);
     try {
       userManager.setPreference(
           Preference.BOOKING_DISPLAY_PREFERENCES,
-          objectMapper.writeValueAsString(StoredPreference.from(normalized)),
+          objectMapper.writeValueAsString(StoredPreference.from(settings)),
           subject.getUsername());
     } catch (JsonProcessingException ex) {
       throw new IllegalStateException("Could not serialize Booking display preferences", ex);
     }
-    return resolved(normalized, true);
+    return resolved(settings, true);
   }
 
   @Override
