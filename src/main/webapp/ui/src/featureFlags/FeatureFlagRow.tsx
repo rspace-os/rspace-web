@@ -11,9 +11,7 @@ type FeatureFlagRowProps = {
   entry: FeatureFlagEntry;
   canChangeBaselines: boolean;
   mutationPending: boolean;
-  onOverride: (value: boolean) => void;
-  onClearOverride: () => void;
-  onBaseline: (value: boolean) => void;
+  onPatch: (document: { overrideValue: boolean | null } | { baselineValue: boolean }) => void;
 };
 
 export default function FeatureFlagRow({
@@ -21,9 +19,7 @@ export default function FeatureFlagRow({
   entry,
   canChangeBaselines,
   mutationPending,
-  onOverride,
-  onClearOverride,
-  onBaseline,
+  onPatch,
 }: FeatureFlagRowProps) {
   const { t } = useTranslation("common");
   const [baselineValue, setBaselineValue] = useState(entry.baselineValue);
@@ -37,17 +33,17 @@ export default function FeatureFlagRow({
           <Switch
             checked={entry.value}
             disabled={!entry.canOverride || mutationPending}
-            onCheckedChange={onOverride}
+            onCheckedChange={(value) => onPatch({ overrideValue: value })}
             aria-label={t("featureFlags.overrideLabel", { flagName })}
           />
-          {entry.canOverride && entry.source !== "USER_OVERRIDE" && (
-            <Button variant="ghost" size="sm" disabled={mutationPending} onClick={() => onOverride(entry.value)}>
-              {t("actions.set")}
-            </Button>
-          )}
-          {entry.canOverride && entry.source === "USER_OVERRIDE" && (
-            <Button variant="ghost" size="sm" disabled={mutationPending} onClick={onClearOverride}>
-              {t("actions.clear")}
+          {entry.canOverride && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={mutationPending}
+              onClick={() => onPatch({ overrideValue: entry.source === "USER_OVERRIDE" ? null : entry.value })}
+            >
+              {entry.source === "USER_OVERRIDE" ? t("actions.clear") : t("actions.set")}
             </Button>
           )}
         </div>
@@ -68,7 +64,7 @@ export default function FeatureFlagRow({
             <Button
               size="sm"
               disabled={mutationPending || baselineValue === entry.baselineValue}
-              onClick={() => onBaseline(baselineValue)}
+              onClick={() => onPatch({ baselineValue })}
             >
               {t("actions.save")}
             </Button>

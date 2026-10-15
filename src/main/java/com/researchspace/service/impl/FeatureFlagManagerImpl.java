@@ -11,9 +11,9 @@ import com.researchspace.featureflags.FeatureFlagReadOnlyException;
 import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlagSource;
 import com.researchspace.model.User;
+import com.researchspace.service.AfterCommit;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.FeatureFlagManager.Patch;
-import com.researchspace.service.UserManager;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,8 +26,6 @@ import org.apache.shiro.subject.Subject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service("featureFlagManager")
 @Slf4j
@@ -38,7 +36,6 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   private final FeatureFlagDao featureFlagDao;
   private final FeatureFlagManifestLoader manifestLoader;
   private final FeatureFlagPropertiesLoader propertiesLoader;
-  private final UserManager userManager;
   private final ApplicationEventPublisher events;
   private final String devModeEnabled;
   private final String reactDevMode;
@@ -50,7 +47,6 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
       FeatureFlagDao featureFlagDao,
       FeatureFlagManifestLoader manifestLoader,
       FeatureFlagPropertiesLoader propertiesLoader,
-      UserManager userManager,
       ApplicationEventPublisher events,
       @Value("${dev.mode.enabled:}") String devModeEnabled,
       @Value("${reactDevMode:false}") String reactDevMode,
@@ -58,7 +54,6 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     this.featureFlagDao = featureFlagDao;
     this.manifestLoader = manifestLoader;
     this.propertiesLoader = propertiesLoader;
-    this.userManager = userManager;
     this.events = events;
     this.devModeEnabled = devModeEnabled;
     this.reactDevMode = reactDevMode;
@@ -99,20 +94,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
 
   @Override
   public Optional<FeatureFlagResource> getFeatureFlag(String flagName, User actor) {
-    RuntimeFeatureFlags snapshot = requireRuntime();
-    FeatureFlagDefinition definition = snapshot.definitions().get(flagName);
-    if (definition == null) {
-      return Optional.empty();
-    }
-    Map<String, Boolean> overrides = getUserOverrides(actor);
-    return Optional.of(
-        snapshot.resolveResource(definition, overrides, canOverrideFeatureFlags(actor)));
-  }
-
-  @Override
-  public synchronized Optional<FeatureFlagResource> updateFeatureFlag(
-      String flagName, Patch patch, User actor) {
-    return updateFeatureFlag(flagName, patch, actor, actor);
+    return resolveResource(flagName, actor, requireRuntime());
   }
 
   @Override
@@ -157,16 +139,6 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
       events.publishEvent(new FeatureFlagResourceChangedEvent(actor, subject, updated));
     }
     return Optional.of(updated);
-  }
-
-  @Override
-  public boolean isFeatureFlagEnabled(String flagName) {
-    return isFeatureFlagEnabled(flagName, getCurrentUser());
-  }
-
-  @Override
-  public boolean isFeatureFlagEnabled(String flagName, boolean useUserContext) {
-    return isFeatureFlagEnabled(flagName, useUserContext ? getCurrentUser() : null);
   }
 
   @Override
@@ -227,7 +199,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   }
 
   private void assertWritable(String flagName, RuntimeFeatureFlags snapshot) {
-    if (snapshot.forcedValues().containsKey(flagName)) {
+    if (snapshot.isForced(flagName)) {
       throw new FeatureFlagReadOnlyException(flagName);
     }
   }
@@ -244,21 +216,10 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   }
 
   private void updateRuntimeAfterCommit(String flagName, boolean value) {
-    Runnable update =
+    AfterCommit.run(
         () -> {
           synchronized (this) {
             runtime = requireRuntime().withBaseline(flagName, value);
-          }
-        };
-    if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-      update.run();
-      return;
-    }
-    TransactionSynchronizationManager.registerSynchronization(
-        new TransactionSynchronization() {
-          @Override
-          public void afterCommit() {
-            update.run();
           }
         });
   }
@@ -292,19 +253,6 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
       log.warn(
           "Could not determine Shiro run-as state; denying feature flag sysadmin capability", e);
       return true;
-    }
-  }
-
-  private User getCurrentUser() {
-    try {
-      Subject subject = SecurityUtils.getSubject();
-      if (subject == null || subject.getPrincipal() == null) {
-        return null;
-      }
-      return userManager.getUserByUsername(subject.getPrincipal().toString());
-    } catch (RuntimeException e) {
-      log.warn("Could not determine the current user; evaluating feature flags at baseline", e);
-      return null;
     }
   }
 

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,7 +23,6 @@ import com.researchspace.featureflags.FeatureFlagResource;
 import com.researchspace.featureflags.FeatureFlagSource;
 import com.researchspace.model.User;
 import com.researchspace.service.FeatureFlagManager.Patch;
-import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,7 +48,6 @@ class FeatureFlagManagerImplTest {
   @Mock private FeatureFlagDao featureFlagDao;
   @Mock private FeatureFlagManifestLoader manifestLoader;
   @Mock private FeatureFlagPropertiesLoader propertiesLoader;
-  @Mock private UserManager userManager;
   @Mock private ApplicationEventPublisher events;
 
   private FeatureFlagManagerImpl featureFlagManager;
@@ -56,7 +55,7 @@ class FeatureFlagManagerImplTest {
   @BeforeEach
   void setUp() {
     featureFlagManager = createManager("", "false");
-    Subject subject = org.mockito.Mockito.mock(Subject.class);
+    Subject subject = mock(Subject.class);
     ThreadContext.bind(subject);
   }
 
@@ -70,7 +69,7 @@ class FeatureFlagManagerImplTest {
 
   @Test
   void reconcileWithoutBaselineRowReportsDefinitionDefault() {
-    when(manifestLoader.loadDefinitions()).thenReturn(List.of(testFlag(false)));
+    when(manifestLoader.loadDefinitions()).thenReturn(List.of(testFlag()));
     when(propertiesLoader.loadForcedValues(Set.of(FLAG))).thenReturn(Map.of());
     when(featureFlagDao.getBaselineValues()).thenReturn(Map.of());
 
@@ -97,7 +96,7 @@ class FeatureFlagManagerImplTest {
     assertEquals(FeatureFlagSource.PROPERTIES_FILE.name(), state.getSource());
     assertThrows(
         FeatureFlagReadOnlyException.class,
-        () -> featureFlagManager.updateFeatureFlag(FLAG, override(false), user));
+        () -> featureFlagManager.updateFeatureFlag(FLAG, override(false), user, user));
   }
 
   @Test
@@ -106,11 +105,10 @@ class FeatureFlagManagerImplTest {
     initialiseRuntime(Map.of(FLAG, false), false);
     User user = user("user", 7L);
 
-    featureFlagManager.updateFeatureFlag(FLAG, override(true), user);
+    featureFlagManager.updateFeatureFlag(FLAG, override(true), user, user);
 
     verify(featureFlagDao).setOverride(7L, FLAG, true);
-    verify(events)
-        .publishEvent(org.mockito.ArgumentMatchers.any(FeatureFlagResourceChangedEvent.class));
+    verify(events).publishEvent(any(FeatureFlagResourceChangedEvent.class));
   }
 
   @Test
@@ -131,10 +129,11 @@ class FeatureFlagManagerImplTest {
   void nonSysadminCannotChangeBaselineEvenInDevMode() {
     featureFlagManager = createManager("true", "false");
     initialiseRuntime(Map.of(FLAG, false), false);
+    User user = user("user", 9L);
 
     assertThrows(
         FeatureFlagPermissionException.class,
-        () -> featureFlagManager.updateFeatureFlag(FLAG, baseline(true), user("user", 9L)));
+        () -> featureFlagManager.updateFeatureFlag(FLAG, baseline(true), user, user));
   }
 
   @Test
@@ -153,7 +152,9 @@ class FeatureFlagManagerImplTest {
     TransactionSynchronizationManager.initSynchronization();
 
     FeatureFlagResource response =
-        featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin).orElseThrow();
+        featureFlagManager
+            .updateFeatureFlag(FLAG, baseline(true), sysadmin, sysadmin)
+            .orElseThrow();
 
     assertTrue(response.isBaselineValue());
     assertFalse(resource(null).isBaselineValue());
@@ -169,74 +170,10 @@ class FeatureFlagManagerImplTest {
     sysadmin.setId(17L);
     TransactionSynchronizationManager.initSynchronization();
 
-    featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin);
+    featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin, sysadmin);
     TransactionSynchronizationManager.clearSynchronization();
 
     assertFalse(resource(null).isBaselineValue());
-  }
-
-  @Test
-  void baselineChangesWithinOneTransactionUseThePersistedValue() {
-    initialiseRuntime(Map.of(FLAG, false), false);
-    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
-    sysadmin.setId(19L);
-    Map<String, Boolean> persistedBaselines = new LinkedHashMap<>(Map.of(FLAG, false));
-    when(featureFlagDao.getBaselineValues())
-        .thenAnswer(invocation -> new LinkedHashMap<>(persistedBaselines));
-    doAnswer(
-            invocation -> {
-              persistedBaselines.put(
-                  invocation.getArgument(0, String.class),
-                  invocation.getArgument(1, Boolean.class));
-              return null;
-            })
-        .when(featureFlagDao)
-        .upsertBaseline(any(), anyBoolean());
-    TransactionSynchronizationManager.initSynchronization();
-
-    try {
-      featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin);
-      featureFlagManager.updateFeatureFlag(FLAG, baseline(false), sysadmin);
-
-      assertFalse(persistedBaselines.get(FLAG));
-      assertFalse(resource(null).isBaselineValue());
-      TransactionSynchronizationManager.getSynchronizations().stream()
-          .forEach(TransactionSynchronization::afterCommit);
-      assertFalse(resource(null).isBaselineValue());
-    } finally {
-      TransactionSynchronizationManager.clearSynchronization();
-    }
-  }
-
-  @Test
-  void unchangedBaselineResponseUsesThePersistedValueWithinOneTransaction() {
-    initialiseRuntime(Map.of(FLAG, false), false);
-    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
-    sysadmin.setId(20L);
-    Map<String, Boolean> persistedBaselines = new LinkedHashMap<>(Map.of(FLAG, false));
-    when(featureFlagDao.getBaselineValues())
-        .thenAnswer(invocation -> new LinkedHashMap<>(persistedBaselines));
-    doAnswer(
-            invocation -> {
-              persistedBaselines.put(
-                  invocation.getArgument(0, String.class),
-                  invocation.getArgument(1, Boolean.class));
-              return null;
-            })
-        .when(featureFlagDao)
-        .upsertBaseline(any(), anyBoolean());
-    TransactionSynchronizationManager.initSynchronization();
-
-    try {
-      featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin);
-      FeatureFlagResource response =
-          featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin).orElseThrow();
-
-      assertTrue(response.isBaselineValue());
-      assertTrue(persistedBaselines.get(FLAG));
-    } finally {
-      TransactionSynchronizationManager.clearSynchronization();
-    }
   }
 
   @Test
@@ -254,12 +191,13 @@ class FeatureFlagManagerImplTest {
     sysadmin.setId(12L);
 
     FeatureFlagResource response =
-        featureFlagManager.updateFeatureFlag(FLAG, baseline(false), sysadmin).orElseThrow();
+        featureFlagManager
+            .updateFeatureFlag(FLAG, baseline(false), sysadmin, sysadmin)
+            .orElseThrow();
     assertEquals(FeatureFlagSource.DEFAULT.name(), response.getSource());
 
     verify(featureFlagDao, never()).upsertBaseline(FLAG, false);
-    verify(events, never())
-        .publishEvent(org.mockito.ArgumentMatchers.any(FeatureFlagResourceChangedEvent.class));
+    verify(events, never()).publishEvent(any(FeatureFlagResourceChangedEvent.class));
     FeatureFlagResource state = resource(null);
     assertFalse(state.isBaselineValue());
     assertEquals(FeatureFlagSource.DEFAULT.name(), state.getSource());
@@ -272,11 +210,10 @@ class FeatureFlagManagerImplTest {
     User user = user("user", 15L);
     when(featureFlagDao.getOverridesForUser(15L)).thenReturn(Map.of());
 
-    featureFlagManager.updateFeatureFlag(FLAG, clearOverride(), user);
+    featureFlagManager.updateFeatureFlag(FLAG, clearOverride(), user, user);
 
     verify(featureFlagDao, never()).clearOverride(15L, FLAG);
-    verify(events, never())
-        .publishEvent(org.mockito.ArgumentMatchers.any(FeatureFlagResourceChangedEvent.class));
+    verify(events, never()).publishEvent(any(FeatureFlagResourceChangedEvent.class));
   }
 
   @Test
@@ -309,7 +246,6 @@ class FeatureFlagManagerImplTest {
         featureFlagDao,
         manifestLoader,
         propertiesLoader,
-        userManager,
         events,
         devModeEnabled,
         reactDevMode,
@@ -317,7 +253,7 @@ class FeatureFlagManagerImplTest {
   }
 
   private void initialiseRuntime(Map<String, Boolean> baselines, boolean forcedValue) {
-    when(manifestLoader.loadDefinitions()).thenReturn(List.of(testFlag(false)));
+    when(manifestLoader.loadDefinitions()).thenReturn(List.of(testFlag()));
     Map<String, Boolean> forcedValues = forcedValue ? Map.of(FLAG, true) : Map.of();
     when(propertiesLoader.loadForcedValues(Set.of(FLAG))).thenReturn(forcedValues);
     when(featureFlagDao.getBaselineValues()).thenReturn(baselines);
@@ -325,8 +261,24 @@ class FeatureFlagManagerImplTest {
     featureFlagManager.reconcileOnStartup();
   }
 
-  private FeatureFlagDefinition testFlag(boolean defaultValue) {
-    return new FeatureFlagDefinition(FLAG, defaultValue);
+  private Map<String, Boolean> stubPersistedBaselines(boolean enabled) {
+    Map<String, Boolean> persistedBaselines = new LinkedHashMap<>(Map.of(FLAG, enabled));
+    when(featureFlagDao.getBaselineValues())
+        .thenAnswer(invocation -> new LinkedHashMap<>(persistedBaselines));
+    doAnswer(
+            invocation -> {
+              persistedBaselines.put(
+                  invocation.getArgument(0, String.class),
+                  invocation.getArgument(1, Boolean.class));
+              return null;
+            })
+        .when(featureFlagDao)
+        .upsertBaseline(any(), anyBoolean());
+    return persistedBaselines;
+  }
+
+  private FeatureFlagDefinition testFlag() {
+    return new FeatureFlagDefinition(FLAG, false);
   }
 
   private FeatureFlagResource resource(User actor) {

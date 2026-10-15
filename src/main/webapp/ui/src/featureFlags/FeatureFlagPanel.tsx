@@ -81,15 +81,7 @@ export default function FeatureFlagPanel({ theme }: { theme: "light" | "dark" })
                     entry={entry}
                     canChangeBaselines={canChangeBaselines}
                     mutationPending={mutation.isPending}
-                    onOverride={(value) =>
-                      mutation.mutate({ flagName, document: { overrideValue: value } }, { onSuccess: markChanged })
-                    }
-                    onClearOverride={() =>
-                      mutation.mutate({ flagName, document: { overrideValue: null } }, { onSuccess: markChanged })
-                    }
-                    onBaseline={(value) =>
-                      mutation.mutate({ flagName, document: { baselineValue: value } }, { onSuccess: markChanged })
-                    }
+                    onPatch={(document) => mutation.mutate({ flagName, document }, { onSuccess: markChanged })}
                   />
                 );
               })}

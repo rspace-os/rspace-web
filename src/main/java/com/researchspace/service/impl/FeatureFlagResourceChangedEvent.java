@@ -8,10 +8,6 @@ import java.util.Objects;
 public record FeatureFlagResourceChangedEvent(
     User actor, User subject, FeatureFlagResource resource) {
 
-  public FeatureFlagResourceChangedEvent(User actor, FeatureFlagResource resource) {
-    this(actor, actor, resource);
-  }
-
   public FeatureFlagResourceChangedEvent {
     Objects.requireNonNull(actor, "Audit actor");
     Objects.requireNonNull(subject, "Audit subject");

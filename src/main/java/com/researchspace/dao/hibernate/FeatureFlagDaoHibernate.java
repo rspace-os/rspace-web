@@ -6,8 +6,8 @@ import com.researchspace.featureflags.FeatureFlagUserOverride;
 import com.researchspace.model.User;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,13 +20,16 @@ public class FeatureFlagDaoHibernate implements FeatureFlagDao {
 
   @Override
   public Map<String, Boolean> getBaselineValues() {
-    List<FeatureFlagBaseline> baselines =
-        getSession().createQuery("from FeatureFlagBaseline", FeatureFlagBaseline.class).list();
-    Map<String, Boolean> values = new LinkedHashMap<>();
-    for (FeatureFlagBaseline baseline : baselines) {
-      values.put(baseline.getFlagName(), baseline.isEnabled());
-    }
-    return values;
+    return getSession()
+        .createQuery("from FeatureFlagBaseline", FeatureFlagBaseline.class)
+        .list()
+        .stream()
+        .collect(
+            Collectors.toMap(
+                FeatureFlagBaseline::getFlagName,
+                FeatureFlagBaseline::isEnabled,
+                (existing, replacement) -> replacement,
+                LinkedHashMap::new));
   }
 
   @Override
@@ -63,18 +66,18 @@ public class FeatureFlagDaoHibernate implements FeatureFlagDao {
 
   @Override
   public Map<String, Boolean> getOverridesForUser(Long userId) {
-    List<FeatureFlagUserOverride> overrides =
-        getSession()
-            .createQuery(
-                "from FeatureFlagUserOverride where user.id = :userId",
-                FeatureFlagUserOverride.class)
-            .setParameter("userId", userId)
-            .list();
-    Map<String, Boolean> values = new LinkedHashMap<>();
-    for (FeatureFlagUserOverride override : overrides) {
-      values.put(override.getFlagName(), override.isEnabled());
-    }
-    return values;
+    return getSession()
+        .createQuery(
+            "from FeatureFlagUserOverride where user.id = :userId", FeatureFlagUserOverride.class)
+        .setParameter("userId", userId)
+        .list()
+        .stream()
+        .collect(
+            Collectors.toMap(
+                FeatureFlagUserOverride::getFlagName,
+                FeatureFlagUserOverride::isEnabled,
+                (existing, replacement) -> replacement,
+                LinkedHashMap::new));
   }
 
   @Override
@@ -88,7 +91,7 @@ public class FeatureFlagDaoHibernate implements FeatureFlagDao {
             .setParameter("flagName", flagName)
             .uniqueResult();
     if (override == null) {
-      User user = getSession().load(User.class, userId);
+      User user = getSession().getReference(User.class, userId);
       getSession().persist(new FeatureFlagUserOverride(user, flagName, enabled));
     } else {
       override.setEnabled(enabled);

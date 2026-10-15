@@ -19,15 +19,9 @@ public final class FeatureFlagAuditTrail {
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void featureFlagChanged(FeatureFlagResourceChangedEvent event) {
-    if (event.actor().equals(event.subject())) {
-      auditTrail.notify(new GenericEvent(event.actor(), event.resource(), AuditAction.WRITE));
-      return;
-    }
+    String description =
+        event.actor().equals(event.subject()) ? null : "subject=" + event.subject().getUsername();
     auditTrail.notify(
-        new GenericEvent(
-            event.actor(),
-            event.resource(),
-            AuditAction.WRITE,
-            "subject=" + event.subject().getUsername()));
+        new GenericEvent(event.actor(), event.resource(), AuditAction.WRITE, description));
   }
 }

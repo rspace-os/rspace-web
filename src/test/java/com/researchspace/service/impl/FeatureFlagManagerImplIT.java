@@ -45,10 +45,11 @@ class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
     new TransactionTemplate(getTxMger())
         .executeWithoutResult(
             ignored -> {
-              featureFlags.updateFeatureFlag(FLAG, new Patch(true, false, null), sysadmin);
+              featureFlags.updateFeatureFlag(
+                  FLAG, new Patch(true, false, null), sysadmin, sysadmin);
               secondResponse.set(
                   featureFlags
-                      .updateFeatureFlag(FLAG, new Patch(true, false, null), sysadmin)
+                      .updateFeatureFlag(FLAG, new Patch(true, false, null), sysadmin, sysadmin)
                       .orElseThrow()
                       .isBaselineValue());
             });
@@ -62,10 +63,11 @@ class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
     new TransactionTemplate(getTxMger())
         .executeWithoutResult(
             ignored -> {
-              featureFlags.updateFeatureFlag(FLAG, new Patch(true, false, null), sysadmin);
+              featureFlags.updateFeatureFlag(
+                  FLAG, new Patch(true, false, null), sysadmin, sysadmin);
               assertFalse(
                   featureFlags
-                      .updateFeatureFlag(FLAG, new Patch(false, false, null), sysadmin)
+                      .updateFeatureFlag(FLAG, new Patch(false, false, null), sysadmin, sysadmin)
                       .orElseThrow()
                       .isBaselineValue());
             });
@@ -76,6 +78,7 @@ class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
     new TransactionTemplate(getTxMger())
         .executeWithoutResult(
             ignored ->
-                featureFlags.updateFeatureFlag(FLAG, new Patch(value, false, null), sysadmin));
+                featureFlags.updateFeatureFlag(
+                    FLAG, new Patch(value, false, null), sysadmin, sysadmin));
   }
 }
