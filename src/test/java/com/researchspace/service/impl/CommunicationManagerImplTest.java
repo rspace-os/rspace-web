@@ -1,8 +1,15 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -19,20 +26,29 @@ import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.testutils.TestFactory;
+import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.annotation.AnnotationTransactionAttributeSource;
+import org.springframework.transaction.interceptor.TransactionInterceptor;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 public class CommunicationManagerImplTest {
@@ -55,10 +71,17 @@ public class CommunicationManagerImplTest {
   @Mock NotificationPostCommitExecutor notificationPostCommitExecutor;
 
   CommunicationManagerImplTSS mgr = new CommunicationManagerImplTSS();
+  private User originator;
+  private User recipient;
 
   @BeforeEach
   public void setUp() {
     setDependencies(mgr);
+    originator = TestFactory.createAnyUser("originator");
+    recipient = TestFactory.createAnyUser("recipient");
+    recipient.setId(1L);
+    lenient().when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
+    mgr.setBroadcasters(Collections.singletonList(broadcaster1));
   }
 
   @AfterEach
@@ -72,32 +95,25 @@ public class CommunicationManagerImplTest {
   @Test
   public void testBroadcastWillUseAllBroadcastersEvenIfOneThrowsException() {
     mgr.setBroadcasters(Arrays.asList(new Broadcaster[] {broadcaster1, broadcaster2}));
-    Mockito.doThrow(RuntimeException.class)
-        .when(broadcaster1)
-        .broadcast(Mockito.any(Communication.class));
+    doThrow(RuntimeException.class).when(broadcaster1).broadcast(any(Communication.class));
 
     User sender = TestFactory.createAnyUser("s");
     User recip = TestFactory.createAnyUser("recip");
 
     MessageOrRequest mor = TestFactory.createAnyMessageForRecipuent(sender, recip);
     mgr.broadcast(mor, Collections.EMPTY_SET);
-    Mockito.verify(broadcaster2, Mockito.times(1)).broadcast(Mockito.any(Communication.class));
+    verify(broadcaster2, times(1)).broadcast(any(Communication.class));
     assertTrue(mgr.notified);
   }
 
   @Test
   public void notificationSideEffectsWaitForCommitAndRunOnce() {
-    User originator = TestFactory.createAnyUser("originator");
-    User recipientOne = TestFactory.createAnyUser("recipientOne");
-    recipientOne.setId(1L);
     User recipientTwo = TestFactory.createAnyUser("recipientTwo");
     recipientTwo.setId(2L);
-    when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
-    mgr.setBroadcasters(Collections.singletonList(broadcaster1));
     executePostCommitCallbacksImmediately();
     TransactionSynchronizationManager.initSynchronization();
 
-    mgr.notify(originator, null, notificationConfig(true, recipientOne, recipientTwo), "message");
+    mgr.notify(originator, null, notificationConfig(true, recipient, recipientTwo), "message");
 
     verify(commDao).save(any(Notification.class));
     verifyNoInteractions(broadcaster1, notificnTracker, notificationPostCommitExecutor);
@@ -107,17 +123,12 @@ public class CommunicationManagerImplTest {
 
     verify(notificationPostCommitExecutor).execute(any(Runnable.class));
     verify(broadcaster1).broadcast(any(Communication.class));
-    verify(notificnTracker).changeUserNotificationCount(recipientOne.getId(), 1);
+    verify(notificnTracker).changeUserNotificationCount(recipient.getId(), 1);
     verify(notificnTracker).changeUserNotificationCount(recipientTwo.getId(), 1);
   }
 
   @Test
   public void notificationSideEffectsDoNotRunAfterRollback() {
-    User originator = TestFactory.createAnyUser("originator");
-    User recipient = TestFactory.createAnyUser("recipient");
-    recipient.setId(1L);
-    when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
-    mgr.setBroadcasters(Collections.singletonList(broadcaster1));
     TransactionSynchronizationManager.initSynchronization();
 
     mgr.notify(originator, null, notificationConfig(true, recipient), "message");
@@ -131,11 +142,6 @@ public class CommunicationManagerImplTest {
 
   @Test
   public void notificationTrackingWaitsForCommitWhenBroadcastIsDisabled() {
-    User originator = TestFactory.createAnyUser("originator");
-    User recipient = TestFactory.createAnyUser("recipient");
-    recipient.setId(1L);
-    when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
-    mgr.setBroadcasters(Collections.singletonList(broadcaster1));
     executePostCommitCallbacksImmediately();
     TransactionSynchronizationManager.initSynchronization();
 
@@ -151,12 +157,6 @@ public class CommunicationManagerImplTest {
 
   @Test
   public void notificationSideEffectsRemainImmediateWithoutSynchronization() {
-    User originator = TestFactory.createAnyUser("originator");
-    User recipient = TestFactory.createAnyUser("recipient");
-    recipient.setId(1L);
-    when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
-    mgr.setBroadcasters(Collections.singletonList(broadcaster1));
-
     mgr.notify(originator, null, notificationConfig(true, recipient), "message");
 
     verify(broadcaster1).broadcast(any(Communication.class));
@@ -176,29 +176,23 @@ public class CommunicationManagerImplTest {
     User sysadmin = TestFactory.createAnyUser("sysadmin1");
     when(userDao.getUserByUsername(originator.getUsername())).thenReturn(originator);
     when(userDao.getUserByUsername(sysadmin.getUsername())).thenReturn(sysadmin);
-    Mockito.doThrow(RuntimeException.class)
-        .when(broadcaster1)
-        .broadcast(Mockito.any(Communication.class));
-    javax.sql.DataSource dataSource = Mockito.mock(javax.sql.DataSource.class);
-    java.util.List<java.sql.Connection> connections = new java.util.ArrayList<>();
+    doThrow(RuntimeException.class).when(broadcaster1).broadcast(any(Communication.class));
+    DataSource dataSource = mock(DataSource.class);
+    List<Connection> connections = new ArrayList<>();
     when(dataSource.getConnection())
         .thenAnswer(
             ignored -> {
-              java.sql.Connection connection = Mockito.mock(java.sql.Connection.class);
+              Connection connection = mock(Connection.class);
               when(connection.getAutoCommit()).thenReturn(true);
               connections.add(connection);
               return connection;
             });
-    org.springframework.jdbc.datasource.DataSourceTransactionManager transactions =
-        new org.springframework.jdbc.datasource.DataSourceTransactionManager(dataSource);
-    org.springframework.aop.framework.ProxyFactory factory =
-        new org.springframework.aop.framework.ProxyFactory(new NotificationPostCommitExecutor());
+    DataSourceTransactionManager transactions = new DataSourceTransactionManager(dataSource);
+    ProxyFactory factory = new ProxyFactory(new NotificationPostCommitExecutor());
     factory.addAdvice(
-        new org.springframework.transaction.interceptor.TransactionInterceptor(
-            transactions,
-            new org.springframework.transaction.annotation.AnnotationTransactionAttributeSource()));
+        new TransactionInterceptor(transactions, new AnnotationTransactionAttributeSource()));
     ReflectionTestUtils.setField(realManager, "notificationPostCommitExecutor", factory.getProxy());
-    java.util.List<Object> saveTransactions = new java.util.ArrayList<>();
+    List<Object> saveTransactions = new ArrayList<>();
     when(commDao.save(any(Notification.class)))
         .thenAnswer(
             invocation -> {
@@ -206,7 +200,7 @@ public class CommunicationManagerImplTest {
               return invocation.getArgument(0);
             });
 
-    new org.springframework.transaction.support.TransactionTemplate(transactions)
+    new TransactionTemplate(transactions)
         .executeWithoutResult(
             ignored -> {
               realManager.notify(originator, null, notificationConfig(true, recipient), "message");
@@ -214,24 +208,22 @@ public class CommunicationManagerImplTest {
             });
 
     assertEquals(2, saveTransactions.size());
-    org.junit.jupiter.api.Assertions.assertNotNull(saveTransactions.get(0));
-    org.junit.jupiter.api.Assertions.assertNotNull(saveTransactions.get(1));
-    org.junit.jupiter.api.Assertions.assertNotSame(
-        saveTransactions.get(0), saveTransactions.get(1));
+    assertNotNull(saveTransactions.get(0));
+    assertNotNull(saveTransactions.get(1));
+    assertNotSame(saveTransactions.get(0), saveTransactions.get(1));
     assertEquals(3, connections.size());
-    for (java.sql.Connection connection : connections) {
+    for (Connection connection : connections) {
       verify(connection).commit();
     }
 
-    org.mockito.ArgumentCaptor<Notification> notifications =
-        org.mockito.ArgumentCaptor.forClass(Notification.class);
-    Mockito.verify(commDao, Mockito.times(2)).save(notifications.capture());
+    ArgumentCaptor<Notification> notifications = ArgumentCaptor.forClass(Notification.class);
+    verify(commDao, times(2)).save(notifications.capture());
     assertEquals(
         NotificationType.NOTIFICATION_DOCUMENT_SHARED,
         notifications.getAllValues().get(0).getNotificationType());
     assertEquals(
         NotificationType.PROCESS_FAILED, notifications.getAllValues().get(1).getNotificationType());
-    Mockito.verify(broadcaster1, Mockito.times(1)).broadcast(Mockito.any(Communication.class));
+    verify(broadcaster1, times(1)).broadcast(any(Communication.class));
     verify(notificnTracker).changeUserNotificationCount(recipient.getId(), 1);
     verify(notificnTracker).changeUserNotificationCount(originator.getId(), 1);
   }
@@ -245,13 +237,13 @@ public class CommunicationManagerImplTest {
   }
 
   private void executePostCommitCallbacksImmediately() {
-    Mockito.doAnswer(
+    doAnswer(
             invocation -> {
               ((Runnable) invocation.getArgument(0)).run();
               return null;
             })
         .when(notificationPostCommitExecutor)
-        .execute(Mockito.any(Runnable.class));
+        .execute(any(Runnable.class));
   }
 
   private NotificationConfig notificationConfig(boolean broadcast, User... recipients) {

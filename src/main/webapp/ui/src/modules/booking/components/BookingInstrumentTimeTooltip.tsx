@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { browserTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
@@ -20,12 +21,12 @@ export function BookingInstrumentTimeTooltip({
   children,
 }: BookingInstrumentTimeTooltipProps) {
   const { t, i18n } = useTranslation("booking");
-  const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const browserZone = browserTimeZone();
 
   const showTooltip =
     !!start &&
     !!instrumentTimeZone &&
-    (instrumentTimeZone !== displayTimeZone || instrumentTimeZone !== browserTimeZone);
+    (instrumentTimeZone !== displayTimeZone || (browserZone !== null && instrumentTimeZone !== browserZone));
 
   if (!showTooltip && !trigger) return children ?? null;
 
@@ -53,11 +54,7 @@ export function BookingInstrumentTimeTooltip({
 
   return (
     <Tooltip disabled={!showTooltip}>
-      {children === undefined ? (
-        <TooltipTrigger render={tooltipTrigger} />
-      ) : (
-        <TooltipTrigger render={tooltipTrigger}>{children}</TooltipTrigger>
-      )}
+      <TooltipTrigger render={tooltipTrigger}>{children}</TooltipTrigger>
       {showTooltip && (
         <TooltipContent role="tooltip">
           {t("bookings.instrumentTimeTooltip", {
