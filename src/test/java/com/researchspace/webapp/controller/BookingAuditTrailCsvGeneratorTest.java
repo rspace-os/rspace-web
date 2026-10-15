@@ -18,8 +18,13 @@ import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -75,36 +80,41 @@ public class BookingAuditTrailCsvGeneratorTest {
     assertEquals("Booking", getCellByRowColumn(csv, 5, 3));
   }
 
-  @Test
-  public void bookingCsvLabelsCreateChangeAndRestoreAndKeepOtherActionsRaw() throws IOException {
-    ISearchResults<AuditTrailSearchResult> results =
-        new SearchResultsImpl<>(
-            toList(
-                createAuditSearchResult(
-                    AuditDomain.BOOKING, AuditAction.CREATE, "bookings:21", "CONFIRMED", null),
-                createAuditSearchResult(
-                    AuditDomain.BOOKING, AuditAction.WRITE, "bookings:21", "CONFIRMED", null),
-                createAuditSearchResult(
-                    AuditDomain.BOOKING,
-                    AuditAction.RESTORE,
-                    "booking-configurations:22",
-                    "ACTIVE",
-                    null),
-                createAuditSearchResult(
-                    AuditDomain.BOOKING, AuditAction.DELETE, "bookings:21", "CONFIRMED", null),
-                createAuditSearchResult(
-                    AuditDomain.RECORD, AuditAction.RESTORE, "SD23", "ACTIVE", null)),
-            0,
-            5);
+  @ParameterizedTest
+  @MethodSource("bookingCsvActionCases")
+  public void bookingCsvLabelsActions(
+      AuditDomain domain,
+      AuditAction action,
+      String id,
+      String state,
+      String description,
+      String expected)
+      throws IOException {
+    AuditTrailSearchResult result = createAuditSearchResult(domain, action, id, state, description);
 
     ResponseEntity<String> csv =
-        auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
+        auditTrailSearchResultCsvGenerator.convertToCsv(
+            singleResult(result), defaultSearchConfig());
 
-    assertEquals("Created", getCellByRowColumn(csv, 2, 2));
-    assertEquals("Changed", getCellByRowColumn(csv, 3, 2));
-    assertEquals("Restored", getCellByRowColumn(csv, 4, 2));
-    assertEquals("DELETE", getCellByRowColumn(csv, 5, 2));
-    assertEquals("RESTORE", getCellByRowColumn(csv, 6, 2));
+    assertEquals(expected, getCellByRowColumn(csv, 2, 2));
+  }
+
+  private static Stream<Arguments> bookingCsvActionCases() {
+    return Stream.of(
+        Arguments.of(
+            AuditDomain.BOOKING, AuditAction.CREATE, "bookings:21", "CONFIRMED", null, "Created"),
+        Arguments.of(
+            AuditDomain.BOOKING, AuditAction.WRITE, "bookings:21", "CONFIRMED", null, "Changed"),
+        Arguments.of(
+            AuditDomain.BOOKING,
+            AuditAction.RESTORE,
+            "booking-configurations:22",
+            "ACTIVE",
+            null,
+            "Restored"),
+        Arguments.of(
+            AuditDomain.BOOKING, AuditAction.DELETE, "bookings:21", "CONFIRMED", null, "DELETE"),
+        Arguments.of(AuditDomain.RECORD, AuditAction.RESTORE, "SD23", "ACTIVE", null, "RESTORE"));
   }
 
   @Test
@@ -125,7 +135,7 @@ public class BookingAuditTrailCsvGeneratorTest {
         .getEvent()
         .getData()
         .getData()
-        .put("target", java.util.Map.of("type", "INSTRUMENT", "id", 5));
+        .put("target", Map.of("type", "INSTRUMENT", "id", 5));
     AuditTrailSearchResult booking =
         createAuditSearchResult(
             AuditDomain.BOOKING, AuditAction.WRITE, "bookings:26", "CONFIRMED", null);

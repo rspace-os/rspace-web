@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { browserTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingHourCycle, sameTimeZone } from "@/modules/booking/domain/bookingTime";
+import { bookingHourCycle, instrumentZoneDiffers } from "@/modules/booking/domain/bookingTime";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 
 export type BookingInstrumentTimeTooltipProps = {
@@ -32,8 +32,7 @@ export function BookingInstrumentTimeTooltip({
   const showTooltip =
     (!!start || !!time) &&
     !!instrumentTimeZone &&
-    (!sameTimeZone(instrumentTimeZone, displayTimeZone) ||
-      (browserZone !== null && !sameTimeZone(instrumentTimeZone, browserZone)));
+    instrumentZoneDiffers(instrumentTimeZone, displayTimeZone, browserZone);
 
   if (!showTooltip && !trigger) return children ?? null;
 

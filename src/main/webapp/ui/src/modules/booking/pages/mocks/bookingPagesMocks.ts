@@ -20,19 +20,14 @@ import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calend
 import { bookingsOpenApi } from "../my-bookings/mocks/bookingMocks";
 import { busyBooking, collectionResponse, otherBooking, ownBooking } from "./bookingCalendarFixtures";
 
-export const availabilityBookingFields = BOOKING_READ_FIELDS;
 export const calendarBookingFields = CALENDAR_BOOKING_FIELDS;
 
 export const bookingPageRequests: {
   collectionQueries: string[];
-  bookingRequests: number;
-  bookingQuery: URL | undefined;
   calendarBookingRequests: URL[];
   createdPayloads: Array<Record<string, unknown>>;
 } = {
   collectionQueries: [],
-  bookingRequests: 0,
-  bookingQuery: undefined,
   calendarBookingRequests: [],
   createdPayloads: [],
 };
@@ -100,8 +95,6 @@ async function catalogueCandidates(url: URL): Promise<BookingCatalogueItem[]> {
 
 export function resetBookingPageRequests(): void {
   bookingPageRequests.collectionQueries = [];
-  bookingPageRequests.bookingRequests = 0;
-  bookingPageRequests.bookingQuery = undefined;
   bookingPageRequests.calendarBookingRequests = [];
   bookingPageRequests.createdPayloads = [];
 }
@@ -171,17 +164,7 @@ export function bookingPagesHandlers(): RequestHandler[] {
         bookingPageRequests.calendarBookingRequests.push(url);
         return apiV2CollectionResponse("bookings", request, [ownBooking, otherBooking, busyBooking]);
       }
-      if (fields === availabilityBookingFields) {
-        bookingPageRequests.bookingRequests += 1;
-        bookingPageRequests.bookingQuery = url;
-        return HttpResponse.json({
-          docs: availabilityBookings,
-          totalDocs: availabilityBookings.length,
-          totalPages: 1,
-          page: 1,
-          hasNextPage: false,
-        });
-      }
+      if (fields === BOOKING_READ_FIELDS) return apiV2CollectionResponse("bookings", request, availabilityBookings);
       return undefined;
     }),
     http.post("/api/v2/bookings", async ({ request }) => {

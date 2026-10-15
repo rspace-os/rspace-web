@@ -104,10 +104,15 @@ const BookingAvailabilityIdentitySchema = {
   state: v.picklist(["CONFIRMED", "CANCELLED"]),
   kind: v.optional(BookingEventKindSchema, "BOOKING"),
 };
-const BookingFullPrivacyEntries = {
+const BookingListPrivacyEntries = {
   purpose: v.nullable(v.string()),
   bookedBy: v.nullable(v.string()),
   createdBy: v.optional(v.nullable(v.string())),
+};
+
+const BookingFullPrivacyEntries = {
+  ...BookingListPrivacyEntries,
+  cancellationReason: v.nullable(v.string()),
 };
 
 const BookingFullManagementEntries = {
@@ -127,7 +132,6 @@ function bookingSchema<
       ...identity,
       privacy: v.literal("full"),
       ...BookingFullPrivacyEntries,
-      cancellationReason: v.nullable(v.string()),
       ...BookingFullManagementEntries,
     }),
     v.object({
@@ -160,7 +164,6 @@ export const BookingDetailsSchema = withEndAfterStart(
     canViewConfiguration: v.boolean(),
     privacy: v.literal("full"),
     ...BookingFullPrivacyEntries,
-    cancellationReason: v.nullable(v.string()),
     ...BookingFullManagementEntries,
   }),
   ["end"],
@@ -173,7 +176,7 @@ const BookingListDocumentObjectSchema = v.object({
   canViewConfiguration: v.boolean(),
   /** Null when the caller can see only a busy event. */
   requesterId: v.nullable(v.number()),
-  ...BookingFullPrivacyEntries,
+  ...BookingListPrivacyEntries,
   privacy: v.picklist(["full", "busy"]),
   ...BookingFullManagementEntries,
 });

@@ -1,13 +1,6 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -15,40 +8,10 @@ import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import type { BookingDetails } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import { createBookingEventTestRouteTree } from "./bookingEventTestHarness";
-
-const document = {
-  id: 41,
-  version: 0,
-  target: {
-    relationTo: "booking-instruments",
-    value: {
-      id: 123,
-      name: "Confocal microscope",
-      deleted: false,
-      parentContainerName: "Imaging lab",
-      parentContainerGlobalId: "IC456",
-    },
-    globalId: "IN123",
-  },
-  canViewConfiguration: true,
-  timezone: "Europe/Berlin",
-  start: "2026-08-17T08:00:00Z",
-  end: "2026-08-17T10:00:00Z",
-  state: "CONFIRMED",
-  kind: "BOOKING",
-  privacy: "full",
-  cancellationReason: null as string | null,
-  purpose: "Cell imaging",
-  bookedBy: "Ada Lovelace (ada)",
-  createdBy: "Grace Hopper (grace)",
-  canEdit: true,
-  canCancel: true,
-  createdAt: "2026-08-01T09:00:00Z",
-  updatedAt: "2026-08-02T10:00:00Z",
-} as const;
+import { bookingEventFixture, createBookingEventTestRouter } from "./bookingEventTestHarness";
 
 function renderPage(
   path = "/booking/calendar/bookings/41",
@@ -68,18 +31,7 @@ function renderPage(
   } else {
     queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
   }
-  const root = createRootRoute({ component: Outlet });
-  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
-  const myBookings = createRoute({ getParentRoute: () => booking, path: "/my-bookings", component: Outlet });
-  const item = createRoute({
-    getParentRoute: () => booking,
-    path: "/bookable-items/$globalId/{-$tab}",
-    component: Outlet,
-  });
-  const router = createRouter({
-    routeTree: root.addChildren([booking.addChildren([myBookings, item, createBookingEventTestRouteTree(booking)])]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
+  const router = createBookingEventTestRouter(path);
   return {
     ...render(
       <QueryClientProvider client={queryClient}>
@@ -102,7 +54,7 @@ describe("BookingEventPage", () => {
       http.get("/api/v2/bookings/41", async () => {
         requested = true;
         await booking.promise;
-        return HttpResponse.json(document);
+        return HttpResponse.json(bookingEventFixture);
       }),
     );
     renderPage("/booking/calendar/bookings/41", preferences.promise);
@@ -133,7 +85,7 @@ describe("BookingEventPage", () => {
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.queryByRole("button")).not.toBeInTheDocument();
     } finally {
-      response.resolve(HttpResponse.json(document));
+      response.resolve(HttpResponse.json(bookingEventFixture));
     }
     expect(await screen.findByRole("heading", { name: "Confocal microscope" })).toBeVisible();
     expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy", "true");
@@ -142,7 +94,7 @@ describe("BookingEventPage", () => {
   it.each([403, 404])("does not retain another booking while navigating to a denied booking (%s)", async (status) => {
     const response = Promise.withResolvers<Response>();
     server.use(
-      http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
+      http.get("/api/v2/bookings/41", () => HttpResponse.json(bookingEventFixture)),
       http.get("/api/v2/bookings/42", () => response.promise),
     );
     const { router } = renderPage();
@@ -161,7 +113,7 @@ describe("BookingEventPage", () => {
   });
 
   it("renders the event readout, metadata aside, item return, and compact location", async () => {
-    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json(document)));
+    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json(bookingEventFixture)));
     renderPage();
 
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toHaveClass(
@@ -195,7 +147,9 @@ describe("BookingEventPage", () => {
     ["later", "2026-10-25T01:30:00Z", /0?2:30\s?(AM)? \+01:00 – .*0?3:30\s?(AM)? \+01:00/],
   ])("tells the %s occurrence of a repeated hour apart in the booking's times", async (_, start, when) => {
     server.use(
-      http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...document, start, end: "2026-10-25T02:30:00Z" })),
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({ ...bookingEventFixture, start, end: "2026-10-25T02:30:00Z" }),
+      ),
     );
     renderPage("/booking/calendar/bookings/41", undefined, {
       ...inheritedBrowserBookingPreferences,
@@ -212,7 +166,7 @@ describe("BookingEventPage", () => {
     server.use(
       http.get("/api/v2/bookings/41", () =>
         HttpResponse.json({
-          ...document,
+          ...bookingEventFixture,
           target: null,
           timezone: null,
           canViewConfiguration: false,
@@ -239,13 +193,7 @@ describe("BookingEventPage", () => {
   });
 
   it("cancels in place and keeps the same readable URL", async () => {
-    let current = {
-      ...document,
-      version: document.version as number,
-      state: document.state as "CONFIRMED" | "CANCELLED",
-      canEdit: document.canEdit as boolean,
-      canCancel: document.canCancel as boolean,
-    };
+    let current: BookingDetails = { ...bookingEventFixture };
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(current)),
       http.patch("/api/v2/bookings/41", () => {
@@ -308,7 +256,13 @@ describe("BookingEventPage", () => {
   it("conceals a busy-only response behind the unavailable state", async () => {
     server.use(
       http.get("/api/v2/bookings/41", () =>
-        HttpResponse.json({ ...document, privacy: "busy", purpose: null, cancellationReason: null, bookedBy: null }),
+        HttpResponse.json({
+          ...bookingEventFixture,
+          privacy: "busy",
+          purpose: null,
+          cancellationReason: null,
+          bookedBy: null,
+        }),
       ),
     );
     renderPage();
