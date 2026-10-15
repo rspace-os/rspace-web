@@ -3,41 +3,27 @@ import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 setupRealAppI18n();
 
 import "@/__tests__/__mocks__/matchMedia";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/react-router";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { NuqsAdapter } from "nuqs/adapters/react";
-import { Suspense } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
-import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
-import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
-import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
-import { bookableItemFixtures, bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
+import {
+  allDayBookableItemCandidates,
+  bookableItemFixtures,
+  bookableItemsHandlers,
+  bookingCataloguePage,
+  collectionPage,
+} from "../bookable-items/mocks/bookableItemsMocks";
+import { renderBookingTestPage } from "../calendar/__tests__/calendarTestHarness";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 
 const fixedClock = () => new Date("2026-08-17T08:30:00Z");
 
-function collectionPage(docs: readonly unknown[]) {
-  return { docs, totalDocs: docs.length, totalPages: docs.length === 0 ? 0 : 1, page: 1 };
-}
-
 async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
   const router = createRouter({
@@ -47,28 +33,13 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
           getParentRoute: () => bookingRoute,
           path: "/all-items/",
           validateSearch: allBookableItemsSearch,
-          component: () => <AllBookableItemsPage clock={fixedClock} userTimeZone="UTC" />,
+          component: () => <AllBookableItemsPage clock={fixedClock} />,
         }),
       ]),
     ]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
-  const wrapper = await createRealI18nWrapper({
-    resources: { booking: bookingEnglish, common: commonEnglish },
-    defaultNS: "common",
-  });
-
-  const result = render(
-    <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
-    </QueryClientProvider>,
-    { wrapper },
-  );
-  return { ...result, router };
+  return renderBookingTestPage(router);
 }
 
 describe("AllBookableItemsPage", () => {
@@ -125,13 +96,7 @@ describe("AllBookableItemsPage", () => {
       http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
-        return HttpResponse.json({
-          items: [],
-          page: 1,
-          pageSize: Number(url.searchParams.get("limit")),
-          total: 0,
-          facets: { types: ["INSTRUMENT"] },
-        });
+        return HttpResponse.json(bookingCataloguePage([], 1, Number(url.searchParams.get("limit")), 0));
       }),
     );
     const { router } = await renderPage();
@@ -146,11 +111,7 @@ describe("AllBookableItemsPage", () => {
   });
 
   it("shows both availability counts before selecting a filter and after clearing it", async () => {
-    const candidates = bookableItemFixtures.slice(0, 2).map((item) => ({
-      ...item,
-      timezone: "UTC",
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-    }));
+    const candidates = allDayBookableItemCandidates();
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(candidates))),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),

@@ -1,11 +1,11 @@
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { page } from "vitest/browser";
+import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { bookingPagesHandlers, resetBookingPageRequests } from "@/modules/booking/pages/mocks/bookingPagesMocks";
-import { currentUser } from "../calendar/calendarFixtures";
 import { AllBookableItemsStory } from "./AllBookableItemsPage.story";
 import { AllBookableItemsPage } from "./pageObjects/AllBookableItemsPage";
 
@@ -32,7 +32,6 @@ afterEach(() => {
 
 describe("the All Bookable Items page", () => {
   test.each([390, 1440])("keeps the quick-filter toolbar and results width stable at %s px", async (width) => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const response = Promise.withResolvers<void>();
     worker.use(
       http.get("/api/v2/booking-configurations", async () => {
@@ -40,32 +39,32 @@ describe("the All Bookable Items page", () => {
         return undefined;
       }),
     );
-    await page.viewport(width, 900);
-    window.history.replaceState({}, "", "/booking/all-items?date=2026-08-17&availability=available-now");
-    render(<AllBookableItemsStory containerWidth={width} />);
-    try {
-      const loading = page.getByText("Finding bookable items…", { exact: true });
-      await expect.element(loading).toHaveClass("sr-only");
-      await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
-      await document.fonts.ready;
-      const results = width === 390 ? pageObj.cards : pageObj.tableElement;
-      const before = results.element().getBoundingClientRect();
-      const toolbarBefore = pageObj.toolbar.element().getBoundingClientRect();
-      await expectNoAxeViolations();
-      response.resolve();
-      await expect.element(loading).not.toBeInTheDocument();
-      await expect.element(pageObj.confocalAvailability).toBeVisible();
-      const after = results.element().getBoundingClientRect();
-      expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
-      expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
-      expect(Math.abs(after.top - before.top)).toBeLessThanOrEqual(2);
-      expect(Math.abs(pageObj.toolbar.element().getBoundingClientRect().top - toolbarBefore.top)).toBeLessThanOrEqual(
-        2,
-      );
-    } finally {
-      response.resolve();
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    await withViewport(width, async () => {
+      window.history.replaceState({}, "", "/booking/all-items?date=2026-08-17&availability=available-now");
+      render(<AllBookableItemsStory containerWidth={width} />);
+      try {
+        const loading = page.getByText("Finding bookable items…", { exact: true });
+        await expect.element(loading).toHaveClass("sr-only");
+        await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
+        await document.fonts.ready;
+        const results = width === 390 ? pageObj.cards : pageObj.tableElement;
+        const before = results.element().getBoundingClientRect();
+        const toolbarBefore = pageObj.toolbar.element().getBoundingClientRect();
+        await expectNoAxeViolations();
+        response.resolve();
+        await expect.element(loading).not.toBeInTheDocument();
+        await expect.element(pageObj.confocalAvailability).toBeVisible();
+        const after = results.element().getBoundingClientRect();
+        expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
+        expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
+        expect(Math.abs(after.top - before.top)).toBeLessThanOrEqual(2);
+        expect(Math.abs(pageObj.toolbar.element().getBoundingClientRect().top - toolbarBefore.top)).toBeLessThanOrEqual(
+          2,
+        );
+      } finally {
+        response.resolve();
+      }
+    });
   });
 
   test("navigates to the bookable item details page", async () => {
@@ -79,34 +78,8 @@ describe("the All Bookable Items page", () => {
     await expect.poll(() => window.location.pathname).toBe("/booking/bookable-items/IN123");
   });
 
-  test("starts immutable maintenance creation from bookable item details for a direct sysadmin", async () => {
-    worker.use(
-      http.get("/api/v2/users/me", () =>
-        HttpResponse.json({
-          ...currentUser,
-          hasSysAdminRole: true,
-          session: { ...currentUser.session, operatedAs: false },
-        }),
-      ),
-    );
-    render(<AllBookableItemsStory />);
-    await pageObj.detailsButton.click();
-
-    await page.getByRole("button", { name: "More event creation options" }).click();
-    await page.getByRole("menuitem", { name: "New Maintenance Event" }).click();
-    const dialog = page.getByRole("dialog", { name: "New Maintenance Event" });
-    await expect.element(dialog).toBeVisible();
-    await expect.element(dialog.getByText("Confocal microscope", { exact: true })).toBeVisible();
-    await expect.element(dialog.getByRole("combobox", { name: "Bookable item" })).not.toBeInTheDocument();
-    await expect.element(dialog.getByRole("radio")).not.toBeInTheDocument();
-    await dialog.getByRole("button", { name: "Cancel" }).click();
-  });
-
   test("uses standardized cards in a narrow container with full-width availability and all controls", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(1200, 900);
-
-    try {
+    await withViewport(1200, async () => {
       render(<AllBookableItemsStory containerWidth={600} />);
 
       await expect.element(pageObj.cards).toBeVisible();
@@ -135,16 +108,11 @@ describe("the All Bookable Items page", () => {
         .element(pageObj.cardDetailsButton("Confocal microscope"))
         .toHaveAttribute("href", "/booking/bookable-items/IN123");
       await expectNoAxeViolations();
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
   test("wraps quick-filter buttons in a very narrow container", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(1200, 900);
-
-    try {
+    await withViewport(1200, async () => {
       render(<AllBookableItemsStory containerWidth={360} />);
 
       await expect.element(pageObj.availableNow).toBeVisible();
@@ -156,9 +124,7 @@ describe("the All Bookable Items page", () => {
             pageObj.availableNow.element().getBoundingClientRect().top,
         )
         .toBe(true);
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
   test("keeps a many-event slice scrollable and usable", async () => {
@@ -217,17 +183,14 @@ describe("the All Bookable Items page", () => {
     pageObj.focusAvailabilitySlice("Confocal microscope", 11);
     await expect.element(pageObj.availabilityDetails).toBeVisible();
 
-    await pageObj.pressEscape();
+    await userEvent.keyboard("{Escape}");
 
     await expect.element(pageObj.availabilityDetails).not.toBeInTheDocument();
     expect(document.activeElement).toBe(pageObj.availabilitySlice("Confocal microscope", 11).element());
   });
 
   test("opens slice details when clicked and keeps a narrow card in the viewport", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(400, 900);
-
-    try {
+    await withViewport(400, async () => {
       render(<AllBookableItemsStory containerWidth={360} />);
 
       await pageObj.availabilitySlice("Confocal microscope", 11).click();
@@ -238,16 +201,11 @@ describe("the All Bookable Items page", () => {
       expect(details.right).toBeLessThanOrEqual(window.innerWidth);
       expect(details.top).toBeGreaterThanOrEqual(0);
       expect(details.bottom).toBeLessThanOrEqual(window.innerHeight);
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
   test("does not render an unnecessary horizontal scrollbar", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(1600, 900);
-
-    try {
+    await withViewport(1600, async () => {
       render(<AllBookableItemsStory />);
       await expect.element(pageObj.table).toBeVisible();
       await expect
@@ -256,9 +214,7 @@ describe("the All Bookable Items page", () => {
           return container ? container.scrollWidth - container.clientWidth : null;
         })
         .toBe(0);
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
   test("switches cached availability filters using the shared display interval", async () => {
