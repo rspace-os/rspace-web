@@ -563,13 +563,14 @@ Schedule rules are in [BookingScheduling.md](DevDocs/DeveloperNotes/BookingSched
 Display-timezone, availability-window, timeline, and rendering behavior is in
 [BookingDisplayPreferences.md](DevDocs/DeveloperNotes/BookingDisplayPreferences.md).
 
-- **Available now** — the current instant falls in an available segment within
-  today's preferred display interval. Booking and blockout intervals are
-  half-open, so an occupied interval excludes its end.
-- **Free later today** — the bookable item is not available now, but has a
-  positive-duration available segment later in today's preferred display
-  interval. Before that interval starts, any available segment qualifies;
-  at or after its end, neither quick filter applies.
+The quick filters are described in [TableListAdapters.md](DevDocs/DeveloperNotes/TableListAdapters.md)
+and the [REST API v2 collection guide](DevDocs/DeveloperNotes/RestApiV2Collections.md).
+
+- **Available now** — the item has free time at the current instant within today's preferred display
+  interval. Booking and blockout intervals are half-open.
+- **Free later today** — the item is busy now but has free time later in today's preferred display
+  interval; before the interval starts any free segment qualifies, and after it ends neither filter
+  applies.
 
 - **Day timeline** — a horizontal view of one day in the display timezone; clock changes can make it
   23 or 25 hours.

@@ -1,6 +1,6 @@
 import { type AnyRoute, createRoute } from "@tanstack/react-router";
+import { bookingFormSearch } from "../bookingFormSearch";
 import AllBookableItemsPage from "./AllBookableItemsPage";
-import { validCalendarDate } from "./calendarDate";
 
 const availabilityModes = ["available-now", "free-later-today"] as const;
 
@@ -14,12 +14,8 @@ export function allBookableItemsSearch(search: Record<string, unknown>) {
   const types = stringList(search.types, /^[A-Z][A-Z0-9_]*$/);
   const page = typeof search.page === "number" ? search.page : Number(search.page);
   const pageSize = Number(search.pageSize);
-  const dateSearch: { date?: string } = {
-    date: validCalendarDate(search.date) ? search.date : undefined,
-  };
   return {
-    ...dateSearch,
-    ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
+    ...bookingFormSearch(search),
     ...(availability ? { availability } : {}),
     ...(typeof search.where === "string" && search.where.trim() ? { where: search.where } : {}),
     ...(typeof search.q === "string" && search.q.trim() ? { q: search.q.slice(0, 255) } : {}),

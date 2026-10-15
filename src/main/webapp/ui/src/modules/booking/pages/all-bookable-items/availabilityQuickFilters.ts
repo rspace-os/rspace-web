@@ -1,10 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import { schedulingSettingsEntries } from "@/modules/booking/configuration/schedulingSettings";
-import {
-  type AvailabilityInterval,
-  classifyCurrentDayAvailability,
-} from "@/modules/booking/domain/availability";
+import { type AvailabilityInterval, classifyCurrentDayAvailability } from "@/modules/booking/domain/availability";
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useAlignedMinute } from "@/modules/booking/hooks/useAlignedMinute";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";

@@ -1,16 +1,13 @@
-import { createMemoryHistory, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createRootRoute, createRoute } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
+import { matchedRoute } from "../routeTestHelpers";
 import { allBookableItemsSearch, createAllBookableItemsRoute } from "./routes";
 
 async function matchedSearch(path: string) {
   const root = createRootRoute();
   const booking = createRoute({ getParentRoute: () => root, path: "/booking" });
-  const router = createRouter({
-    routeTree: root.addChildren([booking.addChildren([createAllBookableItemsRoute(booking)])]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
-  await router.load();
-  return router.state.matches.at(-1)?.search;
+  const routeTree = root.addChildren([booking.addChildren([createAllBookableItemsRoute(booking)])]);
+  return (await matchedRoute(routeTree, path)).search;
 }
 
 describe("All Bookable Items route", () => {
