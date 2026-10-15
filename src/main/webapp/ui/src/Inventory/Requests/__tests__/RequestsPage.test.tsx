@@ -191,6 +191,43 @@ describe("RequestsPage deep-linking", () => {
     consoleErrorSpy.mockRestore();
   });
 
+  test("recovers by showing a list-selected request after a failed deep link, instead of leaving the error stuck", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () =>
+        HttpResponse.json({
+          requests: [
+            {
+              id: 7,
+              status: "PENDING",
+              created: "2026-01-02T10:00:00Z",
+              note: null,
+              requester: { id: 2, username: "other", firstName: "Oscar", lastName: "Other" },
+              sample: { id: 9, globalId: "SA9", name: "Sample Nine", owner: { id: 1 } },
+            },
+          ],
+          totalHits: 1,
+        }),
+      ),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, () => HttpResponse.json({ message: "Not found" }, { status: 404 })),
+    );
+
+    renderWithProviders("?requestId=999");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await user.keyboard("{Enter}");
+
+    // The bug this guards against: a failed deep link's error flag, once set, never cleared on a
+    // plain list click (only a *new* URL id could change the comparison it was derived from),
+    // permanently hiding the request the user just picked behind the stale error message.
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+    expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+  });
+
   test("renders the detail panel's own empty state when there is no requestId in the URL", async () => {
     renderWithProviders("");
 
