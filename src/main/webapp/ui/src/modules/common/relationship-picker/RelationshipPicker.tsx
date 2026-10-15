@@ -170,6 +170,23 @@ export function RelationshipPicker({
       </div>
     );
   };
+  const optionList = (
+    <>
+      <ComboboxList>
+        {(option: RelationshipOptionWithSource) => (
+          <ComboboxItem
+            key={`${option.sourceId}:${option.value}`}
+            value={option}
+            disabled={optionIsDisabled(option)}
+            className="py-1.5 pr-7 pl-2"
+          >
+            {optionContent(option)}
+          </ComboboxItem>
+        )}
+      </ComboboxList>
+      <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
+    </>
+  );
   const availabilityActions =
     availabilitySource?.renderAction === undefined
       ? []
@@ -230,21 +247,7 @@ export function RelationshipPicker({
             showClear={showClear}
             triggerLabel={t("relationshipPicker.openOptions")}
           />
-          <ComboboxContent>
-            <ComboboxList>
-              {(option: RelationshipOptionWithSource) => (
-                <ComboboxItem
-                  key={`${option.sourceId}:${option.value}`}
-                  value={option}
-                  disabled={optionIsDisabled(option)}
-                  className="py-1.5 pr-7 pl-2"
-                >
-                  {optionContent(option)}
-                </ComboboxItem>
-              )}
-            </ComboboxList>
-            <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-          </ComboboxContent>
+          <ComboboxContent>{optionList}</ComboboxContent>
         </Combobox>
       </>
     );
@@ -285,21 +288,7 @@ export function RelationshipPicker({
           </ComboboxValue>
           <ComboboxChipsInput {...common} />
         </ComboboxChips>
-        <ComboboxContent anchor={anchor}>
-          <ComboboxList>
-            {(option: RelationshipOptionWithSource) => (
-              <ComboboxItem
-                key={`${option.sourceId}:${option.value}`}
-                value={option}
-                disabled={optionIsDisabled(option)}
-                className="py-1.5 pr-7 pl-2"
-              >
-                {optionContent(option)}
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-          <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-        </ComboboxContent>
+        <ComboboxContent anchor={anchor}>{optionList}</ComboboxContent>
       </Combobox>
     </>
   );

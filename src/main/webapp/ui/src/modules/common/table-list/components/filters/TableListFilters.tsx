@@ -24,7 +24,7 @@ import type {
   ResolvedFieldConfig,
   SearchSelector,
 } from "@/modules/common/collection/collectionConfig";
-import { fieldLabel } from "@/modules/common/collection/collectionConfig";
+import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/collectionConfig";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
@@ -32,6 +32,7 @@ import type { FilterExpression, FilterValue } from "../../tableListState";
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
 import { FilterValueInput } from "./FilterValueInput";
+import { listValue, scalarValue } from "./filterValue";
 import { SortableFilterRow } from "./SortableFilterRow";
 
 type DraftRule<TDocument> = {
@@ -69,16 +70,6 @@ function draftValue(value: FilterValue): string | readonly string[] {
   if (Array.isArray(value)) return value.map((item) => (item instanceof Date ? item.toISOString() : String(item)));
   if (value instanceof Date) return value.toISOString();
   return String(value);
-}
-
-function scalarValue(value: DraftRule<never>["value"]): string {
-  return typeof value === "string" ? value : (value[0] ?? "");
-}
-
-function listValue(value: DraftRule<never>["value"]): readonly string[] {
-  if (typeof value !== "string") return value;
-  const trimmed = value.trim();
-  return trimmed === "" ? [] : [trimmed];
 }
 
 function valueForOperator(
@@ -151,15 +142,6 @@ function fieldGroups<TDocument>(
     groups.set(key, group);
   }
   return [...groups.values()];
-}
-
-function fieldOptionLabel<TDocument>(
-  field: ResolvedFieldConfig<TDocument>,
-  translate: (key: string) => string,
-): string {
-  const label = fieldLabel(field, translate);
-  const source = field.origin?.sourceLabel;
-  return source ? `${label} (${source})` : label;
 }
 
 export function TableListFilters<TDocument>({

@@ -1,20 +1,8 @@
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import type { ApiV2FilterOperator, ApiV2RuntimeFieldNamespace } from "./apiV2CollectionMetadata";
+import { type ApiV2RuntimeFieldNamespace, apiV2FilterOperators } from "./apiV2CollectionMetadata";
 
-const filterOperator = v.picklist([
-  "==",
-  "!=",
-  "=gt=",
-  "=ge=",
-  "=lt=",
-  "=le=",
-  "=in=",
-  "=out=",
-  "=contains=",
-  "=like=",
-  "=exists=",
-] as const satisfies readonly ApiV2FilterOperator[]);
+const filterOperator = v.picklist(apiV2FilterOperators);
 
 const runtimeFieldSchema = v.object({
   id: v.pipe(v.string(), v.minLength(1)),
