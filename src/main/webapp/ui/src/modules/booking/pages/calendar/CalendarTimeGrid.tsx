@@ -59,10 +59,7 @@ export function CalendarTimeGrid({
   const renderActions = actionsFor(events, timezone, date);
   const month = date.slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
-  const closedPeriods = React.useMemo(
-    () => (schedule && view === "day" ? closedDayRanges(schedule, date, timezone) : undefined),
-    [schedule, date, timezone, view],
-  );
+  const closedPeriods = schedule && view === "day" ? closedDayRanges(schedule, date, timezone) : undefined;
   const canCreateBooking = schedule?.capabilities?.canCreateBooking === true;
   return (
     <section aria-label={t("calendar.layout.time-grid")} className="py-3" aria-busy={isLoading}>

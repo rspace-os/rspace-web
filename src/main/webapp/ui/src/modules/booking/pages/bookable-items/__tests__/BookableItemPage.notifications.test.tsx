@@ -1,3 +1,4 @@
+import { bookingConfigurationTargetQuery } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
@@ -128,7 +129,7 @@ describe("BookableItemPage", () => {
       configurationVersion: 1,
       openingHours: configuration.openingHours.map((entry) => ({ ...entry, end: "20:00" })),
     };
-    await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: bookingConfigurationTargetQuery("IN123", "").queryKey }));
     const save = screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
     await user.click(save);
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.staleEdit");
@@ -211,7 +212,7 @@ describe("BookableItemPage", () => {
       ),
     );
 
-    await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] }));
+    await act(() => queryClient.refetchQueries({ queryKey: bookingConfigurationTargetQuery("IN123", "").queryKey }));
 
     expect(screen.getByRole("spinbutton", { name: "booking:settings.fields.maximumDuration" })).toHaveValue(60);
     const notice = await screen.findByRole("alert");
@@ -285,7 +286,7 @@ describe("BookableItemPage", () => {
     );
     try {
       await act(async () => {
-        void queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] });
+        void queryClient.refetchQueries({ queryKey: bookingConfigurationTargetQuery("IN123", "").queryKey });
         await requested.promise;
       });
       expect(screen.getByRole("heading", { name: "Confocal microscope" })).toBeVisible();

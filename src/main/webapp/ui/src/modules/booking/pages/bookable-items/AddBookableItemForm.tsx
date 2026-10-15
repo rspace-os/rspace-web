@@ -1,5 +1,5 @@
 import { Form, isDirty, useField, useForm } from "@formisch/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,10 +11,17 @@ import {
 } from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingCatalogueKeys,
+  bookingConfigurationKeys,
+  bookingKeys,
+  bookingTargetKeys,
+} from "@/modules/booking/domain/bookingKeys";
 import { useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
 import { apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { databaseId } from "@/modules/common/relationship-picker/queries";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
@@ -27,7 +34,6 @@ import {
   type BookingConfigurationInput,
   BookingConfigurationInputSchema,
   bookingConfigurationFields,
-  invalidateBookingCatalogueQueries,
 } from "./bookingConfiguration";
 import { BookingTargetSchema, MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets } from "./bookingConfigurationTargets";
 
@@ -135,7 +141,15 @@ export function AddBookableItemForm({
   const [selectedTargetName, setSelectedTargetName] = useState(initialTargetName);
   const target = targetSelection(targetField.input);
   const selectedTargetId = target.type === "instrument" ? target.id : undefined;
-  const createMutation = useMutation({
+  const createMutation = useApiV2Mutation({
+    meta: {
+      invalidates: [
+        bookingConfigurationKeys.all,
+        bookingCatalogueKeys.all,
+        bookingKeys.catalogue(),
+        bookingTargetKeys.all,
+      ],
+    },
     mutationFn: (input: BookingConfigurationInput) => createBookingConfiguration(input, token),
     onSuccess: async (created, input) => {
       const globalId = created?.target?.globalId ?? `IN${input.target.value}`;
@@ -167,17 +181,11 @@ export function AddBookableItemForm({
         ),
       });
       // The new configuration is readable, and its instrument is no longer an eligible target.
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        invalidateBookingCatalogueQueries(queryClient),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
-      ]);
       await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.code === TARGET_CONFLICT) {
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "availability"] });
+        await queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.availability() });
       }
     },
   });

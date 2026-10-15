@@ -8,7 +8,9 @@ import {
   Outlet,
 } from "@tanstack/react-router";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { bookingQueryOptions } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingConfigurationKeys } from "@/modules/booking/domain/bookingKeys";
 import { bookableItemFixtures } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { BookingDetailsView } from "../BookingDetailsView";
@@ -87,13 +89,13 @@ export function createBookingEventStoryQueryClient() {
   });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
-  queryClient.setQueryData(["api-v2", "bookings", bookingEventFixture.id], {
+  queryClient.setQueryData(bookingQueryOptions(bookingEventFixture.id, "").queryKey, {
     ...bookingEventFixture,
     start: "2026-10-19T08:00:00Z",
     end: "2026-10-19T10:00:00Z",
   });
   queryClient.setQueryData(
-    ["api-v2", "booking-configurations", "picker", "target", bookingEventFixture.target.globalId],
+    bookingConfigurationKeys.pickerTarget(bookingEventFixture.target.globalId),
     bookableItemFixtures[0],
   );
   return queryClient;

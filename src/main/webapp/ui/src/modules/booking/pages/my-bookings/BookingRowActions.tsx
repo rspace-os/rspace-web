@@ -151,7 +151,6 @@ export function BookingRowActions({
               undo: {
                 run: async () => {
                   await restoreBooking(row.id, cancelled.version ?? 0, token);
-                  await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
                   await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
                 },
                 focusRowId: String(row.id),

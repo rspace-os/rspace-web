@@ -1,3 +1,5 @@
+import { bookingCatalogueKeys } from "@/modules/booking/domain/bookingKeys";
+import { bookingRouteTargetQuery } from "@/modules/booking/pages/bookable-items/bookingConfigurationApi";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -178,7 +180,7 @@ describe("AddBookableItemPage", () => {
     try {
       await act(async () => {
         refresh = queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configuration-targets", "route-target", "IN123"],
+          queryKey: bookingRouteTargetQuery("IN123", "").queryKey,
         });
         await requested.promise;
       });
@@ -293,7 +295,7 @@ describe("AddBookableItemPage", () => {
           return HttpResponse.json({ id: 7 }, { status: 201 });
         }),
       );
-      const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+      const catalogueQueryKey = bookingCatalogueKeys.all;
       const { container, queryClient } = renderPage();
       queryClient.setQueryData(catalogueQueryKey, []);
 

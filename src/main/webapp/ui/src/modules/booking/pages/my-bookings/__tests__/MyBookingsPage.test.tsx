@@ -1,5 +1,6 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
 import appI18n from "@/modules/common/i18n";
+import { apiV2MetadataKey } from "@/modules/common/queries/apiV2QueryKeys";
 
 beforeBookingCatalog(async () => {
   appI18n.addResourceBundle(
@@ -69,7 +70,7 @@ async function renderPage({
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
-  queryClient.setQueryData(["api-v2", "openapi", "bookings"], apiV2CollectionMetadataFromOpenApi(openApi, "bookings"));
+  queryClient.setQueryData(apiV2MetadataKey("bookings"), apiV2CollectionMetadataFromOpenApi(openApi, "bookings"));
   let search = location.search;
   const onUrlUpdate = ({ queryString }: UrlUpdateEvent) => {
     search = queryString;

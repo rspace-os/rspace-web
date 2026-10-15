@@ -59,10 +59,10 @@ it("invalidates every booking view after creation, including the item list and a
   server.use(http.post("/api/v2/bookings", () => HttpResponse.json(upcomingBooking)));
   const queryClient = new QueryClient();
   const keys = [
-    ["api-v2", "bookings", "calendar-events"],
+    bookingKeys.calendarEvents(),
     bookingKeys.calendarAvailability(),
-    ["api-v2", "bookings", "bookable-item-events", 123],
-    ["api-v2", "bookings", "availability-quick-index"],
+    bookingKeys.itemEvents(123),
+    [...bookingKeys.all, "availability-quick-index"],
   ];
   for (const key of keys) queryClient.setQueryData(key, []);
   const { result } = renderHook(() => useCreateBooking("token"), {
@@ -77,7 +77,7 @@ it("invalidates every booking view after creation, including the item list and a
 it("treats a lost create response as uncertain and refreshes booking queries", async () => {
   server.use(http.post("/api/v2/bookings", () => HttpResponse.error()));
   const queryClient = new QueryClient();
-  const key = ["api-v2", "bookings", "calendar-events"];
+  const key = bookingKeys.calendarEvents();
   queryClient.setQueryData(key, []);
   const { result } = renderHook(() => useCreateBooking("token"), {
     wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,

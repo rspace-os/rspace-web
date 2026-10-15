@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import * as v from "valibot";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
@@ -6,6 +6,7 @@ import { ApiV2ProblemError, BookingEventKindSchema, createBooking } from "@/modu
 import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import type { BookingFormSubmission } from "./BookingForm";
 import type { BookableItemOption } from "./bookableItemOption";
 
@@ -179,7 +180,8 @@ export function isBookingOutcomeUncertain(error: unknown): boolean {
 
 export function useCreateBooking(token: string) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useApiV2Mutation({
+    meta: { invalidates: [bookingKeys.all] },
     retry: false,
     mutationFn: (submission: BookingFormSubmission) =>
       createBooking(
@@ -192,21 +194,15 @@ export function useCreateBooking(token: string) {
         },
         token,
       ),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
-      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
-    },
     onError: (error) => {
       if (
         isBookingOutcomeUncertain(error) ||
         isBookingConflictError(error) ||
         (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.concurrentModification")
       ) {
-        void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
         void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
         void queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all });
       }
     },
