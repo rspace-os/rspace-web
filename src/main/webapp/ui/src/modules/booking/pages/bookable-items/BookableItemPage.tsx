@@ -865,7 +865,7 @@ export default function BookableItemPage() {
   const { globalId, tab } = useParams({ from: "/booking/bookable-items/$globalId/{-$tab}" });
   return (
     <Suspense key={globalId} fallback={<BookableItemSkeleton />}>
-      <Details globalId={globalId} tab={bookableItemTab(tab)} key={globalId} />
+      <Details globalId={globalId} tab={bookableItemTab(tab)} />
     </Suspense>
   );
 }

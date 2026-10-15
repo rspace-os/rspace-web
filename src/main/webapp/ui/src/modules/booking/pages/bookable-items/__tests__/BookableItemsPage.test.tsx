@@ -16,12 +16,13 @@ import { type ComponentType, type ReactNode, Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { mutateBookableItems } from "../BookableItemsPage";
-import { bookableItemsOpenApi, ownerBookingAccess } from "../mocks/bookableItemsMocks";
+import { bookableItemFixtures, bookableItemsOpenApi, collectionPage } from "../mocks/bookableItemsMocks";
 import { createBookableItemRoute, createBookableItemsRoute } from "../routes";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
@@ -36,55 +37,12 @@ afterEach(() => {
   window.history.replaceState({}, "", "/");
 });
 
-const bookingConfiguration = {
-  id: 7,
-  configurationVersion: 0,
-  state: "ACTIVE",
-  target: {
-    relationTo: "booking-instruments",
-    value: { id: 123, name: "Confocal microscope", deleted: false },
-    globalId: "IN123",
-  },
-  enabled: true,
-  timezone: "Europe/Berlin",
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-  updatedAt: "2026-08-10T10:00:00Z",
-  ...ownerBookingAccess,
-};
-
-const secondBookingConfiguration = {
-  ...bookingConfiguration,
-  id: 8,
-  target: {
-    ...bookingConfiguration.target,
-    value: { ...bookingConfiguration.target.value, id: 124, name: "Electron microscope" },
-    globalId: "IN124",
-  },
-};
-
-function collectionResponse(docs: readonly Record<string, unknown>[]) {
-  return {
-    docs,
-    totalDocs: docs.length,
-    limit: 20,
-    page: 1,
-    pagingCounter: 1,
-    totalPages: 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
-  };
-}
+const bookingConfiguration = bookableItemFixtures[0];
+const secondBookingConfiguration = bookableItemFixtures[1];
 
 function pagedCollectionResponse(docs: readonly Record<string, unknown>[], page: number, totalDocs = 21) {
   return {
-    ...collectionResponse(docs),
+    ...collectionPage(docs),
     totalDocs,
     page,
     pagingCounter: (page - 1) * 20 + 1,
@@ -96,112 +54,56 @@ function pagedCollectionResponse(docs: readonly Record<string, unknown>[], page:
   };
 }
 
+const bookingConfigurationsPath = bookableItemsOpenApi.paths["/api/v2/booking-configurations"];
+const bookingConfigurationsGet = bookingConfigurationsPath.get;
+if (!bookingConfigurationsGet) throw new Error("Missing booking configuration GET fixture");
 const openApi = {
-  components: bookableItemsOpenApi.components,
+  ...bookableItemsOpenApi,
   paths: {
+    ...bookableItemsOpenApi.paths,
     "/api/v2/booking-configurations": {
+      ...bookingConfigurationsPath,
       get: {
-        responses: bookableItemsOpenApi.paths["/api/v2/booking-configurations"].get.responses,
-        parameters: [
-          {
-            name: "sort",
-            "x-rspace-sort": {
-              fields: ["id", "enabled", "timezone", "updatedAt"],
-              default: ["id"],
-              maximumFields: 5,
-            },
-          },
-          {
-            name: "where",
-            schema: { type: "string", maxLength: 32768 },
-            "x-rspace-filter": {
-              maximumComparisons: 50,
-              maximumLikeComparisons: 10,
-              maximumNesting: 10,
-              maximumArguments: 1000,
-              selectors: {
-                "createdBy.value": {
-                  schema: { type: "integer", format: "int64" },
-                  operators: ["==", "!=", "=in=", "=out="],
-                  wildcards: false,
-                },
-                id: {
-                  schema: { type: "integer", format: "int64" },
-                  operators: ["==", "=in="],
-                  wildcards: false,
-                },
-                enabled: { operators: ["==", "!=", "=out="], wildcards: false },
-                timezone: { operators: ["==", "!=", "=contains="], wildcards: true },
-                updatedAt: { operators: ["==", "=gt=", "=lt="], wildcards: false },
-                "target.id": {
-                  schema: { type: "integer", format: "int64" },
-                  operators: ["=="],
-                  wildcards: false,
-                  title: "Instrument ID",
-                },
-                "target.name": {
-                  schema: { type: "string" },
-                  operators: ["==", "=contains=", "=like="],
-                  wildcards: true,
-                  title: "Instrument name",
-                },
-                "target.deleted": {
-                  schema: { type: "boolean" },
-                  operators: ["=="],
-                  wildcards: false,
-                  title: "Deleted",
+        ...bookingConfigurationsGet,
+        parameters: bookingConfigurationsGet.parameters.map((parameter) => {
+          const filter = "x-rspace-filter" in parameter ? parameter["x-rspace-filter"] : undefined;
+          if (filter) {
+            return {
+              ...parameter,
+              "x-rspace-filter": {
+                ...filter,
+                selectors: {
+                  ...filter.selectors,
+                  id: { ...filter.selectors.id, operators: ["==", "=in="] },
                 },
               },
-            },
-            "x-rspace-relationship-fields": {
-              "target.id": {
-                schema: { type: "integer", format: "int64" },
-                operators: ["=="],
-                wildcards: false,
-                title: "Instrument ID",
+            };
+          }
+          if ("x-rspace-allowed-fields" in parameter) {
+            return {
+              ...parameter,
+              "x-rspace-allowed-fields": {
+                ...parameter["x-rspace-allowed-fields"],
+                "booking-configurations": [
+                  "id",
+                  "configurationVersion",
+                  "target",
+                  "enabled",
+                  "state",
+                  "timezone",
+                  "slotGranularityMinutes",
+                  "openingHours",
+                  "bufferBeforeMinutes",
+                  "bufferAfterMinutes",
+                  "maxBookingDurationMinutes",
+                  "allowDoubleBooking",
+                  "updatedAt",
+                ],
               },
-              "target.name": {
-                schema: { type: "string" },
-                operators: ["==", "=contains=", "=like="],
-                wildcards: true,
-                title: "Instrument name",
-              },
-              "target.globalId": {
-                schema: { type: "string" },
-                operators: [],
-                wildcards: false,
-                title: "Global ID",
-              },
-              "target.deleted": {
-                schema: { type: "boolean" },
-                operators: ["=="],
-                wildcards: false,
-                title: "Deleted",
-              },
-            },
-          },
-          { name: "limit", schema: { type: "integer", default: 20, maximum: 100 } },
-          {
-            name: "fields",
-            "x-rspace-allowed-fields": {
-              "booking-configurations": [
-                "id",
-                "configurationVersion",
-                "target",
-                "enabled",
-                "state",
-                "timezone",
-                "slotGranularityMinutes",
-                "openingHours",
-                "bufferBeforeMinutes",
-                "bufferAfterMinutes",
-                "maxBookingDurationMinutes",
-                "allowDoubleBooking",
-                "updatedAt",
-              ],
-            },
-          },
-        ],
+            };
+          }
+          return parameter;
+        }),
       },
     },
   },
@@ -249,12 +151,11 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     const collectionRequests: Request[] = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         collectionRequests.push(request);
         return HttpResponse.json(
-          collectionResponse([{ ...bookingConfiguration, ownerHealth: { hasEffectiveOwner: false } }]),
+          collectionPage([{ ...bookingConfiguration, ownerHealth: { hasEffectiveOwner: false } }]),
         );
       }),
     );
@@ -268,7 +169,7 @@ describe("BookableItemsPage", () => {
     ).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
     expect(screen.getByText("booking:bookableItems.ownerHealth.needsOwner")).toBeVisible();
-    expect(collectionRequests[0]?.headers.get("Authorization")).toBe("Bearer new-token");
+    expect(collectionRequests[0]?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(new URL(collectionRequests[0]?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
       "href",
@@ -306,10 +207,9 @@ describe("BookableItemsPage", () => {
       data: { hasSysAdminRole: false, session: { operatedAs: false } },
     } as ReturnType<typeof useCurrentUserQuery>);
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(collectionResponse([{ ...bookingConfiguration, target: null }])),
+        HttpResponse.json(collectionPage([{ ...bookingConfiguration, target: null }])),
       ),
     );
 
@@ -329,13 +229,10 @@ describe("BookableItemsPage", () => {
     let deleted = false;
     let deleteRequest: Request | undefined;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", () =>
         HttpResponse.json(
-          collectionResponse(
-            deleted ? [secondBookingConfiguration] : [bookingConfiguration, secondBookingConfiguration],
-          ),
+          collectionPage(deleted ? [secondBookingConfiguration] : [bookingConfiguration, secondBookingConfiguration]),
         ),
       ),
       http.delete("/api/v2/booking-configurations/7", ({ request }) => {
@@ -356,7 +253,7 @@ describe("BookableItemsPage", () => {
     expect(await screen.findByText("Electron microscope")).toBeVisible();
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(deleteRequest?.method).toBe("DELETE");
-    expect(deleteRequest?.headers.get("Authorization")).toBe("Bearer new-token");
+    expect(deleteRequest?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
     expect(deleteRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
@@ -365,12 +262,11 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     const searchRequests: string[] = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const where = new URL(request.url).searchParams.get("where");
         if (where) searchRequests.push(where);
-        return HttpResponse.json(collectionResponse([bookingConfiguration]));
+        return HttpResponse.json(collectionPage([bookingConfiguration]));
       }),
     );
     renderBookableItemsPage();
@@ -385,7 +281,6 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     let collectionRequests = 0;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       // Answers like the backend: the document carries the selected fields only.
       http.get("/api/v2/booking-configurations", ({ request }) => {
@@ -394,7 +289,7 @@ describe("BookableItemsPage", () => {
         const sparse = Object.fromEntries(
           Object.entries(bookingConfiguration).filter(([field]) => selected.includes(field)),
         );
-        return HttpResponse.json(collectionResponse([sparse]));
+        return HttpResponse.json(collectionPage([sparse]));
       }),
     );
 
@@ -413,11 +308,10 @@ describe("BookableItemsPage", () => {
   it("shows selected target fields while keeping the fixed projection", async () => {
     let collectionRequest: Request | undefined;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         collectionRequest = request;
-        return HttpResponse.json(collectionResponse([bookingConfiguration]));
+        return HttpResponse.json(collectionPage([bookingConfiguration]));
       }),
     );
     const columns = encodeURIComponent(JSON.stringify({ fields: ["target.name", "target.deleted"] }));
@@ -448,7 +342,6 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     const bulkRequests: Array<{ url: string; body: unknown; authorization: string | null }> = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const page = Number(new URL(request.url).searchParams.get("page"));
@@ -479,7 +372,7 @@ describe("BookableItemsPage", () => {
     const enableRequest = bulkRequests[0];
     expect(new URL(enableRequest.url).searchParams.get("where")).toBe("id=in=(7,8)");
     expect(enableRequest.body).toEqual({ enabled: true });
-    expect(enableRequest.authorization).toBe("Bearer new-token");
+    expect(enableRequest.authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
     );
@@ -490,10 +383,9 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     const requests: Array<{ where: string | null; body: unknown }> = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(collectionResponse([bookingConfiguration, secondBookingConfiguration])),
+        HttpResponse.json(collectionPage([bookingConfiguration, secondBookingConfiguration])),
       ),
       http.patch("/api/v2/booking-configurations", async ({ request }) => {
         requests.push({
@@ -517,7 +409,6 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     const deleteRequests: Array<{ where: string | null; body: string; contentType: string | null }> = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const page = Number(new URL(request.url).searchParams.get("page"));
@@ -560,10 +451,9 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     let patchRequests = 0;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(collectionResponse([bookingConfiguration, secondBookingConfiguration])),
+        HttpResponse.json(collectionPage([bookingConfiguration, secondBookingConfiguration])),
       ),
       http.patch("/api/v2/booking-configurations", () => {
         patchRequests += 1;
