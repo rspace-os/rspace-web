@@ -1,17 +1,12 @@
 import { type Locator, page, userEvent } from "vitest/browser";
 
-function css(selector: string): Locator {
-  const root = page.elementLocator(document.body) as unknown as { locator: (value: string) => Locator };
-  return root.locator(`css=${selector}`);
-}
-
 export class TableListResponsivePage {
   get table(): Locator {
-    return css('[data-slot="table"][aria-label="Research records table"]');
+    return page.getByRole("table", { name: "Research records table", includeHidden: true });
   }
 
   get cards(): Locator {
-    return css('[data-slot="table-list-card-view"][aria-label="Research records cards"]');
+    return page.getByRole("region", { name: "Research records cards", includeHidden: true });
   }
 
   get search(): Locator {

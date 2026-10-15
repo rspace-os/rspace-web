@@ -2,10 +2,9 @@ import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
-import { server } from "@/__tests__/mswServer";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { listInstruments } from "@/modules/common/relationship-picker/__tests__/relationshipPickerTestFixtures";
 import { TableList } from "@/modules/common/table-list/TableList";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
@@ -31,26 +30,6 @@ const config = resolveCollectionConfig<BookableItem>({
     },
   ],
 });
-
-function listInstruments(onRequest?: (url: URL) => void) {
-  server.use(
-    http.get("/api/v2/instruments", ({ request }) => {
-      onRequest?.(new URL(request.url));
-      return HttpResponse.json({
-        docs: [{ id: 123, name: "Confocal microscope", globalId: "IN123" }],
-        totalDocs: 1,
-        limit: 20,
-        page: 1,
-        pagingCounter: 1,
-        totalPages: 1,
-        hasPrevPage: false,
-        hasNextPage: false,
-        prevPage: null,
-        nextPage: null,
-      });
-    }),
-  );
-}
 
 function renderFilters(onChange: (value: unknown) => void) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

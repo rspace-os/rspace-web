@@ -8,20 +8,9 @@ import { Input } from "@/modules/common/ui/input";
 import { MultiSelect } from "@/modules/common/ui/multi-select";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { FilterSelect } from "./FilterSelect";
+import { type FilterValue, listValue, scalarValue } from "./filterValue";
 import { SuggestedValueInput } from "./SuggestedValueInput";
 import { useTargetScalarValues } from "./useTargetScalarValues";
-
-type FilterValue = string | readonly string[];
-
-function scalarValue(value: FilterValue): string {
-  return typeof value === "string" ? value : (value[0] ?? "");
-}
-
-function listValue(value: FilterValue): readonly string[] {
-  if (typeof value !== "string") return value;
-  const trimmed = value.trim();
-  return trimmed === "" ? [] : [trimmed];
-}
 
 function targetFieldSource<TDocument>(
   name: string,
