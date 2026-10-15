@@ -420,11 +420,11 @@ const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   updatedAt: "2026-08-01T09:00:00Z",
 }));
 
-function collectionPage(docs: readonly unknown[]) {
+export function collectionPage(docs: readonly unknown[], limit = 20) {
   return {
     docs,
     totalDocs: docs.length,
-    limit: 20,
+    limit,
     page: 1,
     pagingCounter: 1,
     totalPages: docs.length === 0 ? 0 : 1,
@@ -572,45 +572,6 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
 }
 
 export function bookableItemDetailsHandlers(): RequestHandler[] {
-  let accessVersion = 3;
-  let accessAssignments = [
-    {
-      grantee: {
-        kind: "USER",
-        id: 1,
-        key: "user:1",
-        name: "Ada Lovelace",
-        detail: "ada",
-        available: true,
-        effectiveRole: "OWNER",
-        roleSources: [],
-      },
-      role: "OWNER",
-    },
-    {
-      grantee: {
-        kind: "AUDIENCE",
-        id: "ALL_USERS",
-        key: "audience:all-users",
-        name: "All users",
-        detail: null,
-        available: true,
-        effectiveRole: null,
-        roleSources: [],
-      },
-      role: "BOOKER",
-    },
-  ];
-  const accessDocument = () => ({
-    scheme: "booking-configurations",
-    version: accessVersion,
-    assignments: accessAssignments,
-    caller: {
-      effectiveRole: "OWNER",
-      roleSources: [],
-      capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
-    },
-  });
   return [
     http.get("/api/v2/booking-configurations", ({ request }) => {
       const where = new URL(request.url).searchParams.get("where") ?? "";
@@ -657,35 +618,5 @@ export function bookableItemDetailsHandlers(): RequestHandler[] {
         subscriptionUrl: `https://rspace.example/public/booking/calendars/feed.ics?token=${"c".repeat(43)}`,
       }),
     ),
-    http.get("/api/v2/booking-configurations/7/access", () =>
-      HttpResponse.json(accessDocument(), { headers: { ETag: `"${accessVersion}"` } }),
-    ),
-    http.get("/api/v2/booking-configurations/7/access/grantees", () =>
-      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
-    ),
-    http.put("/api/v2/booking-configurations/7/access", async ({ request }) => {
-      const body = (await request.json()) as {
-        assignments: Array<{ granteeKey: string; role: string }>;
-      };
-      accessVersion += 1;
-      accessAssignments = body.assignments.map(({ granteeKey, role }) => {
-        if (granteeKey === "user:1") return { ...accessAssignments[0], role };
-        if (granteeKey === "audience:all-users") return { ...accessAssignments[1], role };
-        return {
-          grantee: {
-            kind: "USER",
-            id: 2,
-            key: "user:2",
-            name: "Grace Hopper",
-            detail: "grace",
-            available: true,
-            effectiveRole: role,
-            roleSources: [],
-          },
-          role,
-        };
-      });
-      return HttpResponse.json(accessDocument(), { headers: { ETag: `"${accessVersion}"` } });
-    }),
   ];
 }
