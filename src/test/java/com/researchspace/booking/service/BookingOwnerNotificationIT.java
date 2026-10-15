@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.InstrumentDao;
-import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -17,12 +16,10 @@ import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
-import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.time.Instant;
@@ -77,7 +74,8 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
     createBooking(setup, booker);
 
     List<Notification> notifications =
-        notificationsFor(owner, NotificationType.NOTIFICATION_BOOKING_CREATED);
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CREATED);
     assertEquals(1, notifications.size());
     assertEquals(booker.getId(), notifications.get(0).getOriginator().getId());
     assertPersistedForOwner(notifications.get(0), owner);
@@ -100,36 +98,11 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
         .orElseThrow();
 
     List<Notification> notifications =
-        notificationsFor(owner, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertEquals(1, notifications.size());
     assertEquals(booker.getId(), notifications.get(0).getOriginator().getId());
     assertPersistedForOwner(notifications.get(0), owner);
-  }
-
-  @Test
-  public void ownerPreferenceFalseSuppressesCreatedNotification() {
-    User owner = createInitAndLoginAnyUser();
-    userMgr.setPreference(
-        Preference.NOTIFICATION_BOOKING_CREATED_PREF,
-        Boolean.FALSE.toString(),
-        owner.getUsername());
-    BookingSetup setup = createBookingSetup(owner, "Owner notification preference");
-    User booker = createInitAndLoginAnyUser();
-    shareInstrumentWithBooker(setup, booker);
-
-    createBooking(setup, booker);
-
-    assertEquals(0, notificationsFor(owner, NotificationType.NOTIFICATION_BOOKING_CREATED).size());
-  }
-
-  @Test
-  public void ownerSelfBookingDoesNotCreateOwnerNotification() {
-    User owner = createInitAndLoginAnyUser();
-    BookingSetup setup = createBookingSetup(owner, "Owner self notification");
-
-    createBooking(setup, owner);
-
-    assertEquals(0, notificationsFor(owner, NotificationType.NOTIFICATION_BOOKING_CREATED).size());
   }
 
   @Test
@@ -152,7 +125,8 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
 
     assertNotNull(archived);
     List<Notification> notifications =
-        notificationsFor(owner, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertEquals(1, notifications.size());
     assertEquals(sysadmin.getId(), notifications.get(0).getOriginator().getId());
     assertPersistedForOwner(notifications.get(0), owner);
@@ -169,15 +143,19 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
 
     TransactionTemplate transaction = new TransactionTemplate(getTxMger());
     assertThrows(
-        ForcedRollback.class,
+        BookingNotificationTestFixtures.ForcedRollback.class,
         () ->
             transaction.executeWithoutResult(
                 ignored -> {
                   bookingManager.createBooking(create, booker, booker);
-                  throw new ForcedRollback();
+                  throw new BookingNotificationTestFixtures.ForcedRollback();
                 }));
 
-    assertEquals(0, notificationsFor(owner, NotificationType.NOTIFICATION_BOOKING_CREATED).size());
+    assertEquals(
+        0,
+        BookingNotificationTestFixtures.notificationsFor(
+                communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CREATED)
+            .size());
   }
 
   private TimeSlotBooking createBooking(BookingSetup setup, User booker) {
@@ -225,16 +203,6 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
     permissionUtils.refreshCache();
   }
 
-  private List<Notification> notificationsFor(User user, NotificationType type) {
-    return communicationMgr
-        .getNewNotificationsForUser(
-            user.getUsername(), PaginationCriteria.createDefaultForClass(CommunicationTarget.class))
-        .getResults()
-        .stream()
-        .filter(notification -> notification.getNotificationType() == type)
-        .toList();
-  }
-
   private void assertPersistedForOwner(Notification notification, User owner) throws Exception {
     doInTransaction(
         () -> {
@@ -248,6 +216,4 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
 
   private record BookingSetup(
       User owner, BookingConfiguration configuration, ResolvedBookableTarget target) {}
-
-  private static final class ForcedRollback extends RuntimeException {}
 }

@@ -28,6 +28,7 @@ import com.researchspace.testutils.TestFactory;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -64,7 +65,7 @@ class BookingNotificationServiceTest {
     assertEquals(true, config.getValue().isBroadcast());
     assertEquals(CommunicationNotifyPolicy.ALWAYS_NOTIFY, config.getValue().getPolicyOverride());
     assertEquals(false, config.getValue().isRecordAuthorisationRequired());
-    assertEquals(java.util.Set.of(owner), config.getValue().getNotificationTargetsOverride());
+    assertEquals(Set.of(owner), config.getValue().getNotificationTargetsOverride());
     String expectedMessage =
         notificationType == NotificationType.NOTIFICATION_BOOKING_CREATED
             ? "Booking 42 was created for instrument &lt;Mic &amp; scope&gt; (IN12) from "
@@ -87,8 +88,7 @@ class BookingNotificationServiceTest {
     ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
     verify(communicationManager)
         .notify(eq(previousOwner), isNull(), config.capture(), any(String.class));
-    assertEquals(
-        java.util.Set.of(currentOwner), config.getValue().getNotificationTargetsOverride());
+    assertEquals(Set.of(currentOwner), config.getValue().getNotificationTargetsOverride());
   }
 
   @Test
