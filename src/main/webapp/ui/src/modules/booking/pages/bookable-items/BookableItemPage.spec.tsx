@@ -33,10 +33,61 @@ const auditEvent = {
   payload: { maxBookingDurationMinutes: 60 },
 };
 
+function bookableItemAccessHandlers() {
+  return [
+    http.get("/api/v2/booking-configurations/7/access", () =>
+      HttpResponse.json(
+        {
+          scheme: "booking-configurations",
+          version: 3,
+          assignments: [
+            {
+              grantee: {
+                kind: "USER",
+                id: 1,
+                key: "user:1",
+                name: "Ada Lovelace",
+                detail: "ada",
+                available: true,
+                effectiveRole: "OWNER",
+                roleSources: [],
+              },
+              role: "OWNER",
+            },
+            {
+              grantee: {
+                kind: "AUDIENCE",
+                id: "ALL_USERS",
+                key: "audience:all-users",
+                name: "All users",
+                detail: null,
+                available: true,
+                effectiveRole: null,
+                roleSources: [],
+              },
+              role: "BOOKER",
+            },
+          ],
+          caller: {
+            effectiveRole: "OWNER",
+            roleSources: [],
+            capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
+          },
+        },
+        { headers: { ETag: '"3"' } },
+      ),
+    ),
+    http.get("/api/v2/booking-configurations/7/access/grantees", () =>
+      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
+    ),
+  ];
+}
+
 function registerHandlers() {
   worker.use(
     ...bookableItemsHandlers(() => {}),
     ...bookableItemDetailsHandlers(),
+    ...bookableItemAccessHandlers(),
     http.patch("/api/v2/booking-configurations/7", () => new HttpResponse(null, { status: 204 })),
   );
 }
