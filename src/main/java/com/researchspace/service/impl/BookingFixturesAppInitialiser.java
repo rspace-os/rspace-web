@@ -24,6 +24,7 @@ import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
@@ -44,13 +45,20 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final ZoneId FIXTURE_DATE_ZONE = ZoneId.of("Europe/Berlin");
   private static final int BUSY_CALENDAR_INSTRUMENT_COUNT = 500;
   private static final int BUSY_CALENDAR_EVENTS_PER_INSTRUMENT = 2;
-  private static final int SEARCH_EVENT_FIXTURE_COUNT = 3;
+  private static final List<String> SEARCH_EVENT_FIXTURE_MESSAGE_KEYS =
+      List.of(
+          "bookingFixtures.purposes.auroraCalibration",
+          "bookingFixtures.purposes.beaconCellImaging",
+          "bookingFixtures.purposes.cometProteomics");
+  private static final int SEARCH_EVENT_FIXTURE_COUNT = SEARCH_EVENT_FIXTURE_MESSAGE_KEYS.size();
+  private static final List<BookingOpeningHoursEntry> STANDARD_FIXTURE_OPENING_HOURS =
+      schedule("08:00", "17:00", 1, 2, 3, 4, 5, 6, 7);
   private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
-          null, schedule("08:00", "17:00", 1, 2, 3, 4, 5, 6, 7), null, null, null, null);
+          null, STANDARD_FIXTURE_OPENING_HOURS, null, null, null, null);
   private static final BookingSchedulingSettings.Patch ALERT_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
-          15L, schedule("08:00", "17:00", 1, 2, 3, 4, 5, 6, 7), null, null, 60L, false);
+          15L, STANDARD_FIXTURE_OPENING_HOURS, null, null, 60L, false);
 
   /**
    * The restricted-location plate reader is view-only for {@code user1a}: as PI of the owner's
@@ -122,7 +130,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   /** Auckland's working day falls overnight for a European viewer. */
   static final BookingSchedulingSettings.Patch AUCKLAND_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
-          null, schedule("08:00", "17:00", 1, 2, 3, 4, 5, 6, 7), null, null, null, null);
+          null, STANDARD_FIXTURE_OPENING_HOURS, null, null, null, null);
 
   /** Honolulu's evening hours fall on the next European day, so the weekdays differ. */
   static final BookingSchedulingSettings.Patch HONOLULU_FIXTURE_SETTINGS =
@@ -227,106 +235,121 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     List<Instrument> instruments = new ArrayList<>();
     List<Instrument> schedulingEdgeInstruments = new ArrayList<>();
     List<Instrument> bookingCardInstruments = new ArrayList<>();
-    List<Instrument> busyCalendarInstruments;
-    try {
-      login(new UsernamePasswordToken(FIXTURE_USER, devUserPassword, false));
-      Instrument confocal =
-          ensureInstrument(message("bookingFixtures.instruments.confocal"), owner);
-      moveToParent(
-          confocal,
-          ensureContainer(message("bookingFixtures.containers.imagingLab"), owner, false));
-      instruments.add(confocal);
+    List<Instrument> busyCalendarInstruments =
+        asUser(
+            FIXTURE_USER,
+            devUserPassword,
+            () -> {
+              Instrument confocal =
+                  ensureInstrument(message("bookingFixtures.instruments.confocal"), owner);
+              moveToParent(
+                  confocal,
+                  ensureContainer(message("bookingFixtures.containers.imagingLab"), owner, false));
+              instruments.add(confocal);
 
-      Instrument electron =
-          ensureInstrument(message("bookingFixtures.instruments.electronMicroscope"), owner);
-      moveToParent(
-          electron,
-          ensureContainer(message("bookingFixtures.containers.cryoEmSuite"), owner, false));
-      instruments.add(electron);
+              Instrument electron =
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.electronMicroscope"), owner);
+              moveToParent(
+                  electron,
+                  ensureContainer(message("bookingFixtures.containers.cryoEmSuite"), owner, false));
+              instruments.add(electron);
 
-      Instrument massSpectrometer =
-          ensureInstrument(message("bookingFixtures.instruments.massSpectrometer"), owner);
-      moveToParent(massSpectrometer, containerDao.getWorkbenchForUser(owner));
-      instruments.add(massSpectrometer);
+              Instrument massSpectrometer =
+                  ensureInstrument(message("bookingFixtures.instruments.massSpectrometer"), owner);
+              moveToParent(massSpectrometer, containerDao.getWorkbenchForUser(owner));
+              instruments.add(massSpectrometer);
 
-      Instrument flowCytometer =
-          ensureInstrument(message("bookingFixtures.instruments.flowCytometer"), owner);
-      moveToParent(
-          flowCytometer,
-          ensureContainer(
-              message("bookingFixtures.containers.longCellAnalysisFacility"), owner, false));
-      instruments.add(flowCytometer);
+              Instrument flowCytometer =
+                  ensureInstrument(message("bookingFixtures.instruments.flowCytometer"), owner);
+              moveToParent(
+                  flowCytometer,
+                  ensureContainer(
+                      message("bookingFixtures.containers.longCellAnalysisFacility"),
+                      owner,
+                      false));
+              instruments.add(flowCytometer);
 
-      Instrument noParent =
-          ensureInstrument(message("bookingFixtures.instruments.noParentCentrifuge"), owner);
-      removeFromParent(noParent);
-      instruments.add(noParent);
+              Instrument noParent =
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.noParentCentrifuge"), owner);
+              removeFromParent(noParent);
+              instruments.add(noParent);
 
-      Instrument deletedLocation =
-          ensureInstrument(message("bookingFixtures.instruments.deletedLocationSequencer"), owner);
-      Container deletedParent =
-          ensureContainer(message("bookingFixtures.containers.deletedInstrumentRoom"), owner, true);
-      if (deletedParent.isDeleted() && !hasParent(deletedLocation, deletedParent)) {
-        deletedParent.setRecordDeleted(false);
-        containerDao.save(deletedParent);
-      }
-      moveToParent(deletedLocation, deletedParent);
-      if (!deletedParent.isDeleted()) {
-        deletedParent.setRecordDeleted(true);
-        containerDao.save(deletedParent);
-      }
-      instruments.add(deletedLocation);
+              Instrument deletedLocation =
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.deletedLocationSequencer"), owner);
+              Container deletedParent =
+                  ensureContainer(
+                      message("bookingFixtures.containers.deletedInstrumentRoom"), owner, true);
+              if (deletedParent.isDeleted() && !hasParent(deletedLocation, deletedParent)) {
+                deletedParent.setRecordDeleted(false);
+                containerDao.save(deletedParent);
+              }
+              moveToParent(deletedLocation, deletedParent);
+              if (!deletedParent.isDeleted()) {
+                deletedParent.setRecordDeleted(true);
+                containerDao.save(deletedParent);
+              }
+              instruments.add(deletedLocation);
 
-      bookingCardInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.bookingCardSetup"), owner));
-      bookingCardInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.bookingCardBook"), owner));
-      bookingCardInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.bookingCardDisabled"), owner));
-      bookingCardInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.bookingCardArchived"), owner));
+              bookingCardInstruments.add(
+                  ensureInstrument(message("bookingFixtures.instruments.bookingCardSetup"), owner));
+              bookingCardInstruments.add(
+                  ensureInstrument(message("bookingFixtures.instruments.bookingCardBook"), owner));
+              bookingCardInstruments.add(
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.bookingCardDisabled"), owner));
+              bookingCardInstruments.add(
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.bookingCardArchived"), owner));
 
-      busyCalendarInstruments = ensureBusyCalendarInstruments(owner);
-      instruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.bookingAlerts"), owner));
-      schedulingEdgeInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.aucklandPcrCycler"), owner));
-      schedulingEdgeInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.honoluluDiffractometer"), owner));
-      schedulingEdgeInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.kolkataNmrSpectrometer"), owner));
-      schedulingEdgeInstruments.add(
-          ensureInstrument(message("bookingFixtures.instruments.closedDayIncubator"), owner));
-    } finally {
-      logout();
-    }
+              List<Instrument> busyCalendar = ensureBusyCalendarInstruments(owner);
+              instruments.add(
+                  ensureInstrument(message("bookingFixtures.instruments.bookingAlerts"), owner));
+              schedulingEdgeInstruments.add(
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.aucklandPcrCycler"), owner));
+              schedulingEdgeInstruments.add(
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.honoluluDiffractometer"), owner));
+              schedulingEdgeInstruments.add(
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.kolkataNmrSpectrometer"), owner));
+              schedulingEdgeInstruments.add(
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.closedDayIncubator"), owner));
+              return busyCalendar;
+            });
 
-    Instrument restrictedLocation;
-    try {
-      login(new UsernamePasswordToken(RESTRICTED_INSTRUMENT_OWNER, devUserPassword, false));
-      restrictedLocation =
-          ensureInstrument(
-              message("bookingFixtures.instruments.restrictedLocationPlateReader"),
-              restrictedInstrumentOwner);
-      restrictedLocation.setSharingMode(InventorySharingMode.OWNER_ONLY);
-      instrumentDao.save(restrictedLocation);
-    } finally {
-      logout();
-    }
+    Instrument restrictedLocation =
+        asUser(
+            RESTRICTED_INSTRUMENT_OWNER,
+            devUserPassword,
+            () -> {
+              Instrument instrument =
+                  ensureInstrument(
+                      message("bookingFixtures.instruments.restrictedLocationPlateReader"),
+                      restrictedInstrumentOwner);
+              instrument.setSharingMode(InventorySharingMode.OWNER_ONLY);
+              instrumentDao.save(instrument);
+              return instrument;
+            });
 
-    Container restrictedParent;
-    try {
-      login(new UsernamePasswordToken(RESTRICTED_CONTAINER_OWNER, devUserPassword, false));
-      restrictedParent =
-          ensureContainer(
-              message("bookingFixtures.containers.restrictedInstrumentRoom"),
-              restrictedContainerOwner,
-              false);
-      restrictedParent.setSharingMode(InventorySharingMode.OWNER_ONLY);
-      containerDao.save(restrictedParent);
-    } finally {
-      logout();
-    }
+    Container restrictedParent =
+        asUser(
+            RESTRICTED_CONTAINER_OWNER,
+            devUserPassword,
+            () -> {
+              Container container =
+                  ensureContainer(
+                      message("bookingFixtures.containers.restrictedInstrumentRoom"),
+                      restrictedContainerOwner,
+                      false);
+              container.setSharingMode(InventorySharingMode.OWNER_ONLY);
+              containerDao.save(container);
+              return container;
+            });
     moveToParent(restrictedLocation, restrictedParent);
     instruments.add(restrictedLocation);
     // Indices 8 to 11 follow the plate reader so the earlier fixture indices stay stable.
@@ -348,289 +371,289 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
         reloadInstruments(fixtureIds.bookingCardInstrumentIds());
     List<Instrument> busyCalendarInstruments =
         reloadInstruments(fixtureIds.busyCalendarInstrumentIds());
-    List<BookingConfiguration> configurations;
-    List<BookingConfiguration> busyCalendarConfigurations;
-    try {
-      login(new UsernamePasswordToken(SYSADMIN_UNAME, SYSADMIN_PWD, false));
-      configurations =
-          List.of(
-              ensureConfiguration(
-                  instruments.get(0), "Europe/Berlin", BLOCKOUT_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(1), "America/New_York", WEEKDAY_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(2), "UTC", DOUBLE_BOOKING_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(instruments.get(3), "Asia/Singapore", sysadmin),
-              ensureConfiguration(
-                  instruments.get(4), "Europe/Berlin", MIDNIGHT_CLOSE_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(5), "Europe/Berlin", WEEKDAY_ALL_DAY_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(6), "Europe/Berlin", ALERT_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(7), "Europe/Berlin", VIEW_ONLY_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(8), "Pacific/Auckland", AUCKLAND_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(9), "Pacific/Honolulu", HONOLULU_FIXTURE_SETTINGS, sysadmin),
-              ensureConfiguration(
-                  instruments.get(10), "Asia/Kolkata", KOLKATA_FIXTURE_SETTINGS, sysadmin),
-              // Opens every day until its events exist; the last sysadmin block closes two days.
-              ensureConfiguration(instruments.get(11), "Europe/Berlin", sysadmin));
+    FixtureConfigurationSet fixtureConfigurationSet =
+        asUser(
+            SYSADMIN_UNAME,
+            SYSADMIN_PWD,
+            () -> {
+              List<BookingConfiguration> configurations =
+                  List.of(
+                      ensureConfiguration(
+                          instruments.get(0), "Europe/Berlin", BLOCKOUT_FIXTURE_SETTINGS, sysadmin),
+                      ensureConfiguration(
+                          instruments.get(1),
+                          "America/New_York",
+                          WEEKDAY_FIXTURE_SETTINGS,
+                          sysadmin),
+                      ensureConfiguration(
+                          instruments.get(2), "UTC", DOUBLE_BOOKING_FIXTURE_SETTINGS, sysadmin),
+                      ensureConfiguration(instruments.get(3), "Asia/Singapore", sysadmin),
+                      ensureConfiguration(
+                          instruments.get(4),
+                          "Europe/Berlin",
+                          MIDNIGHT_CLOSE_FIXTURE_SETTINGS,
+                          sysadmin),
+                      ensureConfiguration(
+                          instruments.get(5),
+                          "Europe/Berlin",
+                          WEEKDAY_ALL_DAY_FIXTURE_SETTINGS,
+                          sysadmin),
+                      ensureConfiguration(
+                          instruments.get(6), "Europe/Berlin", ALERT_FIXTURE_SETTINGS, sysadmin),
+                      ensureConfiguration(
+                          instruments.get(7),
+                          "Europe/Berlin",
+                          VIEW_ONLY_FIXTURE_SETTINGS,
+                          sysadmin),
+                      ensureConfiguration(
+                          instruments.get(8),
+                          "Pacific/Auckland",
+                          AUCKLAND_FIXTURE_SETTINGS,
+                          sysadmin),
+                      ensureConfiguration(
+                          instruments.get(9),
+                          "Pacific/Honolulu",
+                          HONOLULU_FIXTURE_SETTINGS,
+                          sysadmin),
+                      ensureConfiguration(
+                          instruments.get(10), "Asia/Kolkata", KOLKATA_FIXTURE_SETTINGS, sysadmin),
+                      // Opens every day until its events exist; the last sysadmin block closes two
+                      // days.
+                      ensureConfiguration(instruments.get(11), "Europe/Berlin", sysadmin));
 
-      ensureConfigurationState(
-          bookingCardInstruments.get(1), true, BookingConfigurationState.ACTIVE, sysadmin);
-      ensureConfigurationState(
-          bookingCardInstruments.get(2), false, BookingConfigurationState.ACTIVE, sysadmin);
-      ensureConfigurationState(
-          bookingCardInstruments.get(3), true, BookingConfigurationState.ARCHIVED, sysadmin);
+              ensureConfigurationState(
+                  bookingCardInstruments.get(1), true, BookingConfigurationState.ACTIVE, sysadmin);
+              ensureConfigurationState(
+                  bookingCardInstruments.get(2), false, BookingConfigurationState.ACTIVE, sysadmin);
+              ensureConfigurationState(
+                  bookingCardInstruments.get(3),
+                  true,
+                  BookingConfigurationState.ARCHIVED,
+                  sysadmin);
 
-      busyCalendarConfigurations =
-          busyCalendarInstruments.stream()
-              .map(
-                  instrument ->
-                      ensureConfigurationState(
-                          instrument, true, BookingConfigurationState.ACTIVE, sysadmin))
-              .toList();
-    } finally {
-      logout();
-    }
+              List<BusyCalendarFixture> busyCalendarFixtures =
+                  busyCalendarInstruments.stream()
+                      .map(
+                          instrument ->
+                              new BusyCalendarFixture(
+                                  instrument,
+                                  ensureConfigurationState(
+                                      instrument,
+                                      true,
+                                      BookingConfigurationState.ACTIVE,
+                                      sysadmin)))
+                      .toList();
+              return new FixtureConfigurationSet(configurations, busyCalendarFixtures);
+            });
+
+    List<BookingConfiguration> configurations = fixtureConfigurationSet.configurations();
+    List<BusyCalendarFixture> busyCalendarFixtures = fixtureConfigurationSet.busyCalendarFixtures();
 
     LocalDate fixtureDate = LocalDate.now(FIXTURE_DATE_ZONE).plusDays(1);
-    try {
-      login(new UsernamePasswordToken(FIXTURE_USER, devUserPassword, false));
-      ensureBooking(
-          instruments.get(0),
-          configurations.get(0),
-          fixtureDate,
-          9,
-          0,
-          10,
-          30,
-          message("bookingFixtures.purposes.cellImaging"),
-          owner);
-      ensureBooking(
-          instruments.get(0),
-          configurations.get(0),
-          fixtureDate,
-          13,
-          0,
-          14,
-          0,
-          message("bookingFixtures.purposes.calibrationRun"),
-          owner);
-      ensureBooking(
-          instruments.get(1),
-          configurations.get(1),
-          firstOpenDayOnOrAfter(fixtureDate, BookingSchedulingSettings.from(configurations.get(1))),
-          10,
-          0,
-          12,
-          0,
-          message("bookingFixtures.purposes.ultrastructureImaging"),
-          owner);
-      LocalDate massSpectrometerDate =
-          firstOpenDayOnOrAfter(fixtureDate, BookingSchedulingSettings.from(configurations.get(2)));
-      ensureBooking(
-          instruments.get(2),
-          configurations.get(2),
-          massSpectrometerDate,
-          8,
-          0,
-          9,
-          30,
-          message("bookingFixtures.purposes.proteomicsRun"),
-          owner);
-      ensureBooking(
-          instruments.get(2),
-          configurations.get(2),
-          massSpectrometerDate,
-          8,
-          30,
-          9,
-          30,
-          message("bookingFixtures.purposes.overlappingProteomicsRun"),
-          owner);
-      ensureBooking(
-          instruments.get(3),
-          configurations.get(3),
-          fixtureDate,
-          14,
-          0,
-          16,
-          0,
-          message("bookingFixtures.purposes.cellSorting"),
-          owner);
-      ensureBooking(
-          instruments.get(3),
-          configurations.get(3),
-          fixtureDate,
-          23,
-          30,
-          0,
-          30,
-          message("bookingFixtures.purposes.overnightAnalysis"),
-          owner);
-      ensureBooking(
-          instruments.get(4),
-          configurations.get(4),
-          fixtureDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY)),
-          22,
-          0,
-          0,
-          0,
-          message("bookingFixtures.purposes.lateSpin"),
-          owner);
-      LocalDate sequencerMonday = fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-      ensureEvent(
-          instruments.get(5),
-          configurations.get(5),
-          sequencerMonday.atStartOfDay(),
-          sequencerMonday.plusDays(2).atStartOfDay(),
-          BookingEventKind.BOOKING,
-          message("bookingFixtures.purposes.twoDaySequencingRun"),
-          owner);
-      // Auckland's 09:00 is the previous European evening, so start a day later to stay future.
-      ensureBooking(
-          instruments.get(8),
-          configurations.get(8),
-          fixtureDate.plusDays(1),
-          9,
-          0,
-          10,
-          0,
-          message("bookingFixtures.purposes.pcrAmplification"),
-          owner);
-      ensureBooking(
-          instruments.get(9),
-          configurations.get(9),
-          firstOpenDayOnOrAfter(fixtureDate, BookingSchedulingSettings.from(configurations.get(9))),
-          18,
-          0,
-          19,
-          0,
-          message("bookingFixtures.purposes.crystalScreening"),
-          owner);
-      ensureBooking(
-          instruments.get(10),
-          configurations.get(10),
-          fixtureDate,
-          10,
-          15,
-          11,
-          30,
-          message("bookingFixtures.purposes.quarterHourNmr"),
-          owner);
-      ensureBooking(
-          instruments.get(11),
-          configurations.get(11),
-          fixtureDate.plusDays(2),
-          10,
-          0,
-          11,
-          0,
-          message("bookingFixtures.purposes.closedDayBooking"),
-          owner);
-
-      LocalDate busyCalendarWeekStart = fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-      String busyCalendarPurpose = message("bookingFixtures.purposes.busyCalendar");
-      for (int instrumentIndex = 0;
-          instrumentIndex < busyCalendarInstruments.size();
-          instrumentIndex++) {
-        LocalDate bookingDate = busyCalendarWeekStart.plusDays(instrumentIndex % 7);
-        for (int eventIndex = 0; eventIndex < BUSY_CALENDAR_EVENTS_PER_INSTRUMENT; eventIndex++) {
-          int startHour = 8 + (instrumentIndex % 4) + (eventIndex * 5);
+    asUser(
+        FIXTURE_USER,
+        devUserPassword,
+        () -> {
           ensureBooking(
-              busyCalendarInstruments.get(instrumentIndex),
-              busyCalendarConfigurations.get(instrumentIndex),
-              bookingDate,
-              startHour,
-              0,
-              startHour,
-              45,
-              busyCalendarPurpose,
+              instruments.get(0),
+              configurations.get(0),
+              fixtureDate,
+              LocalTime.of(9, 0),
+              LocalTime.of(10, 30),
+              message("bookingFixtures.purposes.cellImaging"),
               owner);
-        }
-      }
-      ensureBooking(
-          busyCalendarInstruments.get(0),
-          busyCalendarConfigurations.get(0),
-          busyCalendarWeekStart,
-          18,
-          0,
-          18,
-          45,
-          message("bookingFixtures.purposes.auroraCalibration"),
-          owner);
-      ensureBooking(
-          busyCalendarInstruments.get(1),
-          busyCalendarConfigurations.get(1),
-          busyCalendarWeekStart.plusDays(1),
-          18,
-          0,
-          18,
-          45,
-          message("bookingFixtures.purposes.beaconCellImaging"),
-          owner);
-      ensureBooking(
-          busyCalendarInstruments.get(2),
-          busyCalendarConfigurations.get(2),
-          busyCalendarWeekStart.plusDays(2),
-          18,
-          0,
-          18,
-          45,
-          message("bookingFixtures.purposes.cometProteomics"),
-          owner);
-      log.info(
-          "Ensured {} instruments and {} events for the busy calendar week starting {}",
-          BUSY_CALENDAR_INSTRUMENT_COUNT,
-          BUSY_CALENDAR_INSTRUMENT_COUNT * BUSY_CALENDAR_EVENTS_PER_INSTRUMENT
-              + SEARCH_EVENT_FIXTURE_COUNT,
-          busyCalendarWeekStart);
-    } finally {
-      logout();
-    }
+          ensureBooking(
+              instruments.get(0),
+              configurations.get(0),
+              fixtureDate,
+              LocalTime.of(13, 0),
+              LocalTime.of(14, 0),
+              message("bookingFixtures.purposes.calibrationRun"),
+              owner);
+          ensureBooking(
+              instruments.get(1),
+              configurations.get(1),
+              firstOpenDayOnOrAfter(
+                  fixtureDate, BookingSchedulingSettings.from(configurations.get(1))),
+              LocalTime.of(10, 0),
+              LocalTime.of(12, 0),
+              message("bookingFixtures.purposes.ultrastructureImaging"),
+              owner);
+          LocalDate massSpectrometerDate =
+              firstOpenDayOnOrAfter(
+                  fixtureDate, BookingSchedulingSettings.from(configurations.get(2)));
+          ensureBooking(
+              instruments.get(2),
+              configurations.get(2),
+              massSpectrometerDate,
+              LocalTime.of(8, 0),
+              LocalTime.of(9, 30),
+              message("bookingFixtures.purposes.proteomicsRun"),
+              owner);
+          ensureBooking(
+              instruments.get(2),
+              configurations.get(2),
+              massSpectrometerDate,
+              LocalTime.of(8, 30),
+              LocalTime.of(9, 30),
+              message("bookingFixtures.purposes.overlappingProteomicsRun"),
+              owner);
+          ensureBooking(
+              instruments.get(3),
+              configurations.get(3),
+              fixtureDate,
+              LocalTime.of(14, 0),
+              LocalTime.of(16, 0),
+              message("bookingFixtures.purposes.cellSorting"),
+              owner);
+          ensureBooking(
+              instruments.get(3),
+              configurations.get(3),
+              fixtureDate,
+              LocalTime.of(23, 30),
+              LocalTime.of(0, 30),
+              message("bookingFixtures.purposes.overnightAnalysis"),
+              owner);
+          ensureBooking(
+              instruments.get(4),
+              configurations.get(4),
+              fixtureDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY)),
+              LocalTime.of(22, 0),
+              LocalTime.of(0, 0),
+              message("bookingFixtures.purposes.lateSpin"),
+              owner);
+          LocalDate sequencerMonday = fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+          ensureEvent(
+              instruments.get(5),
+              configurations.get(5),
+              sequencerMonday.atStartOfDay(),
+              sequencerMonday.plusDays(2).atStartOfDay(),
+              BookingEventKind.BOOKING,
+              message("bookingFixtures.purposes.twoDaySequencingRun"),
+              owner);
+          // Auckland's 09:00 is the previous European evening, so start a day later to stay future.
+          ensureBooking(
+              instruments.get(8),
+              configurations.get(8),
+              fixtureDate.plusDays(1),
+              LocalTime.of(9, 0),
+              LocalTime.of(10, 0),
+              message("bookingFixtures.purposes.pcrAmplification"),
+              owner);
+          ensureBooking(
+              instruments.get(9),
+              configurations.get(9),
+              firstOpenDayOnOrAfter(
+                  fixtureDate, BookingSchedulingSettings.from(configurations.get(9))),
+              LocalTime.of(18, 0),
+              LocalTime.of(19, 0),
+              message("bookingFixtures.purposes.crystalScreening"),
+              owner);
+          ensureBooking(
+              instruments.get(10),
+              configurations.get(10),
+              fixtureDate,
+              LocalTime.of(10, 15),
+              LocalTime.of(11, 30),
+              message("bookingFixtures.purposes.quarterHourNmr"),
+              owner);
+          ensureBooking(
+              instruments.get(11),
+              configurations.get(11),
+              fixtureDate.plusDays(2),
+              LocalTime.of(10, 0),
+              LocalTime.of(11, 0),
+              message("bookingFixtures.purposes.closedDayBooking"),
+              owner);
 
+          LocalDate busyCalendarWeekStart =
+              fixtureDate.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+          String busyCalendarPurpose = message("bookingFixtures.purposes.busyCalendar");
+          for (int instrumentIndex = 0;
+              instrumentIndex < busyCalendarFixtures.size();
+              instrumentIndex++) {
+            LocalDate bookingDate = busyCalendarWeekStart.plusDays(instrumentIndex % 7);
+            for (int eventIndex = 0;
+                eventIndex < BUSY_CALENDAR_EVENTS_PER_INSTRUMENT;
+                eventIndex++) {
+              int startHour = 8 + (instrumentIndex % 4) + (eventIndex * 5);
+              ensureBooking(
+                  busyCalendarFixtures.get(instrumentIndex).instrument(),
+                  busyCalendarFixtures.get(instrumentIndex).configuration(),
+                  bookingDate,
+                  LocalTime.of(startHour, 0),
+                  LocalTime.of(startHour, 45),
+                  busyCalendarPurpose,
+                  owner);
+            }
+          }
+          for (int searchIndex = 0;
+              searchIndex < SEARCH_EVENT_FIXTURE_MESSAGE_KEYS.size();
+              searchIndex++) {
+            BusyCalendarFixture searchFixture = busyCalendarFixtures.get(searchIndex);
+            ensureBooking(
+                searchFixture.instrument(),
+                searchFixture.configuration(),
+                busyCalendarWeekStart.plusDays(searchIndex),
+                LocalTime.of(18, 0),
+                LocalTime.of(18, 45),
+                message(SEARCH_EVENT_FIXTURE_MESSAGE_KEYS.get(searchIndex)),
+                owner);
+          }
+          log.info(
+              "Ensured {} instruments and {} events for the busy calendar week starting {}",
+              BUSY_CALENDAR_INSTRUMENT_COUNT,
+              BUSY_CALENDAR_INSTRUMENT_COUNT * BUSY_CALENDAR_EVENTS_PER_INSTRUMENT
+                  + SEARCH_EVENT_FIXTURE_COUNT,
+              busyCalendarWeekStart);
+          return null;
+        });
+
+    asUser(
+        SYSADMIN_UNAME,
+        SYSADMIN_PWD,
+        () -> {
+          ensureBooking(
+              instruments.get(6),
+              configurations.get(6),
+              fixtureDate.minusDays(1),
+              LocalTime.of(10, 0),
+              LocalTime.of(11, 0),
+              message("bookingFixtures.purposes.bookingAlertsPast"),
+              sysadmin);
+          ensureBooking(
+              instruments.get(6),
+              configurations.get(6),
+              fixtureDate,
+              LocalTime.of(10, 0),
+              LocalTime.of(11, 0),
+              message("bookingFixtures.purposes.bookingAlertsOverlap"),
+              sysadmin);
+
+          LocalDate maintenanceDate = fixtureDate.plusDays(3);
+          ensureEvent(
+              instruments.get(11),
+              configurations.get(11),
+              maintenanceDate.atTime(10, 0),
+              maintenanceDate.atTime(12, 0),
+              BookingEventKind.MAINTENANCE,
+              message("bookingFixtures.purposes.closedDayMaintenance"),
+              sysadmin);
+          // Reruns rely on findFirstOverlap skipping both events before createBooking rejects them.
+          ensureConfiguration(
+              instruments.get(11),
+              "Europe/Berlin",
+              closedDayFixtureSettings(
+                  fixtureDate.plusDays(2).getDayOfWeek(), maintenanceDate.getDayOfWeek()),
+              sysadmin);
+          return null;
+        });
+  }
+
+  private <T> T asUser(String username, String password, Supplier<T> action) {
     try {
-      login(new UsernamePasswordToken(SYSADMIN_UNAME, SYSADMIN_PWD, false));
-      ensureBooking(
-          instruments.get(6),
-          configurations.get(6),
-          fixtureDate.minusDays(1),
-          10,
-          0,
-          11,
-          0,
-          message("bookingFixtures.purposes.bookingAlertsPast"),
-          sysadmin);
-      ensureBooking(
-          instruments.get(6),
-          configurations.get(6),
-          fixtureDate,
-          10,
-          0,
-          11,
-          0,
-          message("bookingFixtures.purposes.bookingAlertsOverlap"),
-          sysadmin);
-
-      LocalDate maintenanceDate = fixtureDate.plusDays(3);
-      ensureEvent(
-          instruments.get(11),
-          configurations.get(11),
-          maintenanceDate.atTime(10, 0),
-          maintenanceDate.atTime(12, 0),
-          BookingEventKind.MAINTENANCE,
-          message("bookingFixtures.purposes.closedDayMaintenance"),
-          sysadmin);
-      // Reruns rely on findFirstOverlap skipping both events before createBooking rejects them.
-      ensureConfiguration(
-          instruments.get(11),
-          "Europe/Berlin",
-          closedDayFixtureSettings(
-              fixtureDate.plusDays(2).getDayOfWeek(), maintenanceDate.getDayOfWeek()),
-          sysadmin);
+      login(new UsernamePasswordToken(username, password, false));
+      return action.get();
     } finally {
       logout();
     }
@@ -639,6 +662,11 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private List<Instrument> reloadInstruments(List<Long> instrumentIds) {
     return instrumentIds.stream().map(instrumentDao::get).toList();
   }
+
+  private record FixtureConfigurationSet(
+      List<BookingConfiguration> configurations, List<BusyCalendarFixture> busyCalendarFixtures) {}
+
+  private record BusyCalendarFixture(Instrument instrument, BookingConfiguration configuration) {}
 
   private record FixtureIds(
       Long ownerId,
@@ -710,22 +738,12 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       Instrument instrument,
       BookingConfiguration configuration,
       LocalDate date,
-      int startHour,
-      int startMinute,
-      int endHour,
-      int endMinute,
+      LocalTime startTime,
+      LocalTime endTime,
       String purpose,
       User owner) {
     schedulingFixtures.ensureBooking(
-        instrument,
-        configuration,
-        date,
-        startHour,
-        startMinute,
-        endHour,
-        endMinute,
-        purpose,
-        owner);
+        instrument, configuration, date, startTime, endTime, purpose, owner);
   }
 
   private static ResolvedBookableTarget target(Instrument instrument) {
