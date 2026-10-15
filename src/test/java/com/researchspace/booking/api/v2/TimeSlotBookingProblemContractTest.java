@@ -1,5 +1,6 @@
 package com.researchspace.booking.api.v2;
 
+import static com.researchspace.testutils.BookingResourceTestFixtures.translate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -7,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2Problem;
-import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.booking.service.BookingBufferConflictException;
 import com.researchspace.booking.service.BookingOverlapException;
@@ -21,9 +21,12 @@ import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 
@@ -58,13 +61,27 @@ class TimeSlotBookingProblemContractTest {
     LocaleContextHolder.resetLocaleContext();
   }
 
-  @Test
-  void overlapIdentifiesTheBlockingEventWithoutPrivateFields() throws Exception {
-    JsonNode body =
-        body(advice.handleResourceException(translate(new BookingOverlapException(BLOCKING))));
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("schedulingProblemBodies")
+  void schedulingProblemBodiesRemainStable(
+      String scenario, RuntimeException failure, boolean policy, String expectedJson)
+      throws Exception {
+    ResponseEntity<ApiV2Problem> response =
+        policy
+            ? advice.handleBookingPolicy((BookingPolicyException) failure)
+            : advice.handleResourceException(
+                translate(
+                    operations.timeSlotBookingApiV2Resource(), ResourceOperation.CREATE, failure));
 
-    assertEquals(
-        json.readTree(
+    assertEquals(json.readTree(expectedJson), body(response));
+  }
+
+  private static Stream<Arguments> schedulingProblemBodies() {
+    return Stream.of(
+        Arguments.of(
+            "overlap identifies only the blocking event",
+            new BookingOverlapException(BLOCKING),
+            false,
             """
             {"title":"The selected time overlaps another booking.","status":409,
              "code":"errors.api.v2.booking.overlap",
@@ -72,18 +89,10 @@ class TimeSlotBookingProblemContractTest {
              "conflict":{"id":59,"kind":"BOOKING",
                "start":"2026-09-28T08:00:00Z","end":"2026-09-28T10:00:00Z"}}
             """),
-        body);
-  }
-
-  @Test
-  void bufferIdentifiesTheBlockingEventAndBothBuffers() throws Exception {
-    JsonNode body =
-        body(
-            advice.handleResourceException(
-                translate(new BookingBufferConflictException(BLOCKING, 15, 30))));
-
-    assertEquals(
-        json.readTree(
+        Arguments.of(
+            "buffer conflict includes both buffers",
+            new BookingBufferConflictException(BLOCKING, 15, 30),
+            false,
             """
             {"title":"The selected time is too close to another booking (buffer).","status":409,
              "code":"errors.api.v2.booking.buffer",
@@ -92,51 +101,25 @@ class TimeSlotBookingProblemContractTest {
                "start":"2026-09-28T08:00:00Z","end":"2026-09-28T10:00:00Z"},
              "bufferBeforeMinutes":15,"bufferAfterMinutes":30}
             """),
-        body);
-  }
-
-  @Test
-  void maximumDurationStatesTheLimitInTheDetailAndAsAMember() throws Exception {
-    JsonNode body = body(advice.handleBookingPolicy(BookingPolicyException.maximumDuration(90)));
-
-    assertEquals(
-        json.readTree(
+        Arguments.of(
+            "maximum duration is stated in the detail and member",
+            BookingPolicyException.maximumDuration(90),
+            true,
             """
             {"title":"The booking exceeds this bookable item's maximum duration of 1 hour, 30 minutes.",
              "status":400,"code":"errors.api.v2.booking.maximumDuration",
              "detail":"The booking exceeds this bookable item's maximum duration of 1 hour, 30 minutes.",
              "maximumDurationMinutes":90}
             """),
-        body);
-  }
-
-  @Test
-  void otherSchedulingPolicyProblemsHaveNoExtensionMembers() throws Exception {
-    JsonNode body =
-        body(
-            advice.handleBookingPolicy(
-                new BookingPolicyException(BookingPolicyException.Reason.GRANULARITY)));
-
-    assertEquals(
-        json.readTree(
+        Arguments.of(
+            "granularity policy has no extension members",
+            new BookingPolicyException(BookingPolicyException.Reason.GRANULARITY),
+            true,
             """
             {"title":"Start and end must align with this bookable item's slot granularity.",
              "status":400,"code":"errors.api.v2.booking.granularity",
              "detail":"Start and end must align with this bookable item's slot granularity."}
-            """),
-        body);
-  }
-
-  private ApiV2ResourceException translate(RuntimeException failure) {
-    return operations
-        .timeSlotBookingApiV2Resource()
-        .errorMappings()
-        .get(ResourceOperation.CREATE)
-        .stream()
-        .filter(mapping -> mapping.exceptionType() == failure.getClass())
-        .findFirst()
-        .orElseThrow()
-        .translate(failure);
+            """));
   }
 
   /** Round-trips through text so numbers compare by value, as a client would parse them. */

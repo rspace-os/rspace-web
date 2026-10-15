@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Instrument;
@@ -17,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.Set;
 
 class BookingSchedulingFixtureFactory {
 
@@ -129,7 +131,14 @@ class BookingSchedulingFixtureFactory {
     Date start = Date.from(date.atTime(startTime).atZone(zone).toInstant());
     LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
     Date end = Date.from(endDate.atTime(endTime).atZone(zone).toInstant());
-    if (bookingDao.findFirstOverlap(configuration.getId(), start, end, null).isEmpty()) {
+    if (bookingDao
+        .findFirstOverlap(
+            configuration.getId(),
+            start,
+            end,
+            null,
+            Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE))
+        .isEmpty()) {
       bookingManager.createBooking(
           new TimeSlotBookingManager.Create(target(instrument), start, end, purpose), owner, owner);
     }
