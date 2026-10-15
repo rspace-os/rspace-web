@@ -331,10 +331,7 @@ class TimeSlotBookingSchedulingTest {
   @Test
   void checksRawOverlapThenTheSharedBufferAndLimitsDoubleBookingToMaintenance() {
     ResolvedBookableTarget target = target(12L);
-    BookingConfiguration buffered = configuration(4L, 12L, true);
-    buffered.setTimeZone("UTC");
-    buffered.setBufferBeforeMinutes(10);
-    buffered.setBufferAfterMinutes(20);
+    BookingConfiguration buffered = bufferedConfiguration();
     when(configurationDao.lockActiveByTarget(target.reference())).thenReturn(Optional.of(buffered));
 
     manager.createBooking(

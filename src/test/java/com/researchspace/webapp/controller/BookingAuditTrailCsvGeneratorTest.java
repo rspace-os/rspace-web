@@ -11,6 +11,8 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.HistoricData;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
@@ -29,7 +31,9 @@ public class BookingAuditTrailCsvGeneratorTest {
   @BeforeEach
   public void setUp() {
     ReflectionTestUtils.setField(
-        auditTrailSearchResultCsvGenerator, "messages", BookingAuditMessageFixture.messages());
+        auditTrailSearchResultCsvGenerator,
+        "messages",
+        new MessageSourceUtils(new JsonMessageSource()));
   }
 
   User anyUser = TestFactory.createAnyUser("any");

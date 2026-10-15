@@ -417,18 +417,13 @@ class ApiV2BookingConfigurationResourceTest {
         updateViolation(legacy).getViolations().get(0).reason());
     JsonNode wrongKind = mapper.readTree("{\"openingHours\":1}");
     JsonNode empty = mapper.readTree("{\"openingHours\":[]}");
+    DocumentValidationException wrongType = updateViolation(wrongKind);
     assertEquals(
-        DocumentValidationException.Reason.WRONG_TYPE,
-        assertThrows(DocumentValidationException.class, () -> parseUpdate(wrongKind))
-            .getViolations()
-            .get(0)
-            .reason());
+        DocumentValidationException.Reason.WRONG_TYPE, wrongType.getViolations().get(0).reason());
+    DocumentValidationException emptySchedule = updateViolation(empty);
     assertEquals(
         DocumentValidationException.Reason.INVALID_VALUE,
-        assertThrows(DocumentValidationException.class, () -> parseUpdate(empty))
-            .getViolations()
-            .get(0)
-            .reason());
+        emptySchedule.getViolations().get(0).reason());
   }
 
   @Test
