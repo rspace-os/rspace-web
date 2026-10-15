@@ -1,20 +1,21 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
+import { bookingCatalogueQuery, catalogueItemAsConfiguration } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useBookingNoticeHost } from "@/modules/booking/feedback/BookingNotices";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import type { TableListAlertsApi } from "@/modules/common/table-list/components/TableListAlerts";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
 import type { FilterState } from "@/modules/common/table-list/types";
 import { mutateBookableItems } from "../bookable-items/BookableItemsContent";
-import { calendarSubscriptionQueryKey } from "../bookable-items/bookableItemCalendarSubscription";
 import { bookableItemBulkNotice, useBookableItemNoticeIds } from "../bookable-items/bookableItemFeedback";
 import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
@@ -57,7 +58,7 @@ export function useAllBookableItemsData({
   page,
   pageSize,
 }: AllBookableItemsDataOptions) {
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   // Add disappears once the caller is known to have no instrument to set up, so it offers no dead
   // end; it stays while that answer loads so the toolbar does not shift for everyone else.
@@ -73,7 +74,7 @@ export function useAllBookableItemsData({
     [commonT, t],
   );
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const alertsRef = useRef<TableListAlertsApi | null>(null);
   const [alertsReady, setAlertsReady] = useState(false);
   const attachAlerts = useCallback((api: TableListAlertsApi | null) => {
@@ -90,7 +91,7 @@ export function useAllBookableItemsData({
   const clearSelection = useCallback(() => {
     setSelectedRowIds((current) => (current.size ? new Set() : current));
   }, []);
-  const runtimeSelectors = useMemo(() => (where ? rsqlSelectors(where) : []), [where]);
+  const runtimeSelectors = where ? rsqlSelectors(where) : [];
   const runtimeFieldState = useApiV2RuntimeFields<AllBookableItem>({
     resourceName: "booking-configurations",
     selectors: runtimeSelectors,
@@ -103,11 +104,17 @@ export function useAllBookableItemsData({
         metadata: runtimeFieldState.metadata,
         runtimeFields: runtimeFieldState.runtimeFields,
         localFields: ["availability"],
-        // The same default-namespace translator as the REST API v2 table hook: shared table labels
-        // live in `common`, and this page's own keys carry their `booking:` namespace.
-        translate: (key, values) => String(commonT(key as never, values as never)),
+        i18n,
+        language: i18n.resolvedLanguage ?? i18n.language,
       }),
-    [commonT, runtimeFieldState.metadata, runtimeFieldState.runtimeFields, sourceConfig],
+    [
+      i18n,
+      i18n.resolvedLanguage,
+      i18n.language,
+      runtimeFieldState.metadata,
+      runtimeFieldState.runtimeFields,
+      sourceConfig,
+    ],
   );
   const preferences = useBookingDisplayPreferences();
   const userToday = todayInTimeZone(preferences.timeZone, clock());
@@ -142,26 +149,18 @@ export function useAllBookableItemsData({
       description: t("allBookableItems.quickFilters.freeLaterTodayDescription"),
     },
   } as const;
-  const bounds = useMemo(
-    () =>
-      displayInterval(
-        selectedDate,
-        preferences.timeZone,
-        preferences.availabilityWindow.start,
-        preferences.availabilityWindow.end,
-      ),
-    [preferences.availabilityWindow.end, preferences.availabilityWindow.start, preferences.timeZone, selectedDate],
+  const bounds = displayInterval(
+    selectedDate,
+    preferences.timeZone,
+    preferences.availabilityWindow.start,
+    preferences.availabilityWindow.end,
   );
   const minute = useAlignedMinute(clock);
-  const today = useMemo(
-    () =>
-      todayAvailabilityWindow(
-        new Date(minute),
-        preferences.timeZone,
-        preferences.availabilityWindow.start,
-        preferences.availabilityWindow.end,
-      ),
-    [minute, preferences.availabilityWindow.end, preferences.availabilityWindow.start, preferences.timeZone],
+  const today = todayAvailabilityWindow(
+    new Date(minute),
+    preferences.timeZone,
+    preferences.availabilityWindow.start,
+    preferences.availabilityWindow.end,
   );
   const serverWhere =
     serverFilter.supported && serverFilter.where ? serializeRsqlExpression(serverFilter.where) : undefined;
@@ -171,46 +170,21 @@ export function useAllBookableItemsData({
   const counts = useAvailabilityCounts(
     token,
     subjectId,
-    { q, types, mine, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
+    { q, totals: true, types, mine, where: countsFilter ? serializeRsqlExpression(countsFilter) : undefined },
     today,
     !runtimeFilterBlocked,
   );
   // The table reads its own page; the server applies an availability rule before paging.
-  const catalogueQueryKey = [
-    "api-v2",
-    "bookings",
-    "booking-catalogue",
-    "all-items",
+  const scope = useQueryIdentityScope(subjectId);
+  const catalogueOptions = bookingCatalogueQuery(
+    scope,
+    { q, totals: true, types, mine, where: serverWhere, page, pageSize, availability: serverAvailability, availabilityWindow: today },
     token,
-    subjectId,
-    q,
-    types,
-    mine,
-    serverWhere,
-    page,
-    pageSize,
-    ...(serverAvailability ? [serverAvailability, today.start, today.end, today.now] : []),
-  ];
+  );
+  const catalogueQueryKey = catalogueOptions.queryKey;
   const catalogue = useQuery({
-    queryKey: catalogueQueryKey,
-    queryFn: ({ signal }) =>
-      fetchBookingCatalogue(
-        {
-          q,
-          totals: true,
-          types,
-          mine,
-          where: serverWhere,
-          page,
-          pageSize,
-          availability: serverAvailability,
-          availabilityWindow: today,
-        },
-        token,
-        signal,
-      ),
+    ...catalogueOptions,
     enabled: !runtimeFilterBlocked && token.length > 0,
-    staleTime: 30_000,
     placeholderData: serverAvailability ? keepAcrossMinutes(catalogueQueryKey) : undefined,
   });
   const catalogueItems = catalogue.data?.items ?? [];
@@ -227,29 +201,16 @@ export function useAllBookableItemsData({
     !mine &&
     !types?.length;
   // A disabled, archived or deleted item leaves this list, so it also leaves the selection.
-  const onLifecycleChanged = useCallback(
-    async (configurationIds: readonly number[], permanent = false) => {
-      setSelectedRowIds((current) => {
-        const next = new Set(current);
-        for (const id of configurationIds) next.delete(String(id));
-        return next;
-      });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
-        queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
-        ...configurationIds.map((id) => queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(id) })),
-        // A permanently deleted item's instrument becomes an eligible target again.
-        ...(permanent
-          ? [queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] })]
-          : []),
-      ]);
-    },
-    [queryClient],
-  );
+  const onLifecycleChanged = useCallback(async (configurationIds: readonly number[]) => {
+    setSelectedRowIds((current) => {
+      const next = new Set(current);
+      for (const id of configurationIds) next.delete(String(id));
+      return next;
+    });
+  }, []);
   const [failedBulkAction, setFailedBulkAction] = useState<BookableItemsBulkAction | null>(null);
-  const bulkMutation = useMutation({
+  const bulkMutation = useApiV2Mutation({
+    meta: { invalidates: [bookingConfigurationKeys.all, bookingKeys.all] },
     mutationFn: ({ action, rowIds }: { action: BookableItemsBulkAction; rowIds: readonly string[] }) =>
       mutateBookableItems(action, rowIds, token),
     onMutate: () => setFailedBulkAction(null),

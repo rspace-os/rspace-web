@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calendarEventFocusHref } from "./calendarEventFocus";
+import { calendarEventFocusHref } from "../calendarEventFocus";
 
 describe("calendarEventFocusHref", () => {
   it("uses the saved start date in the display timezone and clears calendar filters", () => {

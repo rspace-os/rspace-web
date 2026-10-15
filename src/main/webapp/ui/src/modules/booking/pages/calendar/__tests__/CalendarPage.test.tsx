@@ -26,9 +26,14 @@ import { renderCalendar } from "./calendarTestHarness";
 // The item shares the viewer's browser time zone, so its Monday closure fills the viewer's Monday.
 const closedOnMonday = {
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  openingHours: [1, 2, 3, 4, 5, 6, 7]
-    .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-    .filter((entry) => [2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+  openingHours: [
+    { dayOfWeek: 2, start: "00:00", end: "24:00" },
+    { dayOfWeek: 3, start: "00:00", end: "24:00" },
+    { dayOfWeek: 4, start: "00:00", end: "24:00" },
+    { dayOfWeek: 5, start: "00:00", end: "24:00" },
+    { dayOfWeek: 6, start: "00:00", end: "24:00" },
+    { dayOfWeek: 7, start: "00:00", end: "24:00" },
+  ],
 };
 const readOnlyCapabilities = {
   ...bookableItemFixtures[0].capabilities,

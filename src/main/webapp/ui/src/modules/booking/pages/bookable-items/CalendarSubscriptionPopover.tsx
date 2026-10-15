@@ -6,6 +6,7 @@ import { CalendarIcon, CalendarPlusIcon, CheckIcon, CopyIcon, LoaderCircleIcon, 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import { bookableItemCalendarSubscriptionQuery } from "@/modules/booking/pages/bookable-items/bookableItemCalendarSubscription";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/modules/common/ui/input-group";
 import {
@@ -21,7 +22,6 @@ import {
   calendarApplicationUrls,
   calendarSubscriptionQueryKey,
   createCalendarSubscription,
-  fetchCalendarSubscriptionStatus,
   revokeCalendarSubscription,
   rotateCalendarSubscription,
 } from "./bookableItemCalendarSubscription";
@@ -42,6 +42,11 @@ export function CalendarSubscriptionPopover({
   openRef.current = open;
   const [clipboardError, setClipboardError] = useState(false);
   const [linkFeedback, setLinkFeedback] = useState<"replaced" | "disconnected" | "copied" | null>(null);
+  const linkFeedbackMessages = {
+    replaced: t("bookableItemDetails.calendarSubscription.replaced"),
+    disconnected: t("bookableItemDetails.calendarSubscription.disconnected"),
+    copied: t("bookableItemDetails.calendarSubscription.copied"),
+  };
   const [focusGoogle, setFocusGoogle] = useState(false);
   // Both break calendars that use the current link, so each is confirmed first.
   const [confirming, setConfirming] = useState<"replace" | "disconnect" | null>(null);
@@ -61,27 +66,36 @@ export function CalendarSubscriptionPopover({
 
   const queryKey = calendarSubscriptionQueryKey(configurationId);
   const status = useQuery({
-    queryKey,
-    queryFn: ({ signal }) => fetchCalendarSubscriptionStatus(configurationId, token, signal),
+    ...bookableItemCalendarSubscriptionQuery(configurationId, token),
     enabled: open,
-    retry: false,
   });
 
-  const resetCopy = () => {
+  const beginChange = () => {
     setClipboardError(false);
+    setLinkFeedback(null);
+    focusCreateRef.current = false;
+    focusRetryRef.current = false;
+    focusOriginRef.current = document.activeElement;
   };
+  const restoreFocusIfUnmoved = useCallback((target: HTMLElement, headingMayRetainFocus = false) => {
+    const active = document.activeElement;
+    if (
+      !focusOriginRef.current ||
+      active === focusOriginRef.current ||
+      active === document.body ||
+      (headingMayRetainFocus && active === headingRef.current)
+    )
+      target.focus();
+    focusOriginRef.current = null;
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: () => createCalendarSubscription(configurationId, token),
     retry: false,
     onMutate: () => {
-      resetCopy();
-      setLinkFeedback(null);
+      beginChange();
       // A fresh link supersedes any earlier replace conflict.
       rotateMutation.reset();
-      focusCreateRef.current = false;
-      focusRetryRef.current = false;
-      focusOriginRef.current = document.activeElement;
     },
     onSuccess: async (created) => {
       await queryClient.cancelQueries({ queryKey, exact: true });
@@ -92,13 +106,7 @@ export function CalendarSubscriptionPopover({
   const rotateMutation = useMutation({
     mutationFn: (etag: string) => rotateCalendarSubscription(configurationId, token, etag),
     retry: false,
-    onMutate: () => {
-      resetCopy();
-      setLinkFeedback(null);
-      focusCreateRef.current = false;
-      focusRetryRef.current = false;
-      focusOriginRef.current = document.activeElement;
-    },
+    onMutate: beginChange,
     onSuccess: async (rotated) => {
       await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData(queryKey, rotated);
@@ -135,13 +143,7 @@ export function CalendarSubscriptionPopover({
   const revokeMutation = useMutation({
     mutationFn: () => revokeCalendarSubscription(configurationId, token),
     retry: false,
-    onMutate: () => {
-      resetCopy();
-      setLinkFeedback(null);
-      focusCreateRef.current = false;
-      focusRetryRef.current = false;
-      focusOriginRef.current = document.activeElement;
-    },
+    onMutate: beginChange,
     onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey, exact: true });
       const refreshed = await status.refetch();
@@ -181,22 +183,24 @@ export function CalendarSubscriptionPopover({
           ? retryButtonRef.current
           : null;
     if (!target) return;
-    const active = document.activeElement;
-    if (
-      !focusOriginRef.current ||
-      active === focusOriginRef.current ||
-      active === headingRef.current ||
-      active === document.body
-    )
-      target.focus();
+    restoreFocusIfUnmoved(target, true);
     focusCreateRef.current = false;
     focusRetryRef.current = false;
-    focusOriginRef.current = null;
-  }, [changing, createMutation.isError, open, status.data, status.isError, status.isSuccess, subscriptionUrl]);
+  }, [
+    changing,
+    createMutation.isError,
+    open,
+    restoreFocusIfUnmoved,
+    status.data,
+    status.isError,
+    status.isSuccess,
+    subscriptionUrl,
+  ]);
 
+  const create = createMutation.mutate;
   const createSubscription = useCallback(() => {
-    if (status.data?.subscriptionUrl === null) createMutation.mutate();
-  }, [createMutation, status.data]);
+    if (status.data?.subscriptionUrl === null) create();
+  }, [create, status.data]);
 
   useEffect(() => {
     if (archived || !open || !autoGenerateOnOpenRef.current || status.isFetching || !status.isSuccess) return;
@@ -208,18 +212,10 @@ export function CalendarSubscriptionPopover({
     (element: HTMLAnchorElement | null) => {
       googleLinkRef.current = element;
       if (!open || !focusGoogle || !element) return;
-      const active = document.activeElement;
-      if (
-        !focusOriginRef.current ||
-        active === focusOriginRef.current ||
-        active === headingRef.current ||
-        active === document.body
-      )
-        element.focus();
-      focusOriginRef.current = null;
+      restoreFocusIfUnmoved(element, true);
       setFocusGoogle(false);
     },
-    [open, focusGoogle],
+    [open, focusGoogle, restoreFocusIfUnmoved],
   );
 
   const close = () => {
@@ -232,7 +228,7 @@ export function CalendarSubscriptionPopover({
     focusOriginRef.current = null;
     setLinkFeedback(null);
     setConfirming(null);
-    resetCopy();
+    setClipboardError(false);
     rotateMutation.reset();
     revokeMutation.reset();
   };
@@ -307,11 +303,9 @@ export function CalendarSubscriptionPopover({
         {confirming ? (
           <div className="space-y-2">
             <p className="text-sm">
-              {t(
-                confirming === "replace"
-                  ? "bookableItemDetails.calendarSubscription.replaceWarning"
-                  : "bookableItemDetails.calendarSubscription.disconnectWarning",
-              )}
+              {confirming === "replace"
+                ? t("bookableItemDetails.calendarSubscription.replaceWarning")
+                : t("bookableItemDetails.calendarSubscription.disconnectWarning")}
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -326,11 +320,9 @@ export function CalendarSubscriptionPopover({
                     : revokeMutation.mutate()
                 }
               >
-                {t(
-                  confirming === "replace"
-                    ? "bookableItemDetails.calendarSubscription.replaceConfirm"
-                    : "bookableItemDetails.calendarSubscription.disconnectConfirm",
-                )}
+                {confirming === "replace"
+                  ? t("bookableItemDetails.calendarSubscription.replaceConfirm")
+                  : t("bookableItemDetails.calendarSubscription.disconnectConfirm")}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setConfirming(null)}>
                 {t("common:actions.cancel")}
@@ -493,13 +485,7 @@ export function CalendarSubscriptionPopover({
           </PopoverClose>
         </PopoverHeader>
         <p role="status" className="sr-only">
-          {linkFeedback === "replaced"
-            ? t("bookableItemDetails.calendarSubscription.replaced")
-            : linkFeedback === "copied"
-              ? t("bookableItemDetails.calendarSubscription.copied")
-              : linkFeedback === "disconnected"
-                ? t("bookableItemDetails.calendarSubscription.disconnected")
-                : null}
+          {linkFeedback ? linkFeedbackMessages[linkFeedback] : null}
         </p>
         {content()}
         <p role="alert" className={clipboardError ? "text-sm text-destructive" : "sr-only"}>

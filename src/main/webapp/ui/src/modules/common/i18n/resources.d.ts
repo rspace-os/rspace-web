@@ -1693,6 +1693,7 @@ export default interface Resources {
         "returnToDraftDay": "Draft day",
         "saving": "The booking is being saved.",
         "schedule": "Day schedule",
+        "timezoneAndItem": "{timezone} · {item}",
         "title": "Day schedule"
       },
       "zoom": {
@@ -2048,6 +2049,8 @@ export default interface Resources {
       "range": "{start}–{end}",
       "rangeAndEndDate": "{period} · {date}",
       "rangeWithOffset": "{period} {offset}",
+      "wallClockWithDate": "{date} {time}",
+      "wallClockWithOffset": "{time} (UTC{offset})",
       "withDayOffset": "{time} ({days})"
     },
     "timelineEdit": {

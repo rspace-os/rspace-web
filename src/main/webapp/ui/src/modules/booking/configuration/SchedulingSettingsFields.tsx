@@ -2,19 +2,30 @@ import { type FormStore, getInput, useField } from "@formisch/react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { OpeningHoursEditor } from "@/modules/booking/configuration/OpeningHoursEditor";
+import { MAX_BUFFER_MINUTES, type SchedulingSettings } from "@/modules/booking/configuration/schedulingSettingsSchema";
 import {
-  MAX_BUFFER_MINUTES,
-  type SchedulingSettings,
-  validMaximumBookingDuration,
-} from "@/modules/booking/configuration/schedulingSettingsSchema";
-import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
+  alignmentAvailable,
+  effectiveAlignment,
+  INCREMENT_UNIT_MINUTES,
+  INCREMENT_UNITS,
+  type IncrementSettings,
+  type IncrementUnit,
+  incrementFitsSchedule,
+  openAllDayEveryDay,
+  validIncrementForSchedule,
+  validMaximumForIncrement,
+} from "@/modules/booking/domain/bookingIncrement";
+import { MAX_BOOKING_DURATION_MINUTES, type OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME,
 } from "@/modules/common/collection-form/responsiveFieldLayout";
+import { Button } from "@/modules/common/ui/button";
+import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
+import { FieldHelpTooltip } from "@/modules/common/ui/field-help-tooltip";
 import { Input } from "@/modules/common/ui/input";
 
 function numberInput(value: unknown): number | undefined {
@@ -197,7 +208,7 @@ function MaximumDurationField({ form, id, disabled }: { form: FormStore; id: str
   const invalid =
     values.maxBookingDurationMinutes !== undefined &&
     increment !== undefined &&
-    !validMaximumBookingDuration(values.maxBookingDurationMinutes, {
+    !validMaximumForIncrement(values.maxBookingDurationMinutes, {
       slotGranularityMinutes: increment,
       incrementUnit: unit,
     });

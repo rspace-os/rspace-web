@@ -17,11 +17,9 @@ import {
 } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
-  type BookingWindowDraft,
   dayMinuteToZonedTime,
   instantToDayMinute,
   resolveWallClock,
-  wallClockDraftFromInstants,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 
@@ -80,21 +78,19 @@ export function timelinePolicy(item: PolicySource, eventKind: "BOOKING" | "MAINT
 
 /** No increment, opening-hours or maximum limits; for a draft before an item is chosen. */
 export function unrestrictedTimelinePolicy(timezone: string): TimelinePolicy {
-  return timelinePolicy(
-    {
-      ...ALWAYS_OPEN,
-      slotGranularityMinutes: 1,
-      incrementUnit: "MINUTES",
-      alignToIncrement: false,
-      timezone,
-      maxBookingDurationMinutes: 0,
-    },
-    "MAINTENANCE",
-  );
+  return {
+    ...ALWAYS_OPEN,
+    slotGranularityMinutes: 1,
+    incrementUnit: "MINUTES",
+    alignToIncrement: false,
+    schedulingTimezone: timezone,
+    maxBookingDurationMinutes: 0,
+    enforceOpeningHours: false,
+  };
 }
 
 /** The first rule a complete interval breaks, or null; permissions and conflicts stay with the server. */
-export function rangeFailure(
+function rangeFailure(
   start: string | Temporal.Instant,
   end: string | Temporal.Instant,
   policy: TimelinePolicy,
@@ -121,15 +117,8 @@ export function rangeFailure(
   return null;
 }
 
-function addMinutes(instant: Temporal.Instant, minutes: number): Temporal.Instant {
-  return instant.add({ minutes });
-}
-
 function toWholeMinute(instant: Temporal.Instant): Temporal.Instant {
-  const remainder = ((instant.epochNanoseconds % MINUTE_NS) + MINUTE_NS) % MINUTE_NS;
-  if (remainder === 0n) return instant;
-  const down = instant.epochNanoseconds - remainder;
-  return Temporal.Instant.fromEpochNanoseconds(remainder * 2n >= MINUTE_NS ? down + MINUTE_NS : down);
+  return instant.round({ smallestUnit: "minute" });
 }
 
 function compare(left: Temporal.Instant, right: Temporal.Instant): number {
@@ -261,7 +250,7 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
       );
       const firstIncrement = Math.max(1, Math.floor(minutesToDay / rule.minutes));
       for (let increments = firstIncrement; ; increments++) {
-        const candidate = addMinutes(fixed, sign * increments * rule.minutes);
+        const candidate = fixed.add({ minutes: sign * increments * rule.minutes });
         if (edge === "end" ? compare(candidate, dayEnd) > 0 : compare(candidate, dayStart) < 0) break;
         const onDay =
           edge === "end"
@@ -315,7 +304,7 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
     if (edge === "move") {
       // Whole-minute starts in order of distance from the exact target; at equal distance the earlier wins.
       const exact = target.epochNanoseconds;
-      let lower = exact - (((exact % MINUTE_NS) + MINUTE_NS) % MINUTE_NS);
+      let lower = target.round({ smallestUnit: "minute", roundingMode: "floor" }).epochNanoseconds;
       let upper = lower + MINUTE_NS;
       const radius = BigInt(SEARCH_RADIUS_MINUTES) * MINUTE_NS;
       while (exact - lower <= radius || upper - exact <= radius) {
@@ -344,7 +333,7 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
     const sign = direction === "next" ? 1 : -1;
     if (edge === "move") {
       for (let offset = 1; offset <= SEARCH_RADIUS_MINUTES; offset++) {
-        const next = moveCandidate(addMinutes(start, sign * offset));
+        const next = moveCandidate(start.add({ minutes: sign * offset }));
         if (next) return next;
       }
       return undefined;
@@ -387,11 +376,7 @@ export function timelineAdjuster(range: TimelineRange, context: TimelineContext)
  * later date. An end on a skipped or repeated local time gives no proposal, since only the form can ask which
  * occurrence to use.
  */
-export function proposeTimelineRange(
-  roughStart: string,
-  roughEnd: string,
-  policy: TimelinePolicy,
-): TimelineRange | undefined {
+function proposeTimelineRange(roughStart: string, roughEnd: string, policy: TimelinePolicy): TimelineRange | undefined {
   const rule = incrementRule(policy);
   const timezone = policy.schedulingTimezone;
   const wholeStart = toWholeMinute(Temporal.Instant.from(roughStart)).toString();
@@ -415,8 +400,4 @@ export function proposeDayRange(
     startMinute: instantToDayMinute(proposal.start, date, displayTimezone),
     endMinute: instantToDayMinute(proposal.end, date, displayTimezone),
   };
-}
-
-export function timelineRangeToDraft(range: TimelineRange, displayTimezone: string): BookingWindowDraft {
-  return wallClockDraftFromInstants(range.start, range.end, displayTimezone);
 }

@@ -4,10 +4,7 @@ import { HttpResponse, http } from "msw";
 import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { classifyCurrentDayAvailability } from "@/modules/booking/domain/availability";
-import type { Booking } from "@/modules/booking/domain/booking";
 import type { FilterExpression } from "@/modules/common/table-list/types";
-import { type CalendarAvailabilityRow, rowAvailabilityIntervals } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
   keepAcrossMinutes,

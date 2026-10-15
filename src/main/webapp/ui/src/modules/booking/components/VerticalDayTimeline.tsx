@@ -132,18 +132,12 @@ export function VerticalDayTimeline({
     () => openingSegments(date, timezone, scheduleWindow),
     [date, scheduleWindow, timezone],
   );
-  const closedHours = React.useMemo(() => closedSegments(openSegments, dayMinutes), [dayMinutes, openSegments]);
+  const closedHours = closedSegments(openSegments, dayMinutes);
   const positionedEvents = React.useMemo(() => layoutVerticalTimelineEvents(events, dayMinutes), [events, dayMinutes]);
   const dayEvents = schedule.status === "success" ? positionedEvents : [];
   const denseLanes = dayEvents.some(({ laneCount }) => canvasWidth > 0 && canvasWidth / laneCount < MINIMUM_LANE_WIDTH);
-  const dateHeading = React.useMemo(
-    () => Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "full" }),
-    [date, i18n.language],
-  );
-  const compactDateHeading = React.useMemo(
-    () => Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "medium" }),
-    [date, i18n.language],
-  );
+  const dateHeading = Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "full" });
+  const compactDateHeading = Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "medium" });
   const resolvedDraftDay = editingRange ? currentWallClock(editingRange.start, timezone).date : undefined;
   const isDraftDay = !resolvedDraftDay || resolvedDraftDay === date;
   const draftStartMinute = editingRange ? instantToDayMinute(editingRange.start, date, timezone) : 0;
@@ -272,7 +266,7 @@ export function VerticalDayTimeline({
                 </time>
               </h2>
               <p className="truncate text-xs text-muted-foreground">
-                {itemName ? `${timezone} · ${itemName}` : timezone}
+                {itemName ? t("dayTimeline.vertical.timezoneAndItem", { timezone, item: itemName }) : timezone}
               </p>
             </div>
             <Button

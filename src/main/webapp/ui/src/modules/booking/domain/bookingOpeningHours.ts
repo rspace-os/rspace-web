@@ -8,17 +8,6 @@ export const MAX_BOOKING_DURATION_MINUTES = 527_040;
 
 export const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
-/** ISO 8601 weekdays, as `Temporal.PlainDate.dayOfWeek` and Java's `DayOfWeek` number them. */
-export const ISO_WEEKDAYS = {
-  MONDAY: 1,
-  TUESDAY: 2,
-  WEDNESDAY: 3,
-  THURSDAY: 4,
-  FRIDAY: 5,
-  SATURDAY: 6,
-  SUNDAY: 7,
-} as const;
-
 export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
 
 const IsoWeekdaySchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7));
@@ -81,8 +70,6 @@ export function formatOpeningRange({ start, end }: OpeningInterval, locale = boo
   });
 }
 
-export type AbsoluteInterval = OpeningInterval;
-
 /** Whether `start`-`end` is one opening interval. A `24:00` end closes at midnight, so it follows any valid start. */
 export function validOpeningHours(start: string, end: string): boolean {
   if (!WALL_TIME.test(start)) return false;
@@ -113,22 +100,37 @@ export function effectiveHours(settings: OpeningSchedule, dayOfWeek: number): Op
   return entry ? { start: entry.start, end: entry.end } : null;
 }
 
-/** Longest continuous weekly opening, including periods touching across the week boundary. */
-export function longestOpeningMinutes(settings: OpeningSchedule): number {
-  const minute = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
-  let longest = 0;
-  let start = -1;
-  let end = -1;
+/** The local minute at a wall-time boundary; `24:00` is the next day's 00:00. */
+export function minuteOfWallTime(time: string): number {
+  return time === "24:00" ? 1440 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+}
+
+export type OpeningPeriod = { start: number; end: number };
+
+/** Continuous opening periods in two unrolled weeks, so a period crossing Sunday into Monday is whole. */
+export function openingPeriods(settings: OpeningSchedule): OpeningPeriod[] {
+  const periods: OpeningPeriod[] = [];
   for (let day = 0; day < 14; day++) {
     const hours = effectiveHours(settings, (day % 7) + 1);
     if (!hours || !validOpeningHours(hours.start, hours.end)) continue;
-    const opening = day * 1440 + minute(hours.start);
-    const closing = day * 1440 + minute(hours.end);
-    if (opening !== end) start = opening;
-    end = closing;
-    longest = Math.max(longest, end - start);
+    const start = day * 1440 + minuteOfWallTime(hours.start);
+    const end = day * 1440 + minuteOfWallTime(hours.end);
+    const previous = periods.at(-1);
+    if (previous && previous.end === start) previous.end = end;
+    else periods.push({ start, end });
   }
-  return longest >= 10080 ? MAX_BOOKING_DURATION_MINUTES : longest;
+  return periods;
+}
+
+/** Longest continuous weekly opening, including periods touching across the week boundary. */
+export function longestOpeningMinutes(settings: OpeningSchedule): number {
+  return Math.max(
+    0,
+    ...openingPeriods(settings).map(({ start, end }) => {
+      const duration = end - start;
+      return duration >= 10080 ? MAX_BOOKING_DURATION_MINUTES : duration;
+    }),
+  );
 }
 
 /**
@@ -160,8 +162,8 @@ function earlierInstant(first: Temporal.Instant, second: Temporal.Instant): Temp
 export function openingIntervals(
   settings: OpeningSchedule,
   timezone: string,
-  interval: AbsoluteInterval,
-): AbsoluteInterval[] {
+  interval: OpeningInterval,
+): OpeningInterval[] {
   const start = Temporal.Instant.from(interval.start);
   const end = Temporal.Instant.from(interval.end);
   const comparison = Temporal.Instant.compare(start, end);
@@ -194,7 +196,7 @@ export function openingIntervals(
 }
 
 /** Whether every instant in the non-empty half-open interval falls within opening hours. */
-export function coversInterval(settings: OpeningSchedule, timezone: string, interval: AbsoluteInterval): boolean {
+export function coversInterval(settings: OpeningSchedule, timezone: string, interval: OpeningInterval): boolean {
   if (Temporal.Instant.compare(interval.start, interval.end) >= 0) return false;
   const openings = openingIntervals(settings, timezone, interval);
   // Openings are clipped to the interval, so full coverage is exactly one opening spanning all of it.

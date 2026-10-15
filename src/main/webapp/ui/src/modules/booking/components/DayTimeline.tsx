@@ -464,7 +464,7 @@ export function DayTimeline({
                 }}
               >
                 <span className="absolute top-1 left-1 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
-                  {period(dragSelection, date, timezone, "–", timeFormat)}
+                  {period(dragSelection, date, timezone, timeFormat)}
                 </span>
               </div>
             ) : null}

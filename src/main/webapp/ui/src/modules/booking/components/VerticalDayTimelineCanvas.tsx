@@ -97,10 +97,7 @@ export function VerticalDayTimelineCanvas({
 }: VerticalDayTimelineCanvasProps) {
   const { t } = useTranslation("booking");
   const dayHeight = (dayMinutes / 60) * PIXELS_PER_HOUR;
-  const hourTicks = React.useMemo(
-    () => Array.from({ length: Math.ceil(dayMinutes / 60) }, (_, index) => index),
-    [dayMinutes],
-  );
+  const hourTicks = Array.from({ length: Math.ceil(dayMinutes / 60) }, (_, index) => index);
   const draftHeight =
     draftVisible && draftSegment ? (draftSegment.endMinute - draftSegment.startMinute) * PIXELS_PER_MINUTE : 0;
   const committedDraftSegment = editingRange ? clipRangeToDay(editingRange, date, timezone, dayMinutes) : undefined;

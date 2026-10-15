@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigg
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingActions } from "./BookingEventActions";
+import { CALENDAR_EVENT_FOCUS_HIGHLIGHT_CLASS } from "./calendarEventFocus";
 import { formatDate, scrollCalendarWithArrowKeys } from "./calendarLayoutUtils";
 import {
   collapseWeekGridLanes,
@@ -206,7 +207,8 @@ export function CalendarWeekTimeGrid({
                       data-lane={item.lane}
                       data-lane-count={item.laneCount}
                       className={cn(
-                        "absolute z-10 px-0.5 py-px data-[calendar-event-focus-highlight=true]:ring-4 data-[calendar-event-focus-highlight=true]:ring-ring data-[calendar-event-focus-highlight=true]:ring-offset-2",
+                        "absolute z-10 px-0.5 py-px",
+                        CALENDAR_EVENT_FOCUS_HIGHLIGHT_CLASS,
                         expanded && "z-[15]",
                       )}
                       style={box}

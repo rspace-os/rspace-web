@@ -192,6 +192,12 @@ export function wallClockDraftFromInstants(start: string, end: string, timezone:
   };
 }
 
+/** One instant as its wall-clock date, time and repeated-hour occurrence in `timezone`. */
+export function wallClockEndpointFromInstant(instant: string, timezone: string) {
+  const draft = wallClockDraftFromInstants(instant, instant, timezone);
+  return { date: draft.startDate, time: draft.startTime, occurrence: draft.startOccurrence };
+}
+
 export function wallClockInstant(
   resolution: WallClockResolution | undefined,
   occurrence: "earlier" | "later" | undefined,

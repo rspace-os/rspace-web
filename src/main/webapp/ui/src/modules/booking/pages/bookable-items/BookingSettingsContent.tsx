@@ -1,5 +1,5 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { isEqual, pick } from "es-toolkit";
 import { CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -8,22 +8,22 @@ import * as v from "valibot";
 import {
   type BookingAdminSettings,
   type BookingSettingsInput,
-  loadBookingAdminSettings,
   type SchedulingSettings,
   SchedulingSettingsFields,
   SchedulingSettingsSchema,
   saveBookingSettings,
 } from "@/modules/booking/configuration/schedulingSettings";
+import { bookingAdminSettingsQuery } from "@/modules/booking/configuration/schedulingSettingsApi";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
-  bookingDisplayPreferencesQueryKey,
+  bookingDisplayPreferencesQueryOptions,
   browserTimeZone,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
-import { retryUnlessClientError } from "@/modules/common/queries/queryRetry";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { Button } from "@/modules/common/ui/button";
 import { FieldError } from "@/modules/common/ui/field";
 import { Separator } from "@/modules/common/ui/separator";
@@ -45,10 +45,7 @@ export function BookingSettingsContent() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const queryClient = useQueryClient();
   const settingsQuery = useSuspenseQuery({
-    queryKey: ["api-v2", "booking-settings", "admin"],
-    queryFn: ({ signal }) => loadBookingAdminSettings(token, signal),
-    // A 403 means the caller is not a sysadmin; retrying cannot change that.
-    retry: retryUnlessClientError,
+    ...bookingAdminSettingsQuery(token),
   });
   const loadedSettings = settingsQuery.data;
   const [settings, setSettings] = useState(loadedSettings);
@@ -67,7 +64,8 @@ export function BookingSettingsContent() {
     },
     [form],
   );
-  const mutation = useMutation({
+  const mutation = useApiV2Mutation({
+    meta: { invalidates: [bookingDisplayPreferencesQueryOptions(token).queryKey] },
     mutationFn: (input: SchedulingSettings) =>
       saveBookingSettings(
         {
@@ -78,9 +76,8 @@ export function BookingSettingsContent() {
         token,
       ),
     onSuccess: async (saved) => {
-      queryClient.setQueryData(["api-v2", "booking-settings", "admin"], saved);
+      queryClient.setQueryData(bookingAdminSettingsQuery("").queryKey, saved);
       adoptSettings(saved);
-      await queryClient.invalidateQueries({ queryKey: bookingDisplayPreferencesQueryKey });
     },
   });
   const displaySettingsValid = v.safeParse(BookingDisplayPreferencesInputSchema, displaySettings).success;

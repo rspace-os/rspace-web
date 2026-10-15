@@ -5,26 +5,13 @@ import { useTranslation } from "react-i18next";
 import { BOOKING_WARNING_CLASS_NAME } from "@/modules/booking/components/bookingWarningStyles";
 import { clockChangeCrossing } from "@/modules/booking/domain/bookingClockChange";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingDateTimeLocale, bookingLocale, formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
-import { formatList } from "@/modules/common/i18n/listFormat";
+import {
+  bookingDateTimeLocale,
+  bookingLocale,
+  formatBookingDateTime,
+  formatDurationMinutes,
+} from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
-
-/** Elapsed time in hours and minutes, never days, so "47 hours" reads against "2 calendar days". */
-function formatElapsed(totalMinutes: number, locale: string): string {
-  const parts = (
-    [
-      ["hour", Math.floor(totalMinutes / 60)],
-      ["minute", totalMinutes % 60],
-    ] as const
-  ).filter(([, value]) => value > 0);
-  return formatList(
-    (parts.length > 0 ? parts : [["minute", 0] as const]).map(([unit, value]) =>
-      new Intl.NumberFormat(locale, { style: "unit", unit, unitDisplay: "long" }).format(value),
-    ),
-    locale,
-    { type: "unit", style: "long" },
-  );
-}
 
 /**
  * A non-blocking note when an event's interval crosses a clock change in its scheduling timezone. It never replaces
@@ -56,7 +43,7 @@ export function ClockChangeWarning({
     const values = {
       kind: kind === "MAINTENANCE" ? "maintenance" : "booking",
       timezone: crossing.timezone,
-      duration: formatElapsed(crossing.elapsedMinutes, locale),
+      duration: formatDurationMinutes(crossing.elapsedMinutes, locale, { largestUnit: "hour" }),
     };
     const count = crossing.changes.length;
     // Same local time on a later date reads as calendar days; anything else as its local range.

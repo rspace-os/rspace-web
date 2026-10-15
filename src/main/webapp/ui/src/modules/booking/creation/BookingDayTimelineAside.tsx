@@ -11,7 +11,8 @@ import {
   sameTimeZone,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
-import { fetchDayBookings } from "@/modules/booking/domain/fetchDayBookings";
+import { dayScheduleQuery } from "@/modules/booking/domain/fetchDayBookings";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import { Button } from "@/modules/common/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/modules/common/ui/sheet";
 import type { BookableItemOption } from "./bookableItemOption";
@@ -72,12 +73,11 @@ export function BookingDayTimelineAside({
     observer.observe(form);
     return () => observer.disconnect();
   }, [formContainerRef]);
+  const scope = useQueryIdentityScope();
   const bounds = zonedDayBounds(date, timezone);
   const schedule = useQuery({
-    queryKey: ["api-v2", "bookings", "day-schedule", target?.globalId, bounds.start, bounds.end, token],
-    queryFn: ({ signal }) => fetchDayBookings(target ? [target.globalId] : [], bounds, token, signal),
-    enabled: Boolean(target && token),
-    staleTime: 30_000,
+    ...dayScheduleQuery(target?.globalId, bounds, token, scope),
+    enabled: Boolean(token),
   });
   const tabClassName = "h-14 w-14 gap-0 rounded-r-none rounded-l-xl border-r-0 px-0 shadow-lg";
   // The heading names the zone, so an alias of the item's zone (Asia/Calcutta for Asia/Kolkata) reads as the item's.

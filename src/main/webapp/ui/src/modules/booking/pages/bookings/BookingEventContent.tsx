@@ -8,10 +8,9 @@ import { useBookableItemConfiguration } from "@/modules/booking/creation/Bookabl
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import {
   ApiV2ProblemError,
-  type BookingDetails,
   type BookingMutation,
   BookingUnavailableError,
-  fetchBooking,
+  bookingQueryOptions,
 } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
@@ -55,10 +54,8 @@ export function BookingEventContent() {
   const stateBadgeRef = useRef<HTMLSpanElement>(null);
   const formId = `booking-event-${useId()}`;
   const booking = useQuery({
-    queryKey: ["api-v2", "bookings", bookingId],
-    enabled: validBookingId && Boolean(token),
-    queryFn: ({ signal }) => fetchBooking(bookingId, token, signal),
-    retry: (failureCount, error) => failureCount < 2 && !isPermanentBookingError(error),
+    ...bookingQueryOptions(validBookingId ? bookingId : undefined, token),
+    enabled: Boolean(token),
   });
   useEffect(() => {
     const currentBooking = booking.data;
@@ -120,7 +117,6 @@ export function BookingEventContent() {
   const target = document.target;
   const canViewItem = document.canViewConfiguration && target !== null;
   const refreshBooking = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
     await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
   };
   const _location = target?.value.parentContainer;
@@ -133,7 +129,7 @@ export function BookingEventContent() {
     preferences.timeFormat,
   );
   const reportBookingUpdated = (event: BookingMutation, itemName: string) => {
-    const latestBooking = queryClient.getQueryData<BookingDetails>(["api-v2", "bookings", bookingId]);
+    const latestBooking = queryClient.getQueryData(bookingQueryOptions(bookingId, token).queryKey);
     localNotices.notify(
       createBookingEventNotice({
         event,

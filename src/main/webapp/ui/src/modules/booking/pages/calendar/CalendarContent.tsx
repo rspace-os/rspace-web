@@ -2,6 +2,7 @@ import * as React from "react";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { dayMinuteToZonedTime, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { BookingEventsCalendar } from "./BookingEventsCalendar";
+import { calendarEventFocusRetryChanges } from "./calendarEventFocus";
 import { useCalendarContentData } from "./useCalendarContentData";
 
 export function CalendarContent() {
@@ -81,7 +82,7 @@ export function CalendarContent() {
               loading: targetName === undefined && targetOption?.restoreStatus === "loading",
               unresolvedLabel:
                 targetName === undefined && targetOption?.restoreStatus !== "loading" ? targetOption?.label : undefined,
-              onRemove: () => replaceSearch("target"),
+              onRemove: () => replaceSearch((search) => search.delete("target")),
             }
           : undefined
       }
@@ -111,11 +112,8 @@ export function CalendarContent() {
       isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
       onRetry={() => {
         if (focusUnavailableRequest) {
-          const search = new URLSearchParams(window.location.search);
-          search.set("focus", String(focusUnavailableRequest.id));
-          search.set("focusRequest", `${focusUnavailableRequest.request}-retry`);
           setFocusUnavailableRequest(undefined);
-          void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true, resetScroll: false });
+          replaceSearch((search) => calendarEventFocusRetryChanges(search, focusUnavailableRequest), false);
         }
         if (layout === "resources" && resourceTable.tableProps.status === "error") {
           void resourceTable.refetch();
@@ -123,7 +121,7 @@ export function CalendarContent() {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) => replaceSearch("date", nextDate)}
+      onDateChange={(nextDate) => replaceSearch((search) => search.set("date", nextDate))}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);

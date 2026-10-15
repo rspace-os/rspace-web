@@ -3,11 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+
 import { server } from "@/__tests__/mswServer";
-import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
+
 import {
-  expectNoAlertMessage,
   expectStatusMessage,
   renderPage,
   useDefaultBookingPreferencesHandlers,
@@ -21,8 +20,6 @@ describe("BookingPreferencesPage", () => {
     let saved: unknown;
     let deleted = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         saved = await request.json();
         return HttpResponse.json({ ...(saved as object), emailDelivery: false });
@@ -69,8 +66,6 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let saved: unknown;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         saved = await request.json();
         return HttpResponse.json({ ...(saved as object), emailDelivery: false });
@@ -112,8 +107,6 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let attempts = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         attempts += 1;
         return attempts === 1

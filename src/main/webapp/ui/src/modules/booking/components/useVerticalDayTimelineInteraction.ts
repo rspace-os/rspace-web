@@ -1,13 +1,14 @@
 import { Temporal } from "@js-temporal/polyfill";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { timelineAdjuster, timelineRangeToDraft } from "@/modules/booking/creation/timelineRange";
+import { timelineAdjuster } from "@/modules/booking/creation/timelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import {
   type BookingTimeFormat,
   type BookingWindowDraft,
   dayMinuteToZonedTime,
   instantToDayMinute,
+  wallClockDraftFromInstants,
 } from "@/modules/booking/domain/bookingTime";
 import { period } from "./DayTimelineEvent";
 import type { VerticalDayTimelineEditing, VerticalDayTimelineSchedule } from "./VerticalDayTimeline";
@@ -33,7 +34,6 @@ export function timeRange(
     },
     date,
     timezone,
-    "–",
     timeFormat,
   );
 }
@@ -113,18 +113,15 @@ export function useVerticalDayTimelineInteraction({
     (minute: number): string => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString(),
     [date, timezone],
   );
-  const adjustInteractionRange = React.useCallback(
-    (
-      active: NonNullable<typeof interactionRef.current>,
-      clientY: number,
-      activeAdjuster: NonNullable<typeof adjuster>,
-    ) => {
-      const minute = minuteAt(clientY) - active.pointerOffsetMinutes;
-      const target = rangeAtMinute(minute);
-      return activeAdjuster.adjust(active.edge, target);
-    },
-    [minuteAt, rangeAtMinute],
-  );
+  const adjustInteractionRange = (
+    active: NonNullable<typeof interactionRef.current>,
+    clientY: number,
+    activeAdjuster: NonNullable<typeof adjuster>,
+  ) => {
+    const minute = minuteAt(clientY) - active.pointerOffsetMinutes;
+    const target = rangeAtMinute(minute);
+    return activeAdjuster.adjust(active.edge, target);
+  };
 
   const cancelInteraction = React.useCallback(() => {
     const active = interactionRef.current;
@@ -146,7 +143,7 @@ export function useVerticalDayTimelineInteraction({
   const commitRange = React.useCallback(
     (next: IsoRange) => {
       if (!editing || !editingRange || rangesEqual(next, editingRange)) return;
-      editing.onChange(timelineRangeToDraft(next, timezone));
+      editing.onChange(wallClockDraftFromInstants(next.start, next.end, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
           period: timeRange(next, date, timezone, timeFormat),
@@ -156,14 +153,11 @@ export function useVerticalDayTimelineInteraction({
     [date, editing, editingRange, t, timeFormat, timezone],
   );
 
-  const changeByStep = React.useCallback(
-    (edge: AdjustmentEdge, direction: Direction) => {
-      if (!editing || !adjuster || interactionRef.current) return;
-      const next = adjuster.step(edge, direction);
-      if (next) commitRange(next);
-    },
-    [adjuster, commitRange, editing],
-  );
+  const changeByStep = (edge: AdjustmentEdge, direction: Direction) => {
+    if (!editing || !adjuster || interactionRef.current) return;
+    const next = adjuster.step(edge, direction);
+    if (next) commitRange(next);
+  };
 
   const onDraftHandleKeyDown = (edge: AdjustmentEdge, event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (event.key === "Escape" && interactionRef.current) {

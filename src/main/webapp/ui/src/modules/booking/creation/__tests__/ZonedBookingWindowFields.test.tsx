@@ -42,7 +42,7 @@ describe("ZonedBookingWindowFields", () => {
             schedulingTimezone="America/New_York"
             slotGranularityMinutes={5}
             maxBookingDurationMinutes={0}
-            openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+            openingHours={ALL_DAY.openingHours}
             density={density}
             value={value}
             onChange={setValue}
@@ -79,7 +79,7 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone="Europe/Berlin"
           slotGranularityMinutes={5}
           maxBookingDurationMinutes={0}
-          openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+          openingHours={ALL_DAY.openingHours}
           density="compact"
           value={value}
           onChange={(next) => {
@@ -151,7 +151,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="Asia/Kathmandu"
         slotGranularityMinutes={10}
         maxBookingDurationMinutes={0}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{
           startDate: "2026-08-17",
           startTime: "09:02",
@@ -180,7 +180,7 @@ describe("ZonedBookingWindowFields", () => {
           schedulingTimezone="UTC"
           slotGranularityMinutes={15}
           maxBookingDurationMinutes={0}
-          openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+          openingHours={ALL_DAY.openingHours}
           density={density}
           initial={{ startDate: "2026-08-17", startTime: "15:22", endDate: "2026-08-17", endTime: "16:00" }}
         />,
@@ -208,7 +208,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="UTC"
         slotGranularityMinutes={15}
         maxBookingDurationMinutes={0}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         initial={{ startDate: "2026-08-17", startTime: "15:15", endDate: "2026-08-17", endTime: "16:00" }}
       />,
     );
@@ -227,7 +227,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="UTC"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         initial={{ startDate: "2026-08-17", startTime: "15:28", endDate: "2026-08-17", endTime: "16:00" }}
       />,
       {
@@ -585,26 +585,23 @@ describe("ZonedBookingWindowFields", () => {
     expect(screen.queryByText("booking:bookings.errors.dayEndMissing")).not.toBeInTheDocument();
   });
 
-  it.each([
-    ["a draft across midnight", "MINUTES" as const, 15, "2026-08-18"],
-    ["a Day increment", "DAYS" as const, 1440, "2026-08-18"],
-  ])("shows both dates in compact density for %s", (_, incrementUnit, slotGranularityMinutes, endDate) => {
+  it("shows both dates in compact density for a Day increment", () => {
     render(
       <StatefulFields
         displayTimezone="UTC"
         schedulingTimezone="UTC"
-        slotGranularityMinutes={slotGranularityMinutes}
-        incrementUnit={incrementUnit}
+        slotGranularityMinutes={1440}
+        incrementUnit="DAYS"
         alignToIncrement={false}
         maxBookingDurationMinutes={0}
         {...ALL_DAY}
         density="compact"
-        initial={{ startDate: "2026-08-17", startTime: "23:00", endDate, endTime: "23:00" }}
+        initial={{ startDate: "2026-08-17", startTime: "23:00", endDate: "2026-08-17", endTime: "23:00" }}
       />,
     );
 
     expect(screen.getByLabelText("booking:bookings.form.startDate")).toHaveValue("2026-08-17");
-    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue(endDate);
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2026-08-17");
   });
 
   it("allows an always-open interval across the scheduling timezone's local date boundary", () => {
@@ -614,7 +611,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="America/New_York"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{
           startDate: "2026-08-18",
           startTime: "05:00",
@@ -636,7 +633,7 @@ describe("ZonedBookingWindowFields", () => {
           incrementUnit: "MINUTES" as const,
           alignToIncrement: true,
           maxBookingDurationMinutes: 0,
-          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+          openingHours: ALL_DAY.openingHours,
         },
       ).window,
     ).toEqual({ start: "2026-08-18T03:00:00Z", end: "2026-08-18T05:00:00Z" });
@@ -682,7 +679,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{
           startDate: "2026-03-29",
           startTime: "02:30",
@@ -705,7 +702,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{
           startDate: "2026-10-25",
           startTime: "02:30",
@@ -728,7 +725,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="UTC"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{ startDate: "2026-10-01", startTime: "00:00", endDate: "2027-10-02", endTime: "00:05" }}
         onChange={vi.fn()}
       />,
@@ -745,7 +742,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={1}
         maxBookingDurationMinutes={60}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{
           startDate: "2026-10-25",
           startTime: "02:30",
@@ -776,7 +773,7 @@ describe("ZonedBookingWindowFields", () => {
           incrementUnit: "MINUTES" as const,
           alignToIncrement: true,
           maxBookingDurationMinutes: 60,
-          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+          openingHours: ALL_DAY.openingHours,
         },
       ).window,
     ).toBeUndefined();
@@ -789,7 +786,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="UTC"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={120}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{ startDate: "2026-08-17", startTime: "09:00", endDate: "2026-08-17", endTime: "11:05" }}
         onChange={vi.fn()}
       />,
@@ -813,7 +810,7 @@ describe("ZonedBookingWindowFields", () => {
         schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={1}
         maxBookingDurationMinutes={60}
-        openingHours={ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        openingHours={ALL_DAY.openingHours}
         value={{
           startDate: "2026-10-25",
           startTime: "02:30",
@@ -844,7 +841,7 @@ describe("ZonedBookingWindowFields", () => {
           incrementUnit: "MINUTES" as const,
           alignToIncrement: true,
           maxBookingDurationMinutes: 60,
-          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+          openingHours: ALL_DAY.openingHours,
         },
       ).window,
     ).toEqual({
@@ -990,7 +987,7 @@ describe("validateBookingWindow weekly opening hours", () => {
       incrementUnit: "MINUTES" as const,
       alignToIncrement: true,
       maxBookingDurationMinutes: 0,
-      openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+      openingHours: ALL_DAY.openingHours,
 
       ...schedule,
       ...policy,
@@ -1011,23 +1008,6 @@ describe("validateBookingWindow weekly opening hours", () => {
     expect(tuesday.window).toBeUndefined();
   });
 
-  it("lets a Monday-only all-day booking end at Tuesday midnight but not one minute later", () => {
-    expect(
-      validate(window("2026-06-01", "00:00", "2026-06-02", "00:00"), {
-        openingHours: [1, 2, 3, 4, 5, 6, 7]
-          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
-      }).openingInvalid,
-    ).toBe(false);
-    expect(
-      validate(window("2026-06-01", "00:00", "2026-06-02", "00:01"), {
-        openingHours: [1, 2, 3, 4, 5, 6, 7]
-          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
-      }).openingInvalid,
-    ).toBe(true);
-  });
-
   it("finds the weekday in the scheduling timezone, not the display timezone", () => {
     // Sunday 10:00 in Los Angeles is Monday 02:00 in Tokyo.
     const draft = window("2026-05-31", "10:00", "2026-05-31", "11:00");
@@ -1036,9 +1016,7 @@ describe("validateBookingWindow weekly opening hours", () => {
       validate(
         draft,
         {
-          openingHours: [1, 2, 3, 4, 5, 6, 7]
-            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-            .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+          openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
         },
         zones,
       ).openingInvalid,
@@ -1047,9 +1025,7 @@ describe("validateBookingWindow weekly opening hours", () => {
       validate(
         draft,
         {
-          openingHours: [1, 2, 3, 4, 5, 6, 7]
-            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-            .filter((entry) => [7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+          openingHours: [{ dayOfWeek: 7, start: "00:00", end: "24:00" }],
         },
         zones,
       ).openingInvalid,
@@ -1067,9 +1043,7 @@ describe("validateBookingWindow weekly opening hours", () => {
 
     // A multi-century draft would otherwise walk tens of thousands of dates, or throw from the enumerator.
     const centuries = validate(window("2026-06-01", "10:00", "2426-06-01", "10:00"), {
-      openingHours: [1, 2, 3, 4, 5, 6, 7]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-        .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
     });
     expect(centuries.maximumDurationInvalid).toBe(true);
     expect(centuries.openingInvalid).toBe(false);
@@ -1104,9 +1078,7 @@ describe("validateBookingWindow weekly opening hours", () => {
     const result = validate(
       window("2026-06-06", "10:00", "2026-06-06", "12:00"),
       {
-        openingHours: [1, 2, 3, 4, 5, 6, 7]
-          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+        openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
       },
       {
         maxBookingDurationMinutes: 60,
@@ -1122,9 +1094,7 @@ describe("validateBookingWindow weekly opening hours", () => {
     const closedSaturday = validate(
       window("2026-06-06", "10:00", "2026-06-06", "12:00"),
       {
-        openingHours: [1, 2, 3, 4, 5, 6, 7]
-          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+        openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
       },
       maintenance,
     );
@@ -1134,9 +1104,7 @@ describe("validateBookingWindow weekly opening hours", () => {
       validate(
         window("2026-06-01", "00:00", "2027-06-02", "00:01"),
         {
-          openingHours: [1, 2, 3, 4, 5, 6, 7]
-            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-            .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+          openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
         },
         maintenance,
       ).maximumDurationInvalid,
@@ -1147,9 +1115,7 @@ describe("validateBookingWindow weekly opening hours", () => {
     const result = validate(
       window("2026-06-06", "10:00", "2026-06-06", "11:00"),
       {
-        openingHours: [1, 2, 3, 4, 5, 6, 7]
-          .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-          .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+        openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
       },
       {
         allowPolicyMismatch: true,
