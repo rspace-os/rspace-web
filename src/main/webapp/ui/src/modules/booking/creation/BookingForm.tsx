@@ -251,7 +251,10 @@ export function BookingForm(props: BookingFormProps) {
   const formTimezone = timezoneChoice ?? displayTimezone;
   const endFormTimezone = endTimezoneChoice ?? formTimezone;
   const formTimezones = useMemo(() => ({ start: formTimezone, end: endFormTimezone }), [formTimezone, endFormTimezone]);
-  const policy = target ? timelinePolicy(target, eventKind) : unrestrictedTimelinePolicy(formTimezone);
+  const policy = useMemo(
+    () => (target ? timelinePolicy(target, eventKind) : unrestrictedTimelinePolicy(formTimezone)),
+    [target, eventKind, formTimezone],
+  );
   const originalDraft =
     props.mode === "edit" ? draftFromInstants(props.booking.start, props.booking.end, formTimezones) : undefined;
   const addDraft = initialWindow
