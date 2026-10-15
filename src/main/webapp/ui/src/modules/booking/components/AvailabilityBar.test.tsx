@@ -11,67 +11,14 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import type { AvailabilitySource } from "@/modules/booking/domain/availability";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 
 vi.unmock("react-i18next");
 
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
 const { AvailabilityBar } = await import("./AvailabilityBar");
 
-const resources = {
-  booking: {
-    availabilityBar: {
-      current: {
-        available: "Available",
-        availableUntil: "Available until {time}",
-        notAvailable: "Not available",
-        notAvailableFrom: "Not available · Available from {time}",
-      },
-      label: "{itemName} availability",
-      now: "Current time: {time}.",
-      nowAfterWindow: "Current time {time} is after the displayed window.",
-      nowBeforeWindow: "Current time {time} is before the displayed window.",
-      timezone: "Time zone: {timezone}",
-      summary: "Availability period: {period}. {states}",
-      emptyWindow: "This display window contains no time on this date because the clocks change.",
-      fullAvailable: "Available for the full period.",
-      ranges: {
-        available: "Available: {ranges}.",
-        booking: "Booked: {ranges}.",
-        blockout: "Blocked out: {ranges}.",
-        overlap: "Booked and blocked out: {ranges}.",
-      },
-      slice: {
-        count: "{count, plural, one {# event} other {# events}}",
-        details: "Details",
-        sources: {
-          booking: "Booking",
-          openingHours: "Outside opening hours",
-        },
-        states: {
-          booking: "Booked",
-          blockout: "Outside opening hours",
-          overlap: "Booked and outside opening hours",
-        },
-        trigger: "{itemName}, {state}, {period}, {count, plural, one {# event} other {# events}}",
-      },
-    },
-    bookings: {
-      details: { noneProvided: "None provided" },
-      maintenanceLabel: "Maintenance blockout",
-    },
-    dayTimeline: {
-      event: { showDetails: "Show details for {title}, {period}" },
-      expanded: {
-        bookedBy: "Booked by",
-        createdBy: "Created by",
-        item: "Item",
-        notes: "Notes",
-        openItem: "Open inventory record {globalId}",
-        purpose: "Purpose",
-      },
-    },
-  },
-};
+const resources = { booking: bookingEnglish };
 
 const periodStart = new Date("2026-08-12T00:00:00.000Z");
 const item = {
@@ -101,16 +48,7 @@ const sourced = (
 });
 
 function availabilityBar(props: Partial<React.ComponentProps<typeof AvailabilityBar>> = {}) {
-  return (
-    <AvailabilityBar
-      item={item}
-      intervals={[]}
-      periodStart={periodStart}
-      timeZone="UTC"
-      userTimeZone="UTC"
-      {...props}
-    />
-  );
+  return <AvailabilityBar item={item} intervals={[]} periodStart={periodStart} timeZone="UTC" {...props} />;
 }
 
 async function renderAvailabilityBar(props: Partial<React.ComponentProps<typeof AvailabilityBar>> = {}) {

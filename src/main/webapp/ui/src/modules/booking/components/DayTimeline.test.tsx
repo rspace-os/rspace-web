@@ -7,6 +7,7 @@ import { sliceAcrossZonedDay } from "@/modules/booking/domain/bookingTime";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { DayTimeline, DayTimelineEventCard, type DayTimelineViewState } from "./DayTimeline";
+import { dayTimelineEvents, LONG_ITEM_NAME } from "./DayTimeline.fixtures";
 import { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
 describe("DayTimeline table row", () => {
@@ -182,41 +183,11 @@ describe("DayTimeline table row", () => {
       <DayTimeline
         date="2026-08-17"
         timezone="Europe/Berlin"
-        events={[
-          {
-            id: "editable",
-            kind: "booking",
-            privacy: "full",
-            title: "Confocal microscope",
-            bookedBy: "Ada",
-            item: { name: "Confocal microscope", globalId: "IN123" },
-            canEdit: true,
-            startMinute: 480,
-            endMinute: 540,
-          },
-          {
-            id: "readonly",
-            kind: "booking",
-            privacy: "full",
-            title: "Electron microscope",
-            bookedBy: "Grace",
-            item: { name: "Electron microscope", globalId: "IN124" },
-            canEdit: false,
-            startMinute: 600,
-            endMinute: 660,
-          },
-          { id: "busy", kind: "booking", privacy: "busy", startMinute: 720, endMinute: 780 },
-          {
-            id: "blockout",
-            kind: "blockout",
-            title: "Maintenance",
-            item: { name: "Flow cytometer", globalId: "IN125" },
-            createdBy: "Morgan Ellis (mellis)",
-            notes: "Laser alignment",
-            startMinute: 840,
-            endMinute: 900,
-          },
-        ]}
+        events={dayTimelineEvents.map((event) =>
+          event.kind === "blockout"
+            ? { ...event, createdBy: "Morgan Ellis (mellis)", notes: "Laser alignment" }
+            : event,
+        )}
         startWindow={0}
         endWindow={24 * 60}
         renderEventActions={(event) => <button type="button">{`Manage ${event.id}`}</button>}
@@ -226,28 +197,32 @@ describe("DayTimeline table row", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Show details for Confocal microscope · Ada/ }));
+    const editable = screen.getByRole("button", { name: new RegExp(`Show details for ${LONG_ITEM_NAME}`) });
+    await user.click(editable);
     expect(screen.getByRole("button", { name: "Manage editable" })).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: /Show details for Electron microscope · Grace/ }));
+    const readonly = screen.getByRole("button", { name: /Show details for Electron microscope · Grace Hopper/ });
+    await user.click(readonly);
     expect(screen.getByRole("button", { name: "Manage readonly" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Zoom in" }));
     expect(screen.queryByRole("button", { name: "Manage readonly" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /Show details for Confocal microscope · Ada/ }));
-    const editablePopup = screen.getByRole("dialog", { name: "08:00–09:00" });
-    await user.click(within(editablePopup).getByRole("button", { name: /Hide details for Confocal microscope · Ada/ }));
+    await user.click(editable);
+    const editablePopup = screen.getByRole("dialog", { name: "09:30–10:30" });
+    await user.click(
+      within(editablePopup).getByRole("button", { name: new RegExp(`Hide details for ${LONG_ITEM_NAME}`) }),
+    );
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Show details for Confocal microscope · Ada/ })).toHaveFocus();
+    expect(editable).toHaveFocus();
 
     await user.click(screen.getByRole("button", { name: /Show details for Busy/ }));
     expect(screen.getByRole("button", { name: "Manage busy" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: /Show details for Maintenance/ }));
+    await user.click(screen.getByRole("button", { name: /Show details for Scheduled maintenance/ }));
     expect(screen.queryByRole("button", { name: "Manage busy" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Manage blockout" })).toBeVisible();
-    const blockoutPopup = screen.getByRole("dialog", { name: "14:00–15:00" });
+    const blockoutPopup = screen.getByRole("dialog", { name: "11:00–12:00" });
     expect(within(blockoutPopup).getByText("Laser alignment")).toBeVisible();
     expect(within(blockoutPopup).getByText("Morgan Ellis (mellis)")).toBeVisible();
     expect(within(blockoutPopup).queryByText("Booked by")).not.toBeInTheDocument();

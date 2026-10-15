@@ -6,14 +6,9 @@ import {
   bookableItemsHandlers,
   sampleBookingEvents,
 } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
-import {
-  busyBooking,
-  collectionResponse,
-  currentUser,
-  otherBooking,
-  ownBooking,
-} from "@/modules/booking/pages/calendar/__tests__/calendarTestHarness";
 import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
+import { busyBooking, collectionResponse, otherBooking, ownBooking } from "./bookingCalendarFixtures";
+import { currentUser } from "./currentUserFixture";
 
 export const availabilityBookingFields = BOOKING_READ_FIELDS;
 export const calendarBookingFields = CALENDAR_BOOKING_FIELDS;

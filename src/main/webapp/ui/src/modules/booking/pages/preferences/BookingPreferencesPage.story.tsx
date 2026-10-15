@@ -16,7 +16,7 @@ import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingP
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
-import { currentUser } from "../calendar/calendarFixtures";
+import { currentUser } from "../mocks/currentUserFixture";
 
 /** Fetches preferences so reload persistence is observable. */
 export function BookingPreferencesPageStory() {
