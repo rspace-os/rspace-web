@@ -4,7 +4,7 @@ import * as v from "valibot";
 /** ISO 8601 weekdays, matching Java's DayOfWeek numbering. */
 export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
 
-const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+export const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const IsoWeekdaySchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7));
 export const OpeningHoursStartSchema = v.pipe(v.string(), v.regex(WALL_TIME));
 export const OpeningHoursEndSchema = v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]);

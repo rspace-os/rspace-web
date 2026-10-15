@@ -693,9 +693,7 @@ describe("Calendar page", () => {
   });
 
   test("keeps the compact form readable in a narrow viewport", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(390, 667);
-    try {
+    await withViewport(390, async () => {
       window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
       render(<CalendarPageStory />);
       await page.getByRole("button", { name: "New Booking" }).click();
@@ -717,8 +715,6 @@ describe("Calendar page", () => {
       await expect.element(dialog.getByRole("button", { name: "Book", exact: true })).toBeVisible();
       await expect.element(dialog.getByRole("button", { name: "More actions" })).not.toBeInTheDocument();
       await dialog.getByRole("button", { name: "Cancel" }).click();
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 });
