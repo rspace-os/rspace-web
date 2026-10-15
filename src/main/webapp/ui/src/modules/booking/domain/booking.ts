@@ -171,10 +171,10 @@ const BookingMutationSchema = withEndAfterStart(bookingSchema(MutationTargetSche
 const BookingListDocumentObjectSchema = v.object({
   ...BookingReadIdentitySchema,
   canViewConfiguration: v.boolean(),
-  requesterId: v.number(),
+  /** Null when the caller can see only a busy event. */
+  requesterId: v.nullable(v.number()),
   ...BookingFullPrivacyEntries,
   privacy: v.picklist(["full", "busy"]),
-  cancellationReason: v.nullable(v.string()),
   ...BookingFullManagementEntries,
 });
 
