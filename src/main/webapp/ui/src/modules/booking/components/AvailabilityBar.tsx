@@ -1,3 +1,4 @@
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -6,7 +7,9 @@ import {
   type AvailabilitySource,
   type AvailabilityState,
   buildAvailabilitySlices,
+  timestamp,
 } from "@/modules/booking/domain/availability";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
 import { UserBadge } from "@/modules/common/ui/user-badge";
@@ -57,12 +60,6 @@ const stateClasses: Record<AvailabilityState, string> = {
   blockout: "bg-[repeating-linear-gradient(135deg,var(--color-amber-700)_0_3px,var(--color-amber-300)_3px_6px)]",
   overlap: "bg-[repeating-linear-gradient(135deg,var(--color-blue-600)_0_3px,var(--color-amber-400)_3px_6px)]",
 };
-
-function timestamp(date: Date, name: string): number {
-  const value = date.getTime();
-  if (!Number.isFinite(value)) throw new RangeError(`${name} must be a valid Date`);
-  return value;
-}
 
 function supportedLocale(language: string): string {
   return Intl.DateTimeFormat.supportedLocalesOf([language]).at(0) ?? "en-US";
@@ -238,8 +235,7 @@ export function AvailabilityBar({
   if (end === start)
     return <p className={cn("text-xs text-muted-foreground", className)}>{t("availabilityBar.emptyWindow")}</p>;
   const nowTimestamp = now === undefined ? null : timestamp(now, "now");
-  const visibleNow = nowTimestamp;
-  const nowPosition = visibleNow === null ? null : Math.max(0, Math.min(1, (visibleNow - start) / (end - start)));
+  const nowPosition = nowTimestamp === null ? null : Math.max(0, Math.min(1, (nowTimestamp - start) / (end - start)));
 
   const slices = buildAvailabilitySlices(intervals, new Date(start), new Date(end));
   const locale = supportedLocale(i18n.language);
@@ -265,20 +261,19 @@ export function AvailabilityBar({
     day: "numeric",
     timeZone,
   });
-  const listFormatter = new Intl.ListFormat(locale, { style: "long", type: "conjunction" });
   const formatRange = ({ startsAt, endsAt }: TimestampInterval) =>
     `${itemDateTimeFormatter.format(startsAt)}–${itemDateTimeFormatter.format(endsAt)}`;
   const formatTimeRange = ({ startsAt, endsAt }: TimestampInterval) =>
     `${timeFormatter.format(startsAt)}–${timeFormatter.format(endsAt)}`;
   const period = formatRange({ startsAt: start, endsAt: end });
   const nowLabel =
-    visibleNow === null
+    nowTimestamp === null
       ? null
-      : visibleNow < start
-        ? t("availabilityBar.nowBeforeWindow", { time: itemDateTimeFormatter.format(visibleNow) })
-        : visibleNow >= end
-          ? t("availabilityBar.nowAfterWindow", { time: itemDateTimeFormatter.format(visibleNow) })
-          : t("availabilityBar.now", { time: itemDateTimeFormatter.format(visibleNow) });
+      : nowTimestamp < start
+        ? t("availabilityBar.nowBeforeWindow", { time: itemDateTimeFormatter.format(nowTimestamp) })
+        : nowTimestamp >= end
+          ? t("availabilityBar.nowAfterWindow", { time: itemDateTimeFormatter.format(nowTimestamp) })
+          : t("availabilityBar.now", { time: itemDateTimeFormatter.format(nowTimestamp) });
   const stateOrder: ReadonlyArray<AvailabilityState> = ["available", "booking", "blockout", "overlap"];
   const states =
     slices.length === 1 && slices[0].state === "available"
@@ -290,25 +285,25 @@ export function AvailabilityBar({
               ? []
               : [
                   t(`availabilityBar.ranges.${state}`, {
-                    ranges: listFormatter.format(ranges),
+                    ranges: formatList(ranges, locale),
                   }),
                 ];
           })
           .join(" ");
   const description = [t("availabilityBar.summary", { period, states }), nowLabel].filter(Boolean).join(" ");
   const currentSegmentIndex =
-    visibleNow === null
+    nowTimestamp === null
       ? -1
-      : slices.findIndex(({ startsAt, endsAt }) => startsAt <= visibleNow && visibleNow < endsAt);
+      : slices.findIndex(({ startsAt, endsAt }) => startsAt <= nowTimestamp && nowTimestamp < endsAt);
   const currentSegment = slices[currentSegmentIndex];
   const currentlyAvailable = currentSegment?.state === "available";
   const nextAvailabilityChange = slices
     .slice(currentSegmentIndex + 1)
     .find(({ state }) => (state === "available") !== currentlyAvailable)?.startsAt;
   const showNextAvailabilityChange =
-    visibleNow !== null &&
+    nowTimestamp !== null &&
     nextAvailabilityChange !== undefined &&
-    dateFormatter.format(visibleNow) === dateFormatter.format(nextAvailabilityChange);
+    dateFormatter.format(nowTimestamp) === dateFormatter.format(nextAvailabilityChange);
   const currentAvailabilityLabel =
     !showCurrentAvailability || currentSegment === undefined
       ? null
@@ -371,9 +366,9 @@ export function AvailabilityBar({
               />
             ))}
           </div>
-          {visibleNow !== null && nowLabel !== null && nowPosition !== null && (
+          {nowTimestamp !== null && nowLabel !== null && nowPosition !== null && (
             <time
-              dateTime={new Date(visibleNow).toISOString()}
+              dateTime={new Date(nowTimestamp).toISOString()}
               title={nowLabel}
               data-slot="availability-bar-now"
               className="pointer-events-none absolute inset-y-0 z-30 w-0.5 bg-red-600"
@@ -421,9 +416,9 @@ export function AvailabilityBar({
                   sideOffset={8}
                   collisionPadding={8}
                   sticky
-                  showArrow
                   className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3"
                 >
+                  <PopoverPrimitive.Arrow className="size-2.5 rotate-45 border border-border bg-popover" />
                   <div className="min-w-0">
                     <PopoverTitle className="text-base font-semibold leading-tight">
                       {formatTimeRange(slice)}

@@ -9,9 +9,15 @@ import {
   emulateReducedMotion,
   expectNoAxeViolations,
 } from "@/__tests__/pageObjects/accessibility";
+import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { auditPage } from "./__tests__/bookableItemAuditFixtures";
 import { BookableItemPageStory } from "./BookableItemPage.story";
-import { bookableItemDetailsHandlers, bookableItemFixtures, bookableItemsHandlers } from "./mocks/bookableItemsMocks";
+import {
+  bookableItemDetailsHandlers,
+  bookableItemFixtures,
+  bookableItemsHandlers,
+  collectionPage,
+} from "./mocks/bookableItemsMocks";
 import { BookableItemPage } from "./pageObjects/BookableItemPage";
 
 const pageObj = new BookableItemPage();
@@ -131,7 +137,6 @@ describe("BookableItemPage", () => {
   });
 
   test.each([390, 1440])("reserves detail width and facts placement while loading at %s px", async (width) => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const response = Promise.withResolvers<void>();
     worker.use(
       http.get("/api/v2/booking-configurations", async () => {
@@ -139,32 +144,32 @@ describe("BookableItemPage", () => {
         return undefined;
       }),
     );
-    await page.viewport(width, 900);
-    render(<BookableItemPageStory />);
     try {
-      const main = page.getByRole("main");
-      await expect.element(main).toHaveAttribute("aria-busy", "true");
-      await document.fonts.ready;
-      const before = main.element().getBoundingClientRect();
-      const factsBefore = main.element().querySelector('[data-slot="bookable-item-facts"]')?.getBoundingClientRect();
-      expect(factsBefore).toBeDefined();
-      await expect.element(page.getByRole("button", { name: "New Booking" })).not.toBeInTheDocument();
-      await expectNoAxeViolations();
-      response.resolve();
-      await expect.element(pageObj.heading).toBeVisible();
-      const after = main.element().getBoundingClientRect();
-      expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
-      expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
-      expect(Math.abs(after.top - before.top)).toBeLessThanOrEqual(2);
-      if (width === 1440 && factsBefore) {
-        const factsAfter = page.getByRole("complementary").element().getBoundingClientRect();
-        expect(Math.abs(factsAfter.left - factsBefore.left)).toBeLessThanOrEqual(8);
-        expect(Math.abs(factsAfter.top - factsBefore.top)).toBeLessThanOrEqual(8);
-        expect(Math.abs(factsAfter.width - factsBefore.width)).toBeLessThanOrEqual(2);
-      }
+      await withViewport(width, async () => {
+        render(<BookableItemPageStory />);
+        const main = page.getByRole("main");
+        await expect.element(main).toHaveAttribute("aria-busy", "true");
+        await document.fonts.ready;
+        const before = main.element().getBoundingClientRect();
+        const factsBefore = main.element().querySelector('[data-slot="bookable-item-facts"]')?.getBoundingClientRect();
+        expect(factsBefore).toBeDefined();
+        await expect.element(page.getByRole("button", { name: "New Booking" })).not.toBeInTheDocument();
+        await expectNoAxeViolations();
+        response.resolve();
+        await expect.element(pageObj.heading).toBeVisible();
+        const after = main.element().getBoundingClientRect();
+        expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
+        expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
+        expect(Math.abs(after.top - before.top)).toBeLessThanOrEqual(2);
+        if (width === 1440 && factsBefore) {
+          const factsAfter = page.getByRole("complementary").element().getBoundingClientRect();
+          expect(Math.abs(factsAfter.left - factsBefore.left)).toBeLessThanOrEqual(8);
+          expect(Math.abs(factsAfter.top - factsBefore.top)).toBeLessThanOrEqual(8);
+          expect(Math.abs(factsAfter.width - factsBefore.width)).toBeLessThanOrEqual(2);
+        }
+      });
     } finally {
       response.resolve();
-      await page.viewport(originalViewport.width, originalViewport.height);
     }
   });
 
@@ -193,20 +198,7 @@ describe("BookableItemPage", () => {
     worker.use(
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const where = new URL(request.url).searchParams.get("where") ?? "";
-        return where.includes("IN123")
-          ? HttpResponse.json({
-              docs: [current],
-              totalDocs: 1,
-              limit: 20,
-              page: 1,
-              pagingCounter: 1,
-              totalPages: 1,
-              hasPrevPage: false,
-              hasNextPage: false,
-              prevPage: null,
-              nextPage: null,
-            })
-          : undefined;
+        return where.includes("IN123") ? HttpResponse.json(collectionPage([current])) : undefined;
       }),
       http.delete("/api/v2/booking-configurations/7", ({ request }) => {
         archiveRequest = request;
@@ -263,20 +255,7 @@ describe("BookableItemPage", () => {
     worker.use(
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const where = new URL(request.url).searchParams.get("where") ?? "";
-        return where.includes("IN123")
-          ? HttpResponse.json({
-              docs: [archived],
-              totalDocs: 1,
-              limit: 20,
-              page: 1,
-              pagingCounter: 1,
-              totalPages: 1,
-              hasPrevPage: false,
-              hasNextPage: false,
-              prevPage: null,
-              nextPage: null,
-            })
-          : undefined;
+        return where.includes("IN123") ? HttpResponse.json(collectionPage([archived])) : undefined;
       }),
       http.delete("/api/v2/booking-configurations/7", ({ request }) => {
         permanentRequest = request;
@@ -436,12 +415,9 @@ describe("BookableItemPage", () => {
   });
 
   test("mounts the access editor at 320 CSS pixels with keyboard navigation and no overflow", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     await emulateForcedColors();
     await emulateReducedMotion();
-    await page.viewport(320, 900);
-
-    try {
+    await withViewport(320, async () => {
       render(<BookableItemPageStory />);
       await expect.element(pageObj.heading).toBeVisible();
       pageObj.accessTab.element().focus();
@@ -470,9 +446,7 @@ describe("BookableItemPage", () => {
       await leaveDialog.getByRole("button", { name: "Cancel" }).click();
       await expect.element(pageObj.accessPanel).toBeVisible();
       await expect.element(graceRole).toHaveTextContent("Booker");
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
   test("blocks tab changes during PATCH and restores focus after saving", async () => {
@@ -518,12 +492,11 @@ describe("BookableItemPage", () => {
   });
 
   test("fits the identity, tabs, and inline editor at 320 CSS pixels", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const longName = "Confocal microscope with an exceptionally long inventory record name for the imaging facility";
     worker.use(
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json({
-          docs: [
+        HttpResponse.json(
+          collectionPage([
             {
               ...bookableItemFixtures[0],
               target: {
@@ -531,22 +504,11 @@ describe("BookableItemPage", () => {
                 value: { ...bookableItemFixtures[0].target.value, name: longName },
               },
             },
-          ],
-          totalDocs: 1,
-          limit: 20,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 1,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        }),
+          ]),
+        ),
       ),
     );
-    await page.viewport(320, 900);
-
-    try {
+    await withViewport(320, async () => {
       render(<BookableItemPageStory />);
       const longHeading = page.getByRole("heading", { level: 1, name: longName });
       const globalId = page.getByText("IN123", { exact: true });
@@ -565,8 +527,6 @@ describe("BookableItemPage", () => {
       await expect.element(pageObj.refreshAudit).toBeVisible();
       await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
       await expectNoAxeViolations();
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 });

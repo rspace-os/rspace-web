@@ -16,66 +16,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { BookingEventList } from "../BookingEventList";
+import { bookableItemEventResponse, booking, busyBooking, maintenanceBooking } from "./bookableItemEventFixtures";
 
 vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
 
-const fullBooking = {
-  id: 41,
-  version: 0,
-  target: {
-    relationTo: "booking-instruments",
-    value: { id: 12, name: "Scope", deleted: false },
-    globalId: "IN12",
-  },
-  timezone: "Europe/Berlin",
-  start: "2026-08-25T09:00:00Z",
-  end: "2026-08-25T10:00:00Z",
-  state: "CONFIRMED",
-  privacy: "full",
-  purpose: "Cell imaging",
-  bookedBy: "Ada Lovelace (ada)",
-  canEdit: true,
-  canCancel: true,
-  createdAt: "2026-08-17T00:00:00Z",
-  updatedAt: "2026-08-17T00:00:00Z",
-};
-const busyBooking = {
-  ...fullBooking,
-  id: 42,
-  privacy: "busy",
-  purpose: null,
-  bookedBy: null,
-  canEdit: false,
-  canCancel: false,
-};
-const maintenance = {
-  ...fullBooking,
-  id: 43,
-  kind: "MAINTENANCE",
-  purpose: "Laser alignment",
-  bookedBy: null,
-  createdBy: "Morgan Ellis (mellis)",
-  canEdit: false,
-};
-
-function envelope(
-  docs: unknown[],
-  options: { page?: number; hasPrevPage?: boolean; hasNextPage?: boolean; totalDocs?: number } = {},
-) {
-  const page = options.page ?? 1;
-  return {
-    docs,
-    totalDocs: options.totalDocs ?? docs.length,
-    limit: 10,
-    page,
-    pagingCounter: (page - 1) * 10 + 1,
-    totalPages: options.hasNextPage || options.hasPrevPage ? 2 : docs.length === 0 ? 0 : 1,
-    hasPrevPage: options.hasPrevPage ?? false,
-    hasNextPage: options.hasNextPage ?? false,
-    prevPage: options.hasPrevPage ? page - 1 : null,
-    nextPage: options.hasNextPage ? page + 1 : null,
-  };
-}
+const fullBooking = { ...booking, purpose: "Cell imaging" };
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 const changeTimezoneLabel = "Change timezone";
@@ -131,7 +76,9 @@ function renderList(options: { controls?: boolean } = {}) {
 
 describe("BookingEventList", () => {
   it("renders full and busy events without leaking busy details", async () => {
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([fullBooking, busyBooking]))));
+    server.use(
+      http.get("/api/v2/bookings", () => HttpResponse.json(bookableItemEventResponse([fullBooking, busyBooking]))),
+    );
     renderList();
 
     await screen.findAllByText("Ada Lovelace (ada)");
@@ -144,7 +91,7 @@ describe("BookingEventList", () => {
   });
 
   it("renders maintenance with its creator rather than as a busy booking", async () => {
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([maintenance]))));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(bookableItemEventResponse([maintenanceBooking]))));
     renderList();
 
     await screen.findAllByText("Morgan Ellis (mellis)");
@@ -161,7 +108,7 @@ describe("BookingEventList", () => {
     server.use(
       http.get("/api/v2/bookings", () => {
         requests += 1;
-        return HttpResponse.json(envelope([fullBooking]));
+        return HttpResponse.json(bookableItemEventResponse([fullBooking]));
       }),
     );
     renderList({ controls: true });
@@ -188,7 +135,7 @@ describe("BookingEventList", () => {
           ? { ...fullBooking, target: { ...fullBooking.target, globalId: "IN13" } }
           : fullBooking;
         return HttpResponse.json(
-          envelope([booking], {
+          bookableItemEventResponse([booking], {
             page,
             hasPrevPage: page > 1,
             hasNextPage: page === 1,
@@ -211,7 +158,7 @@ describe("BookingEventList", () => {
     let fail = true;
     server.use(
       http.get("/api/v2/bookings", () =>
-        fail ? new HttpResponse(null, { status: 500 }) : HttpResponse.json(envelope([])),
+        fail ? new HttpResponse(null, { status: 500 }) : HttpResponse.json(bookableItemEventResponse([])),
       ),
     );
     renderList();
@@ -230,8 +177,8 @@ describe("BookingEventList", () => {
         const page = Number(new URL(request.url).searchParams.get("page"));
         return HttpResponse.json(
           page === 1
-            ? envelope([fullBooking], { page: 1, hasNextPage: true, totalDocs: 11 })
-            : envelope([], { page: 2, hasPrevPage: true, totalDocs: 11 }),
+            ? bookableItemEventResponse([fullBooking], { page: 1, hasNextPage: true, totalDocs: 11 })
+            : bookableItemEventResponse([], { page: 2, hasPrevPage: true, totalDocs: 11 }),
         );
       }),
     );

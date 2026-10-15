@@ -3,10 +3,12 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookableItemFixtures, bookableItemsHandlers } from "../../bookable-items/mocks/bookableItemsMocks";
-import { collectionResponse, currentUser, ownBooking, renderCalendar } from "./calendarTestHarness";
+import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { renderCalendar } from "./calendarTestHarness";
 
 const scrollToDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollTo");
 
