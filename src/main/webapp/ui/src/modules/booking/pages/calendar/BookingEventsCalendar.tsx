@@ -154,7 +154,6 @@ export function BookingEventsCalendar({
     myItemsOnly ||
     (eventFiltering !== false &&
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
-  const changeMyItems = (next: boolean) => onMyItemsChange?.(next);
   const filterControls = (
     <CalendarFilterControls
       date={date}
@@ -229,12 +228,12 @@ export function BookingEventsCalendar({
               label: t("calendar.quickFilters.myItems"),
               icon: <PackageCheckIcon aria-hidden="true" />,
               pressed: myItemsOnly,
-              onClick: () => changeMyItems(!myItemsOnly),
+              onClick: () => onMyItemsChange?.(!myItemsOnly),
             },
           ],
           onReset: () => {
             onMineChange?.(false);
-            changeMyItems(false);
+            onMyItemsChange?.(false);
             onControlsReset();
           },
         }}
