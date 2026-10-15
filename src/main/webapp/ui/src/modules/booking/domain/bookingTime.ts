@@ -74,24 +74,6 @@ export function displayInterval(
   };
 }
 
-export function broadUtcEnvelope(date: string, timezones: readonly string[]): { start: string; end: string } {
-  if (timezones.length === 0) {
-    const bounds = zonedDayBounds(date, "UTC");
-    return { start: bounds.start, end: bounds.end };
-  }
-  const bounds = timezones.map((timezone) => zonedDayBounds(date, timezone));
-  return {
-    start: bounds.reduce(
-      (first, value) => (Temporal.Instant.compare(value.start, first) < 0 ? value.start : first),
-      bounds[0].start,
-    ),
-    end: bounds.reduce(
-      (last, value) => (Temporal.Instant.compare(value.end, last) > 0 ? value.end : last),
-      bounds[0].end,
-    ),
-  };
-}
-
 export function currentWallClock(
   instant: string | Temporal.Instant,
   timezone: string,
@@ -145,17 +127,8 @@ export function sliceAcrossZonedDay(
 
 export function resolveWallClock(date: string, time: string, timezone: string): WallClockResolution {
   const plain = parsePlainDate(date).toPlainDateTime(Temporal.PlainTime.from(time));
-  const fields = {
-    timeZone: timezone,
-    year: plain.year,
-    month: plain.month,
-    day: plain.day,
-    hour: plain.hour,
-    minute: plain.minute,
-    second: plain.second,
-  };
-  const earlier = Temporal.ZonedDateTime.from(fields, { disambiguation: "earlier" });
-  const later = Temporal.ZonedDateTime.from(fields, { disambiguation: "later" });
+  const earlier = plain.toZonedDateTime(timezone, { disambiguation: "earlier" });
+  const later = plain.toZonedDateTime(timezone, { disambiguation: "later" });
   const earlierMatches = earlier.toPlainDateTime().equals(plain);
   const laterMatches = later.toPlainDateTime().equals(plain);
   if (!earlierMatches || !laterMatches) return { kind: "nonexistent" };

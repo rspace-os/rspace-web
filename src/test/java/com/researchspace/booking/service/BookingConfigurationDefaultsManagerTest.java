@@ -337,11 +337,9 @@ class BookingConfigurationDefaultsManagerTest {
   }
 
   private static BookingConfigurationDefaults defaults() {
-    BookingConfigurationDefaults defaults = new BookingConfigurationDefaults();
-    defaults.setId(BookingConfigurationDefaults.SINGLETON_ID);
+    BookingConfigurationDefaults defaults = BookingSettingsTestFixtures.defaults();
     defaults.setSlotGranularityMinutes(5);
     defaults.setOpeningHours(hours("00:00", "24:00"));
-    BookingDisplaySettings.defaults().applyTo(defaults);
     return defaults;
   }
 }

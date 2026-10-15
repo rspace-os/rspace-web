@@ -12,7 +12,6 @@ beforeBookingCatalog(async () => {
 import { describe, expect, test } from "vitest";
 import {
   addCalendarDays,
-  broadUtcEnvelope,
   currentWallClock,
   dayMinuteToZonedTime,
   displayInterval,
@@ -47,13 +46,6 @@ describe("bookingTime", () => {
       start: "2026-09-06T04:00:00Z",
       end: "2026-09-07T03:00:00Z",
       elapsedMinutes: 1380,
-    });
-  });
-
-  test("computes one envelope for several row timezones", () => {
-    expect(broadUtcEnvelope("2026-03-29", ["Europe/Berlin", "America/New_York"])).toEqual({
-      start: "2026-03-28T23:00:00Z",
-      end: "2026-03-30T04:00:00Z",
     });
   });
 
