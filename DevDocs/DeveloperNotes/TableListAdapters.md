@@ -629,6 +629,23 @@ metadata is parsed and immediately before fetch. The current approved routes are
 to them. New providers require an explicit allowlist entry. Queries are constructed
 locally and authenticated catalog requests refuse redirects.
 
+### Metadata-backed relationship filters
+
+API v2 metadata can supply a relationship's scalar filters even when the relationship is omitted
+from local config; declare it locally when the table needs a column or custom label. Relationship
+identity uses a registered picker, while related scalar fields use their declared input types and do
+not suggest record names. The picker groups target fields and custom-field options under the
+relationship label; shared audit relationships use localized `Created by` and `Updated by` labels
+unless the config overrides them. New rules default to `equals` when supported, and restored rules
+keep their saved operator.
+
+The server allows `equals`, `in`, `contains`, and `matches` on a target field, and rejects negative
+operators. `equals` anchors the complete value (including `*`); `matches` finds words anywhere.
+Labels and placeholders must distinguish them.
+
+Browser tests pass `queryString: false` to avoid retaining a filter between mounts and scope locators
+with `page.elementLocator(container)` when a story renders multiple copies.
+
 ## Reuse collection fields in forms
 
 Use `RenderFields` when a create or edit page uses the same collection field configuration. Pass
@@ -831,38 +848,6 @@ Give each table a unique `parameterPrefix`.
 - [REST API v2 hook](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/useApiV2TableList.ts)
 - [RSQL serialization](../../src/main/webapp/ui/src/modules/common/table-list/adapters/apiV2/rsql/serializeRsql.ts)
 - [REST API v2 Storybook example](../../src/main/webapp/ui/src/modules/common/table-list/TableListApiV2.stories.tsx)
-
-## Configure and test relationship-target filters
-
-For example, a booking-configuration table can filter by its instrument name. API metadata supplies
-the relationship's scalar filters even when the relationship is absent from the local config.
-Declare the relationship when the table also needs its column or a custom label:
-
-```ts
-{ name: "target", labelKey: "...", type: "relationship", relationTo: "instruments", hasMany: false },
-```
-
-Relationship identity filters use a record picker when a source is registered. Related scalar
-fields use their declared input type: text fields have a plain text input, numbers have a numeric
-input, and dates have a date input. Scalar fields do not fetch record-name suggestions.
-
-The filter picker groups target fields and their custom-field option under the relationship's
-label. Shared audit relationships use localized `Created by` and `Updated by` labels unless the
-config supplies its own label. New relationship rules default to `equals` when supported;
-opening a saved rule preserves its operator.
-
-The server permits the `equals`, `in`, `contains`, and `matches` operators on a target field. It
-rejects all negative operators.
-
-Keep both `equals` and `matches`. Equality accepts `*` and anchors the complete value. `matches`
-finds words anywhere in the value. UI labels and placeholders must show this difference.
-
-Follow these rules in browser tests of the filter panel:
-
-- Pass `queryString: false`. Otherwise, nuqs retains one test's filter in the URL, and the next
-  mount starts with that filter.
-- Scope locators with `page.elementLocator(container)`. A page-wide query matches every mounted
-  copy of a story.
 
 ## Restore saved views without broadening requests
 

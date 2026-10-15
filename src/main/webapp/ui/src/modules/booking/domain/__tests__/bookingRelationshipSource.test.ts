@@ -9,7 +9,7 @@ describe("booking relationship source", () => {
     server.use(
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const params = new URL(request.url).searchParams;
-        expect(params.get("where")).toBe("target==IN42");
+        expect(params.get("where")).toBe("target=in=(IN42)");
         expect(params.get("depth")).toBe("1");
         expect(params.get("limit")).toBe("1");
         return HttpResponse.json({

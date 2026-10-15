@@ -2,7 +2,8 @@ import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { type ApiV2RuntimeFieldNamespace, apiV2FilterOperators } from "./apiV2CollectionMetadata";
 
-const filterOperator = v.picklist(apiV2FilterOperators);
+// Metadata validation imports this module, so read its operators after initialization.
+const filterOperator = v.lazy(() => v.picklist(apiV2FilterOperators));
 
 const runtimeFieldSchema = v.object({
   id: v.pipe(v.string(), v.minLength(1)),

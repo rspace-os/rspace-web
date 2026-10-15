@@ -301,11 +301,8 @@ export function createApiV2FilterFields<TDocument>({
     fields: [...sourceConfig.fields, ...identityFields],
   };
   const relationshipFields = derivedTargetFields(identityConfig, metadata, translate);
-  const runtimeDerivedFields = derivedRuntimeFields(
-    metadata,
-    runtimeFields,
-    relationshipLabels(identityConfig, translate),
-  );
+  const labels = relationshipLabels(identityConfig, translate);
+  const runtimeDerivedFields = derivedRuntimeFields(metadata, runtimeFields, labels);
   const occupiedNames = new Set([
     ...sourceConfig.fields.map((field) => String(field.name)),
     ...Object.keys(metadata.filtering.selectors),
@@ -339,8 +336,7 @@ export function createApiV2FilterFields<TDocument>({
     .filter((namespace) => namespace.filterable || namespace.columnSelectable)
     .map((namespace) => ({
       namespace: namespace.namespace,
-      viaLabel:
-        namespace.via === "" ? "" : (relationshipLabels(identityConfig, translate).get(namespace.via) ?? namespace.via),
+      viaLabel: namespace.via === "" ? "" : (labels.get(namespace.via) ?? namespace.via),
       catalog: namespace.catalog,
       maximumLimit: namespace.catalogMaximumLimit,
       filterable: namespace.filterable,
