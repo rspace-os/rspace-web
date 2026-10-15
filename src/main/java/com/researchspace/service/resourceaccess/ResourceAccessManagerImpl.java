@@ -299,7 +299,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             null,
             changedAt,
             ResourceAccessAuditReason.DIRECT_LEAVE));
-    events.publishEvent(new ResourceAccessChangedEvent(auditTarget(resource, protectedEntity)));
+    events.publishEvent(new ResourceAccessChangedEvent(protectedEntity));
   }
 
   private void publishDeltas(
