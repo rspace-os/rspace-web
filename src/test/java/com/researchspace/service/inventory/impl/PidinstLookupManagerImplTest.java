@@ -78,6 +78,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -1246,8 +1247,8 @@ class PidinstLookupManagerImplTest {
     second.getMetadata().setName("Another microscope");
     second.getMetadata().setIdentifier(new B2instIdentifier("Handle", "21.T11975/fghij-67890"));
     second.setUpdated("2026-09-01T00:00:00+00:00");
-    B2instSearchResult page = searchResultOf(publishedRecord(), 2);
-    page.getHits().getHits().add(second);
+    B2instSearchResult page = searchResultOf(second, 2);
+    page.getHits().getHits().add(publishedRecord());
     when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50)).thenReturn(page);
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("21.T11975/fghij-67890", "Another microscope", "suffix123456");
@@ -1263,7 +1264,7 @@ class PidinstLookupManagerImplTest {
         manager.search("microscope", List.of("PIDINST_B2INST"), 0, user);
 
     assertEquals(2, result.getHits().size());
-    // newest update first, so the dated "Another microscope" comes first
+    // the registry's own order: "Another microscope" first
     assertEquals("IN7", result.getHits().get(0).getLinkedInstrumentGlobalId());
     assertNull(result.getHits().get(1).getLinkedInstrumentGlobalId());
     verify(doiDao, never()).findActiveByIdentifierAndType(anyString(), any());
@@ -1279,25 +1280,25 @@ class PidinstLookupManagerImplTest {
         .thenReturn(
             searchResultOf(
                 2,
+                publishedRecord(
+                    "21.T11975/b-new",
+                    "b-new",
+                    "2026-09-01T12:00:00.000001+00:00",
+                    "2026-01-01T00:00:00+00:00"),
                 // created after its DataCite twin, yet listed after it: DataCite was asked first
                 publishedRecord(
                     "21.T11975/b-tie",
                     "b-tie",
                     "2026-01-01T00:00:00+00:00",
-                    "2025-12-01T00:00:00+00:00"),
-                publishedRecord(
-                    "21.T11975/b-new",
-                    "b-new",
-                    "2026-09-01T12:00:00.000001+00:00",
-                    "2026-01-01T00:00:00+00:00")));
+                    "2025-12-01T00:00:00+00:00")));
     when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
         .thenReturn(
             dataCitePage(
                 2,
                 dataCiteInstrumentUpdatedAt(
-                    "10.1/d-tie", "2026-01-01T00:00:00Z", "2025-06-01T00:00:00Z"),
+                    "10.1/d-newest", "2026-09-30T00:00:00Z", "2024-01-01T00:00:00Z"),
                 dataCiteInstrumentUpdatedAt(
-                    "10.1/d-newest", "2026-09-30T00:00:00Z", "2024-01-01T00:00:00Z")));
+                    "10.1/d-tie", "2026-01-01T00:00:00Z", "2025-06-01T00:00:00Z")));
 
     ApiPidinstSearchResult result = manager.search("Zeiss", BOTH, 0, user);
 
@@ -1312,7 +1313,7 @@ class PidinstLookupManagerImplTest {
   }
 
   @Test
-  void aHitWithNoOrAnUnreadableUpdateTimeSortsAfterADatedOne() {
+  void aHitWithNoOrAnUnreadableUpdateTimeKeepsItsRegistryPosition() {
     when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(
             searchResultOf(
@@ -1324,7 +1325,7 @@ class PidinstLookupManagerImplTest {
     ApiPidinstSearchResult result = manager.search("Zeiss", List.of("PIDINST_B2INST"), 0, user);
 
     assertIterableEquals(
-        List.of("21.T11975/c-dated", "21.T11975/a-undated", "21.T11975/b-garbled"),
+        List.of("21.T11975/a-undated", "21.T11975/b-garbled", "21.T11975/c-dated"),
         result.getHits().stream().map(ApiPidinstRecord::getPid).toList());
   }
 
@@ -1399,6 +1400,143 @@ class PidinstLookupManagerImplTest {
     assertTrue(page1.getHits().isEmpty());
     assertEquals(3, page1.getTotalHits());
     verify(b2instConnector, never()).searchPublicRecords(anyString(), eq(1), eq(50));
+  }
+
+  private static String minutesBefore(String base, int minutes) {
+    return Instant.parse(base).minusSeconds(60L * minutes).toString();
+  }
+
+  /** The PIDs of the given merged pages of a "Zeiss" search, in the order served. */
+  private List<String> pidsOfPages(List<String> providers, int... pages) {
+    List<String> seen = new ArrayList<>();
+    for (int page : pages) {
+      manager.search("Zeiss", providers, page, user).getHits().stream()
+          .map(ApiPidinstRecord::getPid)
+          .forEach(seen::add);
+    }
+    return seen;
+  }
+
+  /**
+   * RSDEV-1556, Martin's example: DataCite's page 0 holds 50 records of which RSpace hides 10, and
+   * every B2INST hit is older. A merged page is a slice of the registries' raw positions, so page 0
+   * is short (40) and page 1 starts where DataCite's page 1 starts, instead of filling page 0 with
+   * ten B2INST hits that page 1 then repeats while dc-50 to dc-59 are never shown.
+   */
+  @Test
+  void pagingThroughAThinnedRegistryPageShowsEveryKeptHitOnceAndInOrder() {
+    DataCiteDoi[] dc0 = new DataCiteDoi[50];
+    DataCiteDoi[] dc1 = new DataCiteDoi[50];
+    List<String> kept = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      DataCiteDoi doi =
+          dataCiteInstrumentUpdatedAt(
+              "10.1/dc-" + i, minutesBefore("2026-09-01T00:00:00Z", i), "2025-01-01T00:00:00Z");
+      if (i >= 5 && i < 15) {
+        doi.getAttributes().setState("registered"); // not findable: a hidden hit
+      } else {
+        kept.add("10.1/dc-" + i);
+      }
+      (i < 50 ? dc0 : dc1)[i % 50] = doi;
+    }
+    B2instDraftRecord[] b0 = new B2instDraftRecord[50];
+    B2instDraftRecord[] b1 = new B2instDraftRecord[50];
+    for (int i = 0; i < 100; i++) {
+      (i < 50 ? b0 : b1)[i % 50] =
+          publishedRecord(
+              "21.T11975/b2-" + i,
+              "b2-" + i,
+              minutesBefore("2026-08-01T00:00:00Z", i),
+              "2025-01-01T00:00:00Z");
+    }
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
+        .thenReturn(dataCitePage(100, dc0));
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 1, 50))
+        .thenReturn(dataCitePage(100, dc1));
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(searchResultOf(100, b0));
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 1, 50))
+        .thenReturn(searchResultOf(100, b1));
+
+    assertEquals(40, manager.search("Zeiss", BOTH, 0, user).getHits().size(), "page 0 is short");
+    assertEquals(kept, pidsOfPages(BOTH, 0, 1), "pages 0 and 1, in order, nothing else");
+    // a thinned page is not an exhausted registry: DataCite's page 1 was still asked for
+    verify(dataCiteConnector).searchPublicInstrumentDois("Zeiss", 1, 50);
+  }
+
+  /**
+   * RSDEV-1556: a hit without an update time stays where its registry put it. Sorted last, as first
+   * shipped, it left the fetched prefix, so page 1 repeated it and skipped r-50.
+   */
+  @Test
+  void aHitWithoutAnUpdateTimeMidPageIsShownOnceAndInItsRegistryOrder() {
+    B2instDraftRecord[] b0 = new B2instDraftRecord[50];
+    B2instDraftRecord[] b1 = new B2instDraftRecord[50];
+    List<String> all = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      all.add("21.T11975/r-" + i);
+      (i < 50 ? b0 : b1)[i % 50] =
+          publishedRecord(
+              "21.T11975/r-" + i,
+              "r-" + i,
+              i == 10 ? null : minutesBefore("2026-08-01T00:00:00Z", i),
+              "2025-01-01T00:00:00Z");
+    }
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(searchResultOf(100, b0));
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 1, 50))
+        .thenReturn(searchResultOf(100, b1));
+
+    assertEquals(all, pidsOfPages(List.of("PIDINST_B2INST"), 0, 1));
+  }
+
+  /**
+   * RSDEV-1556: the registry's placement is the only recency an undated hit has, so it is taken
+   * next, beside its registry neighbours, rather than after every dated hit of the other registry,
+   * which would hold back everything behind it in its own list.
+   */
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = "not-a-date")
+  void anUndatedHitStaysBesideItsRegistryNeighboursWhenTheOtherRegistryHasOlderHits(
+      String unreadableUpdate) {
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(
+            searchResultOf(
+                3,
+                publishedRecord(
+                    "21.T11975/b-newest", "b-newest", "2026-09-01T00:00:00+00:00", null),
+                publishedRecord("21.T11975/b-undated", "b-undated", unreadableUpdate, null),
+                publishedRecord(
+                    "21.T11975/b-older", "b-older", "2026-08-01T00:00:00+00:00", null)));
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
+        .thenReturn(
+            dataCitePage(
+                1,
+                dataCiteInstrumentUpdatedAt(
+                    "10.1/d-oldest", "2026-07-01T00:00:00Z", "2026-07-01T00:00:00Z")));
+
+    assertIterableEquals(
+        List.of("21.T11975/b-newest", "21.T11975/b-undated", "21.T11975/b-older", "10.1/d-oldest"),
+        manager.search("Zeiss", BOTH, 0, user).getHits().stream()
+            .map(ApiPidinstRecord::getPid)
+            .toList());
+  }
+
+  @Test
+  void twoUndatedHeadsKeepTheOrderAsked() {
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(
+            searchResultOf(1, publishedRecord("21.T11975/b-undated", "b-undated", null, null)));
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
+        .thenReturn(
+            dataCitePage(1, dataCiteInstrument("10.1/d-undated", "findable", "Instrument")));
+
+    assertIterableEquals(
+        List.of("10.1/d-undated", "21.T11975/b-undated"),
+        manager.search("Zeiss", BOTH, 0, user).getHits().stream()
+            .map(ApiPidinstRecord::getPid)
+            .toList());
   }
 
   @Test

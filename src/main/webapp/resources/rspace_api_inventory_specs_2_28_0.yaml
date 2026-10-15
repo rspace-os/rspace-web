@@ -3409,8 +3409,11 @@ paths:
         A DOI or Handle, bare or as a `doi.org` / `hdl.handle.net` address, is a direct lookup at
         the registry its shape names and yields nothing at the other; anything else is one
         full-text query per registry. Hits from the registries asked for form ONE list ordered by
-        the registry's update time, newest first, 50 to a page; equal update times keep each
-        registry's own order, the registries in the order `providers` names them;
+        the registry's update time, newest first, up to 50 to a page; equal update times keep each
+        registry's own order, the registries in the order `providers` names them, and a hit
+        without an update time keeps its registry position. A page is a slice of the registries'
+        own result positions, so it is short when a record on it cannot be offered (not public,
+        not an instrument, no PID) and paging forward shows every offered hit exactly once;
         `totalHits` is the sum of the registries' own totals and `totalsByProvider` gives each.
         Registry pages are cached for 10 minutes.
 
@@ -3456,7 +3459,7 @@ paths:
           name: pageNumber
           required: false
           description: >
-            0-based page of 50 merged hits; defaults to 0. Pages past 199 (the first 10,000
+            0-based page of up to 50 merged hits; defaults to 0. Pages past 199 (the first 10,000
             hits) are refused with a 422.
           schema:
             type: integer
@@ -5006,7 +5009,7 @@ components:
           example: { "PIDINST_DATACITE": 235, "PIDINST_B2INST": 3 }
         hits:
           type: array
-          description: This page, newest update first; equal update times keep each registry's own order.
+          description: This page, up to 50 hits, newest update first; equal update times keep each registry's own order.
           items:
             $ref: "#/components/schemas/PidinstRecord"
     ContainerInfo:
