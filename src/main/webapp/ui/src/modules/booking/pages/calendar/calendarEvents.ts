@@ -14,7 +14,7 @@ const PageSchema = v.object({
 export const CALENDAR_BOOKING_FIELDS =
   "id,version,target,requesterId,canViewConfiguration,timezone,start,end,state,kind,purpose,bookedBy,createdBy,privacy,canEdit,canCancel,createdAt,updatedAt";
 
-export type CalendarEventFilterScope = { where?: string; q?: string };
+type CalendarEventFilterScope = { where?: string; q?: string };
 
 async function fetchPage(
   start: string,
@@ -45,18 +45,22 @@ async function fetchPage(
   return parseOrThrow(PageSchema, await response.json());
 }
 
-export async function loadCalendarEvents(
-  firstDate: string,
-  lastDate: string,
-  timezone: string,
-  token: string,
-  signal: AbortSignal,
-  targetGlobalIds?: readonly string[],
-  scope: CalendarEventFilterScope = {},
-): Promise<readonly BookingListDocument[]> {
+export async function loadCalendarEvents({
+  start,
+  end,
+  token,
+  signal,
+  targetGlobalIds,
+  scope = {},
+}: {
+  start: string;
+  end: string;
+  token: string;
+  signal: AbortSignal;
+  targetGlobalIds?: readonly string[];
+  scope?: CalendarEventFilterScope;
+}): Promise<readonly BookingListDocument[]> {
   if (targetGlobalIds?.length === 0) return [];
-  const start = zonedDayBounds(firstDate, timezone).start;
-  const end = zonedDayBounds(lastDate, timezone).end;
   const first = await fetchPage(start, end, 1, token, signal, targetGlobalIds, scope);
   if (first.totalDocs > 1_000) throw new Error("Booking calendar exceeds 1,000 bookings");
   const events: BookingListDocument[] = [...first.docs];
@@ -66,16 +70,25 @@ export async function loadCalendarEvents(
   return events;
 }
 
-export function useCalendarEvents(
-  firstDate: string,
-  lastDate: string,
-  timezone: string,
-  token: string,
-  targetGlobalIds?: readonly string[],
+export function useCalendarEvents({
+  firstDate,
+  lastDate,
+  timezone,
+  token,
+  targetGlobalIds,
   enabled = true,
-  authScope: string | number = token,
-  scope: CalendarEventFilterScope = {},
-) {
+  authScope = token,
+  scope = {},
+}: {
+  firstDate: string;
+  lastDate: string;
+  timezone: string;
+  token: string;
+  targetGlobalIds?: readonly string[];
+  enabled?: boolean;
+  authScope?: string | number;
+  scope?: CalendarEventFilterScope;
+}) {
   const start = zonedDayBounds(firstDate, timezone).start;
   const end = zonedDayBounds(lastDate, timezone).end;
   return useQuery({
@@ -90,7 +103,7 @@ export function useCalendarEvents(
       scope.where,
       scope.q,
     ],
-    queryFn: ({ signal }) => loadCalendarEvents(firstDate, lastDate, timezone, token, signal, targetGlobalIds, scope),
+    queryFn: ({ signal }) => loadCalendarEvents({ start, end, token, signal, targetGlobalIds, scope }),
     enabled: enabled && token.length > 0,
     staleTime: 30_000,
     meta: viewTransitionQueryMeta,
