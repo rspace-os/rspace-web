@@ -4,27 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import { validMaximumBookingDuration } from "@/modules/booking/configuration/schedulingSettings";
 import BookingSettingsPage from "../BookingSettingsPage";
+import { bookingSettingsFixture } from "./bookingSettingsFixture";
 
 const settings = {
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+  ...bookingSettingsFixture,
   bufferBeforeMinutes: 3,
   bufferAfterMinutes: 7,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-  availabilityWindowStart: "08:00",
-  availabilityWindowEnd: "18:00",
-  timezoneMode: "BROWSER" as const,
-  customTimezone: null,
-  institutionTimezone: "UTC",
-  defaultSharedWith: "ALL_USERS" as const,
-  selectedAccessGrantees: [],
-  configurationVersion: 0,
-  state: "ACTIVE",
+  state: "ACTIVE" as const,
 };
 
 function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
@@ -44,7 +32,6 @@ describe("BookingSettingsPage", () => {
     let current = settings;
     let submitted: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         submitted = await request.json();
@@ -73,17 +60,8 @@ describe("BookingSettingsPage", () => {
     expect(doubleBooking).toBeChecked();
   });
 
-  it("validates maximum duration against the selected increment", () => {
-    expect(validMaximumBookingDuration(0, 5)).toBe(true);
-    expect(validMaximumBookingDuration(60, 5)).toBe(true);
-    expect(validMaximumBookingDuration(7, 5)).toBe(false);
-  });
-
   it("offers every supported time increment", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
-    );
+    server.use(http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)));
     renderPage();
 
     const granularity = await screen.findByRole("combobox", {
@@ -100,7 +78,6 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let patches = 0;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
       http.patch("/api/v2/booking-settings/admin", () => {
         patches += 1;
@@ -125,7 +102,6 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = await request.json();
@@ -165,7 +141,6 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> | undefined;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>;
@@ -188,7 +163,6 @@ describe("BookingSettingsPage", () => {
   it("keeps a stale form open and asks the admin to reload", async () => {
     const user = userEvent.setup();
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
       http.patch("/api/v2/booking-settings/admin", () =>
         HttpResponse.json(

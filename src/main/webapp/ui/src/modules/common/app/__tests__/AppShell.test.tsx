@@ -13,6 +13,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import type { AppBarConfig } from "@/modules/common/app/AppBar.types";
 import AppShell, { type AppBarRouteContext, RouteTransitionIndicator } from "@/modules/common/app/AppShell";
@@ -195,20 +196,11 @@ describe("disabled Booking shell", () => {
         http.get("/api/v2/feature-flags", async () => {
           await flag.promise;
           if (enabled === "unavailable") return new HttpResponse(null, { status: 403 });
-          return HttpResponse.json({
-            docs: [
+          return HttpResponse.json(
+            v2ListEnvelope([
               { name: "bookingEnabled", value: enabled, baselineValue: enabled, source: "DEFAULT", canOverride: false },
-            ],
-            totalDocs: 1,
-            limit: 100,
-            page: 1,
-            pagingCounter: 1,
-            totalPages: 1,
-            hasPrevPage: false,
-            hasNextPage: false,
-            prevPage: null,
-            nextPage: null,
-          });
+            ]),
+          );
         }),
       );
       const router = renderShell("/booking", bookingRoutes());
