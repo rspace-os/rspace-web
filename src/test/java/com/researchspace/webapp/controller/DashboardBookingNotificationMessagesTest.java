@@ -48,7 +48,8 @@ class DashboardBookingNotificationMessagesTest {
     ReflectionTestUtils.setField(
         controller,
         "bookingMessageFormatter",
-        new BookingNotificationMessageFormatter(new JsonMessageSource()));
+        new BookingNotificationMessageFormatter(
+            new JsonMessageSource(), "https://rspace.example.org"));
     ReflectionTestUtils.setField(
         controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
     when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
@@ -98,10 +99,6 @@ class DashboardBookingNotificationMessagesTest {
   @Test
   void writesTimesWithTheBrowserRegionsClockAndTheAppLanguagesWords() {
     LocaleContextHolder.setLocale(Locale.US);
-    DashboardController controller = new DashboardController();
-    UserManager userManager = mock(UserManager.class);
-    User recipient = mock(User.class);
-    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
     Notification structured =
         bookingNotification(
             5L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
@@ -109,16 +106,6 @@ class DashboardBookingNotificationMessagesTest {
         bookingNotification(
             6L, "Booking 6 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
 
-    controller.setUserManager(userManager);
-    ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
-    ReflectionTestUtils.setField(
-        controller,
-        "bookingMessageFormatter",
-        new BookingNotificationMessageFormatter(
-            new JsonMessageSource(), "https://rspace.example.org"));
-    ReflectionTestUtils.setField(
-        controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
-    when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
     when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
 
     Map<Long, String> british =

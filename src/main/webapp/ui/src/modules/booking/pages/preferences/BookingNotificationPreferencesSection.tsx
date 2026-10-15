@@ -110,12 +110,7 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
   useEffect(() => {
     if (!dirty) {
       reset(form, {
-        initialInput: formInput({
-          autoSubscribeOwnedItems: preferences.autoSubscribeOwnedItems,
-          notifyOwnActions: preferences.notifyOwnActions,
-    notifyOnCreated: preferences.notifyOnCreated,
-          notifyOnCancelled: preferences.notifyOnCancelled,
-        }),
+        initialInput: formInput(preferences),
       });
     }
   }, [dirty, form, preferences.autoSubscribeOwnedItems, preferences.notifyOwnActions, preferences.notifyOnCreated, preferences.notifyOnCancelled]);
@@ -153,7 +148,7 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             checked={notifyOnCreated.input === true}
             disabled={pending}
             inputRef={notifyOnCreated.props.ref}
-            onCheckedChange={(checked) => notifyOnCreated.onChange(checked)}
+            onCheckedChange={notifyOnCreated.onChange}
           />
           <NotificationToggle
             id="booking-notify-on-cancelled"
@@ -161,7 +156,7 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
             checked={notifyOnCancelled.input === true}
             disabled={pending}
             inputRef={notifyOnCancelled.props.ref}
-            onCheckedChange={(checked) => notifyOnCancelled.onChange(checked)}
+            onCheckedChange={notifyOnCancelled.onChange}
           />
         </div>
         <BookingNotificationChoiceFields
@@ -195,11 +190,7 @@ function BookingNotificationPreferencesForUser({ subjectId }: { subjectId: numbe
           size="sm"
           disabled={pending || !dirty}
           aria-busy={pending}
-          className={
-            saved
-              ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-              : undefined
-          }
+          variant={saved ? "saved" : "default"}
         >
           {saved ? <CheckIcon aria-hidden="true" /> : null}
           {saved

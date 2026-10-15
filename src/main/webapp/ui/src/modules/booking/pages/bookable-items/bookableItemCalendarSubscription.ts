@@ -73,19 +73,22 @@ function requireEtag(response: Response): string {
   return etag;
 }
 
+async function fetchSubscriptionStatus(
+  path: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<UserCalendarSubscriptionStatus> {
+  const response = await requireSuccess(await fetchWithUiToken(path, { headers: apiV2Headers(token), signal }));
+  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
+  return { ...status, etag: requireEtag(response) };
+}
+
 export async function fetchCalendarSubscriptionStatus(
   configurationId: number,
   token: string,
   signal?: AbortSignal,
 ): Promise<UserCalendarSubscriptionStatus> {
-  const response = await requireSuccess(
-    await fetchWithUiToken(calendarSubscriptionPath(configurationId), {
-      headers: apiV2Headers(token),
-      signal,
-    }),
-  );
-  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
-  return { ...status, etag: requireEtag(response) };
+  return fetchSubscriptionStatus(calendarSubscriptionPath(configurationId), token, signal);
 }
 
 /** Returns the caller's link, issuing one only when none exists. Repeating it is safe. */
@@ -116,26 +119,20 @@ async function issueLink(path: string, token: string, etag?: string): Promise<Us
   return { ...created, etag: requireEtag(response) };
 }
 
-export async function revokeCalendarSubscription(configurationId: number, token: string): Promise<void> {
-  const response = await fetchWithUiToken(calendarSubscriptionPath(configurationId), {
-    method: "DELETE",
-    headers: apiV2Headers(token),
-  });
+async function revokeSubscription(path: string, token: string): Promise<void> {
+  const response = await fetchWithUiToken(path, { method: "DELETE", headers: apiV2Headers(token) });
   if (response.status !== 204) throw await parseApiV2Problem(response);
+}
+
+export async function revokeCalendarSubscription(configurationId: number, token: string): Promise<void> {
+  return revokeSubscription(calendarSubscriptionPath(configurationId), token);
 }
 
 export async function fetchUserCalendarSubscriptionStatus(
   token: string,
   signal?: AbortSignal,
 ): Promise<UserCalendarSubscriptionStatus> {
-  const response = await requireSuccess(
-    await fetchWithUiToken(userCalendarSubscriptionPath, {
-      headers: apiV2Headers(token),
-      signal,
-    }),
-  );
-  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
-  return { ...status, etag: requireEtag(response) };
+  return fetchSubscriptionStatus(userCalendarSubscriptionPath, token, signal);
 }
 
 export async function createUserCalendarSubscription(token: string): Promise<UserCalendarSubscriptionCreated> {
@@ -150,11 +147,7 @@ export async function rotateUserCalendarSubscription(
 }
 
 export async function revokeUserCalendarSubscription(token: string): Promise<void> {
-  const response = await fetchWithUiToken(userCalendarSubscriptionPath, {
-    method: "DELETE",
-    headers: apiV2Headers(token),
-  });
-  if (response.status !== 204) throw await parseApiV2Problem(response);
+  return revokeSubscription(userCalendarSubscriptionPath, token);
 }
 
 export async function fetchItemCalendarLinks(token: string, signal?: AbortSignal): Promise<ItemCalendarLink[]> {
