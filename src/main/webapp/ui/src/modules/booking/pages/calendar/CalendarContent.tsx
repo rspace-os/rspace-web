@@ -38,12 +38,11 @@ export function CalendarContent() {
     setEventWhere,
     setItemWhere,
     setMineOnly,
-    location,
     myItemsOnly,
     setMyItemsOnly,
-    targetItemExpression,
     target,
     targetName,
+    replaceSearch,
   } = useCalendarContentData();
 
   return (
@@ -73,13 +72,7 @@ export function CalendarContent() {
           ? {
               globalId: target,
               name: targetName,
-              onRemove: () => {
-                // Keep the date and the nuqs-owned filters; only the route's item focus is removed.
-                const search = new URLSearchParams(location.searchStr);
-                search.delete("target");
-                const query = search.toString();
-                void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
-              },
+              onRemove: () => replaceSearch("target"),
             }
           : undefined
       }
@@ -114,11 +107,7 @@ export function CalendarContent() {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) => {
-        const search = new URLSearchParams(location.searchStr);
-        search.set("date", nextDate);
-        void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true });
-      }}
+      onDateChange={(nextDate) => replaceSearch("date", nextDate)}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);

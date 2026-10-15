@@ -117,11 +117,21 @@ export function openingWindowsOnDate(
   displayTimezone: string,
   schedule: OpeningSchedule & { timezone: string },
 ): Array<{ start: string; end: string }> {
-  const format = (instant: string) =>
-    formatMinuteWithDayOffset(date, displayTimezone, instantToDayMinute(instant, date, displayTimezone));
+  return openingRangesOnDate(date, displayTimezone, schedule).map(({ startMinute, endMinute }) => ({
+    start: formatMinuteWithDayOffset(date, displayTimezone, startMinute),
+    end: formatMinuteWithDayOffset(date, displayTimezone, endMinute),
+  }));
+}
+
+/** Every scheduling-zone opening interval intersecting the viewer's day, as minute offsets from that day. */
+export function openingRangesOnDate(
+  date: string,
+  displayTimezone: string,
+  schedule: OpeningSchedule & { timezone: string },
+): Array<{ startMinute: number; endMinute: number }> {
   return openingIntervals(schedule, schedule.timezone, zonedDayBounds(date, displayTimezone)).map((opening) => ({
-    start: format(opening.start),
-    end: format(opening.end),
+    startMinute: instantToDayMinute(opening.start, date, displayTimezone),
+    endMinute: instantToDayMinute(opening.end, date, displayTimezone),
   }));
 }
 

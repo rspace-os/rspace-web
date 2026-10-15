@@ -108,9 +108,15 @@ export function useAllBookableItemsData({
   const candidateWhere = candidateFilter ? serializeRsqlExpression(candidateFilter) : undefined;
   const usesAvailability = hasAvailabilityFilter(filters.expression);
   const quickMode = availabilityMode(filters.expression);
-  const quickFilterLabels = {
-    "available-now": t("allBookableItems.quickFilters.availableNow"),
-    "free-later-today": t("allBookableItems.quickFilters.freeLaterToday"),
+  const quickFilterText = {
+    "available-now": {
+      label: t("allBookableItems.quickFilters.availableNow"),
+      description: t("allBookableItems.quickFilters.availableNowDescription"),
+    },
+    "free-later-today": {
+      label: t("allBookableItems.quickFilters.freeLaterToday"),
+      description: t("allBookableItems.quickFilters.freeLaterTodayDescription"),
+    },
   } as const;
   const bounds = useMemo(
     () =>
@@ -225,7 +231,7 @@ export function useAllBookableItemsData({
     invalidFilter,
     runtimeFilterBlocked,
     quickMode,
-    quickFilterLabels,
+    quickFilterText,
     bounds,
     quickIndex,
     quickFilterPending,

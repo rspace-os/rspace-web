@@ -23,10 +23,10 @@ import {
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
-import { type CalendarView, calendarDates, calendarLayouts, calendarViews } from "./BookingEventsCalendar";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
 import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
 import { useCalendarEvents } from "./calendarEvents";
+import { type CalendarView, calendarDates, calendarLayouts, calendarViews } from "./calendarLayoutUtils";
 
 const calendarResourceSourceConfig = {
   ...bookingConfigurationConfig,
@@ -38,7 +38,7 @@ const calendarResourceSourceConfig = {
 const calendarSearchOptions = { history: "replace", clearOnDefault: true } as const;
 const calendarSearchParser = parseAsString.withDefault("").withOptions(calendarSearchOptions);
 const calendarWhereParser = parseAsString.withOptions(calendarSearchOptions);
-// The view and layout live in the query string, so a reload or shared link reopens the same calendar.
+// The view and layout live in the query string, so a reload or a shared link reopens the same calendar.
 const calendarViewParser = parseAsStringLiteral(calendarViews).withDefault("day").withOptions(calendarSearchOptions);
 const calendarLayoutParser = parseAsStringLiteral(calendarLayouts)
   .withDefault("resources")
@@ -115,6 +115,13 @@ export function useCalendarContentData() {
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
   const location = useLocation();
+  const replaceSearch = (key: string, value?: string) => {
+    const search = new URLSearchParams(location.searchStr);
+    if (value === undefined) search.delete(key);
+    else search.set(key, value);
+    const query = search.toString();
+    void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
+  };
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -392,11 +399,10 @@ export function useCalendarContentData() {
     setEventWhere,
     setItemWhere,
     setMineOnly,
-    location,
     myItemsOnly,
     setMyItemsOnly,
-    targetItemExpression,
     target,
     targetName,
+    replaceSearch,
   };
 }

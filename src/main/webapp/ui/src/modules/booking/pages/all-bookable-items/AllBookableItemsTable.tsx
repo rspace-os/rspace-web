@@ -51,7 +51,7 @@ export function AllBookableItemsTable({
   filters,
   runtimeFilterBlocked,
   quickMode,
-  quickFilterLabels,
+  quickFilterText,
   bounds,
   quickIndex,
   quickFilterPending,
@@ -163,15 +163,12 @@ export function AllBookableItemsTable({
       },
       ...(["available-now", "free-later-today"] as const).map((mode) => {
         // The two categories are mutually exclusive, so each chip explains which items it counts.
-        const description =
-          mode === "available-now"
-            ? t("allBookableItems.quickFilters.availableNowDescription")
-            : t("allBookableItems.quickFilters.freeLaterTodayDescription");
+        const text = quickFilterText[mode];
         return {
           id: mode,
           label: (
             <>
-              {quickFilterLabels[mode]}
+              {text.label}
               <span
                 aria-hidden="true"
                 className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
@@ -186,7 +183,7 @@ export function AllBookableItemsTable({
               </span>
             </>
           ),
-          description,
+          description: text.description,
           icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
           pressed: quickMode === mode,
           disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
