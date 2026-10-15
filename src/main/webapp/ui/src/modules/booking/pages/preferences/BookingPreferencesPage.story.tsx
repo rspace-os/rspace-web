@@ -12,7 +12,7 @@ import { Suspense } from "react";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
-import { isPlainDate } from "@/modules/booking/domain/bookingTime";
+import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
@@ -40,10 +40,7 @@ export function BookingPreferencesPageStory() {
         createRoute({
           getParentRoute: () => booking,
           path: "/calendar/",
-          validateSearch: (search: Record<string, unknown>): { date?: string; target?: string } => ({
-            date: typeof search.date === "string" && isPlainDate(search.date) ? search.date : undefined,
-            ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
-          }),
+          validateSearch: bookingFormSearch,
           component: CalendarPage,
         }),
       ]),
