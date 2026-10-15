@@ -92,17 +92,29 @@ booking transaction; a rollback produces no emails or live count updates.
 
 ## Notification times
 
-Booking notifications retain their original booking details in the existing notification
-JSON field. The dashboard and notification dialog format these details using the recipient's
-current Booking display preferences. Browser mode uses the timezone captured at login;
-custom and institution modes use their configured zones. Each time includes its UTC offset
-so repeated daylight-saving hours remain distinguishable. Older booking messages with the
-original ISO interval are also formatted at display time.
+Booking notifications keep their booking ID, instrument identity, and UTC instants in the existing
+JSON data field. The dashboard and notification dialog format these details using the recipient's
+current display preferences. Browser mode uses the timezone captured at login. Custom and Institution
+modes use their configured zones. Each time includes its UTC offset so repeated daylight-saving
+hours remain distinguishable.
 
-The saved message used by email is human-readable in the recipient's configured timezone.
-Browser mode falls back to the institution timezone because email has no browser session.
-Booking message text is decoded once as text in the legacy notification UI, preserving
-literal instrument names without interpreting them as HTML.
+Dashboard messages keep the app language's words and date order. With Automatic, the clock follows
+the browser region from the preferred specific locale in `Accept-Language`; when the header has no
+specific region, the app language supplies the usual clock. `LocaleFilter` replaces the request
+locale with the app language, so the dashboard reads the region from `Accept-Language`. ICU applies
+the Unicode `hc` clock cycle. An explicit H12 or H24 Booking preference overrides the browser-region
+clock.
+
+Email has no browser region. Browser timezone mode falls back to the institution zone; Custom and
+Institution modes use their configured zones. With Automatic, the email clock follows the app
+language; an explicit H12 or H24 preference overrides that clock. The stored email message remains
+human-readable in the recipient's configured timezone.
+
+Older rows have no structured data. The dashboard reformats the final ISO interval only when both
+trailing values match the booking message shape. Existing rows remain readable without migration.
+The legacy notification UI decodes the booking message once as text, preserving literal instrument
+names without interpreting them as HTML. Email delivery also respects
+`BROADCAST_NOTIFICATIONS_BY_EMAIL`.
 
 ## Verification
 

@@ -3,7 +3,7 @@ import { ChevronRightIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/common/ui/collapsible";
@@ -103,12 +103,7 @@ function AuditTimestamp({ value }: { value: string }) {
   const timeFormat = useBookingTimeFormat();
   return (
     <time dateTime={value}>
-      {new Intl.DateTimeFormat(i18n.language, {
-        dateStyle: "medium",
-        timeStyle: "long",
-        hourCycle: bookingHourCycle(timeFormat),
-        timeZone: "UTC",
-      }).format(new Date(value))}
+      {formatBookingDateTime(value, "UTC", i18n.language, timeFormat, { timeStyle: "long" })}
     </time>
   );
 }
