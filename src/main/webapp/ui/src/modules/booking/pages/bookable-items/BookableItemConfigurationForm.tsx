@@ -1,7 +1,11 @@
 import { Form, isDirty, useForm } from "@formisch/react";
+import { pick } from "es-toolkit";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
+import {
+  SchedulingSettingsFields,
+  schedulingSettingsFieldNames,
+} from "@/modules/booking/configuration/schedulingSettings";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import {
@@ -13,13 +17,8 @@ import {
 
 function configurationInput(configuration: BookingConfiguration): BookingConfigurationUpdateInput {
   return {
-    enabled: configuration.enabled,
-    slotGranularityMinutes: configuration.slotGranularityMinutes,
+    ...pick(configuration, ["enabled", ...schedulingSettingsFieldNames]),
     openingHours: configuration.openingHours.map((entry) => ({ ...entry })),
-    bufferBeforeMinutes: configuration.bufferBeforeMinutes,
-    bufferAfterMinutes: configuration.bufferAfterMinutes,
-    maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
-    allowDoubleBooking: configuration.allowDoubleBooking,
   };
 }
 
