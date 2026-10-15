@@ -218,8 +218,8 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     entity.setVersionPin(versionPin);
     // Capture the exact audit revision the pinned version maps to. Null version means "latest",
     // which the snapshot resolver resolves dynamically at read time, so no revision is stored.
-    // For a CSV-imported link the revision can still be null here (skipTargetCheck): the card
-    // reports such a pin as "Version not found" to readers.
+    // A CSV import (skipTargetCheck) can store a pin to a version that does not exist; its revision
+    // is then null. The card's "Version not found" comes from a live lookup, not from this field.
     Long revisionId =
         versionPin == null
             ? null

@@ -113,7 +113,9 @@ public class CsvSampleImporterLinkFieldTest {
 
   @Test
   void aPinnedVersionTheReadableTargetLacksFailsThatRowOnly() {
-    when(parser.linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    User importingUser = new User("u");
+    when(parser.linkTargetResolver.targetExistsAndIsReadable(any(), eq(importingUser)))
+        .thenReturn(true);
     when(parser.snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 1L, 7L))
         .thenReturn(null);
     when(parser.snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 1L, 3L))
@@ -123,7 +125,7 @@ public class CsvSampleImporterLinkFieldTest {
             new String[] {"s1", "IsDerivedFrom https://rspace.example.com/globalId/SA1v7"},
             new String[] {"s2", "IsDerivedFrom https://rspace.example.com/globalId/SA1v3"});
 
-    importer.convertLinesToSamples(result, lines, Map.of(0, "name"), 2, new User("u"));
+    importer.convertLinesToSamples(result, lines, Map.of(0, "name"), 2, importingUser);
 
     assertEquals(1, result.getErrorCount());
     assertEquals(1, result.getSuccessCount());

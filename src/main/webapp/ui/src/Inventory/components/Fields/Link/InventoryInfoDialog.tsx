@@ -40,10 +40,6 @@ function recordEndpoint(globalId: string, versionPin?: number | null): string | 
   return versionPin == null ? base : `${base}/versions/${versionPin}`;
 }
 
-function isNotFound(error: Error): boolean {
-  return isAxiosError(error) && error.response?.status === 404;
-}
-
 type State =
   | { state: "init" }
   | { state: "loading" }
@@ -92,6 +88,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
   }, [props.open, props.globalId, props.versionPin, factory]);
 
   if (!props.open) return null;
+  const baseGlobalId = props.globalId.replace(/v\d+$/, "");
   return (
     <Dialog
       open={props.open}
@@ -105,10 +102,10 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
         {state.state === "loading" && <Skeleton variant="rectangular" width="100%" height={240} />}
         {state.state === "fail" && (
           <Alert severity="error">
-            {props.versionPin != null && isNotFound(state.error)
+            {props.versionPin != null && isAxiosError(state.error) && state.error.response?.status === 404
               ? t("fields.link.infoDialog.versionNotFound", {
                   versionPin: props.versionPin,
-                  globalId: props.globalId.replace(/v\d+$/, ""),
+                  globalId: baseGlobalId,
                 })
               : state.error.message}
           </Alert>
@@ -131,7 +128,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
                     i18nKey="inventory:fields.link.infoDialog.versionNote"
                     values={{
                       versionPin: props.versionPin,
-                      globalId: props.globalId.replace(/v\d+$/, ""),
+                      globalId: baseGlobalId,
                     }}
                   />
                 </Typography>

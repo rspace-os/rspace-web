@@ -1427,47 +1427,8 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
             + targetGlobalId
             + "v7\n";
 
-    MvcResult result =
-        mockMvc
-            .perform(
-                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
-                    .file(
-                        new MockMultipartFile(
-                            "file", "links.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)))
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .param("recordType", "SAMPLES")
-                    .header("apiKey", apiKey))
-            .andReturn();
-    assertNull(result.getResolvedException());
-    ApiInventoryImportSampleParseResult parseResult =
-        getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class);
-    ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
-    templateInfo.setExpiryDate(null);
-    templateInfo.getFields().remove(0); // Name column maps to the sample name
-
-    String settingsJson =
-        "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\"}, \"templateInfo\": "
-            + JacksonUtil.toJson(templateInfo)
-            + "} }";
-    result =
-        mockMvc
-            .perform(
-                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
-                    .file(
-                        new MockMultipartFile(
-                            "samplesFile",
-                            "links.csv",
-                            "text/csv",
-                            csv.getBytes(StandardCharsets.UTF_8)))
-                    .contentType(MediaType.MULTIPART_FORM_DATA)
-                    .param("importSettings", settingsJson)
-                    .header("apiKey", apiKey))
-            .andReturn();
-    assertNull(result.getResolvedException());
-
-    ApiInventoryImportResult importResult =
-        getFromJsonResponseBody(result, ApiInventoryImportResult.class);
-    ApiInventoryImportSampleImportResult sampleResults = importResult.getSampleResult();
+    ApiInventoryImportSampleImportResult sampleResults =
+        importSamplesCsv(csv, buildLinkColumnSampleImportSettings(csv));
     assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, sampleResults.getStatus());
     assertEquals(0, sampleResults.getSuccessCount(), "the valid row is not saved either");
     assertEquals(1, sampleResults.getErrorCount());

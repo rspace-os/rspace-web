@@ -22,7 +22,7 @@ export type LinkTargetSummary = {
    * Whether the version pinned in the requested id has a recorded revision.
    * Absent for an unpinned request or an unreadable target (ADR-0002).
    */
-  pinnedVersionFound?: boolean | null;
+  pinnedVersionFound?: boolean;
 };
 
 /**

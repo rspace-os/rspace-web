@@ -21,6 +21,7 @@ import {
   iconForGlobalId,
   isInventoryGlobalId,
   openUrlForTarget,
+  pinnedGlobalId,
   prefixOf,
   supportsVersionPin,
 } from "./iconForGlobalId";
@@ -55,18 +56,6 @@ function openHrefForLink(link: ExtraInventoryLink, targetIsInventory: boolean): 
   return openUrlForTarget(link.targetGlobalId, link.versionPin);
 }
 
-/**
- * Asks the summary about the pinned version, or the bare target when unpinned.
- * Rebuilt from the base id: rows written before ids were normalised can already
- * carry a suffix, which the pin, not the stored id, decides.
- */
-function summaryIdForLink(link: ExtraInventoryLink): string {
-  const match = GLOBAL_ID_PATTERN.exec(link.targetGlobalId);
-  if (!match) return link.targetGlobalId;
-  const baseId = `${match[1]}${match[2]}`;
-  return link.versionPin == null ? baseId : `${baseId}v${link.versionPin}`;
-}
-
 export interface LinkFieldProps {
   /** Field name (the user-supplied label of the ExtraLinkField row) */
   name: string;
@@ -93,7 +82,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const [infoOpen, setInfoOpen] = useState(false);
   // current state of the target; null while loading or unresolvable, which
   // renders the card exactly as before the summary existed (no pill, Open on)
-  const targetSummary = useLinkTargetSummary(summaryIdForLink(props.link));
+  const targetSummary = useLinkTargetSummary(pinnedGlobalId(props.link.targetGlobalId, props.link.versionPin));
   const targetDeleted = targetSummary?.deleted === true;
   // a target the viewer cannot resolve gets "No access", whatever its kind. The server
   // redacts unreadable and nonexistent targets identically (ADR-0002), so this covers both
@@ -180,8 +169,9 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             // the tooltip names both causes without saying which applies, and avoids
             // implying the viewer once had access: the pill also shows to viewers who
             // never did, and to ones whose target never existed (ADR-0002)
-            <Tooltip title={t("fields.link.linkField.noPermission")}>
+            <Tooltip describeChild title={t("fields.link.linkField.noPermission")}>
               <Chip
+                tabIndex={0}
                 size="small"
                 color="warning"
                 label={t("fields.link.linkField.noAccess")}
@@ -190,8 +180,12 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             </Tooltip>
           )}
           {pinnedVersionMissing && (
-            <Tooltip title={t("fields.link.linkField.versionNotFoundDetail", { version: props.link.versionPin })}>
+            <Tooltip
+              describeChild
+              title={t("fields.link.linkField.versionNotFoundDetail", { version: props.link.versionPin })}
+            >
               <Chip
+                tabIndex={0}
                 size="small"
                 color="warning"
                 label={t("fields.link.linkField.versionNotFound")}

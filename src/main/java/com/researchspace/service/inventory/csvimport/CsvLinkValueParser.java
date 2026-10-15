@@ -35,6 +35,7 @@ public class CsvLinkValueParser {
    * @param importer the importing user. A pinned version is checked only when they can read the
    *     target: an item they cannot read, or that does not exist, still imports as a dangling link,
    *     so the import never reveals whether it, or a version of it, exists (ADR-0002, RSDEV-1530).
+   *     The lookups need the calling {@code *Manager}'s transaction, as the CSV import provides.
    * @return the link described by the cell, flagged lenient so a target that no longer exists on
    *     this server still imports as a dangling link
    * @throws IllegalArgumentException with a user-facing message when the cell is not a link, or

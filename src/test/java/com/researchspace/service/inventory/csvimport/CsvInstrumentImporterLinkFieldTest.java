@@ -103,14 +103,16 @@ public class CsvInstrumentImporterLinkFieldTest {
 
   @Test
   void aPinnedVersionTheReadableTargetLacksFailsTheRow() {
-    when(parser.linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(true);
+    User importingUser = new User("u");
+    when(parser.linkTargetResolver.targetExistsAndIsReadable(any(), eq(importingUser)))
+        .thenReturn(true);
     when(parser.snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SD, 7L, 5L))
         .thenReturn(null);
     List<String[]> lines =
         List.<String[]>of(
             new String[] {"i1", "IsCalibratedBy https://rspace.example.com/globalId/SD7v5"});
 
-    importer.convertLinesToInstruments(result, lines, Map.of(0, "name"), 2, new User("u"));
+    importer.convertLinesToInstruments(result, lines, Map.of(0, "name"), 2, importingUser);
 
     assertEquals(1, result.getErrorCount());
     assertEquals(0, result.getSuccessCount());

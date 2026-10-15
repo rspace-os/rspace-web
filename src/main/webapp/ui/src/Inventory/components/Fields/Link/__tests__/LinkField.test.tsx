@@ -431,10 +431,10 @@ describe("LinkField", () => {
     expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("SA42");
   });
 
-  it("does not double a version suffix a stored target id already carries", () => {
+  it("asks about the pinned version, not a suffix the stored target id already carries", () => {
     // rows written before the backend normalised stored ids can carry "vN" already
-    renderField({ link: { ...baseLink, targetGlobalId: "SA42v4", versionPin: 4 } });
-    expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("SA42v4");
+    renderField({ link: { ...baseLink, targetGlobalId: "SA42v4", versionPin: 7 } });
+    expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("SA42v7");
   });
 
   it("asks about the bare target when a stored id carries a suffix but the link is not pinned", () => {
@@ -498,6 +498,49 @@ describe("LinkField", () => {
 
     expect(screen.getByText("inventory:fields.link.linkField.versionNotFound")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toBeInTheDocument();
+  });
+
+  it("puts the Version not found pill in the tab order, described by its detail", async () => {
+    const user = userEvent.setup();
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: "a sample",
+      type: "SAMPLE",
+      deleted: false,
+      readable: true,
+      pinnedVersionFound: false,
+    });
+    renderField({ link: { ...baseLink, versionPin: 7 } });
+
+    await user.tab(); // the info button
+    await user.tab(); // the pill
+    const pill = document.activeElement;
+    expect(pill).toHaveTextContent("inventory:fields.link.linkField.versionNotFound");
+    // the pill keeps its visible text as its name; the detail only describes it
+    expect(pill).not.toHaveAttribute("aria-label");
+    await user.hover(screen.getByText("inventory:fields.link.linkField.versionNotFound"));
+    await screen.findByRole("tooltip");
+    expect(pill).toHaveAccessibleDescription("inventory:fields.link.linkField.versionNotFoundDetail");
+  });
+
+  it("puts the No access pill in the tab order, described by why", async () => {
+    const user = userEvent.setup();
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: null,
+      type: null,
+      deleted: false,
+      readable: false,
+    });
+    renderField();
+
+    await user.tab(); // the info button is disabled, so the pill comes first
+    const pill = document.activeElement;
+    expect(pill).toHaveTextContent("inventory:fields.link.linkField.noAccess");
+    expect(pill).not.toHaveAttribute("aria-label");
+    await user.hover(screen.getByText("inventory:fields.link.linkField.noAccess"));
+    await screen.findByRole("tooltip");
+    expect(pill).toHaveAccessibleDescription("inventory:fields.link.linkField.noPermission");
   });
 
   it("shows no Version not found pill when the pinned version resolves", () => {

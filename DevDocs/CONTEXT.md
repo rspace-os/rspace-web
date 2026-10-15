@@ -29,7 +29,8 @@ now: "Pinned to v3" on the card, a `v3` suffix on the Global ID in an exported
 CSV cell, in a registered address and in an API payload. Saved only when the
 target has that version, and that is checked after the viewer's right to read
 the target, so an unreadable target never has its versions looked at
-(ADR-0002). A link with no pin follows the latest version.
+(ADR-0002). A link with no pin follows the latest version. Notebooks have no
+versions, so a link to a notebook cannot be pinned.
 _Avoid_: versioned link, locked link, frozen link
 
 **Dangling link**:
