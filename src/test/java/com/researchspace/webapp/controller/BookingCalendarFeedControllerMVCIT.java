@@ -1,5 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -76,12 +80,10 @@ class BookingCalendarFeedControllerMVCIT {
         .andExpect(content().contentType("text/calendar;charset=UTF-8"))
         .andExpect(header().string("Cache-Control", "private, no-store"))
         .andExpect(header().string("Referrer-Policy", "no-referrer"))
-        .andExpect(content().string(org.hamcrest.Matchers.startsWith("BEGIN:VCALENDAR")))
-        .andExpect(content().string(org.hamcrest.Matchers.containsString(fixture.marker())))
-        .andExpect(content().string(org.hamcrest.Matchers.endsWith("END:VCALENDAR\r\n")))
-        .andExpect(
-            content()
-                .string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("<html"))));
+        .andExpect(content().string(startsWith("BEGIN:VCALENDAR")))
+        .andExpect(content().string(containsString(fixture.marker())))
+        .andExpect(content().string(endsWith("END:VCALENDAR\r\n")))
+        .andExpect(content().string(not(containsString("<html"))));
   }
 
   private void assertMissing(String token) throws Exception {
