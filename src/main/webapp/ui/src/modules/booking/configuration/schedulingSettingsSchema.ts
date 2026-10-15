@@ -5,6 +5,11 @@ import {
   BookingTimezoneModeSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
+  INCREMENT_UNITS,
+  validIncrementForSchedule,
+  validMaximumForIncrement,
+} from "@/modules/booking/domain/bookingIncrement";
+import {
   ALL_ISO_WEEKDAYS,
   MAX_BOOKING_DURATION_MINUTES,
   OpeningHoursSchema,
@@ -13,6 +18,8 @@ import {
 export const MAX_BUFFER_MINUTES = 10_080;
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
+  "incrementUnit",
+  "alignToIncrement",
   "openingHours",
   "bufferBeforeMinutes",
   "bufferAfterMinutes",
@@ -45,7 +52,7 @@ export const SchedulingSettingsSchema = v.pipe(
     ["slotGranularityMinutes"],
   ),
   v.forward(
-    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
+    v.check((settings) => validMaximumForIncrement(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -56,7 +63,7 @@ export const BookingSettingsSchema = v.pipe(
     ...bookingDisplayPreferencesEntries,
   }),
   v.forward(
-    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
+    v.check((settings) => validMaximumForIncrement(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -79,7 +86,7 @@ export const BookingAdminSettingsSchema = v.pipe(
     configurationVersion: v.number(),
   }),
   v.forward(
-    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
+    v.check((settings) => validMaximumForIncrement(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -99,12 +106,3 @@ export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };
-
-export function validMaximumBookingDuration(maximumMinutes: number, granularityMinutes: number): boolean {
-  return (
-    maximumMinutes === 0 ||
-    (maximumMinutes >= granularityMinutes &&
-      maximumMinutes <= MAX_BOOKING_DURATION_MINUTES &&
-      maximumMinutes % granularityMinutes === 0)
-  );
-}

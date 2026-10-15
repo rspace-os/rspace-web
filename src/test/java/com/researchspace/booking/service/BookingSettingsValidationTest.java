@@ -40,28 +40,34 @@ class BookingSettingsValidationTest {
 
   @Test
   void rejectsEmptyDuplicateOutOfRangeAndIncompleteDays() {
-    assertEquals(Reason.OPENING_HOURS, rejection(List.of()));
+    assertEquals(Reason.OPENING_HOURS, rejection(patch(List.of()).merge(current)));
     assertEquals(
         Reason.OPENING_HOURS,
         rejection(
-            List.of(
-                new BookingOpeningHoursEntry(1, "09:00", "12:00"),
-                new BookingOpeningHoursEntry(1, "13:00", "17:00"))));
+            patch(
+                    List.of(
+                        new BookingOpeningHoursEntry(1, "09:00", "12:00"),
+                        new BookingOpeningHoursEntry(1, "13:00", "17:00")))
+                .merge(current)));
     assertEquals(
         Reason.OPENING_HOURS,
-        rejection(List.of(new BookingOpeningHoursEntry(0, "09:00", "17:00"))));
+        rejection(
+            patch(List.of(new BookingOpeningHoursEntry(0, "09:00", "17:00"))).merge(current)));
     assertEquals(
         Reason.OPENING_HOURS,
-        rejection(Arrays.asList(new BookingOpeningHoursEntry(1, "09:00", "17:00"), null)));
-    assertEquals(
-        Reason.OPENING_HOURS, rejection(List.of(new BookingOpeningHoursEntry(1, null, "17:00"))));
+        rejection(
+            patch(Arrays.asList(new BookingOpeningHoursEntry(1, "09:00", "17:00"), null))
+                .merge(current)));
     assertEquals(
         Reason.OPENING_HOURS,
-        rejection(List.of(new BookingOpeningHoursEntry(1, "18:00", "08:00"))));
+        rejection(patch(List.of(new BookingOpeningHoursEntry(1, null, "17:00"))).merge(current)));
+    assertEquals(
+        Reason.OPENING_HOURS,
+        rejection(
+            patch(List.of(new BookingOpeningHoursEntry(1, "18:00", "08:00"))).merge(current)));
   }
 
-  private Reason rejection(List<BookingOpeningHoursEntry> hours) {
-    BookingSchedulingSettings settings = patch(hours).merge(current);
+  private Reason rejection(BookingSchedulingSettings settings) {
     return assertThrows(
             InvalidBookingSchedulingSettingsException.class,
             () -> BookingSettingsValidation.requireValid(settings))
@@ -93,12 +99,7 @@ class BookingSettingsValidationTest {
                     new BookingOpeningHoursEntry(1, "00:00", "24:00"),
                     new BookingOpeningHoursEntry(3, "00:00", "24:00")))
             .merge(twoDays);
-    assertEquals(
-        Reason.GRANULARITY,
-        assertThrows(
-                InvalidBookingSchedulingSettingsException.class,
-                () -> BookingSettingsValidation.requireValid(disconnected))
-            .reason());
+    assertEquals(Reason.GRANULARITY, rejection(disconnected));
     BookingSchedulingSettings alwaysOpen =
         new BookingSchedulingSettings(
             527040,
@@ -121,7 +122,9 @@ class BookingSettingsValidationTest {
             BookingSettingsValidation.requireValid(
                 patch(List.of(new BookingOpeningHoursEntry(2, "18:00", "24:00"))).merge(current)));
     assertEquals(
-        Reason.GRANULARITY, rejection(List.of(new BookingOpeningHoursEntry(2, "23:59", "24:00"))));
+        Reason.GRANULARITY,
+        rejection(
+            patch(List.of(new BookingOpeningHoursEntry(2, "23:59", "24:00"))).merge(current)));
     BookingSchedulingSettings oneMinute =
         new BookingSchedulingSettings.Patch(
                 1L,

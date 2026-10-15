@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { CalendarResourceSchedule } from "../CalendarResourceSchedule";
 import type { BookingCalendarResource } from "../calendarLayoutUtils";
 
@@ -26,7 +27,7 @@ const twoDayConfiguration = {
   slotGranularityMinutes: 2880,
   incrementUnit: "DAYS",
   alignToIncrement: false,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+  openingHours: [...ALWAYS_OPEN.openingHours],
 
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,

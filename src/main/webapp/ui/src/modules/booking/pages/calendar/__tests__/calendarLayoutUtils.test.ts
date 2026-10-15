@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { IncrementUnit } from "@/modules/booking/domain/bookingIncrement";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { nextFreeRange, scrollCalendarWithArrowKeys, shiftDate, startOfWeek } from "../calendarLayoutUtils";
 
@@ -42,7 +43,7 @@ function policy(
     slotGranularityMinutes,
     incrementUnit,
     alignToIncrement,
-    openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+    ...ALWAYS_OPEN,
 
     maxBookingDurationMinutes: 0,
   });

@@ -1,13 +1,14 @@
 import { Temporal } from "@js-temporal/polyfill";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { timelineAdjuster, timelineRangeToDraft } from "@/modules/booking/creation/timelineRange";
+import { timelineAdjuster } from "@/modules/booking/creation/timelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import {
   type BookingTimeFormat,
   type BookingWindowDraft,
   dayMinuteToZonedTime,
   instantToDayMinute,
+  wallClockDraftFromInstants,
 } from "@/modules/booking/domain/bookingTime";
 import { period } from "./DayTimelineEvent";
 import type { VerticalDayTimelineEditing, VerticalDayTimelineSchedule } from "./VerticalDayTimeline";
@@ -146,7 +147,7 @@ export function useVerticalDayTimelineInteraction({
   const commitRange = React.useCallback(
     (next: IsoRange) => {
       if (!editing || !editingRange || rangesEqual(next, editingRange)) return;
-      editing.onChange(timelineRangeToDraft(next, timezone));
+      editing.onChange(wallClockDraftFromInstants(next.start, next.end, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
           period: timeRange(next, date, timezone, timeFormat),

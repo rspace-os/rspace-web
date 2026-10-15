@@ -4,6 +4,7 @@ import { TriangleAlertIcon } from "lucide-react";
 import * as React from "react";
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { BOOKING_ERROR_CLASS_NAME } from "@/modules/booking/components/bookingWarningStyles";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import {
   BookingForm,
@@ -32,6 +33,7 @@ import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/f
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { cn } from "@/modules/common/utils/cn";
 import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
 
 /** A save rejected because the booking changed after the version the draft was saved against. */
@@ -116,14 +118,12 @@ export function InlineBookingEditor({
           "calendar",
           createBookingEventNotice({
             event: updated,
-            message:
+            message: t(
               updated.kind === "MAINTENANCE"
-                ? t("bookings.feedback.maintenanceUpdated", {
-                    itemName: submission.target.name,
-                  })
-                : t("bookings.feedback.eventUpdated", {
-                    itemName: submission.target.name,
-                  }),
+                ? "bookings.feedback.maintenanceUpdated"
+                : "bookings.feedback.eventUpdated",
+              { itemName: submission.target.name },
+            ),
             timeZone: timezone,
             searchStr,
           }),
@@ -279,7 +279,7 @@ export function InlineBookingEditor({
               ref={staleAlertRef}
               tabIndex={-1}
               variant="destructive"
-              className="border-red-700 bg-red-100 text-red-950 outline-none focus-visible:ring-3 focus-visible:ring-ring/40 *:data-[slot=alert-description]:text-red-950 dark:border-red-400 dark:bg-red-950 dark:text-red-200 dark:*:data-[slot=alert-description]:text-red-200"
+              className={cn(BOOKING_ERROR_CLASS_NAME, "outline-none focus-visible:ring-3 focus-visible:ring-ring/40")}
             >
               <TriangleAlertIcon aria-hidden="true" />
               <AlertDescription>{t("calendar.inlineEditor.staleEdit")}</AlertDescription>

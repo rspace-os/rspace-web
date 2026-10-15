@@ -83,17 +83,6 @@ export function BookingSidebar() {
   const preferences = useBookingDisplayPreferences();
   const canOpenBookableItems = useCanOpenBookableItemsAdministration();
   const sidebarItems = items(todayInTimeZone(preferences.timeZone), currentUser.hasSysAdminRole, canOpenBookableItems);
-  const labels = {
-    dashboard: t("sidebar.dashboard"),
-    calendar: t("sidebar.calendar"),
-    allItems: t("sidebar.allItems"),
-    addBooking: t("sidebar.addBooking"),
-    myBookings: t("sidebar.myBookings"),
-    preferences: t("sidebar.preferences"),
-    administration: t("sidebar.administration"),
-    settings: t("sidebar.settings"),
-    bookableItems: t("sidebar.bookableItems"),
-  };
 
   return (
     <SidebarGroup>
@@ -105,18 +94,17 @@ export function BookingSidebar() {
               // shadcn's Base UI sidebar-menu-collapsible example, with the Collapsible rendered as the
               // <li> so the menu stays a valid ul > li list, and Base UI's data-open in place of data-state.
               <Collapsible key={item.key} className="group/collapsible" defaultOpen render={<SidebarMenuItem />}>
-                <CollapsibleTrigger render={<SidebarMenuButton tooltip={labels[item.key]} />}>
+                <CollapsibleTrigger render={<SidebarMenuButton tooltip={t(`sidebar.${item.key}`)} />}>
                   <item.icon />
-                  <span>{labels[item.key]}</span>
+                  <span>{t(`sidebar.${item.key}`)}</span>
                   <ChevronRightIcon className="ml-auto transition-transform group-data-open/collapsible:rotate-90" />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <SidebarMenuSub>
                     {item.children.map((child) => (
                       <SidebarMenuSubItem key={child.key}>
-                        {/* an <a> without href has no role, so unrouted sub-items render as buttons */}
-                        <SidebarMenuSubButton render={"link" in child ? child.link : <button type="button" />}>
-                          <span>{labels[child.key]}</span>
+                        <SidebarMenuSubButton render={child.link}>
+                          <span>{t(`sidebar.${child.key}`)}</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
@@ -125,12 +113,9 @@ export function BookingSidebar() {
               </Collapsible>
             ) : (
               <SidebarMenuItem key={item.key}>
-                <SidebarMenuButton
-                  tooltip={labels[item.key]}
-                  render={"link" in item ? item.link : <button type="button" />}
-                >
+                <SidebarMenuButton tooltip={t(`sidebar.${item.key}`)} render={item.link}>
                   <item.icon />
-                  <span>{labels[item.key]}</span>
+                  <span>{t(`sidebar.${item.key}`)}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ),
