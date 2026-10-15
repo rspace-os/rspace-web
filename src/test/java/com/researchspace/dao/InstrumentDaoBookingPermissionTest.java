@@ -8,7 +8,7 @@ import static com.researchspace.booking.service.BookingResourceRoleScheme.OWNER;
 import static com.researchspace.booking.service.BookingResourceRoleScheme.VIEWER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -110,7 +110,7 @@ class InstrumentDaoBookingPermissionTest extends SpringTransactionalTest {
     }
 
     InstrumentDao.BookingItemAccess access = projected.get(instrumentId);
-    assertTrue(access != null);
+    assertNotNull(access);
     assertEquals(instrument.get().getOwner().getUsername(), access.ownerUsername());
     assertEquals(
         subject.hasSysadminRole()

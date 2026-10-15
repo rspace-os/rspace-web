@@ -8,6 +8,7 @@ import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.InternalFilter;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
@@ -21,83 +22,11 @@ import java.util.function.Function;
 public final class ApiV2TimeSlotBookingResource {
 
   private static final CollectionFieldType<String> CALENDAR_OPTION =
-      new CollectionFieldType<>() {
-        @Override
-        public Class<String> javaType() {
-          return String.class;
-        }
-
-        @Override
-        public InputKind inputKind() {
-          return InputKind.STRING;
-        }
-
-        @Override
-        public String parse(String value) {
-          return value;
-        }
-
-        @Override
-        public Object serialize(String value) {
-          return value;
-        }
-
-        @Override
-        public Set<com.researchspace.model.collection.Operator> operators() {
-          return Set.of(
-              com.researchspace.model.collection.Operator.EQUAL,
-              com.researchspace.model.collection.Operator.NOT_EQUAL,
-              com.researchspace.model.collection.Operator.IN,
-              com.researchspace.model.collection.Operator.NOT_IN,
-              com.researchspace.model.collection.Operator.EXISTS);
-        }
-
-        @Override
-        public boolean sortable() {
-          return false;
-        }
-      };
-
+      CollectionFieldTypes.text(
+          Set.of(Operator.EQUAL, Operator.NOT_EQUAL, Operator.IN, Operator.NOT_IN, Operator.EXISTS),
+          false);
   private static final CollectionFieldType<String> CALENDAR_PERSON =
-      new CollectionFieldType<>() {
-        @Override
-        public Class<String> javaType() {
-          return String.class;
-        }
-
-        @Override
-        public InputKind inputKind() {
-          return InputKind.STRING;
-        }
-
-        @Override
-        public String parse(String value) {
-          return value;
-        }
-
-        @Override
-        public Object serialize(String value) {
-          return value;
-        }
-
-        @Override
-        public Set<com.researchspace.model.collection.Operator> operators() {
-          return Set.of(
-              com.researchspace.model.collection.Operator.CONTAINS,
-              com.researchspace.model.collection.Operator.LIKE,
-              com.researchspace.model.collection.Operator.EXISTS);
-        }
-
-        @Override
-        public boolean supportsWildcards() {
-          return true;
-        }
-
-        @Override
-        public boolean sortable() {
-          return false;
-        }
-      };
+      CollectionFieldTypes.text(Set.of(Operator.CONTAINS, Operator.LIKE, Operator.EXISTS), true);
 
   private static final Relationship<TimeSlotBooking> TARGET =
       ApiV2BookingConfigurationResource.instrumentTarget(

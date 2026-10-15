@@ -8,7 +8,6 @@ import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.QueryConstraint;
-import com.researchspace.service.resourceaccess.ResourceRoleSchemeRegistry;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -22,13 +21,6 @@ import java.util.Set;
  * authorization-safe.
  */
 public final class BookingEventReadAccess implements AccessFunction {
-
-  public BookingEventReadAccess() {}
-
-  /** Keeps the configuration bean source-compatible while access comes from the target policy. */
-  public BookingEventReadAccess(ResourceRoleSchemeRegistry ignored) {
-    this();
-  }
 
   @Override
   public AccessResult check(AccessContext context) {

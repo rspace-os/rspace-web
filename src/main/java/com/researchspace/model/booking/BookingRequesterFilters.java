@@ -3,6 +3,7 @@ package com.researchspace.model.booking;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Keeps requester filters from revealing who booked an event that the caller sees only as busy.
@@ -21,23 +22,33 @@ public final class BookingRequesterFilters {
 
   private BookingRequesterFilters() {}
 
-  /** Returns the filter with every requester comparison limited to visible requesters. */
-  public static FilterExpression visibleRequestersOnly(FilterExpression filter, Long subjectId) {
-    if (filter == null) {
-      return null;
-    }
+  /** Shared server-side requirement that the caller can read the related Inventory item. */
+  public static final FilterExpression.Comparison READABLE_ITEM =
+      new FilterExpression.Comparison("target", Operator.EXISTS, List.of(true), false);
+
+  /** Maps every leaf comparison while preserving nested And/Or nodes and child order. */
+  public static FilterExpression mapComparisons(
+      FilterExpression filter, Function<FilterExpression.Comparison, FilterExpression> mapper) {
+    if (filter == null) return null;
     if (filter instanceof FilterExpression.And and) {
       return new FilterExpression.And(
-          and.children().stream().map(child -> visibleRequestersOnly(child, subjectId)).toList());
+          and.children().stream().map(child -> mapComparisons(child, mapper)).toList());
     }
     if (filter instanceof FilterExpression.Or or) {
       return new FilterExpression.Or(
-          or.children().stream().map(child -> visibleRequestersOnly(child, subjectId)).toList());
+          or.children().stream().map(child -> mapComparisons(child, mapper)).toList());
     }
-    FilterExpression.Comparison comparison = (FilterExpression.Comparison) filter;
-    return namesRequester(comparison.field())
-        ? new FilterExpression.And(List.of(comparison, requesterVisible(subjectId)))
-        : comparison;
+    return mapper.apply((FilterExpression.Comparison) filter);
+  }
+
+  /** Returns the filter with every requester comparison limited to visible requesters. */
+  public static FilterExpression visibleRequestersOnly(FilterExpression filter, Long subjectId) {
+    return mapComparisons(
+        filter,
+        comparison ->
+            namesRequester(comparison.field())
+                ? new FilterExpression.And(List.of(comparison, requesterVisible(subjectId)))
+                : comparison);
   }
 
   /**
@@ -45,14 +56,12 @@ public final class BookingRequesterFilters {
    * own request. Both selectors exist on every Booking event description.
    */
   public static FilterExpression requesterVisible(Long subjectId) {
-    FilterExpression readableItem =
-        new FilterExpression.Comparison("target", Operator.EXISTS, List.of(true), false);
     if (subjectId == null) {
-      return readableItem;
+      return READABLE_ITEM;
     }
     return new FilterExpression.Or(
         List.of(
-            readableItem,
+            READABLE_ITEM,
             new FilterExpression.Comparison(
                 "requesterId", Operator.EQUAL, List.of(subjectId), false)));
   }

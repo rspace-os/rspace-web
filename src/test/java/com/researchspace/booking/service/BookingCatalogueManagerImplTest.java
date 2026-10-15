@@ -90,16 +90,8 @@ class BookingCatalogueManagerImplTest {
     when(instruments.getReadableParentLocationSummaries(Set.of(101L), caller)).thenReturn(Map.of());
 
     BookingCatalogueManager.Page result =
-        manager.search(
-            null,
-            null,
-            ResourceRequest.unpaged(null),
-            List.of(),
-            List.of(),
-            BookingCatalogueManager.Capability.CREATE_BOOKING,
-            3,
-            7,
-            caller);
+        search(
+            ResourceRequest.unpaged(null), BookingCatalogueManager.Capability.CREATE_BOOKING, 3, 7);
 
     assertEquals(3, result.page());
     assertEquals(7, result.pageSize());
@@ -130,16 +122,8 @@ class BookingCatalogueManagerImplTest {
         .thenReturn(new ResourcePage<>(List.of(), 0));
 
     BookingCatalogueManager.Page result =
-        manager.search(
-            null,
-            null,
-            ResourceRequest.unpaged(null),
-            List.of(),
-            List.of(),
-            BookingCatalogueManager.Capability.CREATE_BOOKING,
-            4,
-            9,
-            caller);
+        search(
+            ResourceRequest.unpaged(null), BookingCatalogueManager.Capability.CREATE_BOOKING, 4, 9);
 
     assertEquals(List.of(), result.items());
     assertEquals(4, result.page());
@@ -161,8 +145,7 @@ class BookingCatalogueManagerImplTest {
         new FilterExpression.Comparison("id", Operator.GREATER_THAN, List.of(0L), false);
     RuntimeFieldSelection runtime =
         new RuntimeFieldSelection(
-            Map.of("target.customFields.SF1", org.mockito.Mockito.mock(ResolvedRuntimeField.class)),
-            Set.of());
+            Map.of("target.customFields.SF1", mock(ResolvedRuntimeField.class)), Set.of());
     ResourceRequest request =
         new ResourceRequest(
             callerFilter,
@@ -177,7 +160,7 @@ class BookingCatalogueManagerImplTest {
     when(instruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
     when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
 
-    manager.search(null, null, request, List.of(), List.of(), null, 3, 7, caller);
+    search(request, null, 3, 7);
 
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations).getConfigurations(captured.capture(), same(caller));
@@ -193,5 +176,11 @@ class BookingCatalogueManagerImplTest {
         assertInstanceOf(QueryConstraint.And.class, catalogueRequest.serverConstraint());
     assertSame(callerConstraint, restrictions.children().get(0));
     assertInstanceOf(FilterExpression.And.class, restrictions.children().get(1));
+  }
+
+  private BookingCatalogueManager.Page search(
+      ResourceRequest request, BookingCatalogueManager.Capability capability, int page, int size) {
+    return manager.search(
+        null, null, request, List.of(), List.of(), capability, page, size, caller);
   }
 }

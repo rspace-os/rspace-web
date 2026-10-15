@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -13,8 +14,11 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,24 +26,23 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class BookingItemPermissions {
 
-  @org.springframework.beans.factory.annotation.Autowired
-  private com.researchspace.booking.dao.BookingCalendarSubscriptionDao subscriptions;
-
-  @org.springframework.beans.factory.annotation.Autowired
-  private org.springframework.beans.factory.ObjectProvider<FreshBookingPermissionReader>
-      freshReader;
-
   private final InventoryPermissionUtils inventoryPermissions;
   private final InstrumentDao instruments;
   private final BookingResourceRoleScheme roleScheme;
+  private final BookingCalendarSubscriptionDao subscriptions;
+  private final ObjectProvider<BookingFreshPermissionReader> freshReader;
 
   public BookingItemPermissions(
       InventoryPermissionUtils inventoryPermissions,
       InstrumentDao instruments,
-      BookingResourceRoleScheme roleScheme) {
+      BookingResourceRoleScheme roleScheme,
+      BookingCalendarSubscriptionDao subscriptions,
+      ObjectProvider<BookingFreshPermissionReader> freshReader) {
     this.inventoryPermissions = inventoryPermissions;
     this.instruments = instruments;
     this.roleScheme = roleScheme;
+    this.subscriptions = subscriptions;
+    this.freshReader = freshReader;
   }
 
   /**
@@ -58,10 +61,15 @@ public class BookingItemPermissions {
   /** Resolves one configuration against the target item's current permission state. */
   @Transactional(readOnly = true)
   public ResolvedResourceAccess resolve(BookingConfiguration configuration, User subject) {
-    if (!eligibleSubject(subject) || configuration == null || configuration.getTarget() == null) {
+    return resolve(configuration == null ? null : configuration.getTarget(), subject);
+  }
+
+  /** Resolves a target reference against the item's current permission state. */
+  @Transactional(readOnly = true)
+  public ResolvedResourceAccess resolve(BookableTargetReference target, User subject) {
+    if (!eligibleSubject(subject) || target == null) {
       return ResolvedResourceAccess.none();
     }
-    BookableTargetReference target = configuration.getTarget();
     if (target.type() != BookableTargetType.INSTRUMENT || target.id() == null) {
       return ResolvedResourceAccess.none();
     }
@@ -84,8 +92,8 @@ public class BookingItemPermissions {
             .map(BookingConfiguration::getTarget)
             .filter(target -> target != null && target.type() == BookableTargetType.INSTRUMENT)
             .map(BookableTargetReference::id)
-            .filter(java.util.Objects::nonNull)
-            .collect(java.util.stream.Collectors.toSet());
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
     Map<Long, InstrumentDao.BookingItemAccess> targets =
         eligible && !targetIds.isEmpty()
             ? instruments.getBookingItemAccess(targetIds, subject)
@@ -166,7 +174,7 @@ public class BookingItemPermissions {
             capability ->
                 !capability.equals(BookingResourceRoleScheme.MANAGE_ASSIGNMENTS)
                     && !capability.equals(BookingResourceRoleScheme.MANAGE_OWNERS))
-        .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        .collect(Collectors.toUnmodifiableSet());
   }
 
   private static boolean eligibleSubject(User subject) {

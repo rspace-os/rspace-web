@@ -129,7 +129,7 @@ class ApiV2ResourceConfigTest {
               "target.customFields.SF1==BSL-2",
               registration.description(),
               catalog.registry(),
-              registration.runtimeFieldContext(actor, catalog::runtimeFieldsOf));
+              registration.runtimeFieldContext(actor));
       assertEquals("instruments", request.runtime().find("target.customFields.SF1").readResource());
       assertEquals("target", request.runtime().relationshipFor("target.customFields.SF1"));
 

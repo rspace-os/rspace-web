@@ -2,6 +2,7 @@ package com.researchspace.booking.dao;
 
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
+import com.researchspace.model.booking.BookingConfigurationDefaults;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
@@ -22,7 +23,9 @@ public class BookingCalendarSubscriptionDaoHibernate
     // replace with affected-user fences if measured contention warrants the broader mutation audit.
     getSession()
         .createNativeQuery(
-            "select id from BookingConfigurationDefaults where id = 1 for update", Long.class)
+            "select id from BookingConfigurationDefaults where id = :defaultsId for update",
+            Long.class)
+        .setParameter("defaultsId", BookingConfigurationDefaults.SINGLETON_ID)
         .getSingleResult();
   }
 

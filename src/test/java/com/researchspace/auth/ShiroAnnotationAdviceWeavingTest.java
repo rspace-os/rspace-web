@@ -118,11 +118,15 @@ public class ShiroAnnotationAdviceWeavingTest {
   @Test
   public void annotatedBeanIsProxiedByTheAdvisor() throws Exception {
     assertTrue(
-        securityXmlUsesClassBasedProxying(),
-        "security.xml must keep the outer advisor proxy class-based for concrete service beans");
-    assertTrue(
         AopUtils.isAopProxy(context.getBean(GuardedService.class)),
         "the @RequiresPermissions bean was not proxied: annotation advice is not being woven");
+  }
+
+  @Test
+  public void securityXmlKeepsClassBasedProxying() throws Exception {
+    assertTrue(
+        securityXmlUsesClassBasedProxying(),
+        "security.xml must keep the outer advisor proxy class-based for concrete service beans");
   }
 
   @Test
@@ -187,13 +191,9 @@ public class ShiroAnnotationAdviceWeavingTest {
    * missing or renamed, {@link #exactlyOneAssignableTo} fails with the full declared list.
    */
   private static List<Class<?>> beanClassesDeclaredInSecurityXml() throws Exception {
-    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    factory.setNamespaceAware(true);
-    Document doc = factory.newDocumentBuilder().parse(SECURITY_XML.toFile());
-    NodeList beans = doc.getElementsByTagNameNS("*", "bean");
     List<Class<?>> classes = new ArrayList<>();
-    for (int i = 0; i < beans.getLength(); i++) {
-      String className = ((Element) beans.item(i)).getAttribute("class");
+    for (Element bean : securityXmlBeans()) {
+      String className = bean.getAttribute("class");
       if (className.isEmpty()) {
         continue;
       }
@@ -207,12 +207,7 @@ public class ShiroAnnotationAdviceWeavingTest {
   }
 
   private static boolean securityXmlUsesClassBasedProxying() throws Exception {
-    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-    factory.setNamespaceAware(true);
-    Document doc = factory.newDocumentBuilder().parse(SECURITY_XML.toFile());
-    NodeList beans = doc.getElementsByTagNameNS("*", "bean");
-    for (int i = 0; i < beans.getLength(); i++) {
-      Element bean = (Element) beans.item(i);
+    for (Element bean : securityXmlBeans()) {
       if (!AbstractAdvisorAutoProxyCreator.class.isAssignableFrom(
           Class.forName(bean.getAttribute("class")))) {
         continue;
@@ -226,6 +221,18 @@ public class ShiroAnnotationAdviceWeavingTest {
       }
     }
     return false;
+  }
+
+  private static List<Element> securityXmlBeans() throws Exception {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+    factory.setNamespaceAware(true);
+    Document doc = factory.newDocumentBuilder().parse(SECURITY_XML.toFile());
+    NodeList beans = doc.getElementsByTagNameNS("*", "bean");
+    List<Element> elements = new ArrayList<>(beans.getLength());
+    for (int i = 0; i < beans.getLength(); i++) {
+      elements.add((Element) beans.item(i));
+    }
+    return elements;
   }
 
   private static Class<?> exactlyOneAssignableTo(List<Class<?>> declared, Class<?> contract) {

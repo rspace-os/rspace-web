@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.controller;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -85,7 +86,9 @@ class ResourceAccessControllerMVCIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.openingHours.length()").value(7))
         .andExpect(jsonPath("$.roleSources.length()").value(1))
-        .andExpect(jsonPath("$.roleSources[0]").value(Map.of("kind", "IMPLICIT", "role", "OWNER")))
+        .andExpect(
+            jsonPath("$.roleSources[0]")
+                .value(equalTo(Map.of("kind", "IMPLICIT", "role", "OWNER"))))
         .andExpect(jsonPath("$.ownerHealth").doesNotExist());
 
     mockMvc
@@ -93,7 +96,7 @@ class ResourceAccessControllerMVCIT {
             get("/api/v2/booking-configurations/" + configurationId)
                 .header("apiKey", fixture.sysadminKey()))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.ownerHealth").value(Map.of()));
+        .andExpect(jsonPath("$.ownerHealth").value(equalTo(Map.of())));
   }
 
   @Test
