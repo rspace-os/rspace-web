@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,10 +34,13 @@ import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
 import java.util.List;
@@ -105,7 +109,11 @@ class BookingCatalogueManagerImplTest {
         .thenReturn(new ResourcePage<>(List.of(configuration), 2));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of(101L)))
         .thenReturn(Map.of(101L, instrument));
-    when(instruments.getReadableParentLocationSummaries(Set.of(101L), caller)).thenReturn(Map.of());
+    when(instruments.getReadableParentLocationSummaries(Set.of(101L), caller))
+        .thenReturn(
+            Map.of(
+                101L,
+                new InstrumentParentLocationSummary(44L, "Workbench", ContainerType.WORKBENCH)));
 
     BookingCatalogueManager.Page result =
         search(
@@ -119,6 +127,9 @@ class BookingCatalogueManagerImplTest {
     assertEquals(7, result.pageSize());
     assertEquals(2, result.total());
     assertEquals(openingHours, result.items().get(0).openingHours());
+    assertEquals(
+        new BookingCatalogueManager.Location("BE44", "Workbench"),
+        result.items().get(0).location());
     ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations)
         .getConfigurations(request.capture(), same(caller), same(accessRestriction));
@@ -151,17 +162,7 @@ class BookingCatalogueManagerImplTest {
     when(configurations.getConfigurations(any(ResourceRequest.class), same(caller), same(inTwelve)))
         .thenReturn(new ResourcePage<>(List.of(), 0));
 
-    manager.search(
-        null,
-        null,
-        ResourceRequest.unpaged(location(12L)),
-        List.of(),
-        List.of(),
-        null,
-        false,
-        1,
-        20,
-        caller);
+    search(ResourceRequest.unpaged(location(12L)), null, false, 1, 20);
 
     ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(configurations).getConfigurations(request.capture(), same(caller), same(inTwelve));
@@ -174,25 +175,23 @@ class BookingCatalogueManagerImplTest {
   void stillListsTheItemsOfALocationInsideADisjunction() {
     when(bookingInstruments.findConfiguredInstrumentIdsInReadableParents(Set.of(12L), caller))
         .thenReturn(Set.of(5L));
-    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
         .thenReturn(new ResourcePage<>(List.of(), 0));
     FilterExpression none =
         new FilterExpression.Comparison("id", Operator.EQUAL, List.of(0L), false);
 
-    manager.search(
-        null,
-        null,
+    search(
         ResourceRequest.unpaged(new FilterExpression.Or(List.of(location(12L), none))),
-        List.of(),
-        List.of(),
         null,
         false,
         1,
-        20,
-        caller);
+        20);
 
     ArgumentCaptor<ResourceRequest> request = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(configurations).getConfigurations(request.capture(), same(caller));
+    verify(configurations)
+        .getConfigurations(
+            request.capture(), same(caller), isNull(RsqlCollectionQuery.Predicate.class));
     assertEquals(
         new FilterExpression.Or(
             List.of(
@@ -205,9 +204,7 @@ class BookingCatalogueManagerImplTest {
     return new FilterExpression.Comparison(
         "location",
         Operator.EQUAL,
-        List.of(
-            new com.researchspace.model.collection.ResourceReference<>(
-                "booking-locations", containerId)),
+        List.of(new ResourceReference<>("booking-locations", containerId)),
         false);
   }
 
@@ -217,10 +214,7 @@ class BookingCatalogueManagerImplTest {
         .thenReturn(
             new ResourcePage<>(
                 List.of(
-                    new com.researchspace.model.inventory.InstrumentParentLocationSummary(
-                        7L,
-                        "WB reader",
-                        com.researchspace.model.inventory.Container.ContainerType.WORKBENCH)),
+                    new InstrumentParentLocationSummary(7L, "WB reader", ContainerType.WORKBENCH)),
                 1));
 
     BookingCatalogueManager.LocationPage byGlobalId =
@@ -283,7 +277,8 @@ class BookingCatalogueManagerImplTest {
             ResourceFieldSelections.root(FieldSelection.exclude(Set.of("id"))),
             new IncludeTree(Map.of("target", IncludeTree.empty())),
             runtime);
-    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
         .thenReturn(new ResourcePage<>(List.of(), 0));
     when(bookingInstruments.getBookingRelationshipTargets(Set.of())).thenReturn(Map.of());
     when(instruments.getReadableParentLocationSummaries(Set.of(), caller)).thenReturn(Map.of());
@@ -291,7 +286,9 @@ class BookingCatalogueManagerImplTest {
     search(request, null, false, 3, 7);
 
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
-    verify(configurations).getConfigurations(captured.capture(), same(caller));
+    verify(configurations)
+        .getConfigurations(
+            captured.capture(), same(caller), isNull(RsqlCollectionQuery.Predicate.class));
     ResourceRequest catalogueRequest = captured.getValue();
     assertSame(callerFilter, catalogueRequest.filter());
     assertSame(runtime, catalogueRequest.runtime());
@@ -442,7 +439,8 @@ class BookingCatalogueManagerImplTest {
     List<BookingConfiguration> first =
         java.util.stream.LongStream.rangeClosed(1, batch).mapToObj(id -> open(id)).toList();
     List<BookingConfiguration> second = List.of(open(batch + 1L), open(batch + 2L));
-    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
         .thenAnswer(
             invocation -> {
               long after = afterId(invocation.<ResourceRequest>getArgument(0).serverConstraint());
@@ -487,7 +485,8 @@ class BookingCatalogueManagerImplTest {
     buffered.setBufferAfterMinutes(20);
     BookingConfiguration closedMonday = open(3);
     closedMonday.setOpeningHours(hours("00:00", "24:00", 2, 3, 4, 5, 6, 7));
-    when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
+    when(configurations.getConfigurations(
+            any(ResourceRequest.class), same(caller), isNull(RsqlCollectionQuery.Predicate.class)))
         .thenReturn(new ResourcePage<>(List.of(buffered, open(2), closedMonday), 3));
     when(bookings.findConfirmedEventIntervals(any(), any(), any()))
         .thenReturn(

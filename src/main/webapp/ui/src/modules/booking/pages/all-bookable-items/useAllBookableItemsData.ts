@@ -23,7 +23,7 @@ import { calendarSubscriptionQueryKey } from "../bookable-items/bookableItemCale
 import type { BookableItemsBulkAction } from "../bookable-items/bookableItemLifecycleHelpers";
 import { useEligibleBookingTargets } from "../bookable-items/bookableItemsAdministrationAccess";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
-import { availabilityMode, createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
+import { createAllBookableItemsConfig, filterExpression } from "./allBookableItemsTableConfig";
 import {
   type AllBookableItem,
   type AvailabilityQuickFilter,
@@ -121,7 +121,17 @@ export function useAllBookableItemsData({
     runtimeFieldState.error !== null ||
     runtimeFieldState.missing.length > 0 ||
     invalidFilter;
-  const quickMode = availabilityMode(filters.expression);
+  const quickMode = serverFilter.supported ? serverFilter.availability : undefined;
+  const quickFilterText = {
+    "available-now": {
+      label: t("allBookableItems.quickFilters.availableNow"),
+      description: t("allBookableItems.quickFilters.availableNowDescription"),
+    },
+    "free-later-today": {
+      label: t("allBookableItems.quickFilters.freeLaterToday"),
+      description: t("allBookableItems.quickFilters.freeLaterTodayDescription"),
+    },
+  } as const;
   const bounds = useMemo(
     () =>
       displayInterval(
@@ -281,5 +291,6 @@ export function useAllBookableItemsData({
     selectionPending,
     setFailedBulkAction,
     token,
+    quickFilterText,
   };
 }
