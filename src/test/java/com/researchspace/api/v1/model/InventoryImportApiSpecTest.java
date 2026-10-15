@@ -6,12 +6,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -109,6 +113,77 @@ class InventoryImportApiSpecTest {
     }
 
     assertEquals(List.of(), dangling);
+  }
+
+  /**
+   * In OpenAPI 3.0 {@code nullable} applies only beside {@code type}, and each {@code allOf} member
+   * is validated on its own, so a member that declares a type rejects null.
+   */
+  @Test
+  void nullableReferencesAcceptNull() {
+    List<String> rejectingNull = new ArrayList<>();
+    findNullableReferencesRejectingNull(spec, "", rejectingNull);
+
+    assertEquals(List.of(), rejectingNull);
+  }
+
+  static Stream<Arguments> enumAndJavaEnum() {
+    return Stream.of(
+        Arguments.of("InventoryRecordInfo/properties/type", ApiInventoryRecordType.class),
+        Arguments.of("InventoryImportPartialResult/properties/type", ApiInventoryRecordType.class),
+        Arguments.of(
+            "InventoryImportPartialResult/properties/status", InventoryBulkOperationStatus.class),
+        Arguments.of(
+            "InventoryImportResult/properties/status", InventoryBulkOperationStatus.class));
+  }
+
+  @ParameterizedTest(name = "[{index}] {0}")
+  @MethodSource("enumAndJavaEnum")
+  void enumListsTheJavaEnumValues(String property, Class<? extends Enum<?>> javaEnum) {
+    Set<String> declared = new TreeSet<>();
+    spec.at("/components/schemas/" + property + "/enum").forEach(v -> declared.add(v.asText()));
+
+    assertEquals(
+        Arrays.stream(javaEnum.getEnumConstants())
+            .map(Enum::name)
+            .collect(Collectors.toCollection(TreeSet::new)),
+        declared);
+  }
+
+  private static void findNullableReferencesRejectingNull(
+      JsonNode node, String path, List<String> found) {
+    if (node.path("nullable").asBoolean() && !node.has("type")) {
+      for (JsonNode member : node.path("allOf")) {
+        if (declaresTypeWithoutNullable(member)) {
+          found.add(path);
+          break;
+        }
+      }
+    }
+    if (node.isArray()) {
+      for (int i = 0; i < node.size(); i++) {
+        findNullableReferencesRejectingNull(node.get(i), path + "/" + i, found);
+      }
+    } else {
+      node.fieldNames()
+          .forEachRemaining(
+              name ->
+                  findNullableReferencesRejectingNull(node.get(name), path + "/" + name, found));
+    }
+  }
+
+  private static boolean declaresTypeWithoutNullable(JsonNode schema) {
+    String ref = schema.path("$ref").asText();
+    JsonNode resolved = ref.isEmpty() ? schema : spec.at(ref.substring(1));
+    if (resolved.has("type") && !resolved.path("nullable").asBoolean()) {
+      return true;
+    }
+    for (JsonNode member : resolved.path("allOf")) {
+      if (declaresTypeWithoutNullable(member)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
