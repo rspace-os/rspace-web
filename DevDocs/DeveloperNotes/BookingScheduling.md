@@ -5,6 +5,8 @@ Each row has an integral ISO `dayOfWeek` from 1 for Monday to 7 for Sunday, a
 `start` in `HH:mm`, and an exclusive `end` in `HH:mm` or `24:00`. The start must
 precede the end. Schedules contain one to seven unique weekdays and return in
 weekday order. Omitted weekdays are closed.
+Initial defaults contain seven independent `00:00` to `24:00` entries. To close
+all days, disable bookings; an empty week is invalid.
 
 The collection declares the three row fields through `BookingOpeningHoursCodec`.
 The singleton settings PATCH and persistence converter use that same contract.

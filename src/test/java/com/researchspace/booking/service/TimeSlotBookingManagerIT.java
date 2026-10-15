@@ -41,12 +41,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -718,11 +721,11 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
     Instant afterStart15 = start.plus(1, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, afterStart15, afterStart15.plus(1, ChronoUnit.HOURS)));
     Instant afterStart19 = start.plus(1, ChronoUnit.HOURS).plus(19, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, afterStart19, afterStart19.plus(1, ChronoUnit.HOURS)));
     Instant afterStart20 = start.plus(1, ChronoUnit.HOURS).plus(20, ChronoUnit.MINUTES);
     create(target, owner, afterStart20, afterStart20.plus(1, ChronoUnit.HOURS));
@@ -731,11 +734,11 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     create(target, owner, laterStart, laterStart.plus(1, ChronoUnit.HOURS));
     Instant beforeStart15 = laterStart.minus(1, ChronoUnit.HOURS).minus(15, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, beforeStart15, beforeStart15.plus(1, ChronoUnit.HOURS)));
     Instant beforeStart19 = laterStart.minus(1, ChronoUnit.HOURS).minus(19, ChronoUnit.MINUTES);
     assertThrows(
-        BookingOverlapException.class,
+        BookingBufferConflictException.class,
         () -> create(target, owner, beforeStart19, beforeStart19.plus(1, ChronoUnit.HOURS)));
     Instant beforeStart20 = laterStart.minus(1, ChronoUnit.HOURS).minus(20, ChronoUnit.MINUTES);
     create(target, owner, beforeStart20, beforeStart20.plus(1, ChronoUnit.HOURS));
@@ -860,101 +863,100 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     }
   }
 
-  @Test
-  public void closingTheWeekdayUnderTheConfigurationLockRejectsAConcurrentCreate()
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("openingHoursChangeScenarios")
+  public void openingHoursChangesUnderConfigurationLockRejectInvalidWrites(
+      String scenario, boolean timeEdit, BookingSchedulingSettings.Patch settings)
       throws Exception {
     User owner = createInitAndLoginAnyUser();
-    ApiInstrument created = createBasicInstrumentForUser(owner, "Open days concurrency scope");
-    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
-    // 2030-01-07 is a Monday in the configuration's UTC scheduling zone.
-    var command =
-        new TimeSlotBookingManager.Create(
-            new ResolvedBookableTarget(setup.target(), setup.instrument()),
-            Date.from(Instant.parse("2030-01-07T10:00:00Z")),
-            Date.from(Instant.parse("2030-01-07T11:00:00Z")),
-            "Concurrent open days test");
-
-    Throwable result =
-        writeWhileSettingsChangeHoldsTheLock(
-            setup,
-            owner,
-            new BookingSchedulingSettings.Patch(
-                null, hours("00:00", "24:00", 2, 3, 4, 5, 6, 7), null, null, null, null),
-            () -> bookingManager.createBooking(command, owner, owner));
-
-    assertTrue(
-        result instanceof BookingPolicyException policy
-            && policy.reason() == BookingPolicyException.Reason.OPENING_HOURS,
-        () -> "Unexpected create result: " + result);
-    assertEquals(
-        Integer.valueOf(0),
-        jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND deleted ="
-                + " 0",
-            Integer.class,
-            setup.configurationId()));
-  }
-
-  @Test
-  public void addingAnExclusiveExceptionUnderTheConfigurationLockRejectsAConcurrentTimeEdit()
-      throws Exception {
-    User owner = createInitAndLoginAnyUser();
-    ApiInstrument created = createBasicInstrumentForUser(owner, "Exception concurrency scope");
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Opening hours concurrency scope");
     Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
     ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
     Instant start = Instant.parse("2030-01-07T10:00:00Z");
-    var existing =
-        bookingManager.createBooking(
-            new TimeSlotBookingManager.Create(
-                target, Date.from(start), Date.from(start.plus(1, ChronoUnit.HOURS)), null),
-            owner,
-            owner);
-    // Moves the booking to Tuesday 10:00-11:00, which the Tuesday exception excludes.
-    var moveToTuesday =
+    TimeSlotBooking existing =
+        timeEdit
+            ? bookingManager.createBooking(
+                new TimeSlotBookingManager.Create(
+                    target, Date.from(start), Date.from(start.plus(1, ChronoUnit.HOURS)), null),
+                owner,
+                owner)
+            : null;
+    TimeSlotBookingManager.Patch moveToTuesday =
         new TimeSlotBookingManager.Patch(
             Date.from(start.plus(1, ChronoUnit.DAYS)),
             Date.from(start.plus(1, ChronoUnit.DAYS).plus(1, ChronoUnit.HOURS)),
             false,
             null,
             null);
+    Runnable write =
+        timeEdit
+            ? () -> bookingManager.updateBooking(existing.getId(), moveToTuesday, owner, owner)
+            : () ->
+                bookingManager.createBooking(
+                    new TimeSlotBookingManager.Create(
+                        target,
+                        Date.from(start),
+                        Date.from(start.plus(1, ChronoUnit.HOURS)),
+                        "Concurrent open-hours test"),
+                    owner,
+                    owner);
 
-    Throwable result =
-        writeWhileSettingsChangeHoldsTheLock(
-            setup,
-            owner,
+    Throwable result = writeWhileSettingsChangeHoldsTheLock(setup, owner, settings, write);
+
+    if (timeEdit) {
+      assertTrue(
+          (result instanceof BookingPolicyException policy
+                  && policy.reason() == BookingPolicyException.Reason.OPENING_HOURS)
+              || result instanceof BookingConcurrentModificationException,
+          () -> "Unexpected edit result: " + result);
+      assertEquals(
+          start,
+          bookingManager
+              .getBooking(existing.getId(), owner)
+              .orElseThrow()
+              .getStartTime()
+              .toInstant());
+      BookingPolicyException retry =
+          assertThrows(
+              BookingPolicyException.class,
+              () -> bookingManager.updateBooking(existing.getId(), moveToTuesday, owner, owner));
+      assertEquals(BookingPolicyException.Reason.OPENING_HOURS, retry.reason());
+    } else {
+      assertTrue(
+          result instanceof BookingPolicyException policy
+              && policy.reason() == BookingPolicyException.Reason.OPENING_HOURS,
+          () -> "Unexpected create result: " + result);
+      assertEquals(
+          Integer.valueOf(0),
+          jdbcTemplate.queryForObject(
+              "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND deleted ="
+                  + " 0",
+              Integer.class,
+              setup.configurationId()));
+    }
+  }
+
+  private static Stream<Arguments> openingHoursChangeScenarios() {
+    return Stream.of(
+        Arguments.of(
+            "closing Monday rejects a concurrent create",
+            false,
             new BookingSchedulingSettings.Patch(
-                null,
-                List.of(
-                    new BookingOpeningHoursEntry(1, "00:00", "24:00"),
-                    new BookingOpeningHoursEntry(2, "12:00", "13:00"),
-                    new BookingOpeningHoursEntry(3, "00:00", "24:00"),
-                    new BookingOpeningHoursEntry(4, "00:00", "24:00"),
-                    new BookingOpeningHoursEntry(5, "00:00", "24:00"),
-                    new BookingOpeningHoursEntry(6, "00:00", "24:00"),
-                    new BookingOpeningHoursEntry(7, "00:00", "24:00")),
-                null,
-                null,
-                null,
-                null),
-            () -> bookingManager.updateBooking(existing.getId(), moveToTuesday, owner, owner));
+                null, hours("00:00", "24:00", 2, 3, 4, 5, 6, 7), null, null, null, null)),
+        Arguments.of(
+            "Tuesday exception rejects a concurrent time edit",
+            true,
+            new BookingSchedulingSettings.Patch(
+                null, hoursWithTuesdayException(), null, null, null, null)));
+  }
 
-    assertTrue(
-        (result instanceof BookingPolicyException policy
-                && policy.reason() == BookingPolicyException.Reason.OPENING_HOURS)
-            || result instanceof BookingConcurrentModificationException,
-        () -> "Unexpected edit result: " + result);
-    assertEquals(
-        start,
-        bookingManager
-            .getBooking(existing.getId(), owner)
-            .orElseThrow()
-            .getStartTime()
-            .toInstant());
-    BookingPolicyException retry =
-        assertThrows(
-            BookingPolicyException.class,
-            () -> bookingManager.updateBooking(existing.getId(), moveToTuesday, owner, owner));
-    assertEquals(BookingPolicyException.Reason.OPENING_HOURS, retry.reason());
+  private static List<BookingOpeningHoursEntry> hoursWithTuesdayException() {
+    return Stream.of(
+            hours("00:00", "24:00", 1),
+            List.of(new BookingOpeningHoursEntry(2, "12:00", "13:00")),
+            hours("00:00", "24:00", 3, 4, 5, 6, 7))
+        .flatMap(List::stream)
+        .toList();
   }
 
   private Throwable writeWhileSettingsChangeHoldsTheLock(

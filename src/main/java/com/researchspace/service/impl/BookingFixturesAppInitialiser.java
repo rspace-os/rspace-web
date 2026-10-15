@@ -16,6 +16,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.springframework.context.ApplicationContext;
@@ -486,7 +488,14 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     Date start = Date.from(date.atTime(startTime).atZone(zone).toInstant());
     LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
     Date end = Date.from(endDate.atTime(endTime).atZone(zone).toInstant());
-    if (bookingDao.findFirstOverlap(configuration.getId(), start, end, null).isEmpty()) {
+    if (bookingDao
+        .findFirstOverlap(
+            configuration.getId(),
+            start,
+            end,
+            null,
+            Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE))
+        .isEmpty()) {
       bookingManager.createBooking(
           new TimeSlotBookingManager.Create(target(instrument), start, end, purpose), owner, owner);
     }

@@ -118,7 +118,9 @@ class BookingAuditTrailTest {
     AuditData parsed = saved.data();
     String json = parsed.toJson();
     assertTrue(
-        json.contains("\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\",\"end\":\"17:00\"}]"),
+        json.contains(
+            "\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"00:00\",\"end\":\"24:00\"},"
+                + "{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}]"),
         json);
     assertFalse(parsed.getData().containsKey("openingStart"));
     assertFalse(parsed.getData().containsKey("openingEnd"));
@@ -179,10 +181,7 @@ class BookingAuditTrailTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(42L);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L));
-    configuration.setOpeningHours(
-        java.util.List.of(
-            new com.researchspace.model.booking.BookingOpeningHoursEntry(6, "10:00", "16:00"),
-            new com.researchspace.model.booking.BookingOpeningHoursEntry(1, "00:00", "24:00")));
+    configuration.setOpeningHours(openingHoursSnapshot());
 
     SavedRecord saved =
         savedRecord(
@@ -197,8 +196,8 @@ class BookingAuditTrailTest {
             "\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"00:00\",\"end\":\"24:00\"},"
                 + "{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}]"),
         json);
-    org.junit.jupiter.api.Assertions.assertFalse(json.contains("\"openDays\""), json);
-    org.junit.jupiter.api.Assertions.assertFalse(json.contains("\"openingExceptions\""), json);
+    assertFalse(json.contains("\"openDays\""), json);
+    assertFalse(json.contains("\"openingExceptions\""), json);
     assertEquals("booking-configurations:42", parsed.getData().get("id"));
     assertTrue(parsed.getData().get("target").toString().contains("INSTRUMENT"));
     assertEquals(AuditDomain.BOOKING, saved.historicData().getDomain());
@@ -292,6 +291,8 @@ class BookingAuditTrailTest {
   }
 
   private static List<BookingOpeningHoursEntry> openingHoursSnapshot() {
-    return List.of(new BookingOpeningHoursEntry(1, "09:00", "17:00"));
+    return List.of(
+        new BookingOpeningHoursEntry(6, "10:00", "16:00"),
+        new BookingOpeningHoursEntry(1, "00:00", "24:00"));
   }
 }
