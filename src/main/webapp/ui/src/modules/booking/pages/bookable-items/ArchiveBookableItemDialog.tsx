@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -25,23 +25,14 @@ export function ArchiveBookableItemDialog({
   onArchived: (configurationId: number) => Promise<void>;
 }) {
   const { t } = useTranslation(["booking", "common"]);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<unknown>(null);
-  const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    setDeleteError(null);
-    try {
+  const archiveMutation = useMutation({
+    mutationFn: async () => {
       await onArchive(configuration.id, requiredVersion(configuration));
       close();
       await onArchived(configuration.id);
-    } catch (error) {
-      setDeleteError(error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+    },
+  });
+  const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
 
   return (
     <AlertDialog open onOpenChange={(open) => !open && close()}>
@@ -52,18 +43,18 @@ export function ArchiveBookableItemDialog({
             {t("bookableItems.archiveDialog.description", { item: itemName })}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        {deleteError ? (
+        {archiveMutation.isError ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.archiveDialog.error", { item: itemName })}
           </p>
         ) : null}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>{t("common:actions.cancel")}</AlertDialogCancel>
+          <AlertDialogCancel disabled={archiveMutation.isPending}>{t("common:actions.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
-            disabled={isDeleting}
-            aria-busy={isDeleting}
-            onClick={() => void handleDelete()}
+            disabled={archiveMutation.isPending}
+            aria-busy={archiveMutation.isPending}
+            onClick={() => archiveMutation.mutate()}
           >
             {t("bookableItems.actions.archive")}
           </AlertDialogAction>

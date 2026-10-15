@@ -525,6 +525,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
   const showBooking = useIsFeatureFlagEnabled(FEATURE_FLAGS.bookingEnabled);
+  const exportIndex = showBooking ? 9 : 8;
   const sidebarRef = useLandmark("Navigation");
 
   const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
@@ -573,13 +574,9 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
                 href="/booking"
               />
             )}
-            <ExportNavItem index={showBooking ? 9 : 8} tabIndex={getTabIndex(showBooking ? 9 : 8)} getRef={getRef} />
+            <ExportNavItem index={exportIndex} tabIndex={getTabIndex(exportIndex)} getRef={getRef} />
             {isSysAdmin && (
-              <SettingsNavItem
-                index={showBooking ? 10 : 9}
-                tabIndex={getTabIndex(showBooking ? 10 : 9)}
-                getRef={getRef}
-              />
+              <SettingsNavItem index={exportIndex + 1} tabIndex={getTabIndex(exportIndex + 1)} getRef={getRef} />
             )}
           </List>
         </Box>
