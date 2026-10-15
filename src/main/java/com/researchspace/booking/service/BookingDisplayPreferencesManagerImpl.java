@@ -90,18 +90,16 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
   public ResolvedBookingDisplayPreferences resolveForNotificationSnapshot(User recipient) {
     UserPreference preference =
         recipient.getValueForPreference(Preference.BOOKING_DISPLAY_PREFERENCES);
-    String value = preference.getValue();
-    if (value == null || value.isBlank()) {
-      return resolved(globalDefaults(recipient), false);
-    }
-    BookingDisplaySettings stored = readStored(value, recipient);
-    return stored == null ? resolved(globalDefaults(recipient), false) : resolved(stored, true);
+    return resolve(preference.getValue(), recipient);
   }
 
   private ResolvedBookingDisplayPreferences getForAuthorizedSubject(User subject) {
     UserPreference preference =
         userManager.getPreferenceForUser(subject, Preference.BOOKING_DISPLAY_PREFERENCES);
-    String value = preference.getValue();
+    return resolve(preference.getValue(), subject);
+  }
+
+  private ResolvedBookingDisplayPreferences resolve(String value, User subject) {
     if (value == null || value.isBlank()) {
       return resolved(globalDefaults(subject), false);
     }
@@ -183,10 +181,7 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
   }
 
   private void requireAccess(User subject, User actor) {
-    if (!active(subject) || !active(actor)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
-    }
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
+    if (!BookingUserAccess.hasAccess(featureFlags, subject, actor)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }
