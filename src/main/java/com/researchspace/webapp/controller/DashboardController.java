@@ -19,8 +19,6 @@ import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageOrRequestView;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.comms.Notification;
-import com.researchspace.model.comms.NotificationType;
-import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.model.dtos.MessageTypeFilter;
 import com.researchspace.model.dtos.NotificationStatus;
 import com.researchspace.model.field.ErrorList;
@@ -37,7 +35,6 @@ import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -348,49 +345,11 @@ public class DashboardController extends BaseController {
         bookingDisplayPreferences.getForNotificationRecipient(recipient).orElse(null);
     ZoneId displayZone =
         BookingNotificationMessageFormatter.zoneFor(preferences, browserZone, institutionZone);
-    Map<Long, String> messages = new HashMap<>();
     Locale locale = LocaleContextHolder.getLocale();
     Locale regionalLocale = BookingNotificationMessageFormatter.regionalLocaleFrom(acceptLanguage);
     BookingTimeFormat timeFormat = preferences == null ? null : preferences.timeFormat();
-    for (Notification notification : notifications) {
-      NotificationType type = notification.getNotificationType();
-      if (!BookingNotificationMessageFormatter.isBookingNotification(type)) {
-        continue;
-      }
-      try {
-        if (notification.getNotificationDataObject() instanceof BookingNotificationData data) {
-          messages.put(
-              notification.getId(),
-              bookingMessageFormatter.format(
-                  type, data, displayZone, locale, regionalLocale, timeFormat));
-        } else {
-          messages.put(
-              notification.getId(),
-              bookingMessageFormatter.formatLegacy(
-                  type,
-                  notification.getNotificationMessage(),
-                  displayZone,
-                  locale,
-                  regionalLocale,
-                  timeFormat));
-        }
-      } catch (RuntimeException ex) {
-        log.warn(
-            "Could not format booking notification [{}]; using its stored message",
-            notification.getId(),
-            ex);
-        messages.put(
-            notification.getId(),
-            bookingMessageFormatter.formatLegacy(
-                type,
-                notification.getNotificationMessage(),
-                displayZone,
-                locale,
-                regionalLocale,
-                timeFormat));
-      }
-    }
-    return messages;
+    return bookingMessageFormatter.formatNotifications(
+        notifications, displayZone, locale, regionalLocale, timeFormat);
   }
 
   private ZoneId browserZone(HttpSession session) {
@@ -399,7 +358,7 @@ public class DashboardController extends BaseController {
       return null;
     }
     try {
-      return ZoneId.of(timeZone.getID());
+      return timeZone.toZoneId();
     } catch (DateTimeException ex) {
       return null;
     }

@@ -151,8 +151,7 @@ class BookingNotificationMessageFormatterTest {
     assertTrue(british.contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)"), british);
     // ICU writes a narrow no-break space before the day period, as browsers do.
     assertTrue(
-        american.replace('\u202f', ' ').contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
-        american);
+        normalised(american).contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"), american);
     assertFalse(american.contains("06:00"), american);
   }
 
@@ -182,9 +181,7 @@ class BookingNotificationMessageFormatterTest {
         twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
     assertFalse(twentyFourHour.contains("AM"), twentyFourHour);
     assertTrue(
-        twelveHour
-            .replace('\u202f', ' ')
-            .contains("8 Oct 2026, 6:00 am (Europe/Berlin, UTC+02:00)"),
+        normalised(twelveHour).contains("8 Oct 2026, 6:00 am (Europe/Berlin, UTC+02:00)"),
         twelveHour);
     for (BookingTimeFormat automatic :
         new BookingTimeFormat[] {BookingTimeFormat.AUTOMATIC, null}) {
@@ -193,9 +190,7 @@ class BookingNotificationMessageFormatterTest {
           formatter.formatForEmail(created, data, berlin, Locale.US, automatic));
     }
     assertTrue(
-        formatter
-            .formatForEmail(created, data, berlin, Locale.US)
-            .replace('\u202f', ' ')
+        normalised(formatter.formatForEmail(created, data, berlin, Locale.US))
             .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"));
   }
 
@@ -214,9 +209,7 @@ class BookingNotificationMessageFormatterTest {
     assertTrue(
         twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
     assertTrue(
-        twelveHour
-            .replace('\u202f', ' ')
-            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
+        normalised(twelveHour).contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
         twelveHour);
     assertEquals(
         formatter.format(created, data, berlin, Locale.US, british),
@@ -288,5 +281,9 @@ class BookingNotificationMessageFormatterTest {
     data.setStartTime(start);
     data.setEndTime(end);
     return data;
+  }
+
+  private static String normalised(String value) {
+    return value.replace('\u202f', ' ');
   }
 }

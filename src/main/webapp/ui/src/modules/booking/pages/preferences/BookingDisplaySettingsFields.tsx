@@ -11,7 +11,6 @@ import {
 import {
   type BookingTimeFormat,
   bookingDateTimeLocale,
-  bookingDateTimeLocaleFor,
   formatWallClockTime,
 } from "@/modules/booking/domain/bookingTime";
 import { Input } from "@/modules/common/ui/input";
@@ -46,7 +45,7 @@ function RadioList<Value extends string>({
 
 /** An afternoon time written with `format`'s clock, so each Time format option shows what it looks like. */
 function timeFormatExample(format: BookingTimeFormat): string {
-  return formatWallClockTime("14:30", bookingDateTimeLocaleFor(format));
+  return formatWallClockTime("14:30", bookingDateTimeLocale(format));
 }
 
 export function BookingDisplaySettingsFields({

@@ -9,7 +9,7 @@ import {
   type SourcedAvailabilityInterval,
   timestamp,
 } from "@/modules/booking/domain/availability";
-import { bookingLocale } from "@/modules/booking/domain/bookingTime";
+import { bookingLocale, formatInstantRange } from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
@@ -112,9 +112,9 @@ export function AvailabilityBar({
     timeZone,
   });
   const formatRange = ({ startsAt, endsAt }: TimestampInterval) =>
-    `${itemDateTimeFormatter.format(startsAt)}–${itemDateTimeFormatter.format(endsAt)}`;
+    formatInstantRange(itemDateTimeFormatter, startsAt, endsAt);
   const formatTimeRange = ({ startsAt, endsAt }: TimestampInterval) =>
-    `${timeFormatter.format(startsAt)}–${timeFormatter.format(endsAt)}`;
+    formatInstantRange(timeFormatter, startsAt, endsAt);
   const period = formatRange({ startsAt: start, endsAt: end });
   const nowLabel =
     nowTimestamp === null
@@ -131,16 +131,24 @@ export function AvailabilityBar({
       : stateOrder
           .flatMap((state) => {
             const ranges = slices.filter((slice) => slice.state === state).map(formatRange);
-            return ranges.length === 0
-              ? []
-              : [
-                  t(`availabilityBar.ranges.${state}`, {
-                    ranges: formatList(ranges, locale),
-                  }),
-                ];
+            if (ranges.length === 0) return [];
+            const values = { ranges: formatList(ranges, locale) };
+            return [
+              {
+                available: () => t("availabilityBar.ranges.available", values),
+                booking: () => t("availabilityBar.ranges.booking", values),
+                blockout: () => t("availabilityBar.ranges.blockout", values),
+                overlap: () => t("availabilityBar.ranges.overlap", values),
+              }[state](),
+            ];
           })
           .join(" ");
-  const description = [t("availabilityBar.summary", { period, states }), nowLabel].filter(Boolean).join(" ");
+  const description = t("availabilityBar.description", {
+    period,
+    states,
+    now: nowLabel ?? "",
+    hasNow: nowLabel ? "yes" : "no",
+  });
   const currentSegmentIndex =
     nowTimestamp === null
       ? -1

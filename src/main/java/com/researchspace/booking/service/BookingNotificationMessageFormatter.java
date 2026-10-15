@@ -6,6 +6,7 @@ import com.ibm.icu.util.TimeZone;
 import com.ibm.icu.util.ULocale;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences;
 import com.researchspace.model.booking.BookingTimeFormat;
+import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
 import java.net.URI;
@@ -19,9 +20,11 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
@@ -48,8 +51,6 @@ public class BookingNotificationMessageFormatter {
   private static final String CANCELLED_MESSAGE_KEY = "bookingNotifications.cancelled";
   private static final String BOOKING_PATH = "/booking/calendar/bookings/";
   private static final String BOOKABLE_ITEM_PATH = "/booking/bookable-items/";
-  private static final Pattern FINAL_ISO_INSTANT =
-      Pattern.compile("(?:\\d{4}|[+-]\\d{6})-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$");
 
   private final MessageSource messageSource;
   private final String absoluteLinkBase;
@@ -231,55 +232,36 @@ public class BookingNotificationMessageFormatter {
   }
 
   /**
-   * Formats an older stored booking message if its final interval is still in canonical ISO form.
+   * Formats booking notifications for the dashboard, using stored text when structured data is
+   * absent or cannot be formatted.
    */
-  public String formatLegacy(NotificationType type, String message, ZoneId zone, Locale locale) {
-    return formatLegacy(type, message, zone, locale, null);
-  }
-
-  /**
-   * Formats an older stored booking message as {@link #formatLegacy(NotificationType, String,
-   * ZoneId, Locale)} does, with the 12- or 24-hour clock of {@code regionalLocale} when it is not
-   * null.
-   */
-  public String formatLegacy(
-      NotificationType type, String message, ZoneId zone, Locale locale, Locale regionalLocale) {
-    return formatLegacy(type, message, zone, locale, regionalLocale, BookingTimeFormat.AUTOMATIC);
-  }
-
-  /**
-   * Formats an older stored booking message as {@link #formatLegacy(NotificationType, String,
-   * ZoneId, Locale, Locale)} does, except that an explicit 12- or 24-hour {@code timeFormat}
-   * replaces the clock of {@code regionalLocale}.
-   */
-  public String formatLegacy(
-      NotificationType type,
-      String message,
+  public Map<Long, String> formatNotifications(
+      List<Notification> notifications,
       ZoneId zone,
       Locale locale,
       Locale regionalLocale,
       BookingTimeFormat timeFormat) {
-    if (!isBookingNotification(type) || message == null) {
-      return message;
+    Map<Long, String> messages = new HashMap<>();
+    for (Notification notification : notifications) {
+      NotificationType type = notification.getNotificationType();
+      if (!isBookingNotification(type)) {
+        continue;
+      }
+      try {
+        if (notification.getNotificationDataObject() instanceof BookingNotificationData data) {
+          messages.put(
+              notification.getId(), format(type, data, zone, locale, regionalLocale, timeFormat));
+          continue;
+        }
+      } catch (RuntimeException ex) {
+        log.warn(
+            "Could not format booking notification [{}]; using its stored message",
+            notification.getId(),
+            ex);
+      }
+      messages.put(notification.getId(), notification.getNotificationMessage());
     }
-    int period = message.length() - 1;
-    int to = message.lastIndexOf(" to ", period);
-    int from = to < 0 ? -1 : message.lastIndexOf(" from ", to);
-    if (period < 0 || message.charAt(period) != '.' || to < 0 || from < 0) {
-      return message;
-    }
-    int startIndex = from + " from ".length();
-    String start = message.substring(startIndex, to);
-    String end = message.substring(to + " to ".length(), period);
-    if (!isCanonicalInstant(start) || !isCanonicalInstant(end)) {
-      return message;
-    }
-    String hourCycle = hourCycleKeyword(timeFormat, regionalLocale);
-    return message.substring(0, startIndex)
-        + formatInstant(start, zone, locale, hourCycle)
-        + " to "
-        + formatInstant(end, zone, locale, hourCycle)
-        + message.substring(period);
+    return messages;
   }
 
   public static boolean isBookingNotification(NotificationType type) {
@@ -336,17 +318,6 @@ public class BookingNotificationMessageFormatter {
       case HOUR_CYCLE_23 -> "h23";
       case HOUR_CYCLE_24 -> "h24";
     };
-  }
-
-  private static boolean isCanonicalInstant(String value) {
-    if (!FINAL_ISO_INSTANT.matcher(value).matches()) {
-      return false;
-    }
-    try {
-      return DateTimeFormatter.ISO_INSTANT.format(Instant.parse(value)).equals(value);
-    } catch (DateTimeException ex) {
-      return false;
-    }
   }
 
   private static Optional<ZoneId> validZone(String value) {

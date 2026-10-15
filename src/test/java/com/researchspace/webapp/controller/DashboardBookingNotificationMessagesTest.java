@@ -67,6 +67,10 @@ class DashboardBookingNotificationMessagesTest {
     Notification structured =
         bookingNotification(
             1L, "Stored email text", data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z"));
+    Notification other = new Notification();
+    other.setId(3L);
+    other.setNotificationType(NotificationType.PROCESS_COMPLETED);
+
     when(preferences.getForNotificationRecipient(recipient))
         .thenReturn(
             Optional.of(
@@ -80,10 +84,6 @@ class DashboardBookingNotificationMessagesTest {
                     true)));
     when(session.getAttribute(SessionAttributeUtils.TIMEZONE))
         .thenReturn(TimeZone.getTimeZone("Asia/Tokyo"));
-
-    Notification other = new Notification();
-    other.setId(3L);
-    other.setNotificationType(NotificationType.PROCESS_COMPLETED);
 
     Map<Long, String> messages =
         controller.bookingNotificationMessages(
@@ -104,28 +104,22 @@ class DashboardBookingNotificationMessagesTest {
     Notification structured =
         bookingNotification(
             5L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
-    Notification legacy =
-        bookingNotification(
-            6L, "Booking 6 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
 
     when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
 
     Map<Long, String> british =
         controller.bookingNotificationMessages(
-            List.of(structured, legacy),
+            List.of(structured),
             "recipient",
             mock(HttpSession.class),
             "en-GB,en-US;q=0.9,en;q=0.8");
     Map<Long, String> american =
         controller.bookingNotificationMessages(
-            List.of(structured, legacy), "recipient", mock(HttpSession.class), "en-US,en;q=0.9");
+            List.of(structured), "recipient", mock(HttpSession.class), "en-US,en;q=0.9");
 
     assertTrue(
         british.get(5L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), british.get(5L));
     assertTrue(british.get(5L).startsWith("Booking <a href="), british.get(5L));
-    assertTrue(
-        british.get(6L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
-        british.get(6L));
     // ICU writes a narrow no-break space before the day period, as browsers do.
     assertTrue(
         american
@@ -142,9 +136,6 @@ class DashboardBookingNotificationMessagesTest {
     Notification structured =
         bookingNotification(
             7L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
-    Notification legacy =
-        bookingNotification(
-            8L, "Booking 8 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
 
     when(preferences.getForNotificationRecipient(recipient))
         .thenReturn(
@@ -160,14 +151,11 @@ class DashboardBookingNotificationMessagesTest {
 
     Map<Long, String> messages =
         controller.bookingNotificationMessages(
-            List.of(structured, legacy), "recipient", session, "en-US,en;q=0.9");
+            List.of(structured), "recipient", session, "en-US,en;q=0.9");
 
     assertTrue(
         messages.get(7L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"),
         messages.get(7L));
-    assertTrue(
-        messages.get(8L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
-        messages.get(8L));
     assertFalse(messages.get(7L).contains("AM"), messages.get(7L));
   }
 

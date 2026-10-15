@@ -15,7 +15,6 @@ import { resolveBookingWindow } from "../../creation/ZonedBookingWindowFields";
 import {
   addCalendarDays,
   bookingDateTimeLocale,
-  bookingDateTimeLocaleFor,
   bookingHourCycle,
   bookingLocale,
   currentWallClock,
@@ -253,7 +252,7 @@ describe("bookingTime", () => {
   });
 
   test("an explicit Time format replaces the browser region's clock but not its date order", () => {
-    const regional = bookingDateTimeLocaleFor("AUTOMATIC");
+    const regional = bookingDateTimeLocale("AUTOMATIC");
     expect(bookingHourCycle("H24")).toBe("h23");
     expect(formatWallClockTime("14:05", bookingDateTimeLocale("H24"))).toBe("14:05");
     expect(formatWallClockTime("00:00", bookingDateTimeLocale("H24"))).toBe("00:00");

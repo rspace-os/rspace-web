@@ -1,7 +1,13 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { type BookingTimeFormat, bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import {
+  type BookingTimeFormat,
+  bookingHourCycle,
+  bookingLocale,
+  formatInstantRange,
+  resolveWallClock,
+} from "@/modules/booking/domain/bookingTime";
+import i18n from "@/modules/common/i18n";
 import type { BookingListDocument } from "./booking";
-import { resolveWallClock } from "./bookingTime";
 
 export type BookingAgendaDay = {
   date: string;
@@ -72,7 +78,7 @@ export function formatBookingAgendaTimeRange(
     hourCycle: bookingHourCycle(timeFormat),
     ...(needsOffset(startZoned, endZoned, timeZone) ? { timeZoneName: "shortOffset" } : {}),
   });
-  const range = `${formatter.format(startDate)}–${formatter.format(endDate)}`;
+  const range = formatInstantRange(formatter, startDate, endDate);
   const startLocalDate = startZoned.toPlainDate();
   const endLocalDate = endZoned.toPlainDate();
   if (startLocalDate.equals(endLocalDate)) return range;
@@ -82,7 +88,7 @@ export function formatBookingAgendaTimeRange(
     day: "numeric",
     ...(startLocalDate.year === endLocalDate.year ? {} : { year: "numeric" }),
   });
-  return `${range} · ${endDateLabel}`;
+  return i18n.t("booking:time.rangeAndEndDate", { period: range, date: endDateLabel, lng: bookingLocale() });
 }
 
 export function formatBookingAgendaDateTime(

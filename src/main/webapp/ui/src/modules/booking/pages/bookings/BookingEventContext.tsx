@@ -1,6 +1,5 @@
 import { createContext, type Dispatch, type ReactNode, type RefObject, type SetStateAction, useContext } from "react";
 import type { BookingDetails } from "@/modules/booking/domain/booking";
-import { type BookingTimeFormat, formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 
 export type BookingEventContextValue = {
   booking: BookingDetails;
@@ -47,14 +46,4 @@ export function Panel({
       <div className="pt-4 text-sm">{children}</div>
     </Tag>
   );
-}
-
-/** With the UTC offset on a clock-change day, so the two occurrences of a repeated hour read differently. */
-export function formatBookingEventDateTime(
-  value: string,
-  timeZone: string,
-  language: string,
-  timeFormat: BookingTimeFormat = "AUTOMATIC",
-): string {
-  return formatBookingDateTime(value, timeZone, language, timeFormat);
 }
