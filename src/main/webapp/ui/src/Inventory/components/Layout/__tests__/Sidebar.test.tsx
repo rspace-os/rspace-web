@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import type { ReactNode } from "react";
 import axios from "@/common/axios";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
 import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
@@ -25,6 +26,17 @@ vi.mock("@/featureFlags/queries", () => ({
 }));
 
 const mockAxios = new MockAdapter(axios);
+
+function renderSidebar(rootStore: ReturnType<typeof makeMockRootStore>, content: ReactNode = <Sidebar id="foo" />) {
+  return render(
+    <ThemeProvider theme={materialTheme}>
+      <LandmarksProvider>
+        <storesContext.Provider value={rootStore}>{content}</storesContext.Provider>
+      </LandmarksProvider>
+    </ThemeProvider>,
+  );
+}
+
 describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
@@ -36,15 +48,7 @@ describe("Sidebar", () => {
       uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
       searchStore: { search: { benchSearch: true } },
     });
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <LandmarksProvider>
-          <storesContext.Provider value={rootStore}>
-            <Sidebar id="foo" />
-          </storesContext.Provider>
-        </LandmarksProvider>
-      </ThemeProvider>,
-    );
+    renderSidebar(rootStore);
 
     expect(useIsFeatureFlagEnabled).toHaveBeenCalledWith(FEATURE_FLAGS.bookingEnabled);
     expect(screen.getByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).toHaveAttribute(
@@ -59,15 +63,7 @@ describe("Sidebar", () => {
       uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
       searchStore: { search: { benchSearch: true } },
     });
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <LandmarksProvider>
-          <storesContext.Provider value={rootStore}>
-            <Sidebar id="foo" />
-          </storesContext.Provider>
-        </LandmarksProvider>
-      </ThemeProvider>,
-    );
+    renderSidebar(rootStore);
 
     expect(screen.queryByRole("link", { name: "inventory:layout.sidebar.bookingSystem" })).not.toBeInTheDocument();
   });
@@ -87,15 +83,7 @@ describe("Sidebar", () => {
         },
       },
     });
-    const { container } = render(
-      <ThemeProvider theme={materialTheme}>
-        <LandmarksProvider>
-          <storesContext.Provider value={rootStore}>
-            <Sidebar id="foo" />
-          </storesContext.Provider>
-        </LandmarksProvider>
-      </ThemeProvider>,
-    );
+    const { container } = renderSidebar(rootStore);
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     await expect(container).toBeAccessible();
@@ -126,27 +114,22 @@ describe("Sidebar", () => {
         },
       },
     });
-    render(
-      <ThemeProvider theme={materialTheme}>
-        <LandmarksProvider>
-          <storesContext.Provider value={rootStore}>
-            <NavigateContext.Provider
-              value={{
-                useNavigate: () => navFn,
-                useLocation: () => ({
-                  hash: "",
-                  pathname: "",
-                  search: "",
-                  state: {},
-                  key: "",
-                }),
-              }}
-            >
-              <Sidebar id="foo" />
-            </NavigateContext.Provider>
-          </storesContext.Provider>
-        </LandmarksProvider>
-      </ThemeProvider>,
+    renderSidebar(
+      rootStore,
+      <NavigateContext.Provider
+        value={{
+          useNavigate: () => navFn,
+          useLocation: () => ({
+            hash: "",
+            pathname: "",
+            search: "",
+            state: {},
+            key: "",
+          }),
+        }}
+      >
+        <Sidebar id="foo" />
+      </NavigateContext.Provider>,
     );
 
     await user.click(screen.getByRole("button", { name: "inventory:recordTypes.instrument.plural" }));

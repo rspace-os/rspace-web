@@ -29,14 +29,12 @@ export function BookableItemsBulkActions({
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const [archiveOpen, setArchiveOpen] = useState(false);
-  const error =
-    failedAction === "enable"
-      ? t("bookableItems.bulk.errors.enable")
-      : failedAction === "disable"
-        ? t("bookableItems.bulk.errors.disable")
-        : failedAction === "archive"
-          ? t("bookableItems.bulk.errors.archive")
-          : null;
+  const errorKeys = {
+    enable: "bookableItems.bulk.errors.enable",
+    disable: "bookableItems.bulk.errors.disable",
+    archive: "bookableItems.bulk.errors.archive",
+  } as const;
+  const error = failedAction === null ? null : t(errorKeys[failedAction]);
 
   const runAction = async (action: BookableItemsBulkAction) => {
     try {

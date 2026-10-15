@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -28,26 +29,17 @@ export function PermanentDeleteBookableItemDialog({
   const { t } = useTranslation(["booking", "common"]);
   const [confirmation, setConfirmation] = useState("");
   const confirmationId = useId();
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<unknown>(null);
-  const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    setDeleteError(null);
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
       await onDelete(configuration.id, requiredVersion(configuration));
       close();
       await onDeleted();
-    } catch (error) {
-      setDeleteError(error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+    },
+  });
+  const itemName = configuration.target?.value.name ?? t("common:values.unknownItem");
 
   return (
-    <AlertDialog open onOpenChange={(open) => !open && !isDeleting && close()}>
+    <AlertDialog open onOpenChange={(open) => !open && !deleteMutation.isPending && close()}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t("bookableItems.permanentDeleteDialog.title")}</AlertDialogTitle>
@@ -59,22 +51,30 @@ export function PermanentDeleteBookableItemDialog({
           <span>{t("bookableItems.permanentDeleteDialog.confirmationLabel")}</span>
           <Input
             id={confirmationId}
+            autoComplete="off"
             value={confirmation}
             onChange={(event) => setConfirmation(event.currentTarget.value)}
           />
         </label>
-        {deleteError ? (
+        {deleteMutation.isError ? (
           <p role="alert" className="text-sm text-destructive">
-            {t(lifecycleErrorKey(deleteError, "bookableItems.permanentDeleteDialog.error"))}
+            {t(
+              lifecycleErrorKey(
+                deleteMutation.error,
+                "bookableItems.permanentDeleteDialog.error",
+                "bookableItems.lifecycleErrors.stale",
+                "bookableItems.lifecycleErrors.stateChanged",
+              ),
+            )}
           </p>
         ) : null}
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>{t("common:actions.cancel")}</AlertDialogCancel>
+          <AlertDialogCancel disabled={deleteMutation.isPending}>{t("common:actions.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
-            disabled={isDeleting || confirmation !== itemName}
-            aria-busy={isDeleting}
-            onClick={() => void handleDelete()}
+            disabled={deleteMutation.isPending || confirmation !== itemName}
+            aria-busy={deleteMutation.isPending}
+            onClick={() => deleteMutation.mutate()}
           >
             {t("bookableItems.actions.deletePermanently")}
           </AlertDialogAction>

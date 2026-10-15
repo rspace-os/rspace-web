@@ -3,22 +3,25 @@ import type { BookingConfigurationRow } from "./bookingConfiguration";
 
 export type BookableItemsBulkAction = "enable" | "disable" | "archive";
 
-export type BookableItemsLifecycleErrorKey =
+type BookableItemsLifecycleErrorKey =
   | "bookableItems.lifecycleErrors.restore"
   | "bookableItems.lifecycleErrors.stale"
   | "bookableItems.lifecycleErrors.stateChanged"
   | "bookableItems.permanentDeleteDialog.error";
+type BookableItemDetailLifecycleErrorKey =
+  | "bookableItemDetails.lifecycleErrors.restore"
+  | "bookableItemDetails.lifecycleErrors.stale"
+  | "bookableItemDetails.lifecycleErrors.stateChanged"
+  | "bookableItemDetails.permanentDeleteDialog.error";
+type LifecycleErrorKey = BookableItemsLifecycleErrorKey | BookableItemDetailLifecycleErrorKey;
 
-export function lifecycleErrorKey(
-  error: unknown,
-  fallback: BookableItemsLifecycleErrorKey,
-): BookableItemsLifecycleErrorKey {
-  if (error instanceof ApiV2ProblemError && error.status === 412) {
-    return "bookableItems.lifecycleErrors.stale";
-  }
-  if (error instanceof ApiV2ProblemError && error.status === 409) {
-    return "bookableItems.lifecycleErrors.stateChanged";
-  }
+export function lifecycleErrorKey<
+  TStale extends LifecycleErrorKey,
+  TChanged extends LifecycleErrorKey,
+  TFallback extends LifecycleErrorKey,
+>(error: unknown, fallback: TFallback, stale: TStale, stateChanged: TChanged): TStale | TChanged | TFallback {
+  if (error instanceof ApiV2ProblemError && error.status === 412) return stale;
+  if (error instanceof ApiV2ProblemError && error.status === 409) return stateChanged;
   return fallback;
 }
 

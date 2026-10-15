@@ -11,12 +11,10 @@ import {
   isBookingOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
+import { calendarAvailabilityRow } from "@/modules/booking/domain/availability";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import {
-  calendarAvailabilityRow,
-  useCalendarAvailability,
-} from "@/modules/booking/pages/calendar/calendarAvailability";
+import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import {
   AlertDialog,
@@ -48,11 +46,10 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const closingRef = React.useRef(false);
   const previousPathname = React.useRef(pathname);
   const shouldBlock = React.useCallback(() => dirty && !closingRef.current, [dirty]);
-  const enableBeforeUnload = React.useCallback(() => dirty && !closingRef.current, [dirty]);
   const blocker = useBlocker({
     shouldBlockFn: shouldBlock,
     withResolver: true,
-    enableBeforeUnload,
+    enableBeforeUnload: shouldBlock,
   });
 
   const closeCreation = React.useCallback(() => {
@@ -76,7 +73,6 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
     if (!dirty) {
       finish();
       blocker.proceed();
-      return;
     }
   }, [blocker, dirty, finish]);
 
@@ -160,7 +156,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const availabilityViolation = Boolean(
     availability.isSuccess &&
       availabilityTarget &&
-      availability.data.get(availabilityTarget.globalId)?.some(() => true),
+      (availability.data.get(availabilityTarget.globalId)?.length ?? 0) > 0,
   );
 
   const anchor = document.getElementById(creation.triggerId);

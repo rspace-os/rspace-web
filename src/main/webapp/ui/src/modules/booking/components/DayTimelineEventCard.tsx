@@ -6,11 +6,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/pop
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
 import {
+  type DayTimelineActionRenderers,
   type DayTimelineEvent,
   dateForMinute,
   formatDayDate,
   formatMinute,
-  formatMinuteWithDayOffset,
   period,
 } from "./DayTimelineEvent";
 import { ExpandedEventCard } from "./ExpandedEventCard";
@@ -43,9 +43,7 @@ export function DayTimelineEventCard({
   onExpandedChange?: (expanded: boolean) => void;
   collisionBoundary?: HTMLElement | null;
   expandedCardClassName?: string;
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
-}) {
+} & DayTimelineActionRenderers) {
   const { t } = useTranslation("booking");
   const detailsId = `${React.useId()}-details`;
   const [internalExpanded, setInternalExpanded] = React.useState(false);
@@ -56,20 +54,22 @@ export function DayTimelineEventCard({
   const setExpanded = onExpandedChange ?? setInternalExpanded;
   const title = event.kind === "blockout" || event.privacy === "full" ? event.title : t("dayTimeline.event.busy");
   const labelledTitle = event.kind === "booking" && event.privacy === "full" ? `${title} · ${event.bookedBy}` : title;
+  const isBusy = event.kind === "booking" && event.privacy === "busy";
   const notes = event.kind === "booking" && event.privacy === "busy" ? undefined : event.notes;
   const exactPeriod = period(event, date, timezone);
   const accessibleLabel = notes
     ? t("dayTimeline.event.labelWithNotes", { title: labelledTitle, period: exactPeriod, notes })
     : t("dayTimeline.event.label", { title: labelledTitle, period: exactPeriod });
   const isBlockout = event.kind === "blockout";
-  const isBusy = event.kind === "booking" && event.privacy === "busy";
   const timeline = variant === "timeline";
   const expandsInPlace = isBusy && isExpanded;
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
   const compactDate =
     startDate === endDate ? formatDayDate(startDate) : `${formatDayDate(startDate)} - ${formatDayDate(endDate)}`;
-  const compactPeriod = `${formatMinuteWithDayOffset(date, timezone, event.startMinute)} - ${formatMinuteWithDayOffset(date, timezone, event.endMinute)}`;
+  const compactPeriod = period(event, date, timezone, " - ");
+  const triggerClassName =
+    "absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60";
   const toggleLabel = isExpanded
     ? t("dayTimeline.event.hideDetails", { title: labelledTitle, period: exactPeriod })
     : t("dayTimeline.event.showDetails", { title: labelledTitle, period: exactPeriod });
@@ -145,7 +145,7 @@ export function DayTimelineEventCard({
           aria-controls={detailsId}
           aria-expanded={isExpanded}
           aria-label={toggleLabel}
-          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
+          className={triggerClassName}
           onClick={() => setExpanded(!isExpanded)}
           onKeyDown={(keyboardEvent) => {
             if (keyboardEvent.key !== "Escape" || !isExpanded) return;
@@ -160,7 +160,7 @@ export function DayTimelineEventCard({
           aria-controls={detailsId}
           aria-expanded={isExpanded}
           aria-label={toggleLabel}
-          className="absolute inset-0 z-10 rounded-sm bg-transparent outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/60"
+          className={triggerClassName}
         />
       )}
       <span
