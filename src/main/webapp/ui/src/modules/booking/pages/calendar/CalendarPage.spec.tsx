@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import { withViewport } from "@/__tests__/pageObjects/viewport";
 import {
   bookingPageRequests,
   bookingPagesHandlers,
@@ -12,7 +13,7 @@ import {
 } from "@/modules/booking/pages/mocks/bookingPagesMocks";
 import { customNewYorkBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { bookableItemFixtures } from "../bookable-items/mocks/bookableItemsMocks";
-import { collectionResponse, ownBooking } from "./__tests__/calendarTestHarness";
+import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { CalendarPageStory } from "./CalendarPage.story";
 import { CalendarPage as CalendarPageObject } from "./pageObjects/CalendarPage";
 
@@ -120,10 +121,8 @@ describe("Calendar page", () => {
   });
 
   test.each([390, 1279, 1280, 1440])("keeps integrated Calendar controls reachable at %s px", async (width) => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(width, 900);
-    render(<CalendarPageStory />);
-    try {
+    await withViewport(width, async () => {
+      render(<CalendarPageStory />);
       await expect.element(calendar.toolbar).toBeVisible();
       await document.fonts.ready;
       for (const control of [
@@ -151,15 +150,12 @@ describe("Calendar page", () => {
       // Month fades from disabled to enabled when leaving Resources.
       await expect.poll(() => getComputedStyle(calendar.month.element()).opacity).toBe("1");
       await expectNoAxeViolations();
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
   test.each([390, 1440])(
     "keeps the week resource grid through sequential resource/event loading at %s px",
     async (width) => {
-      const originalViewport = { width: window.innerWidth, height: window.innerHeight };
       const resources = Promise.withResolvers<void>();
       const events = Promise.withResolvers<void>();
       worker.use(
@@ -189,36 +185,36 @@ describe("Calendar page", () => {
           return HttpResponse.json(collectionResponse([]));
         }),
       );
-      await page.viewport(width, 900);
-      render(<CalendarPageStory />);
       try {
-        await calendar.week.click();
-        const pending = page.getByRole("region", { name: "Loading", exact: true });
-        await expect.element(pending).toHaveAttribute("aria-busy", "true");
-        const dateCount = 7;
-        await expect.poll(() => pending.element().querySelectorAll("[data-calendar-date]").length).toBe(dateCount);
-        await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
-        await expect.element(pending.getByRole("button")).not.toBeInTheDocument();
-        await document.fonts.ready;
-        const before = pending.element().getBoundingClientRect();
-        await expectNoAxeViolations();
-        resources.resolve();
-        const loaded = page.getByRole("region", { name: "Resources", exact: true });
-        await expect.element(loaded.getByText("IN123", { exact: true })).toBeVisible();
-        await expect.element(loaded).toHaveAttribute("aria-busy", "true");
-        const rowsReady = loaded.element().getBoundingClientRect();
-        expect(Math.abs(rowsReady.height - before.height)).toBeLessThanOrEqual(8);
-        expect(Math.abs(rowsReady.width - before.width)).toBeLessThanOrEqual(2);
-        expect(Math.abs(rowsReady.top - before.top)).toBeLessThanOrEqual(2);
-        events.resolve();
-        await expect.element(loaded).toHaveAttribute("aria-busy", "false");
-        const after = loaded.element().getBoundingClientRect();
-        expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(8);
-        expect(loaded.element().querySelectorAll("[data-calendar-date]").length).toBe(dateCount);
+        await withViewport(width, async () => {
+          render(<CalendarPageStory />);
+          await calendar.week.click();
+          const pending = page.getByRole("region", { name: "Loading", exact: true });
+          await expect.element(pending).toHaveAttribute("aria-busy", "true");
+          const dateCount = 7;
+          await expect.poll(() => pending.element().querySelectorAll("[data-calendar-date]").length).toBe(dateCount);
+          await expect.element(page.getByText("Confocal microscope", { exact: true })).not.toBeInTheDocument();
+          await expect.element(pending.getByRole("button")).not.toBeInTheDocument();
+          await document.fonts.ready;
+          const before = pending.element().getBoundingClientRect();
+          await expectNoAxeViolations();
+          resources.resolve();
+          const loaded = page.getByRole("region", { name: "Resources", exact: true });
+          await expect.element(loaded.getByText("IN123", { exact: true })).toBeVisible();
+          await expect.element(loaded).toHaveAttribute("aria-busy", "true");
+          const rowsReady = loaded.element().getBoundingClientRect();
+          expect(Math.abs(rowsReady.height - before.height)).toBeLessThanOrEqual(8);
+          expect(Math.abs(rowsReady.width - before.width)).toBeLessThanOrEqual(2);
+          expect(Math.abs(rowsReady.top - before.top)).toBeLessThanOrEqual(2);
+          events.resolve();
+          await expect.element(loaded).toHaveAttribute("aria-busy", "false");
+          const after = loaded.element().getBoundingClientRect();
+          expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(8);
+          expect(loaded.element().querySelectorAll("[data-calendar-date]").length).toBe(dateCount);
+        });
       } finally {
         resources.resolve();
         events.resolve();
-        await page.viewport(originalViewport.width, originalViewport.height);
       }
     },
   );
@@ -226,7 +222,6 @@ describe("Calendar page", () => {
   test.each([390, 1440].flatMap((width) => (["day", "week", "month"] as const).map((view) => ({ width, view }))))(
     "keeps the $view grid geometry while events load at $width px",
     async ({ width, view }) => {
-      const originalViewport = { width: window.innerWidth, height: window.innerHeight };
       const response = Promise.withResolvers<void>();
       worker.use(
         http.get("/api/v2/bookings", async () => {
@@ -234,33 +229,32 @@ describe("Calendar page", () => {
           return HttpResponse.json(collectionResponse([ownBooking]));
         }),
       );
-      await page.viewport(width, 900);
-      window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-      render(<CalendarPageStory />);
       try {
-        await calendar.timeGridLayout.click();
-        await calendar[view].click();
-        await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "true");
-        await document.fonts.ready;
-        const before = calendar.timeGrid.element().getBoundingClientRect();
-        const toolbarBefore = calendar.toolbar.element().getBoundingClientRect();
-        response.resolve();
-        await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "false");
-        const after = calendar.timeGrid.element().getBoundingClientRect();
-        const toolbarAfter = calendar.toolbar.element().getBoundingClientRect();
-        expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
-        expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
-        expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(8);
-        expect(Math.abs(toolbarAfter.top - toolbarBefore.top)).toBeLessThanOrEqual(2);
+        await withViewport(width, async () => {
+          window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+          render(<CalendarPageStory />);
+          await calendar.timeGridLayout.click();
+          await calendar[view].click();
+          await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "true");
+          await document.fonts.ready;
+          const before = calendar.timeGrid.element().getBoundingClientRect();
+          const toolbarBefore = calendar.toolbar.element().getBoundingClientRect();
+          response.resolve();
+          await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "false");
+          const after = calendar.timeGrid.element().getBoundingClientRect();
+          const toolbarAfter = calendar.toolbar.element().getBoundingClientRect();
+          expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
+          expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
+          expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(8);
+          expect(Math.abs(toolbarAfter.top - toolbarBefore.top)).toBeLessThanOrEqual(2);
+        });
       } finally {
         response.resolve();
-        await page.viewport(originalViewport.width, originalViewport.height);
       }
     },
   );
 
   test.each([390, 1440])("keeps authorized resource rows stable while events load at %s px", async (width) => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
     const response = Promise.withResolvers<void>();
     worker.use(
       http.get("/api/v2/bookings", async () => {
@@ -268,30 +262,30 @@ describe("Calendar page", () => {
         return HttpResponse.json(collectionResponse([ownBooking]));
       }),
     );
-    await page.viewport(width, 900);
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
     try {
-      await calendar.resources.click();
-      await calendar.day.click();
-      const resources = page.getByRole("region", { name: "Resources", exact: true });
-      await expect.element(resources.getByText("IN123", { exact: true })).toBeVisible();
-      await expect.element(resources).toHaveAttribute("aria-busy", "true");
-      await document.fonts.ready;
-      const before = resources.element().getBoundingClientRect();
-      const toolbarBefore = calendar.toolbar.element().getBoundingClientRect();
-      response.resolve();
-      await expect.element(resources).toHaveAttribute("aria-busy", "false");
-      const after = resources.element().getBoundingClientRect();
-      expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
-      expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
-      expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(8);
-      expect(Math.abs(calendar.toolbar.element().getBoundingClientRect().top - toolbarBefore.top)).toBeLessThanOrEqual(
-        2,
-      );
+      await withViewport(width, async () => {
+        window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+        render(<CalendarPageStory />);
+        await calendar.resources.click();
+        await calendar.day.click();
+        const resources = page.getByRole("region", { name: "Resources", exact: true });
+        await expect.element(resources.getByText("IN123", { exact: true })).toBeVisible();
+        await expect.element(resources).toHaveAttribute("aria-busy", "true");
+        await document.fonts.ready;
+        const before = resources.element().getBoundingClientRect();
+        const toolbarBefore = calendar.toolbar.element().getBoundingClientRect();
+        response.resolve();
+        await expect.element(resources).toHaveAttribute("aria-busy", "false");
+        const after = resources.element().getBoundingClientRect();
+        expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
+        expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(2);
+        expect(Math.abs(after.height - before.height)).toBeLessThanOrEqual(8);
+        expect(
+          Math.abs(calendar.toolbar.element().getBoundingClientRect().top - toolbarBefore.top),
+        ).toBeLessThanOrEqual(2);
+      });
     } finally {
       response.resolve();
-      await page.viewport(originalViewport.width, originalViewport.height);
     }
   });
 
@@ -380,7 +374,7 @@ describe("Calendar page", () => {
     await expect.element(calendar.showEventDetails("Busy")).toHaveAttribute("aria-expanded", "false");
   });
 
-  test("uses live booking events across every prototype layout and period", async () => {
+  test("uses live booking events across every calendar layout and period", async () => {
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
     render(<CalendarPageStory />);
 
@@ -410,7 +404,7 @@ describe("Calendar page", () => {
     await expect.element(calendar.viewItemDetails).not.toBeInTheDocument();
     await expect.element(calendar.editBooking).not.toBeInTheDocument();
 
-    await calendar.searchFor("Grace");
+    await calendar.search.fill("Grace");
     await expect.element(calendar.event("Confocal microscope")).not.toBeInTheDocument();
     await expect.element(calendar.event("Electron microscope")).toBeVisible();
     await page.getByRole("button", { name: "Clear search" }).click();

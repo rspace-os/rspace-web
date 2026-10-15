@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { ChevronRight, LockKeyhole, Minus, Plus, Wrench, X } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +20,7 @@ import {
 } from "@/modules/common/ui/popover";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
-import type { useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
+import { centerMinuteForScrollPosition, type useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
 
 const DAY_MINUTES = 24 * 60;
 const MINIMUM_VISUAL_DURATION = 15;
@@ -105,8 +106,10 @@ function formatMinuteWithDayOffset(date: string, timezone: string, minute: numbe
   return `${time.toPlainTime().toString({ smallestUnit: "minute" })}${zoneLabel}${dayLabel}`;
 }
 
-function period(event: DayTimelineEvent, date: string, timezone: string) {
-  return `${formatMinuteWithDayOffset(date, timezone, event.startMinute)}–${formatMinuteWithDayOffset(date, timezone, event.endMinute)}`;
+function period(range: DayTimelineRange, date: string, timezone: string) {
+  const start = formatMinuteWithDayOffset(date, timezone, range.startMinute);
+  const end = formatMinuteWithDayOffset(date, timezone, range.endMinute);
+  return `${start}–${end}`;
 }
 
 function positionEvents(events: ReadonlyArray<DayTimelineEvent>, dayMinutes: number): Array<PositionedEvent> {
@@ -513,8 +516,8 @@ function NowMarker({
     <div
       className={cn(
         "pointer-events-none absolute top-8 bottom-0 z-30 w-0.5 bg-red-600",
-        pinned && edge === "before" && "left-0",
-        pinned && edge === "after" && "right-0",
+        edge === "before" && "left-0",
+        edge === "after" && "right-0",
       )}
       style={pinned ? undefined : { left: `${(minute / dayMinutes) * 100}%` }}
       data-testid="day-timeline-now"
@@ -640,30 +643,26 @@ export function DayTimeline({
 
   const changeZoom = (delta: number) => {
     const scroller = scrollerRef.current;
-    const nextCenterMinute = scroller
-      ? ((scroller.scrollLeft + scroller.clientWidth / 2) / scroller.scrollWidth) * dayMinutes
-      : centerMinute;
+    const nextCenterMinute = scroller ? centerMinuteForScrollPosition(scroller, dayMinutes) : centerMinute;
     updateViewState({ zoom: Math.min(4, Math.max(1, zoom + delta)), centerMinute: nextCenterMinute });
   };
 
   const syncScrollPosition = () => {
     const scroller = scrollerRef.current;
     if (!scroller || scroller.scrollWidth === 0) return;
-    scrollCenter.current = ((scroller.scrollLeft + scroller.clientWidth / 2) / scroller.scrollWidth) * dayMinutes;
+    scrollCenter.current = centerMinuteForScrollPosition(scroller, dayMinutes);
     scrollSync?.scroll(scroller);
   };
 
-  const formattedDate = new Intl.DateTimeFormat(i18n.language, { dateStyle: "full", timeZone: "UTC" }).format(
-    new Date(`${date}T12:00:00Z`),
-  );
+  const formattedDate = Temporal.PlainDate.from(date).toLocaleString(i18n.language, { dateStyle: "full" });
+  const nowTime =
+    nowMinute === undefined || nowEdge === null ? null : formatMinuteWithDayOffset(date, timezone, nowMinute);
   const nowLabel =
-    nowMinute === undefined || nowEdge === null
+    nowTime === null || nowEdge === null
       ? null
-      : nowEdge === "before"
-        ? t("dayTimeline.now.current", { time: formatMinuteWithDayOffset(date, timezone, nowMinute) })
-        : nowEdge === "after"
-          ? t("dayTimeline.now.afterWindow", { time: formatMinuteWithDayOffset(date, timezone, nowMinute) })
-          : t("dayTimeline.now.current", { time: formatMinuteWithDayOffset(date, timezone, nowMinute) });
+      : nowEdge === "after"
+        ? t("dayTimeline.now.afterWindow", { time: nowTime })
+        : t("dayTimeline.now.current", { time: nowTime });
   const tableRow = variant === "table-row";
   const eventAreaTop = tableRow ? 32 : 64;
   const setScrollerRef = React.useCallback((node: HTMLElement | null) => {
@@ -836,7 +835,14 @@ export function DayTimeline({
                 }}
               >
                 <span className="absolute top-1 left-1 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
-                  {`${formatMinuteWithDayOffset(date, timezone, Math.min(dragRange.from, dragRange.to))}–${formatMinuteWithDayOffset(date, timezone, Math.max(dragRange.from, dragRange.to))}`}
+                  {period(
+                    {
+                      startMinute: Math.min(dragRange.from, dragRange.to),
+                      endMinute: Math.max(dragRange.from, dragRange.to),
+                    },
+                    date,
+                    timezone,
+                  )}
                 </span>
               </div>
             ) : null}

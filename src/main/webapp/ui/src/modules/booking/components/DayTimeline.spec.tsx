@@ -2,7 +2,8 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { DayTimelineStory, LONG_ITEM_NAME } from "./DayTimeline.story";
+import { LONG_ITEM_NAME } from "./DayTimeline.fixtures";
+import { DayTimelineStory } from "./DayTimeline.story";
 import { DayTimelinePage } from "./pageObjects/DayTimelinePage";
 
 const timeline = new DayTimelinePage();

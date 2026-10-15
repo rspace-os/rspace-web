@@ -1,4 +1,5 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { apiV2CollectionResponse } from "@/__tests__/mocks/apiV2CollectionMock";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
@@ -7,13 +8,8 @@ import {
   bookableItemsHandlers,
   sampleBookingEvents,
 } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
-import {
-  busyBooking,
-  currentUser,
-  otherBooking,
-  ownBooking,
-} from "@/modules/booking/pages/calendar/__tests__/calendarTestHarness";
 import { CALENDAR_BOOKING_FIELDS } from "@/modules/booking/pages/calendar/calendarEvents";
+import { busyBooking, otherBooking, ownBooking } from "./bookingCalendarFixtures";
 
 export const availabilityBookingFields = BOOKING_READ_FIELDS;
 export const calendarBookingFields = CALENDAR_BOOKING_FIELDS;

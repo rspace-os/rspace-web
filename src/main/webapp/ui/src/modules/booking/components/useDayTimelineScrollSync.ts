@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 
+export function centerMinuteForScrollPosition(
+  element: Pick<HTMLElement, "scrollLeft" | "clientWidth" | "scrollWidth">,
+  dayMinutes: number,
+): number {
+  return ((element.scrollLeft + element.clientWidth / 2) / element.scrollWidth) * dayMinutes;
+}
+
 /** Share an elapsed-minute viewport without rendering React content on scroll. */
 export function useDayTimelineScrollSync() {
   const [sync] = useState(() => {
@@ -22,7 +29,7 @@ export function useDayTimelineScrollSync() {
         const row = rows.get(element);
         if (!row || element.scrollWidth === 0 || Math.abs(element.scrollLeft - row.lastLeft) < 0.5) return;
         row.lastLeft = element.scrollLeft;
-        centerMinute = ((element.scrollLeft + element.clientWidth / 2) / element.scrollWidth) * row.dayMinutes;
+        centerMinute = centerMinuteForScrollPosition(element, row.dayMinutes);
         source = element;
         if (frame !== undefined) return;
         frame = requestAnimationFrame(() => {

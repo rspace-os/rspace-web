@@ -4,17 +4,12 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import type { BookingDisplayPreferencesDocument } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import {
-  busyBooking,
-  collectionResponse,
-  currentUser,
-  otherBooking,
-  ownBooking,
-} from "../calendar/__tests__/calendarTestHarness";
+import { busyBooking, collectionResponse, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { BookingPreferencesPageStory } from "./BookingPreferencesPage.story";
 import { inheritedBrowserBookingPreferences } from "./bookingPreferencesFixtures";
 import { BookingPreferencesPage } from "./pageObjects/BookingPreferencesPage";

@@ -1,8 +1,8 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents } from "../calendarEvents";
-import { collectionResponse, otherBooking, ownBooking } from "./calendarTestHarness";
 
 describe("calendar events", () => {
   it("loads every page for the selected calendar range with private-safe fields", async () => {

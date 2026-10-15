@@ -2,7 +2,6 @@ import { type Locator, page, userEvent } from "vitest/browser";
 
 export class CalendarPage {
   readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Electron microscope" });
-  readonly bookableItemDetailsTarget: Locator = page.getByText("IN124", { exact: true });
   readonly heading: Locator = page.getByRole("heading", { name: "Calendar" });
   readonly toolbar: Locator = page.getByRole("toolbar", { name: "Calendar", exact: true });
   readonly reset: Locator = this.toolbar.getByRole("button", {
@@ -22,7 +21,6 @@ export class CalendarPage {
   readonly week: Locator = page.getByRole("button", { name: "Week", exact: true });
   readonly month: Locator = page.getByRole("button", { name: "Month", exact: true });
   readonly mine: Locator = page.getByRole("button", { name: "My calendar" });
-  readonly previous: Locator = this.toolbar.getByRole("button", { name: /^Previous / });
   readonly next: Locator = this.toolbar.getByRole("button", { name: /^Next / });
   readonly newBooking: Locator = page.getByRole("button", { name: "New Booking" });
   readonly timeZone: Locator = this.toolbar.getByLabelText(/^Time zone:/);
@@ -65,9 +63,5 @@ export class CalendarPage {
       targetPosition: { x: 420, y: 60 },
     };
     await userEvent.dragAndDrop(canvas, canvas, positions);
-  }
-
-  async searchFor(value: string): Promise<void> {
-    await this.search.fill(value);
   }
 }

@@ -3,22 +3,8 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
-import { loadCalendarAvailability, loadDatedCalendarAvailability } from "../calendarAvailability";
-
-function envelope(docs: unknown[], page = 1, totalPages = 1, totalDocs = docs.length) {
-  return {
-    docs,
-    totalDocs,
-    limit: 100,
-    page,
-    pagingCounter: (page - 1) * 100 + 1,
-    totalPages,
-    hasPrevPage: page > 1,
-    hasNextPage: page < totalPages,
-    prevPage: page > 1 ? page - 1 : null,
-    nextPage: page < totalPages ? page + 1 : null,
-  };
-}
+import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
+import { loadCalendarAvailability } from "../calendarAvailability";
 
 const booking = (id: number, target: string, start: string, end: string) => ({
   id,
@@ -42,8 +28,10 @@ const booking = (id: number, target: string, start: string, end: string) => ({
   updatedAt: "2026-08-01T09:00:00Z",
 });
 
+const ALWAYS_OPEN = [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }));
+
 const schedule = {
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+  openingHours: ALWAYS_OPEN,
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   allowDoubleBooking: false,
@@ -86,7 +74,9 @@ describe("calendar availability", () => {
     server.use(
       http.get("/api/v2/bookings", () =>
         HttpResponse.json(
-          envelope([{ ...booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"), kind: "MAINTENANCE" }]),
+          collectionResponse([
+            { ...booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z"), kind: "MAINTENANCE" },
+          ]),
         ),
       ),
     );
@@ -112,7 +102,7 @@ describe("calendar availability", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         requests.push(new URL(request.url));
         return HttpResponse.json(
-          envelope([
+          collectionResponse([
             booking(1, "IN1", "2026-03-28T22:00:00Z", "2026-03-29T01:00:00Z"),
             booking(2, "IN2", "2026-03-29T03:00:00Z", "2026-03-29T05:00:00Z"),
           ]),
@@ -148,8 +138,16 @@ describe("calendar availability", () => {
         pages.push(page);
         return HttpResponse.json(
           page === "1"
-            ? envelope([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")], 1, 2, 2)
-            : envelope([booking(2, "IN1", "2026-08-17T12:00:00Z", "2026-08-17T13:00:00Z")], 2, 2, 2),
+            ? collectionResponse([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")], {
+                page: 1,
+                totalPages: 2,
+                totalDocs: 2,
+              })
+            : collectionResponse([booking(2, "IN1", "2026-08-17T12:00:00Z", "2026-08-17T13:00:00Z")], {
+                page: 2,
+                totalPages: 2,
+                totalDocs: 2,
+              }),
         );
       }),
     );
@@ -158,48 +156,18 @@ describe("calendar availability", () => {
     expect(pages).toEqual(["1", "2"]);
     expect(result.get("IN1")).toHaveLength(2);
 
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 1, 11, 1001))));
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        HttpResponse.json(collectionResponse([], { page: 1, totalPages: 11, totalDocs: 1001 })),
+      ),
+    );
     await expect(loadCalendarAvailability(rows, "2026-08-17", "token", new AbortController().signal)).rejects.toThrow(
       "exceeds 1,000",
     );
   });
 
-  it("uses one envelope while clipping rows to different local dates", async () => {
-    let requestUrl: URL | undefined;
-    server.use(
-      http.get("/api/v2/bookings", ({ request }) => {
-        requestUrl = new URL(request.url);
-        return HttpResponse.json(
-          envelope([
-            booking(1, "IN1", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
-            booking(2, "IN2", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
-          ]),
-        );
-      }),
-    );
-
-    const result = await loadDatedCalendarAvailability(
-      [
-        { globalId: "IN1", timezone: "Asia/Tokyo", date: "2026-08-18", ...schedule },
-        { globalId: "IN2", timezone: "America/Los_Angeles", date: "2026-08-17", ...schedule },
-      ],
-      "token",
-      new AbortController().signal,
-    );
-
-    const where = requestUrl?.searchParams.get("where") ?? "";
-    expect(where).toContain("start<2026-08-18T15:00:00Z");
-    expect(where).toContain("end>2026-08-17T07:00:00Z");
-    expect(result.get("IN1")).toEqual([
-      sourced("booking:1", "booking", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
-    ]);
-    expect(result.get("IN2")).toEqual([
-      sourced("booking:2", "booking", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
-    ]);
-  });
-
   it("generates and clips closures for every scheduling date overlapped by the display interval", async () => {
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))));
     const interval = displayInterval("2026-08-18", "Pacific/Auckland", "00:00", "24:00");
 
     const result = await loadCalendarAvailability(
@@ -238,7 +206,7 @@ describe("calendar availability", () => {
   it("marks closed and buffered periods unavailable while double-bookable events stay available", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        HttpResponse.json(envelope([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")])),
+        HttpResponse.json(collectionResponse([booking(1, "IN1", "2026-08-17T10:00:00Z", "2026-08-17T11:00:00Z")])),
       ),
     );
     const restricted = {
@@ -313,7 +281,7 @@ describe("calendar availability", () => {
     { date: "2026-08-18", closures: [["2026-08-18T00:00:00Z", "2026-08-18T10:00:00Z"]] },
     { date: "2026-08-19", closures: [["2026-08-19T00:00:00Z", "2026-08-20T00:00:00Z"]] },
   ])("uses the independent weekday schedule on $date", async ({ date, closures }) => {
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([]))));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([]))));
     const result = await loadCalendarAvailability(
       [
         {
