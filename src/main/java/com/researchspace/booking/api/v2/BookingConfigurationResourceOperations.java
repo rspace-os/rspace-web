@@ -22,28 +22,25 @@ import com.researchspace.booking.service.BookingConfigurationTargetConflictExcep
 import com.researchspace.booking.service.InvalidBookableTargetException;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
-import com.researchspace.model.booking.BookableTargetReference;
-import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationCapabilities;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
+import com.researchspace.model.booking.BookingOwnerHealth;
 import com.researchspace.model.booking.BookingSchedulingSettings;
-import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.ParsedDocument;
-import com.researchspace.model.collection.RelationshipTarget;
-import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourcePage;
-import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.FeatureFlagManager;
 import java.time.Clock;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -92,9 +89,9 @@ public final class BookingConfigurationResourceOperations
                 "errors.api.v2.bookingConfiguration.target.conflict",
                 "The instrument already has a booking configuration."));
     List<ApiV2ErrorMapping> updateErrors =
-        java.util.stream.Stream.concat(
+        Stream.concat(
                 writeErrors.stream(),
-                java.util.stream.Stream.of(
+                Stream.of(
                     ApiV2ErrorMapping.of(
                         BookingConcurrentModificationException.class,
                         HttpStatus.PRECONDITION_FAILED,
@@ -154,8 +151,8 @@ public final class BookingConfigurationResourceOperations
         Optional.of(
             new ResourceAccessSpec<>(
                 protectedResourceAccess,
-                com.researchspace.model.booking.BookingConfigurationCapabilities.class,
-                com.researchspace.model.booking.BookingOwnerHealth.class)));
+                BookingConfigurationCapabilities.class,
+                BookingOwnerHealth.class)));
   }
 
   @Override
@@ -232,7 +229,7 @@ public final class BookingConfigurationResourceOperations
     return manager.updateConfiguration(
         id,
         patch(document),
-        java.util.Objects.requireNonNull(expectedVersion, "Expected configuration version"),
+        Objects.requireNonNull(expectedVersion, "Expected configuration version"),
         caller.subject(),
         caller.actor());
   }
@@ -278,8 +275,7 @@ public final class BookingConfigurationResourceOperations
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
     long expectedVersion =
-        java.util.Objects.requireNonNull(
-            options.expectedVersion(), "Expected configuration version");
+        Objects.requireNonNull(options.expectedVersion(), "Expected configuration version");
     if (options.permanent()) {
       if (caller.isDelegated()) {
         throw new AuthorizationException("errors.api.v2.forbidden");
@@ -307,43 +303,28 @@ public final class BookingConfigurationResourceOperations
 
   private static Patch patch(ParsedDocument document) {
     return new Patch(
-        value(document, "enabled", Boolean.class),
+        BookingDocumentValues.value(document, "enabled", Boolean.class),
         null,
         schedulingPatch(document),
-        value(document, "state", BookingConfigurationState.class));
+        BookingDocumentValues.value(document, "state", BookingConfigurationState.class));
   }
 
   private Create create(ParsedDocument document) {
     return new Create(
         (boolean) document.values().getOrDefault("enabled", true),
         institutionClock.getZone().getId(),
-        target(document),
+        BookingDocumentValues.target(document, description),
         schedulingPatch(document));
   }
 
   private static BookingSchedulingSettings.Patch schedulingPatch(ParsedDocument document) {
     return new BookingSchedulingSettings.Patch(
-        value(document, "slotGranularityMinutes", Long.class),
+        BookingDocumentValues.value(document, "slotGranularityMinutes", Long.class),
         openingHours(document),
-        value(document, "bufferBeforeMinutes", Long.class),
-        value(document, "bufferAfterMinutes", Long.class),
-        value(document, "maxBookingDurationMinutes", Long.class),
-        value(document, "allowDoubleBooking", Boolean.class));
-  }
-
-  private ResolvedBookableTarget target(ParsedDocument document) {
-    Object value = document.values().get("target");
-    if (value == null) {
-      return null;
-    }
-    ResolvedResourceReference<?, ?> resolved = ResolvedResourceReference.class.cast(value);
-    ResourceReference<?, ?> reference = resolved.reference();
-    BookableTargetType type = BookableTargetType.class.cast(reference.kind());
-    Long id = Long.class.cast(reference.id());
-    RelationshipTarget<?> metadata = description.requireRelationship("target").targetForKind(type);
-    Object selectedEntity = resolved.entityAs(metadata.entityType());
-    InventoryRecord entity = InventoryRecord.class.cast(selectedEntity);
-    return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);
+        BookingDocumentValues.value(document, "bufferBeforeMinutes", Long.class),
+        BookingDocumentValues.value(document, "bufferAfterMinutes", Long.class),
+        BookingDocumentValues.value(document, "maxBookingDurationMinutes", Long.class),
+        BookingDocumentValues.value(document, "allowDoubleBooking", Boolean.class));
   }
 
   private static List<BookingOpeningHoursEntry> openingHours(ParsedDocument document) {
@@ -351,9 +332,5 @@ public final class BookingConfigurationResourceOperations
     return value == null
         ? null
         : List.class.cast(value).stream().map(BookingOpeningHoursEntry.class::cast).toList();
-  }
-
-  private static <T> T value(ParsedDocument document, String field, Class<T> type) {
-    return type.cast(document.values().get(field));
   }
 }

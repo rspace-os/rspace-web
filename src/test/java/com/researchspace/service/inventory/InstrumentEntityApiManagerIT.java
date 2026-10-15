@@ -1,6 +1,5 @@
 package com.researchspace.service.inventory;
 
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,35 +12,25 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
-import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
 import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.core.testutil.CoreTestUtils;
-import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.BookableTargetReference;
-import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.inventory.impl.InstrumentEntityApiManagerImpl;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
 
-  @Autowired private BookingConfigurationManager bookingConfigurationManager;
   @Autowired private BookingConfigurationProtectedResourceAccess bookingProtectedAccess;
   @Autowired private ResourceAccessManager resourceAccessManager;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private FeatureFlagManager featureFlags;
 
   @Test
   public void checkBasicInstrumentCreateRetrieveAndExists() throws Exception {
@@ -227,21 +216,7 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
   @Test
   public void changeApiInstrumentOwner_canTransferBookingConfigurationOwnershipTogether()
       throws Exception {
-    // Booking ownership transfer is feature-gated for the acting subject.
-    User sysadmin = getSysAdminUser();
-    boolean originalBookingBaseline =
-        featureFlags.getFeatureFlag(BOOKING_ENABLED, sysadmin).orElseThrow().isBaselineValue();
-    featureFlags.updateFeatureFlag(
-        BOOKING_ENABLED, new FeatureFlagManager.Patch(true, false, null), sysadmin, sysadmin);
-    try {
-      transferBookingConfigurationOwnershipTogether();
-    } finally {
-      featureFlags.updateFeatureFlag(
-          BOOKING_ENABLED,
-          new FeatureFlagManager.Patch(originalBookingBaseline, false, null),
-          sysadmin,
-          sysadmin);
-    }
+    withBookingEnabled(this::transferBookingConfigurationOwnershipTogether);
   }
 
   private void transferBookingConfigurationOwnershipTogether() throws Exception {
@@ -251,18 +226,7 @@ public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase 
     setUpUserWithoutCustomContent(newOwner);
 
     ApiInstrument created = createBasicInstrumentForUser(owner, "booking-owner-transfer");
-    openTransaction();
-    Instrument instrument = instrumentDao.get(created.getId());
-    Hibernate.initialize(instrument.getOwner());
-    commitTransaction();
-    BookableTargetReference target =
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, created.getId());
-    BookingConfiguration configuration =
-        bookingConfigurationManager.createConfiguration(
-            new BookingConfigurationManager.Create(
-                true, "UTC", new ResolvedBookableTarget(target, instrument)),
-            owner,
-            owner);
+    BookingConfiguration configuration = bookingConfigurationFor(created, owner);
 
     created.setOwner(new ApiUser(newOwner));
     ApiInstrument transferred =

@@ -12,18 +12,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.axiope.search.SearchManager;
 import com.researchspace.Constants;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
+import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.testutil.InvokableWithResult;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.AuditDaoIT;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.UserDao;
+import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Community;
 import com.researchspace.model.EcatChemistryFile;
@@ -41,6 +45,10 @@ import com.researchspace.model.Role;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedRecord;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.comms.Communication;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
@@ -49,6 +57,7 @@ import com.researchspace.model.comms.MsgOrReqstCreationCfg;
 import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfiguration;
 import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -60,6 +69,7 @@ import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.EcatImageAnnotationManager;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
@@ -89,6 +99,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.util.ThreadContext;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -127,6 +138,9 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
   }
 
   protected @Autowired DataSource dataSource;
+  protected @Autowired InstrumentDao instrumentDao;
+  protected @Autowired BookingConfigurationManager bookingConfigurationManager;
+  protected @Autowired FeatureFlagManager featureFlagManager;
 
   protected @Autowired IContentInitializer contentInitializer;
   protected @Autowired EcatImageAnnotationManager imgAnnotationMgr;
@@ -562,6 +576,48 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase
    * Opens a new transaction. This is only needed if you're calling a DAO method from a test case,
    * rather than a service method.
    */
+  protected void withBookingEnabled(CheckedTestAction action) throws Exception {
+    User sysadmin = getSysAdminUser();
+    boolean originalBaseline =
+        featureFlagManager
+            .getFeatureFlag(FeatureFlags.BOOKING_ENABLED, sysadmin)
+            .orElseThrow()
+            .isBaselineValue();
+    featureFlagManager.updateFeatureFlag(
+        FeatureFlags.BOOKING_ENABLED,
+        new FeatureFlagManager.Patch(true, false, null),
+        sysadmin,
+        sysadmin);
+    try {
+      action.run();
+    } finally {
+      featureFlagManager.updateFeatureFlag(
+          FeatureFlags.BOOKING_ENABLED,
+          new FeatureFlagManager.Patch(originalBaseline, false, null),
+          sysadmin,
+          sysadmin);
+    }
+  }
+
+  protected BookingConfiguration bookingConfigurationFor(ApiInstrument apiInstrument, User owner) {
+    openTransaction();
+    Instrument instrument = instrumentDao.get(apiInstrument.getId());
+    Hibernate.initialize(instrument.getOwner());
+    commitTransaction();
+    BookableTargetReference target =
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, apiInstrument.getId());
+    return bookingConfigurationManager.createConfiguration(
+        new BookingConfigurationManager.Create(
+            true, "UTC", new ResolvedBookableTarget(target, instrument)),
+        owner,
+        owner);
+  }
+
+  @FunctionalInterface
+  protected interface CheckedTestAction {
+    void run() throws Exception;
+  }
+
   protected TransactionStatus openTransaction() {
     // for some reason it's necessary to go through AuditDaoIT (or maybe any IT class)
     status = AuditDaoIT.openTransaction(getTxMger());

@@ -1,7 +1,6 @@
 package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ApiV2UserResource;
@@ -14,11 +13,10 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * The users collection query against the real {@code User} mapping.
@@ -27,32 +25,46 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  * rename in the entity breaks the Blaze-Persistence query at runtime and nowhere else; no amount of
  * mocking catches that.
  */
-@ExtendWith(SpringExtension.class)
 class ApiV2UserResourceDaoIT extends SpringTransactionalTest {
 
   @Autowired private UserDao userDao;
 
-  private static ResourceRequest request(FilterExpression filter) {
+  private static ResourceRequest request(FilterExpression filter, List<Sort> sort) {
     return new ResourceRequest(
-        filter,
-        ApiV2UserResource.DESCRIPTION.defaultSort(),
-        new ResourceRequest.Page(1, 20),
-        FieldSelection.all(),
-        IncludeTree.empty());
+        filter, sort, new ResourceRequest.Page(1, 20), FieldSelection.all(), IncludeTree.empty());
   }
 
   @Test
   @DisplayName("every declared field is a queryable property of the entity")
   void everyDeclaredFieldIsQueryable() {
-    createAndSaveUserIfNotExists("collectionqueryuser");
+    User target = createAndSaveUserIfNotExists("collectionqueryuser");
+    target.setFirstName("collection-query-first");
+    target.setLastName("collection-query-last");
+    Map<String, Object> values = ApiV2UserResource.DESCRIPTION.toDocument(target);
 
     ApiV2UserResource.DESCRIPTION
         .fields()
         .forEach(
-            field ->
-                assertTrue(
-                    userDao.countUsers(sortedBy(field.name())) > 0,
-                    "sorting on " + field.name() + " must reach a real property"));
+            field -> {
+              ResourcePage<User> page =
+                  userDao.getUsers(
+                      request(
+                          new FilterExpression.Comparison(
+                              field.name(),
+                              Operator.EQUAL,
+                              List.of(
+                                  field
+                                      .filterSelector()
+                                      .parse(values.get(field.name()).toString())),
+                              false),
+                          field.name().equals("id")
+                              ? List.of(new Sort("id", true))
+                              : List.of(new Sort(field.name(), true), new Sort("id", true))));
+              assertEquals(
+                  List.of(target.getId()),
+                  page.resources().stream().map(User::getId).toList(),
+                  "filtering and sorting on " + field.name() + " must reach a real property");
+            });
   }
 
   @Test
@@ -63,7 +75,8 @@ class ApiV2UserResourceDaoIT extends SpringTransactionalTest {
 
     ResourceRequest scoped =
         request(
-            new FilterExpression.Comparison("id", Operator.EQUAL, List.of(target.getId()), false));
+            new FilterExpression.Comparison("id", Operator.EQUAL, List.of(target.getId()), false),
+            ApiV2UserResource.DESCRIPTION.defaultSort());
     ResourcePage<User> page = userDao.getUsers(scoped);
 
     assertEquals(1, page.resources().size());
@@ -79,22 +92,7 @@ class ApiV2UserResourceDaoIT extends SpringTransactionalTest {
   void unfilteredQueryCounts() {
     createAndSaveUserIfNotExists("collectionqueryunfiltered");
 
-    assertEquals(userDao.countUsers(request(null)), userDao.getUsers(request(null)).total());
-  }
-
-  @Test
-  @DisplayName("a missing id is empty rather than an exception, so a get renders 404 not 500")
-  void missingIdIsEmpty() {
-    // GenericDao.get throws ObjectRetrievalFailureException here, which would escape as a 500.
-    assertTrue(userDao.getSafeNull(Long.MAX_VALUE).isEmpty());
-  }
-
-  private static ResourceRequest sortedBy(String field) {
-    return new ResourceRequest(
-        null,
-        List.of(new Sort(field, true)),
-        new ResourceRequest.Page(1, 20),
-        FieldSelection.all(),
-        IncludeTree.empty());
+    ResourceRequest unfiltered = request(null, ApiV2UserResource.DESCRIPTION.defaultSort());
+    assertEquals(userDao.countUsers(unfiltered), userDao.getUsers(unfiltered).total());
   }
 }

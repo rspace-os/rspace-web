@@ -3,24 +3,16 @@ package com.researchspace.booking.dao;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.BookableTargetReference;
-import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
-import com.researchspace.model.resourceaccess.ResourceAccess;
-import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.time.Instant;
 import java.util.Date;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
 class TimeSlotBookingDaoTest extends SpringTransactionalTest {
 
   @Autowired private TimeSlotBookingDao bookingDao;
@@ -92,18 +84,11 @@ class TimeSlotBookingDaoTest extends SpringTransactionalTest {
   }
 
   private BookingConfiguration configurationFor(User owner, String name) {
-    Long instrumentId = createBasicInstrumentForUser(owner, name).getId();
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setEnabled(true);
-    configuration.setTimeZone("UTC");
-    configuration.replaceTarget(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId));
-    ResourceAccess access =
-        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, owner, new Date());
-    access.addAssignment(ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, owner));
-    configuration.setResourceAccess(access);
-    sessionFactory.getCurrentSession().persist(configuration);
-    sessionFactory.getCurrentSession().flush();
+    var session = sessionFactory.getCurrentSession();
+    BookingConfiguration configuration =
+        BookingDaoTestFixtures.configuration(
+            session, owner, createBasicInstrumentForUser(owner, name).getId());
+    session.flush();
     return configuration;
   }
 
@@ -114,20 +99,16 @@ class TimeSlotBookingDaoTest extends SpringTransactionalTest {
       String end,
       BookingState state,
       boolean deleted) {
-    TimeSlotBooking booking = new TimeSlotBooking();
-    booking.setBookingConfiguration(configuration);
-    booking.setRequester(requester);
-    booking.setStartTime(instant(start));
-    booking.setEndTime(instant(end));
-    booking.setState(state);
-    booking.setDeleted(deleted);
-    booking.setCreatedAt(new Date());
-    booking.setUpdatedAt(new Date());
-    booking.setCreatedBy(requester);
-    booking.setUpdatedBy(requester);
-    sessionFactory.getCurrentSession().persist(booking);
-    sessionFactory.getCurrentSession().flush();
-    return booking;
+    return BookingDaoTestFixtures.booking(
+        sessionFactory.getCurrentSession(),
+        configuration,
+        requester,
+        instant(start),
+        instant(end),
+        state,
+        deleted,
+        new Date(),
+        new Date());
   }
 
   private static Date instant(String value) {

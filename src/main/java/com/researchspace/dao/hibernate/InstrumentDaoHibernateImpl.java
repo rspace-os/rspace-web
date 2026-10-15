@@ -263,15 +263,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     return new ResourcePage<>(locations, total);
   }
 
-  protected String readableContainerPredicate(
-      User caller,
-      List<String> groupMembers,
-      List<String> groupNames,
-      List<String> visibleOwners,
-      String alias) {
-    return super.readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, alias);
-  }
-
   private <T> void setBookingCatalogueLocationParameters(
       Query<T> query,
       User caller,
@@ -296,6 +287,17 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
           "locationQuery",
           "%" + LikeEscaper.escape(locationQuery.trim().toLowerCase(Locale.ROOT)) + "%");
     }
+  }
+
+  private static InstrumentReadSummary toReadSummary(
+      Long id,
+      String name,
+      boolean deleted,
+      Long parentContainerId,
+      String parentContainerName,
+      ContainerType parentContainerType) {
+    return new InstrumentReadSummary(
+        id, name, deleted, parentContainerId, parentContainerName, parentContainerType);
   }
 
   @Override
@@ -364,10 +366,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         .whereExpression("instrument.id in :instrumentIds")
         .setParameter("instrumentIds", instrumentIds)
         .getResultStream()
-        .map(
-            row ->
-                new InstrumentReadSummary(
-                    row.instrumentId(), row.name(), row.deleted(), null, null, null))
+        .map(row -> toReadSummary(row.instrumentId(), row.name(), row.deleted(), null, null, null))
         .collect(Collectors.toMap(InstrumentReadSummary::id, summary -> summary));
   }
 
@@ -412,8 +411,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                 byGlobalId
                     ? query.toUpperCase(Locale.ROOT)
                     : "%" + LikeEscaper.escape(query.toLowerCase(Locale.ROOT)) + "%")
-            .setParameter(
-                "targetType", com.researchspace.model.booking.BookableTargetType.INSTRUMENT)
+            .setParameter("targetType", BookableTargetType.INSTRUMENT)
             .setMaxResults(limit);
     if (!subject.hasSysadminRole()) {
       targetQuery.setParameter("subjectId", subject.getId());

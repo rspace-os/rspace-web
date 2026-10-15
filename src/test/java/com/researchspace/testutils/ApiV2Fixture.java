@@ -1,6 +1,7 @@
 package com.researchspace.testutils;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,6 +36,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.test.web.servlet.MockMvc;
@@ -400,11 +403,12 @@ public final class ApiV2Fixture {
     }
     bookingFlagEnabled = true;
     User target = sysadmin();
+    Supplier<IllegalStateException> missingBookingFlag =
+        () -> new IllegalStateException("bookingEnabled feature flag is not registered");
     FeatureFlagResource original =
         featureFlagManager
             .getFeatureFlag(FeatureFlags.BOOKING_ENABLED, target)
-            .orElseThrow(
-                () -> new IllegalStateException("bookingEnabled feature flag is not registered"));
+            .orElseThrow(missingBookingFlag);
     if (original.isValue()) {
       return;
     }
@@ -412,8 +416,7 @@ public final class ApiV2Fixture {
     featureFlagManager
         .updateFeatureFlag(
             FeatureFlags.BOOKING_ENABLED, new Patch(true, false, null), target, target)
-        .orElseThrow(
-            () -> new IllegalStateException("bookingEnabled feature flag is not registered"));
+        .orElseThrow(missingBookingFlag);
     teardown.add(
         () ->
             featureFlagManager.updateFeatureFlag(
@@ -476,23 +479,18 @@ public final class ApiV2Fixture {
   private void deleteBookingConfigurationAsSysadmin(long id) {
     String path = "/api/v2/booking-configurations/" + id;
     try {
-      MvcResult current =
-          mockMvc
-              .perform(
-                  org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(path)
-                      .header("apiKey", sysadminKey()))
-              .andReturn();
+      MvcResult current = mockMvc.perform(get(path).header("apiKey", sysadminKey())).andReturn();
       if (current.getResponse().getStatus() == 404) {
         return;
       }
-      String etag = current.getResponse().getHeader(org.springframework.http.HttpHeaders.ETAG);
+      String etag = current.getResponse().getHeader(HttpHeaders.ETAG);
       int deleteStatus =
           mockMvc
               .perform(
                   delete(path)
                       .queryParam("permanent", "true")
                       .header("apiKey", sysadminKey())
-                      .header(org.springframework.http.HttpHeaders.IF_MATCH, etag))
+                      .header(HttpHeaders.IF_MATCH, etag))
               .andReturn()
               .getResponse()
               .getStatus();

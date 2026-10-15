@@ -1,5 +1,7 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.model.User;
+import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import org.springframework.stereotype.Component;
@@ -18,16 +20,7 @@ public final class BookingAuditTrail {
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void bookingConfigurationChanged(BookingConfigurationAuditEvent event) {
-    if (event.actor().equals(event.subject())) {
-      auditTrail.notify(new GenericEvent(event.actor(), event.configuration(), event.action()));
-      return;
-    }
-    auditTrail.notify(
-        new GenericEvent(
-            event.actor(),
-            event.configuration(),
-            event.action(),
-            "subject=" + event.subject().getUsername()));
+    notifyActorSubjectChange(event.actor(), event.subject(), event.configuration(), event.action());
   }
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -44,29 +37,21 @@ public final class BookingAuditTrail {
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void bookingConfigurationDefaultsChanged(BookingConfigurationDefaultsAuditEvent event) {
-    if (event.actor().equals(event.subject())) {
-      auditTrail.notify(new GenericEvent(event.actor(), event.defaults(), event.action()));
-      return;
-    }
-    auditTrail.notify(
-        new GenericEvent(
-            event.actor(),
-            event.defaults(),
-            event.action(),
-            "subject=" + event.subject().getUsername()));
+    notifyActorSubjectChange(event.actor(), event.subject(), event.defaults(), event.action());
   }
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void timeSlotBookingChanged(TimeSlotBookingAuditEvent event) {
-    if (event.actor().equals(event.subject())) {
-      auditTrail.notify(new GenericEvent(event.actor(), event.booking(), event.action()));
+    notifyActorSubjectChange(event.actor(), event.subject(), event.booking(), event.action());
+  }
+
+  private void notifyActorSubjectChange(
+      User actor, User subject, Object auditedObject, AuditAction action) {
+    if (actor.equals(subject)) {
+      auditTrail.notify(new GenericEvent(actor, auditedObject, action));
       return;
     }
     auditTrail.notify(
-        new GenericEvent(
-            event.actor(),
-            event.booking(),
-            event.action(),
-            "subject=" + event.subject().getUsername()));
+        new GenericEvent(actor, auditedObject, action, "subject=" + subject.getUsername()));
   }
 }
