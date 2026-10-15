@@ -10,7 +10,7 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
 
-export type BookingSummaryCardProps = {
+type BookingSummaryCardProps = {
   booking: BookingListDocument;
   timeZone: string;
   variant?: "default" | "plain";
@@ -33,33 +33,24 @@ export function BookingSummaryCard({ booking, timeZone, variant = "default" }: B
   const formatDateTime = (value: string) =>
     formatBookingAgendaDateTime(value, booking.start, booking.end, timeZone, i18n.resolvedLanguage ?? i18n.language);
 
-  const fields: TableListCardField[] = [
+  const dateFields = [
     {
       id: "start",
       label: t("myBookings.fields.start"),
+      instant: booking.start,
+    },
+    { id: "end", label: t("myBookings.fields.end"), instant: booking.end },
+  ] as const;
+  const fields: TableListCardField[] = [
+    ...dateFields.map(({ id, label, instant }) => ({
+      id,
+      label,
       value: (
-        <BookingInstrumentTimeTooltip
-          start={booking.start}
-          displayTimeZone={timeZone}
-          instrumentTimeZone={booking.timezone}
-        >
-          <time dateTime={booking.start}>{formatDateTime(booking.start)}</time>
+        <BookingInstrumentTimeTooltip start={instant} displayTimeZone={timeZone} instrumentTimeZone={booking.timezone}>
+          <time dateTime={instant}>{formatDateTime(instant)}</time>
         </BookingInstrumentTimeTooltip>
       ),
-    },
-    {
-      id: "end",
-      label: t("myBookings.fields.end"),
-      value: (
-        <BookingInstrumentTimeTooltip
-          start={booking.end}
-          displayTimeZone={timeZone}
-          instrumentTimeZone={booking.timezone}
-        >
-          <time dateTime={booking.end}>{formatDateTime(booking.end)}</time>
-        </BookingInstrumentTimeTooltip>
-      ),
-    },
+    })),
     ...(location
       ? [
           {

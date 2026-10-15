@@ -1,6 +1,6 @@
 import type { DayTimelineEvent } from "./DayTimelineEvent";
 
-export type PositionedVerticalTimelineEvent = {
+type PositionedVerticalTimelineEvent = {
   event: DayTimelineEvent;
   startMinute: number;
   endMinute: number;

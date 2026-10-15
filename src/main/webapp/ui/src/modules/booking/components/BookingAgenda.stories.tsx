@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import type { BookingAgendaProps } from "@/modules/booking/components/BookingAgenda";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { bookingListDocument } from "@/modules/booking/domain/bookingAgendaFixtures";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { BookingAgenda } from "./BookingAgenda";
 
@@ -29,26 +30,14 @@ function booking(
       }
     : null;
 
-  return {
+  return bookingListDocument({
     id,
-    version: 1,
     target,
-    timezone: "Europe/Berlin",
     start,
     end,
-    state: "CONFIRMED",
-    kind: "BOOKING",
     privacy,
     purpose,
-    bookedBy: null,
-    createdBy: null,
-    canViewConfiguration: privacy === "full",
-    requesterId: 7,
-    canEdit: false,
-    canCancel: false,
-    createdAt: start,
-    updatedAt: start,
-  };
+  });
 }
 
 const bookings = [
