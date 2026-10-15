@@ -658,7 +658,12 @@ describe("Calendar page", () => {
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         updatedPayload = (await request.json()) as Record<string, unknown>;
         ifMatch = request.headers.get("If-Match");
-        return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
+        return HttpResponse.json({
+          ...ownBooking,
+          cancellationReason: null,
+          ...updatedPayload,
+          version: ownBooking.version + 1,
+        });
       }),
     );
     render(<CalendarPageStory history={history} />);
@@ -692,7 +697,12 @@ describe("Calendar page", () => {
     worker.use(
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         updatedPayload = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
+        return HttpResponse.json({
+          ...ownBooking,
+          cancellationReason: null,
+          ...updatedPayload,
+          version: ownBooking.version + 1,
+        });
       }),
     );
     render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
@@ -746,7 +756,7 @@ describe("Calendar page", () => {
   });
 
   test("opens a full event, edits it on its canonical page, and refreshes the readout", async () => {
-    let details = { ...ownBooking, createdBy: "Ada Lovelace (ada)" };
+    let details = { ...ownBooking, cancellationReason: null, createdBy: "Ada Lovelace (ada)" };
     worker.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(details)),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
