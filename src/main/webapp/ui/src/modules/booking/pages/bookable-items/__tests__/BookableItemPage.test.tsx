@@ -362,6 +362,47 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123/details"));
   });
 
+  it("keeps only valid inventory access rows and treats only true flags as enabled", async () => {
+    let sharingMode: "WHITELIST" | "OWNER_GROUPS" = "WHITELIST";
+    const sharedWith = [
+      { group: { id: 11, name: "String flags" }, shared: "true", itemOwnerGroup: "true" },
+      { group: { id: 12, name: "Boolean owner" }, shared: true, itemOwnerGroup: true },
+      { group: { id: "13", name: "Invalid id" }, shared: true, itemOwnerGroup: true },
+      null,
+    ];
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(
+          collectionPage(
+            [
+              {
+                ...configuration,
+                capabilities: { ...configuration.capabilities, canViewAccess: false },
+              },
+            ],
+            2,
+          ),
+        ),
+      ),
+      http.get("/api/inventory/v1/instruments/123", () => HttpResponse.json({ sharingMode, sharedWith })),
+    );
+    const { queryClient } = renderPage("/booking/bookable-items/IN123/access");
+    const explicitAccessTable = await screen.findByRole("table");
+    const stringFlagsRow = within(explicitAccessTable).getByRole("row", { name: /String flags/ });
+    const booleanOwnerRow = within(explicitAccessTable).getByRole("row", { name: /Boolean owner/ });
+
+    expect(within(explicitAccessTable).getAllByRole("row")).toHaveLength(3);
+    expect(within(explicitAccessTable).queryByText("Invalid id")).not.toBeInTheDocument();
+    expect(within(stringFlagsRow).getByRole("checkbox")).toHaveAttribute("aria-checked", "false");
+    expect(within(booleanOwnerRow).getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
+
+    sharingMode = "OWNER_GROUPS";
+    await act(() => queryClient.refetchQueries({ queryKey: ["inventory", "instruments", 123, "access"] }));
+    expect(await screen.findByRole("link", { name: "Boolean owner" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "String flags" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Invalid id" })).not.toBeInTheDocument();
+  });
+
   it("archives an owned configuration after confirmation", async () => {
     let deleteRequest: Request | undefined;
     server.use(
