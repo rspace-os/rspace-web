@@ -856,9 +856,7 @@ function GalleryAppBar({
                   title={t("appBar.aboutRSpace")}
                   avatar={<InfoIcon />}
                   compact
-                  onClick={() => {
-                    setAccountMenuAnchorEl(null);
-                  }}
+                  onClick={() => setAccountMenuAnchorEl(null)}
                   component="a"
                   href="/about"
                 />
