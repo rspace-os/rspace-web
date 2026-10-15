@@ -7,7 +7,7 @@ import type {
   FieldName,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/collectionConfig";
-import type { CollectionFetcher } from "../../tableListState";
+import type { CollectionFetcher, FilterExpression } from "../../tableListState";
 import { type UseTableListOptions, type UseTableListResult, useTableList } from "../../useTableList";
 import { savedViewSelectors } from "../../useTableListQueryString";
 import { type ApiV2CollectionMetadata, fetchApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
@@ -25,11 +25,13 @@ import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./run
 
 type TableOptions<TRow extends Record<string, unknown>> = Omit<UseTableListOptions<TRow>, "config" | "dataSource">;
 
-function collectFilterFields(expression: unknown, into: Set<string>): void {
-  if (typeof expression !== "object" || expression === null) return;
-  const node = expression as { kind?: string; field?: unknown; children?: unknown };
-  if (node.kind === "comparison" && typeof node.field === "string") into.add(node.field);
-  if (Array.isArray(node.children)) for (const child of node.children) collectFilterFields(child, into);
+function collectFilterFields<TDocument>(expression: FilterExpression<TDocument> | null, into: Set<string>): void {
+  if (expression === null) return;
+  if (expression.kind === "comparison") {
+    into.add(expression.field);
+    return;
+  }
+  for (const child of expression.children) collectFilterFields(child, into);
 }
 
 export type UseApiV2TableListOptions<

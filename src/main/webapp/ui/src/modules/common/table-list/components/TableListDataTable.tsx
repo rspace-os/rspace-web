@@ -412,6 +412,29 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     selection.onChange(next);
   };
 
+  const renderRowSelection = useCallback(
+    (rowId: string, row: TDocument) => {
+      if (!selection) return undefined;
+      return (
+        <Checkbox
+          aria-label={t("tableList.selection.selectRow", {
+            row: selection.getRowLabel?.(row) ?? rowId,
+          })}
+          checked={selection.value.has(rowId)}
+          disabled={
+            selection.disabled || (!selection.value.has(rowId) && selection.value.size >= selection.maximumCount)
+          }
+          onCheckedChange={(checked) => {
+            const next = new Set(selection.value);
+            checked ? next.add(rowId) : next.delete(rowId);
+            selection.onChange(next);
+          }}
+        />
+      );
+    },
+    [selection, t],
+  );
+
   const renderedDataRows = useMemo(
     () =>
       renderRows
@@ -425,21 +448,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id} className="overflow-hidden py-2 text-ellipsis">
                   {cell.column.id === selectionColumnId && selection ? (
-                    <Checkbox
-                      aria-label={t("tableList.selection.selectRow", {
-                        row: selection.getRowLabel?.(row.original) ?? row.id,
-                      })}
-                      checked={selection.value.has(row.id)}
-                      disabled={
-                        selection.disabled ||
-                        (!selection.value.has(row.id) && selection.value.size >= selection.maximumCount)
-                      }
-                      onCheckedChange={(checked) => {
-                        const next = new Set(selection.value);
-                        checked ? next.add(row.id) : next.delete(row.id);
-                        selection.onChange(next);
-                      }}
-                    />
+                    renderRowSelection(row.id, row.original)
                   ) : (
                     <FlexRender cell={cell} />
                   )}
@@ -447,7 +456,18 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               ))}
             </TableRow>
           )),
-    [columnState, config, i18n.resolvedLanguage, onRowOpen, renderRows, rowModel, selection, t, uiColumns],
+    [
+      columnState,
+      config,
+      i18n.resolvedLanguage,
+      onRowOpen,
+      renderRowSelection,
+      renderRows,
+      rowModel,
+      selection,
+      t,
+      uiColumns,
+    ],
   );
   const renderedCardItems = useMemo<readonly TableListCardItem[]>(() => {
     if (renderRows || cardPresentation === false) return [];
@@ -473,22 +493,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
         id: row.id,
         title: titleCell ? <FlexRender cell={titleCell} /> : displayValue(row.original[config.useAsTitle]),
         fields,
-        selection: selection ? (
-          <Checkbox
-            aria-label={t("tableList.selection.selectRow", {
-              row: selection.getRowLabel?.(row.original) ?? row.id,
-            })}
-            checked={selection.value.has(row.id)}
-            disabled={
-              selection.disabled || (!selection.value.has(row.id) && selection.value.size >= selection.maximumCount)
-            }
-            onCheckedChange={(checked) => {
-              const next = new Set(selection.value);
-              checked ? next.add(row.id) : next.delete(row.id);
-              selection.onChange(next);
-            }}
-          />
-        ) : undefined,
+        selection: renderRowSelection(row.id, row.original),
         actions:
           footerCells.length > 0 ? footerCells.map((cell) => <FlexRender key={cell.id} cell={cell} />) : undefined,
         selected: selection?.value.has(row.id),
@@ -502,6 +507,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     onRowOpen,
     renderRows,
     rowModel,
+    renderRowSelection,
     selection,
     t,
     uiColumns,

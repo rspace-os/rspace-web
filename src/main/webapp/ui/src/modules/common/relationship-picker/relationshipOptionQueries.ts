@@ -10,8 +10,6 @@ import type {
   RelationshipSource,
 } from "./relationshipSources";
 
-export const OPTION_PAGE_SIZE = 20;
-
 function sourceList(source: RelationshipSource | undefined, sources: readonly RelationshipSource[] | undefined) {
   if (sources !== undefined) return sources;
   return source === undefined ? [] : [source];
@@ -63,7 +61,7 @@ export function useRelationshipOptions({
   const options: RelationshipOptionWithSource[] = candidates.flatMap((candidate, index) =>
     (sourceQueries[index]?.data ?? []).map((document) => {
       const option = candidate.toOption(document, labels);
-      return { ...option, sourceId: candidate.id, sourceDocument: document };
+      return { ...option, sourceId: candidate.id };
     }),
   );
   return {
@@ -112,7 +110,7 @@ export function useSelectedRelationshipOptions({
       queries[index]?.data ??
       queryClient.getQueryData(["relationship-option", owner?.id ?? "unknown", token ?? "anonymous", value]);
     if (owner && document !== undefined && document !== null) {
-      return { ...owner.toOption(document, labels), sourceId: owner.id, sourceDocument: document };
+      return { ...owner.toOption(document, labels), sourceId: owner.id };
     }
     return { value, label: value, sourceId: owner?.id ?? "unknown" };
   });

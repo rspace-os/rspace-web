@@ -218,8 +218,6 @@ export const EmptyAndError: Story = {
   ),
 };
 
-export const FieldTypes: Story = { render: () => <ControlledLocalDemo /> };
-
 export const CardsWithFullWidthField: Story = {
   render: () => (
     <div className="mx-auto max-w-xl p-8">

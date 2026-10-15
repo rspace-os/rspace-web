@@ -1,17 +1,20 @@
 import type { FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
 
-export type ApiV2FilterOperator =
-  | "=="
-  | "!="
-  | "=gt="
-  | "=ge="
-  | "=lt="
-  | "=le="
-  | "=in="
-  | "=out="
-  | "=contains="
-  | "=like="
-  | "=exists=";
+export const apiV2FilterOperators = [
+  "==",
+  "!=",
+  "=gt=",
+  "=ge=",
+  "=lt=",
+  "=le=",
+  "=in=",
+  "=out=",
+  "=contains=",
+  "=like=",
+  "=exists=",
+] as const;
+
+export type ApiV2FilterOperator = (typeof apiV2FilterOperators)[number];
 
 export type ApiV2FilterLimits = {
   maximumComparisons: number;
@@ -81,19 +84,7 @@ export type ApiV2CollectionMetadata<TDocument> = {
   };
 };
 
-const filterOperators = new Set<ApiV2FilterOperator>([
-  "==",
-  "!=",
-  "=gt=",
-  "=ge=",
-  "=lt=",
-  "=le=",
-  "=in=",
-  "=out=",
-  "=contains=",
-  "=like=",
-  "=exists=",
-]);
+const filterOperators = new Set<ApiV2FilterOperator>(apiV2FilterOperators);
 
 function object(value: unknown, role: string): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {

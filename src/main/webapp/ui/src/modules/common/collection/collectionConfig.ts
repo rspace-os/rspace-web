@@ -71,23 +71,6 @@ export type FieldListConfig<TDocument> = {
 export type FieldConditionContext<TDocument> = {
   data: Partial<TDocument>;
   value: TDocument[FieldName<TDocument>] | undefined;
-  field: {
-    errors: readonly string[] | null;
-    isDirty: boolean;
-    isEdited: boolean;
-    isTouched: boolean;
-    isValid: boolean;
-  };
-  form: {
-    errors: readonly string[] | null;
-    isDirty: boolean;
-    isEdited: boolean;
-    isSubmitting: boolean;
-    isSubmitted: boolean;
-    isTouched: boolean;
-    isValid: boolean;
-    isValidating: boolean;
-  };
 };
 
 export type FieldFormConfig<TDocument, TWidget extends string> = {
@@ -118,6 +101,14 @@ export function fieldLabel(field: { labelKey: string; label?: string }, translat
   return field.label ?? translate(field.labelKey);
 }
 
+export function fieldOptionLabel(
+  field: { labelKey: string; label?: string; origin?: { sourceLabel?: string } },
+  translate: (key: string) => string,
+): string {
+  const label = fieldLabel(field, translate);
+  return field.origin?.sourceLabel ? `${label} (${field.origin.sourceLabel})` : label;
+}
+
 export function selectOptionText(option: SelectOption): string {
   if (typeof option === "string") return option;
   return "textValue" in option ? option.textValue : option.label;
@@ -138,8 +129,7 @@ export type FieldOrigin = {
 
 type BaseFieldConfig<
   TDocument,
-  TWidget extends string,
-  TFormConfig extends FieldFormConfig<TDocument, TWidget> = FieldFormConfig<TDocument, TWidget>,
+  TFormConfig extends FieldFormConfig<TDocument, string> = FieldFormConfig<TDocument, never>,
 > = {
   name: FieldName<TDocument>;
   labelKey: string;
@@ -154,24 +144,24 @@ type BaseFieldConfig<
 };
 
 export type FieldConfig<TDocument> =
-  | (BaseFieldConfig<TDocument, "text" | "textarea" | "time"> & {
+  | (BaseFieldConfig<TDocument, FieldFormConfig<TDocument, "text" | "textarea" | "time">> & {
       type: "text";
       maximumLength?: number;
     })
-  | (BaseFieldConfig<TDocument, "number"> & {
+  | (BaseFieldConfig<TDocument> & {
       type: "number";
     })
-  | (BaseFieldConfig<TDocument, "checkbox"> & {
+  | (BaseFieldConfig<TDocument> & {
       type: "boolean";
     })
-  | (BaseFieldConfig<TDocument, "dateTime"> & {
+  | (BaseFieldConfig<TDocument> & {
       type: "dateTime";
     })
-  | (BaseFieldConfig<TDocument, "select" | "card", SelectFieldFormConfig<TDocument>> & {
+  | (BaseFieldConfig<TDocument, SelectFieldFormConfig<TDocument>> & {
       type: "select";
       options: readonly SelectOption[];
     })
-  | (BaseFieldConfig<TDocument, "relationship"> & {
+  | (BaseFieldConfig<TDocument> & {
       type: "relationship";
       relationTo: string;
       hasMany: boolean;

@@ -29,7 +29,7 @@ import type {
   ResolvedCollectionConfig,
   ResolvedFieldConfig,
 } from "@/modules/common/collection/collectionConfig";
-import { fieldLabel } from "@/modules/common/collection/collectionConfig";
+import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/collectionConfig";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/adapters/apiV2/runtimeFieldCatalog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
@@ -259,8 +259,7 @@ export function TableListColumns<TDocument>({
   const column = (fieldName: FieldName<TDocument>, section: Section) => {
     const field = availableFields.find((candidate) => candidate.name === fieldName);
     if (!field) return null;
-    const source = field.origin?.sourceLabel;
-    const label = source ? `${fieldLabel(field, translate)} (${source})` : fieldLabel(field, translate);
+    const label = fieldOptionLabel(field, translate);
     return (
       <SortableColumn
         key={fieldName}

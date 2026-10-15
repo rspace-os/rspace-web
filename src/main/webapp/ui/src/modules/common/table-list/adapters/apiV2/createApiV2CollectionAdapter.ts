@@ -413,10 +413,8 @@ function expandedTarget(relationship: unknown): Record<string, unknown> | null {
 }
 
 function targetValue<TDocument>(row: TDocument, owner: FieldName<TDocument>, targetField: string): string {
-  const relationship = row[owner];
-  if (typeof relationship !== "object" || relationship === null || Array.isArray(relationship)) return "";
-  const value = (relationship as Record<string, unknown>).value;
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return "";
-  const fieldValue = (value as Record<string, unknown>)[targetField];
+  const value = expandedTarget(row[owner]);
+  if (!value) return "";
+  const fieldValue = value[targetField];
   return fieldValue === null || fieldValue === undefined ? "" : String(fieldValue);
 }
