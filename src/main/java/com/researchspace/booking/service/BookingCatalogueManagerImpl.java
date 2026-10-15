@@ -2,8 +2,11 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
+import com.researchspace.booking.dao.BookingCalendarQuery;
+import com.researchspace.booking.dao.BookingItemQuery;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -43,16 +46,16 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
   private final InstrumentDao instruments;
   private final BookingInstrumentQueryDao bookingInstruments;
   private final FeatureFlagManager featureFlags;
-  private final com.researchspace.booking.dao.BookingItemQuery itemQuery;
-  private final com.researchspace.booking.dao.BookingCalendarQuery calendarQuery;
+  private final BookingItemQuery itemQuery;
+  private final BookingCalendarQuery calendarQuery;
 
   public BookingCatalogueManagerImpl(
       BookingConfigurationManager configurations,
       InstrumentDao instruments,
       BookingInstrumentQueryDao bookingInstruments,
       FeatureFlagManager featureFlags,
-      com.researchspace.booking.dao.BookingItemQuery itemQuery,
-      com.researchspace.booking.dao.BookingCalendarQuery calendarQuery) {
+      BookingItemQuery itemQuery,
+      BookingCalendarQuery calendarQuery) {
     this.configurations = configurations;
     this.instruments = instruments;
     this.bookingInstruments = bookingInstruments;
@@ -118,7 +121,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       int page,
       int limit,
       User caller,
-      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
+      Predicate restriction) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)) {
       throw new NotFoundException();
     }
@@ -132,7 +135,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     filters.add(comparison("target.deleted", Operator.EQUAL, false));
     if (capability != null) {
       restriction =
-          com.researchspace.booking.dao.BookingItemQuery.and(
+          BookingItemQuery.and(
               restriction,
               itemQuery.restriction(
                   caller,

@@ -8,7 +8,9 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.booking.dao.BookingCalendarQuery;
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.User;
@@ -17,6 +19,7 @@ import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.AccessFunction;
@@ -35,9 +38,11 @@ import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceFieldSelections;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldBinding;
+import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
@@ -52,6 +57,7 @@ import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.resourceaccess.ResourceRoleReadAccess;
 import com.researchspace.service.resourceaccess.ResourceRoleSchemeRegistry;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -127,8 +133,8 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
   private final InstrumentEntityApiManager instrumentApiManager;
 
   private final ApiV2ResourceCatalog catalog;
-  private final com.researchspace.booking.dao.BookingCalendarQuery calendarQuery;
-  private final com.researchspace.booking.dao.TimeSlotBookingDao calendarBookings;
+  private final BookingCalendarQuery calendarQuery;
+  private final TimeSlotBookingDao calendarBookings;
 
   @Autowired
   BookingConfigurationTargetFilterIT(
@@ -138,8 +144,8 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
       InstrumentCustomFieldManager customFields,
       InstrumentEntityApiManager instrumentApiManager,
       ApiV2ResourceCatalog catalog,
-      com.researchspace.booking.dao.BookingCalendarQuery calendarQuery,
-      com.researchspace.booking.dao.TimeSlotBookingDao calendarBookings) {
+      BookingCalendarQuery calendarQuery,
+      TimeSlotBookingDao calendarBookings) {
     this.instrumentDao = instrumentDao;
     this.bookingConfigurationDao = bookingConfigurationDao;
     this.criteriaBuilderFactory = criteriaBuilderFactory;
@@ -150,45 +156,20 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     this.calendarBookings = calendarBookings;
   }
 
-  private static final java.time.Instant CALENDAR_START =
-      java.time.Instant.parse("2026-09-20T00:00:00Z");
-  private static final java.time.Instant CALENDAR_END = CALENDAR_START.plusSeconds(86400);
+  private static final Instant CALENDAR_START = Instant.parse("2026-09-20T00:00:00Z");
+  private static final Instant CALENDAR_END = CALENDAR_START.plusSeconds(86400);
 
   @Test
   void calendarRequiresOneVisibleEventToMatchTheWholeExpressionAndCountsEachResourceOnce() {
     User owner = createInitAndLoginAnyUser();
     BookingConfiguration config =
         configurationFor(createBasicInstrumentForUser(owner, "Calendar scope").getId(), owner);
-    calendarEvent(
-        config,
-        owner,
-        "other",
-        com.researchspace.model.booking.BookingEventKind.BOOKING,
-        3600,
-        false);
-    calendarEvent(
-        config,
-        owner,
-        "needle",
-        com.researchspace.model.booking.BookingEventKind.MAINTENANCE,
-        7200,
-        false);
+    calendarEvent(config, owner, "other", BookingEventKind.BOOKING, 3600, false);
+    calendarEvent(config, owner, "needle", BookingEventKind.MAINTENANCE, 7200, false);
     String eventWhere = "kind==BOOKING";
     assertEquals(0, calendarPage(config, owner, eventWhere, "needle").total());
-    calendarEvent(
-        config,
-        owner,
-        "needle",
-        com.researchspace.model.booking.BookingEventKind.BOOKING,
-        10800,
-        false);
-    calendarEvent(
-        config,
-        owner,
-        "needle",
-        com.researchspace.model.booking.BookingEventKind.BOOKING,
-        14400,
-        false);
+    calendarEvent(config, owner, "needle", BookingEventKind.BOOKING, 10800, false);
+    calendarEvent(config, owner, "needle", BookingEventKind.BOOKING, 14400, false);
     var page = calendarPage(config, owner, eventWhere, "needle");
     assertEquals(1, page.total());
     assertEquals(
@@ -214,22 +195,10 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     assertEquals(1, calendarPage(config, owner, null, "needle").total());
     assertEquals(0, calendarPage(config, owner, null, owner.getUsername()).total());
     assertEquals(0, calendarPage(config, owner, "kind==BOOKING", "needle").total());
-    calendarEvent(
-        config,
-        owner,
-        "other",
-        com.researchspace.model.booking.BookingEventKind.BOOKING,
-        3600,
-        false);
+    calendarEvent(config, owner, "other", BookingEventKind.BOOKING, 3600, false);
     assertEquals(1, calendarPage(config, owner, "kind==BOOKING", "needle").total());
     assertEquals(1, calendarPage(config, owner, null, owner.getUsername()).total());
-    calendarEvent(
-        config,
-        owner,
-        "purpose-only",
-        com.researchspace.model.booking.BookingEventKind.MAINTENANCE,
-        7200,
-        false);
+    calendarEvent(config, owner, "purpose-only", BookingEventKind.MAINTENANCE, 7200, false);
     assertEquals(1, calendarPage(config, owner, null, "purpose-only").total());
     assertEquals(0, calendarPage(config, owner, "kind==BOOKING", "purpose-only").total());
     assertEquals(1, calendarPage(config, owner, "kind==MAINTENANCE", "purpose-only").total());
@@ -242,20 +211,8 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     Instrument instrument = instrumentDao.get(item.getId());
     instrument.setDescription("description-only");
     BookingConfiguration config = configurationFor(item.getId(), owner);
-    calendarEvent(
-        config,
-        owner,
-        "deleted",
-        com.researchspace.model.booking.BookingEventKind.BOOKING,
-        3600,
-        true);
-    calendarEvent(
-        config,
-        owner,
-        "tomorrow",
-        com.researchspace.model.booking.BookingEventKind.BOOKING,
-        90000,
-        false);
+    calendarEvent(config, owner, "deleted", BookingEventKind.BOOKING, 3600, true);
+    calendarEvent(config, owner, "tomorrow", BookingEventKind.BOOKING, 90000, false);
     assertEquals(0, calendarPage(config, owner, "kind==BOOKING", null).total());
     assertEquals(1, calendarPage(config, owner, null, "description-only").total());
     User inventoryOwner = createInitAndLoginAnyUser();
@@ -267,7 +224,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     assertEquals(0, calendarPage(config, owner, null, "IN" + item.getId()).total());
   }
 
-  private com.researchspace.model.collection.ResourcePage<BookingConfiguration> calendarPage(
+  private ResourcePage<BookingConfiguration> calendarPage(
       BookingConfiguration config, User caller, String eventWhere, String text) {
     var events = catalog.find("bookings").orElseThrow();
     ResourceRequest eventRequest =
@@ -285,17 +242,17 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
       BookingConfiguration config,
       User user,
       String purpose,
-      com.researchspace.model.booking.BookingEventKind kind,
+      BookingEventKind kind,
       int offset,
       boolean deleted) {
-    var event = new com.researchspace.model.booking.TimeSlotBooking();
+    var event = new TimeSlotBooking();
     event.setBookingConfiguration(config);
     event.setRequester(user);
     event.setStartTime(Date.from(CALENDAR_START.plusSeconds(offset)));
     event.setEndTime(Date.from(CALENDAR_START.plusSeconds(offset + 1800)));
     event.setKind(kind);
     event.setPurpose(purpose);
-    event.setState(com.researchspace.model.booking.BookingState.CONFIRMED);
+    event.setState(BookingState.CONFIRMED);
     event.setDeleted(deleted);
     event.setCreatedBy(user);
     event.setUpdatedBy(user);
@@ -317,8 +274,12 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     User owner = createInitAndLoginAnyUser();
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(owner, "Safety level");
     String value = predicate.equals("=exists=false") ? "" : "BSL-2";
-    Instrument readable = instrumentFromTemplate(owner, template, "Readable", value);
-    Instrument privateItem = instrumentFromTemplate(owner, template, "Private", value);
+    Instrument readable =
+        InstrumentCustomFieldTestUtils.instrumentFromTemplate(
+            instrumentDao, instrumentApiManager, owner, template, "Readable", value);
+    Instrument privateItem =
+        InstrumentCustomFieldTestUtils.instrumentFromTemplate(
+            instrumentDao, instrumentApiManager, owner, template, "Private", value);
     String extraName = "Safety " + UUID.randomUUID();
     if (extra) {
       for (Instrument instrument : List.of(readable, privateItem)) {
@@ -349,14 +310,14 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
                 .findFirst()
                 .orElseThrow()
                 .selector()
-            : definitionOf(owner, template).selector();
+            : InstrumentCustomFieldTestUtils.definitionOf(customFields, owner, template).selector();
     var registration = catalog.find("booking-configurations").orElseThrow();
     var request =
         ApiV2ResourceRequestParser.filtered(
             "target." + selector + predicate,
             registration.description(),
             catalog.registry(),
-            registration.runtimeFieldContext(owner, catalog::runtimeFieldsOf));
+            registration.runtimeFieldContext(owner));
     RelationshipReadAccess access = RelationshipReadAccess.forActor(catalog.registry(), owner);
     assertEquals(1, bookingConfigurationDao.countResources(request, access));
     assertEquals(

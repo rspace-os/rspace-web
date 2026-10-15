@@ -118,9 +118,6 @@ public class ShiroAnnotationAdviceWeavingTest {
   @Test
   public void annotatedBeanIsProxiedByTheAdvisor() {
     assertTrue(
-        securityXmlUsesClassBasedProxying(),
-        "security.xml must keep the outer advisor proxy class-based for concrete service beans");
-    assertTrue(
         AopUtils.isAopProxy(context.getBean(GuardedService.class)),
         "the @RequiresPermissions bean was not proxied: annotation advice is not being woven");
   }

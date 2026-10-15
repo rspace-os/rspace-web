@@ -5,6 +5,7 @@ import com.blazebit.persistence.CommonQueryBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
@@ -310,9 +311,7 @@ public class InventoryDaoHibernate<T extends InventoryRecord, PK extends Seriali
       for (int i = 0; i < userGroupsUniqueNames.size(); i++) {
         setParameter.accept(
             "userGroupUniqueName" + i,
-            "%&"
-                + com.researchspace.dao.query.LikeEscaper.escape(userGroupsUniqueNames.get(i))
-                + "=%");
+            "%&" + LikeEscaper.escape(userGroupsUniqueNames.get(i)) + "=%");
       }
     }
   }

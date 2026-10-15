@@ -30,19 +30,18 @@ public class BookingConfigurationDaoHibernate
 
   private final CriteriaBuilderFactory criteriaBuilderFactory;
   private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
-
   private final BookingItemQuery itemQuery;
   private final InstrumentDao instruments;
 
   public BookingConfigurationDaoHibernate(
       SessionFactory sessionFactory,
       CriteriaBuilderFactory criteriaBuilderFactory,
+      BookingItemQuery itemQuery,
+      InstrumentDao instruments,
       @Qualifier(
               com.researchspace.booking.config.BookingResourceAccessConfiguration
                   .BOOKING_CONFIGURATION_DESCRIPTION)
-          CollectionDescription<BookingConfiguration> description,
-      BookingItemQuery itemQuery,
-      InstrumentDao instruments) {
+          CollectionDescription<BookingConfiguration> description) {
     super(BookingConfiguration.class, sessionFactory);
     this.criteriaBuilderFactory = criteriaBuilderFactory;
     this.itemQuery = itemQuery;
