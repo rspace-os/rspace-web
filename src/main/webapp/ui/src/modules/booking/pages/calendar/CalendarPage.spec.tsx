@@ -781,9 +781,7 @@ describe("Calendar page", () => {
   });
 
   test("does not reject a drag across a repeated hour", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    try {
-      await page.viewport(1440, 900);
+    await withViewport(1440, async () => {
       history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-10-25"] });
       const confocal = bookableItemFixtures.find((fixture) => fixture.target.globalId === "IN123");
       if (!confocal) throw new Error("Confocal microscope must be available in the catalogue fixture");
@@ -858,9 +856,7 @@ describe("Calendar page", () => {
         start: "2026-10-25T00:30:00Z",
         end: "2026-10-25T01:30:00Z",
       });
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
   test("ends pristine creation when leaving Calendar so resource dragging works after returning", async () => {

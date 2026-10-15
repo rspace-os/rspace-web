@@ -3,7 +3,6 @@ import { cleanup, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import {
@@ -13,7 +12,6 @@ import {
 } from "../../bookable-items/mocks/bookableItemsMocks";
 import { busyBooking, collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { bookingPagesHandlers } from "../../mocks/bookingPagesMocks";
-import { currentUser } from "../../mocks/currentUserFixture";
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
 import { renderCalendar } from "./calendarTestHarness";
 
@@ -36,11 +34,7 @@ afterAll(() => {
 
 describe("CalendarPage", () => {
   it("shows every bookable item by default when the period has no bookings", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))),
-    );
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))));
 
     await renderCalendar();
 
@@ -54,8 +48,6 @@ describe("CalendarPage", () => {
   it("offers a retry when booking events cannot be loaded", async () => {
     let requests = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => {
         requests += 1;
         return requests === 1
@@ -83,11 +75,7 @@ describe("CalendarPage", () => {
       canCancel: false,
     };
     const showCalendarWith = async (booking: BookingListDocument) => {
-      server.use(
-        oauthTokenHandler(true),
-        http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-        http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))),
-      );
+      server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))));
       await renderCalendar(`/booking/calendar?date=${booking.start.slice(0, 10)}`);
       await userEvent.setup().click(await screen.findByRole("button", { name: "Time grid" }));
       await userEvent.setup().click(await screen.findByRole("button", { name: /^Show details for/ }));
@@ -123,8 +111,6 @@ describe("CalendarPage", () => {
         if (url.pathname === "/api/v2/booking-catalogue/calendar")
           catalogueSearches.push(url.searchParams.get("q") ?? "");
       }),
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
     );
     const user = userEvent.setup();
@@ -157,8 +143,6 @@ describe("CalendarPage", () => {
       purpose: "QuasarPurposeMarker",
     };
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const query = new URL(request.url).searchParams.get("q");
         const item = bookableItemFixtures[0];
@@ -226,8 +210,6 @@ describe("CalendarPage", () => {
     });
     const catalogueRequests: Array<{ q: string | null; page: number }> = [];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const url = new URL(request.url);
@@ -263,11 +245,7 @@ describe("CalendarPage", () => {
   });
 
   it("shows an empty state when a calendar search has no matches", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
-    );
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))));
 
     const user = userEvent.setup();
     await renderCalendar();

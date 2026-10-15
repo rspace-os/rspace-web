@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { currentUser } from "../../calendar/calendarFixtures";
+import { currentUser } from "../../mocks/currentUserFixture";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
