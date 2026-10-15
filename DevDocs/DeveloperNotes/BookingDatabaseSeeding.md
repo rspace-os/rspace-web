@@ -3,16 +3,12 @@
 ## Findings
 
 RSpace applies `classpath:sqlUpdates/liquibase-master.xml` at startup through
-`SpringLiquibase`. The deployment property `liquibase.context` selects which
-changesets run. Production uses `run`; local development and tests use
-`run,dev-test`; cloud deployments use `run,cloud`. The repository requires every
-new changeset to declare one of those contexts and forbids editing a changeset
-after it has been applied because Liquibase checksums it.
+`SpringLiquibase`. Context selection, deployment defaults, and append-only checksum rules are in
+[DatabaseChangeGuidelines.md](../../src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md).
 
 Sources: [`applicationContext-dao.xml`](../../src/main/resources/applicationContext-dao.xml#L8-L16),
-[`defaultDeployment.properties`](../../src/main/resources/deployments/defaultDeployment.properties#L351-L355),
-[`DatabaseChangeGuidelines.md`](../../src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md#L48-L65),
-[`DatabaseChangeGuidelines.md`](../../src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md#L106-L138).
+[`defaultDeployment.properties`](../../src/main/resources/deployments/defaultDeployment.properties#L367),
+[Liquibase guidelines](../../src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md).
 
 The master changelog includes the booking schema in dependency order. The
 booking tables are created before resource-access and state changesets, and the
@@ -66,21 +62,13 @@ first open day on or after the fixture date, because that date floats.
 Sources: [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L119-L220),
 [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L237-L440),
 [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L442-L628),
-[`docker/dev/README.md`](../../docker/dev/README.md#L110-L123).
+[`docker/dev/README.md`](../../docker/dev/README.md#quick-start).
 
 ## Recommended approach
 
-Use a new Liquibase changeset for permanent reference data that must exist in
-every deployment. Give it `context="run"`, add a comment, register it in
-`liquibase-master.xml`, use stable natural-key lookups or guarded inserts when
-the database may already contain the row, and test both a fresh baseline and an
-upgrade database. Keep the seed data in a separate SQL file only when the
-volume makes XML inserts unreadable; load it with `<sqlFile>` from the
-changeset.
-
-Use `context="dev-test"` for data that belongs only in local development or
-automated test databases. Do not put development fixtures in the `run` context,
-because production and enterprise deployments also use `run`.
+Follow [DatabaseChangeGuidelines.md](../../src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md)
+for changeset registration, contexts, and fresh/upgrade validation. The booking-specific choice between
+a permanent static seed and a repeatable development fixture is described below.
 
 Do not convert the full current booking fixture set into raw SQL. It depends on
 inventory creation, ownership, resource-access rows, audit behavior, generated
@@ -158,4 +146,4 @@ workflow, but those commands destroy the local database volume and should only
 be used when explicitly intended.
 
 Source: [`DatabaseChangeGuidelines.md`](../../src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md#L106-L112),
-[`docker/dev/README.md`](../../docker/dev/README.md#L250-L280).
+[`docker/dev/README.md`](../../docker/dev/README.md#destroying-a-worktrees-instance).
