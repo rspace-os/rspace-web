@@ -68,8 +68,9 @@ const BOOKING_PROBLEM_KEYS = {
   "errors.api.v2.booking.startInPast": "bookings.errors.startInPast",
   "errors.api.v2.booking.window": "bookings.errors.window",
   "errors.api.v2.booking.duration": "bookings.errors.duration",
-  "errors.api.v2.booking.maximumDuration": "bookings.errors.maximumDuration",
+  [MAXIMUM_DURATION_CODE]: "bookings.errors.maximumDuration",
   "errors.api.v2.booking.overlap": "bookings.errors.overlap",
+  [BUFFER_CODE]: "bookings.errors.overlap",
   "errors.api.v2.booking.granularity": "bookings.errors.granularity",
   "errors.api.v2.booking.openingHours": "bookings.errors.openingHours",
   "errors.api.v2.booking.target.unavailable": "bookings.errors.targetUnavailable",
@@ -141,16 +142,6 @@ export function maximumDurationMessage(maxBookingDurationMinutes: number, t: TFu
   });
 }
 
-export function bookingCreationProblemMessage(
-  error: unknown,
-  t: TFunction<"booking">,
-  maxBookingDurationMinutes?: number,
-): string {
-  return isBookingOutcomeUncertain(error)
-    ? t("bookings.errors.outcomeUncertain")
-    : bookingProblemMessage(error, t, maxBookingDurationMinutes);
-}
-
 /** What a form shows for a failed save: a sentence, and the server-named conflict for the conflict list. */
 export function bookingProblemFeedback(
   error: unknown,
@@ -167,9 +158,10 @@ export function bookingProblemFeedback(
 ): { message?: string; conflict?: BookingConflict } {
   if (!error) return {};
   const conflict = bookingProblemConflict(error, displayTimezone, target?.timezone);
-  const message = creation
-    ? bookingCreationProblemMessage(error, t, target?.maxBookingDurationMinutes)
-    : bookingProblemMessage(error, t, target?.maxBookingDurationMinutes);
+  const message =
+    creation && isBookingOutcomeUncertain(error)
+      ? t("bookings.errors.outcomeUncertain")
+      : bookingProblemMessage(error, t, target?.maxBookingDurationMinutes);
   // A listed overlap explains itself; a buffer conflict still needs the sentence naming the buffer.
   return { conflict, message: conflict && !conflict.bufferOnly ? undefined : message };
 }
@@ -199,11 +191,13 @@ export function useCreateBooking(token: string) {
       void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
     },
     onError: (error) => {
-      const invalidateBookings =
+      if (
         isBookingOutcomeUncertain(error) ||
         isBookingConflictError(error) ||
-        (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.concurrentModification");
-      if (invalidateBookings) void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+        (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.concurrentModification")
+      ) {
+        void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
       }

@@ -7,6 +7,7 @@ import { server } from "@/__tests__/mswServer";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import { upcomingBooking } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
+import type { BookingFormSubmission } from "../BookingForm";
 import {
   bookingCreationProblemKey,
   bookingProblemConflict,
@@ -18,8 +19,17 @@ import {
   useCreateBooking,
   withBookingProblemConflict,
 } from "../useCreateBooking";
+import { confocalTargetWith } from "./creationTestFixtures";
 
 const conflict = { id: 59, kind: "BOOKING", start: "2026-09-28T08:00:00Z", end: "2026-09-28T10:00:00Z" } as const;
+
+const bookingSubmission = {
+  target: confocalTargetWith({ name: "Microscope", timezone: "UTC" }),
+  window: { start: "2026-09-08T09:00:00Z", end: "2026-09-08T10:00:00Z" },
+  purpose: null,
+  eventKind: "BOOKING",
+  returnDate: "2026-09-08",
+} satisfies BookingFormSubmission;
 
 /** A problem as parseApiV2Problem keeps it: the parsed body on `problem`. */
 function problem(status: number, code: string, body: Record<string, unknown> = {}) {
@@ -58,25 +68,7 @@ it("invalidates every booking view after creation, including the item list and a
     wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,
   });
   await act(async () => {
-    await result.current.mutateAsync({
-      target: {
-        configurationId: 7,
-        targetId: 123,
-        globalId: "IN123",
-        name: "Microscope",
-        timezone: "UTC",
-        slotGranularityMinutes: 5,
-        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-        bufferBeforeMinutes: 0,
-        bufferAfterMinutes: 0,
-        maxBookingDurationMinutes: 0,
-        allowDoubleBooking: false,
-      },
-      window: { start: "2026-09-08T09:00:00Z", end: "2026-09-08T10:00:00Z" },
-      purpose: null,
-      eventKind: "BOOKING",
-      returnDate: "2026-09-08",
-    });
+    await result.current.mutateAsync(bookingSubmission);
   });
   for (const key of keys) expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
 });
@@ -93,25 +85,7 @@ it("treats a lost create response as uncertain and refreshes booking queries", a
   let error: unknown;
   await act(async () => {
     try {
-      await result.current.mutateAsync({
-        target: {
-          configurationId: 7,
-          targetId: 123,
-          globalId: "IN123",
-          name: "Microscope",
-          timezone: "UTC",
-          slotGranularityMinutes: 5,
-          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-          bufferBeforeMinutes: 0,
-          bufferAfterMinutes: 0,
-          maxBookingDurationMinutes: 0,
-          allowDoubleBooking: false,
-        },
-        window: { start: "2026-09-08T09:00:00Z", end: "2026-09-08T10:00:00Z" },
-        purpose: null,
-        eventKind: "BOOKING",
-        returnDate: "2026-09-08",
-      });
+      await result.current.mutateAsync(bookingSubmission);
     } catch (caught) {
       error = caught;
     }
@@ -252,23 +226,8 @@ it("refreshes bookings after a buffer rejection", async () => {
   await act(async () => {
     await result.current
       .mutateAsync({
-        target: {
-          configurationId: 7,
-          targetId: 123,
-          globalId: "IN123",
-          name: "Microscope",
-          timezone: "UTC",
-          slotGranularityMinutes: 5,
-          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-          bufferBeforeMinutes: 15,
-          bufferAfterMinutes: 15,
-          maxBookingDurationMinutes: 0,
-          allowDoubleBooking: false,
-        },
-        window: { start: "2026-09-08T09:00:00Z", end: "2026-09-08T10:00:00Z" },
-        purpose: null,
-        eventKind: "BOOKING",
-        returnDate: "2026-09-08",
+        ...bookingSubmission,
+        target: { ...bookingSubmission.target, bufferBeforeMinutes: 15, bufferAfterMinutes: 15 },
       })
       .catch(() => undefined);
   });

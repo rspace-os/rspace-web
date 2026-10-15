@@ -9,6 +9,7 @@ import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDi
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
+import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { useApiV2TableList } from "@/modules/common/table-list/hooks/apiV2TableList";
@@ -28,7 +29,7 @@ import {
 } from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
-import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
+import { type MyBookingsPeriod, myBookingsPeriodParser, myBookingsPeriods } from "./search";
 
 const fetchBookingList: typeof fetch = (input, init = {}) => {
   const url = new URL(String(input), window.location.origin);
@@ -79,7 +80,21 @@ export async function fetchUpcomingBookingCount(
 
 export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) {
   const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
+  const periodText = {
+    upcoming: {
+      label: t("myBookings.period.upcoming"),
+      empty: t("myBookings.empty.upcoming"),
+      Icon: CalendarClockIcon,
+    },
+    past: { label: t("myBookings.period.past"), empty: t("myBookings.empty.past"), Icon: HistoryIcon },
+    cancelled: {
+      label: t("myBookings.period.cancelled"),
+      empty: t("myBookings.empty.cancelled"),
+      Icon: CalendarX2Icon,
+    },
+  } as const;
+
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
@@ -206,8 +221,6 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     void setPeriod(nextPeriod);
   };
 
-  const cancelledLabel = t("myBookings.period.cancelled");
-
   return (
     <TooltipProvider delay={250}>
       <main className="space-y-6 p-4 sm:p-8">
@@ -221,20 +234,24 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         </header>
         <div ref={periodControlsRef} className="space-y-2">
           <ButtonGroup aria-label={t("myBookings.period.legend")}>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "upcoming" ? "secondary" : "outline"}
-              aria-label={t("myBookings.period.upcoming")}
-              aria-pressed={period === "upcoming"}
-              onClick={() => selectPeriod("upcoming")}
-            >
-              <CalendarClockIcon aria-hidden="true" />
-              {t("myBookings.period.upcoming")}
-              {upcomingCount.isSuccess && (
-                <Badge
-                  variant={period === "upcoming" ? "secondary" : "outline"}
-                  className="pointer-events-none min-w-5 px-1"
+            {myBookingsPeriods.map((value) => {
+              const { Icon, label } = periodText[value];
+              return (
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={period === value ? "secondary" : "outline"}
+                  aria-label={label}
+                  aria-pressed={period === value}
+                  onClick={() => selectPeriod(value)}
+                >
+                  <Icon aria-hidden="true" />
+                  {label}
+                  {value === "upcoming" && upcomingCount.isSuccess && (
+                    <Badge
+                      variant={period === "upcoming" ? "secondary" : "outline"}
+                      className="pointer-events-none min-w-5 px-1"
                   aria-label={
                     upcomingCount.data.totalIsLowerBound
                       ? t("myBookings.count.lowerBoundAccessible")
@@ -244,36 +261,16 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   {upcomingCount.data.totalIsLowerBound
                     ? t("myBookings.count.lowerBound")
                     : upcomingCount.data.totalDocs}
-                </Badge>
-              )}
-              {upcomingCount.isPending && (
-                <span role="status" className="sr-only">
-                  {t("myBookings.count.loading")}
-                </span>
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "past" ? "secondary" : "outline"}
-              aria-label={t("myBookings.period.past")}
-              aria-pressed={period === "past"}
-              onClick={() => selectPeriod("past")}
-            >
-              <HistoryIcon aria-hidden="true" />
-              {t("myBookings.period.past")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "cancelled" ? "secondary" : "outline"}
-              aria-label={cancelledLabel}
-              aria-pressed={period === "cancelled"}
-              onClick={() => selectPeriod("cancelled")}
-            >
-              <CalendarX2Icon aria-hidden="true" />
-              {cancelledLabel}
-            </Button>
+                    </Badge>
+                  )}
+                  {value === "upcoming" && upcomingCount.isPending && (
+                    <span role="status" className="sr-only">
+                      {t("myBookings.count.loading")}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
           </ButtonGroup>
           {upcomingCount.isError && (
             <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
@@ -300,13 +297,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         <TableList
           {...table.tableProps}
           presentations={{ table: "wide", cards: "narrow" }}
-          emptyDescription={
-            period === "upcoming"
-              ? t("myBookings.empty.upcoming")
-              : period === "past"
-                ? t("myBookings.empty.past")
-                : t("myBookings.empty.cancelled")
-          }
+          emptyDescription={periodText[period].empty}
           rowActions={rowActions}
           hideHeader
         />

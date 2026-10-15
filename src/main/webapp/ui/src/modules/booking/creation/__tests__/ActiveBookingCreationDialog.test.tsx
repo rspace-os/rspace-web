@@ -28,6 +28,7 @@ import { ActiveBookingCreationDialog } from "../ActiveBookingCreationDialog";
 import type { BookableItemOption } from "../bookableItemOption";
 import type { BookingCreationContext } from "../bookingCreationStore";
 import { BookingCreationStoreProvider } from "../bookingCreationStore";
+import { confocalTargetWith } from "./creationTestFixtures";
 
 // Delegates to the real request unless a test rejects with a problem carrying its parsed body.
 vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
@@ -35,19 +36,12 @@ vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
   return { ...actual, createBooking: vi.fn(actual.createBooking) };
 });
 
-const target: BookableItemOption = {
-  configurationId: 7,
-  targetId: 123,
-  globalId: "IN123",
-  name: "Confocal microscope",
+const target: BookableItemOption = confocalTargetWith({
   timezone: "UTC",
   slotGranularityMinutes: 15,
-  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
   bufferBeforeMinutes: 15,
   bufferAfterMinutes: 15,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-};
+});
 
 const creation: BookingCreationContext = {
   ownerId: "calendar",

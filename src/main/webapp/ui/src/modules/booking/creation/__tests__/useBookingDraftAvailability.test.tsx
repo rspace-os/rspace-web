@@ -8,20 +8,7 @@ import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import type { BookingFormState } from "../BookingForm";
 import type { BookableItemOption } from "../bookableItemOption";
 import { useBookingDraftAvailability } from "../useBookingDraftAvailability";
-
-const target: BookableItemOption = {
-  configurationId: 7,
-  targetId: 123,
-  globalId: "IN123",
-  name: "Confocal microscope",
-  timezone: "Europe/Berlin",
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-};
+import { confocalBooking, confocalBookingPage, confocalTarget as target } from "./creationTestFixtures";
 
 const draft: BookingWindowDraft = {
   startDate: "2026-10-19",
@@ -29,40 +16,6 @@ const draft: BookingWindowDraft = {
   endDate: "2026-10-19",
   endTime: "11:00",
 };
-
-function booking({
-  id,
-  start,
-  end,
-  kind = "BOOKING",
-}: {
-  id: number;
-  start: string;
-  end: string;
-  kind?: "BOOKING" | "MAINTENANCE";
-}) {
-  return {
-    id,
-    version: 0,
-    target: {
-      relationTo: "instruments",
-      value: { id: 123, name: target.name, deleted: false },
-      globalId: target.globalId,
-    },
-    timezone: target.timezone,
-    start,
-    end,
-    state: "CONFIRMED",
-    kind,
-    privacy: "full",
-    purpose: `Purpose ${id}`,
-    bookedBy: "Ada Lovelace",
-    canEdit: false,
-    canCancel: false,
-    createdAt: "2026-10-01T09:00:00Z",
-    updatedAt: "2026-10-01T09:00:00Z",
-  };
-}
 
 function page(docs: readonly unknown[]) {
   return HttpResponse.json({
@@ -135,7 +88,7 @@ describe("useBookingDraftAvailability", () => {
   it("checks conflicts as soon as both endpoints are entered, before the item's rules are met", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        page([booking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
+        page([confocalBooking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
       ),
     );
     const { result } = renderAvailability({ state: formState({ meetsRules: false }) });
@@ -167,7 +120,7 @@ describe("useBookingDraftAvailability", () => {
   it("allows ordinary overlap with a warning when double booking is enabled", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        page([booking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
+        page([confocalBooking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
       ),
     );
     const { result } = renderAvailability({ state: formState({ item: { ...target, allowDoubleBooking: true } }) });
@@ -181,7 +134,7 @@ describe("useBookingDraftAvailability", () => {
   it("blocks maintenance over an ordinary booking even when the item permits double booking", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        page([booking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
+        page([confocalBooking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
       ),
     );
     const { result } = renderAvailability({
@@ -196,7 +149,7 @@ describe("useBookingDraftAvailability", () => {
   it("applies the target buffer when deciding whether a booking overlaps", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        page([booking({ id: 2, start: "2026-10-19T07:50:00Z", end: "2026-10-19T07:55:00Z" })]),
+        page([confocalBooking({ id: 2, start: "2026-10-19T07:50:00Z", end: "2026-10-19T07:55:00Z" })]),
       ),
     );
     const { result } = renderAvailability({
@@ -210,7 +163,7 @@ describe("useBookingDraftAvailability", () => {
   });
 
   it("excludes the booking being edited from its own availability conflicts", async () => {
-    const current = booking({ id: 41, start: "2026-10-19T08:00:00Z", end: "2026-10-19T10:00:00Z" });
+    const current = confocalBooking({ id: 41, start: "2026-10-19T08:00:00Z", end: "2026-10-19T10:00:00Z" });
     server.use(http.get("/api/v2/bookings", () => page([current])));
     const { result } = renderAvailability({
       state: formState({ start: "2026-10-19T08:05:00Z", end: "2026-10-19T10:05:00Z" }),

@@ -14,10 +14,6 @@ export class MyBookingsPageObject {
     return page.getByRole("button", { name: "Past" });
   }
 
-  get cancelled(): Locator {
-    return page.getByRole("button", { name: "Cancelled", exact: true });
-  }
-
   get upcomingCount(): Locator {
     return page.getByLabelText("2 upcoming bookings");
   }

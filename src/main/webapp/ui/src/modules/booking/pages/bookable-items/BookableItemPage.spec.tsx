@@ -715,70 +715,60 @@ describe("BookableItemPage", () => {
     });
   });
 
-  test("keeps equal day rows and no page overflow while editing hours by day at 320 CSS pixels", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(320, 900);
-
-    try {
+  test("keeps equal weekday rows and no page overflow while editing hours by day at 320 CSS pixels", async () => {
+    await withViewport(320, async () => {
       render(<BookableItemPageStory history={history} />);
       await expect.element(pageObj.heading).toBeVisible();
       await pageObj.openEditor();
-      await pageObj.setDifferentHours.click();
-      await expect.element(pageObj.hoursByDay).toBeVisible();
+      await expect.element(pageObj.openingHours).toBeVisible();
 
       const sharedHeight = pageObj.dayRow("Tuesday").element().getBoundingClientRect().height;
-      await pageObj.editDayHours("Monday").click();
-      // The first icon button stays mounted, so keyboard focus moves from pencil to tick.
-      await expect.element(pageObj.confirmDayHours("Monday")).toHaveFocus();
-      await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
+      const mondayEnd = pageObj.openingEnd("Monday");
+      expect(pageObj.dayRow("Monday").element().getBoundingClientRect().height).toBe(sharedHeight);
       await expect.element(pageObj.save).toBeDisabled();
-
-      // A changed day makes the form dirty, so Save is enabled once the draft is confirmed.
-      await userEvent.fill(pageObj.dayRow("Monday").getByLabelText("Opening end"), "12:00");
-      await pageObj.confirmDayHours("Monday").click();
-      await expect.element(pageObj.editDayHours("Monday")).toHaveFocus();
+      await mondayEnd.fill("12:00");
+      await expect.element(mondayEnd).toHaveValue("12:00");
+      await expect.element(pageObj.openingStart("Monday")).toHaveValue("08:00");
+      await expect.element(pageObj.openingEnd("Tuesday")).toHaveValue("17:00");
+      await expect.element(mondayEnd).toHaveFocus();
       await expect.element(pageObj.save).toBeEnabled();
+      await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
       expect(pageObj.dayRow("Monday").element().getBoundingClientRect().height).toBe(sharedHeight);
       // The newly enabled Save button fades in from its disabled opacity; check contrast once it is opaque.
       await expect.poll(() => getComputedStyle(pageObj.save.element()).opacity).toBe("1");
       await expectNoAxeViolations();
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+    });
   });
 
-  test("keeps each day row's icons on one line at 390 CSS pixels so only a draft row grows", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(390, 900);
-    const height = (day: string) => pageObj.dayRow(day).element().getBoundingClientRect().height;
-    const noOverflow = () => expect.poll(() => document.documentElement.scrollWidth).toBe(390);
-
-    try {
+  test("keeps independent weekday rows aligned without page overflow at 390 CSS pixels", async () => {
+    await withViewport(390, async () => {
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const contentHeight = (day: string) => {
+        const row = pageObj.dayRow(day).element();
+        const style = getComputedStyle(row);
+        const borderWidth = Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.borderBottomWidth);
+        return row.getBoundingClientRect().height - borderWidth;
+      };
+      const noOverflow = () => expect.poll(() => document.documentElement.scrollWidth).toBe(390);
       render(<BookableItemPageStory history={history} />);
       await expect.element(pageObj.heading).toBeVisible();
       await pageObj.openEditor();
-      await pageObj.setDifferentHours.click();
-      await expect.element(pageObj.hoursByDay).toBeVisible();
+      await expect.element(pageObj.openingHours).toBeVisible();
       await noOverflow();
-      const sharedHeight = height("Tuesday");
-      expect(sharedHeight).toBe(53);
 
-      await pageObj.editDayHours("Monday").click();
-      await noOverflow();
-      // Only a draft row grows, because its inputs wrap under the day name.
-      expect(height("Monday")).toBeGreaterThan(sharedHeight);
-      await pageObj.dayRow("Monday").getByLabelText("Opening start").fill("10:00");
-      await pageObj.confirmDayHours("Monday").click();
+      const sharedHeight = contentHeight("Tuesday");
+      expect(sharedHeight).toBeGreaterThan(0);
+      for (const day of days) expect(contentHeight(day), `${day} weekday content height`).toBe(sharedHeight);
 
-      const revert = pageObj.dayRow("Monday").getByRole("button", { name: "Use shared hours on Monday" });
-      await expect.element(revert).toBeVisible();
-      expect(height("Monday")).toBe(sharedHeight);
-      expect(revert.element().getBoundingClientRect().top).toBe(
-        pageObj.editDayHours("Monday").element().getBoundingClientRect().top,
-      );
+      const mondayStart = pageObj.openingStart("Monday");
+      await mondayStart.fill("10:00");
+      await expect.element(mondayStart).toHaveValue("10:00");
+      await expect.element(pageObj.openingStart("Tuesday")).toHaveValue("08:00");
+      await expect.element(pageObj.openingEnd("Tuesday")).toHaveValue("17:00");
+      await expect.element(mondayStart).toHaveFocus();
+      await expect.element(pageObj.save).toBeEnabled();
       await noOverflow();
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+      for (const day of days) expect(contentHeight(day), `${day} weekday content height after edit`).toBe(sharedHeight);
+    });
   });
 });

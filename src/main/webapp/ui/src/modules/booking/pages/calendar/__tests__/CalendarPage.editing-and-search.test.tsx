@@ -14,7 +14,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -27,13 +27,8 @@ import {
 import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import {
-  renderCalendar,
-  restoreCalendarScrollTo,
-  setupCalendarBookableItems,
-  setupCalendarScrollTo,
-} from "./calendarPageTestUtils";
-import { currentUser } from "./calendarTestHarness";
+import { restoreCalendarScrollTo, setupCalendarBookableItems, setupCalendarScrollTo } from "./calendarPageTestUtils";
+import { renderCalendar } from "./calendarTestHarness";
 
 beforeAll(() => setupCalendarScrollTo());
 beforeEach(() => setupCalendarBookableItems());
@@ -225,8 +220,8 @@ describe("CalendarPage", () => {
       expect(within(card).getByRole("textbox", { name: "Purpose" })).toHaveValue("Keep my calendar draft");
       expect(within(card).getByLabelText("Start time")).toHaveValue(originalTime);
       expect(within(card).getByText("Server value")).toBeVisible();
-      expect(within(card).getByRole("heading", { name: "11:00 (+1)–13:00 (+1)" })).toBeVisible();
-      expect(within(card).getByText("18-08-2026")).toBeVisible();
+      expect(within(card).getByRole("heading", { name: "11:00 AM (+1)–01:00 PM (+1)" })).toBeVisible();
+      expect(within(card).getByText("08/18/2026")).toBeVisible();
 
       await user.click(within(card).getByRole("button", { name: "Save changes" }));
       await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
@@ -311,8 +306,6 @@ describe("CalendarPage", () => {
 
   it("explains a server buffer rejection in the inline calendar editor and lists the named booking", async () => {
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.patch("/api/v2/bookings/41", () =>
         HttpResponse.json(
