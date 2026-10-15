@@ -45,9 +45,11 @@ export const storyUser: CurrentUser = {
 
 export function BookableItemPageStory({
   hasSysAdminRole = true,
-  history = createMemoryHistory({ initialEntries: ["/booking/bookable-items/IN123"] }),
+  initialPath = "/booking/bookable-items/IN123",
+  history,
 }: {
   hasSysAdminRole?: boolean;
+  initialPath?: string;
   history?: RouterHistory;
 } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -78,7 +80,7 @@ export function BookableItemPageStory({
         }),
       ]),
     ]),
-    history,
+    history: history ?? createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
   return (
