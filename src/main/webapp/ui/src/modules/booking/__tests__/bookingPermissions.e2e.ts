@@ -1,29 +1,12 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { type APIRequestContext, expect } from "@playwright/test";
-import { createDynamicUser, dynamicUserTest } from "@/__tests__/e2e/fixtures/dynamicUser";
+import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
+import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
-import { BookingSchedulePage } from "./pageObjects/BookingSchedulePage";
-import { CreateBookingPage } from "./pageObjects/CreateBookingPage";
-import { MyBookingsPage } from "./pageObjects/MyBookingsPage";
+import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { type BookingConfiguration, createBookingConfiguration, type OpeningHoursEntry } from "./bookingE2eFixtures";
 
-const test = dynamicUserTest.extend<{
-  pageBookingSchedule: BookingSchedulePage;
-  pageCreateBooking: CreateBookingPage;
-  pageMyBookings: MyBookingsPage;
-}>({
-  pageBookingSchedule: async ({ page }, use) => use(new BookingSchedulePage(page)),
-  pageCreateBooking: async ({ page }, use) => use(new CreateBookingPage(page)),
-  pageMyBookings: async ({ page }, use) => use(new MyBookingsPage(page)),
-});
-
-type OpeningHoursEntry = { dayOfWeek: number; start: string; end: string };
-type BookingConfiguration = {
-  id: number;
-  configurationVersion: number;
-  timezone: string;
-  openingHours: OpeningHoursEntry[];
-};
 type Booking = {
   id: number;
   purpose: string | null;
@@ -40,27 +23,6 @@ type AccessDocument = {
   assignments: Array<{ grantee: { detail: string | null }; role: string }>;
 };
 
-const bookingFields =
-  "id,version,target,canViewConfiguration,timezone,start,end,state,purpose,bookedBy,privacy,canEdit,canCancel,createdAt,updatedAt";
-
-async function createBookingConfiguration(
-  apiContext: APIRequestContext,
-  apiKey: string,
-  instrumentId: number,
-  openingHours?: OpeningHoursEntry[],
-): Promise<BookingConfiguration> {
-  const response = await apiContext.post("/api/v2/booking-configurations", {
-    headers: { apiKey },
-    data: {
-      enabled: true,
-      target: { relationTo: "booking-instruments", value: instrumentId },
-      openingHours,
-    },
-  });
-  expect(response.ok(), await response.text()).toBe(true);
-  return response.json() as Promise<BookingConfiguration>;
-}
-
 async function readBookingConfiguration(
   apiContext: APIRequestContext,
   apiKey: string,
@@ -72,7 +34,7 @@ async function readBookingConfiguration(
 }
 
 function futureDate(days: number): string {
-  return new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return Temporal.Now.zonedDateTimeISO("UTC").toPlainDate().add({ days }).toString();
 }
 
 test.describe
@@ -140,7 +102,7 @@ test.describe
         expect(response.ok(), await response.text()).toBe(true);
 
         const incomingOwnerBooking = await apiContext.get(
-          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${bookingFields}`,
+          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${BOOKING_READ_FIELDS}`,
           { headers: { apiKey: incomingOwner.apiKey } },
         );
         expect(incomingOwnerBooking.ok(), await incomingOwnerBooking.text()).toBe(true);
@@ -152,7 +114,7 @@ test.describe
 
       await test.step("the former owner keeps a read-only booking with an unknown item", async () => {
         const bookingRead = await apiContext.get(
-          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${bookingFields}`,
+          `/api/v2/bookings/${bookingId}?depth=1&fields[bookings]=${BOOKING_READ_FIELDS}`,
           { headers: { apiKey: appUser.apiKey } },
         );
         expect(bookingRead.ok(), await bookingRead.text()).toBe(true);
@@ -169,7 +131,7 @@ test.describe
         });
 
         const ownRowsResponse = await apiContext.get(
-          `/api/v2/bookings?depth=1&limit=100&where=id==${bookingId}&fields[bookings]=${bookingFields}`,
+          `/api/v2/bookings?depth=1&limit=100&where=id==${bookingId}&fields[bookings]=${BOOKING_READ_FIELDS}`,
           { headers: { apiKey: appUser.apiKey } },
         );
         expect(ownRowsResponse.ok(), await ownRowsResponse.text()).toBe(true);
@@ -214,7 +176,7 @@ test.describe("Independent booking hours release acceptance", { tag: tags.INVENT
     apiContext,
     appUser,
     clientInventory,
-    pageBookingSchedule,
+    pageBookableItem,
   }) => {
     test.slow();
     const instrument = await clientInventory.createInstrument({ name: uniqueName("e2e-independent-hours") });
@@ -230,38 +192,38 @@ test.describe("Independent booking hours release acceptance", { tag: tags.INVENT
     ];
 
     await test.step("save all seven independent intervals through the configuration editor", async () => {
-      await pageBookingSchedule.openRecord(instrument.globalId);
-      await pageBookingSchedule.openEditor();
-      await expect(pageBookingSchedule.hours.getByRole("listitem")).toHaveCount(7);
-      await pageBookingSchedule.setHours("Monday", savedHours[0]);
-      await expect(pageBookingSchedule.endTime("Tuesday")).toHaveValue("18:00");
+      await pageBookableItem.openDetails(instrument.globalId);
+      await pageBookableItem.openEditor();
+      await expect(pageBookableItem.hours.getByRole("listitem")).toHaveCount(7);
+      await pageBookableItem.setHours("Monday", savedHours[0]);
+      await expect(pageBookableItem.endTime("Tuesday")).toHaveValue("18:00");
       for (const [index, day] of weekdays.entries()) {
-        await expect(pageBookingSchedule.openDay(day)).toBeChecked();
-        if (index > 0) await pageBookingSchedule.setHours(day, savedHours[index]);
+        await expect(pageBookableItem.openDay(day)).toBeChecked();
+        if (index > 0) await pageBookableItem.setHours(day, savedHours[index]);
       }
-      await pageBookingSchedule.save(configuration.id);
+      await pageBookableItem.save(configuration.id);
       const saved = await readBookingConfiguration(apiContext, appUser.apiKey, configuration.id);
       expect(saved.openingHours).toEqual(savedHours);
       expect(saved.configurationVersion).toBe(configuration.configurationVersion + 1);
     });
 
     await test.step("Cancel restores the complete saved week without changing its version", async () => {
-      await pageBookingSchedule.openEditor();
-      for (const day of weekdays) await pageBookingSchedule.setHours(day, { start: "10:00", end: "15:00" });
-      await pageBookingSchedule.openDay("Monday").uncheck();
-      await pageBookingSchedule.cancel();
+      await pageBookableItem.openEditor();
+      for (const day of weekdays) await pageBookableItem.setHours(day, { start: "10:00", end: "15:00" });
+      await pageBookableItem.openDay("Monday").uncheck();
+      await pageBookableItem.cancel();
       const retained = await readBookingConfiguration(apiContext, appUser.apiKey, configuration.id);
       expect(retained.openingHours).toEqual(savedHours);
       expect(retained.configurationVersion).toBe(configuration.configurationVersion + 1);
-      await pageBookingSchedule.openEditor();
+      await pageBookableItem.openEditor();
       for (const [index, day] of weekdays.entries()) {
-        await expect(pageBookingSchedule.openDay(day)).toBeChecked();
-        await expect(pageBookingSchedule.startTime(day)).toHaveValue(savedHours[index].start);
-        await expect(pageBookingSchedule.endTime(day)).toHaveValue(
+        await expect(pageBookableItem.openDay(day)).toBeChecked();
+        await expect(pageBookableItem.startTime(day)).toHaveValue(savedHours[index].start);
+        await expect(pageBookableItem.endTime(day)).toHaveValue(
           savedHours[index].end === "24:00" ? "00:00" : savedHours[index].end,
         );
       }
-      await pageBookingSchedule.cancel();
+      await pageBookableItem.cancel();
     });
 
     await test.step("closing a previously bookable weekday rejects a real booking", async () => {
@@ -278,9 +240,9 @@ test.describe("Independent booking hours release acceptance", { tag: tags.INVENT
       });
       expect(accepted.status(), await accepted.text()).toBe(201);
 
-      await pageBookingSchedule.openEditor();
-      await pageBookingSchedule.openDay(weekdays[date.dayOfWeek - 1]).uncheck();
-      await pageBookingSchedule.save(configuration.id);
+      await pageBookableItem.openEditor();
+      await pageBookableItem.openDay(weekdays[date.dayOfWeek - 1]).uncheck();
+      await pageBookableItem.save(configuration.id);
       const closed = await readBookingConfiguration(apiContext, appUser.apiKey, configuration.id);
       expect(closed.openingHours).toEqual(savedHours.filter((entry) => entry.dayOfWeek !== date.dayOfWeek));
 
