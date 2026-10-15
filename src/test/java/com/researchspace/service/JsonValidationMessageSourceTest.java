@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.api.v2.model.ApiV2CollectionQuery;
+import com.researchspace.model.collection.CollectionQueryLimits;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -59,8 +60,8 @@ class JsonValidationMessageSourceTest {
     validator.afterPropertiesSet();
 
     ApiV2CollectionQuery query = new ApiV2CollectionQuery();
-    query.setLimit(ApiV2CollectionQuery.MAX_LIMIT + 1);
-    query.setDepth(ApiV2CollectionQuery.MAX_DEPTH + 1);
+    query.setLimit(CollectionQueryLimits.MAX_PAGE_SIZE + 1);
+    query.setDepth(CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH + 1);
 
     assertEquals(
         Set.of("Limit must not exceed 100.", "Depth must not exceed 10."),
