@@ -2,10 +2,7 @@ import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { MyBookingsRoutePage } from "./MyBookingsRoutePage";
-
-export { MyBookingsRoutePage } from "./MyBookingsRoutePage";
-export { UserBookingsPage, type UserBookingsPageProps } from "./UserBookingsPage";
+import { UserBookingsPage } from "./UserBookingsPage";
 
 export default function MyBookingsPage() {
   return (
@@ -36,5 +33,5 @@ function MyBookingsSkeleton() {
 function MyBookingsContent() {
   const { t } = useTranslation("booking");
   const { data: currentUser } = useCurrentUserQuery();
-  return <MyBookingsRoutePage requesterId={currentUser.id} title={t("myBookings.title")} />;
+  return <UserBookingsPage requesterId={currentUser.id} title={t("myBookings.title")} />;
 }

@@ -23,6 +23,7 @@ export function CalendarAgenda({
 }) {
   const { t } = useTranslation("booking");
   const dates = periodDates(date, view);
+  const eventsByDate = dates.map((day) => ({ day, events: eventsOn(events, day, timezone) }));
   const dateRailRef = useScrollToToday(date, view, today);
   return (
     <section aria-label={t("calendar.layout.agenda")} className="p-3" aria-busy={isLoading}>
@@ -35,8 +36,8 @@ export function CalendarAgenda({
           tabIndex={0}
         >
           <ol className="space-y-1">
-            {dates.map((day) => {
-              const count = eventsOn(events, day, timezone).length;
+            {eventsByDate.map(({ day, events: dayEvents }) => {
+              const count = dayEvents.length;
               return (
                 <li
                   key={day}
@@ -67,8 +68,7 @@ export function CalendarAgenda({
               ))}
             </div>
           ) : (
-            dates.flatMap((day) => {
-              const dayEvents = eventsOn(events, day, timezone);
+            eventsByDate.flatMap(({ day, events: dayEvents }) => {
               if (dayEvents.length === 0) return [];
               return [
                 <section key={day} className="space-y-2">

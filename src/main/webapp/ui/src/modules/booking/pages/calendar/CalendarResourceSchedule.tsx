@@ -6,6 +6,7 @@ import { DayTimeline, type DayTimelineViewState } from "@/modules/booking/compon
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -15,16 +16,33 @@ import { CalendarEventCard } from "./CalendarEventCard";
 import {
   actionsFor,
   type BookingCalendarResource,
-  blockoutActionsFor,
   type CalendarView,
   formatDate,
   nextFreeRange,
-  occursOn,
   periodDates,
   scrollCalendarWithArrowKeys,
   toTimelineEvent,
   useScrollToToday,
 } from "./calendarLayoutUtils";
+
+function ResourceHeader({ resource }: { resource: BookingCalendarResource }) {
+  const { t } = useTranslation("booking");
+  return (
+    <InventoryItem
+      locationPlacement="below"
+      name={resource.value.name}
+      globalId={resource.globalId}
+      href={`/globalId/${resource.globalId}`}
+      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
+      size="xs"
+    >
+      <InventoryLocationLink
+        name={resource.value.parentContainerName}
+        globalId={resource.value.parentContainerGlobalId}
+      />
+    </InventoryItem>
+  );
+}
 
 function ResourceDateGrid({
   dates,
@@ -102,9 +120,15 @@ export function CalendarResourceSchedule({
   const dates = React.useMemo(() => periodDates(date, view), [date, view]);
   const eventsByResourceAndDate = React.useMemo(() => {
     const index = new Map<string, BookingListDocument[]>();
+    const boundsByDate = dates.map((day) => {
+      const bounds = zonedDayBounds(day, timezone);
+      return { day, start: Date.parse(bounds.start), end: Date.parse(bounds.end) };
+    });
     for (const event of events) {
-      for (const day of dates) {
-        if (!occursOn(event, day, timezone)) continue;
+      const eventStart = Date.parse(event.start);
+      const eventEnd = Date.parse(event.end);
+      for (const { day, start, end } of boundsByDate) {
+        if (!(eventStart < end && eventEnd > start)) continue;
         const key = `${event.target.globalId}|${day}`;
         const rows = index.get(key) ?? [];
         rows.push(event);
@@ -189,19 +213,7 @@ export function CalendarResourceSchedule({
               return (
                 <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
-                    <InventoryItem
-                      locationPlacement="below"
-                      name={resource.value.name}
-                      globalId={resource.globalId}
-                      href={`/globalId/${resource.globalId}`}
-                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                      size="xs"
-                    >
-                      <InventoryLocationLink
-                        name={resource.value.parentContainerName}
-                        globalId={resource.value.parentContainerGlobalId}
-                      />
-                    </InventoryItem>
+                    <ResourceHeader resource={resource} />
                   </header>
                   <div className="relative grid min-h-32 min-w-0">
                     <div className="grid min-w-0" aria-hidden={isLoading || undefined} inert={isLoading}>
@@ -219,7 +231,7 @@ export function CalendarResourceSchedule({
                         scrollSync={timelineScrollSync}
                         showScrollbar={index === resourceRows.length - 1}
                         renderEventActions={actionsFor(resourceEvents, timezone, date)}
-                        renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone, date)}
+                        renderBlockoutActions={actionsFor(resourceEvents, timezone, date)}
                         snapIncrementMinutes={configuration?.slotGranularityMinutes}
                         creationDisabled={isLoading || creationDisabled || !canCreateBooking}
                         onRangeSelect={
@@ -259,19 +271,7 @@ export function CalendarResourceSchedule({
               <React.Fragment key={resource.globalId}>
                 <div className="sticky left-0 z-10 border-r border-b bg-background p-1">
                   <div className="space-y-1">
-                    <InventoryItem
-                      locationPlacement="below"
-                      name={resource.value.name}
-                      globalId={resource.globalId}
-                      href={`/globalId/${resource.globalId}`}
-                      idLinkLabel={t("dayTimeline.expanded.openItem", { globalId: resource.globalId })}
-                      size="xs"
-                    >
-                      <InventoryLocationLink
-                        name={resource.value.parentContainerName}
-                        globalId={resource.value.parentContainerGlobalId}
-                      />
-                    </InventoryItem>
+                    <ResourceHeader resource={resource} />
                     {editConfigurationLink(resource, configurationByTarget.get(resource.globalId))}
                   </div>
                 </div>

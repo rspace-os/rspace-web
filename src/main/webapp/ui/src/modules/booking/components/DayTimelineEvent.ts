@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { dayMinuteToZonedTime, parsePlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 
 const DAY_MINUTES = 24 * 60;
@@ -43,6 +44,11 @@ export type DayTimelineViewState = {
 
 export type DayTimelineRange = Readonly<{ startMinute: number; endMinute: number }>;
 
+export type DayTimelineActionRenderers = {
+  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => ReactNode;
+  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => ReactNode;
+};
+
 export function formatMinute(date: string, timezone: string, minute: number) {
   return dayMinuteToZonedTime(date, timezone, minute).toPlainTime().toString({ smallestUnit: "minute" });
 }
@@ -65,6 +71,13 @@ export function formatMinuteWithDayOffset(date: string, timezone: string, minute
   return `${time.toPlainTime().toString({ smallestUnit: "minute" })}${zoneLabel}${dayLabel}`;
 }
 
-export function period(event: DayTimelineEvent, date: string, timezone: string) {
-  return `${formatMinuteWithDayOffset(date, timezone, event.startMinute)}–${formatMinuteWithDayOffset(date, timezone, event.endMinute)}`;
+export function period(
+  eventOrRange: DayTimelineEvent | DayTimelineRange,
+  date: string,
+  timezone: string,
+  separator = "–",
+) {
+  const start = formatMinuteWithDayOffset(date, timezone, eventOrRange.startMinute);
+  const end = formatMinuteWithDayOffset(date, timezone, eventOrRange.endMinute);
+  return `${start}${separator}${end}`;
 }

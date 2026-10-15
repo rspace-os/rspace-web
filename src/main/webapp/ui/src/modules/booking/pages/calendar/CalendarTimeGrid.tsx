@@ -6,11 +6,9 @@ import { cn } from "@/modules/common/utils/cn";
 import { CalendarEventCard } from "./CalendarEventCard";
 import {
   actionsFor,
-  blockoutActionsFor,
   type CalendarView,
   calendarDates,
   eventsOn,
-  firstOfMonth,
   formatDate,
   scrollCalendarWithArrowKeys,
   toTimelineEvent,
@@ -38,7 +36,7 @@ export function CalendarTimeGrid({
 }) {
   const { t } = useTranslation("booking");
   const dates = calendarDates(date, view);
-  const month = firstOfMonth(date).slice(0, 7);
+  const month = date.slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
   return (
     <section aria-label={t("calendar.layout.time-grid")} className="p-3" aria-busy={isLoading}>
@@ -53,7 +51,7 @@ export function CalendarTimeGrid({
               endWindow={availabilityEndMinute}
               showZoomControls={false}
               renderEventActions={actionsFor(events, timezone, date)}
-              renderBlockoutActions={blockoutActionsFor(events, timezone, date)}
+              renderBlockoutActions={actionsFor(events, timezone, date)}
             />
           </div>
           {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}

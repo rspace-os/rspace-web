@@ -15,8 +15,6 @@ import { Heading } from "@/modules/common/ui/typography";
 import { BookingBreadcrumbs } from "./BookingBreadcrumbs";
 import { BookingSidebar } from "./BookingSidebar";
 
-export { BookingSidebar } from "./BookingSidebar";
-
 /** Dashboard is the Booking landing page; Calendar remains a separate route. */
 export function createBookingIndexRoute<TParentRoute extends AnyRoute>(bookingRoute: TParentRoute) {
   return createRoute({

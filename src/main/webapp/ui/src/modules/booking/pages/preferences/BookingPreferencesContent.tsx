@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import {
+  type BookingDisplayPreferencesDocument,
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
   bookingDisplayPreferencesQueryKey,
@@ -19,12 +20,12 @@ import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "./BookingDisplaySettingsFields";
 import { UserCalendarSubscription } from "./UserCalendarSubscription";
 
-function inputFrom(document: {
-  availabilityWindowStart: string;
-  availabilityWindowEnd: string;
-  timezoneMode: BookingDisplayPreferencesInput["timezoneMode"];
-  customTimezone: string | null;
-}): BookingDisplayPreferencesInput {
+function inputFrom(
+  document: Pick<
+    BookingDisplayPreferencesDocument,
+    "availabilityWindowStart" | "availabilityWindowEnd" | "timezoneMode" | "customTimezone"
+  >,
+): BookingDisplayPreferencesInput {
   return {
     availabilityWindowStart: document.availabilityWindowStart,
     availabilityWindowEnd: document.availabilityWindowEnd,

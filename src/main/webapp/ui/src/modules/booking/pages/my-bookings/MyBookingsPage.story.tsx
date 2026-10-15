@@ -17,8 +17,8 @@ import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/
 import { createBookableItemRoute } from "../bookable-items/routes";
 import { createBookingEventRouteTree } from "../bookings/routes";
 import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
-import { MyBookingsRoutePage } from "./MyBookingsPage";
 import { bookingsOpenApi } from "./mocks/bookingMocks";
+import { UserBookingsPage } from "./UserBookingsPage";
 
 const storySearch = new URLSearchParams({
   period: "upcoming",
@@ -53,7 +53,7 @@ export function MyBookingsPageStory({
   const pageRoute = createRoute({
     getParentRoute: () => bookingRoute,
     path: "/my-bookings",
-    component: () => <MyBookingsRoutePage requesterId={84} title="My Bookings" />,
+    component: () => <UserBookingsPage requesterId={84} title="My Bookings" />,
   });
   const router = createRouter({
     routeTree: root.addChildren([

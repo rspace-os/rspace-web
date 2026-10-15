@@ -47,7 +47,7 @@ export function AllBookableItemsStory({
   const router = createRouter({
     routeTree: rootRoute.addChildren([
       bookingRoute.addChildren([
-        createAllBookableItemsRoute(bookingRoute, () => <AllBookableItemsPage clock={storyClock} userTimeZone="UTC" />),
+        createAllBookableItemsRoute(bookingRoute, () => <AllBookableItemsPage clock={storyClock} />),
         createBookableItemRoute(bookingRoute),
       ]),
     ]),

@@ -88,14 +88,9 @@ function targetSelection(input: unknown): TargetSelection {
     input === undefined ||
     input === null ||
     input === "" ||
-    (typeof input === "object" && Object.keys(input).length === 0)
-  ) {
-    return { type: "empty" };
-  }
-  if (
-    typeof input === "object" &&
-    "value" in input &&
-    (input.value === undefined || input.value === null || input.value === "")
+    (typeof input === "object" &&
+      (Object.keys(input).length === 0 ||
+        ("value" in input && (input.value === undefined || input.value === null || input.value === ""))))
   ) {
     return { type: "empty" };
   }
@@ -154,8 +149,7 @@ export function AddBookableItemForm({
     failedForSelectedTarget
       ? createMutation.error
       : null;
-  const alreadyConfigured = conflict !== null;
-  const canComplete = target.type === "instrument" && !alreadyConfigured;
+  const canComplete = target.type === "instrument" && conflict === null;
   const createFailed =
     createMutation.error instanceof ApiV2ProblemError && failedForSelectedTarget && conflict === null;
 
@@ -194,7 +188,7 @@ export function AddBookableItemForm({
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.instrumentRequired")}
           </p>
-        ) : target.type === "instrument" && alreadyConfigured ? (
+        ) : target.type === "instrument" && conflict !== null ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.availability.alreadyConfigured")}{" "}
             <Link

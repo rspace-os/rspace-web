@@ -69,20 +69,7 @@ function renderAt(initialPath: string, hasSysAdminRole = true, preferencesReady 
       HttpResponse.json({ parentContainerName: null, parentContainerGlobalId: null }),
     ),
     http.get("/api/v2/openapi.json", () => HttpResponse.json(bookingsOpenApi)),
-    http.get("/api/v2/bookings", () =>
-      HttpResponse.json({
-        docs: [],
-        totalDocs: 0,
-        limit: 100,
-        page: 1,
-        pagingCounter: 1,
-        totalPages: 0,
-        hasPrevPage: false,
-        hasNextPage: false,
-        prevPage: null,
-        nextPage: null,
-      }),
-    ),
+    http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([], { limit: 100 }))),
     http.get("/api/v2/users/me/booking-preferences", async () => {
       await preferencesReady;
       return HttpResponse.json(inheritedBrowserBookingPreferences);

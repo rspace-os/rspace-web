@@ -23,9 +23,9 @@ import type { FilterExpression, FilterState } from "@/modules/common/table-list/
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
+import { TooltipIconLink } from "../../components/TooltipIconLink";
 import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/calendarAvailability";
 import {
   type AllBookableItem,
@@ -141,14 +141,9 @@ const currentDate = () => new Date();
 
 export type AllBookableItemsContentProps = {
   clock?: () => Date;
-  /** @deprecated Display timezone comes from Booking preferences. */
-  userTimeZone?: string;
 };
 
-export function AllBookableItemsContent({
-  clock = currentDate,
-  userTimeZone: _legacyUserTimeZone,
-}: AllBookableItemsContentProps = {}) {
+export function AllBookableItemsContent({ clock = currentDate }: AllBookableItemsContentProps = {}) {
   const { t } = useTranslation("booking");
   const config = useMemo(
     () =>
@@ -183,6 +178,10 @@ export function AllBookableItemsContent({
   const invalidFilter = Boolean(where && !filters.expression);
   const usesAvailability = hasAvailabilityFilter(filters.expression);
   const quickMode = availabilityMode(filters.expression);
+  const quickFilterLabels = {
+    "available-now": t("allBookableItems.quickFilters.availableNow"),
+    "free-later-today": t("allBookableItems.quickFilters.freeLaterToday"),
+  } as const;
   const bounds = useMemo(
     () =>
       displayInterval(
@@ -319,64 +318,40 @@ export function AllBookableItemsContent({
         const bookLabel = t("allBookableItems.actions.book");
         return (
           <div className="flex gap-1">
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Link
-                    aria-label={detailsLabel}
-                    className={buttonVariants({ variant: "outline", size: "icon-lg" })}
-                    data-slot="button"
-                    to="/booking/bookable-items/$globalId/{-$tab}"
-                    params={{ globalId: row.target.globalId, tab: undefined }}
-                  />
-                }
-              >
-                <EyeIcon aria-hidden="true" />
-              </TooltipTrigger>
-              <TooltipContent role="tooltip" className="rounded-sm">
-                {detailsLabel}
-              </TooltipContent>
-            </Tooltip>
+            <TooltipIconLink label={detailsLabel} icon={<EyeIcon aria-hidden="true" />}>
+              <Link
+                aria-label={detailsLabel}
+                className={buttonVariants({ variant: "outline", size: "icon-lg" })}
+                data-slot="button"
+                to="/booking/bookable-items/$globalId/{-$tab}"
+                params={{ globalId: row.target.globalId, tab: undefined }}
+              />
+            </TooltipIconLink>
             {row.capabilities?.canCreateBooking ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={bookLabel}
-                      className={buttonVariants({ variant: "outline", size: "icon-lg" })}
-                      data-slot="button"
-                      to="/booking/calendar/bookings/add"
-                      search={{ date: rowDate, target: row.target.globalId }}
-                    />
-                  }
-                >
-                  <CalendarPlusIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip" className="rounded-sm">
-                  {bookLabel}
-                </TooltipContent>
-              </Tooltip>
+              <TooltipIconLink label={bookLabel} icon={<CalendarPlusIcon aria-hidden="true" />}>
+                <Link
+                  aria-label={bookLabel}
+                  className={buttonVariants({ variant: "outline", size: "icon-lg" })}
+                  data-slot="button"
+                  to="/booking/calendar/bookings/add"
+                  search={{ date: rowDate, target: row.target.globalId }}
+                />
+              </TooltipIconLink>
             ) : null}
             {row.capabilities?.canEditConfiguration ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={t("allBookableItems.actions.settings")}
-                      className={buttonVariants({ variant: "outline", size: "icon-lg" })}
-                      data-slot="button"
-                      to="/booking/bookable-items/$globalId/{-$tab}"
-                      params={{ globalId: row.target.globalId, tab: "details" }}
-                      search={{ edit: true }}
-                    />
-                  }
-                >
-                  <SettingsIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip" className="rounded-sm">
-                  {t("allBookableItems.actions.settings")}
-                </TooltipContent>
-              </Tooltip>
+              <TooltipIconLink
+                label={t("allBookableItems.actions.settings")}
+                icon={<SettingsIcon aria-hidden="true" />}
+              >
+                <Link
+                  aria-label={t("allBookableItems.actions.settings")}
+                  className={buttonVariants({ variant: "outline", size: "icon-lg" })}
+                  data-slot="button"
+                  to="/booking/bookable-items/$globalId/{-$tab}"
+                  params={{ globalId: row.target.globalId, tab: "details" }}
+                  search={{ edit: true }}
+                />
+              </TooltipIconLink>
             ) : null}
           </div>
         );
@@ -410,9 +385,7 @@ export function AllBookableItemsContent({
       id: mode,
       label: (
         <>
-          {mode === "available-now"
-            ? t("allBookableItems.quickFilters.availableNow")
-            : t("allBookableItems.quickFilters.freeLaterToday")}
+          {quickFilterLabels[mode]}
           <span aria-hidden="true" className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background">
             {quickIndex.isError ? (
               "—"
