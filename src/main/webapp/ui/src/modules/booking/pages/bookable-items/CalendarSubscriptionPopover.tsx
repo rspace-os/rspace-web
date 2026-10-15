@@ -22,7 +22,6 @@ import {
   calendarSubscriptionQueryKey,
   createCalendarSubscription,
   fetchCalendarSubscriptionStatus,
-  itemCalendarLinksQueryKey,
   revokeCalendarSubscription,
   rotateCalendarSubscription,
 } from "./bookableItemCalendarSubscription";
@@ -64,7 +63,6 @@ export function CalendarSubscriptionPopover({
     setCopied(false);
     setClipboardError(false);
   };
-  const linksChanged = () => void queryClient.invalidateQueries({ queryKey: itemCalendarLinksQueryKey });
 
   const createMutation = useMutation({
     mutationFn: () => createCalendarSubscription(configurationId, token),
@@ -77,7 +75,6 @@ export function CalendarSubscriptionPopover({
     onSuccess: async (created) => {
       await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData(queryKey, created);
-      linksChanged();
       setFocusGoogle(true);
     },
   });
@@ -88,7 +85,6 @@ export function CalendarSubscriptionPopover({
     onSuccess: async (rotated) => {
       await queryClient.cancelQueries({ queryKey, exact: true });
       queryClient.setQueryData(queryKey, rotated);
-      linksChanged();
       setConfirming(null);
     },
     onError: async (error) => {
@@ -103,7 +99,6 @@ export function CalendarSubscriptionPopover({
     onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey, exact: true });
       setConfirming(null);
-      linksChanged();
       await status.refetch();
     },
     onError: () => setConfirming(null),

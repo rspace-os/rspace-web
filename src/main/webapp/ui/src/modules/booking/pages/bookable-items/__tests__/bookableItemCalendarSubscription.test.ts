@@ -114,7 +114,8 @@ describe("bookable item calendar subscription client", () => {
     await expect(createCalendarSubscription(7, "token")).rejects.toThrow();
   });
 
-  it.each([403])("parses a %s API problem", async (status) => {
+  it("parses a 403 API problem", async () => {
+    const status = 403;
     server.use(
       http.get(path, () => HttpResponse.json({ status, code: `problem.${status}`, detail: "Safe detail" }, { status })),
     );
