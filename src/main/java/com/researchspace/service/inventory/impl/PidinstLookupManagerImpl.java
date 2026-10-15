@@ -10,7 +10,6 @@ import com.researchspace.api.v1.model.ApiPidinstSearchResult;
 import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier;
 import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier.Reason;
 import com.researchspace.api.v1.model.ApiTargetLocation;
-import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.InstrumentTemplateDao;
@@ -163,15 +162,15 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           "^(?:https?://hdl\\.handle\\.net/)?(21\\.[A-Za-z0-9.]+/\\S+)$", Pattern.CASE_INSENSITIVE);
 
   /**
-   * Newest update first, the merged order of ADR 0011. Nothing else may break a tie: the registries
-   * sort by update time alone, so a tie-breaker of RSpace's own would reorder a tie that spans two
-   * registry pages, and merged page k+1 would repeat a hit of page k and drop another. The sort is
-   * stable, so a tie keeps each registry's order, the registries in the order they were asked.
+   * Newest update first, judged between the registries' next records only ({@link #mergedPage}, ADR
+   * 0011 decision 4). Never reorder a registry's own list, by a tie-breaker or by moving an undated
+   * record: the registries sort by update time alone, so merged page k+1 would repeat a hit of page
+   * k and drop another. A tie keeps the order the registries were asked in. An undated head counts
+   * as newest, so it stays beside its registry neighbours instead of holding back everything behind
+   * it in its own list (RSDEV-1556).
    */
-  private static final Comparator<ApiPidinstRecord> NEWEST_FIRST =
-      Comparator.comparing(
-          (ApiPidinstRecord record) -> instantOf(record.getUpdated()),
-          Comparator.nullsLast(Comparator.reverseOrder()));
+  private static final Comparator<Candidate> NEWEST_FIRST =
+      Comparator.comparing(Candidate::updated, Comparator.nullsFirst(Comparator.reverseOrder()));
 
   /**
    * B2INST writes "+00:00" offsets, the DataCite mapper writes Instant.toString(): both parse here.
@@ -188,14 +187,24 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * One registry page after RSpace's own filters, with the registry's total and the raw page size.
+   * One raw registry record at its registry position (RSDEV-1556, ADR 0011 decision 4): {@code
+   * shown} when RSpace may offer it, a public instrument record with a PID, hidden otherwise. A
+   * hidden candidate still holds its place, so every merged page is a slice of the same list.
    */
-  private record RegistryPage(List<ApiPidinstRecord> records, int total, int rawCount) {
-    static final RegistryPage EMPTY = new RegistryPage(List.of(), 0, 0);
+  private record Candidate(ApiPidinstRecord record, Instant updated, boolean shown) {
+    static Candidate of(ApiPidinstRecord record, boolean shown) {
+      return new Candidate(
+          record, instantOf(record.getUpdated()), shown && record.getPid() != null);
+    }
   }
 
-  /** The first pages of one registry, concatenated, with its total. */
-  private record RegistryHits(List<ApiPidinstRecord> records, int total) {}
+  /** One raw registry page, every record a candidate, with the registry's total. */
+  private record RegistryPage(List<Candidate> candidates, int total) {
+    static final RegistryPage EMPTY = new RegistryPage(List.of(), 0);
+  }
+
+  /** The first pages of one registry, concatenated in its order, with its total. */
+  private record RegistryHits(List<Candidate> candidates, int total) {}
 
   @Autowired private B2instConnector b2instConnector;
   @Autowired private DataCiteConnector dataCiteConnector;
@@ -226,20 +235,17 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     result.setProviders(registries.stream().map(Enum::name).toList());
     result.setPageNumber(pageNumber);
     // merged page k can only hold items from each registry's first (k+1) pages, so those are
-    // all that is fetched (each page is cached by the connectors), merged, and sliced
-    List<ApiPidinstRecord> candidates = new ArrayList<>();
+    // all that is fetched (each page is cached by the connectors), merged head by head, and sliced
+    List<List<Candidate>> lists = new ArrayList<>();
     int totalHits = 0;
     for (IdentifierType registry : registries) {
       RegistryHits hits = hitsUpTo(q, registry, pageNumber);
       result.getTotalsByProvider().put(registry.name(), hits.total());
       totalHits += hits.total();
-      candidates.addAll(hits.records());
+      lists.add(hits.candidates());
     }
     result.setTotalHits(totalHits);
-    candidates.sort(NEWEST_FIRST);
-    int from = Math.min(pageNumber * PAGE_SIZE, candidates.size());
-    int to = Math.min(from + PAGE_SIZE, candidates.size());
-    result.getHits().addAll(candidates.subList(from, to));
+    result.getHits().addAll(mergedPage(lists, pageNumber));
     for (IdentifierType registry : registries) {
       annotateLinkedInstruments(
           result.getHits().stream()
@@ -249,6 +255,41 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           user);
     }
     return result;
+  }
+
+  /**
+   * Raw positions {@code pageNumber * PAGE_SIZE} to {@code (pageNumber + 1) * PAGE_SIZE - 1} of the
+   * registries' lists merged head by head with {@link #NEWEST_FIRST}, the hidden candidates dropped
+   * only then (RSDEV-1556, ADR 0011 decision 4). Each list is in its registry's own order and the
+   * merge reads heads only, so the page is a slice of the one list the registries' complete results
+   * would merge into: a list that runs out here has either ended at the registry (a short page) or
+   * contributed {@code (pageNumber + 1) * PAGE_SIZE} candidates, one past the last position this
+   * page reads.
+   */
+  private static List<ApiPidinstRecord> mergedPage(List<List<Candidate>> lists, int pageNumber) {
+    int[] next = new int[lists.size()];
+    List<ApiPidinstRecord> page = new ArrayList<>();
+    int first = pageNumber * PAGE_SIZE;
+    for (int position = 0; position < first + PAGE_SIZE; position++) {
+      int newest = -1;
+      for (int i = 0; i < lists.size(); i++) {
+        if (next[i] < lists.get(i).size()
+            && (newest < 0
+                || NEWEST_FIRST.compare(
+                        lists.get(i).get(next[i]), lists.get(newest).get(next[newest]))
+                    < 0)) {
+          newest = i;
+        }
+      }
+      if (newest < 0) {
+        break;
+      }
+      Candidate taken = lists.get(newest).get(next[newest]++);
+      if (position >= first && taken.shown()) {
+        page.add(taken.record());
+      }
+    }
+    return page;
   }
 
   @Override
@@ -303,7 +344,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   /**
    * One registry's share of merged page {@code pageNumber}: its pages 0..pageNumber, stopping at a
-   * short one, or the single hit of a direct PID lookup. Its total is the registry's own.
+   * short one, or the single hit of a direct PID lookup; every record in the registry's own order.
+   * Its total is the registry's own.
    */
   private RegistryHits hitsUpTo(String query, IdentifierType registry, int pageNumber) {
     if (isPidOfTheOtherRegistry(query, registry)) {
@@ -311,10 +353,13 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     }
     Optional<String> pid = pidOf(query, registry);
     if (pid.isPresent()) {
-      List<ApiPidinstRecord> hit = fetchByPid(pid.get(), registry).map(List::of).orElse(List.of());
+      List<Candidate> hit =
+          fetchByPid(pid.get(), registry)
+              .map(record -> List.of(Candidate.of(record, true)))
+              .orElse(List.of());
       return new RegistryHits(hit, hit.size());
     }
-    List<ApiPidinstRecord> records = new ArrayList<>();
+    List<Candidate> candidates = new ArrayList<>();
     int total = 0;
     for (int page = 0; page <= pageNumber; page++) {
       RegistryPage fetched =
@@ -324,14 +369,14 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       if (page == 0) {
         total = fetched.total();
       }
-      records.addAll(fetched.records());
-      // judged on what the registry sent, not on what survived RSpace's filters: a page RSpace
-      // thinned is not an exhausted registry
-      if (fetched.rawCount() < PAGE_SIZE) {
+      candidates.addAll(fetched.candidates());
+      // judged on what the registry sent, hidden candidates included: a page RSpace thinned is
+      // not an exhausted registry
+      if (fetched.candidates().size() < PAGE_SIZE) {
         break;
       }
     }
-    return new RegistryHits(records, total);
+    return new RegistryHits(candidates, total);
   }
 
   /**
@@ -339,9 +384,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    *
    * <p>The account's own records under {@code /api/user/records} are deliberately not searched.
    * Only a public PID may be linked (RSDEV-1326), so a record still in draft, submitted or declined
-   * is not a candidate, and the published index is exactly the set that is. Hits are filtered on
-   * {@code is_published} as well, so the rule holds in RSpace whatever the index returns, and
-   * {@code total} stays the registry's own.
+   * is not a candidate, and the published index is exactly the set that is. A hit the index reports
+   * as not published is a hidden candidate, so the rule holds in RSpace whatever the index returns,
+   * and {@code total} stays the registry's own.
    */
   private RegistryPage b2instPage(String query, int page) {
     // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
@@ -363,15 +408,16 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     }
     B2instSearchResult result =
         b2instConnector.searchPublicRecords(containsForB2inst(searchable), page, PAGE_SIZE);
-    List<B2instDraftRecord> raw = result.getHits().getHits();
-    List<ApiPidinstRecord> records =
-        raw.stream()
-            .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
-            .map(PidinstRecordMapper::fromB2inst)
-            .filter(record -> record.getPid() != null)
+    List<Candidate> candidates =
+        result.getHits().getHits().stream()
+            .map(
+                record ->
+                    Candidate.of(
+                        PidinstRecordMapper.fromB2inst(record),
+                        Boolean.TRUE.equals(record.getIsPublished())))
             .toList();
     Integer total = result.getHits().getTotal();
-    return new RegistryPage(records, total == null ? records.size() : total, raw.size());
+    return new RegistryPage(candidates, total == null ? candidates.size() : total);
   }
 
   /**
@@ -387,8 +433,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * 0011). An exhausted later page of a query that did match is not retried, which would fill it
    * from another query. The retry carries the raw query rather than the escaped one, because it
    * composes its own clause and {@link #DOI_FRAGMENT} already limits what may go in it; its gate
-   * reads the raw query too, so escaping cannot change which searches retry. Hits are re-checked
-   * for a findable instrument, so the rule holds whatever the index returns (ADR 0009).
+   * reads the raw query too, so escaping cannot change which searches retry. A hit that is not a
+   * findable instrument is a hidden candidate, so the rule holds whatever the index returns (ADR
+   * 0009).
    */
   private RegistryPage dataCitePage(String query, int page) {
     DataCiteDoiSearchResult hits =
@@ -398,14 +445,15 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         && DOI_FRAGMENT.matcher(query).matches()) {
       hits = dataCiteConnector.searchPublicInstrumentDois("doi:*" + query + "*", page, PAGE_SIZE);
     }
-    List<ApiPidinstRecord> records =
+    List<Candidate> candidates =
         hits.getData().stream()
-            .filter(PidinstLookupManagerImpl::isInstrumentDoi)
-            .filter(PidinstLookupManagerImpl::isFindable)
-            .map(PidinstRecordMapper::fromDataCite)
-            .filter(record -> record.getPid() != null)
+            .map(
+                doi ->
+                    Candidate.of(
+                        PidinstRecordMapper.fromDataCite(doi),
+                        isInstrumentDoi(doi) && isFindable(doi)))
             .toList();
-    return new RegistryPage(records, hits.getMeta().getTotal(), hits.getData().size());
+    return new RegistryPage(candidates, hits.getMeta().getTotal());
   }
 
   /**
