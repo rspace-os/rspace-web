@@ -4563,6 +4563,8 @@ components:
             - SUBSAMPLE
             - CONTAINER
             - SAMPLE_TEMPLATE
+            - INSTRUMENT
+            - INSTRUMENT_TEMPLATE
         attachments:
           $ref: "#/components/schemas/FileList"
         barcodes:
@@ -6191,7 +6193,6 @@ components:
             - $ref: "#/components/schemas/Error"
     InventoryImportPartialResult:
       description: The outcome of one CSV file within an import.
-      type: object
       properties:
         type:
           type: string
@@ -6220,8 +6221,9 @@ components:
         results:
           type: array
           description: >
-            One entry per row processed, in file order. An error while creating items ends the
-            list at the row that failed.
+            One entry per row, in file order. When creating an item fails, its entry carries the
+            `error` and the import stops there: rows after it were never created, though subsample
+            rows can still be listed.
           items:
             $ref: "#/components/schemas/InventoryBulkOperationRecordResult"
         successCount:
