@@ -8,6 +8,7 @@ export function toTimelineEvent(
   date: string,
   timezone: string,
 ): DayTimelineEvent {
+  const id = String(event.id);
   const slice = sliceAcrossZonedDay(event.start, event.end, date, timezone);
   const instrumentTime = {
     startInstant: event.start,
@@ -15,7 +16,13 @@ export function toTimelineEvent(
     instrumentTimeZone: event.timezone,
   };
   if (event.privacy === "busy") {
-    return { id: String(event.id), kind: "booking", privacy: "busy", ...slice, ...instrumentTime };
+    return {
+      id,
+      kind: "booking",
+      privacy: "busy",
+      ...slice,
+      ...instrumentTime,
+    };
   }
   const target = event.target;
   const itemName = target?.value.name ?? i18n.t("common:values.unknownItem");
@@ -27,12 +34,13 @@ export function toTimelineEvent(
           globalId: target.value.parentContainerGlobalId,
         }
       : undefined;
+  const item = { name: itemName, globalId: itemGlobalId, location };
   if (event.kind === "MAINTENANCE") {
     return {
-      id: String(event.id),
+      id,
       kind: "blockout",
       title: i18n.t("booking:bookings.maintenanceLabel"),
-      item: { name: itemName, globalId: itemGlobalId, location },
+      item,
       createdBy: event.createdBy ?? undefined,
       notes: event.purpose ?? undefined,
       ...slice,
@@ -40,16 +48,12 @@ export function toTimelineEvent(
     };
   }
   return {
-    id: String(event.id),
+    id,
     kind: "booking",
     privacy: "full",
     title: itemName,
     bookedBy: event.bookedBy ?? "",
-    item: {
-      name: itemName,
-      globalId: itemGlobalId,
-      location,
-    },
+    item,
     notes: event.purpose ?? undefined,
     canEdit: event.canEdit,
     ...slice,

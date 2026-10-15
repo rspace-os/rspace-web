@@ -51,14 +51,6 @@ function emptyPage() {
   return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
 }
 
-function deferred<T>() {
-  let resolve!: (value: T) => void;
-  const promise = new Promise<T>((done) => {
-    resolve = done;
-  });
-  return { promise, resolve };
-}
-
 function scheduleBooking({ id, targetId, name }: { id: number; targetId: string; name: string }) {
   return {
     id,
@@ -147,7 +139,7 @@ async function expectVisibleOccurrence(text: string) {
 
 describe("BookingDayTimelineAside acceptance", () => {
   it("keeps the loading state visible until the day schedule resolves", async () => {
-    const request = deferred<Response>();
+    const request = Promise.withResolvers<Response>();
     let requests = 0;
     server.use(
       http.get("/api/v2/bookings", () => {
@@ -212,7 +204,7 @@ describe("BookingDayTimelineAside acceptance", () => {
   });
 
   it("does not let an in-flight previous-target response replace the current schedule", async () => {
-    const staleResponse = deferred<Response>();
+    const staleResponse = Promise.withResolvers<Response>();
     const requestedTargets: string[] = [];
     const nextTarget: BookableItemOption = {
       ...target,
