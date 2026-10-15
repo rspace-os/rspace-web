@@ -109,7 +109,7 @@ export function CalendarWeekTimeGrid({
                 className="absolute right-1.5 -translate-y-1/2 text-[11px] leading-none whitespace-nowrap text-muted-foreground tabular-nums"
                 style={{ top: hour * WEEK_GRID_PIXELS_PER_HOUR }}
               >
-                {formatWallClockTime(`${hour}:00`)}
+                {formatWallClockTime(`${String(hour).padStart(2, "0")}:00`)}
               </span>
             ))}
           </div>
@@ -134,6 +134,8 @@ export function CalendarWeekTimeGrid({
                 {dayEvents.map((item) => {
                   const key = `${day}|${item.event.id}`;
                   const expanded = expandedEventKey === key;
+                  const box = weekGridEventBox(item);
+                  const renderActions = () => <BookingActions event={item.booking} timezone={timezone} />;
                   return (
                     <li
                       key={item.event.id}
@@ -141,21 +143,21 @@ export function CalendarWeekTimeGrid({
                       data-lane={item.lane}
                       data-lane-count={item.laneCount}
                       className={cn("absolute z-10 px-0.5 py-px", expanded && "z-[15]")}
-                      style={weekGridEventBox(item)}
+                      style={box}
                     >
                       <DayTimelineEventCard
                         event={item.event}
                         date={day}
                         timezone={timezone}
                         compactCards={false}
-                        fitHeight={weekGridEventBox(item).height}
+                        fitHeight={box.height}
                         variant="timeline"
                         expanded={expanded}
                         onExpandedChange={(open) =>
                           setExpandedEventKey((current) => (open ? key : current === key ? null : current))
                         }
-                        renderEventActions={() => <BookingActions event={item.booking} timezone={timezone} />}
-                        renderBlockoutActions={() => <BookingActions event={item.booking} timezone={timezone} />}
+                        renderEventActions={renderActions}
+                        renderBlockoutActions={renderActions}
                       />
                       {item.continuesBefore ? (
                         <span

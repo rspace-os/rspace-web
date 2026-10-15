@@ -8,11 +8,7 @@ import { BookingDayTimelineAside } from "@/modules/booking/creation/BookingDayTi
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
 import { useBookingDraftAvailability } from "@/modules/booking/creation/useBookingDraftAvailability";
 import { useBookingTimelineDraft } from "@/modules/booking/creation/useBookingTimelineDraft";
-import {
-  bookingProblemFeedback,
-  isBookingConflictError,
-  withBookingProblemConflict,
-} from "@/modules/booking/creation/useCreateBooking";
+import { bookingProblemFeedback, isBookingConflictError } from "@/modules/booking/creation/useCreateBooking";
 import {
   ApiV2ProblemError,
   type BookingDetails,
@@ -23,6 +19,7 @@ import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Panel, useBookingEvent } from "./BookingEventContext";
+import { bookingFormFeedback } from "./bookingFormFeedback";
 
 function editable(booking: BookingDetails): booking is BookingDetails & {
   canEdit: true;
@@ -142,6 +139,16 @@ export default function BookingInlineEditForm() {
     displayTimezone: displayTimeZone,
     target: configuration.data ?? undefined,
   });
+  const feedback = bookingFormFeedback({
+    problem,
+    availability,
+    interactionActive: draftBridge.interactionActive,
+    fallbackError:
+      !saveError && !draftBridge.interactionActive && availability.violation && availability.conflicts.length === 0
+        ? bookingT("bookings.errors.overlap")
+        : undefined,
+    t: bookingT,
+  });
   const blocked =
     conflict ||
     isBookingConflictError(mutation.error) ||
@@ -222,26 +229,7 @@ export default function BookingInlineEditForm() {
               configuration={configuration.data}
               token={token}
               pending={mutation.isPending || conflict}
-              error={
-                problem.message ??
-                (!saveError &&
-                !draftBridge.interactionActive &&
-                availability.violation &&
-                availability.conflicts.length === 0
-                  ? t("bookings.errors.overlap")
-                  : undefined)
-              }
-              warning={
-                !draftBridge.interactionActive && availability.failed
-                  ? t("bookings.warnings.availabilityUnknown")
-                  : undefined
-              }
-              conflicts={
-                draftBridge.interactionActive
-                  ? []
-                  : withBookingProblemConflict(availability.conflicts, problem.conflict)
-              }
-              conflictSeverity={problem.conflict ? "error" : availability.conflictSeverity}
+              {...feedback}
               submissionBlocked={blocked}
               windowAdjustment={draftBridge.windowAdjustment}
               windowAdjustmentTarget={draftBridge.windowAdjustmentTarget}

@@ -50,9 +50,8 @@ describe("openingWindowsOnDate", () => {
     expect(
       openingWindowsOnDate("2026-09-25", "Asia/Tokyo", {
         ...tokyo,
-        openingHours: tokyo.openingHours.map(
-          (entry) =>
-            [{ dayOfWeek: 5, start: "12:00", end: "13:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        openingHours: tokyo.openingHours.map((entry) =>
+          entry.dayOfWeek === 5 ? { ...entry, start: "12:00", end: "13:00" } : entry,
         ),
       }),
     ).toEqual([{ start: "12:00 PM", end: "01:00 PM" }]);

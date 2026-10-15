@@ -7,6 +7,7 @@ import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCre
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import { DraftMarker } from "@/modules/booking/creation/DraftMarker";
 import type { TimelineMovePolicy } from "@/modules/booking/creation/timelineMove";
+import { useBookingDraftAvailability } from "@/modules/booking/creation/useBookingDraftAvailability";
 import {
   bookingProblemFeedback,
   isBookingConflictError,
@@ -14,13 +15,7 @@ import {
   useCreateBooking,
   withBookingProblemConflict,
 } from "@/modules/booking/creation/useCreateBooking";
-import {
-  bookingConflicts,
-  calendarAvailabilityRow,
-  useCalendarAvailability,
-} from "@/modules/booking/domain/availability";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import {
   AlertDialog,
@@ -136,39 +131,15 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
 
   const maintenance = creation.eventKind === "MAINTENANCE";
   const availabilityTarget = formState?.target ?? creation.target;
-  const availabilityRow = availabilityTarget
-    ? calendarAvailabilityRow({
-        ...availabilityTarget,
-        // Opening hours are the form's own check, so closed time must not read as an overlap here.
-        ...ALWAYS_OPEN,
-        // Fetch overlaps even when the configuration permits double booking so the form can explain them.
-        allowDoubleBooking: false,
-      })
-    : undefined;
-  // Checked as soon as both endpoints are entered, before the item's rules are met.
-  const enteredWindow = formState?.enteredWindow;
-  const availabilityInterval = enteredWindow
-    ? {
-        ...enteredWindow,
-        date: formState.draft.startDate,
-        timeZone: availabilityTarget?.timezone ?? preferences.timeZone,
-        elapsedMinutes: (Date.parse(enteredWindow.end) - Date.parse(enteredWindow.start)) / 60_000,
-      }
-    : { start: "", end: "", date: "", timeZone: preferences.timeZone, elapsedMinutes: 0 };
-  const availability = useCalendarAvailability(
-    availabilityRow && enteredWindow ? [availabilityRow] : [],
-    availabilityInterval,
+  const availability = useBookingDraftAvailability({
+    formState: formState ? { ...formState, target: formState.target ?? creation.target } : undefined,
+    displayTimezone: preferences.timeZone,
     token,
-  );
-  const checkingAvailability = Boolean(availabilityRow && enteredWindow && availability.isPending);
-  const availabilityViolation = Boolean(
-    availability.isSuccess &&
-      availabilityTarget &&
-      (availability.data.get(availabilityTarget.globalId)?.length ?? 0) > 0,
-  );
-  const conflicts = availabilityViolation
-    ? bookingConflicts(availability.data?.get(availabilityTarget?.globalId ?? "") ?? [], preferences.timeZone)
-    : [];
+    eventKind: creation.eventKind,
+  });
+  const checkingAvailability = availability.checking;
+  const availabilityViolation = availability.violation;
+  const conflicts = availability.conflicts;
   const canOverlapBookings =
     creation.eventKind === "BOOKING" &&
     availabilityTarget?.allowDoubleBooking === true &&

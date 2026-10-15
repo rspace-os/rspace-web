@@ -24,16 +24,11 @@ import {
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
-import {
-  BookingEventsCalendar,
-  type CalendarView,
-  calendarDates,
-  calendarLayouts,
-  calendarViews,
-} from "./BookingEventsCalendar";
+import { BookingEventsCalendar } from "./BookingEventsCalendar";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
 import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
 import { useCalendarEvents } from "./calendarEvents";
+import { type CalendarView, calendarDates, calendarLayouts, calendarViews } from "./calendarLayoutUtils";
 
 const calendarResourceSourceConfig = {
   ...bookingConfigurationConfig,
@@ -45,7 +40,7 @@ const calendarResourceSourceConfig = {
 const calendarSearchOptions = { history: "replace", clearOnDefault: true } as const;
 const calendarSearchParser = parseAsString.withDefault("").withOptions(calendarSearchOptions);
 const calendarWhereParser = parseAsString.withOptions(calendarSearchOptions);
-// The view and layout live in the query string, so a reload or shared link reopens the same calendar.
+// The view and layout live in the query string, so a reload or a shared link reopens the same calendar.
 const calendarViewParser = parseAsStringLiteral(calendarViews).withDefault("day").withOptions(calendarSearchOptions);
 const calendarLayoutParser = parseAsStringLiteral(calendarLayouts)
   .withDefault("resources")
@@ -122,6 +117,13 @@ export function CalendarContent() {
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
   const location = useLocation();
+  const replaceSearch = (key: string, value?: string) => {
+    const search = new URLSearchParams(location.searchStr);
+    if (value === undefined) search.delete(key);
+    else search.set(key, value);
+    const query = search.toString();
+    void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
+  };
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -393,13 +395,7 @@ export function CalendarContent() {
           ? {
               globalId: target,
               name: targetName,
-              onRemove: () => {
-                // Keep the date and the nuqs-owned filters; only the route's item focus is removed.
-                const search = new URLSearchParams(location.searchStr);
-                search.delete("target");
-                const query = search.toString();
-                void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
-              },
+              onRemove: () => replaceSearch("target"),
             }
           : undefined
       }
@@ -434,11 +430,7 @@ export function CalendarContent() {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) => {
-        const search = new URLSearchParams(location.searchStr);
-        search.set("date", nextDate);
-        void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true });
-      }}
+      onDateChange={(nextDate) => replaceSearch("date", nextDate)}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);

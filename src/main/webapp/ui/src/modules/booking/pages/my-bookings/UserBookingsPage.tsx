@@ -27,7 +27,13 @@ import {
 } from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
-import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
+import { type MyBookingsPeriod, myBookingsPeriodParser, myBookingsPeriods } from "./search";
+
+const periodText = {
+  upcoming: { label: "myBookings.period.upcoming", empty: "myBookings.empty.upcoming", Icon: CalendarClockIcon },
+  past: { label: "myBookings.period.past", empty: "myBookings.empty.past", Icon: HistoryIcon },
+  cancelled: { label: "myBookings.period.cancelled", empty: "myBookings.empty.cancelled", Icon: CalendarX2Icon },
+} as const;
 
 const UpcomingCountSchema = v.object({ totalDocs: v.number() });
 const projection = {
@@ -197,8 +203,6 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     void setPeriod(nextPeriod);
   };
 
-  const cancelledLabel = t("myBookings.period.cancelled");
-
   return (
     <TooltipProvider delay={250}>
       <main className="space-y-6 p-4 sm:p-8">
@@ -212,53 +216,37 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         </header>
         <div ref={periodControlsRef} className="space-y-2">
           <ButtonGroup aria-label={t("myBookings.period.legend")}>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "upcoming" ? "secondary" : "outline"}
-              aria-label={t("myBookings.period.upcoming")}
-              aria-pressed={period === "upcoming"}
-              onClick={() => selectPeriod("upcoming")}
-            >
-              <CalendarClockIcon aria-hidden="true" />
-              {t("myBookings.period.upcoming")}
-              {upcomingCount.isSuccess && (
-                <Badge
-                  variant={period === "upcoming" ? "secondary" : "outline"}
-                  className="pointer-events-none min-w-5 px-1"
-                  aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
+            {myBookingsPeriods.map((value) => {
+              const { Icon, label } = periodText[value];
+              return (
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={period === value ? "secondary" : "outline"}
+                  aria-label={t(label)}
+                  aria-pressed={period === value}
+                  onClick={() => selectPeriod(value)}
                 >
-                  {upcomingCount.data}
-                </Badge>
-              )}
-              {upcomingCount.isPending && (
-                <span role="status" className="sr-only">
-                  {t("myBookings.count.loading")}
-                </span>
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "past" ? "secondary" : "outline"}
-              aria-label={t("myBookings.period.past")}
-              aria-pressed={period === "past"}
-              onClick={() => selectPeriod("past")}
-            >
-              <HistoryIcon aria-hidden="true" />
-              {t("myBookings.period.past")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "cancelled" ? "secondary" : "outline"}
-              aria-label={cancelledLabel}
-              aria-pressed={period === "cancelled"}
-              onClick={() => selectPeriod("cancelled")}
-            >
-              <CalendarX2Icon aria-hidden="true" />
-              {cancelledLabel}
-            </Button>
+                  <Icon aria-hidden="true" />
+                  {t(label)}
+                  {value === "upcoming" && upcomingCount.isSuccess && (
+                    <Badge
+                      variant={period === "upcoming" ? "secondary" : "outline"}
+                      className="pointer-events-none min-w-5 px-1"
+                      aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
+                    >
+                      {upcomingCount.data}
+                    </Badge>
+                  )}
+                  {value === "upcoming" && upcomingCount.isPending && (
+                    <span role="status" className="sr-only">
+                      {t("myBookings.count.loading")}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
           </ButtonGroup>
           {upcomingCount.isError && (
             <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
@@ -285,13 +273,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         <TableList
           {...table.tableProps}
           presentations={{ table: "wide", cards: "narrow" }}
-          emptyDescription={
-            period === "upcoming"
-              ? t("myBookings.empty.upcoming")
-              : period === "past"
-                ? t("myBookings.empty.past")
-                : t("myBookings.empty.cancelled")
-          }
+          emptyDescription={t(periodText[period].empty)}
           rowActions={rowActions}
           hideHeader
         />
