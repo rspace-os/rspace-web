@@ -1487,6 +1487,23 @@ combine the readable results before applying read overrides.
 requests, runtime-field catalogs and response metadata keep their own validation and limits;
 sharing offset math does not give them a common pagination contract.
 
+## Booking catalogue availability quick filters
+
+`GET /api/v2/booking-catalogue/availability-counts` returns `availableNow` and
+`freeLaterToday` counts without rows. It accepts the catalogue filters `q`, `target`,
+`where`, repeated `type` and `location`, `capability`, and `mine`, plus required
+`availabilityStart` and `availabilityEnd` instants and optional `now`. The end may equal
+or follow the start, and the window may span at most two days. `now` defaults to the server
+clock. Counts cover the caller's readable, active, enabled items under those filters.
+
+The catalogue search accepts the same window with `availability=available-now` or
+`availability=free-later-today` and applies the category before pagination. Categories are
+mutually exclusive. An item is available now when `now` lies inside the window and its
+opening hours and buffered confirmed events leave that instant free. Otherwise it is free
+later when some free time remains in the window after `now`. Before the window starts,
+any free time counts as free later; at or after its end, neither category matches.
+Maintenance remains busy even when the item permits double booking.
+
 ## Booking Calendar query scope
 
 `GET /api/v2/booking-catalogue/calendar` accepts `calendarStart`, `calendarEnd`,

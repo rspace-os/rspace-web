@@ -12,6 +12,7 @@ import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
@@ -475,7 +476,7 @@ class RsqlCollectionQueryTest {
                     ApiV2UserResource.DESCRIPTION,
                     ApiV2BookingInstrumentResource.DESCRIPTION,
                     ApiV2InstrumentResource.DESCRIPTION,
-                    com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION)));
+                    ApiV2BookingLocationResource.DESCRIPTION)));
 
     Predicate result =
         auditTranslator.translate(

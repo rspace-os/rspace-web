@@ -9,10 +9,13 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ResourceDeleteOptions;
+import com.researchspace.booking.dao.BookingLocationQuery;
 import com.researchspace.booking.service.BookingConfigurationManager;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
 import com.researchspace.booking.service.BookingConfigurationProtectedResourceAccess;
+import com.researchspace.booking.service.BookingLocationFilterManagerImpl;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
@@ -53,10 +56,10 @@ class BookingConfigurationResourceOperationsTest {
   private final BookingConfigurationResourceOperations operations =
       new BookingConfigurationResourceOperations(
           manager,
-          new com.researchspace.booking.service.BookingLocationFilterManagerImpl(
-              mock(com.researchspace.dao.InstrumentDao.class),
+          new BookingLocationFilterManagerImpl(
+              mock(InstrumentDao.class),
               mock(InstrumentReadAccess.class),
-              mock(com.researchspace.booking.dao.BookingLocationQuery.class)),
+              mock(BookingLocationQuery.class)),
           protectedResourceAccess,
           featureFlags,
           institutionClock,

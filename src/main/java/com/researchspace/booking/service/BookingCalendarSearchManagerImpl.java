@@ -11,10 +11,12 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /** Applies Calendar scope before event pagination without changing availability queries. */
 @Service
+@RequiredArgsConstructor
 public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchManager {
   /** The event's target reference in the bookings collection query. */
   private static final String EVENT_TARGET = "booking.bookingConfiguration.target";
@@ -24,19 +26,6 @@ public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchMa
   private final BookingItemQuery itemQuery;
   private final FeatureFlagManager flags;
   private final BookingLocationFilterManager locations;
-
-  public BookingCalendarSearchManagerImpl(
-      TimeSlotBookingManager bookings,
-      BookingCalendarQuery query,
-      BookingItemQuery itemQuery,
-      FeatureFlagManager flags,
-      BookingLocationFilterManager locations) {
-    this.bookings = bookings;
-    this.query = query;
-    this.itemQuery = itemQuery;
-    this.flags = flags;
-    this.locations = locations;
-  }
 
   /** Returns one visible event page under the complete item, event, interval and search scope. */
   @Override

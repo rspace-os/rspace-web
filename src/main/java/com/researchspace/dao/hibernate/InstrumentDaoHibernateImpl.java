@@ -9,7 +9,6 @@ import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.FileProperty;
-import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
@@ -238,15 +237,9 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
         || (containerIds != null && containerIds.isEmpty())) {
       return new ResourcePage<>(List.of(), 0);
     }
-    List<String> groupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
-    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
-    String bookingAccess =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, visibleOwners, "instrument.");
-    String containerAccess =
-        readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
+    InventoryReadQueryContext context = readQueryContext(caller);
+    String bookingAccess = context.permissionPredicate(this, "instrument.");
+    String containerAccess = context.readableContainerPredicate(this, "parent");
     String nameFilter =
         query == null || query.isBlank()
             ? ""
@@ -282,10 +275,17 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                     + " order by lower(parent.editInfo.name), parent.id",
                 Object[].class)
             .setMaxResults(limit);
-    setBookingCatalogueLocationParameters(
-        countQuery, caller, groupMembers, groupNames, visibleOwners, query);
-    setBookingCatalogueLocationParameters(
-        pageQuery, caller, groupMembers, groupNames, visibleOwners, query);
+    countQuery.setParameter("targetType", BookableTargetType.INSTRUMENT);
+    countQuery.setParameter("configurationState", BookingConfigurationState.ACTIVE);
+    context.bind(countQuery, null);
+    pageQuery.setParameter("targetType", BookableTargetType.INSTRUMENT);
+    pageQuery.setParameter("configurationState", BookingConfigurationState.ACTIVE);
+    context.bind(pageQuery, null);
+    if (query != null && !query.isBlank()) {
+      String locationQuery = "%" + LikeEscaper.escape(query.trim().toLowerCase(Locale.ROOT)) + "%";
+      countQuery.setParameter("locationQuery", locationQuery);
+      pageQuery.setParameter("locationQuery", locationQuery);
+    }
     if (containerIds != null) {
       countQuery.setParameterList("locationIds", containerIds);
       pageQuery.setParameterList("locationIds", containerIds);
@@ -305,23 +305,6 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
                         (Long) row[0], (String) row[1], (ContainerType) row[2]))
             .toList();
     return new ResourcePage<>(locations, total);
-  }
-
-  private <T> void setBookingCatalogueLocationParameters(
-      Query<T> query,
-      User caller,
-      List<String> groupMembers,
-      List<String> groupNames,
-      List<String> visibleOwners,
-      String locationQuery) {
-    query.setParameter("targetType", BookableTargetType.INSTRUMENT);
-    query.setParameter("configurationState", BookingConfigurationState.ACTIVE);
-    addQueryParams(null, caller, query, visibleOwners, groupMembers, groupNames);
-    if (locationQuery != null && !locationQuery.isBlank()) {
-      query.setParameter(
-          "locationQuery",
-          "%" + LikeEscaper.escape(locationQuery.trim().toLowerCase(Locale.ROOT)) + "%");
-    }
   }
 
   private static InstrumentReadSummary toReadSummary(

@@ -152,36 +152,6 @@ function createAllBookableItemsConfig(
   } as const satisfies CollectionConfig<AllBookableItem>);
 }
 
-function comparisons(
-  expression: FilterExpression<AllBookableItem> | null,
-): readonly Extract<FilterExpression<AllBookableItem>, { kind: "comparison" }>[] {
-  if (!expression) return [];
-  if (expression.kind === "comparison") return [expression];
-  if (expression.kind === "or") return [];
-  return expression.children.flatMap(comparisons);
-}
-
-function filterValue(
-  expression: FilterExpression<AllBookableItem> | null,
-  field: "availability" | "target",
-): string | undefined {
-  const value = comparisons(expression).find(
-    (comparison) => comparison.field === field && comparison.operator === "equals",
-  )?.value;
-  return typeof value === "string" ? value : undefined;
-}
-
-function availabilityMode(expression: FilterExpression<AllBookableItem> | null): AvailabilityQuickFilter | undefined {
-  const values = new Set(
-    comparisons(expression)
-      .filter((rule) => rule.field === "availability")
-      .map((rule) => rule.value),
-  );
-  if (values.size !== 1) return undefined;
-  const value = filterValue(expression, "availability");
-  return value === "available-now" || value === "free-later-today" ? value : undefined;
-}
-
 function filterExpression(
   target: string | undefined,
   availability: AvailabilityQuickFilter | undefined,
@@ -289,7 +259,17 @@ function AllBookableItemsContentForUser({
     runtimeFieldState.error !== null ||
     runtimeFieldState.missing.length > 0 ||
     invalidFilter;
-  const quickMode = availabilityMode(filters.expression);
+  const quickMode = serverFilter.supported ? serverFilter.availability : undefined;
+  const quickFilterText = {
+    "available-now": {
+      label: t("allBookableItems.quickFilters.availableNow"),
+      description: t("allBookableItems.quickFilters.availableNowDescription"),
+    },
+    "free-later-today": {
+      label: t("allBookableItems.quickFilters.freeLaterToday"),
+      description: t("allBookableItems.quickFilters.freeLaterTodayDescription"),
+    },
+  } as const;
   const bounds = useMemo(
     () =>
       displayInterval(
@@ -544,12 +524,10 @@ function AllBookableItemsContentForUser({
       maximumCount: 100,
       getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
       renderActions: (selection) => {
-        const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
         return (
           <>
             <BookingNotificationBulkActions
               selection={selection}
-              selectedConfigurationIds={selectedConfigurationIds}
               pending={notificationSubscriptionMutation.isPending}
               onAction={(configurationIds, enabled) =>
                 notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })
@@ -689,17 +667,12 @@ function AllBookableItemsContentForUser({
       },
       ...(["available-now", "free-later-today"] as const).map((mode) => {
         // The two categories are mutually exclusive, so each chip explains which items it counts.
-        const description =
-          mode === "available-now"
-            ? t("allBookableItems.quickFilters.availableNowDescription")
-            : t("allBookableItems.quickFilters.freeLaterTodayDescription");
+        const text = quickFilterText[mode];
         return {
           id: mode,
           label: (
             <>
-              {mode === "available-now"
-                ? t("allBookableItems.quickFilters.availableNow")
-                : t("allBookableItems.quickFilters.freeLaterToday")}
+              {text.label}
               <span
                 aria-hidden="true"
                 className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
@@ -718,7 +691,7 @@ function AllBookableItemsContentForUser({
               </span>
             </>
           ),
-          description,
+          description: text.description,
           icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
           pressed: quickMode === mode,
           onClick: () =>
@@ -761,7 +734,6 @@ function AllBookableItemsContentForUser({
         {...tableProps}
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
-        rows={rows}
         filterButtons={availabilityFilters}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[
