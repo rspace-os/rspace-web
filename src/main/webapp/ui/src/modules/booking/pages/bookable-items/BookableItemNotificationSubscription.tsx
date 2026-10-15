@@ -71,8 +71,6 @@ function ItemNotificationEditor({
   });
   const dirty = isDirty(form);
   const saved = feedback === "saved" && !dirty;
-  const pending = mutation.isPending;
-
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
       <CardHeader>
@@ -96,7 +94,7 @@ function ItemNotificationEditor({
           <BookingNotificationChoiceFields
             form={form}
             labelKey="notificationSubscriptions.item.label"
-            disabled={pending}
+            disabled={mutation.isPending}
           />
           {feedback === "conflict" ? (
             <p role="alert" className="text-sm text-destructive">
@@ -111,8 +109,8 @@ function ItemNotificationEditor({
             <Button
               type="submit"
               size="sm"
-              disabled={pending || !dirty}
-              aria-busy={pending}
+              disabled={mutation.isPending || !dirty}
+              aria-busy={mutation.isPending}
               className={
                 saved
                   ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
@@ -126,7 +124,7 @@ function ItemNotificationEditor({
               type="button"
               size="sm"
               variant="outline"
-              disabled={pending || !dirty}
+              disabled={mutation.isPending || !dirty}
               onClick={() => {
                 reset(form, { initialInput: bookingNotificationChoice(subscription.enabled) });
                 setFeedback(null);
@@ -182,14 +180,17 @@ function BookableItemNotificationSubscriptionForUser({
     queryFn: ({ signal }) => fetchBookingNotificationSubscription(configurationId, token, signal),
     enabled: canManageNotificationSubscription,
   });
+  const notificationCardHeader = () => (
+    <CardHeader>
+      <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
+    </CardHeader>
+  );
 
   if (!canManageNotificationSubscription) return null;
   if (subscription.isPending) {
     return (
       <Card size="sm" aria-busy="true">
-        <CardHeader>
-          <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
-        </CardHeader>
+        {notificationCardHeader()}
         <CardContent>
           <Skeleton className="h-24 w-full" />
         </CardContent>
@@ -199,9 +200,7 @@ function BookableItemNotificationSubscriptionForUser({
   if (subscription.isError) {
     return (
       <Card size="sm">
-        <CardHeader>
-          <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
-        </CardHeader>
+        {notificationCardHeader()}
         <CardContent className="space-y-3">
           <p role="alert" className="text-sm text-destructive">
             {t("notificationSubscriptions.item.loadError")}

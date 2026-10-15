@@ -1,19 +1,19 @@
 package com.researchspace.booking.service;
 
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
 import com.researchspace.model.booking.BookableItemNotificationSubscription;
+import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -102,12 +103,7 @@ public class BookingNotificationSubscriptionManagerImpl
       throw new BookingNotificationSubscriptionConflictException();
     }
     Date now = new Date();
-    if (current == null) {
-      current = new BookableItemNotificationSubscription(subject, item.instrument(), enabled, now);
-    } else {
-      current.setEnabled(enabled);
-      current.setUpdatedAt(now);
-    }
+    current = upsert(current, subject, item.instrument(), enabled, now);
     BookableItemNotificationSubscription saved = subscriptions.saveAndFlush(current);
     return status(item, saved, subject);
   }
@@ -124,7 +120,7 @@ public class BookingNotificationSubscriptionManagerImpl
                 items.stream().map(item -> item.instrument().getId()).distinct().toList())
             .stream()
             .collect(
-                java.util.stream.Collectors.toMap(
+                Collectors.toMap(
                     subscription -> subscription.getInstrument().getId(), value -> value));
     return items.stream()
         .map(item -> status(item, savedByInstrument.get(item.instrument().getId()), subject))
@@ -141,19 +137,13 @@ public class BookingNotificationSubscriptionManagerImpl
     Map<Long, BookableItemNotificationSubscription> savedByInstrument =
         subscriptions.findByUserAndInstrumentsForUpdate(subject.getId(), instrumentIds).stream()
             .collect(
-                java.util.stream.Collectors.toMap(
+                Collectors.toMap(
                     subscription -> subscription.getInstrument().getId(), value -> value));
     Date now = new Date();
     for (ResolvedItem item : items) {
       BookableItemNotificationSubscription subscription =
           savedByInstrument.get(item.instrument().getId());
-      if (subscription == null) {
-        subscription =
-            new BookableItemNotificationSubscription(subject, item.instrument(), enabled, now);
-      } else {
-        subscription.setEnabled(enabled);
-        subscription.setUpdatedAt(now);
-      }
+      subscription = upsert(subscription, subject, item.instrument(), enabled, now);
       subscriptions.saveAndFlush(subscription);
       savedByInstrument.put(item.instrument().getId(), subscription);
     }
@@ -207,20 +197,17 @@ public class BookingNotificationSubscriptionManagerImpl
         ids.stream()
             .map(id -> configurations.getSafeNull(id).orElseThrow(NotFoundException::new))
             .toList();
-    Map<Long, com.researchspace.service.resourceaccess.ResolvedResourceAccess> accessById =
-        itemPermissions.resolveAll(items, subject);
+    Map<Long, ResolvedResourceAccess> accessById = itemPermissions.resolveAll(items, subject);
     for (BookingConfiguration item : items) {
       if (!accessById
-          .getOrDefault(
-              item.getId(), com.researchspace.service.resourceaccess.ResolvedResourceAccess.none())
+          .getOrDefault(item.getId(), ResolvedResourceAccess.none())
           .hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
         throw new NotFoundException();
       }
     }
     for (BookingConfiguration item : items) {
       if (item.getTarget() == null
-          || item.getTarget().type()
-              != com.researchspace.model.booking.BookableTargetType.INSTRUMENT
+          || item.getTarget().type() != BookableTargetType.INSTRUMENT
           || item.getTarget().id() == null) {
         throw new NotFoundException();
       }
@@ -229,7 +216,7 @@ public class BookingNotificationSubscriptionManagerImpl
     TreeSet<Long> targetIds =
         items.stream()
             .map(item -> item.getTarget().id())
-            .collect(java.util.stream.Collectors.toCollection(TreeSet::new));
+            .collect(Collectors.toCollection(TreeSet::new));
     Map<Long, Instrument> instrumentsById = new LinkedHashMap<>();
     for (Long targetId : targetIds) {
       Instrument instrument =
@@ -281,16 +268,24 @@ public class BookingNotificationSubscriptionManagerImpl
     return userManager.getPreferenceForUser(user, preference).getValueAsBoolean();
   }
 
-  private void requireAccess(User subject, User actor) {
-    if (!active(subject)
-        || !active(actor)
-        || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
+  private static BookableItemNotificationSubscription upsert(
+      BookableItemNotificationSubscription current,
+      User subject,
+      Instrument instrument,
+      boolean enabled,
+      Date now) {
+    if (current == null) {
+      return new BookableItemNotificationSubscription(subject, instrument, enabled, now);
     }
+    current.setEnabled(enabled);
+    current.setUpdatedAt(now);
+    return current;
   }
 
-  private static boolean active(User user) {
-    return user != null && user.isEnabled() && !user.isAccountLocked();
+  private void requireAccess(User subject, User actor) {
+    if (!BookingUserAccess.hasAccess(featureFlags, subject, actor)) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
   }
 
   private record ResolvedItem(BookingConfiguration configuration, Instrument instrument) {}

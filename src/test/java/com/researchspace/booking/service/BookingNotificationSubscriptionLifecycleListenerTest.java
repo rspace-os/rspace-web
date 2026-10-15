@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -39,21 +40,17 @@ class BookingNotificationSubscriptionLifecycleListenerTest {
   }
 
   @Test
-  void ignoresInstrumentTemplatesAndDeletedInstruments() {
+  void ignoresDeletedInstruments() {
     Instrument deleted = new Instrument();
     deleted.setId(43L);
     deleted.setRecordDeleted(true);
     listener.instrumentTransferred(event(deleted));
 
-    verifyNoTransferLookups();
+    verifyNoInteractions(configurations, subscriptions);
   }
 
   private static InventoryTransferEvent event(Instrument instrument) {
     User user = new User("transfer-actor");
     return new InventoryTransferEvent(instrument, user, user, user);
-  }
-
-  private void verifyNoTransferLookups() {
-    org.mockito.Mockito.verifyNoInteractions(configurations, subscriptions);
   }
 }

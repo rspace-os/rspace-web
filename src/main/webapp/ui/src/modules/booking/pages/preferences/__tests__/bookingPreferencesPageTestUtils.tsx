@@ -2,8 +2,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { server } from "@/__tests__/mswServer";
-import { currentUser } from "@/modules/booking/pages/calendar/calendarFixtures";
+
 import BookingPreferencesPage from "../BookingPreferencesPage";
 
 export function useDefaultBookingPreferencesHandlers() {

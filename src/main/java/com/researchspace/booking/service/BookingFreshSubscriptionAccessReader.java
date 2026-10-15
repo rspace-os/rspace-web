@@ -5,7 +5,6 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
-import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.service.FeatureFlagManager;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -44,10 +43,8 @@ public class BookingFreshSubscriptionAccessReader {
         return false;
       }
       for (BookableTargetReference target : targets) {
-        BookingConfiguration configuration = new BookingConfiguration();
-        configuration.replaceTarget(target);
         if (!permissions
-            .resolve(configuration, subject)
+            .resolve(target, subject)
             .hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
           return false;
         }

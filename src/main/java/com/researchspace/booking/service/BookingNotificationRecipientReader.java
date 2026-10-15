@@ -4,9 +4,9 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookableItemNotificationSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
-import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
@@ -75,11 +75,10 @@ public class BookingNotificationRecipientReader {
     session.setDefaultReadOnly(true);
 
     // This unlocked query is deliberately the first SELECT in this transaction.
-    List<com.researchspace.model.booking.BookableItemNotificationSubscription> candidates =
+    List<BookableItemNotificationSubscription> candidates =
         subscriptions.findEnabledByInstrument(instrumentId);
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.replaceTarget(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId));
+    BookableTargetReference target =
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId);
 
     List<BookingNotificationRecipient> selected = new ArrayList<>();
     for (var subscription : candidates) {
@@ -92,23 +91,16 @@ public class BookingNotificationRecipientReader {
       }
 
       if (!permissions
-          .resolve(configuration, recipient)
+          .resolve(target, recipient)
           .hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
         continue;
       }
 
+      Hibernate.initialize(recipient);
       Hibernate.initialize(recipient.getUserPreferences());
       // These preference reads are consumed after this transaction closes.
       recipient.wantsNotificationFor(event);
       recipient.getValueForPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL).getValue();
-      recipient.getId();
-      recipient.getUsername();
-      recipient.getFirstName();
-      recipient.getLastName();
-      recipient.getFullName();
-      recipient.getEmail();
-      recipient.isEnabled();
-
       var display = displayPreferences.resolveForNotificationSnapshot(recipient);
       ZoneId displayZone =
           BookingNotificationMessageFormatter.zoneFor(display, null, institutionClock.getZone());
