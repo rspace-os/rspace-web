@@ -38,8 +38,7 @@ export class SearchableResultsTable {
     // The selection cell's control is labelled "Select <name>", so skip it to reach the name cell.
     await row
       .getByRole("cell", { name, exact: options.exact })
-      .filter({ hasNot: page.getByRole("checkbox") })
-      .filter({ hasNot: page.getByRole("radio") })
+      .filter({ hasNot: page.getByRole("checkbox").or(page.getByRole("radio")) })
       .click();
   }
 
