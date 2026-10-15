@@ -760,6 +760,21 @@ return <TableList {...table.tableProps} />;
 
 Keep each custom mapping next to its endpoint.
 
+### Reuse API v2 fields in a custom endpoint
+
+`useApiV2RuntimeFields` loads static resource metadata and hydrates the runtime selectors used by
+the current route. Pass the effective subject ID as `request.authScope` with the OAuth token;
+metadata is shared, while selected definitions remain scoped to the caller, resource, and catalogue.
+Token callbacks require an explicit `authScope`.
+
+Use `enrichApiV2FilterConfig({ config, metadata, runtimeFields, localFields })` when an endpoint
+returns its own DTO. It derives relationship and runtime filters but leaves derived fields out of
+column selection. `localFields` names filters resolved by the page; other operators come from API
+metadata. Keep DTO parsing, pagination, and query composition in the endpoint's fetcher.
+
+A collection's `relationshipSources`, keyed by `relationTo`, override default picker sources. Keep
+search and saved-ID resolution in the source, and preserve an unavailable saved ID in the filter.
+
 ## Tests
 
 Test a REST API v2 table at these seams:
@@ -843,24 +858,6 @@ Follow these rules in browser tests of the filter panel:
   mount starts with that filter.
 - Scope locators with `page.elementLocator(container)`. A page-wide query matches every mounted
   copy of a story.
-
-## Reuse API v2 filters with a custom endpoint
-
-`useApiV2RuntimeFields` loads static resource metadata and hydrates the runtime selectors referenced
-by the current route. Pass the effective subject ID as `request.authScope`, alongside the OAuth
-`token`. Static metadata is shared; definitions and selected fields are scoped to the caller,
-resource, and catalogue URLs. A token callback requires an explicit `authScope`.
-
-Use `enrichApiV2FilterConfig({ config, metadata, runtimeFields, localFields })` when an endpoint
-returns its own DTO. It derives the same relationship and runtime filters as the collection adapter,
-but leaves derived fields out of column selection. `localFields` explicitly identifies filters the
-page resolves itself, such as booking availability. All other filter operators come from API
-metadata. Keep DTO parsing, pagination, and query composition in the endpoint's own fetcher.
-
-A collection config can contribute `relationshipSources`, keyed by the field's `relationTo`.
-These override the default picker sources for that table. Sources own search and saved-ID resolution;
-booking uses catalogue discovery and visible configuration/booking references for historical IDs.
-An unavailable saved ID remains visible instead of being dropped from the filter.
 
 ## Restore saved views without broadening requests
 
