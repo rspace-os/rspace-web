@@ -43,15 +43,16 @@ class ApiV2HoppedRuntimeProjectionTest {
   void attachesTargetValuesUnderTheSelectorTheRequestAskedWith() {
     Nodes nodes = new Nodes(new Node(1L, 7L), new Node(2L, 8L));
     ApiV2ResourceCatalog catalog = catalog(nodes, new StubTargetFields(Map.of(7L, "BSL-2")));
+    List<Map<String, Object>> documents = list(catalog);
 
-    Map<String, Object> first = list(catalog, nodes).get(0);
-    Map<String, Object> second = list(catalog, nodes).get(1);
+    Map<String, Object> first = documents.get(0);
+    Map<String, Object> second = documents.get(1);
 
     assertEquals(Map.of("SF1", "BSL-2"), first.get("target.customFields"));
     assertEquals(Map.of(), second.get("target.customFields"));
   }
 
-  private List<Map<String, Object>> list(ApiV2ResourceCatalog catalog, Nodes nodes) {
+  private List<Map<String, Object>> list(ApiV2ResourceCatalog catalog) {
     ApiV2ResourceRegistration<?, ?> registration = catalog.find("nodes").orElseThrow();
     return registration.list(request(catalog), ACTOR).docs();
   }
