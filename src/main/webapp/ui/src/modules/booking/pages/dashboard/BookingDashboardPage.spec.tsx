@@ -3,6 +3,7 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { institutionBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { BookingDashboardPageStory } from "./BookingDashboardPage.story";
 import { bookingDashboardHandlers, dashboardBookings } from "./mocks/bookingDashboardMocks";
@@ -222,42 +223,42 @@ describe("Booking dashboard", () => {
   );
 
   test("keeps the mobile popup in the viewport and the pager in a stable position", async () => {
-    const originalViewport = { width: window.innerWidth, height: window.innerHeight };
-    await page.viewport(320, 800);
-    registerHandlers({
-      docs: dashboardBookings.map((booking) =>
-        booking.id >= 200 && booking.id < 205
-          ? {
-              ...booking,
-              target: {
-                ...booking.target,
-                value: {
-                  ...booking.target.value,
-                  name: `Instrument ${booking.id} with a deliberately long name that must not move the pager`,
-                },
-              },
-            }
-          : booking,
-      ),
-    });
-    render(<BookingDashboardPageStory history={history} />);
-    try {
-      await dashboard.calendarDay("Wednesday, August 19, 2026").click();
-      await expect.element(dashboard.popup).toBeVisible();
-      const firstPagerTop = dashboard.next.element().getBoundingClientRect().top;
-      await dashboard.next.click();
-      await expect.element(dashboard.range).toHaveTextContent("6–6 of 6");
-      const secondPagerTop = dashboard.next.element().getBoundingClientRect().top;
-      expect(Math.abs(secondPagerTop - firstPagerTop)).toBeLessThanOrEqual(1);
+    await withViewport(
+      320,
+      async () => {
+        registerHandlers({
+          docs: dashboardBookings.map((booking) =>
+            booking.id >= 200 && booking.id < 205
+              ? {
+                  ...booking,
+                  target: {
+                    ...booking.target,
+                    value: {
+                      ...booking.target.value,
+                      name: `Instrument ${booking.id} with a deliberately long name that must not move the pager`,
+                    },
+                  },
+                }
+              : booking,
+          ),
+        });
+        render(<BookingDashboardPageStory history={history} />);
+        await dashboard.calendarDay("Wednesday, August 19, 2026").click();
+        await expect.element(dashboard.popup).toBeVisible();
+        const firstPagerTop = dashboard.next.element().getBoundingClientRect().top;
+        await dashboard.next.click();
+        await expect.element(dashboard.range).toHaveTextContent("6–6 of 6");
+        const secondPagerTop = dashboard.next.element().getBoundingClientRect().top;
+        expect(Math.abs(secondPagerTop - firstPagerTop)).toBeLessThanOrEqual(1);
 
-      await closePopup();
-      await dashboard.calendarDay("Saturday, August 22, 2026").click();
-      await expect.element(dashboard.popup).toBeVisible();
-      const popupBox = dashboard.popup.element().getBoundingClientRect();
-      expect(popupBox.left).toBeGreaterThanOrEqual(0);
-      expect(popupBox.right).toBeLessThanOrEqual(320);
-    } finally {
-      await page.viewport(originalViewport.width, originalViewport.height);
-    }
+        await closePopup();
+        await dashboard.calendarDay("Saturday, August 22, 2026").click();
+        await expect.element(dashboard.popup).toBeVisible();
+        const popupBox = dashboard.popup.element().getBoundingClientRect();
+        expect(popupBox.left).toBeGreaterThanOrEqual(0);
+        expect(popupBox.right).toBeLessThanOrEqual(320);
+      },
+      800,
+    );
   });
 });
