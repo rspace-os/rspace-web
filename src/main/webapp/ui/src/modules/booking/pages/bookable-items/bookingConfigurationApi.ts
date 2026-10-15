@@ -104,11 +104,12 @@ export async function fetchBookingConfigurationByTarget(
   token: string,
   signal?: AbortSignal,
 ): Promise<BookingConfiguration> {
-  const configuration = await findBookingConfigurationByTarget(globalId, token, signal);
-  if (!configuration || configuration.target?.globalId !== globalId) {
+  const configurations = await readBookingConfigurationsByTarget(globalId, token, signal);
+  if (configurations.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  if (configurations.length === 0 || configurations[0].target?.globalId !== globalId) {
     throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
   }
-  return configuration;
+  return configurations[0];
 }
 
 export async function fetchBookingConfigurationDetailsByTarget(
