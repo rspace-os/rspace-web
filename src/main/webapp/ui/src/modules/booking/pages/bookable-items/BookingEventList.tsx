@@ -6,7 +6,7 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import type { Booking } from "@/modules/booking/domain/booking";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionTranslationKey } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -33,16 +33,6 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
   const timeFormat = useBookingTimeFormat();
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const formatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(i18n.language, {
-        dateStyle: "medium",
-        timeStyle: "short",
-        hourCycle: bookingHourCycle(timeFormat),
-        timeZone: timezone,
-      }),
-    [i18n.language, timezone, timeFormat],
-  );
   const config = useMemo(
     () =>
       resolveCollectionConfig({
@@ -78,7 +68,9 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
                   displayTimeZone={timezone}
                   instrumentTimeZone={row.timezone}
                 >
-                  <time dateTime={row.start}>{formatter.formatRange(new Date(row.start), new Date(row.end))}</time>
+                  <time dateTime={row.start}>
+                    {formatBookingPeriod(row.start, row.end, timezone, i18n.language, timeFormat)}
+                  </time>
                 </BookingInstrumentTimeTooltip>
               ),
             },
@@ -136,7 +128,7 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
           },
         ],
       } satisfies CollectionConfig<Booking>),
-    [formatter, period, t],
+    [i18n.language, period, t, timeFormat, timezone],
   );
   const queryPrefix = bookingKeys.itemEvents(globalId, period, cutoff);
   const totals = useQuery({
