@@ -166,7 +166,7 @@ final class ApiV2OpenApiQueryParameters {
               CollectionQueryLimits.MAX_SORT_FIELDS));
       parameters.add(sort);
       parameters.add(pageParameter());
-      parameters.add(limitParameter());
+      parameters.add(limitParameter("Maximum documents per page."));
     }
     if (operation == ResourceOperation.COUNT
         || operation == ResourceOperation.BULK_UPDATE
@@ -505,7 +505,7 @@ final class ApiV2OpenApiQueryParameters {
         schema);
   }
 
-  private static Map<String, Object> pageParameter() {
+  static Map<String, Object> pageParameter() {
     return parameter(
         "page",
         "query",
@@ -514,7 +514,7 @@ final class ApiV2OpenApiQueryParameters {
         "One-based page number.");
   }
 
-  private static Map<String, Object> limitParameter() {
+  static Map<String, Object> limitParameter(String description) {
     return parameter(
         "limit",
         "query",
@@ -528,7 +528,7 @@ final class ApiV2OpenApiQueryParameters {
             CollectionQueryLimits.MAX_PAGE_SIZE,
             "default",
             20),
-        "Maximum documents per page.");
+        description);
   }
 
   public static String operatorToken(Operator operator) {

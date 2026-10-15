@@ -15,7 +15,6 @@ import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldType;
-import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.FieldSchema;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourceRegistry;
@@ -457,6 +456,10 @@ public final class ApiV2OpenApiGenerator {
     return ApiV2OpenApiResourceDocumentBuilder.field(resource, name);
   }
 
+  private static Map<String, Object> limitParameter(String description) {
+    return ApiV2OpenApiQueryParameters.limitParameter(description);
+  }
+
   static Map<String, Object> listResult(Map<String, Object> item) {
     return ordered(
         "type",
@@ -531,13 +534,11 @@ public final class ApiV2OpenApiGenerator {
             + "partial audit data. eventId is deterministic response identity, not a source-log "
             + "signature.");
     result.put("tags", List.of(resource.resourceName()));
-    result.put("security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    result.put("security", AUTHENTICATED_SECURITY);
     result.put(
         "x-rspace-access",
-        ordered(
-            "description",
+        operationAccessExtension(
             "Authenticated callers who can read the resource.",
-            "denialReasonCodes",
             List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
     result.put("parameters", auditParameters(resource.description().schema(), count));
     result.put("responses", auditResponses(count));
@@ -608,28 +609,8 @@ public final class ApiV2OpenApiGenerator {
                   "type", "string", "pattern", "^[0-9a-f]{64}$", "minLength", 64, "maxLength", 64),
               "Fingerprint returned by page one. Supply it unchanged together with snapshotDate"
                   + " on later pages."));
-      parameters.add(
-          parameter(
-              "page",
-              "query",
-              false,
-              ordered("type", "integer", "minimum", 1, "default", 1),
-              "One-based page number."));
-      parameters.add(
-          parameter(
-              "limit",
-              "query",
-              false,
-              ordered(
-                  "type",
-                  "integer",
-                  "minimum",
-                  1,
-                  "maximum",
-                  CollectionQueryLimits.MAX_PAGE_SIZE,
-                  "default",
-                  20),
-              "Maximum events per page."));
+      parameters.add(pageParameter());
+      parameters.add(limitParameter("Maximum events per page."));
     }
     return parameters;
   }
@@ -953,6 +934,15 @@ public final class ApiV2OpenApiGenerator {
       throw new IllegalArgumentException(label + " must not be blank");
     }
     return value;
+  }
+
+  private static Map<String, Object> operationAccessExtension(
+      String description, Collection<String> denialReasonCodes) {
+    return ApiV2OpenApiResourceAccessDocs.operationAccessExtension(description, denialReasonCodes);
+  }
+
+  private static Map<String, Object> pageParameter() {
+    return ApiV2OpenApiQueryParameters.pageParameter();
   }
 
   private static Object withNullableReferenceProperties(Object schema) {

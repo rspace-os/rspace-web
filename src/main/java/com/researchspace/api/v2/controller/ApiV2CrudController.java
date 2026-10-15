@@ -1,5 +1,7 @@
 package com.researchspace.api.v2.controller;
 
+import static com.researchspace.api.v2.controller.ApiV2ControllerSupport.subject;
+
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.json.ApiV2JsonBody;
 import com.researchspace.api.v2.model.ApiV2BulkResult;
@@ -330,7 +332,7 @@ public class ApiV2CrudController {
   private ApiV2ResourceRegistration<?, ?> requireResource(
       String name, ResourceOperation operation) {
     ApiV2ResourceRegistration<?, ?> registration =
-        resources.find(name).orElseThrow(NotFoundException::new);
+        ApiV2ControllerSupport.requireResource(resources, name);
     if (!registration.supports(operation)) {
       throw new ApiV2MethodNotAllowedException(allowedMethods(registration));
     }
@@ -343,9 +345,5 @@ public class ApiV2CrudController {
         .map(ResourceOperation::httpMethod)
         .map(HttpMethod::valueOf)
         .collect(Collectors.toCollection(LinkedHashSet::new));
-  }
-
-  private static User subject(ApiV2Caller caller) {
-    return caller == null ? null : caller.subject();
   }
 }
