@@ -198,7 +198,12 @@ describe("BookingEventPage", () => {
   ])("warns about a clock change in the details only when %s", async (_, timezone, warned) => {
     server.use(
       http.get("/api/v2/bookings/41", () =>
-        HttpResponse.json({ ...document, timezone, start: "2026-10-24T10:00:00Z", end: "2026-10-25T11:00:00Z" }),
+        HttpResponse.json({
+          ...bookingEventFixture,
+          timezone,
+          start: "2026-10-24T10:00:00Z",
+          end: "2026-10-25T11:00:00Z",
+        }),
       ),
     );
     renderPage();
