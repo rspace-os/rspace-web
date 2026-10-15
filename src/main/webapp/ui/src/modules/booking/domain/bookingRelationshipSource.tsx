@@ -1,4 +1,3 @@
-import { cmp, eq } from "rsql-builder";
 import * as v from "valibot";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -46,19 +45,10 @@ export const bookingInstrumentSource: RelationshipSource = {
   },
   resolve: async (value, token, signal) => {
     if (!validId(value)) return null;
-    const parameters = new URLSearchParams({
-      where: cmp("target", eq(value.toUpperCase())).toString(),
-      limit: "1",
-      depth: "1",
-      "fields[booking-configurations]": "id,target",
-    });
-    const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
-      headers: apiV2Headers(token ?? ""),
-      signal,
-    });
-    if (!response.ok) throw new Error(`Booking reference request failed (${response.status})`);
-    const target = parseOrThrow(referenceSchema, await response.json()).docs[0]?.target;
-    return target ? { ...target.value, globalId: target.globalId } : null;
+    const canonical = canonicalId(value);
+    if (canonical === null) return null;
+    const resolved = await bookingInstrumentSource.resolveMany?.([value], token, signal);
+    return resolved?.[canonical] ?? null;
   },
   batchSize: 100,
   resolveMany: async (values, token, signal) => {

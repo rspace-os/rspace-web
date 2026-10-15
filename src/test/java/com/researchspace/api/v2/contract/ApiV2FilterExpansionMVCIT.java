@@ -379,7 +379,7 @@ class ApiV2FilterExpansionMVCIT {
             where,
             registration.description(),
             catalog.registry(),
-            registration.runtimeFieldContext(owner, catalog::runtimeFieldsOf));
+            registration.runtimeFieldContext(owner));
     ResourceRequest request =
         new ResourceRequest(
             parsed.filter(),
@@ -536,11 +536,9 @@ class ApiV2FilterExpansionMVCIT {
     }
     MvcResult result = mockMvc.perform(request).andReturn();
     assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
-    JsonNode body = OBJECT_MAPPER.readTree(result.getResponse().getContentAsString());
     return new MeasuredRequest(
         TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started),
-        statistics.getPrepareStatementCount(),
-        body.path("totalDocs").asLong());
+        statistics.getPrepareStatementCount());
   }
 
   private void clearSession() {
@@ -570,5 +568,5 @@ class ApiV2FilterExpansionMVCIT {
 
   private record PerformanceRow(long configurationId, long targetId) {}
 
-  private record MeasuredRequest(long millis, long statements, long totalDocs) {}
+  private record MeasuredRequest(long millis, long statements) {}
 }

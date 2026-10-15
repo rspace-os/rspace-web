@@ -47,18 +47,21 @@ export class BookableItemsFilterPage extends BasePage {
     await this.filterPanel.getByRole("button", { name: "Add filter" }).click();
   }
 
-  async chooseField(number: number, name: string | RegExp): Promise<void> {
-    await this.field(number).click();
+  private async chooseOption(locator: Locator, name: string | RegExp): Promise<void> {
+    await locator.click();
     await this.page.getByRole("option", { name, exact: typeof name === "string" }).click();
+  }
+
+  async chooseField(number: number, name: string | RegExp): Promise<void> {
+    await this.chooseOption(this.field(number), name);
   }
 
   async chooseOperator(number: number, name: string | RegExp): Promise<void> {
-    await this.operator(number).click();
-    await this.page.getByRole("option", { name, exact: typeof name === "string" }).click();
+    await this.chooseOption(this.operator(number), name);
   }
 
   async chooseRuntimeField(number: number, name: string): Promise<void> {
-    await this.page.getByRole("combobox", { name: `Field for filter ${number}` }).click();
+    await this.field(number).click();
     await this.page.getByRole("option", { name: /Custom field/ }).click();
     const search = this.page.getByRole("combobox", { name: new RegExp(`custom fields for filter ${number}`, "i") });
     await search.fill(name);
