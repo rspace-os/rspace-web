@@ -186,7 +186,7 @@ export type StructuredFieldProps<TDocument> = {
   invalid: boolean;
 };
 
-export type StructuredFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "custom"> & {
+export type StructuredFieldFormConfig<TDocument> = FieldFormConfig<TDocument, never> & {
   component: ComponentType<StructuredFieldProps<TDocument>>;
 };
 
