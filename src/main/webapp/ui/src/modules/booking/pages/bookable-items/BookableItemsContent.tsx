@@ -5,7 +5,6 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { schedulingSettingsFieldNames } from "@/modules/booking/configuration/schedulingSettings";
-import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
@@ -24,13 +23,14 @@ import { BookableItemsBulkActions } from "./BookableItemsBulkActions";
 import { calendarSubscriptionQueryKey } from "./bookableItemCalendarSubscription";
 import { type BookableItemsBulkAction, lifecycleErrorKey, requiredVersion } from "./bookableItemLifecycleHelpers";
 import {
+  archiveBookingConfiguration,
   type BookingConfigurationRow,
   BookingConfigurationSchema,
   bookingConfigurationConfig,
+  permanentlyDeleteBookingConfiguration,
+  restoreBookingConfiguration,
 } from "./bookingConfiguration";
 import { PermanentDeleteBookableItemDialog } from "./PermanentDeleteBookableItemDialog";
-
-export type { BookableItemsBulkAction } from "./bookableItemLifecycleHelpers";
 
 const bookableItemsProjection = {
   fixed: [
@@ -122,44 +122,6 @@ export async function mutateBookableItems(
     ...(isDelete ? {} : { body: JSON.stringify({ enabled: action === "enable" }) }),
   });
   if (!response.ok) throw new Error(`Bulk booking ${action} failed with status ${response.status}`);
-}
-
-async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "If-Match": `"${version}"`,
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
-}
-
-async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "If-Match": `"${version}"`,
-      "X-Requested-With": "XMLHttpRequest",
-    },
-    body: JSON.stringify({ state: "ACTIVE" }),
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
-}
-
-async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "If-Match": `"${version}"`,
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
 }
 
 export function BookableItemsContent() {
@@ -326,7 +288,14 @@ export function BookableItemsContent() {
       ) : null}
       {restoreMutation.isError ? (
         <p role="alert" className="mb-3 text-sm text-destructive">
-          {t(lifecycleErrorKey(restoreMutation.error, "bookableItems.lifecycleErrors.restore"))}
+          {t(
+            lifecycleErrorKey(
+              restoreMutation.error,
+              "bookableItems.lifecycleErrors.restore",
+              "bookableItems.lifecycleErrors.stale",
+              "bookableItems.lifecycleErrors.stateChanged",
+            ),
+          )}
         </p>
       ) : null}
       <TableList

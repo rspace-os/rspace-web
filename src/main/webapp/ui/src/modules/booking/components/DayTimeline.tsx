@@ -6,10 +6,12 @@ import { dayMinuteToZonedTime, wallClockToDayMinute, zonedDayBounds } from "@/mo
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import {
+  type DayTimelineActionRenderers,
   type DayTimelineEvent,
   type DayTimelineRange,
   type DayTimelineViewState,
   formatMinuteWithDayOffset,
+  period,
 } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { centerMinuteForScrollPosition, type useDayTimelineScrollSync } from "./useDayTimelineScrollSync";
@@ -32,12 +34,6 @@ type PositionedEvent = {
   visualEndMinute: number;
   lane: number;
 };
-
-function period(range: DayTimelineRange, date: string, timezone: string) {
-  const start = formatMinuteWithDayOffset(date, timezone, range.startMinute);
-  const end = formatMinuteWithDayOffset(date, timezone, range.endMinute);
-  return `${start}–${end}`;
-}
 
 function positionEvents(events: ReadonlyArray<DayTimelineEvent>, dayMinutes: number): Array<PositionedEvent> {
   const laneEnds: Array<number> = [];
@@ -148,12 +144,10 @@ export function DayTimeline({
   variant?: "detail" | "table-row";
   itemName?: string;
   expandedCardClassName?: string | ((event: DayTimelineEvent) => string | undefined);
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
   snapIncrementMinutes?: number;
   creationDisabled?: boolean;
   onRangeSelect?: (range: DayTimelineRange, trigger: HTMLElement) => void;
-}) {
+} & DayTimelineActionRenderers) {
   const dayMinutes = React.useMemo(() => zonedDayBounds(date, timezone).elapsedMinutes, [date, timezone]);
   const startWindow = React.useMemo(
     () => wallClockToDayMinute(date, timezone, wallStartWindow),

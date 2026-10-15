@@ -1,11 +1,12 @@
 import { Wrench, X } from "lucide-react";
-import type * as React from "react";
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
-import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
+import { BookingDetailRows } from "./BookingDetailRows";
 import {
+  type DayTimelineActionRenderers,
   type DayTimelineEvent,
   dateForMinute,
   formatDayDate,
@@ -24,13 +25,11 @@ export function ExpandedEventCard({
   exactPeriod,
   renderEventActions,
   renderBlockoutActions,
-}: {
+}: DayTimelineActionRenderers & {
   date: string;
   timezone: string;
   event: DetailedDayTimelineEvent;
   exactPeriod: string;
-  renderEventActions?: (event: Extract<DayTimelineEvent, { kind: "booking" }>, period: string) => React.ReactNode;
-  renderBlockoutActions?: (event: Extract<DayTimelineEvent, { kind: "blockout" }>, period: string) => React.ReactNode;
 }) {
   const { t } = useTranslation("booking");
   const isBlockout = event.kind === "blockout";
@@ -41,6 +40,10 @@ export function ExpandedEventCard({
   const duration = Math.max(0, event.endMinute - event.startMinute);
   const actions =
     event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : renderBlockoutActions?.(event, exactPeriod);
+  const dateTimeRows = [
+    { key: "start", label: t("bookings.form.start"), date: startDate, minute: event.startMinute },
+    { key: "end", label: t("bookings.form.end"), date: endDate, minute: event.endMinute },
+  ];
 
   return (
     <>
@@ -68,28 +71,19 @@ export function ExpandedEventCard({
           </div>
           {spansMultipleDates ? (
             <dl className="mt-1.5 grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 gap-y-0.5 text-xs leading-4">
-              <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
-                {t("bookings.form.start")}
-              </dt>
-              <dd>
-                <time dateTime={`${startDate}T${formatMinute(date, timezone, event.startMinute)}`}>
-                  {t("dayTimeline.expanded.dateTime", {
-                    date: formatDayDate(startDate),
-                    time: formatMinuteWithDayOffset(date, timezone, event.startMinute),
-                  })}
-                </time>
-              </dd>
-              <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>
-                {t("bookings.form.end")}
-              </dt>
-              <dd>
-                <time dateTime={`${endDate}T${formatMinute(date, timezone, event.endMinute)}`}>
-                  {t("dayTimeline.expanded.dateTime", {
-                    date: formatDayDate(endDate),
-                    time: formatMinuteWithDayOffset(date, timezone, event.endMinute),
-                  })}
-                </time>
-              </dd>
+              {dateTimeRows.map(({ key, label, date: endpointDate, minute }) => (
+                <Fragment key={key}>
+                  <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>{label}</dt>
+                  <dd>
+                    <time dateTime={`${endpointDate}T${formatMinute(date, timezone, minute)}`}>
+                      {t("dayTimeline.expanded.dateTime", {
+                        date: formatDayDate(endpointDate),
+                        time: formatMinuteWithDayOffset(date, timezone, minute),
+                      })}
+                    </time>
+                  </dd>
+                </Fragment>
+              ))}
             </dl>
           ) : (
             <time dateTime={startDate} className="mt-1.5 block text-xs leading-4">
@@ -127,27 +121,20 @@ export function ExpandedEventCard({
             </InventoryItem>
           </dd>
         </div>
-        {event.kind === "booking" ? (
-          <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
-            <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.bookedBy")}</dt>
-            <dd className="min-w-0">
-              <UserBadge name={event.bookedBy} />
-            </dd>
-          </div>
-        ) : event.createdBy ? (
-          <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
-            <dt className="text-muted-foreground text-xs">{t("dayTimeline.expanded.createdBy")}</dt>
-            <dd className="min-w-0">
-              <UserBadge name={event.createdBy} />
-            </dd>
-          </div>
-        ) : null}
-        <div className="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2">
-          <dt className="text-muted-foreground text-xs">
-            {t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
-          </dt>
-          <dd className="text-xs leading-4">{event.notes}</dd>
-        </div>
+        <BookingDetailRows
+          actor={event.kind === "booking" ? event.bookedBy : event.createdBy}
+          showActor={event.kind === "booking" || Boolean(event.createdBy)}
+          actorLabel={
+            event.kind === "booking"
+              ? t("dayTimeline.expanded.bookedBy")
+              : event.createdBy
+                ? t("dayTimeline.expanded.createdBy")
+                : ""
+          }
+          detailsLabel={t(isBlockout ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
+          details={event.notes}
+          rowClassName="grid grid-cols-[4.5rem_1fr] gap-2 px-4 py-2"
+        />
       </dl>
 
       {actions}

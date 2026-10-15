@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { CalendarClockIcon, EyeIcon, HistoryIcon, PencilIcon, RefreshCwIcon } from "lucide-react";
+import { useQueryState } from "nuqs";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
@@ -23,7 +24,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modu
 import { Heading } from "@/modules/common/ui/typography";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { bookingListConfig } from "./bookingList";
-import type { MyBookingsPeriod } from "./search";
+import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
 const UpcomingCountSchema = v.object({ totalDocs: v.number() });
 const projection = {
@@ -50,8 +51,6 @@ const emptyDescriptionKeys = {
 export type UserBookingsPageProps = {
   requesterId: number;
   title: string;
-  period: MyBookingsPeriod;
-  onPeriodChange: (period: MyBookingsPeriod) => void;
 };
 
 export async function fetchUpcomingBookingCount(
@@ -71,7 +70,8 @@ export async function fetchUpcomingBookingCount(
   return parseOrThrow(UpcomingCountSchema, await response.json()).totalDocs;
 }
 
-export function UserBookingsPage({ requesterId, title, period, onPeriodChange }: UserBookingsPageProps) {
+export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) {
+  const [period, setPeriod] = useQueryState("period", myBookingsPeriodParser);
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
@@ -241,7 +241,7 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
   const selectPeriod = (nextPeriod: "upcoming" | "past") => {
     if (nextPeriod === period) return;
     table.setPage({ ...table.state.page, pageIndex: 0 });
-    onPeriodChange(nextPeriod);
+    void setPeriod(nextPeriod);
   };
 
   return (

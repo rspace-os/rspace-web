@@ -9,7 +9,7 @@ import { UserBadge } from "@/modules/common/ui/user-badge";
 import type { AuditRow } from "./bookableItemAudit";
 import { recordedValues } from "./bookableItemAudit";
 
-export function RecordedValues({ row }: { row: AuditRow }) {
+function RecordedValues({ row }: { row: AuditRow }) {
   const { t, i18n } = useTranslation("booking");
   const labels: Record<string, string> = {
     start: t("bookableItemDetails.audit.values.start"),
@@ -47,7 +47,7 @@ function bookingId(target: string | null | undefined): string | null {
   return match?.[1] ?? null;
 }
 
-export function AuditTarget({ target }: { target: AuditRow["target"] }) {
+function AuditTarget({ target }: { target: AuditRow["target"] }) {
   const id = bookingId(target);
   return id === null ? (
     <span>{target ?? "—"}</span>
@@ -58,7 +58,7 @@ export function AuditTarget({ target }: { target: AuditRow["target"] }) {
   );
 }
 
-export function AuditTimestamp({ value }: { value: string }) {
+function AuditTimestamp({ value }: { value: string }) {
   const { i18n } = useTranslation("booking");
   return (
     <time dateTime={value}>

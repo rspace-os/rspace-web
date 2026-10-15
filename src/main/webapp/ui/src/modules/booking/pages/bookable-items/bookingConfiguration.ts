@@ -4,7 +4,8 @@ import {
   schedulingSettingsEntries,
   validMaximumBookingDuration,
 } from "@/modules/booking/configuration/schedulingSettings";
-import { bookingApiV2Headers } from "@/modules/booking/domain/apiV2";
+import { bookingApiV2Headers, bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
+import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
@@ -130,6 +131,31 @@ export const BookingConfigurationUpdateInputSchema = v.pipe(
 );
 
 export type BookingConfigurationUpdateInput = v.InferOutput<typeof BookingConfigurationUpdateInputSchema>;
+
+export async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "DELETE",
+    headers: bookingApiV2Headers(token, { "If-Match": `"${version}"` }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+export async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "PATCH",
+    headers: bookingApiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
+    body: JSON.stringify({ state: "ACTIVE" }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+export async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
+    method: "DELETE",
+    headers: bookingApiV2Headers(token, { "If-Match": `"${version}"` }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";

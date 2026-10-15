@@ -6,8 +6,6 @@ import { CompactBookingCreationDialog } from "@/modules/booking/creation/Compact
 import { Heading } from "@/modules/common/ui/typography";
 import { BookingBreadcrumbs } from "./BookingBreadcrumbs";
 
-export { BookingSidebar } from "./BookingSidebar";
-
 export function BookingDashboard() {
   const { t } = useTranslation("booking");
   return (
