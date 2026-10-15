@@ -2,6 +2,7 @@ import { type APIRequestContext, type Browser, type BrowserContextOptions, expec
 import { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClient";
 import type { SysadminClient } from "@/__tests__/e2e/api/clients/SysadminClient";
 import { storageStatePath } from "@/__tests__/e2e/authState";
+import { OperationWizardComponent } from "@/__tests__/e2e/components/inventory/OperationWizardComponent";
 import { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
 import { env } from "@/__tests__/e2e/env";
 import { test } from "@/__tests__/e2e/fixtures/flows";
@@ -14,6 +15,7 @@ import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN } from "@/__tests__/e2e/users";
 
 const PROPERTY = "inventory.sampleRequests.available";
+const OPERATIONS_PROPERTY = "inventory.operations.available";
 const PASSWORD = "Passw0rd!23";
 const openContexts = new Set<Awaited<ReturnType<Browser["newContext"]>>>();
 // Every requestable=true sample is visible to every other user's instance-wide Requestable
@@ -167,6 +169,7 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     apiContext,
   }) => {
     env.assertGlobalMutationsAllowed(PROPERTY);
+    env.assertGlobalMutationsAllowed(OPERATIONS_PROPERTY);
 
     const sampleName = uniqueName("e2e-sample-requests-enable");
     await new InventoryClient(apiContext, SYSADMIN.apiKey).createSample({ name: sampleName });
@@ -183,9 +186,13 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
 
       await systemConfig.open();
       const originalValue = (await systemConfig.getSetting(PROPERTY)).trim() as SystemPropertyValue;
+      const originalOperationsValue = (
+        await systemConfig.getSetting(OPERATIONS_PROPERTY)
+      ).trim() as SystemPropertyValue;
       try {
-        await test.step("Given inventory.sampleRequests.available starts Denied", async () => {
+        await test.step("Given inventory.sampleRequests.available and inventory.operations.available both start Denied", async () => {
           await systemConfig.setSetting(PROPERTY, "DENIED");
+          await systemConfig.setSetting(OPERATIONS_PROPERTY, "DENIED");
         });
 
         await test.step("Then the Requests sidebar item and the sample's Requestable switch are both absent", async () => {
@@ -218,7 +225,10 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
         });
       } finally {
         await systemConfig.open();
-        await systemConfig.ensureSetting(PROPERTY, originalValue);
+        await systemConfig.ensureSettings({
+          [PROPERTY]: originalValue,
+          [OPERATIONS_PROPERTY]: originalOperationsValue,
+        });
       }
     } finally {
       await ctx.close();
@@ -231,10 +241,12 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Five separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
     const reasonText = "Need 5 vials for a follow-up experiment.";
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
@@ -287,10 +299,12 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Five separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -340,10 +354,12 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Five separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -396,10 +412,12 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Four separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -443,10 +461,12 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Six separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -507,10 +527,12 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Six separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -580,16 +602,320 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     });
   });
 
+  test("As a user who has had a sample request made against me and inventory.operations.available is set to allowed I can approve that request and then transfer that sample directly", async ({
+    browser,
+    browserContextOptions,
+    clientSysadmin,
+    apiContext,
+    flowSampleRequestsAvailable,
+    flowOperationsAvailable,
+  }) => {
+    // Six separate logins (a fresh browser context each), so allow extra time on a cold backend.
+    test.slow();
+    void flowSampleRequestsAvailable;
+    void flowOperationsAvailable;
+
+    const alice = await test.step("Given Alice owns Sample X", async () => {
+      const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
+      const sample = await createTestSample(actor, uniqueName("e2e-sample-requests"));
+      return { ...actor, sample };
+    });
+    const bob = await test.step("And Bob is a separate user", () =>
+      createInventoryActor(clientSysadmin, apiContext, "Bob"));
+
+    await test.step("When Alice marks Sample X as requestable", () =>
+      markSampleRequestable(browser, browserContextOptions, alice));
+
+    const requestId =
+      await test.step("And Bob finds Sample X via the Requestable Samples search and requests it", async () => {
+        const session = await newSession(browser, browserContextOptions, bob);
+        await findRequestableSample(session.page, session.inventoryPage, alice.sample.name);
+        const id = await session.inventoryPage.detailsPanel.requestMaterial().sendRequest("Please can I use this.");
+        await session.close();
+        return id;
+      });
+
+    await test.step("Then Alice sees the Pending request with a Prepare Sample button, not a Transfer Sample button", async () => {
+      const session = await newSession(browser, browserContextOptions, alice);
+      await session.requestsPage.openRequest(requestId);
+      await expect(session.requestsPage.statusChip("Pending")).toBeVisible();
+      await expect(session.requestsPage.prepareSampleButton).toBeVisible();
+      await expect(session.requestsPage.transferSampleButton).toBeHidden();
+      await session.close();
+    });
+
+    await test.step("Then Alice approves the request, selects a subsample, and transfers the sample directly via Choose Sample to Prepare", async () => {
+      const session = await newSession(browser, browserContextOptions, alice);
+      await session.requestsPage.openRequest(requestId);
+      await session.requestsPage.approveRequest();
+      await expect(session.requestsPage.statusChip("Approved")).toBeVisible();
+
+      await expect(session.requestsPage.prepareSampleButton).toBeDisabled();
+      await session.requestsPage.selectFirstAvailableSubsample();
+      await expect(session.requestsPage.prepareSampleButton).toBeEnabled();
+
+      await session.requestsPage.chooseToTransferDirectly();
+      const dialog = session.page.getByRole("dialog");
+      const dialogHeading = dialog.getByRole("heading");
+      await expect(dialogHeading).toContainText(alice.sample.name);
+      await expect(dialogHeading).toContainText("Bob Requests");
+      await expect(dialog.getByRole("alert")).toContainText("Bob Requests");
+
+      const recipientCombobox = dialog.getByRole("combobox");
+      await expect(recipientCombobox).toHaveValue(new RegExp(`\\(${bob.username}\\)`));
+
+      const toasts = new ToastsComponent(session.page);
+      await dialog.getByRole("button", { name: "Transfer", exact: true }).click();
+      await expect(toasts.byVariant("success", `${alice.sample.name} has been transferred to`)).toBeVisible();
+      await expect(session.requestsPage.statusChip("Fulfilled")).toBeVisible();
+      trackOwnershipTransferred(alice.sample.id, bob);
+      await session.close();
+    });
+
+    await test.step("Then Bob sees the request Fulfilled, and now owns Sample X on his own Bench", async () => {
+      const session = await newSession(browser, browserContextOptions, bob);
+      await session.requestsPage.openRequest(requestId);
+      await expect(session.requestsPage.statusChip("Fulfilled")).toBeVisible();
+
+      await session.inventoryPage.openRecord("SAMPLE", alice.sample.name);
+      await expect(session.inventoryPage.detailsPanel.overviewField("Owner")).toContainText("Bob Requests");
+
+      // Location lives on the subsample, not the sample itself; a fresh sample's only subsample
+      // is always named "<sample>.01".
+      await session.inventoryPage.openRecord("SUBSAMPLE", `${alice.sample.name}.01`);
+      const breadcrumb = session.inventoryPage.detailsPanel
+        .section("Overview")
+        .getByRole("navigation", { name: "breadcrumb" });
+      await expect(breadcrumb).toContainText("My Bench");
+      await session.close();
+    });
+  });
+
+  test("As a user who has had a sample request made against me and inventory.operations.available is set to allowed I can approve that request and then use the operations wizard to process the request, before transferring the sample to the requesting user", async ({
+    browser,
+    browserContextOptions,
+    clientSysadmin,
+    apiContext,
+    flowSampleRequestsAvailable,
+    flowOperationsAvailable,
+  }) => {
+    // Six separate logins (a fresh browser context each), so allow extra time on a cold backend.
+    test.slow();
+    void flowSampleRequestsAvailable;
+    void flowOperationsAvailable;
+
+    const alice = await test.step("Given Alice owns Sample X", async () => {
+      const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
+      const sample = await createTestSample(actor, uniqueName("e2e-sample-requests"));
+      return { ...actor, sample };
+    });
+    const bob = await test.step("And Bob is a separate user", () =>
+      createInventoryActor(clientSysadmin, apiContext, "Bob"));
+    const aliquotName = `${alice.sample.name} Aliquot`;
+
+    await test.step("When Alice marks Sample X as requestable", () =>
+      markSampleRequestable(browser, browserContextOptions, alice));
+
+    const requestId =
+      await test.step("And Bob finds Sample X via the Requestable Samples search and requests it", async () => {
+        const session = await newSession(browser, browserContextOptions, bob);
+        await findRequestableSample(session.page, session.inventoryPage, alice.sample.name);
+        const id = await session.inventoryPage.detailsPanel.requestMaterial().sendRequest("Please can I use this.");
+        await session.close();
+        return id;
+      });
+
+    await test.step("Then Alice sees the Pending request with a Prepare Sample button, not a Transfer Sample button", async () => {
+      const session = await newSession(browser, browserContextOptions, alice);
+      await session.requestsPage.openRequest(requestId);
+      await expect(session.requestsPage.statusChip("Pending")).toBeVisible();
+      await expect(session.requestsPage.prepareSampleButton).toBeVisible();
+      await expect(session.requestsPage.transferSampleButton).toBeHidden();
+      await session.close();
+    });
+
+    await test.step("Then Alice approves the request, selects a subsample, and uses the Operations Wizard to aliquot it before transferring the new sample to Bob", async () => {
+      const session = await newSession(browser, browserContextOptions, alice);
+      await session.requestsPage.openRequest(requestId);
+      await session.requestsPage.approveRequest();
+      await expect(session.requestsPage.statusChip("Approved")).toBeVisible();
+
+      await expect(session.requestsPage.prepareSampleButton).toBeDisabled();
+      await session.requestsPage.selectFirstAvailableSubsample();
+      await expect(session.requestsPage.prepareSampleButton).toBeEnabled();
+
+      await session.requestsPage.chooseToCreateViaWizard();
+      const wizard = new OperationWizardComponent(session.page);
+      await wizard.performAliquot(aliquotName);
+
+      const dialog = session.page.getByRole("dialog");
+      const dialogHeading = dialog.getByRole("heading");
+      await expect(dialogHeading).toContainText(aliquotName);
+      await expect(dialogHeading).toContainText("Bob Requests");
+      // Reached via the wizard, the info box explains the new sample instead of the usual
+      // ownership warning, and names only the new sample, not the requester - the requester is
+      // instead named in the "will be moved to {requester}'s bench" bullet below.
+      await expect(dialog.getByRole("alert")).toContainText(aliquotName);
+      await expect(dialog.getByRole("listitem").filter({ hasText: "moved" })).toContainText("Bob Requests");
+
+      const recipientCombobox = dialog.getByRole("combobox");
+      await expect(recipientCombobox).toHaveValue(new RegExp(`\\(${bob.username}\\)`));
+
+      const toasts = new ToastsComponent(session.page);
+      await dialog.getByRole("button", { name: "Transfer", exact: true }).click();
+      await expect(toasts.byVariant("success", `${aliquotName} has been transferred to`)).toBeVisible();
+      await expect(session.requestsPage.statusChip("Fulfilled")).toBeVisible();
+
+      // The newly-created aliquot, not the originally requested Sample X, should be what's
+      // recorded as transferred - its Transferred Sample chip must therefore differ from the
+      // Requested Sample chip, which always still names Sample X.
+      const transferredSampleLink = session.requestsPage.detailField("Transferred Sample").getByRole("link");
+      await transferredSampleLink.waitFor({ state: "visible" });
+      const transferredSampleId = await transferredSampleLink.innerText();
+      const requestedSampleId = await session.requestsPage
+        .detailField("Requested Sample")
+        .getByRole("link")
+        .innerText();
+      expect(transferredSampleId).not.toBe(requestedSampleId);
+      await session.close();
+    });
+
+    await test.step("Then Bob sees the request Fulfilled, Sample X is still Alice's, and he now owns the new Aliquot on his own Bench", async () => {
+      const session = await newSession(browser, browserContextOptions, bob);
+      await session.requestsPage.openRequest(requestId);
+      await expect(session.requestsPage.statusChip("Fulfilled")).toBeVisible();
+
+      // Bob has no general access to Alice's Sample X (only to the Aliquot, which he now owns),
+      // so a plain search for it - unlike for the Aliquot below - only finds it via the
+      // Requestable filter, which Sample X still qualifies for (its requestable flag is untouched
+      // by this flow). A plain search wouldn't even need that filter to find *something*: Sample
+      // X's name is a substring of the Aliquot's, so it would resolve the Aliquot's own row
+      // instead of correctly finding no match.
+      await findRequestableSample(session.page, session.inventoryPage, alice.sample.name);
+      await expect(session.inventoryPage.detailsPanel.overviewField("Owner")).toContainText("Alice Requests");
+
+      await session.inventoryPage.openRecord("SAMPLE", aliquotName);
+      await expect(session.inventoryPage.detailsPanel.overviewField("Owner")).toContainText("Bob Requests");
+
+      // Location lives on the subsample, not the sample itself; a fresh sample's only subsample
+      // is always named "<sample>.01".
+      await session.inventoryPage.openRecord("SUBSAMPLE", `${aliquotName}.01`);
+      const breadcrumb = session.inventoryPage.detailsPanel
+        .section("Overview")
+        .getByRole("navigation", { name: "breadcrumb" });
+      await expect(breadcrumb).toContainText("My Bench");
+      await session.close();
+    });
+  });
+
+  test("As a user who has had a sample request made against me and inventory.operations.available is set to allowed I can approve that request and then use the operations wizard to process the request, but without transferring the sample to the requesting user", async ({
+    browser,
+    browserContextOptions,
+    clientSysadmin,
+    apiContext,
+    flowSampleRequestsAvailable,
+    flowOperationsAvailable,
+  }) => {
+    // Five separate logins (a fresh browser context each), so allow extra time on a cold backend.
+    test.slow();
+    void flowSampleRequestsAvailable;
+    void flowOperationsAvailable;
+
+    const alice = await test.step("Given Alice owns Sample X", async () => {
+      const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
+      const sample = await createTestSample(actor, uniqueName("e2e-sample-requests"));
+      return { ...actor, sample };
+    });
+    const bob = await test.step("And Bob is a separate user", () =>
+      createInventoryActor(clientSysadmin, apiContext, "Bob"));
+    const aliquotName = `${alice.sample.name} Aliquot`;
+
+    await test.step("When Alice marks Sample X as requestable", () =>
+      markSampleRequestable(browser, browserContextOptions, alice));
+
+    const requestId =
+      await test.step("And Bob finds Sample X via the Requestable Samples search and requests it", async () => {
+        const session = await newSession(browser, browserContextOptions, bob);
+        await findRequestableSample(session.page, session.inventoryPage, alice.sample.name);
+        const id = await session.inventoryPage.detailsPanel.requestMaterial().sendRequest("Please can I use this.");
+        await session.close();
+        return id;
+      });
+
+    await test.step("Then Alice sees the Pending request with a Prepare Sample button, not a Transfer Sample button", async () => {
+      const session = await newSession(browser, browserContextOptions, alice);
+      await session.requestsPage.openRequest(requestId);
+      await expect(session.requestsPage.statusChip("Pending")).toBeVisible();
+      await expect(session.requestsPage.prepareSampleButton).toBeVisible();
+      await expect(session.requestsPage.transferSampleButton).toBeHidden();
+      await session.close();
+    });
+
+    await test.step("Then Alice approves the request, selects a subsample, uses the Operations Wizard to aliquot it, but cancels the transfer", async () => {
+      const session = await newSession(browser, browserContextOptions, alice);
+      await session.requestsPage.openRequest(requestId);
+      await session.requestsPage.approveRequest();
+      await expect(session.requestsPage.statusChip("Approved")).toBeVisible();
+
+      await expect(session.requestsPage.prepareSampleButton).toBeDisabled();
+      await session.requestsPage.selectFirstAvailableSubsample();
+      await expect(session.requestsPage.prepareSampleButton).toBeEnabled();
+
+      await session.requestsPage.chooseToCreateViaWizard();
+      const wizard = new OperationWizardComponent(session.page);
+      await wizard.performAliquot(aliquotName);
+
+      const dialog = session.page.getByRole("dialog");
+      const dialogHeading = dialog.getByRole("heading");
+      await expect(dialogHeading).toContainText(aliquotName);
+      await expect(dialogHeading).toContainText("Bob Requests");
+      // Reached via the wizard, the info box explains the new sample instead of the usual
+      // ownership warning, and names only the new sample, not the requester - the requester is
+      // instead named in the "will be moved to {requester}'s bench" bullet below.
+      await expect(dialog.getByRole("alert")).toContainText(aliquotName);
+      await expect(dialog.getByRole("listitem").filter({ hasText: "moved" })).toContainText("Bob Requests");
+
+      const recipientCombobox = dialog.getByRole("combobox");
+      await expect(recipientCombobox).toHaveValue(new RegExp(`\\(${bob.username}\\)`));
+
+      await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+      await dialog.waitFor({ state: "hidden" });
+
+      // Cancelling the transfer leaves the request Approved, not Fulfilled - the new sample was
+      // created (by the wizard's Perform step), but never handed over, so it stays Alice's.
+      await expect(session.requestsPage.statusChip("Approved")).toBeVisible();
+
+      await session.inventoryPage.openRecord("SAMPLE", aliquotName);
+      await expect(session.inventoryPage.detailsPanel.overviewField("Owner")).toContainText("Alice Requests");
+
+      await session.inventoryPage.openRecord("SUBSAMPLE", `${aliquotName}.01`);
+      const breadcrumb = session.inventoryPage.detailsPanel
+        .section("Overview")
+        .getByRole("navigation", { name: "breadcrumb" });
+      await expect(breadcrumb).toContainText("My Bench");
+      await session.close();
+    });
+
+    await test.step("Then Bob still sees the request as Approved", async () => {
+      const session = await newSession(browser, browserContextOptions, bob);
+      await session.requestsPage.openRequest(requestId);
+      await expect(session.requestsPage.statusChip("Approved")).toBeVisible();
+      await session.close();
+    });
+  });
+
   test("As a user who has had a sample request made against me I can transfer that sample without first using the approval step", async ({
     browser,
     browserContextOptions,
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Five separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -663,10 +989,12 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsNotAvailable,
   }) => {
     // Six separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    void flowOperationsNotAvailable;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");

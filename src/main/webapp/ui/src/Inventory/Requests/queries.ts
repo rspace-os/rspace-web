@@ -86,7 +86,7 @@ export function useSampleRequestDetailQuery(requestId: number | null) {
   });
 }
 
-export type OtherActiveSampleRequest = { id: number; requesterName: string };
+export type OtherActiveSampleRequest = { id: number; status: string; requesterName: string };
 
 /**
  * Other PENDING/APPROVED requests against the same sample, excluding `excludeRequestId` - backs
@@ -107,14 +107,17 @@ export function useOtherActiveSampleRequestsQuery(sampleId: number | null, exclu
         status: "PENDING,APPROVED",
         pageSize: "100",
       });
-      return ApiService.query<{ requests: Array<{ id: number; requester: { firstName: string; lastName: string } }> }>(
-        "sampleRequests",
-        params,
-      ).then(
+      return ApiService.query<{
+        requests: Array<{ id: number; status: string; requester: { firstName: string; lastName: string } }>;
+      }>("sampleRequests", params).then(
         ({ data }): Array<OtherActiveSampleRequest> =>
           data.requests
             .filter((r) => r.id !== excludeRequestId)
-            .map((r) => ({ id: r.id, requesterName: `${r.requester.firstName} ${r.requester.lastName}` })),
+            .map((r) => ({
+              id: r.id,
+              status: r.status,
+              requesterName: `${r.requester.firstName} ${r.requester.lastName}`,
+            })),
       );
     },
     enabled: sampleId !== null,

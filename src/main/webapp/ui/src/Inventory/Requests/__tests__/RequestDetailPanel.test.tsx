@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import type React from "react";
@@ -8,6 +8,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
+// Constructing SubSampleModel/SampleModel instances (for the Operations Wizard launch tests)
+// touches getRootStore() internally; this registers the real RootStore factory for that.
+import "@/stores/stores/RootStore";
+import { sampleAttrs } from "@/stores/models/__tests__/SampleModel/mocking";
+import { subsampleAttrs } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import materialTheme from "@/theme";
 import RequestDetailPanel from "../RequestDetailPanel";
 import type { ApiSampleRequestListItem } from "../RequestsList";
@@ -63,10 +68,15 @@ vi.mock("@/stores/use-stores", () => ({
 
 // ApiServiceBase gates every call behind `when(() => !getRootStore().authStore.isSynchronizing)`
 // (see ApiServiceBase.ts) - without this, the real ApiService code backing MSW's handlers below
-// would never even issue its requests.
+// would never even issue its requests. unitStore is needed too: constructing the SubSampleModel/
+// SampleModel the Operations Wizard launch tests build from the subSamples fetch touches
+// HasQuantity's quantityUnitLabel, which reads getRootStore().unitStore.getUnit(...) directly.
 vi.mock("@/stores/stores/getRootStore", () => ({
   __esModule: true,
-  default: () => ({ authStore: { isSynchronizing: false } }),
+  default: () => ({
+    authStore: { isSynchronizing: false },
+    unitStore: { getUnit: () => ({ label: "ml" }) },
+  }),
 }));
 
 // RequestSampleLocations does its own fetching and rendering of the location table; all this
@@ -104,6 +114,31 @@ vi.mock("../../components/Inputs/PeopleField", () => ({
   ),
 }));
 
+// The real hook drives a whole lock-acquisition/wizard-dialog flow unrelated to what this suite
+// is verifying - that the panel asks for the right origin and the right excluded operations. A
+// stub records both and exposes a fake "wizard" marker so a test can assert the launch happened.
+const launchOperationWizard = vi.fn().mockResolvedValue(true);
+let lastWizardOrigins: ReadonlyArray<{ id: number | null; globalId: string | null }> = [];
+let lastExcludedOperationKeys: ReadonlySet<string> | undefined;
+let lastOnPerformed: ((sample: { id: number; globalId: string; name: string } | null) => void) | undefined;
+vi.mock("../../components/Operations/useOperationWizardLauncher", () => ({
+  useOperationWizardLauncher: (
+    origins: ReadonlyArray<{ id: number | null; globalId: string | null }>,
+    options: {
+      onPerformed?: (sample: { id: number; globalId: string; name: string } | null) => void;
+      excludedOperationKeys?: ReadonlySet<string>;
+    } = {},
+  ) => {
+    lastWizardOrigins = origins;
+    lastExcludedOperationKeys = options.excludedOperationKeys;
+    lastOnPerformed = options.onPerformed;
+    return {
+      launch: launchOperationWizard,
+      wizard: origins.length > 0 ? <div data-testid="mock-operation-wizard" /> : null,
+    };
+  },
+}));
+
 function baseRequest(overrides: Partial<ApiSampleRequestListItem> = {}): ApiSampleRequestListItem {
   return {
     id: 101,
@@ -133,6 +168,7 @@ const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
 const SAMPLE_REQUEST_STATUS_URL = "/api/inventory/v1/sampleRequests/:id/status";
 const SAMPLE_URL = "/api/inventory/v1/samples/:id";
 const SAMPLE_CHANGE_OWNER_URL = "/api/inventory/v1/samples/:id/actions/changeOwner";
+const SUBSAMPLE_URL = "/api/inventory/v1/subSamples/:id";
 
 /**
  * The happy-path handler set re-registered before every test, matching what apiGet/apiQuery/
@@ -205,6 +241,9 @@ beforeEach(() => {
   deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   deploymentProperties["inventory.operations.available"] = "ALLOWED";
   getUser.mockResolvedValue({ username: REQUESTER.username });
+  launchOperationWizard.mockResolvedValue(true);
+  lastWizardOrigins = [];
+  lastExcludedOperationKeys = undefined;
   server.use(...defaultHandlers());
 });
 
@@ -263,6 +302,41 @@ describe("RequestDetailPanel", () => {
     }
   });
 
+  it("shows the requester's username with a 'Deleted' suffix, rather than a user-details lookup, once their account has been deleted", async () => {
+    renderPanel(baseRequest({ requester: { ...REQUESTER, id: null } }));
+    await waitForInitialFetches();
+
+    // Not the firstName/lastName lookup chip used for a live account (no account exists any
+    // more to look up), and not the account's possibly-stale first/last name either.
+    expect(screen.queryByText("Rita Requester")).toBeNull();
+    expect(screen.getByText("inventory:requestsManagement.userDeleted")).toBeInTheDocument();
+  });
+
+  it("shows a Request History entry's createdBy username with a 'Deleted' suffix once their account has been deleted", async () => {
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet("sampleRequests", Number(params.id));
+        return HttpResponse.json({
+          statusChanges: [
+            {
+              id: 1,
+              status: "APPROVED",
+              created: "2026-01-02T10:00:00Z",
+              createdBy: { id: null, username: "old-owner", firstName: "Olive", lastName: "Owner" },
+              reason: null,
+              transferredSample: null,
+            },
+          ],
+          sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
+        });
+      }),
+    );
+    renderPanel(baseRequest());
+    await waitForInitialFetches();
+
+    expect(screen.getByText("inventory:requestsManagement.userDeleted")).toBeInTheDocument();
+  });
+
   it("hides owner-only actions and shows a Cancel option for a non-owner viewing a pending request", async () => {
     currentUser.value = REQUESTER;
     renderPanel(baseRequest());
@@ -275,6 +349,10 @@ describe("RequestDetailPanel", () => {
   it("cancels the request as a non-owner and notifies listeners", async () => {
     const user = userEvent.setup();
     currentUser.value = REQUESTER;
+    apiUpdate.mockImplementation((resource: string) => {
+      if (resource === "sampleRequests") return Promise.resolve({ data: { status: "CANCELLED" } });
+      return Promise.reject(new Error("unexpected"));
+    });
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
@@ -701,8 +779,16 @@ describe("RequestDetailPanel", () => {
     restoreConsole();
   });
 
-  it("shows the placeholder Operations Wizard step when 'Create a new sample' is chosen", async () => {
+  it("launches the Operations Wizard for the selected subsample, excluding Pool and Destroy, when 'Create a new sample' is chosen", async () => {
     const user = userEvent.setup();
+    server.use(
+      http.get(SUBSAMPLE_URL, ({ params }) => {
+        apiGet("subSamples", Number(params.id));
+        return HttpResponse.json(
+          subsampleAttrs({ id: 42, globalId: "SS42", name: "Sample Fifty Five.01", sample: sampleAttrs() }),
+        );
+      }),
+    );
     renderPanel(baseRequest({ status: "APPROVED" }));
     await waitForInitialFetches();
 
@@ -722,9 +808,81 @@ describe("RequestDetailPanel", () => {
       }),
     );
 
+    await waitFor(() => expect(apiGet).toHaveBeenCalledWith("subSamples", 42));
+    await waitFor(() => expect(launchOperationWizard).toHaveBeenCalled());
+    expect(lastWizardOrigins).toHaveLength(1);
+    expect(lastWizardOrigins[0]).toMatchObject({ id: 42, globalId: "SS42" });
+    expect(lastExcludedOperationKeys).toEqual(new Set(["destroy", "pool"]));
+  });
+
+  it("opens the Transfer Ownership dialog for the newly-created sample once the Operations Wizard performs an operation", async () => {
+    const user = userEvent.setup();
+    // defaultHandlers() already covers the sampleRequests/status and samples/changeOwner PUTs
+    // (echoing back whatever body was sent, which is all this test actually asserts on) - only
+    // the subSamples fetch needs its own handler here.
+    server.use(
+      http.get(SUBSAMPLE_URL, ({ params }) => {
+        apiGet("subSamples", Number(params.id));
+        return HttpResponse.json(
+          subsampleAttrs({ id: 42, globalId: "SS42", name: "Sample Fifty Five.01", sample: sampleAttrs() }),
+        );
+      }),
+    );
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+    await waitFor(() => expect(launchOperationWizard).toHaveBeenCalled());
+
+    // Simulates the wizard's Passage/Aliquot/etc. step handing back the new sample it created.
+    act(() => lastOnPerformed?.({ id: 77, globalId: "SA77", name: "Sample Fifty Five.02" }));
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+
+    // The new sample didn't exist before this flow, so the usual "you will no longer own this
+    // sample" warning (and its "subsamples will be moved" bullet) don't apply - this is the
+    // wizard-path replacement content for both.
     expect(
-      await screen.findByRole("dialog", { name: "inventory:requestsManagement.detail.prepareDialog.title" }),
+      within(transferDialog).getByText("inventory:requestsManagement.detail.transferDialog.newSampleHint"),
     ).toBeInTheDocument();
+    expect(within(transferDialog).queryByText("inventory:requestsManagement.detail.transferDialog.warning")).toBeNull();
+    expect(
+      within(transferDialog).getByText("inventory:requestsManagement.detail.transferDialog.bullets.newSampleMoved"),
+    ).toBeInTheDocument();
+    expect(
+      within(transferDialog).queryByText("inventory:requestsManagement.detail.transferDialog.bullets.subsamplesMoved"),
+    ).toBeNull();
+
+    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
+
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", {
+        status: "FULFILLED",
+        transferredSampleGlobalId: "SA77",
+      }),
+    );
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("samples", "77/actions/changeOwner", {
+        owner: { username: REQUESTER.username },
+      }),
+    );
   });
 
   it("skips the Choose Sample to Prepare dialog and goes straight to Transfer when inventory.sampleRequests.available is on and inventory.operations.available is off", async () => {
@@ -766,6 +924,110 @@ describe("RequestDetailPanel", () => {
     expect(
       screen.queryByRole("button", { name: "inventory:requestsManagement.detail.transferSampleButton" }),
     ).toBeNull();
+  });
+
+  describe("Choose Sample to Prepare dialog warnings", () => {
+    /** Reaches the Choose Sample to Prepare dialog with the "transfer" radio already selected. */
+    async function openChooseMethodDialogWithTransferSelected(user: ReturnType<typeof userEvent.setup>) {
+      deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+      deploymentProperties["inventory.operations.available"] = "ALLOWED";
+      renderPanel(baseRequest({ status: "APPROVED" }));
+      await waitForInitialFetches();
+      await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+      await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+      const dialog = screen.getByRole("dialog", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+      });
+      await user.click(
+        within(dialog).getByRole("radio", {
+          name: "inventory:requestsManagement.detail.chooseMethodDialog.transferOption",
+        }),
+      );
+      return dialog;
+    }
+
+    it("names the Pending state specifically when every other active request is Pending", async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+          apiQuery("sampleRequests", new URL(request.url).searchParams);
+          return HttpResponse.json({
+            requests: [{ id: 202, status: "PENDING", requester: { firstName: "Sam", lastName: "Second" } }],
+          });
+        }),
+      );
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      expect(
+        await within(dialog).findByText(
+          "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningPending",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("names the Approved states specifically when every other active request is Approved", async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+          apiQuery("sampleRequests", new URL(request.url).searchParams);
+          return HttpResponse.json({
+            requests: [{ id: 203, status: "APPROVED", requester: { firstName: "Tara", lastName: "Third" } }],
+          });
+        }),
+      );
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      expect(
+        await within(dialog).findByText(
+          "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningApproved",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("falls back to the either/or wording when other active requests span both Pending and Approved", async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+          apiQuery("sampleRequests", new URL(request.url).searchParams);
+          return HttpResponse.json({
+            requests: [
+              { id: 202, status: "PENDING", requester: { firstName: "Sam", lastName: "Second" } },
+              { id: 203, status: "APPROVED", requester: { firstName: "Tara", lastName: "Third" } },
+            ],
+          });
+        }),
+      );
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      expect(
+        await within(dialog).findByText(
+          "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarning",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("combines both warnings into one alert, leading the other-requests half with 'also', when the sample also has multiple subsamples", async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get(SAMPLE_URL, ({ params }) => {
+          apiGet("samples", Number(params.id));
+          return HttpResponse.json({ subSamples: [{ id: 1 }, { id: 2 }] });
+        }),
+        http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+          apiQuery("sampleRequests", new URL(request.url).searchParams);
+          return HttpResponse.json({
+            requests: [{ id: 202, status: "PENDING", requester: { firstName: "Sam", lastName: "Second" } }],
+          });
+        }),
+      );
+      const dialog = await openChooseMethodDialogWithTransferSelected(user);
+
+      const alert = await within(dialog).findByRole("alert");
+      expect(alert).toHaveTextContent("inventory:requestsManagement.detail.chooseMethodDialog.transferWarning");
+      expect(alert).toHaveTextContent(
+        "inventory:requestsManagement.detail.chooseMethodDialog.otherActiveRequestsWarningPendingCombined",
+      );
+    });
   });
 
   describe("Transfer Ownership dialog content", () => {

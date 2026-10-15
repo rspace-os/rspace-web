@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * The "Request this sample" box in a Sample's Overview section (non-owners
@@ -20,7 +20,11 @@ export class RequestMaterialSection {
   /** Opens the request dialog, submits it with the given note, and returns the created request's id. */
   async sendRequest(note: string): Promise<number> {
     await this.requestButton.click();
-    await this.page.getByLabel("Describe your request").fill(note);
+    const noteField = this.page.getByLabel("Describe your request");
+    // The user should be able to start typing their request immediately, without first having
+    // to click into the field.
+    await expect(noteField).toBeFocused();
+    await noteField.fill(note);
     const [response] = await Promise.all([
       this.page.waitForResponse(
         (res) => res.url().includes("/api/inventory/v1/sampleRequests") && res.request().method() === "POST",
