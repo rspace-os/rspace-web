@@ -68,14 +68,9 @@ class BookingCalendarFeedGeneratorTest {
             "UTC",
             List.of(event(7L, BookingPrivacy.FULL, "Ada (ada)", "My booking", false)),
             true);
-    Calendar parsed =
-        new CalendarBuilder()
-            .build(
-                new ByteArrayInputStream(
-                    generator.generate(source, SERVER, Locale.ENGLISH, 100_000)));
-    VEvent event = parsed.<VEvent>getComponents(Component.VEVENT).get(0);
-    assertEquals(
-        "Unknown item - Booking", event.getProperty(Property.SUMMARY).orElseThrow().getValue());
+    Calendar parsed = parse(generator.generate(source, SERVER, Locale.ENGLISH, 100_000));
+    VEvent event = firstEvent(parsed);
+    assertEquals("Unknown item - Booking", firstEventSummary(parsed));
     assertFalse(event.getProperty(Property.URL).isPresent());
     assertTrue(
         event.getProperty(Property.DESCRIPTION).orElseThrow().getValue().contains("My booking"));

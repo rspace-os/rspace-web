@@ -4,6 +4,8 @@ import com.researchspace.booking.dao.BookingCalendarSubscriptionCandidate;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.dao.UserDao;
+import com.researchspace.model.CommunityPermissionsChangedEvent;
+import com.researchspace.model.GroupPermissionsChangedEvent;
 import com.researchspace.model.UserSavedEvent;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
@@ -58,14 +60,11 @@ public class BookingCalendarAccessListener {
     itemChanged(event.getTransferredItem());
   }
 
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-  public void groupChanged(com.researchspace.model.GroupPermissionsChangedEvent event) {
-    subscriptions.lockPermissionFence();
-    revokeUnreadable(subscriptions.findCandidatesForMembershipRevalidation());
-  }
-
-  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
-  public void communityChanged(com.researchspace.model.CommunityPermissionsChangedEvent event) {
+  @TransactionalEventListener(
+      classes = {GroupPermissionsChangedEvent.class, CommunityPermissionsChangedEvent.class},
+      phase = TransactionPhase.AFTER_COMMIT,
+      fallbackExecution = true)
+  public void permissionsChanged(Object event) {
     subscriptions.lockPermissionFence();
     revokeUnreadable(subscriptions.findCandidatesForMembershipRevalidation());
   }

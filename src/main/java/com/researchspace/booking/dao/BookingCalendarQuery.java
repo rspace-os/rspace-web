@@ -19,6 +19,7 @@ import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -73,7 +74,7 @@ public final class BookingCalendarQuery {
     Predicate mandatory =
         new RsqlCollectionQuery(events, alias, "calendarAccess")
             .translateTrusted(scoped.serverConstraint(), targets);
-    Predicate itemText = itemText("bookingConfiguration.target", text, caller);
+    Predicate itemText = itemText("bookingConfiguration.target", text, caller, targets);
     Predicate eventTextPredicate = eventText(alias, text, caller, targets);
     Predicate body =
         and(
@@ -95,7 +96,7 @@ public final class BookingCalendarQuery {
   public Predicate eventSearch(String text, User caller) {
     RelationshipReadAccess targets = RelationshipReadAccess.forActor(registry.getObject(), caller);
     return or(
-        itemText("booking.bookingConfiguration.target", text, caller),
+        itemText("booking.bookingConfiguration.target", text, caller, targets),
         eventText("booking", text, caller, targets));
   }
 
@@ -118,22 +119,16 @@ public final class BookingCalendarQuery {
   }
 
   private static FilterExpression calendarFacets(FilterExpression filter) {
-    if (filter == null) return null;
-    if (filter instanceof FilterExpression.And and) {
-      return new FilterExpression.And(
-          and.children().stream().map(BookingCalendarQuery::calendarFacets).toList());
-    }
-    if (filter instanceof FilterExpression.Or or) {
-      return new FilterExpression.Or(
-          or.children().stream().map(BookingCalendarQuery::calendarFacets).toList());
-    }
-    FilterExpression.Comparison comparison = (FilterExpression.Comparison) filter;
+    return BookingRequesterFilters.mapComparisons(filter, BookingCalendarQuery::calendarFacet);
+  }
+
+  private static FilterExpression calendarFacet(FilterExpression.Comparison comparison) {
     if (comparison.field().equals("privacy")) {
       boolean matches = privacyMatches(comparison);
       return new FilterExpression.Comparison("privacy", Operator.EXISTS, List.of(matches), false);
     }
     if (comparison.field().equals("timezone")) {
-      return new FilterExpression.And(List.of(comparison, readableTarget()));
+      return new FilterExpression.And(List.of(comparison, BookingRequesterFilters.READABLE_ITEM));
     }
     if (!comparison.field().equals("bookedBy")) return comparison;
     if (comparison.operator() == Operator.EXISTS) {
@@ -161,10 +156,6 @@ public final class BookingCalendarQuery {
     return new FilterExpression.Or(names);
   }
 
-  private static FilterExpression readableTarget() {
-    return new FilterExpression.Comparison("target", Operator.EXISTS, List.of(true), false);
-  }
-
   private static boolean privacyMatches(FilterExpression.Comparison comparison) {
     boolean containsFull =
         comparison.values().stream()
@@ -189,9 +180,9 @@ public final class BookingCalendarQuery {
                 comparison("deleted", Operator.EQUAL, false)));
   }
 
-  private Predicate itemText(String targetPath, String text, User caller) {
+  private Predicate itemText(
+      String targetPath, String text, User caller, RelationshipReadAccess targets) {
     if (text == null || text.isBlank()) return null;
-    RelationshipReadAccess targets = RelationshipReadAccess.forActor(registry.getObject(), caller);
     CollectionDescription<?> instruments = targets.description("instruments");
     AccessResult access = targets.result("instruments");
     Predicate descriptionAccess = new Predicate("1 = 0", Map.of());
@@ -211,8 +202,8 @@ public final class BookingCalendarQuery {
     parameters.put("calendarTargetType", BookableTargetType.INSTRUMENT);
     String exactId = "";
     if (text.trim().toUpperCase(Locale.ROOT).matches("IN[1-9][0-9]*")) {
-      java.math.BigInteger id = new java.math.BigInteger(text.trim().substring(2));
-      if (id.compareTo(java.math.BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
+      BigInteger id = new BigInteger(text.trim().substring(2));
+      if (id.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
         parameters.put("calendarTargetId", id.longValue());
         exactId = " OR calendarInstrument.id = :calendarTargetId";
       }

@@ -448,13 +448,7 @@ class ApiV2BookingConfigurationResourceTest {
     User owner = mock(User.class);
     User sysadmin = mock(User.class);
     when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
-    ResourceRenderer renderer =
-        new ResourceRenderer(
-            new ResourceRegistry(
-                List.of(
-                    ApiV2BookingConfigurationResource.DESCRIPTION,
-                    ApiV2UserResource.DESCRIPTION,
-                    ApiV2BookingInstrumentResource.DESCRIPTION)));
+    ResourceRenderer renderer = new ResourceRenderer(REGISTRY);
     var selection =
         ResourceFieldSelections.root(FieldSelection.include(Set.of("roleSources", "ownerHealth")));
 
@@ -464,7 +458,7 @@ class ApiV2BookingConfigurationResourceTest {
             ApiV2BookingConfigurationResource.DESCRIPTION,
             selection,
             IncludeTree.empty(),
-            (resourceName, id) -> java.util.Optional.empty(),
+            (resourceName, id) -> Optional.empty(),
             Map.of(),
             new AccessContext(owner, Operation.READ, "booking-configurations"));
     assertEquals(
@@ -477,7 +471,7 @@ class ApiV2BookingConfigurationResourceTest {
             ApiV2BookingConfigurationResource.DESCRIPTION,
             selection,
             IncludeTree.empty(),
-            (resourceName, id) -> java.util.Optional.empty(),
+            (resourceName, id) -> Optional.empty(),
             Map.of(),
             new AccessContext(sysadmin, Operation.READ, "booking-configurations"));
     assertEquals(Map.of(), sysadminDocument.get("ownerHealth"));

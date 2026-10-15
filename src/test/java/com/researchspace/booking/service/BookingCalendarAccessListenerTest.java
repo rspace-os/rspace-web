@@ -1,11 +1,18 @@
 package com.researchspace.booking.service;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingCalendarSubscriptionCandidate;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.dao.UserDao;
+import com.researchspace.model.CommunityPermissionsChangedEvent;
+import com.researchspace.model.GroupPermissionsChangedEvent;
 import com.researchspace.model.User;
 import com.researchspace.model.UserSavedEvent;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -19,9 +26,10 @@ import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InOrder;
 
 class BookingCalendarAccessListenerTest {
@@ -44,6 +52,7 @@ class BookingCalendarAccessListenerTest {
     configuration.setId(11L);
     when(subscriptions.findCandidatesByUserId(7L)).thenReturn(List.of(subscription));
     when(subscriptions.findCandidatesByConfigurationId(11L)).thenReturn(List.of(subscription));
+    when(subscriptions.findCandidatesForMembershipRevalidation()).thenReturn(List.of(subscription));
     when(configurations.getSafeNull(11L)).thenReturn(Optional.of(configuration));
     when(users.getSafeNull(7L)).thenReturn(Optional.of(user));
     when(item.isInstrument()).thenReturn(true);
@@ -55,9 +64,20 @@ class BookingCalendarAccessListenerTest {
         .thenReturn(Map.of(11L, ResolvedResourceAccess.none()));
   }
 
-  @Test
-  void sharingLossRevokesLinkBeforeAnotherRequest() {
-    listener.itemEdited(new InventoryEditingEvent(item, user));
+  @ParameterizedTest
+  @EnumSource(RevocationEvent.class)
+  void permissionChangesRevokeTheLink(RevocationEvent event) {
+    switch (event) {
+      case ITEM_EDITED -> listener.itemEdited(new InventoryEditingEvent(item, user));
+      case ITEM_TRANSFERRED ->
+          listener.itemTransferred(
+              new InventoryTransferEvent(item, user, user, TestFactory.createAnyUser("new-owner")));
+      case USER_SAVED -> listener.userSaved(new UserSavedEvent(user));
+      case GROUP_CHANGED -> listener.permissionsChanged(new GroupPermissionsChangedEvent(null));
+      case COMMUNITY_CHANGED ->
+          listener.permissionsChanged(new CommunityPermissionsChangedEvent(null));
+    }
+
     verify(subscriptions).deleteById(13L);
   }
 
@@ -73,42 +93,9 @@ class BookingCalendarAccessListenerTest {
   }
 
   @Test
-  void ownershipTransferRechecksSubscribers() {
-    listener.itemTransferred(
-        new InventoryTransferEvent(item, user, user, TestFactory.createAnyUser("new-owner")));
-    verify(subscriptions).deleteById(13L);
-  }
-
-  @Test
-  void userStatusOrMembershipLossRevokesLink() {
-    listener.userSaved(new UserSavedEvent(user));
-    verify(subscriptions).deleteById(13L);
-  }
-
-  @Test
-  void groupChangesRecheckLinksForOtherMembersAsWell() {
-    when(subscriptions.findCandidatesForMembershipRevalidation()).thenReturn(List.of(subscription));
-    listener.groupChanged(new com.researchspace.model.GroupPermissionsChangedEvent(null));
-    verify(subscriptions).deleteById(13L);
-  }
-
-  @Test
-  void communityChangesRecheckExistingLinks() {
-    when(subscriptions.findCandidatesForMembershipRevalidation()).thenReturn(List.of(subscription));
-    listener.communityChanged(new com.researchspace.model.CommunityPermissionsChangedEvent(null));
-    verify(subscriptions).deleteById(13L);
-  }
-
-  @Test
   void retainedReadAccessKeepsLink() {
     when(permissions.resolveAll(List.of(configuration), user))
-        .thenReturn(
-            Map.of(
-                11L,
-                new ResolvedResourceAccess(
-                    Optional.of("VIEWER"),
-                    Set.of(BookingResourceRoleScheme.READ_RESOURCE),
-                    List.of())));
+        .thenReturn(Map.of(11L, BookingAccessTestFixtures.readableAccess()));
     listener.itemEdited(new InventoryEditingEvent(item, user));
     verify(subscriptions, never()).deleteById(13L);
   }
@@ -121,5 +108,13 @@ class BookingCalendarAccessListenerTest {
 
     verify(subscriptions).deleteById(13L);
     verifyNoInteractions(permissions);
+  }
+
+  private enum RevocationEvent {
+    ITEM_EDITED,
+    ITEM_TRANSFERRED,
+    USER_SAVED,
+    GROUP_CHANGED,
+    COMMUNITY_CHANGED
   }
 }

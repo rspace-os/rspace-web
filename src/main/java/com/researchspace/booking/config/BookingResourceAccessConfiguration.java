@@ -4,14 +4,12 @@ import com.researchspace.booking.service.BookingEventReadAccess;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingRequesterFilters;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.FilterExpression;
-import com.researchspace.model.collection.Operator;
-import com.researchspace.service.resourceaccess.ResourceRoleSchemeRegistry;
-import java.util.List;
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,9 +28,8 @@ public class BookingResourceAccessConfiguration {
   }
 
   @Bean(name = TIME_SLOT_BOOKING_DESCRIPTION)
-  CollectionDescription<TimeSlotBooking> timeSlotBookingCollectionDescription(
-      ResourceRoleSchemeRegistry schemes) {
-    return ApiV2TimeSlotBookingResource.description(new BookingEventReadAccess(schemes));
+  CollectionDescription<TimeSlotBooking> timeSlotBookingCollectionDescription() {
+    return ApiV2TimeSlotBookingResource.description(new BookingEventReadAccess());
   }
 
   /** Restricts configuration rows through the target relationship's registered item policy. */
@@ -44,11 +41,9 @@ public class BookingResourceAccessConfiguration {
           if (!context.isAuthenticated()
               || !context.user().isEnabled()
               || context.user().isAccountLocked()) {
-            return com.researchspace.model.collection.AccessResult.denied(
-                AccessPolicy.AUTHENTICATION_REQUIRED);
+            return AccessResult.denied(AccessPolicy.AUTHENTICATION_REQUIRED);
           }
-          return com.researchspace.model.collection.AccessResult.allowedWhere(
-              new FilterExpression.Comparison("target", Operator.EXISTS, List.of(true), false));
+          return AccessResult.allowedWhere(BookingRequesterFilters.READABLE_ITEM);
         });
   }
 }

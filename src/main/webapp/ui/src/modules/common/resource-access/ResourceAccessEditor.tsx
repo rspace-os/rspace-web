@@ -1,8 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TriangleAlertIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
+import { resourceAccessQueries } from "@/modules/common/resource-access/resourceAccess";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
 import {
   AlertDialog,
@@ -30,12 +33,7 @@ import {
   mergeAccessDraft,
 } from "./accessRows";
 import { GranteePicker } from "./GranteePicker";
-import {
-  fetchResourceAccess,
-  leaveResource,
-  ResourceAccessRequestError,
-  replaceResourceAccess,
-} from "./resourceAccess";
+import { leaveResource, ResourceAccessRequestError, replaceResourceAccess } from "./resourceAccess";
 import type {
   GranteeKind,
   ResourceAccessAssignment,
@@ -115,10 +113,11 @@ function ResourceAccessEditorSession({
 }: Props) {
   const { t, i18n } = useTranslation("common");
   const queryClient = useQueryClient();
-  const queryKey = ["api-v2", resource, resourceId, "access", token] as const;
+  const scope = useQueryIdentityScope();
+  const accessOptions = resourceAccessQueries.document(resource, resourceId, token, scope);
+  const queryKey = accessOptions.queryKey;
   const access = useQuery({
-    queryKey,
-    queryFn: ({ signal }) => fetchResourceAccess(resource, resourceId, token, signal),
+    ...accessOptions,
   });
   const accessDenied =
     access.error instanceof ResourceAccessRequestError && [401, 403, 404].includes(access.error.status);
@@ -200,11 +199,11 @@ function ResourceAccessEditorSession({
     },
   });
 
-  const leave = useMutation({
+  const leave = useApiV2Mutation({
+    meta: { invalidates: [resourceAccessQueries.all(resource)] },
     mutationFn: () => leaveResource(resource, resourceId, token),
     onSuccess: () => {
       setLeaveOpen(false);
-      void queryClient.invalidateQueries({ queryKey: ["api-v2", resource] });
     },
     onError: () => setAnnouncement(t("resourceAccess.leaveError")),
   });
@@ -215,7 +214,7 @@ function ResourceAccessEditorSession({
     setAnnouncement(t("resourceAccess.unsavedChanges"));
   }, [dirty, save.isSuccess, save.reset, t]);
 
-  const assignedKeys = useMemo(() => new Set(draft.map(({ grantee }) => grantee.key)), [draft]);
+  const assignedKeys = new Set(draft.map(({ grantee }) => grantee.key));
   const namedAssignmentCount = draft.filter(({ grantee }) => grantee.kind !== "AUDIENCE").length;
   const canManage = !effectiveReadOnly && access.data?.caller.capabilities.canManageAssignments === true;
 

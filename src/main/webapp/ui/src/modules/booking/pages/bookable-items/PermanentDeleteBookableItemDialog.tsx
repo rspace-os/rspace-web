@@ -1,6 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  bookingConfigurationKeys,
+  bookingKeys,
+  bookingSubscriptionKeys,
+  bookingTargetKeys,
+} from "@/modules/booking/domain/bookingKeys";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +35,17 @@ export function PermanentDeleteBookableItemDialog({
   const { t } = useTranslation(["booking", "common"]);
   const [confirmation, setConfirmation] = useState("");
   const confirmationId = useId();
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await onDelete(configuration.id, requiredVersion(configuration));
+  const deleteMutation = useApiV2Mutation({
+    meta: {
+      invalidates: [
+        bookingConfigurationKeys.all,
+        bookingKeys.all,
+        bookingTargetKeys.all,
+        bookingSubscriptionKeys.calendar(configuration.id),
+      ],
+    },
+    mutationFn: () => onDelete(configuration.id, requiredVersion(configuration)),
+    onSuccess: async () => {
       close();
       await onDeleted();
     },

@@ -221,7 +221,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     requireCapability(configuration, subject, BookingResourceRoleScheme.EDIT_CONFIGURATION);
     // Booking access is inherited from the current Inventory target. New configurations do not
     // create an independent ResourceAccess aggregate or copy Booking sharing defaults.
-    configuration.setResourceAccess(null);
     validateSettings(configuration);
     validate(configuration);
     return configuration;
@@ -522,7 +521,8 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   }
 
   private boolean canRead(BookingConfiguration configuration, User subject) {
-    return resolveAccess(configuration, subject)
+    return itemPermissions
+        .resolve(configuration, subject)
         .hasCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY);
   }
 
@@ -536,10 +536,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
     if (!access.hasCapability(capability)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
-  }
-
-  private ResolvedResourceAccess resolveAccess(BookingConfiguration configuration, User subject) {
-    return itemPermissions.resolve(configuration, subject);
   }
 
   private void prepareAccessProjection(List<BookingConfiguration> configurations, User subject) {

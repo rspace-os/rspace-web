@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -128,7 +129,7 @@ class BookingCalendarManagerSubscriptionTest {
             CryptoUtils.hashToken(RAW_TOKEN).getBytes(StandardCharsets.UTF_8),
             storedHash.getBytes(StandardCharsets.UTF_8)));
 
-    InOrder lockOrder = org.mockito.Mockito.inOrder(configurationDao, accessManager);
+    InOrder lockOrder = inOrder(configurationDao, accessManager);
     lockOrder.verify(configurationDao).lockById(CONFIGURATION_ID);
     lockOrder.verify(accessManager).resolveForMutation(configuration, owner);
 
@@ -231,32 +232,25 @@ class BookingCalendarManagerSubscriptionTest {
 
   @ParameterizedTest
   @EnumSource(ConcealedConfiguration.class)
-  void statusAndCreateConcealMissingOrUnreadableConfigurations(ConcealedConfiguration scenario) {
+  void statusAndCreateConcealUnavailableConfigurations(ConcealedConfiguration scenario) {
     if (scenario == ConcealedConfiguration.MISSING) {
       when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.empty());
       when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.empty());
       when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.empty());
     } else {
+      if (scenario == ConcealedConfiguration.ARCHIVED_WITHOUT_ACCESS) {
+        configuration.setState(BookingConfigurationState.ARCHIVED);
+      }
       when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
       when(accessManager.resolveForMutation(configuration, owner))
           .thenReturn(ResolvedResourceAccess.none());
     }
 
-    assertThrows(
-        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.status(CONFIGURATION_ID, owner, owner));
-    assertThrows(
-        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
-  }
-
-  @Test
-  void createConcealsAnArchivedConfigurationWithoutBookingAccess() {
-    configuration.setState(BookingConfigurationState.ARCHIVED);
-    when(accessManager.resolve(configuration, owner)).thenReturn(ResolvedResourceAccess.none());
-    when(accessManager.resolveForMutation(configuration, owner))
-        .thenReturn(ResolvedResourceAccess.none());
-
+    if (scenario != ConcealedConfiguration.ARCHIVED_WITHOUT_ACCESS) {
+      assertThrows(
+          BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
+          () -> manager.status(CONFIGURATION_ID, owner, owner));
+    }
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
         () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
@@ -306,6 +300,7 @@ class BookingCalendarManagerSubscriptionTest {
 
   private enum ConcealedConfiguration {
     MISSING,
-    UNREADABLE
+    UNREADABLE,
+    ARCHIVED_WITHOUT_ACCESS
   }
 }

@@ -1,10 +1,12 @@
 package com.researchspace.booking.dao;
 
 import com.researchspace.dao.CollectionDao;
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.List;
 import java.util.Optional;
@@ -14,10 +16,8 @@ import java.util.Set;
 public interface BookingConfigurationDao extends CollectionDao<BookingConfiguration, Long> {
 
   /** Applies the same Calendar event restriction to distinct resources and their total. */
-  com.researchspace.model.collection.ResourcePage<BookingConfiguration> getCalendarResources(
-      ResourceRequest request,
-      RelationshipReadAccess access,
-      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction);
+  ResourcePage<BookingConfiguration> getCalendarResources(
+      ResourceRequest request, RelationshipReadAccess access, Predicate restriction);
 
   /** Finds the configuration assigned to the complete target identity. */
   Optional<BookingConfiguration> findByTarget(BookableTargetReference target);

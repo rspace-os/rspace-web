@@ -29,8 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class InstrumentEntityApiManagerIT extends RealTransactionSpringTestBase {
 
   @Autowired private BookingConfigurationProtectedResourceAccess bookingProtectedAccess;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private FeatureFlagManager featureFlags;
 
   @Test
   public void checkBasicInstrumentCreateRetrieveAndExists() throws Exception {

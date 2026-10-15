@@ -11,11 +11,8 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
 class BookingCalendarSubscriptionDaoTest extends SpringTransactionalTest {
 
   @Autowired private BookingCalendarSubscriptionDao subscriptionDao;
@@ -23,23 +20,20 @@ class BookingCalendarSubscriptionDaoTest extends SpringTransactionalTest {
   @Test
   void loadsCandidatesForAConfiguration() {
     User user = createInitAndLoginAnyUser();
+    var session = sessionFactory.getCurrentSession();
     Long instrumentId = createBasicInstrumentForUser(user, "Calendar subscription target").getId();
-
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(true);
     configuration.setTimeZone("UTC");
     configuration.replaceTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId));
-    sessionFactory.getCurrentSession().persist(configuration);
-    sessionFactory.getCurrentSession().flush();
-
-    sessionFactory
-        .getCurrentSession()
-        .persist(
-            new BookableItemCalendarSubscription(
-                configuration, user, "a".repeat(64), "raw-token", new Date()));
-    sessionFactory.getCurrentSession().flush();
-    sessionFactory.getCurrentSession().clear();
+    session.persist(configuration);
+    session.flush();
+    session.persist(
+        new BookableItemCalendarSubscription(
+            configuration, user, "a".repeat(64), "raw-token", new Date()));
+    session.flush();
+    session.clear();
 
     List<BookingCalendarSubscriptionCandidate> subscriptions =
         subscriptionDao.findCandidatesByConfigurationId(configuration.getId());
