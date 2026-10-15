@@ -5,7 +5,6 @@ import type { BookableItemOption } from "@/modules/booking/creation/bookableItem
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/adapters/apiV2/runtimeFieldCatalog";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import type { FilterExpression, FilterState } from "@/modules/common/table-list/tableListState";
@@ -44,39 +43,6 @@ function additionalEventResourceCount(
   }
   return additionalResourceIds.size;
 }
-
-// This fallback keeps the presentational calendar usable from stories and small callers that do
-// not need the API metadata-backed filter panels. Production passes the enriched event config.
-const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>({
-  slug: "booking-events-calendar",
-  idField: "id",
-  useAsTitle: "purpose",
-  defaultColumns: ["purpose"],
-  listSearchableFields: ["target.name", "target.globalId", "purpose"],
-  labels: {
-    singularKey: "booking:calendar.event",
-    pluralKey: "booking:calendar.title",
-  },
-  fields: [
-    { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false, form: false },
-    {
-      name: "target",
-      type: "relationship",
-      relationTo: "booking-instruments",
-      hasMany: false,
-      labelKey: "booking:calendar.fields.target",
-      capabilities: { filterOperators: [] },
-    },
-    { name: "purpose", type: "text", maximumLength: 1_000, labelKey: "booking:calendar.fields.purpose" },
-    {
-      name: "bookedBy",
-      type: "text",
-      maximumLength: 255,
-      labelKey: "booking:calendar.fields.bookedBy",
-      capabilities: { filterOperators: [] },
-    },
-  ],
-});
 
 export function BookingEventsCalendar({
   date,
@@ -127,7 +93,6 @@ export function BookingEventsCalendar({
   onRetryAvailability?: () => void;
   /** Enabled configurations to render as resource rows, including resources with no events. */
   resources?: readonly BookingCalendarResource[];
-  currentUserId: number;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -141,7 +106,7 @@ export function BookingEventsCalendar({
   resourceTableProps?: TableListProps<BookingConfiguration>;
   searchControl?: { value: string; onChange: (search: string) => void };
   itemFilterConfig?: ResolvedCollectionConfig<BookingConfiguration>;
-  eventFilterConfig?: ResolvedCollectionConfig<BookingListDocument>;
+  eventFilterConfig: ResolvedCollectionConfig<BookingListDocument>;
   itemFilterExpression?: FilterExpression<BookingConfiguration> | null;
   eventFilterExpression?: FilterExpression<BookingListDocument> | null;
   itemFilterIssue?: CalendarFilterIssueState;
@@ -184,7 +149,6 @@ export function BookingEventsCalendar({
     }
     return [...byId.values()];
   }, [editors, events]);
-  const eventConfig = eventFilterConfig ?? calendarEventFallbackConfig;
   const eventFiltering:
     | false
     | { value: FilterState<BookingListDocument>; onChange: (value: FilterState<BookingListDocument>) => void } =
@@ -207,7 +171,6 @@ export function BookingEventsCalendar({
     mineOnly ||
     (eventFiltering !== false &&
       (eventFiltering.value.search.trim() !== "" || eventFiltering.value.expression !== null));
-  const changeMine = (next: boolean) => onMineChange?.(next);
   const filterControls = (
     <CalendarFilterControls
       date={date}
@@ -244,7 +207,7 @@ export function BookingEventsCalendar({
         </div>
       )}
       <TableList
-        config={eventConfig}
+        config={eventFilterConfig}
         rows={displayedEvents}
         getRowId={(event) => String(event.id)}
         clientSide={false}
@@ -273,17 +236,35 @@ export function BookingEventsCalendar({
               label: t("calendar.quickFilters.mine"),
               icon: <CalendarCheck2Icon aria-hidden="true" />,
               pressed: mineOnly,
-              onClick: () => changeMine(!mineOnly),
+              onClick: () => onMineChange?.(!mineOnly),
             },
           ],
           onReset: () => {
-            changeMine(false);
+            onMineChange?.(false);
             onControlsReset();
           },
         }}
         renderRowsWhenEmpty
         renderRows={(calendarEvents) => {
           const extraEventResourceCount = additionalEventResourceCount(calendarEvents, resources);
+          const resourceSchedule = (
+            <CalendarResourceSchedule
+              date={date}
+              view={view}
+              events={calendarEvents}
+              blockingEvents={blockingEvents}
+              resources={resources}
+              includeEventResources={eventScopeIsFiltered}
+              timezone={timezone}
+              today={todayValue}
+              availabilityStartMinute={availabilityStartMinute}
+              availabilityEndMinute={availabilityEndMinute}
+              resourceConfigurations={resourceConfigurations}
+              creationDisabled={creationDisabled}
+              isLoading={isLoading}
+              onResourceRangeSelect={onResourceRangeSelect}
+            />
+          );
           return (
             <BookingEditorsContext.Provider value={editorContext}>
               {itemFilterIssue ? <CalendarFilterIssue {...itemFilterIssue} /> : null}
@@ -329,43 +310,11 @@ export function BookingEventsCalendar({
                       if (resourceTableProps.status === "loading") {
                         return <ResourceScheduleSkeleton period={{ date, view }} />;
                       }
-                      return (
-                        <CalendarResourceSchedule
-                          date={date}
-                          view={view}
-                          events={calendarEvents}
-                          blockingEvents={blockingEvents}
-                          resources={resources}
-                          includeEventResources={eventScopeIsFiltered}
-                          timezone={timezone}
-                          today={todayValue}
-                          availabilityStartMinute={availabilityStartMinute}
-                          availabilityEndMinute={availabilityEndMinute}
-                          resourceConfigurations={resourceConfigurations}
-                          creationDisabled={creationDisabled}
-                          isLoading={isLoading}
-                          onResourceRangeSelect={onResourceRangeSelect}
-                        />
-                      );
+                      return resourceSchedule;
                     }}
                   />
                 ) : (
-                  <CalendarResourceSchedule
-                    date={date}
-                    view={view}
-                    events={calendarEvents}
-                    blockingEvents={blockingEvents}
-                    resources={resources}
-                    includeEventResources={eventScopeIsFiltered}
-                    timezone={timezone}
-                    today={todayValue}
-                    availabilityStartMinute={availabilityStartMinute}
-                    availabilityEndMinute={availabilityEndMinute}
-                    resourceConfigurations={resourceConfigurations}
-                    creationDisabled={creationDisabled}
-                    isLoading={isLoading}
-                    onResourceRangeSelect={onResourceRangeSelect}
-                  />
+                  resourceSchedule
                 ))}
               {layout === "agenda" && (
                 <CalendarAgenda

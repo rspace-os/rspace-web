@@ -4,8 +4,16 @@ import { HttpResponse, http } from "msw";
 import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents, useCalendarEvents } from "../calendarEvents";
+
+function calendarBounds(firstDate: string, lastDate: string, timezone: string) {
+  return {
+    start: zonedDayBounds(firstDate, timezone).start,
+    end: zonedDayBounds(lastDate, timezone).end,
+  };
+}
 
 describe("calendar events", () => {
   it("sends complete item/event grouping and Search before the event limit", async () => {
@@ -23,9 +31,11 @@ describe("calendar events", () => {
       }),
     );
     await expect(
-      loadCalendarEvents("2026-08-17", "2026-08-23", "UTC", "token", new AbortController().signal, undefined, {
-        where,
-        q: "purpose-only",
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "UTC"),
+        token: "token",
+        signal: new AbortController().signal,
+        scope: { where, q: "purpose-only" },
       }),
     ).resolves.toEqual([ownBooking]);
     expect(requests).toHaveLength(1);
@@ -56,7 +66,11 @@ describe("calendar events", () => {
     );
 
     await expect(
-      loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal),
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "Europe/Berlin"),
+        token: "token",
+        signal: new AbortController().signal,
+      }),
     ).resolves.toEqual([ownBooking, otherBooking]);
 
     expect(requests).toHaveLength(2);
@@ -76,11 +90,20 @@ describe("calendar events", () => {
     );
 
     await expect(
-      loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal, []),
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "Europe/Berlin"),
+        token: "token",
+        signal: new AbortController().signal,
+        targetGlobalIds: [],
+      }),
     ).resolves.toEqual([]);
 
     await expect(
-      loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal),
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "Europe/Berlin"),
+        token: "token",
+        signal: new AbortController().signal,
+      }),
     ).resolves.toEqual([ownBooking]);
 
     expect(requests).toBe(1);
@@ -99,11 +122,25 @@ describe("calendar events", () => {
       createElement(QueryClientProvider, { client: queryClient }, children);
 
     const firstCaller = renderHook(
-      () => useCalendarEvents("2026-08-17", "2026-08-23", "UTC", "token", undefined, true, "caller-one"),
+      () =>
+        useCalendarEvents({
+          firstDate: "2026-08-17",
+          lastDate: "2026-08-23",
+          timezone: "UTC",
+          token: "token",
+          authScope: "caller-one",
+        }),
       { wrapper },
     );
     const secondCaller = renderHook(
-      () => useCalendarEvents("2026-08-17", "2026-08-23", "UTC", "token", undefined, true, "caller-two"),
+      () =>
+        useCalendarEvents({
+          firstDate: "2026-08-17",
+          lastDate: "2026-08-23",
+          timezone: "UTC",
+          token: "token",
+          authScope: "caller-two",
+        }),
       { wrapper },
     );
 
@@ -118,7 +155,11 @@ describe("calendar events", () => {
     server.use(http.get("/api/v2/booking-calendar/events", () => new HttpResponse(null, { status: 503 })));
 
     await expect(
-      loadCalendarEvents("2026-08-17", "2026-08-17", "UTC", "token", new AbortController().signal),
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-17", "UTC"),
+        token: "token",
+        signal: new AbortController().signal,
+      }),
     ).rejects.toThrow("Booking calendar request failed (503)");
   });
 
@@ -132,7 +173,11 @@ describe("calendar events", () => {
     );
 
     await expect(
-      loadCalendarEvents("2026-08-17", "2026-08-23", "UTC", "token", new AbortController().signal),
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "UTC"),
+        token: "token",
+        signal: new AbortController().signal,
+      }),
     ).rejects.toThrow("Booking calendar exceeds 1,000 bookings");
     expect(requests).toBe(1);
   });
@@ -146,7 +191,12 @@ describe("calendar events", () => {
     );
 
     await expect(
-      loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal, ["IN123"]),
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "Europe/Berlin"),
+        token: "token",
+        signal: new AbortController().signal,
+        targetGlobalIds: ["IN123"],
+      }),
     ).resolves.toEqual([ownBooking]);
 
     expect(requests).toHaveLength(1);

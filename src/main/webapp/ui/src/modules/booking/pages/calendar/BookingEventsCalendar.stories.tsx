@@ -3,9 +3,41 @@ import * as React from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { bookingTarget, busyBooking, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
 import { BookingEventsCalendar, type CalendarLayout, type CalendarView } from "./BookingEventsCalendar";
+
+const calendarEventFallbackConfig = resolveCollectionConfig<BookingListDocument>({
+  slug: "booking-events-calendar",
+  idField: "id",
+  useAsTitle: "purpose",
+  defaultColumns: ["purpose"],
+  listSearchableFields: ["target.name", "target.globalId", "purpose"],
+  labels: {
+    singularKey: "booking:calendar.event",
+    pluralKey: "booking:calendar.title",
+  },
+  fields: [
+    { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false, form: false },
+    {
+      name: "target",
+      type: "relationship",
+      relationTo: "booking-instruments",
+      hasMany: false,
+      labelKey: "booking:calendar.fields.target",
+      capabilities: { filterOperators: [] },
+    },
+    { name: "purpose", type: "text", maximumLength: 1_000, labelKey: "booking:calendar.fields.purpose" },
+    {
+      name: "bookedBy",
+      type: "text",
+      maximumLength: 255,
+      labelKey: "booking:calendar.fields.bookedBy",
+      capabilities: { filterOperators: [] },
+    },
+  ],
+});
 
 const storyEvents: readonly BookingListDocument[] = [
   ownBooking,
@@ -42,7 +74,7 @@ function InteractiveCalendar() {
       layout={layout}
       timezone="Europe/Berlin"
       events={events}
-      currentUserId={1}
+      eventFilterConfig={calendarEventFallbackConfig}
       searchControl={{ value: search, onChange: setSearch }}
       mineOnly={mineOnly}
       onMineChange={setMineOnly}
