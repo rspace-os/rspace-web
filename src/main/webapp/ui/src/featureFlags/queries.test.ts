@@ -1,11 +1,12 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, test } from "vitest";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import { FEATURE_FLAGS } from "./generatedFeatureFlags";
 import { getFeatureFlags } from "./queries";
 
 const validFlagResponse = {
-  docs: [
+  ...v2ListEnvelope([
     {
       name: FEATURE_FLAGS.bookingEnabled,
       value: true,
@@ -13,16 +14,8 @@ const validFlagResponse = {
       source: "USER_OVERRIDE",
       canOverride: true,
     },
-  ],
-  totalDocs: 1,
+  ]),
   limit: 100,
-  page: 1,
-  pagingCounter: 1,
-  totalPages: 1,
-  hasPrevPage: false,
-  hasNextPage: false,
-  prevPage: null,
-  nextPage: null,
 };
 
 describe("feature flag queries", () => {

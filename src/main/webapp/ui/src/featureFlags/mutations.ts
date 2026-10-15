@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { FeatureFlagName } from "./generatedFeatureFlags";
 import { featureFlagQueryKeys } from "./queries";
-import { FEATURE_FLAGS_API_BASE_URL, featureFlagRequestHeaders, toFeatureFlagRequestError } from "./utils";
+import { FEATURE_FLAGS_API_BASE_URL, FeatureFlagRequestError, featureFlagRequestHeaders } from "./utils";
 
-export type PatchFeatureFlagParams = {
+type PatchFeatureFlagParams = {
   flagName: FeatureFlagName;
   document: { overrideValue: boolean | null } | { baselineValue: boolean };
 };
@@ -20,7 +20,7 @@ export async function patchFeatureFlag({ flagName, document }: PatchFeatureFlagP
   });
 
   if (!response.ok) {
-    throw toFeatureFlagRequestError(response);
+    throw new FeatureFlagRequestError(response);
   }
 }
 
@@ -29,6 +29,6 @@ export function usePatchFeatureFlagMutation() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   return useMutation({
     mutationFn: async (variables: PatchFeatureFlagParams) => patchFeatureFlag(variables, token),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...featureFlagQueryKeys.all, "flags"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: featureFlagQueryKeys.flags() }),
   });
 }
