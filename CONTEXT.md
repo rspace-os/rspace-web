@@ -604,21 +604,19 @@ and the [REST API v2 collection guide](DevDocs/DeveloperNotes/RestApiV2Collectio
   subscriptions do not return.
 - **Permanently delete a booking configuration** — remove its live data while retaining audit history;
   only a system administrator acting as themselves may do this.
-- **Bookable-item calendar subscription** — one user's independently revocable,
-  read-only external calendar of one booking configuration's full schedule. It
-  remains available only while that user has effective permission to view the
-  configuration. Losing the final permission ends the subscription; restoring
-  access does not revive it.
+Calendar endpoints, token handling, preconditions, and access rules are in
+[BookingCalendarSubscriptions.md](DevDocs/DeveloperNotes/BookingCalendarSubscriptions.md).
+- **Bookable-item calendar subscription** — one user's revocable, read-only calendar of a booking
+  configuration's schedule. Losing the final view permission ends it; restored access does not
+  revive it.
   _Avoid_: instrument calendar link, item feed
-- **Personal booking calendar subscription** — one user's revocable, read-only
-  external calendar of the reservations they requested and the blockouts they
-  created across bookable items.
+- **Personal booking calendar subscription** — one user's revocable, read-only calendar of their
+  bookings and blockouts across bookable items.
   _Avoid_: per-user calendar link, user calendar
 - **Subscription link** — the bearer URL for a bookable-item or personal booking
   calendar subscription.
-- **Calendar cancellation tombstone** — the retained calendar representation of
-  a cancelled or deleted booking event. It keeps the event's stable identity and
-  original time range while declaring the event cancelled.
+- **Calendar cancellation tombstone** — a cancelled or deleted event retained with its stable identity
+  and original time range, marked as cancelled.
   _Avoid_: deleted calendar event, hidden cancellation
 - **Booking access assignment**: one Booking role granted directly to one user
   or group for one booking configuration. The assignment governs the

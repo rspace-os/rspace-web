@@ -27,14 +27,14 @@ public class ICSEventGenerator {
     VEvent deadline = new VEvent(date, "RS request from " + mor.getOriginator().getFullName());
 
     Description des = new Description(mor.getMessage());
-    deadline.setPropertyList(deadline.getPropertyList().add(des));
+    deadline.add(des);
     // Generate a UID for the event..
     UidGenerator ug;
 
     ug = new RandomUidGenerator();
-    deadline.setPropertyList(deadline.getPropertyList().add(ug.generateUid()));
+    deadline.add(ug.generateUid());
 
-    icalendar.setComponentList(icalendar.getComponentList().add(deadline));
+    icalendar.add(deadline);
     return icalendar;
   }
 
@@ -54,32 +54,30 @@ public class ICSEventGenerator {
       Recur<Instant> recur =
           new Recur<>(Frequency.valueOf(event.getFrequency()), event.getOccurrences().intValue());
       RRule<Instant> rrule = new RRule<>(recur);
-      deadline.setPropertyList(deadline.getPropertyList().add(rrule));
+      deadline.add(rrule);
     }
 
     if (event.getDescription() != null) {
       Description description = new Description(event.getDescription());
-      deadline.setPropertyList(deadline.getPropertyList().add(description));
+      deadline.add(description);
     }
 
     // Generate a UID for the event..
     UidGenerator ug;
 
     ug = new RandomUidGenerator();
-    deadline.setPropertyList(deadline.getPropertyList().add(ug.generateUid()));
+    deadline.add(ug.generateUid());
 
-    icalendar.setComponentList(icalendar.getComponentList().add(deadline));
+    icalendar.add(deadline);
     return icalendar;
   }
 
   private Calendar getIcal4jCalendarInstance() {
     Calendar icalendar = new Calendar();
-    icalendar.setPropertyList(
-        icalendar
-            .getPropertyList()
-            .add(new ProdId("-//ResearchSpace//iCal4j 1.0//EN"))
-            .add(ImmutableVersion.VERSION_2_0)
-            .add(ImmutableCalScale.GREGORIAN));
+    icalendar
+        .add(new ProdId("-//ResearchSpace//iCal4j 1.0//EN"))
+        .add(ImmutableVersion.VERSION_2_0)
+        .add(ImmutableCalScale.GREGORIAN);
     return icalendar;
   }
 }

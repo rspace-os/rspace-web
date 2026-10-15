@@ -15,3 +15,9 @@ and explicit revocation behavior are unchanged.
 Calendar feed responses use `Cache-Control: private, no-store`,
 `Referrer-Policy: no-referrer`, and `X-Content-Type-Options: nosniff`, including
 empty error responses.
+
+## Access and feed contents
+
+A bookable-item feed is available only while its owner has effective permission to view the
+configuration. Losing that final permission ends the subscription; restoring access does not revive
+it. A personal feed contains the user's requested bookings and the blockouts they created.

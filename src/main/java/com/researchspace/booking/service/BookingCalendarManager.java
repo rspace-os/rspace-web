@@ -10,10 +10,6 @@ public interface BookingCalendarManager {
 
   record Status(boolean active, Date updatedAt, String subscriptionUrl, String etag) {
 
-    public Status(boolean active, Date updatedAt, String subscriptionUrl) {
-      this(active, updatedAt, subscriptionUrl, null);
-    }
-
     public Status {
       updatedAt = copy(updatedAt);
     }
