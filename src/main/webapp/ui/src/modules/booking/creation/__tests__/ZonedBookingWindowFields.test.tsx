@@ -233,6 +233,7 @@ describe("ZonedBookingWindowFields", () => {
       {
         resources: {
           booking: {
+            bookableItemDetails: { minutes: bookingEnglish.bookableItemDetails.minutes },
             bookings: {
               form: { startSnapped: bookingEnglish.bookings.form.startSnapped },
               increment: bookingEnglish.bookings.increment,

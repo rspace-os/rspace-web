@@ -566,7 +566,6 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     const bulkRequests: Array<{ url: string; body: unknown; authorization: string | null }> = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const page = Number(new URL(request.url).searchParams.get("page"));
@@ -599,7 +598,7 @@ describe("BookableItemsPage", () => {
     const enableRequest = bulkRequests[0];
     expect(new URL(enableRequest.url).searchParams.get("where")).toBe("id=in=(7,8)");
     expect(enableRequest.body).toEqual({ enabled: true });
-    expect(enableRequest.authorization).toBe("Bearer new-token");
+    expect(enableRequest.authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(await screen.findByText("2 items are now enabled.")).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
