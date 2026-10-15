@@ -435,6 +435,60 @@ describe("DayTimeline table row", () => {
     expect(onRangeSelect).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    { incrementUnit: "MINUTES", slotGranularityMinutes: 15, endMinute: 622, label: "10:07 AM–10:22 AM" },
+    { incrementUnit: "DAYS", slotGranularityMinutes: 1440, endMinute: 2047, label: "10:07 AM–10:07 AM (+1)" },
+  ] as const)(
+    "retains the clicked minute for unaligned $incrementUnit proposals",
+    async ({ incrementUnit, slotGranularityMinutes, endMinute, label }) => {
+      const user = userEvent.setup();
+      const wrapper = await createRealI18nWrapper({
+        resources: { booking: bookingEnglish, common: commonEnglish },
+        defaultNS: "common",
+      });
+      const onRangeSelect = vi.fn();
+      const policy = timelinePolicy({
+        timezone: "UTC",
+        slotGranularityMinutes,
+        incrementUnit,
+        alignToIncrement: false,
+        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+        maxBookingDurationMinutes: 0,
+      });
+      render(
+        <DayTimeline
+          date="2026-08-17"
+          timezone="UTC"
+          events={[]}
+          startWindow={0}
+          endWindow={1440}
+          proposeSelection={(range) => proposeDayRange(range, "2026-08-17", "UTC", policy)}
+          onRangeSelect={onRangeSelect}
+        />,
+        { wrapper },
+      );
+      const canvas = screen.getByTestId("day-timeline-canvas");
+      vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
+        x: 0,
+        y: 0,
+        left: 0,
+        top: 0,
+        right: 1440,
+        bottom: 100,
+        width: 1440,
+        height: 100,
+        toJSON: () => ({}),
+      });
+      await user.pointer([
+        { target: canvas, coords: { clientX: 607 } },
+        { keys: "[MouseLeft>]", target: canvas },
+      ]);
+      expect(screen.getByText(label)).toBeVisible();
+      await user.pointer("[/MouseLeft]");
+      expect(onRangeSelect).toHaveBeenCalledWith({ startMinute: 607, endMinute }, expect.any(HTMLElement));
+    },
+  );
+
   it("shades closed periods behind events and fully shades a closed day", async () => {
     const wrapper = await createRealI18nWrapper({
       resources: { booking: bookingEnglish, common: commonEnglish },
