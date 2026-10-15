@@ -175,26 +175,22 @@ class BookingAuditTrailTest {
 
   @Test
   void bookingConfigurationAuditSerializesItsTargetIdentity() {
-    HistoryDAO historyDao = mock(HistoryDAO.class);
-    AuditTrailImpl auditTrail = new AuditTrailImpl();
-    auditTrail.setHistoryDao(historyDao);
-    BookingAuditTrail listener = new BookingAuditTrail(auditTrail);
     User actor = TestFactory.createAnyUser("sysadmin");
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(42L);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L));
 
-    listener.bookingConfigurationChanged(
-        new BookingConfigurationAuditEvent(actor, configuration, AuditAction.CREATE));
-
-    ArgumentCaptor<Iterable<HistoricData>> records = ArgumentCaptor.forClass(Iterable.class);
-    verify(historyDao).save(records.capture());
-    String json = records.getValue().iterator().next().getData().toJson();
-    AuditData parsed = AuditData.fromJson(json);
+    SavedRecord saved =
+        savedRecord(
+            listener ->
+                listener.bookingConfigurationChanged(
+                    new BookingConfigurationAuditEvent(actor, configuration, AuditAction.CREATE)));
+    String json = saved.historicData().getData().toJson();
+    AuditData parsed = saved.data();
     assertTrue(json.contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":7}"), json);
     assertEquals("booking-configurations:42", parsed.getData().get("id"));
     assertTrue(parsed.getData().get("target").toString().contains("INSTRUMENT"));
-    assertEquals(AuditDomain.BOOKING, records.getValue().iterator().next().getDomain());
+    assertEquals(AuditDomain.BOOKING, saved.historicData().getDomain());
   }
 
   @Test
