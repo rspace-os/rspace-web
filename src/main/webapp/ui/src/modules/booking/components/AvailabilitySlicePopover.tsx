@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Popover, PopoverTrigger } from "@/modules/common/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
 
 export function AvailabilitySlicePopover({
@@ -17,6 +17,7 @@ export function AvailabilitySlicePopover({
 }) {
   const [open, setOpen] = React.useState(false);
   const suppressRestoredFocusRef = React.useRef(false);
+  const popupRef = React.useRef<HTMLDivElement>(null);
   return (
     <Popover
       open={open}
@@ -44,7 +45,18 @@ export function AvailabilitySlicePopover({
         )}
         style={{ left, width }}
       />
-      {children}
+      <PopoverContent
+        ref={popupRef}
+        initialFocus={popupRef}
+        side="bottom"
+        align="start"
+        sideOffset={8}
+        collisionPadding={8}
+        sticky
+        className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3 duration-0 data-closed:animate-none data-open:animate-none"
+      >
+        {children}
+      </PopoverContent>
     </Popover>
   );
 }
