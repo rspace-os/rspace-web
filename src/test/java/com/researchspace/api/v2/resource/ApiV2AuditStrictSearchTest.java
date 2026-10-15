@@ -494,7 +494,7 @@ class ApiV2AuditStrictSearchTest {
             .replace("\"id\":\"BC1\"", "\"target\":{\"id\":\"" + bookingId + "\"}");
     write("RSLogs.txt", direct + "\n" + nested + "\n");
 
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(bookingRequest);
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(bookingRequest);
 
     assertEquals(1, results.size());
     assertEquals(AuditDomain.BOOKING, results.get(0).getEvent().getDomain());
