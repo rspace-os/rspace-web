@@ -23,6 +23,5 @@ export function bookingListDocument(overrides: Partial<BookingListDocument> = {}
     createdAt: start,
     updatedAt: start,
     ...overrides,
-    cancellationReason: overrides.cancellationReason ?? null,
   };
 }

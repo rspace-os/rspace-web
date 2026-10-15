@@ -88,6 +88,7 @@ export function confocalBooking({
     kind,
     privacy: "full" as const,
     purpose,
+    cancellationReason: null,
     bookedBy: "Ada Lovelace",
     canEdit: false,
     canCancel: false,

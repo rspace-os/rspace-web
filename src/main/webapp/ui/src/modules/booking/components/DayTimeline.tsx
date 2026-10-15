@@ -150,16 +150,6 @@ export function DayTimeline({
   variant?: "detail" | "table-row";
   itemName?: string;
   expandedCardClassName?: string | ((event: DayTimelineEvent) => string | undefined);
-  renderEventActions?: (
-    event: Extract<DayTimelineEvent, { kind: "booking" }>,
-    period: string,
-    timelineEventElement?: HTMLElement | null,
-  ) => React.ReactNode;
-  renderBlockoutActions?: (
-    event: Extract<DayTimelineEvent, { kind: "blockout" }>,
-    period: string,
-    timelineEventElement?: HTMLElement | null,
-  ) => React.ReactNode;
   snapIncrementMinutes?: number;
   creationDisabled?: boolean;
   onRangeSelect?: (range: DayTimelineRange, trigger: HTMLElement) => void;
