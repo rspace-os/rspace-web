@@ -17,6 +17,7 @@ import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
   currentWallClock,
+  sameDraft,
   wallClockDraftFromInstants,
 } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
@@ -130,17 +131,6 @@ function emptyDraft(date = ""): BookingWindowDraft {
   return { startDate: date, startTime: "", endDate: date, endTime: "" };
 }
 
-function sameWindowDraft(left: BookingWindowDraft, right: BookingWindowDraft): boolean {
-  return (
-    left.startDate === right.startDate &&
-    left.startTime === right.startTime &&
-    left.startOccurrence === right.startOccurrence &&
-    left.endDate === right.endDate &&
-    left.endTime === right.endTime &&
-    left.endOccurrence === right.endOccurrence
-  );
-}
-
 export function BookingForm(props: BookingFormProps) {
   const { t } = useTranslation("booking");
   const editing = props.mode === "edit";
@@ -189,7 +179,7 @@ export function BookingForm(props: BookingFormProps) {
     const adjustmentTarget = props.windowAdjustmentTarget ?? target?.globalId;
     if (adjustmentTarget !== target?.globalId) return;
     appliedWindowAdjustment.current = adjustment;
-    setDraft((current) => (sameWindowDraft(adjustment, current) ? current : adjustment));
+    setDraft((current) => (sameDraft(adjustment, current) ? current : adjustment));
   }, [props.windowAdjustment, props.windowAdjustmentTarget, target?.globalId]);
   useEffect(() => {
     const adjustment = props.windowAdjustment;
@@ -198,7 +188,7 @@ export function BookingForm(props: BookingFormProps) {
       adjustment &&
       adjustment === appliedWindowAdjustment.current &&
       adjustmentTarget === target?.globalId &&
-      sameWindowDraft(adjustment, draft)
+      sameDraft(adjustment, draft)
     ) {
       props.onWindowAdjustmentApplied?.(adjustment, adjustmentTarget);
     }
@@ -218,7 +208,7 @@ export function BookingForm(props: BookingFormProps) {
       });
     }
   }
-  const allowPolicyMismatch = Boolean(originalDraft && sameWindowDraft(draft, originalDraft));
+  const allowPolicyMismatch = Boolean(originalDraft && sameDraft(draft, originalDraft));
   const window = useMemo(
     () =>
       target
@@ -278,7 +268,7 @@ export function BookingForm(props: BookingFormProps) {
   };
   const dirty =
     (target?.globalId ?? "") !== initialState.targetGlobalId ||
-    !sameWindowDraft(draft, initialState.draft) ||
+    !sameDraft(draft, initialState.draft) ||
     purposeValue !== initialState.purpose;
   const bookingInPast = window !== undefined && Date.parse(window.start) <= Date.now();
   const notifyStateChange = useEffectEvent((state: BookingFormState) => props.onStateChange?.(state));

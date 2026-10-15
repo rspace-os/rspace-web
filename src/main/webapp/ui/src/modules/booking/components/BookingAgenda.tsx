@@ -1,3 +1,4 @@
+import { Temporal } from "@js-temporal/polyfill";
 import { ChevronDownIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,9 +7,9 @@ import {
   formatBookingAgendaDate,
   formatBookingAgendaTimeRange,
   getBookingAgendaRelativeDay,
-  getBookingAgendaTodayDate,
   groupBookingsByStartDate,
 } from "@/modules/booking/domain/bookingAgenda";
+import { currentWallClock } from "@/modules/booking/domain/bookingTime";
 import { BookingSummaryCard } from "./BookingSummaryCard";
 
 type ControlledExpansion = {
@@ -35,8 +36,8 @@ export function BookingAgenda(props: BookingAgendaProps) {
   const expandedIds = props.expandedIds ?? localExpandedIds;
   const locale = i18n.resolvedLanguage ?? i18n.language;
   const groups = groupBookingsByStartDate(props.bookings, props.timeZone);
-  const todayDate = getBookingAgendaTodayDate(props.now, props.timeZone);
-  const currentYear = Number(todayDate.slice(0, 4));
+  const todayDate = currentWallClock(Temporal.Instant.fromEpochMilliseconds(props.now), props.timeZone).date;
+  const currentYear = Temporal.PlainDate.from(todayDate).year;
 
   useEffect(() => {
     const bookingIds = new Set(props.bookings.map(({ id }) => id));
@@ -58,7 +59,7 @@ export function BookingAgenda(props: BookingAgendaProps) {
   return (
     <div data-slot="booking-agenda" className="min-w-0">
       {groups.map(({ date, bookings }) => {
-        const relativeDay = getBookingAgendaRelativeDay(date, props.now, props.timeZone);
+        const relativeDay = getBookingAgendaRelativeDay(date, todayDate);
         const dayLabel =
           relativeDay === "today"
             ? t("dashboard.agenda.today")

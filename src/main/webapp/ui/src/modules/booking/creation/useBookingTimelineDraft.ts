@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
+import { type BookingWindowDraft, sameDraft } from "@/modules/booking/domain/bookingTime";
 import type { BookingFormState } from "./BookingForm";
 
 type PendingAdjustment = {
@@ -8,17 +8,6 @@ type PendingAdjustment = {
   acknowledged: boolean;
   observed: boolean;
 };
-
-function sameDraft(left: BookingWindowDraft, right: BookingWindowDraft): boolean {
-  return (
-    left.startDate === right.startDate &&
-    left.startTime === right.startTime &&
-    left.startOccurrence === right.startOccurrence &&
-    left.endDate === right.endDate &&
-    left.endTime === right.endTime &&
-    left.endOccurrence === right.endOccurrence
-  );
-}
 
 export function useBookingTimelineDraft() {
   const [formState, setFormState] = useState<BookingFormState | undefined>(undefined);

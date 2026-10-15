@@ -13,7 +13,7 @@ import { formatList } from "@/modules/common/i18n/listFormat";
 import { PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
 import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
-import { BookingKindIcon } from "./BookingKindIcon";
+import { BookingSourceRow } from "./BookingSourceRow";
 
 export type { AvailabilityInterval } from "@/modules/booking/domain/availability";
 
@@ -319,31 +319,28 @@ export function AvailabilityBar({
                       );
                     }
                     return (
-                      <li
+                      <BookingSourceRow
                         key={source.id}
-                        className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5"
-                      >
-                        <BookingKindIcon maintenance={kind !== "booking"} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-xs font-medium">
-                            {source.booking?.kind === "MAINTENANCE"
-                              ? t("bookings.maintenanceLabel")
-                              : kind === "booking"
-                                ? t("availabilityBar.slice.sources.booking")
-                                : t("availabilityBar.slice.sources.openingHours")}
-                          </span>
-                          <span className="block text-[11px] text-muted-foreground">
-                            <BookingInstrumentTimeTooltip
-                              start={source.startsAt.toISOString()}
-                              end={source.endsAt.toISOString()}
-                              displayTimeZone={timeZone}
-                              instrumentTimeZone={instrumentTimeZone}
-                            >
-                              {formatTimeRange(source)}
-                            </BookingInstrumentTimeTooltip>
-                          </span>
-                        </span>
-                      </li>
+                        truncate={false}
+                        heading={
+                          source.booking?.kind === "MAINTENANCE"
+                            ? t("bookings.maintenanceLabel")
+                            : kind === "booking"
+                              ? t("availabilityBar.slice.sources.booking")
+                              : t("availabilityBar.slice.sources.openingHours")
+                        }
+                        period={
+                          <BookingInstrumentTimeTooltip
+                            start={source.startsAt.toISOString()}
+                            end={source.endsAt.toISOString()}
+                            displayTimeZone={timeZone}
+                            instrumentTimeZone={instrumentTimeZone}
+                          >
+                            {formatTimeRange(source)}
+                          </BookingInstrumentTimeTooltip>
+                        }
+                        maintenance={kind !== "booking"}
+                      />
                     );
                   })}
                 </ul>

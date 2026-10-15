@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { BookingListDocument } from "./booking";
 import {
   formatBookingAgendaDate,
   formatBookingAgendaDateTime,
@@ -7,28 +6,16 @@ import {
   getBookingAgendaRelativeDay,
   groupBookingsByStartDate,
 } from "./bookingAgenda";
+import { bookingListDocument } from "./bookingAgendaFixtures";
 
-function booking(id: number, start: string, end: string): BookingListDocument {
-  return {
+function booking(id: number, start: string, end: string) {
+  return bookingListDocument({
     id,
-    version: 1,
     target: null,
-    timezone: "Europe/Berlin",
     start,
     end,
-    state: "CONFIRMED",
-    kind: "BOOKING",
-    privacy: "full",
-    purpose: null,
-    bookedBy: null,
-    createdBy: null,
     canViewConfiguration: false,
-    requesterId: 7,
-    canEdit: false,
-    canCancel: false,
-    createdAt: start,
-    updatedAt: start,
-  };
+  });
 }
 
 describe("booking agenda date helpers", () => {
@@ -57,12 +44,12 @@ describe("booking agenda date helpers", () => {
   it("groups in the selected timezone and labels calendar days across the spring DST change", () => {
     const rows = [booking(9, "2026-03-28T23:30:00.000Z", "2026-03-29T01:30:00.000Z")];
     const groups = groupBookingsByStartDate(rows, "Europe/Berlin");
-    const now = Date.parse("2026-03-28T23:30:00.000Z");
+    const todayDate = "2026-03-29";
 
     expect(groups.map(({ date }) => date)).toEqual(["2026-03-29"]);
-    expect(getBookingAgendaRelativeDay("2026-03-29", now, "Europe/Berlin")).toBe("today");
-    expect(getBookingAgendaRelativeDay("2026-03-30", now, "Europe/Berlin")).toBe("tomorrow");
-    expect(getBookingAgendaRelativeDay("2026-03-31", now, "Europe/Berlin")).toBeNull();
+    expect(getBookingAgendaRelativeDay("2026-03-29", todayDate)).toBe("today");
+    expect(getBookingAgendaRelativeDay("2026-03-30", todayDate)).toBe("tomorrow");
+    expect(getBookingAgendaRelativeDay("2026-03-31", todayDate)).toBeNull();
 
     const springRange = formatBookingAgendaTimeRange(
       "2026-03-29T00:30:00.000Z",
@@ -124,8 +111,8 @@ describe("booking agenda date helpers", () => {
   });
 
   it("finds tomorrow by calendar date across a year boundary", () => {
-    const now = Date.parse("2026-12-31T23:30:00.000Z");
-    expect(getBookingAgendaRelativeDay("2027-01-01", now, "Europe/Berlin")).toBe("today");
-    expect(getBookingAgendaRelativeDay("2027-01-02", now, "Europe/Berlin")).toBe("tomorrow");
+    const todayDate = "2027-01-01";
+    expect(getBookingAgendaRelativeDay("2027-01-01", todayDate)).toBe("today");
+    expect(getBookingAgendaRelativeDay("2027-01-02", todayDate)).toBe("tomorrow");
   });
 });

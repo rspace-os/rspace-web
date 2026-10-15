@@ -22,69 +22,58 @@ export function groupBookingsByStartDate(
   return [...groups].map(([date, dayBookings]) => ({ date, bookings: dayBookings }));
 }
 
-export function getBookingAgendaRelativeDay(date: string, now: number, timeZone: string): "today" | "tomorrow" | null {
-  const today = Temporal.PlainDate.from(getBookingAgendaTodayDate(now, timeZone));
+export function getBookingAgendaRelativeDay(date: string, todayDate: string): "today" | "tomorrow" | null {
+  const today = Temporal.PlainDate.from(todayDate);
   const agendaDate = Temporal.PlainDate.from(date);
   if (agendaDate.equals(today)) return "today";
   if (agendaDate.equals(today.add({ days: 1 }))) return "tomorrow";
   return null;
 }
 
-export function getBookingAgendaTodayDate(now: number, timeZone: string): string {
-  return Temporal.Instant.fromEpochMilliseconds(now).toZonedDateTimeISO(timeZone).toPlainDate().toString();
-}
-
 export function formatBookingAgendaDate(date: string, locale: string, currentYear: number): string {
   const plainDate = Temporal.PlainDate.from(date);
-  const options: Intl.DateTimeFormatOptions = {
+  return plainDate.toLocaleString(locale, {
     weekday: "long",
     month: "long",
     day: "numeric",
-    timeZone: "UTC",
     ...(plainDate.year === currentYear ? {} : { year: "numeric" }),
-  };
-  return new Intl.DateTimeFormat(locale, options).format(new Date(`${date}T12:00:00.000Z`));
+  });
 }
 
-function wallClockIsAmbiguous(instant: string, timeZone: string): boolean {
-  const zoned = Temporal.Instant.from(instant).toZonedDateTimeISO(timeZone);
+function wallClockIsAmbiguous(zoned: Temporal.ZonedDateTime, timeZone: string): boolean {
   const localTime = `${String(zoned.hour).padStart(2, "0")}:${String(zoned.minute).padStart(2, "0")}`;
   return resolveWallClock(zoned.toPlainDate().toString(), localTime, timeZone).kind === "ambiguous";
 }
 
-function needsOffset(start: string, end: string, timeZone: string): boolean {
-  const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
-  const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
+function needsOffset(startZoned: Temporal.ZonedDateTime, endZoned: Temporal.ZonedDateTime, timeZone: string): boolean {
   return (
     startZoned.offset !== endZoned.offset ||
-    wallClockIsAmbiguous(start, timeZone) ||
-    wallClockIsAmbiguous(end, timeZone)
+    wallClockIsAmbiguous(startZoned, timeZone) ||
+    wallClockIsAmbiguous(endZoned, timeZone)
   );
 }
 
 export function formatBookingAgendaTimeRange(start: string, end: string, timeZone: string, locale: string): string {
+  const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
+  const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
   const startDate = new Date(start);
   const endDate = new Date(end);
   const formatter = new Intl.DateTimeFormat(locale, {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
-    ...(needsOffset(start, end, timeZone) ? { timeZoneName: "shortOffset" } : {}),
+    ...(needsOffset(startZoned, endZoned, timeZone) ? { timeZoneName: "shortOffset" } : {}),
   });
   const range = `${formatter.format(startDate)}–${formatter.format(endDate)}`;
-  const startLocalDate = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone).toPlainDate();
-  const endLocalDate = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone).toPlainDate();
+  const startLocalDate = startZoned.toPlainDate();
+  const endLocalDate = endZoned.toPlainDate();
   if (startLocalDate.equals(endLocalDate)) return range;
 
-  const dateOptions: Intl.DateTimeFormatOptions = {
-    timeZone: "UTC",
+  const endDateLabel = endLocalDate.toLocaleString(locale, {
     month: "short",
     day: "numeric",
     ...(startLocalDate.year === endLocalDate.year ? {} : { year: "numeric" }),
-  };
-  const endDateLabel = new Intl.DateTimeFormat(locale, dateOptions).format(
-    new Date(`${endLocalDate.toString()}T12:00:00.000Z`),
-  );
+  });
   return `${range} · ${endDateLabel}`;
 }
 
@@ -96,7 +85,9 @@ export function formatBookingAgendaDateTime(
   locale: string,
 ): string {
   const date = new Date(value);
-  if (!needsOffset(start, end, timeZone)) {
+  const startZoned = Temporal.Instant.from(start).toZonedDateTimeISO(timeZone);
+  const endZoned = Temporal.Instant.from(end).toZonedDateTimeISO(timeZone);
+  if (!needsOffset(startZoned, endZoned, timeZone)) {
     return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone }).format(date);
   }
   return new Intl.DateTimeFormat(locale, {

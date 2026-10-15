@@ -36,28 +36,6 @@ export function UpcomingBookingsWidget({
   timeZone: string;
   asOf: number;
 }) {
-  return (
-    <UpcomingBookingsWidgetContent
-      key={requesterId}
-      requesterId={requesterId}
-      token={token}
-      timeZone={timeZone}
-      asOf={asOf}
-    />
-  );
-}
-
-function UpcomingBookingsWidgetContent({
-  requesterId,
-  token,
-  timeZone,
-  asOf,
-}: {
-  requesterId: number;
-  token: string;
-  timeZone: string;
-  asOf: number;
-}) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const asOfIso = useMemo(() => new Date(asOf).toISOString(), [asOf]);

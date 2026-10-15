@@ -158,13 +158,6 @@ export default function BookingInlineEditForm() {
     originalWindow: { start: base.start, end: base.end },
     excludedBookingId: base.id,
   });
-  const handleTimelineChange = useCallback(
-    (draft: BookingFormState["draft"], targetGlobalId: string | undefined) => {
-      draftBridge.onTimelineChange(draft, targetGlobalId);
-    },
-    [draftBridge.onTimelineChange],
-  );
-
   if (!editable(booking) || !editable(base)) return null;
 
   const blocked =
@@ -292,7 +285,7 @@ export default function BookingInlineEditForm() {
                   : undefined
             }
             onInteractionChange={draftBridge.onInteractionChange}
-            onChange={(draft) => handleTimelineChange(draft, configuration.data?.globalId)}
+            onChange={(draft) => draftBridge.onTimelineChange(draft, configuration.data?.globalId)}
           />
         </div>
       ) : null}
