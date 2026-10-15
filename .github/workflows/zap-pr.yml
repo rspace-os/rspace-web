@@ -117,6 +117,7 @@ jobs:
           rm -rf "$RS_FILE_BASE"
           mkdir -p "$RS_FILE_BASE"
 
+      # Override the dev template so ZAP exercises production CSRF and CORS behavior.
       - name: Start RSpace (jetty:run-war)
         run: |
           set -euo pipefail
@@ -128,6 +129,8 @@ jobs:
             -Dspring.profiles.active=run \
             -DreactDevMode=false \
             -Demail.enabled=false \
+            -Dcsrf.filters.enabled=true \
+            -Dapi.permissiveCors.enabled=false \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
             -Djdbc.db.maven=rspace \
             -DRS_FILE_BASE="$RS_FILE_BASE" \

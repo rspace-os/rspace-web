@@ -137,6 +137,15 @@ Security events and exceptions should be logged by a security logger
 out of a controller will be logged correctly using the
 `ControllerExceptionHandler` wired into controllers.
 
+## ZAP pull request scans
+
+The workflow in `.github/workflows/zap-pr.yml` uses the development deployment
+template for its temporary instance and seeded accounts. It overrides
+`csrf.filters.enabled=true` and `api.permissiveCors.enabled=false` when starting
+Jetty so the scan exercises production-default CSRF and CORS behavior. Keep
+these overrides when changing the scan setup, and verify that the authenticated
+scan completes with both settings in place.
+
 ## Sorting paginated listings
 
 The `orderBy` request parameter on legacy listings is bound straight onto
