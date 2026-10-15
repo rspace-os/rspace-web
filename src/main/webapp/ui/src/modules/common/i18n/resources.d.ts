@@ -1412,6 +1412,10 @@ export default interface Resources {
       "periodNavigation": "Calendar period navigation",
       "previousDay": "Previous day",
       "previousPeriod": "Previous {period}",
+      "privacy": {
+        "busy": "Busy only",
+        "full": "Full details"
+      },
       "quickFilters": {
         "legend": "Booking event quick filters",
         "mine": "My calendar"
