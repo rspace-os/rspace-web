@@ -151,6 +151,18 @@ export const bookableItemFixtures = [
   },
 ] as const;
 
+export function allDayBookableItemCandidates() {
+  return bookableItemFixtures.slice(0, 2).map((item) => ({
+    ...item,
+    timezone: "UTC",
+    openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
+      dayOfWeek,
+      start: "00:00",
+      end: "24:00",
+    })),
+  }));
+}
+
 export const sampleBookingEvents = [
   {
     id: 41,

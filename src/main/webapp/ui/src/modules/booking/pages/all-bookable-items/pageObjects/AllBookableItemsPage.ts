@@ -1,13 +1,9 @@
-import { type Locator, page, userEvent } from "vitest/browser";
-
-function css(selector: string): Locator {
-  const root = page.elementLocator(document.body) as unknown as { locator: (value: string) => Locator };
-  return root.locator(`css=${selector}`);
-}
+import { type Locator, page } from "vitest/browser";
+import { bookableItemHeading, bookableItemTarget, css } from "../../bookable-items/pageObjects/bookableItemLocators";
 
 export class AllBookableItemsPage {
-  readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Confocal microscope" });
-  readonly bookableItemDetailsTarget: Locator = page.getByText("IN123", { exact: true });
+  readonly bookableItemDetailsHeading: Locator = bookableItemHeading("Confocal microscope");
+  readonly bookableItemDetailsTarget: Locator = bookableItemTarget("IN123");
 
   get table(): Locator {
     return page.getByRole("table");
@@ -89,10 +85,6 @@ export class AllBookableItemsPage {
     this.availabilitySlice(itemName, contributorCount).element().focus();
   }
 
-  async pressEscape(): Promise<void> {
-    await userEvent.keyboard("{Escape}");
-  }
-
   availabilityDetailsRect(): DOMRect {
     return this.availabilityDetails.element().getBoundingClientRect();
   }
@@ -104,14 +96,6 @@ export class AllBookableItemsPage {
 
   availabilityDetailsBorderWidth(): string {
     return getComputedStyle(this.availabilityDetails.element()).borderTopWidth;
-  }
-
-  parentContainer(name: string): Locator {
-    return this.table.getByRole("link", { name, exact: true });
-  }
-
-  cardParentContainer(itemName: string, parentName: string): Locator {
-    return this.card(itemName).getByRole("link", { name: parentName, exact: true });
   }
 
   get effectiveTimeZone(): Locator {
