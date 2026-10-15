@@ -45,6 +45,7 @@ import {
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
+  bookingConfigurationTargetQueryKey,
   invalidateBookingCatalogueQueries,
   permanentlyDeleteBookingConfiguration,
   restoreBookingConfiguration,
@@ -159,7 +160,7 @@ export function LoadedBookableItemPage({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         setStaleEdit(true);
-        const queryKey = ["api-v2", "booking-configurations", "target", globalId];
+        const queryKey = bookingConfigurationTargetQueryKey(globalId);
         await queryClient.refetchQueries({ queryKey });
         const latest = queryClient.getQueryData<BookingConfiguration>(queryKey);
         if (latest) setConflictVersion(latest.configurationVersion);
@@ -181,7 +182,7 @@ export function LoadedBookableItemPage({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -200,7 +201,7 @@ export function LoadedBookableItemPage({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -220,7 +221,7 @@ export function LoadedBookableItemPage({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -473,11 +474,14 @@ export function LoadedBookableItemPage({
             </div>
             <div className="min-w-0 space-y-6 @2xl:sticky @2xl:top-4 @2xl:self-start">
               <BookableItemFactsAside configuration={configuration} displayTimeZone={preferences.timeZone} />
-              <BookableItemNotificationSubscription
-                configurationId={configuration.id}
-                globalId={globalId}
-                canManageNotificationSubscription={configuration.capabilities.canManageNotificationSubscription}
-              />
+              {configuration.capabilities.canManageNotificationSubscription ? (
+                <BookableItemNotificationSubscription
+                  key={`${currentUser.id}-${configuration.id}-${configuration.capabilities.canManageNotificationSubscription}`}
+                  configurationId={configuration.id}
+                  globalId={globalId}
+                  subjectId={currentUser.id}
+                />
+              ) : null}
             </div>
           </div>
         </Tabs.Root>

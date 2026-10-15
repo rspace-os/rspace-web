@@ -13,7 +13,6 @@ import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { currentUser } from "@/modules/booking/pages/mocks/currentUserFixture";
 import { createBookingSettingsRoute } from "../routes";
@@ -40,7 +39,6 @@ let adminSettingsRequests = 0;
 
 beforeEach(() => {
   adminSettingsRequests = 0;
-  server.use(oauthTokenHandler(true));
 });
 
 function answerAdminSettings(respond: () => Response) {
