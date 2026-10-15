@@ -29,6 +29,8 @@ import net.fortuna.ical4j.model.Property;
 import net.fortuna.ical4j.model.component.VEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class BookingCalendarFeedGeneratorTest {
 
@@ -61,7 +63,7 @@ class BookingCalendarFeedGeneratorTest {
     CalendarSource source =
         new CalendarSource("booking:calendar.feed.myBookings", "UTC", List.of(), true);
     byte[] bytes = generator.generate(source, SERVER, Locale.ENGLISH, 100_000);
-    Calendar parsed = new CalendarBuilder().build(new ByteArrayInputStream(bytes));
+    Calendar parsed = parse(bytes);
 
     assertTrue(parsed.getComponents(Component.VEVENT).isEmpty());
     assertEquals(1, parsed.getComponents(Component.VTIMEZONE).size());
@@ -83,7 +85,7 @@ class BookingCalendarFeedGeneratorTest {
     byte[] second = generator.generate(source, SERVER, Locale.ENGLISH, 100_000);
 
     assertArrayEquals(first, second);
-    Calendar parsed = new CalendarBuilder().build(new ByteArrayInputStream(first));
+    Calendar parsed = parse(first);
     assertFalse(parsed.getProperty(Property.METHOD).isPresent());
     assertEquals(
         "Microscope, A;\nRoom", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
@@ -119,61 +121,25 @@ class BookingCalendarFeedGeneratorTest {
     assertFalse(busyText.contains("Plate"));
   }
 
-  @Test
-  void namesDownloadedBookingAfterTheInstrument() throws Exception {
-    CalendarSource source =
-        new CalendarSource(
-            "Microscope", "UTC", List.of(event(7L, BookingPrivacy.BUSY, null, null, false)));
-
-    Calendar parsed =
-        new CalendarBuilder()
-            .build(
-                new ByteArrayInputStream(
-                    generator.generateDownload(source, SERVER, Locale.ENGLISH, 100_000)));
-
-    assertEquals(
-        "Microscope - Booking", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
-    assertEquals(
-        "Microscope - Booking",
-        parsed
-            .<VEvent>getComponents(Component.VEVENT)
-            .get(0)
-            .getProperty(Property.SUMMARY)
-            .orElseThrow()
-            .getValue());
-  }
-
-  @Test
-  void namesDownloadedMaintenanceAfterTheInstrument() throws Exception {
+  @ParameterizedTest
+  @CsvSource({"BOOKING, Booking", "MAINTENANCE, Maintenance"})
+  void namesDownloadedEventsAfterTheInstrument(BookingEventKind kind, String label)
+      throws Exception {
+    BookingPrivacy privacy =
+        kind == BookingEventKind.MAINTENANCE ? BookingPrivacy.FULL : BookingPrivacy.BUSY;
+    String createdBy = kind == BookingEventKind.MAINTENANCE ? "Ada (ada)" : null;
     CalendarSource source =
         new CalendarSource(
             "Microscope",
             "UTC",
             List.of(
-                event(
-                    7L,
-                    BookingEventKind.MAINTENANCE,
-                    BookingPrivacy.FULL,
-                    "Ada (ada)",
-                    null,
-                    true)));
+                event(7L, kind, privacy, createdBy, null, kind == BookingEventKind.MAINTENANCE)));
 
-    Calendar parsed =
-        new CalendarBuilder()
-            .build(
-                new ByteArrayInputStream(
-                    generator.generateDownload(source, SERVER, Locale.ENGLISH, 100_000)));
+    Calendar parsed = parse(generator.generateDownload(source, SERVER, Locale.ENGLISH, 100_000));
 
-    assertEquals(
-        "Microscope - Maintenance", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
-    assertEquals(
-        "Microscope - Maintenance",
-        parsed
-            .<VEvent>getComponents(Component.VEVENT)
-            .get(0)
-            .getProperty(Property.SUMMARY)
-            .orElseThrow()
-            .getValue());
+    String expected = "Microscope - " + label;
+    assertEquals(expected, parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
+    assertEquals(expected, firstEventSummary(parsed));
   }
 
   @Test
@@ -208,21 +174,10 @@ class BookingCalendarFeedGeneratorTest {
     CalendarSource source =
         new CalendarSource("booking:calendar.feed.myBookings", "UTC", List.of(event), true);
 
-    Calendar parsed =
-        new CalendarBuilder()
-            .build(
-                new ByteArrayInputStream(
-                    generator.generate(source, SERVER, Locale.ENGLISH, 100_000)));
+    Calendar parsed = parse(generator.generate(source, SERVER, Locale.ENGLISH, 100_000));
 
     assertEquals("My RSpace bookings", parsed.getProperty("X-WR-CALNAME").orElseThrow().getValue());
-    assertEquals(
-        "Confocal microscope - Booking",
-        parsed
-            .<VEvent>getComponents(Component.VEVENT)
-            .get(0)
-            .getProperty(Property.SUMMARY)
-            .orElseThrow()
-            .getValue());
+    assertEquals("Confocal microscope - Booking", firstEventSummary(parsed));
   }
 
   @Test
@@ -234,19 +189,9 @@ class BookingCalendarFeedGeneratorTest {
     CalendarSource single = new CalendarSource("Microscope", "UTC", List.of(event));
 
     VEvent multiEvent =
-        new CalendarBuilder()
-            .build(
-                new ByteArrayInputStream(
-                    generator.generate(multi, SERVER, Locale.ENGLISH, 100_000)))
-            .<VEvent>getComponents(Component.VEVENT)
-            .get(0);
+        firstEvent(parse(generator.generate(multi, SERVER, Locale.ENGLISH, 100_000)));
     VEvent singleEvent =
-        new CalendarBuilder()
-            .build(
-                new ByteArrayInputStream(
-                    generator.generate(single, SERVER, Locale.ENGLISH, 100_000)))
-            .<VEvent>getComponents(Component.VEVENT)
-            .get(0);
+        firstEvent(parse(generator.generate(single, SERVER, Locale.ENGLISH, 100_000)));
 
     assertEquals(multiEvent, singleEvent);
     assertEquals(
@@ -285,5 +230,17 @@ class BookingCalendarFeedGeneratorTest {
 
   private static Date date(String value) {
     return Date.from(Instant.parse(value));
+  }
+
+  private static Calendar parse(byte[] bytes) throws Exception {
+    return new CalendarBuilder().build(new ByteArrayInputStream(bytes));
+  }
+
+  private static VEvent firstEvent(Calendar calendar) {
+    return calendar.<VEvent>getComponents(Component.VEVENT).get(0);
+  }
+
+  private static String firstEventSummary(Calendar calendar) {
+    return firstEvent(calendar).getProperty(Property.SUMMARY).orElseThrow().getValue();
   }
 }

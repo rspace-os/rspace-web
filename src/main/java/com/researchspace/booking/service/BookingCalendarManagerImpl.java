@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 import org.apache.shiro.authz.AuthorizationException;
@@ -393,7 +394,8 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       if (subscription.isPresent()) {
         BookableItemCalendarSubscription value = subscription.get();
         User owner = value.getUser();
-        if (!active(owner) || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)) {
+        if (!BookingDisplayPreferencesManagerImpl.active(owner)
+            || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)) {
           SECURITY_LOG.debug(
               "Booking calendar subscription [{}] is currently unavailable", value.getId());
           return new NotFound();
@@ -433,7 +435,8 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       }
       UserBookingCalendarSubscription value = userSubscription.get();
       User owner = value.getUser();
-      if (!active(owner) || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)) {
+      if (!BookingDisplayPreferencesManagerImpl.active(owner)
+          || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)) {
         SECURITY_LOG.debug(
             "User booking calendar subscription [{}] is currently unavailable", value.getId());
         return new NotFound();
@@ -501,24 +504,11 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
       return Optional.empty();
     }
-    var instrument =
-        instrumentDao.getBookingSummaries(java.util.Set.of(target.id())).get(target.id());
+    var instrument = instrumentDao.getBookingSummaries(Set.of(target.id())).get(target.id());
     if (instrument == null || instrument.deleted()) {
       return Optional.empty();
     }
-    CalendarEvent event =
-        new CalendarEvent(
-            booking.getId(),
-            booking.getStartTime(),
-            booking.getEndTime(),
-            booking.getCreatedAt(),
-            booking.getUpdatedAt(),
-            booking.getKind(),
-            booking.getPrivacy(),
-            booking.getVisibleBookedBy(),
-            booking.getVisibleCreatedBy(),
-            booking.getVisiblePurpose(),
-            booking.isCanEdit());
+    CalendarEvent event = CalendarEvent.of(booking, null);
     return Optional.of(
         new CalendarSource(instrument.name(), configuration.getTimeZone(), List.of(event)));
   }
@@ -581,13 +571,9 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   }
 
   private static void requireActiveUser(User user) {
-    if (!active(user)) {
+    if (!BookingDisplayPreferencesManagerImpl.active(user)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
-  }
-
-  private static boolean active(User user) {
-    return user != null && user.isEnabled() && !user.isAccountLocked();
   }
 
   static URI validatedBaseUrl(String configured) {

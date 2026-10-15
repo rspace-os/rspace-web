@@ -166,7 +166,7 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
     }
   }
 
-  private static boolean active(User user) {
+  static boolean active(User user) {
     return user != null && user.isEnabled() && !user.isAccountLocked();
   }
 }

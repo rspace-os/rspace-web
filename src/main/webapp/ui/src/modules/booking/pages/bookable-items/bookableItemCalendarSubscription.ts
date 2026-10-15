@@ -133,9 +133,9 @@ export async function revokeUserCalendarSubscription(token: string): Promise<voi
 }
 
 export function toWebcalUrl(feedUrl: string): string {
-  if (feedUrl.startsWith("https://")) return `webcal://${feedUrl.slice("https://".length)}`;
-  if (feedUrl.startsWith("http://")) return `webcal://${feedUrl.slice("http://".length)}`;
-  throw new Error("Calendar subscription URL must use HTTP or HTTPS");
+  const webcalUrl = feedUrl.replace(/^https?:\/\//, "webcal://");
+  if (webcalUrl === feedUrl) throw new Error("Calendar subscription URL must use HTTP or HTTPS");
+  return webcalUrl;
 }
 
 export function calendarApplicationUrls(feedUrl: string): {

@@ -42,9 +42,12 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,6 +56,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 
 class BookingCalendarManagerTest {
@@ -60,6 +65,9 @@ class BookingCalendarManagerTest {
   private static final long CONFIGURATION_ID = 11L;
   private static final long BOOKING_ID = 42L;
   private static final String RAW_TOKEN = "A".repeat(43);
+  private static final URI SERVER_BASE_URI = URI.create("https://rspace.example/context");
+  private static final String FEED_URL =
+      "https://rspace.example/context/public/booking/calendars/feed.ics";
 
   private BookingCalendarSubscriptionDao subscriptionDao;
   private BookingConfigurationDao configurationDao;
@@ -91,7 +99,7 @@ class BookingCalendarManagerTest {
     configuration.setId(CONFIGURATION_ID);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 101L));
     configuration.setResourceAccess(
-        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, owner, new java.util.Date()));
+        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, owner, new Date()));
     when(properties.getServerUrl()).thenReturn("https://rspace.example/context");
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(true);
     when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.of(configuration));
@@ -128,7 +136,7 @@ class BookingCalendarManagerTest {
 
     ArgumentCaptor<BookableItemCalendarSubscription> saved =
         ArgumentCaptor.forClass(BookableItemCalendarSubscription.class);
-    org.mockito.Mockito.verify(subscriptionDao).saveAndFlush(saved.capture());
+    verify(subscriptionDao).saveAndFlush(saved.capture());
     String storedHash = saved.getValue().getTokenHash();
     assertEquals(RAW_TOKEN, saved.getValue().getRawToken());
     assertEquals(64, storedHash.length());
@@ -211,24 +219,21 @@ class BookingCalendarManagerTest {
     assertSame(owner, saved.getValue().getUser());
     assertEquals(RAW_TOKEN, saved.getValue().getRawToken());
     assertEquals(64, saved.getValue().getTokenHash().length());
-    assertEquals(
-        "https://rspace.example/context/public/booking/calendars/feed.ics?token=" + RAW_TOKEN,
-        created.subscriptionUrl());
+    assertEquals(FEED_URL + "?token=" + RAW_TOKEN, created.subscriptionUrl());
   }
 
   @Test
   void userSubscriptionTokenGeneratesTheOwnersCrossItemSource() throws Exception {
     UserBookingCalendarSubscription subscription =
         new UserBookingCalendarSubscription(
-            owner, CryptoUtils.hashToken(RAW_TOKEN), RAW_TOKEN, new java.util.Date());
+            owner, CryptoUtils.hashToken(RAW_TOKEN), RAW_TOKEN, new Date());
     CalendarSource source =
         new CalendarSource("booking:calendar.feed.myBookings", "UTC", List.of(), true);
-    java.util.Date refreshedAt = new java.util.Date(1234L);
+    Date refreshedAt = new Date(1234L);
     when(subscriptionDao.findByTokenHash(any())).thenReturn(Optional.empty());
     when(userSubscriptionDao.findByTokenHash(any())).thenReturn(Optional.of(subscription));
     when(bookingManager.getUserCalendarSource(owner, refreshedAt, 100)).thenReturn(source);
-    when(generator.generate(
-            source, URI.create("https://rspace.example/context"), Locale.ENGLISH, 10_000))
+    when(generator.generate(source, SERVER_BASE_URI, Locale.ENGLISH, 10_000))
         .thenReturn(new byte[] {4, 5});
 
     BookingCalendarManager.Available result =
@@ -247,29 +252,20 @@ class BookingCalendarManagerTest {
     BookingCalendarManager.Status status = manager.status(CONFIGURATION_ID, owner, owner);
 
     assertTrue(status.active());
-    assertEquals(
-        "https://rspace.example/context/public/booking/calendars/feed.ics?token=previous",
-        status.subscriptionUrl());
+    assertEquals(FEED_URL + "?token=previous", status.subscriptionUrl());
   }
 
-  @Test
-  void statusAndCreateConcealAMissingOrUnreadableConfiguration() {
-    when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.empty());
-    when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.empty());
-    when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.empty());
-
-    assertThrows(
-        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.status(CONFIGURATION_ID, owner, owner));
-    assertThrows(
-        BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
-        () -> manager.createOrRotate(CONFIGURATION_ID, owner, owner, "\"inactive\""));
-  }
-
-  @Test
-  void statusAndCreateConcealAConfigurationWithoutBookingAccess() {
-    when(accessManager.resolve(configuration.getResourceAccess(), owner))
-        .thenReturn(ResolvedResourceAccess.none());
+  @ParameterizedTest
+  @EnumSource(ConcealedConfiguration.class)
+  void statusAndCreateConcealMissingOrUnreadableConfigurations(ConcealedConfiguration scenario) {
+    if (scenario == ConcealedConfiguration.MISSING) {
+      when(configurationDao.getSafeNull(CONFIGURATION_ID)).thenReturn(Optional.empty());
+      when(configurationDao.lockActiveById(CONFIGURATION_ID)).thenReturn(Optional.empty());
+      when(configurationDao.lockById(CONFIGURATION_ID)).thenReturn(Optional.empty());
+    } else {
+      when(accessManager.resolve(configuration.getResourceAccess(), owner))
+          .thenReturn(ResolvedResourceAccess.none());
+    }
 
     assertThrows(
         BookingCalendarManagerImpl.BookingCalendarNotFoundException.class,
@@ -326,12 +322,11 @@ class BookingCalendarManagerTest {
   void validFeedUsesTheOwnersCurrentSourceAndRequestedLocale() throws Exception {
     BookableItemCalendarSubscription subscription = subscription();
     CalendarSource source = new CalendarSource("Microscope", "UTC", List.of());
-    java.util.Date refreshedAt = new java.util.Date(1234L);
+    Date refreshedAt = new Date(1234L);
     when(subscriptionDao.findByTokenHash(any())).thenReturn(Optional.of(subscription));
     when(bookingManager.getCalendarSource(CONFIGURATION_ID, owner, refreshedAt, 100))
         .thenReturn(Optional.of(source));
-    when(generator.generate(
-            source, URI.create("https://rspace.example/context"), Locale.FRENCH, 10_000))
+    when(generator.generate(source, SERVER_BASE_URI, Locale.FRENCH, 10_000))
         .thenReturn(new byte[] {1, 2, 3});
 
     BookingCalendarManager.Available result =
@@ -349,18 +344,15 @@ class BookingCalendarManagerTest {
     owner.setEnabled(false);
 
     assertInstanceOf(
-        BookingCalendarManager.NotFound.class,
-        manager.feed(RAW_TOKEN, Locale.ENGLISH, new java.util.Date()));
+        BookingCalendarManager.NotFound.class, manager.feed(RAW_TOKEN, Locale.ENGLISH, new Date()));
     owner.setEnabled(true);
     when(bookingManager.getCalendarSource(eq(CONFIGURATION_ID), eq(owner), any(), eq(100)))
         .thenReturn(Optional.empty());
     assertInstanceOf(
-        BookingCalendarManager.NotFound.class,
-        manager.feed(RAW_TOKEN, Locale.ENGLISH, new java.util.Date()));
+        BookingCalendarManager.NotFound.class, manager.feed(RAW_TOKEN, Locale.ENGLISH, new Date()));
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
     assertInstanceOf(
-        BookingCalendarManager.NotFound.class,
-        manager.feed(RAW_TOKEN, Locale.ENGLISH, new java.util.Date()));
+        BookingCalendarManager.NotFound.class, manager.feed(RAW_TOKEN, Locale.ENGLISH, new Date()));
     verify(subscriptionDao, never()).removeForUserAndConfiguration(any(), any());
   }
 
@@ -373,8 +365,7 @@ class BookingCalendarManagerTest {
     when(subscriptionDao.findByTokenHash(any())).thenReturn(Optional.of(subscription));
     when(bookingManager.getCalendarSource(eq(CONFIGURATION_ID), eq(owner), any(), eq(100)))
         .thenReturn(Optional.of(source));
-    when(generator.generate(
-            source, URI.create("https://rspace.example/context"), Locale.ENGLISH, 10_000))
+    when(generator.generate(source, SERVER_BASE_URI, Locale.ENGLISH, 10_000))
         .thenAnswer(
             invocation -> {
               generationEntered.countDown();
@@ -384,12 +375,12 @@ class BookingCalendarManagerTest {
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     Future<BookingCalendarManager.FeedResult> first =
-        executor.submit(() -> manager.feed(RAW_TOKEN, Locale.ENGLISH, new java.util.Date()));
+        executor.submit(() -> manager.feed(RAW_TOKEN, Locale.ENGLISH, new Date()));
     try {
       assertTrue(generationEntered.await(5, TimeUnit.SECONDS));
       assertInstanceOf(
           BookingCalendarManager.AtCapacity.class,
-          manager.feed(RAW_TOKEN, Locale.ENGLISH, new java.util.Date()));
+          manager.feed(RAW_TOKEN, Locale.ENGLISH, new Date()));
       releaseGeneration.countDown();
       assertInstanceOf(BookingCalendarManager.Available.class, first.get(5, TimeUnit.SECONDS));
     } finally {
@@ -410,15 +401,14 @@ class BookingCalendarManagerTest {
 
     assertInstanceOf(
         BookingCalendarManager.Oversized.class,
-        manager.feed(RAW_TOKEN, Locale.ENGLISH, new java.util.Date()));
+        manager.feed(RAW_TOKEN, Locale.ENGLISH, new Date()));
   }
 
   @Test
   void unexpectedFeedFailureIsUnavailableRatherThanConcealedAsMissing() {
     when(subscriptionDao.findByTokenHash(any())).thenThrow(new IllegalStateException());
 
-    BookingCalendarManager.FeedResult result =
-        manager.feed(RAW_TOKEN, java.util.Locale.ENGLISH, new java.util.Date());
+    BookingCalendarManager.FeedResult result = manager.feed(RAW_TOKEN, Locale.ENGLISH, new Date());
 
     assertInstanceOf(BookingCalendarManager.Oversized.class, result);
   }
@@ -428,10 +418,7 @@ class BookingCalendarManagerTest {
     TimeSlotBooking booking = confirmedBooking();
     stubDownload(booking, "Confocal Microscope!", "Europe/Berlin");
     when(generator.generateDownload(
-            any(CalendarSource.class),
-            eq(URI.create("https://rspace.example/context")),
-            eq(Locale.FRENCH),
-            eq(10_000)))
+            any(CalendarSource.class), eq(SERVER_BASE_URI), eq(Locale.FRENCH), eq(10_000)))
         .thenReturn(new byte[] {1, 2, 3});
 
     BookingCalendarManager.Download download =
@@ -455,6 +442,7 @@ class BookingCalendarManagerTest {
     verify(generator).generateDownload(generated.capture(), any(), any(), eq(10_000));
     assertEquals(1, generated.getValue().events().size());
     assertEquals(BOOKING_ID, generated.getValue().events().get(0).id());
+    assertNull(generated.getValue().events().get(0).itemName());
     assertEquals("Microscope", generated.getValue().itemName());
   }
 
@@ -463,7 +451,7 @@ class BookingCalendarManagerTest {
     TimeSlotBooking booking = confirmedBooking();
     stubDownload(booking, "Microscope", "UTC");
     when(accessManager.resolve(configuration.getResourceAccess(), owner))
-        .thenReturn(new ResolvedResourceAccess(Optional.empty(), java.util.Set.of(), List.of()));
+        .thenReturn(ResolvedResourceAccess.none());
 
     assertTrue(manager.download(BOOKING_ID, owner, Locale.ENGLISH).isEmpty());
 
@@ -500,36 +488,36 @@ class BookingCalendarManagerTest {
     booking.setBookingConfiguration(configuration);
     booking.setRequester(owner);
     booking.setState(BookingState.CONFIRMED);
-    booking.setStartTime(java.util.Date.from(Instant.parse("2026-09-12T23:30:00Z")));
-    booking.setEndTime(java.util.Date.from(Instant.parse("2026-09-13T01:30:00Z")));
+    booking.setStartTime(Date.from(Instant.parse("2026-09-12T23:30:00Z")));
+    booking.setEndTime(Date.from(Instant.parse("2026-09-13T01:30:00Z")));
     return booking;
   }
 
   private void stubDownload(TimeSlotBooking booking, String itemName, String timeZone) {
     configuration.setTimeZone(timeZone);
     when(bookingManager.getBooking(BOOKING_ID, owner)).thenReturn(Optional.of(booking));
-    when(instrumentDao.getBookingSummaries(java.util.Set.of(101L)))
+    when(instrumentDao.getBookingSummaries(Set.of(101L)))
         .thenReturn(
-            java.util.Map.of(
-                101L, new InstrumentReadSummary(101L, itemName, false, null, null, null)));
+            Map.of(101L, new InstrumentReadSummary(101L, itemName, false, null, null, null)));
   }
 
   private BookableItemCalendarSubscription subscription() {
     return new BookableItemCalendarSubscription(
-        configuration,
-        owner,
-        CryptoUtils.hashToken("previous"),
-        "previous",
-        new java.util.Date(1000L));
+        configuration, owner, CryptoUtils.hashToken("previous"), "previous", new Date(1000L));
   }
 
   private static ResolvedResourceAccess ownerAccess() {
     return new ResolvedResourceAccess(
         Optional.of(BookingResourceRoleScheme.OWNER),
-        java.util.Set.of(
+        Set.of(
             BookingResourceRoleScheme.READ_RESOURCE,
             BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION,
             BookingResourceRoleScheme.MANAGE_ALL_EVENTS),
         List.of());
+  }
+
+  private enum ConcealedConfiguration {
+    MISSING,
+    UNREADABLE
   }
 }
