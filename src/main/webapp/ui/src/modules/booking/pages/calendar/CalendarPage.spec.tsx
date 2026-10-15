@@ -700,7 +700,7 @@ describe("Calendar page", () => {
           return HttpResponse.json({ status: 412, code: "errors.api.v2.preconditionFailed" }, { status: 412 });
         }
         serverBooking = { ...serverBooking, ...payload, version: serverBooking.version + 1 };
-        return HttpResponse.json(serverBooking);
+        return HttpResponse.json({ ...serverBooking, cancellationReason: null });
       }),
     );
     render(<CalendarPageStory history={history} />);
