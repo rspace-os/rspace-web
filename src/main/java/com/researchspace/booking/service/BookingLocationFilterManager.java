@@ -3,7 +3,6 @@ package com.researchspace.booking.service;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingLocationResource;
-import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.ResourceRequest;
 import java.util.Map;
 import java.util.Set;
@@ -20,15 +19,12 @@ import java.util.Set;
 public interface BookingLocationFilterManager {
 
   /**
-   * Returns {@code filter} with every {@code location} and {@code location.value} comparison
-   * replaced by an equivalent target comparison, preserving the Boolean structure.
+   * Returns {@code request} with every {@code location} and {@code location.value} comparison in
+   * its caller filter replaced by an equivalent target comparison, preserving Boolean structure.
    *
    * @throws com.researchspace.model.collection.CollectionQueryException when a location comparison
    *     would name more items than one query may bind
    */
-  FilterExpression resolveLocations(FilterExpression filter, User caller);
-
-  /** As {@link #resolveLocations(FilterExpression, User)}, for a request's caller filter. */
   ResourceRequest resolveLocations(ResourceRequest request, User caller);
 
   /** A request with its location filters resolved, and a trusted restriction to AND with it. */

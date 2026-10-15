@@ -102,36 +102,23 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
       String targetPath,
       String name,
       AccessConstraints constraints) {
-    return switch (comparison.operator()) {
-      case EQUAL, IN ->
-          locationQuery.readableParent(
-              caller,
-              targetPath,
-              containerIds(comparison),
-              true,
-              name,
-              constraints.read(),
-              constraints.edit());
-      case NOT_EQUAL, NOT_IN ->
-          locationQuery.readableParent(
-              caller,
-              targetPath,
-              containerIds(comparison),
-              false,
-              name,
-              constraints.read(),
-              constraints.edit());
-      default ->
-          locationQuery.readableParent(
-              caller,
-              targetPath,
-              null,
-              Boolean.TRUE.equals(comparison.values().get(0)),
-              name,
-              constraints.read(),
-              constraints.edit());
-    };
+    ParentMatch match =
+        switch (comparison.operator()) {
+          case EQUAL, IN -> new ParentMatch(containerIds(comparison), true);
+          case NOT_EQUAL, NOT_IN -> new ParentMatch(containerIds(comparison), false);
+          default -> new ParentMatch(null, Boolean.TRUE.equals(comparison.values().get(0)));
+        };
+    return locationQuery.readableParent(
+        caller,
+        targetPath,
+        match.containerIds(),
+        match.includes(),
+        name,
+        constraints.read(),
+        constraints.edit());
   }
+
+  private record ParentMatch(Set<Long> containerIds, boolean includes) {}
 
   private AccessConstraints accessConstraints(User caller) {
     if (caller == null || !caller.isEnabled() || caller.isAccountLocked()) {
@@ -152,8 +139,7 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
     return List.of(filter);
   }
 
-  @Override
-  public FilterExpression resolveLocations(FilterExpression filter, User caller) {
+  private FilterExpression resolveLocations(FilterExpression filter, User caller) {
     if (filter == null || !mentionsLocation(filter)) {
       return filter;
     }

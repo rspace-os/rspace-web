@@ -8,7 +8,6 @@ import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -23,8 +22,8 @@ import java.util.Optional;
  * <p>Free time is the window's part inside the item's opening hours, less every counted confirmed
  * event widened by the item's buffers. Opening hours are resolved per date in the item's scheduling
  * time zone through {@link BookingSchedulingSettings#effectiveHours(int)}, with the wall-clock
- * rules of {@link BookingSchedulingPolicyImpl}. Maintenance always counts as busy; bookings do
- * unless the item allows double booking.
+ * rules of {@link BookingSchedulingPolicy}. Maintenance always counts as busy; bookings do unless
+ * the item allows double booking.
  */
 final class BookingCurrentAvailability {
 
@@ -91,9 +90,7 @@ final class BookingCurrentAvailability {
 
   /** A scheduling-zone wall-clock boundary; {@code 24:00} is the next date's start of day. */
   private static Instant boundary(LocalDate date, String time, ZoneId zone) {
-    return BookingSchedulingSettings.END_OF_DAY.equals(time)
-        ? date.plusDays(1).atStartOfDay(zone).toInstant()
-        : date.atTime(LocalTime.parse(time)).atZone(zone).toInstant();
+    return BookingSchedulingPolicy.openingEnd(time, date, zone);
   }
 
   /** Counted events widened by the item's buffers and clipped to {@code [start, end)}. */

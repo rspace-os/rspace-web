@@ -108,12 +108,12 @@ export type CatalogueAvailability = "available-now" | "free-later-today";
 /** Today's availability window `[start, end)` in the display time zone, and the instant to classify. */
 export type CatalogueAvailabilityWindow = { start: string; end: string; now: string };
 
-export const BookingCatalogueAvailabilityCountsSchema = v.object({
+const BookingCatalogueAvailabilityCountsSchema = v.object({
   availableNow: v.number(),
   freeLaterToday: v.number(),
 });
 
-export type BookingCatalogueAvailabilityCounts = v.InferOutput<typeof BookingCatalogueAvailabilityCountsSchema>;
+type BookingCatalogueAvailabilityCounts = v.InferOutput<typeof BookingCatalogueAvailabilityCountsSchema>;
 
 function appendAll(parameters: URLSearchParams, name: string, values: readonly string[] | undefined) {
   for (const value of values ?? []) parameters.append(name, value);

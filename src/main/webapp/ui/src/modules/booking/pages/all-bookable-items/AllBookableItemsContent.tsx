@@ -55,6 +55,7 @@ function AllBookableItemsContentForUser({
     failedBulkAction,
     selectionPending,
     setFailedBulkAction,
+    rows,
     ...data
   } = useAllBookableItemsData({
     clock,

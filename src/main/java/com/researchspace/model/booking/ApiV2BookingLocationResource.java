@@ -97,10 +97,5 @@ public final class ApiV2BookingLocationResource {
     return new FilterExpression.Comparison("target.value", Operator.IN, List.of(-1L), false);
   }
 
-  private static OpenApiSchemaDocumentation documentation(
-      String title, String description, String example) {
-    return OpenApiSchemaDocumentation.of(title, description, example);
-  }
-
   private ApiV2BookingLocationResource() {}
 }

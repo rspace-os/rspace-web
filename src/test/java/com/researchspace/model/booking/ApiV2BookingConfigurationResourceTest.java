@@ -307,11 +307,11 @@ class ApiV2BookingConfigurationResourceTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION,
+                ApiV2InstrumentResource.DESCRIPTION,
                 com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION));
 
     Map<String, Object> rendered =
-        new ResourceRenderer(registry)
+        new ResourceRenderer(REGISTRY)
             .render(
                 configuration,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
@@ -338,11 +338,11 @@ class ApiV2BookingConfigurationResourceTest {
             List.of(
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION,
+                ApiV2InstrumentResource.DESCRIPTION,
                 com.researchspace.inventory.model.ApiV2ContainerResource.DESCRIPTION));
 
     Map<String, Object> rendered =
-        new ResourceRenderer(registry)
+        new ResourceRenderer(REGISTRY)
             .render(
                 configuration,
                 ApiV2BookingConfigurationResource.DESCRIPTION,

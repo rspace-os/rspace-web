@@ -114,7 +114,7 @@ const requiresTraining = [
 const definitions = [...hazardClass, ...requiresTraining];
 
 /** An unconfigured instrument the story user could set up, so Administration offers Add. */
-export const eligibleBookingTargetFixture = {
+const eligibleBookingTargetFixture = {
   id: 950,
   globalId: "IN950",
   name: "Unconfigured spectrometer",
