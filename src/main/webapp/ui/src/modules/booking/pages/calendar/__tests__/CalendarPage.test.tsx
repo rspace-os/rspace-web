@@ -2,9 +2,10 @@ import "@/__tests__/__mocks__/matchMedia";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { server } from "@/__tests__/mswServer";
+import { cataloguePage as creationCataloguePage } from "@/modules/booking/creation/__tests__/creationTestFixtures";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import {
   bookableItemFixtures,
@@ -13,13 +14,8 @@ import {
 } from "../../bookable-items/mocks/bookableItemsMocks";
 import { busyBooking, collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
-import {
-  renderCalendar,
-  restoreCalendarScrollTo,
-  setupCalendarBookableItems,
-  setupCalendarScrollTo,
-} from "./calendarPageTestUtils";
-import { currentUser } from "./calendarTestHarness";
+import { restoreCalendarScrollTo, setupCalendarBookableItems, setupCalendarScrollTo } from "./calendarPageTestUtils";
+import { renderCalendar } from "./calendarTestHarness";
 
 // 2026-08-17 is a Monday.
 const closedOnMonday = { openingHours: bookableItemFixtures[0].openingHours.filter((entry) => entry.dayOfWeek !== 1) };
@@ -43,15 +39,7 @@ function catalogueItem(item: (typeof bookableItemFixtures)[number], overrides: R
 }
 
 function cataloguePage(items: readonly Record<string, unknown>[]) {
-  return { items, page: 1, pageSize: 20, total: items.length, facets: { types: ["INSTRUMENT"] } };
-}
-
-/** nuqs reads `window.location`, not the router's memory history, so seed both. */
-async function renderCalendarAt(url: string) {
-  const previous = window.location.href;
-  window.history.replaceState(null, "", url);
-  onTestFinished(() => window.history.replaceState(null, "", previous));
-  return renderCalendar(url);
+  return { ...creationCataloguePage([], 1, items.length), items };
 }
 
 beforeAll(() => setupCalendarScrollTo());
@@ -61,13 +49,9 @@ afterAll(() => restoreCalendarScrollTo());
 describe("CalendarPage", () => {
   it("keeps the view and layout in the query string so a reload reopens them", async () => {
     const user = userEvent.setup();
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))),
-    );
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))));
 
-    await renderCalendarAt("/booking/calendar?layout=time-grid&view=week");
+    await renderCalendar("/booking/calendar?layout=time-grid&view=week");
 
     expect(await screen.findByRole("button", { name: "Time grid" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
@@ -77,13 +61,9 @@ describe("CalendarPage", () => {
   });
 
   it("opens the week when a link asks for Month in Resources", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))),
-    );
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))));
 
-    await renderCalendarAt("/booking/calendar?view=month");
+    await renderCalendar("/booking/calendar?view=month");
 
     expect(await screen.findByRole("button", { name: "Resources" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "Week" })).toHaveAttribute("aria-pressed", "true");
@@ -211,8 +191,6 @@ describe("CalendarPage", () => {
   it("keeps viewer events visible while disabling resource creation", async () => {
     const item = bookableItemFixtures[0];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", () =>
         HttpResponse.json({
@@ -250,8 +228,6 @@ describe("CalendarPage", () => {
   it("shades a closed weekday for read-only viewers in the Resources and Time grid day views", async () => {
     const item = bookableItemFixtures[0];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", () =>
         HttpResponse.json({
@@ -293,8 +269,6 @@ describe("CalendarPage", () => {
     const [confocal, electron] = bookableItemFixtures;
     const catalogueWheres: (string | null)[] = [];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", ({ request }) => {
         const where = new URL(request.url).searchParams.get("where");
@@ -303,7 +277,7 @@ describe("CalendarPage", () => {
         return HttpResponse.json(cataloguePage(where === "target==IN123" ? items.slice(0, 1) : items));
       }),
     );
-    await renderCalendarAt("/booking/calendar?date=2026-08-17&calendar-resources.where=target%3D%3DIN123");
+    await renderCalendar("/booking/calendar?date=2026-08-17&calendar-resources.where=target%3D%3DIN123");
 
     await waitFor(() => expect(screen.getAllByTestId("day-timeline-closed-hours")).toHaveLength(1));
     expect(catalogueWheres.at(-1)).toBe("target==IN123");
@@ -317,8 +291,6 @@ describe("CalendarPage", () => {
   it("does not shade the Time grid when several items are in scope", async () => {
     const [confocal, electron] = bookableItemFixtures;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
       http.get("/api/v2/booking-catalogue/calendar", () =>
         HttpResponse.json(
@@ -326,7 +298,7 @@ describe("CalendarPage", () => {
         ),
       ),
     );
-    await renderCalendarAt("/booking/calendar?date=2026-08-17&calendar-resources.where=target%3Din%3D(IN123%2CIN124)");
+    await renderCalendar("/booking/calendar?date=2026-08-17&calendar-resources.where=target%3Din%3D(IN123%2CIN124)");
 
     // Both rows have loaded, each with its closed Monday.
     await waitFor(() => expect(screen.getAllByTestId("day-timeline-closed-hours")).toHaveLength(2));
@@ -341,8 +313,6 @@ describe("CalendarPage", () => {
   it("keeps closure shading for a read-only row and offers it no booking or configuration action", async () => {
     const [confocal, electron] = bookableItemFixtures;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))),
       http.get("/api/v2/booking-catalogue/calendar", () =>
         HttpResponse.json(

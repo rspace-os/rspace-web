@@ -188,9 +188,6 @@ export function BookingEventsCalendar({
     : resourceConfigurations?.length === 1 && resourceRowCount === 1
       ? resourceConfigurations[0]
       : undefined;
-  const changeMine = (next: boolean) => onMineChange?.(next);
-  const changeMyItems = (next: boolean) => onMyItemsChange?.(next);
-
   const filterControls = (
     <CalendarFilterControls
       date={date}
@@ -259,19 +256,19 @@ export function BookingEventsCalendar({
               label: t("calendar.quickFilters.mine"),
               icon: <CalendarCheck2Icon aria-hidden="true" />,
               pressed: mineOnly,
-              onClick: () => changeMine(!mineOnly),
+              onClick: () => onMineChange?.(!mineOnly),
             },
             {
               id: "my-items",
               label: t("calendar.quickFilters.myItems"),
               icon: <PackageCheckIcon aria-hidden="true" />,
               pressed: myItemsOnly,
-              onClick: () => changeMyItems(!myItemsOnly),
+              onClick: () => onMyItemsChange?.(!myItemsOnly),
             },
           ],
           onReset: () => {
-            changeMine(false);
-            changeMyItems(false);
+            onMineChange?.(false);
+            onMyItemsChange?.(false);
             onControlsReset();
           },
         }}

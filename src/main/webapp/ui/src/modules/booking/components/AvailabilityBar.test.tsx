@@ -1,15 +1,9 @@
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { renderInRouter } from "@/__tests__/helpers/renderInRouter";
 import type { AvailabilitySource } from "@/modules/booking/domain/availability";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 
@@ -60,14 +54,9 @@ async function renderRoutedAvailabilityBar(props: Partial<React.ComponentProps<t
   const root = createRootRoute({ component: Outlet });
   const index = createRoute({ getParentRoute: () => root, path: "/", component: () => availabilityBar(props) });
   const details = createRoute({ getParentRoute: () => root, path: "/booking/calendar/bookings/$id" });
-  const router = createRouter({
-    routeTree: root.addChildren([index, details]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
-  });
-  return {
-    ...(await renderWithRealI18n(<RouterProvider router={router as never} />, { resources, defaultNS: "booking" })),
-    router,
-  };
+  return renderInRouter(root.addChildren([index, details]), (ui) =>
+    renderWithRealI18n(ui, { resources, defaultNS: "booking" }),
+  );
 }
 
 describe("AvailabilityBar", () => {
@@ -320,10 +309,10 @@ describe("AvailabilityBar", () => {
       );
       const dialog = await screen.findByRole("dialog");
       const disclosure = within(dialog).getByLabelText(
-        `Show details for ${kind === "BOOKING" ? "Confocal microscope" : "Maintenance blockout"}, 09:00–10:00`,
+        `Show details for ${kind === "BOOKING" ? "Confocal microscope" : "Maintenance"}, 09:00–10:00`,
       );
       expect(
-        within(dialog).getByText(kind === "BOOKING" ? "Booked by Ada Lovelace (ada)" : "Maintenance blockout"),
+        within(dialog).getByText(kind === "BOOKING" ? "Booked by Ada Lovelace (ada)" : "Maintenance"),
       ).toBeVisible();
       await user.click(disclosure);
 
