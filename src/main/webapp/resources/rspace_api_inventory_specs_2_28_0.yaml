@@ -6177,7 +6177,7 @@ components:
     InventoryBulkOperationRecordResult:
       description: >
         The outcome for one row (or for the template): the record it created, or the error that
-        stopped it. Exactly one of the two is set.
+        stopped it. In an import result, exactly one of the two is set.
       type: object
       properties:
         record:
