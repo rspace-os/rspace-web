@@ -1,28 +1,16 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import { getMaintenanceStatus } from "@/modules/maintenance/queries";
 
 describe("getMaintenanceStatus", () => {
-  const envelope = (docs: Array<{ canUserLoginNow: boolean }>) => ({
-    docs,
-    totalDocs: docs.length,
-    limit: 1,
-    page: 1,
-    pagingCounter: 1,
-    totalPages: docs.length === 0 ? 0 : 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
-  });
-
   it("reports 'in-progress' while maintenance is active", async () => {
     let capturedRequest: Request | undefined;
     server.use(
       http.get("/api/v2/maintenances", ({ request }) => {
         capturedRequest = request;
-        return HttpResponse.json(envelope([{ canUserLoginNow: false }]));
+        return HttpResponse.json(v2ListEnvelope([{ canUserLoginNow: false }]));
       }),
     );
 
@@ -37,12 +25,12 @@ describe("getMaintenanceStatus", () => {
   it.each([
     {
       name: "reports 'clear' once maintenance is over",
-      response: () => HttpResponse.json(envelope([{ canUserLoginNow: true }])),
+      response: () => HttpResponse.json(v2ListEnvelope([{ canUserLoginNow: true }])),
       expected: "clear",
     },
     {
       name: "reports 'clear' when no maintenance window remains",
-      response: () => HttpResponse.json(envelope([])),
+      response: () => HttpResponse.json(v2ListEnvelope([])),
       expected: "clear",
     },
     {

@@ -117,7 +117,6 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
           className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
         >
           <BellIcon />
-          <span className="sr-only">{t("appBar.notifications")}</span>
         </a>
         <AccessibilityTips />
         <AccountMenu currentUser={currentUser} bannerImageUrl={config.branding.bannerImageUrl} />

@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { createElement, Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { currentUserResponse } from "@/__tests__/helpers/currentUserResponse";
 import { server } from "@/__tests__/mswServer";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { getCurrentUser, useCurrentUserEventSync, useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -12,31 +13,6 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 }));
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
-
-const currentUserResponse = {
-  id: 123,
-  username: "ada",
-  email: "ada@example.com",
-  firstName: "Ada",
-  lastName: "Lovelace",
-  homeFolderId: 456,
-  workbenchId: 789,
-  hasPiRole: true,
-  hasSysAdminRole: false,
-  profileImageUrl: null,
-  profileImageApiUrl: "/api/v2/users/me/profile-image",
-  orcid: { available: true, id: null },
-  capabilities: {
-    canUseInventory: true,
-    canPublish: false,
-    canViewSystem: false,
-  },
-  livechat: { enabled: true, serverKey: "server-key" },
-  session: {
-    operatedAs: false,
-    lastSession: null,
-  },
-};
 
 beforeEach(() => {
   mockedUseOauthTokenQuery.mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);

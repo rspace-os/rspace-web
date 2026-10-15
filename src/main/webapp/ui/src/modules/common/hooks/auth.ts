@@ -1,8 +1,9 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import {
   fetchOauthToken,
+  isPublicDocumentView,
   mintUiToken,
   saveStoredToken,
   secondsToExpiry,
@@ -23,15 +24,15 @@ export function tokenRefreshInterval(token?: string): number | false {
   return Math.min(2_147_483_647, Math.max(1_000, secondsUntilRefresh * 1_000));
 }
 
+const LegacyOauthTokenSchema = v.object({ data: v.string() });
+const RestApiV2OauthTokenSchema = v.object({ accessToken: v.string() });
+
 /**
  * Fetches a new OAuth token from the server.
  * This is used internally by the useOauthTokenQuery hook.
  */
-const LegacyOauthTokenSchema = v.object({ data: v.string() });
-const RestApiV2OauthTokenSchema = v.object({ accessToken: v.string() });
-
 export async function fetchToken(useRestApiV2 = false): Promise<string> {
-  const legacyUrl = document.getElementById("public_document_view")
+  const legacyUrl = isPublicDocumentView()
     ? "/public/publicView/userform/ajax/inventoryOauthToken"
     : "/userform/ajax/inventoryOauthToken";
   const response = await fetch(useRestApiV2 ? "/api/v2/oauth/tokens" : legacyUrl, {
@@ -87,8 +88,11 @@ export async function fetchToken(useRestApiV2 = false): Promise<string> {
  * the token value from the query result without worrying about staleness.
  */
 export function useOauthTokenQuery(options: { useRestApiV2?: boolean } = {}) {
-  const useRestApiV2 = options.useRestApiV2 ?? document.getElementById("public_document_view") === null;
-  return useSuspenseQuery({
+  return useSuspenseQuery(oauthTokenQueryOptions(options.useRestApiV2 ?? !isPublicDocumentView()));
+}
+
+export function oauthTokenQueryOptions(useRestApiV2: boolean) {
+  return queryOptions({
     queryKey: queryKeys.oauthToken(useRestApiV2),
     queryFn: async () => {
       // V2 tokens are bound to the current run-as identity and its rotating browser-session
