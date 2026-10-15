@@ -730,7 +730,7 @@ public final class ApiV2OpenApiGenerator {
               CollectionQueryLimits.MAX_SORT_FIELDS));
       parameters.add(sort);
       parameters.add(pageParameter());
-      parameters.add(limitParameter());
+      parameters.add(limitParameter("Maximum documents per page."));
     }
     if (operation == ResourceOperation.COUNT
         || operation == ResourceOperation.BULK_UPDATE
@@ -1056,7 +1056,7 @@ public final class ApiV2OpenApiGenerator {
         "One-based page number.");
   }
 
-  private static Map<String, Object> limitParameter() {
+  private static Map<String, Object> limitParameter(String description) {
     return parameter(
         "limit",
         "query",
@@ -1070,7 +1070,7 @@ public final class ApiV2OpenApiGenerator {
             CollectionQueryLimits.MAX_PAGE_SIZE,
             "default",
             20),
-        "Maximum documents per page.");
+        description);
   }
 
   private static Map<String, Object> responses(
@@ -1587,13 +1587,11 @@ public final class ApiV2OpenApiGenerator {
             + "partial audit data. eventId is deterministic response identity, not a source-log "
             + "signature.");
     result.put("tags", List.of(resource.resourceName()));
-    result.put("security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    result.put("security", AUTHENTICATED_SECURITY);
     result.put(
         "x-rspace-access",
-        ordered(
-            "description",
+        operationAccessExtension(
             "Authenticated callers who can read the resource.",
-            "denialReasonCodes",
             List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
     result.put("parameters", auditParameters(resource.description().schema(), count));
     result.put("responses", auditResponses(count));
@@ -1664,28 +1662,8 @@ public final class ApiV2OpenApiGenerator {
                   "type", "string", "pattern", "^[0-9a-f]{64}$", "minLength", 64, "maxLength", 64),
               "Fingerprint returned by page one. Supply it unchanged together with snapshotDate"
                   + " on later pages."));
-      parameters.add(
-          parameter(
-              "page",
-              "query",
-              false,
-              ordered("type", "integer", "minimum", 1, "default", 1),
-              "One-based page number."));
-      parameters.add(
-          parameter(
-              "limit",
-              "query",
-              false,
-              ordered(
-                  "type",
-                  "integer",
-                  "minimum",
-                  1,
-                  "maximum",
-                  CollectionQueryLimits.MAX_PAGE_SIZE,
-                  "default",
-                  20),
-              "Maximum events per page."));
+      parameters.add(pageParameter());
+      parameters.add(limitParameter("Maximum events per page."));
     }
     return parameters;
   }

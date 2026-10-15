@@ -4,10 +4,11 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditDomain;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
+import lombok.With;
 
 /** One event from the RSpace audit trail. */
 public record ApiV2AuditEvent(
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minLength = 64, maxLength = 64)
+    @With @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minLength = 64, maxLength = 64)
         String eventId,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED, format = "date-time") String timestamp,
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String username,

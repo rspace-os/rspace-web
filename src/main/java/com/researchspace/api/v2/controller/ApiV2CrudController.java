@@ -14,7 +14,6 @@ import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceDeleteOptions;
 import com.researchspace.api.v2.resource.ResourceDeleteResult;
 import com.researchspace.api.v2.resource.ResourceOperation;
-import com.researchspace.model.User;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
@@ -91,8 +90,8 @@ public class ApiV2CrudController {
             fieldsets,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller)));
-    return registration.list(request, subject(caller));
+            registration.runtimeFieldContext(ApiV2ControllerSupport.subject(caller)));
+    return registration.list(request, ApiV2ControllerSupport.subject(caller));
   }
 
   /**
@@ -116,7 +115,7 @@ public class ApiV2CrudController {
     requireNamespace(registration, namespace);
     RuntimeFieldCatalogQuery query = catalogQuery(search, ids, page, limit);
     RuntimeFieldCatalogPage catalog =
-        registration.runtimeFieldCatalog(subject(caller), namespace, query);
+        registration.runtimeFieldCatalog(ApiV2ControllerSupport.subject(caller), namespace, query);
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("fields", catalog.fields().stream().map(ApiV2CrudController::catalogEntry).toList());
     body.put("hasMore", catalog.hasMore());
@@ -195,8 +194,8 @@ public class ApiV2CrudController {
             where,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller))),
-        subject(caller));
+            registration.runtimeFieldContext(ApiV2ControllerSupport.subject(caller))),
+        ApiV2ControllerSupport.subject(caller));
   }
 
   @GetMapping("/{resource}/{id}")
@@ -219,8 +218,8 @@ public class ApiV2CrudController {
                 fieldsets,
                 registration.description(),
                 registration.registry(),
-                registration.runtimeFieldContext(subject(caller))),
-            subject(caller));
+                registration.runtimeFieldContext(ApiV2ControllerSupport.subject(caller))),
+            ApiV2ControllerSupport.subject(caller));
     return okWithDocumentEtag(registration, document);
   }
 
@@ -277,7 +276,7 @@ public class ApiV2CrudController {
             where,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller))),
+            registration.runtimeFieldContext(ApiV2ControllerSupport.subject(caller))),
         body,
         caller);
   }
@@ -332,12 +331,12 @@ public class ApiV2CrudController {
             where,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller))),
+            registration.runtimeFieldContext(ApiV2ControllerSupport.subject(caller))),
         caller);
   }
 
   private ApiV2ResourceRegistration<?, ?> requireResource(String name) {
-    return resources.find(name).orElseThrow(NotFoundException::new);
+    return ApiV2ControllerSupport.requireResource(resources, name);
   }
 
   /**
@@ -368,9 +367,5 @@ public class ApiV2CrudController {
     if (errors != null && errors.hasErrors()) {
       throw new BindException(errors);
     }
-  }
-
-  private static User subject(ApiV2Caller caller) {
-    return caller == null ? null : caller.subject();
   }
 }

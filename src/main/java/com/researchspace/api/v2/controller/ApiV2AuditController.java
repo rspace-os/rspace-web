@@ -7,12 +7,9 @@ import com.researchspace.api.v2.model.ApiV2AuditQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.resource.ApiV2AuditLog;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
-import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
-import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
-import jakarta.ws.rs.NotFoundException;
 import java.util.Date;
 import java.util.Set;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -49,7 +46,11 @@ public final class ApiV2AuditController {
       BindingResult errors)
       throws BindException {
     throwBindExceptionIfErrors(errors);
-    return auditLog.search(requireResource(resource), id, query, subject(caller));
+    return auditLog.search(
+        ApiV2ControllerSupport.requireResource(resources, resource),
+        id,
+        query,
+        ApiV2ControllerSupport.subject(caller));
   }
 
   @GetMapping("/{resource}/{id}/audit/count")
@@ -69,20 +70,18 @@ public final class ApiV2AuditController {
     query.setPage(1);
     query.setLimit(1);
     return new ApiV2CountResult(
-        auditLog.search(requireResource(resource), id, query, subject(caller)).totalDocs());
-  }
-
-  private ApiV2ResourceRegistration<?, ?> requireResource(String name) {
-    return resources.find(name).orElseThrow(NotFoundException::new);
+        auditLog
+            .search(
+                ApiV2ControllerSupport.requireResource(resources, resource),
+                id,
+                query,
+                ApiV2ControllerSupport.subject(caller))
+            .totalDocs());
   }
 
   private static void throwBindExceptionIfErrors(BindingResult errors) throws BindException {
     if (errors != null && errors.hasErrors()) {
       throw new BindException(errors);
     }
-  }
-
-  private static User subject(ApiV2Caller caller) {
-    return caller == null ? null : caller.subject();
   }
 }
