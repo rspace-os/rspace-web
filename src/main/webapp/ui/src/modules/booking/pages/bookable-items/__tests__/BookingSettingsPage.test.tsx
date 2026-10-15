@@ -1,39 +1,13 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-import {
-  DEFAULT_SCHEDULING_SETTINGS,
-  SchedulingSettingsSchema,
-  validMaximumBookingDuration,
-} from "@/modules/booking/configuration/schedulingSettings";
-import { validOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
-import BookingSettingsPage from "../BookingSettingsPage";
-import { bookingSettingsFixture } from "./bookingSettingsFixture";
+import { bookingSettingsFixture, renderBookingSettingsPage } from "./bookingSettingsTestHarness";
 
-const settings = {
-  ...bookingSettingsFixture,
-  incrementUnit: "MINUTES" as const,
-  alignToIncrement: true,
-  bufferBeforeMinutes: 3,
-  bufferAfterMinutes: 7,
-  state: "ACTIVE" as const,
-};
-
-function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <BookingSettingsPage />
-      </Suspense>
-    </QueryClientProvider>,
-  );
-}
+const settings = { ...bookingSettingsFixture, state: "ACTIVE" as const };
 
 describe("BookingSettingsPage", () => {
   it.each([
@@ -55,7 +29,7 @@ describe("BookingSettingsPage", () => {
           return HttpResponse.json(current);
         }),
       );
-      renderPage();
+      renderBookingSettingsPage();
 
       expect(
         await screen.findByRole("radio", { name: `booking:preferences.timeFormat.${initialLabel}` }),
@@ -94,7 +68,7 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json({ status: 409, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 409 });
       }),
     );
-    renderPage(queryClient);
+    renderBookingSettingsPage(queryClient);
     const doubleBooking = await screen.findByRole("checkbox", {
       name: "booking:settings.fields.allowDoubleBooking",
     });
@@ -122,14 +96,13 @@ describe("BookingSettingsPage", () => {
     let current = settings;
     let submitted: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         submitted = await request.json();
         return HttpResponse.json({ ...current, allowDoubleBooking: true, configurationVersion: 2 });
       }),
     );
-    renderPage(queryClient);
+    renderBookingSettingsPage(queryClient);
     within(await screen.findByRole("group", { name: "Monday" })).getByLabelText("booking:settings.fields.openingEnd");
     current = {
       ...settings,
@@ -157,13 +130,12 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let current = settings;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
       http.patch("/api/v2/booking-settings/admin", () =>
         HttpResponse.json({ status: 409, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 409 }),
       ),
     );
-    renderPage();
+    renderBookingSettingsPage();
     await user.click(await screen.findByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
     const closes = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
       "booking:settings.fields.openingEnd",
@@ -196,7 +168,6 @@ describe("BookingSettingsPage", () => {
     });
     let loads = 0;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", async () => {
         loads += 1;
         if (loads > 1) await responseReady;
@@ -206,7 +177,7 @@ describe("BookingSettingsPage", () => {
         HttpResponse.json({ status: 409, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 409 }),
       ),
     );
-    renderPage();
+    renderBookingSettingsPage();
     const doubleBooking = await screen.findByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" });
     await user.click(doubleBooking);
     const save = screen.getByRole("button", { name: "booking:settings.actions.save" });
@@ -228,56 +199,6 @@ describe("BookingSettingsPage", () => {
     expect(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" })).not.toBeChecked();
   });
 
-  it("allows closing at 24:00 after any valid start", () => {
-    expect(validOpeningHours("00:00", "24:00")).toBe(true);
-    expect(validOpeningHours("08:00", "24:00")).toBe(true);
-    expect(validOpeningHours("24:00", "24:00")).toBe(false);
-  });
-
-  it("defaults to every weekday open with no exceptions", () => {
-    expect(DEFAULT_SCHEDULING_SETTINGS).toMatchObject({
-      openingHours: [1, 2, 3, 4, 5, 6, 7]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-        .filter((entry) => [1, 2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
-    });
-    expect(v.safeParse(SchedulingSettingsSchema, DEFAULT_SCHEDULING_SETTINGS).success).toBe(true);
-  });
-
-  it.each([
-    ["no open days", [], "openingHours"],
-    ["duplicate weekdays", [1, 1].map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" })), "openingHours"],
-    ["an out-of-range weekday", [{ dayOfWeek: 8, start: "09:00", end: "17:00" }], "openingHours.0.dayOfWeek"],
-    ["a reversed interval", [{ dayOfWeek: 2, start: "16:00", end: "10:00" }], "openingHours.0.end"],
-  ])("rejects scheduling settings with %s", (_, openingHours, path) => {
-    const result = v.safeParse(SchedulingSettingsSchema, { ...DEFAULT_SCHEDULING_SETTINGS, openingHours });
-    expect(result.success).toBe(false);
-    expect(result.issues?.map((issue) => v.getDotPath(issue))).toEqual([path]);
-  });
-
-  it("accepts 24:00 in an exception after a non-midnight start", () => {
-    const result = v.safeParse(SchedulingSettingsSchema, {
-      ...DEFAULT_SCHEDULING_SETTINGS,
-      openingHours: DEFAULT_SCHEDULING_SETTINGS.openingHours.map(
-        (entry) =>
-          [{ dayOfWeek: 2, start: "08:00", end: "24:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
-      ),
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it("submits only the supplied open weekdays", () => {
-    const output = v.parse(SchedulingSettingsSchema, {
-      ...DEFAULT_SCHEDULING_SETTINGS,
-      openingHours: DEFAULT_SCHEDULING_SETTINGS.openingHours
-        .filter((entry) => [1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek))
-        .map(
-          (entry) =>
-            [{ dayOfWeek: 2, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
-        ),
-    });
-    expect(output.openingHours).toEqual([{ dayOfWeek: 1, start: "00:00", end: "24:00" }]);
-  });
-
   it("shows full-day closing as 00:00 while preserving the 24:00 API value", async () => {
     const user = userEvent.setup();
     let submitted: Record<string, unknown> | undefined;
@@ -286,14 +207,13 @@ describe("BookingSettingsPage", () => {
       openingHours: settings.openingHours.map((entry) => ({ ...entry, start: "00:00", end: "24:00" })),
     };
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(fullDaySettings)),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         submitted = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json(fullDaySettings);
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const openingEnd = within(await screen.findByRole("group", { name: "Monday" })).getByLabelText(
       "booking:settings.fields.openingEnd",
@@ -314,27 +234,6 @@ describe("BookingSettingsPage", () => {
     });
   });
 
-  it("validates maximum duration against the selected increment", () => {
-    const minutes = (slotGranularityMinutes: number) => ({ slotGranularityMinutes, incrementUnit: "MINUTES" as const });
-    expect(validMaximumBookingDuration(0, minutes(5))).toBe(true);
-    expect(validMaximumBookingDuration(60, minutes(5))).toBe(true);
-    expect(validMaximumBookingDuration(7, minutes(5))).toBe(false);
-  });
-
-  it("offers every supported increment unit", async () => {
-    server.use(http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)));
-    renderPage();
-
-    const units = await screen.findByRole("group", { name: "booking:settings.fields.incrementUnit" });
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementMinutes" })).toBeVisible();
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementHours" })).toBeVisible();
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementDays" })).toBeVisible();
-    expect(within(units).getByRole("button", { name: "booking:settings.fields.incrementMinutes" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-  });
-
   it("does not submit an invalid maximum duration", async () => {
     const user = userEvent.setup();
     let patches = 0;
@@ -345,7 +244,7 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json(settings);
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const maximum = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.maximumDuration",
@@ -371,7 +270,7 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json({ ...settings, allowDoubleBooking: true, configurationVersion: 1 });
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const buffer = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.buffer",
@@ -422,7 +321,7 @@ describe("BookingSettingsPage", () => {
         return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 });
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     const buffer = await screen.findByRole("spinbutton", {
       name: "booking:settings.fields.buffer",
@@ -442,14 +341,13 @@ describe("BookingSettingsPage", () => {
     const user = userEvent.setup();
     let body: Record<string, unknown> | undefined;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/booking-settings/admin", () => HttpResponse.json({ ...settings, timeFormat: "H12" })),
       http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>;
         return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 });
       }),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     expect(await screen.findByRole("radio", { name: "booking:preferences.timeFormat.twelveHour" })).toBeChecked();
     expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeDisabled();
@@ -475,7 +373,7 @@ describe("BookingSettingsPage", () => {
         ),
       ),
     );
-    renderPage();
+    renderBookingSettingsPage();
 
     await user.click(
       await screen.findByRole("checkbox", {
@@ -502,7 +400,6 @@ describe("BookingSettingsPage", () => {
     function serve(initial: typeof settings = settings) {
       const submitted: Record<string, unknown>[] = [];
       server.use(
-        oauthTokenHandler(true),
         http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(initial)),
         http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
           const body = (await request.json()) as Record<string, unknown>;
@@ -518,7 +415,7 @@ describe("BookingSettingsPage", () => {
     it("shows seven independent rows and saves one-day edits immediately", async () => {
       const user = userEvent.setup();
       const submitted = serve();
-      renderPage();
+      renderBookingSettingsPage();
       await screen.findByRole("group", { name: "Monday" });
       const list = screen.getByRole("list", { name: "booking:bookableItemDetails.fields.openingHours" });
       expect(within(list).getAllByRole("listitem")).toHaveLength(7);
@@ -538,7 +435,7 @@ describe("BookingSettingsPage", () => {
     it("retains a closed day's unsaved hours and starts a newly enabled day all day", async () => {
       const user = userEvent.setup();
       serve({ ...settings, openingHours: settings.openingHours.filter((entry) => entry.dayOfWeek !== 7) });
-      renderPage();
+      renderBookingSettingsPage();
       await screen.findByRole("group", { name: "Monday" });
       const start = within(dayHours("Tuesday")).getByLabelText("booking:settings.fields.openingStart");
       await user.clear(start);
@@ -556,7 +453,7 @@ describe("BookingSettingsPage", () => {
     it("submits closed days by omission and rejects an empty week", async () => {
       const user = userEvent.setup();
       const submitted = serve();
-      renderPage();
+      renderBookingSettingsPage();
       await screen.findByRole("group", { name: "Monday" });
       for (const day of ["Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]) {
         await user.click(screen.getByRole("checkbox", { name: day }));

@@ -41,9 +41,7 @@ describe("openingWindowsOnDate", () => {
     expect(
       openingWindowsOnDate("2026-09-25", "America/Los_Angeles", {
         ...tokyo,
-        openingHours: tokyo.openingHours.filter((entry) =>
-          [1, 2, 3, 4, 5, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
-        ),
+        openingHours: tokyo.openingHours.filter((entry) => entry.dayOfWeek !== 6),
       }),
     ).toEqual([]);
   });

@@ -13,16 +13,11 @@ import { BookableItemPicker } from "@/modules/booking/creation/BookableItemPicke
 import { BookingFormAlerts } from "@/modules/booking/creation/BookingFormAlerts";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { timelinePolicy, unrestrictedTimelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
 import { todayInTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import type { IncrementSettings } from "@/modules/booking/domain/bookingIncrement";
-import {
-  ALL_ISO_WEEKDAYS,
-  ALWAYS_OPEN,
-  coversInterval,
-  type OpeningSchedule,
-} from "@/modules/booking/domain/bookingOpeningHours";
+import { ALL_ISO_WEEKDAYS, coversInterval } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingTimeFormat,
   type BookingWindowDraft,
@@ -32,7 +27,7 @@ import {
   isPlainDate,
   sameDraft,
   sameTimeZone,
-  wallClockDraftFromInstants,
+  wallClockEndpointFromInstant,
   wallClockInstant,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
@@ -53,7 +48,6 @@ import {
   endpointTimezones,
   type ResolvedBookingWindow,
   resolveBookingWindow,
-  UNRESTRICTED_INCREMENT,
   validateBookingWindow,
   ZonedBookingWindowFields,
 } from "./ZonedBookingWindowFields";
@@ -97,10 +91,6 @@ function openingHoursSummary(
       { type: "unit" },
     ),
   });
-}
-
-function openingSchedule({ openingHours }: OpeningSchedule): OpeningSchedule {
-  return { openingHours };
 }
 
 function purposeFields(eventKind: BookingEventKind) {
@@ -202,19 +192,10 @@ function emptyDraft(date = ""): BookingWindowDraft {
   return { startDate: date, startTime: "", endDate: date, endTime: "" };
 }
 
-function wallClockEndpoint(instant: string, timezone: string) {
-  const {
-    startDate: date,
-    startTime: time,
-    startOccurrence: occurrence,
-  } = wallClockDraftFromInstants(instant, instant, timezone);
-  return { date, time, occurrence };
-}
-
 function draftFromInstants(start: string, end: string, timezones: EndpointTimezones): BookingWindowDraft {
   const zones = endpointTimezones(timezones);
-  const startValue = wallClockEndpoint(start, zones.start);
-  const endValue = wallClockEndpoint(end, zones.end);
+  const startValue = wallClockEndpointFromInstant(start, zones.start);
+  const endValue = wallClockEndpointFromInstant(end, zones.end);
   return {
     startDate: startValue.date,
     startTime: startValue.time,
@@ -236,23 +217,14 @@ function convertDraft(draft: BookingWindowDraft, from: EndpointTimezones, to: En
   const { start, end } = resolveBookingWindow(draft, source);
   const startInstant = wallClockInstant(start, draft.startOccurrence);
   const endInstant = wallClockInstant(end, draft.endOccurrence);
-  const startValue = startInstant ? wallClockEndpoint(startInstant, destination.start) : undefined;
-  const endValue = endInstant ? wallClockEndpoint(endInstant, destination.end) : undefined;
+  const startValue = startInstant ? wallClockEndpointFromInstant(startInstant, destination.start) : undefined;
+  const endValue = endInstant ? wallClockEndpointFromInstant(endInstant, destination.end) : undefined;
   return {
     ...draft,
     ...(startValue
       ? { startDate: startValue.date, startTime: startValue.time, startOccurrence: startValue.occurrence }
       : {}),
     ...(endValue ? { endDate: endValue.date, endTime: endValue.time, endOccurrence: endValue.occurrence } : {}),
-  };
-}
-/** The target's increment rule; maintenance and an unselected target are unrestricted. */
-function incrementSettings(eventKind: BookingEventKind, target: BookableItemOption | undefined): IncrementSettings {
-  if (eventKind === "MAINTENANCE" || !target) return UNRESTRICTED_INCREMENT;
-  return {
-    slotGranularityMinutes: target.slotGranularityMinutes,
-    incrementUnit: target.incrementUnit,
-    alignToIncrement: target.alignToIncrement,
   };
 }
 export function BookingForm(props: BookingFormProps) {
@@ -279,6 +251,7 @@ export function BookingForm(props: BookingFormProps) {
   const formTimezone = timezoneChoice ?? displayTimezone;
   const endFormTimezone = endTimezoneChoice ?? formTimezone;
   const formTimezones = useMemo(() => ({ start: formTimezone, end: endFormTimezone }), [formTimezone, endFormTimezone]);
+  const policy = target ? timelinePolicy(target, eventKind) : unrestrictedTimelinePolicy(formTimezone);
   const originalDraft =
     props.mode === "edit" ? draftFromInstants(props.booking.start, props.booking.end, formTimezones) : undefined;
   const addDraft = initialWindow
@@ -337,18 +310,8 @@ export function BookingForm(props: BookingFormProps) {
   const allowPolicyMismatch = Boolean(originalDraft && sameDraft(draft, originalDraft));
   const enteredWindow = useMemo(() => resolveBookingWindow(draft, formTimezones).window, [draft, formTimezones]);
   const window = useMemo(
-    () =>
-      target
-        ? validateBookingWindow(draft, formTimezones, {
-            schedulingTimezone: target.timezone,
-            ...incrementSettings(eventKind, target),
-            maxBookingDurationMinutes: eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes,
-            ...(eventKind === "MAINTENANCE" ? ALWAYS_OPEN : openingSchedule(target)),
-            enforceOpeningHours: eventKind !== "MAINTENANCE",
-            allowPolicyMismatch,
-          }).window
-        : undefined,
-    [draft, formTimezones, target, eventKind, allowPolicyMismatch],
+    () => (target ? validateBookingWindow(draft, formTimezones, { ...policy, allowPolicyMismatch }).window : undefined),
+    [draft, formTimezones, target, policy, allowPolicyMismatch],
   );
   const selectTarget = (next: BookableItemOption | undefined) => {
     props.onTargetChange?.(next);
@@ -434,11 +397,7 @@ export function BookingForm(props: BookingFormProps) {
         displayTimezone={formTimezones.start}
         endTimezone={formTimezones.end}
         onTimezoneChange={props.fixedTimezone ? undefined : changeTimezone}
-        schedulingTimezone={target?.timezone ?? formTimezone}
-        {...incrementSettings(eventKind, target)}
-        maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : (target?.maxBookingDurationMinutes ?? 0)}
-        {...(eventKind === "MAINTENANCE" || !target ? ALWAYS_OPEN : openingSchedule(target))}
-        enforceOpeningHours={Boolean(target) && eventKind !== "MAINTENANCE"}
+        {...policy}
         value={draft}
         onChange={(next) => {
           props.onDraftChange?.(convertDraft(next, formTimezones, displayTimezone), target?.globalId);

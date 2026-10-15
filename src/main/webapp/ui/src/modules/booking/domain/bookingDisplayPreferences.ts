@@ -5,7 +5,7 @@ import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { bookingApiV2Headers, bookingApiV2JsonHeaders } from "./apiV2";
 import { parseApiV2Problem, requireSuccess } from "./booking";
-import { OpeningHoursEndSchema, OpeningHoursStartSchema } from "./bookingOpeningHours";
+import { minuteOfWallTime, OpeningHoursEndSchema, OpeningHoursStartSchema } from "./bookingOpeningHours";
 import type { BookingTimeFormat } from "./bookingTime";
 
 export const BookingTimezoneModeSchema = v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]);
@@ -54,8 +54,14 @@ export const BookingDisplayPreferencesInputSchema = v.pipe(
     ...BookingDisplayPreferencesEntries,
     timeFormat: v.optional(BookingTimeFormatSchema),
   }),
-  v.forward(v.check(hasValidAvailabilityWindow), ["availabilityWindowEnd"]),
-  v.forward(v.check(hasValidCustomTimezone), ["customTimezone"]),
+  v.forward(
+    v.check((document) => hasValidAvailabilityWindow(document)),
+    ["availabilityWindowEnd"],
+  ),
+  v.forward(
+    v.check((document) => hasValidCustomTimezone(document)),
+    ["customTimezone"],
+  ),
 );
 
 export type BookingDisplayPreferencesDocument = v.InferInput<typeof BookingDisplayPreferencesDocumentSchema>;
@@ -103,6 +109,14 @@ export async function fetchBookingDisplayPreferences(
   return parseOrThrow(BookingDisplayPreferencesDocumentSchema, (await response.json()) as unknown);
 }
 
+/** Query options for callers that need the display preferences document directly. */
+export function bookingDisplayPreferencesQueryOptions(token: string) {
+  return {
+    queryKey: bookingDisplayPreferencesQueryKey,
+    queryFn: ({ signal }: { signal: AbortSignal }) => fetchBookingDisplayPreferences(token, signal),
+  } as const;
+}
+
 export async function replaceBookingDisplayPreferences(
   input: BookingDisplayPreferencesInput,
   token: string,
@@ -124,9 +138,7 @@ export async function resetBookingDisplayPreferences(token: string): Promise<voi
 }
 
 export function minuteOfDay(value: string): number {
-  if (value === "24:00") return 24 * 60;
-  const [hour, minute] = value.split(":").map(Number);
-  return hour * 60 + minute;
+  return minuteOfWallTime(value);
 }
 
 export function isValidTimeZone(value: string): boolean {

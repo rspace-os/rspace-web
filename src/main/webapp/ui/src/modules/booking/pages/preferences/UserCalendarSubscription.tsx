@@ -3,7 +3,7 @@ import { faGoogle } from "@fortawesome/free-brands-svg-icons/faGoogle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarIcon, CheckIcon, CopyIcon } from "lucide-react";
-import { type Ref, useEffect, useRef, useState } from "react";
+import { type Ref, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
@@ -45,17 +45,35 @@ export function UserCalendarSubscription({ token }: { token: string }) {
     queryFn: ({ signal }) => fetchUserCalendarSubscriptionStatus(token, signal),
     retry: false,
   });
-  const resetCopy = () => {
+  const subscriptionUrl = status.data?.subscriptionUrl ?? null;
+  const beginChange = useCallback(() => {
     setClipboardError(false);
-  };
+    setLinkFeedback(null);
+    focusTarget.current = null;
+    focusOrigin.current = document.activeElement;
+  }, []);
+  const resolveCreateButton = useCallback(
+    () => (status.isSuccess && subscriptionUrl === null ? createButtonRef.current : null),
+    [status.isSuccess, subscriptionUrl],
+  );
+  const focusTargetAfterRefetch = useCallback((refreshed: Awaited<ReturnType<typeof status.refetch>>) => {
+    if (refreshed.isSuccess && refreshed.data.subscriptionUrl === null) return "create" as const;
+    if (refreshed.isError) return "retry" as const;
+    return "calendar" as const;
+  }, []);
+  const restoreFocusIfUnmoved = useCallback((target: HTMLElement | null) => {
+    if (target) {
+      const active = document.activeElement;
+      if (!focusOrigin.current || active === focusOrigin.current || active === document.body) target.focus();
+    }
+    focusTarget.current = null;
+    focusOrigin.current = null;
+  }, []);
   const create = useMutation({
     mutationFn: () => createUserCalendarSubscription(token),
     retry: false,
     onMutate: () => {
-      resetCopy();
-      setLinkFeedback(null);
-      focusTarget.current = null;
-      focusOrigin.current = document.activeElement;
+      beginChange();
       // A fresh link supersedes any earlier replace conflict.
       rotate.reset();
     },
@@ -73,10 +91,7 @@ export function UserCalendarSubscription({ token }: { token: string }) {
     },
     retry: false,
     onMutate: () => {
-      resetCopy();
-      setLinkFeedback(null);
-      focusTarget.current = null;
-      focusOrigin.current = document.activeElement;
+      beginChange();
       dialogRestoresFocus.current = true;
     },
     onSuccess: async (rotated) => {
@@ -88,14 +103,9 @@ export function UserCalendarSubscription({ token }: { token: string }) {
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 409) {
         const refreshed = await status.refetch();
-        if (refreshed.isSuccess && refreshed.data.subscriptionUrl === null) {
-          setLinkFeedback("disconnected");
-          focusTarget.current = "create";
-        } else if (refreshed.isError) {
-          focusTarget.current = "retry";
-        } else {
-          focusTarget.current = "calendar";
-        }
+        const nextFocus = focusTargetAfterRefetch(refreshed);
+        if (nextFocus === "create") setLinkFeedback("disconnected");
+        focusTarget.current = nextFocus;
         return;
       }
       focusTarget.current = "calendar";
@@ -105,15 +115,10 @@ export function UserCalendarSubscription({ token }: { token: string }) {
   const revoke = useMutation({
     mutationFn: () => revokeUserCalendarSubscription(token),
     retry: false,
-    onMutate: () => {
-      resetCopy();
-      setLinkFeedback(null);
-      focusTarget.current = null;
-      focusOrigin.current = document.activeElement;
-    },
+    onMutate: beginChange,
     onSuccess: async () => {
       await queryClient.cancelQueries({ queryKey: userCalendarSubscriptionQueryKey, exact: true });
-      resetCopy();
+      setClipboardError(false);
       rotate.reset();
       if (status.data) {
         queryClient.setQueryData(userCalendarSubscriptionQueryKey, {
@@ -124,43 +129,41 @@ export function UserCalendarSubscription({ token }: { token: string }) {
         });
       }
       const refreshed = await status.refetch();
-      if (refreshed.isSuccess && refreshed.data.subscriptionUrl === null) {
-        focusTarget.current = "create";
-        setLinkFeedback("disconnected");
-      } else if (refreshed.isError) {
-        focusTarget.current = "retry";
-      } else {
-        focusTarget.current = "calendar";
-      }
+      const nextFocus = focusTargetAfterRefetch(refreshed);
+      focusTarget.current = nextFocus;
+      if (nextFocus === "create") setLinkFeedback("disconnected");
     },
   });
-  const subscriptionUrl = status.data?.subscriptionUrl ?? null;
   const pending = create.isPending || rotate.isPending || revoke.isPending;
   const rotateConflict = rotate.error instanceof ApiV2ProblemError && rotate.error.status === 409;
 
   useEffect(() => {
     if (confirmingReplace || pending || dialogRestoresFocus.current) return;
+    const createButton = resolveCreateButton();
     const target =
       focusTarget.current === "calendar" && subscriptionUrl !== null
         ? googleLinkRef.current
-        : focusTarget.current === "calendar" && status.isSuccess && subscriptionUrl === null
-          ? createButtonRef.current
-          : focusTarget.current === "create" && status.isSuccess && subscriptionUrl === null
-            ? createButtonRef.current
-            : focusTarget.current === "retry" && status.isError
-              ? retryButtonRef.current
-              : null;
-    if (target) {
-      const active = document.activeElement;
-      if (!focusOrigin.current || active === focusOrigin.current || active === document.body) target.focus();
-      focusTarget.current = null;
-      focusOrigin.current = null;
-    }
-  }, [confirmingReplace, linkFeedback, pending, status.data, status.isError, status.isSuccess, subscriptionUrl]);
+        : (focusTarget.current === "calendar" || focusTarget.current === "create") && createButton !== null
+          ? createButton
+          : focusTarget.current === "retry" && status.isError
+            ? retryButtonRef.current
+            : null;
+    if (target) restoreFocusIfUnmoved(target);
+  }, [
+    confirmingReplace,
+    linkFeedback,
+    pending,
+    resolveCreateButton,
+    restoreFocusIfUnmoved,
+    status.data,
+    status.isError,
+    status.isSuccess,
+    subscriptionUrl,
+  ]);
 
   const copyLink = async () => {
     if (subscriptionUrl === null) return;
-    resetCopy();
+    setClipboardError(false);
     setLinkFeedback(null);
     try {
       await navigator.clipboard.writeText(subscriptionUrl);
@@ -180,15 +183,7 @@ export function UserCalendarSubscription({ token }: { token: string }) {
         <p className="text-sm text-muted-foreground">{t("preferences.calendarSubscription.description")}</p>
       </div>
       <p role="status" className="sr-only">
-        {linkFeedback === "ready"
-          ? t("preferences.calendarSubscription.ready")
-          : linkFeedback === "replaced"
-            ? t("preferences.calendarSubscription.replaced")
-            : linkFeedback === "disconnected"
-              ? t("preferences.calendarSubscription.disconnected")
-              : linkFeedback === "copied"
-                ? t("preferences.calendarSubscription.copied")
-                : null}
+        {linkFeedback ? t(`preferences.calendarSubscription.${linkFeedback}`) : null}
       </p>
       {status.isPending ? (
         <div aria-busy="true">
@@ -296,8 +291,8 @@ export function UserCalendarSubscription({ token }: { token: string }) {
             const target =
               focusTarget.current === "calendar" && subscriptionUrl !== null
                 ? googleLinkRef.current
-                : focusTarget.current === "create" && status.isSuccess
-                  ? createButtonRef.current
+                : focusTarget.current === "create"
+                  ? resolveCreateButton()
                   : focusTarget.current === "retry" && status.isError
                     ? retryButtonRef.current
                     : null;
