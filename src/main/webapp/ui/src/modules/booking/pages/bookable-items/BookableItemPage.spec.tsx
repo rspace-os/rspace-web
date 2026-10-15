@@ -8,12 +8,12 @@ import {
   emulateReducedMotion,
   expectNoAxeViolations,
 } from "@/__tests__/pageObjects/accessibility";
+import { auditPage } from "./__tests__/bookableItemAuditFixtures";
 import { BookableItemPageStory } from "./BookableItemPage.story";
 import { bookableItemDetailsHandlers, bookableItemFixtures, bookableItemsHandlers } from "./mocks/bookableItemsMocks";
 import { BookableItemPage } from "./pageObjects/BookableItemPage";
 
 const pageObj = new BookableItemPage();
-const snapshotFingerprint = "b".repeat(64);
 const auditEvent = {
   eventId: "a".repeat(64),
   timestamp: "2026-08-25T10:42:18Z",
@@ -25,27 +25,61 @@ const auditEvent = {
   payload: { maxBookingDurationMinutes: 60 },
 };
 
-function auditPage(pageNumber = 1, totalPages = 1) {
-  return {
-    docs: [auditEvent],
-    totalDocs: totalPages * 20,
-    limit: 20,
-    page: pageNumber,
-    pagingCounter: (pageNumber - 1) * 20 + 1,
-    totalPages,
-    hasPrevPage: pageNumber > 1,
-    hasNextPage: pageNumber < totalPages,
-    prevPage: pageNumber > 1 ? pageNumber - 1 : null,
-    nextPage: pageNumber < totalPages ? pageNumber + 1 : null,
-    snapshotDate: "2026-08-25",
-    snapshotFingerprint,
-  };
+function bookableItemAccessHandlers() {
+  return [
+    http.get("/api/v2/booking-configurations/7/access", () =>
+      HttpResponse.json(
+        {
+          scheme: "booking-configurations",
+          version: 3,
+          assignments: [
+            {
+              grantee: {
+                kind: "USER",
+                id: 1,
+                key: "user:1",
+                name: "Ada Lovelace",
+                detail: "ada",
+                available: true,
+                effectiveRole: "OWNER",
+                roleSources: [],
+              },
+              role: "OWNER",
+            },
+            {
+              grantee: {
+                kind: "AUDIENCE",
+                id: "ALL_USERS",
+                key: "audience:all-users",
+                name: "All users",
+                detail: null,
+                available: true,
+                effectiveRole: null,
+                roleSources: [],
+              },
+              role: "BOOKER",
+            },
+          ],
+          caller: {
+            effectiveRole: "OWNER",
+            roleSources: [],
+            capabilities: { canManageAssignments: true, canManageOwners: true, canLeave: false },
+          },
+        },
+        { headers: { ETag: '"3"' } },
+      ),
+    ),
+    http.get("/api/v2/booking-configurations/7/access/grantees", () =>
+      HttpResponse.json([{ kind: "USER", id: 2, key: "user:2", name: "Grace Hopper", detail: "grace" }]),
+    ),
+  ];
 }
 
 function registerHandlers() {
   worker.use(
     ...bookableItemsHandlers(() => {}),
     ...bookableItemDetailsHandlers(),
+    ...bookableItemAccessHandlers(),
     http.patch("/api/v2/booking-configurations/7", () => new HttpResponse(null, { status: 204 })),
   );
 }
@@ -282,7 +316,7 @@ describe("BookableItemPage", () => {
     worker.use(
       http.get("/api/v2/booking-configurations/7/audit", () => {
         auditRequests += 1;
-        return HttpResponse.json(auditPage());
+        return HttpResponse.json(auditPage([auditEvent]));
       }),
     );
     render(<BookableItemPageStory />);

@@ -17,10 +17,10 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { BookableItemAuditLog } from "../BookableItemAuditLog";
+import { auditPage, snapshotFingerprint } from "./bookableItemAuditFixtures";
 
 vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
 
-const snapshotFingerprint = "b".repeat(64);
 const event = {
   eventId: "a".repeat(64),
   timestamp: "2026-08-25T10:42:18Z",
@@ -32,28 +32,6 @@ const event = {
   payload: { enabled: true, bookingConfigurationId: "booking-configurations:7" },
   target: "bookings:41",
 };
-
-function auditPage(
-  docs = [event],
-  options: { page?: number; totalPages?: number; hasPrevPage?: boolean; hasNextPage?: boolean } = {},
-) {
-  const page = options.page ?? 1;
-  const totalPages = options.totalPages ?? 1;
-  return {
-    docs,
-    totalDocs: totalPages * 20,
-    limit: 20,
-    page,
-    pagingCounter: (page - 1) * 20 + 1,
-    totalPages,
-    hasPrevPage: options.hasPrevPage ?? page > 1,
-    hasNextPage: options.hasNextPage ?? page < totalPages,
-    prevPage: page > 1 ? page - 1 : null,
-    nextPage: page < totalPages ? page + 1 : null,
-    snapshotDate: "2026-08-25",
-    snapshotFingerprint,
-  };
-}
 
 function wrapper({ children }: { children: ReactNode }) {
   const root = createRootRoute({ component: () => children });
@@ -112,7 +90,7 @@ describe("BookableItemAuditLog", () => {
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", ({ request }) => {
         requests.push(new URL(request.url));
-        return HttpResponse.json(auditPage());
+        return HttpResponse.json(auditPage([event]));
       }),
     );
     renderAudit();
@@ -132,7 +110,7 @@ describe("BookableItemAuditLog", () => {
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", () => {
         requests += 1;
-        return HttpResponse.json(auditPage());
+        return HttpResponse.json(auditPage([event]));
       }),
     );
     const { container } = renderAudit();
