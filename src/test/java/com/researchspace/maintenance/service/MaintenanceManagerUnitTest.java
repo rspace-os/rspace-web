@@ -1,5 +1,8 @@
 package com.researchspace.maintenance.service;
 
+import static com.researchspace.maintenance.service.MaintenanceTestFixtures.filter;
+import static com.researchspace.maintenance.service.MaintenanceTestFixtures.hoursFromNow;
+import static com.researchspace.maintenance.service.MaintenanceTestFixtures.maintenance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -22,11 +25,9 @@ import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.MessageSourceUtils;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -57,7 +58,7 @@ class MaintenanceManagerUnitTest {
 
   @Test
   void appliesStartBeforeAnExplicitLoginCutoff() {
-    ScheduledMaintenance maintenance = maintenance(2);
+    ScheduledMaintenance maintenance = maintenance(2, 3);
     Date newStart = hoursFromNow(4);
     Date newEnd = hoursFromNow(6);
     Date explicitCutoff = hoursFromNow(3);
@@ -82,7 +83,7 @@ class MaintenanceManagerUnitTest {
 
   @Test
   void rejectsInvalidWindowsAndOversizedBulkMatchesBeforeSaving() {
-    ScheduledMaintenance maintenance = maintenance(2);
+    ScheduledMaintenance maintenance = maintenance(2, 3);
     ParsedDocument invalid = ParsedDocument.update(Map.of("endDate", hoursFromNow(1)));
     when(dao.getSafeNull(42L)).thenReturn(Optional.of(maintenance));
 
@@ -90,7 +91,7 @@ class MaintenanceManagerUnitTest {
         MaintenanceOperationException.class, () -> manager.updateResource(42L, invalid, user));
     verify(dao, never()).save(any());
 
-    ResourceRequest query = request("message==test");
+    ResourceRequest query = ResourceRequest.unpaged(filter("message==test"));
     when(dao.getResources(eq(query), eq(1001), any(RelationshipReadAccess.class)))
         .thenReturn(Collections.nCopies(1001, maintenance));
     assertThrows(
@@ -113,7 +114,7 @@ class MaintenanceManagerUnitTest {
 
   @Test
   void rejectsCreateDocumentsPassedToUpdate() {
-    ScheduledMaintenance maintenance = maintenance(2);
+    ScheduledMaintenance maintenance = maintenance(2, 3);
     when(dao.getSafeNull(42L)).thenReturn(Optional.of(maintenance));
     ParsedDocument createDocument =
         new ParsedDocument(WriteOperation.CREATE, Map.of("message", "updated"));
@@ -126,7 +127,7 @@ class MaintenanceManagerUnitTest {
 
   @Test
   void rejectsInvalidWindowsOnCreate() {
-    ScheduledMaintenance invalid = new ScheduledMaintenance(hoursFromNow(2), hoursFromNow(1));
+    ScheduledMaintenance invalid = maintenance(2, 1);
 
     assertThrows(MaintenanceOperationException.class, () -> manager.createResource(invalid, user));
 
@@ -135,8 +136,8 @@ class MaintenanceManagerUnitTest {
 
   @Test
   void validatesTheWholeCreateBatchBeforeSavingAndPublishesOnce() {
-    ScheduledMaintenance first = maintenance(2);
-    ScheduledMaintenance second = maintenance(4);
+    ScheduledMaintenance first = maintenance(2, 3);
+    ScheduledMaintenance second = maintenance(4, 5);
     when(dao.save(any(ScheduledMaintenance.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -144,7 +145,7 @@ class MaintenanceManagerUnitTest {
     verify(dao, times(2)).save(any(ScheduledMaintenance.class));
     verify(events).publishEvent(any(MaintenanceChangedEvent.class));
 
-    ScheduledMaintenance invalid = new ScheduledMaintenance(hoursFromNow(5), hoursFromNow(4));
+    ScheduledMaintenance invalid = maintenance(5, 4);
     assertThrows(
         MaintenanceOperationException.class,
         () -> manager.createResources(List.of(first, invalid), user));
@@ -158,7 +159,7 @@ class MaintenanceManagerUnitTest {
         () ->
             manager.createResources(
                 Collections.nCopies(
-                    CollectionMutationLimits.MAX_BULK_CREATE_ROWS + 1, maintenance(2)),
+                    CollectionMutationLimits.MAX_BULK_CREATE_ROWS + 1, maintenance(2, 3)),
                 user));
 
     verify(dao, never()).save(any());
@@ -179,7 +180,7 @@ class MaintenanceManagerUnitTest {
   @Test
   void checksAuthorizationBeforeBulkQueries() {
     when(user.hasRole(Role.SYSTEM_ROLE)).thenReturn(false);
-    ResourceRequest query = request("id==42");
+    ResourceRequest query = ResourceRequest.unpaged(filter("id==42"));
 
     assertThrows(AuthorizationException.class, () -> manager.removeResources(query, user));
 
@@ -188,30 +189,14 @@ class MaintenanceManagerUnitTest {
 
   @Test
   void publishesOneChangeEventAfterSuccessfulBulkMutation() {
-    ResourceRequest query = request("message==test");
-    ScheduledMaintenance first = maintenance(2);
-    ScheduledMaintenance second = maintenance(3);
+    ResourceRequest query = ResourceRequest.unpaged(filter("message==test"));
+    ScheduledMaintenance first = maintenance(2, 3);
+    ScheduledMaintenance second = maintenance(3, 4);
     when(dao.getResources(eq(query), eq(1001), any(RelationshipReadAccess.class)))
         .thenReturn(List.of(first, second));
 
     manager.updateResources(query, ParsedDocument.update(Map.of("message", "updated")), user);
 
     verify(events, times(1)).publishEvent(any(MaintenanceChangedEvent.class));
-  }
-
-  private static ResourceRequest request(String filter) {
-    return ResourceRequest.unpaged(
-        new RsqlFilterParser(ApiV2MaintenanceResource.DESCRIPTION).parse(filter));
-  }
-
-  private static ScheduledMaintenance maintenance(int startHoursFromNow) {
-    return new ScheduledMaintenance(
-        hoursFromNow(startHoursFromNow), hoursFromNow(startHoursFromNow + 1));
-  }
-
-  private static Date hoursFromNow(int hours) {
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.HOUR_OF_DAY, hours);
-    return calendar.getTime();
   }
 }

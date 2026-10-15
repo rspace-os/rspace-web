@@ -83,7 +83,7 @@ public class MaintenanceManagerImpl extends AbstractCollectionManager<ScheduledM
   @Override
   protected void validateResource(ScheduledMaintenance maintenance) {
     if (!maintenance.hasValidWindow()) {
-      throw new MaintenanceOperationException(MaintenanceOperationException.Reason.INVALID_WINDOW);
+      throw new MaintenanceOperationException();
     }
   }
 

@@ -102,7 +102,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void appliesDefaultPaginationWhenNoMaintenanceIsScheduled() throws Exception {
-    stubPage(Collections.emptyList(), 0, 1, 20);
+    stubPage(Collections.emptyList(), 0);
 
     mockMvc
         .perform(get(ENDPOINT))
@@ -184,7 +184,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void returnsAnEmptyPageWhenPagingPastTheEnd() throws Exception {
-    stubPage(Collections.emptyList(), 1, 999, 20);
+    stubPage(Collections.emptyList(), 1);
 
     mockMvc
         .perform(get(ENDPOINT).param("page", "999"))
@@ -209,7 +209,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void returnsProtocolCorrectMethodAndAcceptErrors() throws Exception {
-    stubPage(Collections.emptyList(), 0, 1, 20);
+    stubPage(Collections.emptyList(), 0);
     mockMvc
         .perform(put(ENDPOINT))
         .andExpect(status().isMethodNotAllowed())
@@ -277,7 +277,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void passesRsqlAndSortToTheManager() throws Exception {
-    stubPage(Collections.emptyList(), 0, 1, 20);
+    stubPage(Collections.emptyList(), 0);
 
     mockMvc
         .perform(
@@ -298,7 +298,7 @@ class ApiV2CrudControllerTest {
   void selectsRequestedFieldsWhileAlwaysReturningId() throws Exception {
     ScheduledMaintenance maintenance = futureMaintenance(2, "Planned database upgrade");
     maintenance.setId(42L);
-    stubPage(List.of(maintenance), 1, 1, 20);
+    stubPage(List.of(maintenance), 1);
 
     mockMvc
         .perform(get(ENDPOINT).param("fields[maintenances]", "message"))
@@ -379,7 +379,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void rejectsInvalidSelectionDepthAndWhere() throws Exception {
-    stubPage(List.of(futureMaintenance(2, "Window")), 1, 1, 20);
+    stubPage(List.of(futureMaintenance(2, "Window")), 1);
 
     mockMvc
         .perform(
@@ -420,7 +420,7 @@ class ApiV2CrudControllerTest {
 
   @Test
   void rejectsMalformedRepeatedAndLegacyFieldsets() throws Exception {
-    stubPage(List.of(futureMaintenance(2, "Window")), 1, 1, 20);
+    stubPage(List.of(futureMaintenance(2, "Window")), 1);
 
     mockMvc
         .perform(get(ENDPOINT).param("fields[maintenances]", "message", "startDate"))
@@ -685,8 +685,7 @@ class ApiV2CrudControllerTest {
     }
   }
 
-  private void stubPage(
-      List<ScheduledMaintenance> results, long total, int page, int resultsPerPage) {
+  private void stubPage(List<ScheduledMaintenance> results, long total) {
     when(maintenanceManager.getResources(any(ResourceRequest.class), any()))
         .thenReturn(new ResourcePage<>(results, total));
   }
