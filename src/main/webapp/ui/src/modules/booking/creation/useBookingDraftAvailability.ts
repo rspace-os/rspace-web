@@ -1,13 +1,13 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useMemo } from "react";
 import type { BookingFormState } from "@/modules/booking/creation/BookingForm";
-import { bookingConflicts } from "@/modules/booking/domain/availability";
-import type { BookingEventKind } from "@/modules/booking/domain/booking";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import {
+  bookingConflicts,
   calendarAvailabilityRow,
   useCalendarAvailability,
-} from "@/modules/booking/pages/calendar/calendarAvailability";
+} from "@/modules/booking/domain/availability";
+import type { BookingEventKind } from "@/modules/booking/domain/booking";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 
 function sameInstant(left: string, right: string): boolean {
   try {

@@ -6,12 +6,13 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
-import { currentUser } from "@/modules/booking/pages/calendar/calendarFixtures";
+import { currentUser } from "@/modules/booking/pages/mocks/currentUserFixture";
 import { institutionBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { BookingDashboardPageStory } from "./BookingDashboardPage.story";
 import {
   bookingDashboardHandlers,
+  bookingTarget,
   collectionResponse,
   dashboardBookingFixture,
   dashboardBookings,
@@ -70,7 +71,7 @@ describe("Booking dashboard", () => {
     await expect.element(dashboard.upcomingInstrument("Instrument 104")).toBeVisible();
     await expect.element(dashboard.upcomingInstrument("Instrument 200")).not.toBeInTheDocument();
     await expect.element(dashboard.upcomingViewAll).toHaveAttribute("href", "/booking/my-bookings?period=upcoming");
-    await dashboard.upcomingDisclosure("Instrument 100").click();
+    await dashboard.upcomingInstrument("Instrument 100").click();
     await expect
       .element(dashboard.upcomingDetailsLink("Instrument 100"))
       .toHaveAttribute("href", "/booking/calendar/bookings/100");
@@ -105,7 +106,7 @@ describe("Booking dashboard", () => {
         const url = new URL(request.url);
         requests.push(url);
         if (url.searchParams.get("limit") !== "5") {
-          return HttpResponse.json(collectionResponse(dashboardBookings));
+          return HttpResponse.json(collectionResponse(dashboardBookings, { limit: 100 }));
         }
 
         upcomingAttempt += 1;
@@ -131,8 +132,8 @@ describe("Booking dashboard", () => {
     try {
       render(<BookingDashboardPageStory history={history} queryClient={queryClient} />);
       await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
-      await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
-      await dashboard.upcomingDisclosure("Instrument 100").click();
+      await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
+      await dashboard.upcomingInstrument("Instrument 100").click();
       await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
 
       expect(triggerMinute).toBeDefined();
@@ -152,17 +153,17 @@ describe("Booking dashboard", () => {
 
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
       await expect.element(dashboard.upcomingInstrument("Instrument 101")).toBeVisible();
-      await expect.element(dashboard.upcomingDisclosure("Instrument 101")).toBeVisible();
+      await expect.element(dashboard.upcomingInstrument("Instrument 101")).toBeVisible();
       await expect.element(dashboard.upcomingInstrument("Instrument 100")).not.toBeInTheDocument();
       await expect
-        .poll(() => dashboard.upcomingDisclosure("Instrument 101").element().parentElement?.hasAttribute("open"))
+        .poll(() => dashboard.upcomingInstrument("Instrument 101").element().parentElement?.hasAttribute("open"))
         .toBe(false);
 
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings", "dashboard", "upcoming"] });
       await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
-      await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
+      await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
       await expect
-        .poll(() => dashboard.upcomingDisclosure("Instrument 100").element().parentElement?.hasAttribute("open"))
+        .poll(() => dashboard.upcomingInstrument("Instrument 100").element().parentElement?.hasAttribute("open"))
         .toBe(false);
     } finally {
       releaseDelayedResponse();
@@ -177,8 +178,8 @@ describe("Booking dashboard", () => {
     render(<BookingDashboardPageStory history={history} queryClient={queryClient} />);
 
     await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
-    await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
-    await dashboard.upcomingDisclosure("Instrument 100").click();
+    await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
+    await dashboard.upcomingInstrument("Instrument 100").click();
     await expect.element(dashboard.upcomingDetailsLink("Instrument 100")).toBeVisible();
 
     queryClient.setQueryData(currentUserQueryKeys.me(), { ...currentUser, id: currentUser.id + 1 });
@@ -188,9 +189,9 @@ describe("Booking dashboard", () => {
       )
       .toBe(true);
     await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
-    await expect.element(dashboard.upcomingDisclosure("Instrument 100")).toBeVisible();
+    await expect.element(dashboard.upcomingInstrument("Instrument 100")).toBeVisible();
     await expect
-      .poll(() => dashboard.upcomingDisclosure("Instrument 100").element().parentElement?.hasAttribute("open"))
+      .poll(() => dashboard.upcomingInstrument("Instrument 100").element().parentElement?.hasAttribute("open"))
       .toBe(false);
     await expect
       .poll(() =>
@@ -201,19 +202,11 @@ describe("Booking dashboard", () => {
 
   test("keeps deliberately populated busy-booking purpose private in the upcoming agenda", async () => {
     const fullBooking = dashboardBookingFixture(700, 18, {
-      target: {
-        relationTo: "booking-instruments",
-        value: { id: 700, name: "Private full booking", deleted: false },
-        globalId: "IN700",
-      },
+      target: bookingTarget(700, "Private full booking"),
       purpose: "Private purpose",
     });
     const busyBooking = dashboardBookingFixture(701, 18, {
-      target: {
-        relationTo: "booking-instruments",
-        value: { id: 701, name: "Private busy booking", deleted: false },
-        globalId: "IN701",
-      },
+      target: bookingTarget(701, "Private busy booking"),
       privacy: "busy",
       purpose: "Must stay hidden",
       canViewConfiguration: false,
@@ -222,11 +215,11 @@ describe("Booking dashboard", () => {
     render(<BookingDashboardPageStory history={history} />);
 
     await expect.element(dashboard.upcomingInstrument("Private full booking")).toBeVisible();
-    await expect.element(dashboard.upcomingDisclosure("Private full booking")).toBeVisible();
-    await dashboard.upcomingDisclosure("Private full booking").click();
+    await expect.element(dashboard.upcomingInstrument("Private full booking")).toBeVisible();
+    await dashboard.upcomingInstrument("Private full booking").click();
     await expect.element(dashboard.upcomingDetailsLink("Private full booking")).toBeVisible();
-    await expect.element(dashboard.upcomingDisclosure("Private busy booking")).toBeVisible();
-    await dashboard.upcomingDisclosure("Private busy booking").click();
+    await expect.element(dashboard.upcomingInstrument("Private busy booking")).toBeVisible();
+    await dashboard.upcomingInstrument("Private busy booking").click();
     await expect.element(dashboard.upcomingPurpose("Must stay hidden")).not.toBeInTheDocument();
   });
 

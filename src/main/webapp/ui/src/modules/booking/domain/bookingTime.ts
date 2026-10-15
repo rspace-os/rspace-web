@@ -25,6 +25,17 @@ export type BookingWindowDraft = {
   endOccurrence?: "earlier" | "later";
 };
 
+export function sameDraft(left: BookingWindowDraft, right: BookingWindowDraft): boolean {
+  return (
+    left.startDate === right.startDate &&
+    left.startTime === right.startTime &&
+    left.startOccurrence === right.startOccurrence &&
+    left.endDate === right.endDate &&
+    left.endTime === right.endTime &&
+    left.endOccurrence === right.endOccurrence
+  );
+}
+
 export function parsePlainDate(value: string): Temporal.PlainDate {
   return Temporal.PlainDate.from(value);
 }
