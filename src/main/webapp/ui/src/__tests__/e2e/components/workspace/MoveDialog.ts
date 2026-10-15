@@ -47,8 +47,26 @@ export class MoveDialog {
 
   async clickFolder(name: string): Promise<void> {
     const target = this.path.filter({ hasText: name });
+    await this.waitForTreeToSettle();
     await this.folder(name).click();
     await target.waitFor({ state: "visible" });
+    await this.waitForTreeToSettle();
+  }
+
+  // The tree sorter re-attaches every node on each slide frame, so webkit drops a click landing mid-slide.
+  private async waitForTreeToSettle(): Promise<void> {
+    await this.page.waitForFunction(
+      () => {
+        const tree = document.querySelector("#movefolder-tree");
+        if (!tree || tree.querySelector(".wait")) return false;
+
+        // jQuery restores inline overflow when the slide finishes.
+        return Array.from(tree.querySelectorAll("ul")).every((list) => list.style.overflow !== "hidden");
+      },
+      undefined,
+      // waitForFunction never times out by default.
+      { timeout: 10_000 },
+    );
   }
 
   async setOrdering(field: MoveDialogSortField, order: MoveDialogSortOrder): Promise<void> {

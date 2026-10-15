@@ -46,7 +46,11 @@ export class WorkspacePage extends BasePage {
   }
 
   override async open(folderId?: number): Promise<void> {
-    await this.page.goto(folderId !== undefined ? `${this.path}/${folderId}` : this.path);
+    const res = await this.page.goto(folderId !== undefined ? `${this.path}/${folderId}` : this.path);
+    // Folder links call window.resetToolbar, which only exists once the React toolbar has mounted;
+    // clicking one earlier throws and silently skips the navigation. An inaccessible folder renders
+    // an error page with no toolbar, which callers assert themselves.
+    if (res?.ok()) await this.waitUntilLoaded();
     await waitForWorkspaceAnimations(this.page);
   }
 
@@ -204,9 +208,15 @@ export class WorkspacePage extends BasePage {
   }
 
   async openReceivedMessages(): Promise<MessagesAndRequestsDialogComponent> {
-    await this.toolbar.messagesButton.click();
+    const [res] = await Promise.all([
+      this.page.waitForResponse((res) => res.url().includes("/dashboard/ajax/allMessages")),
+      this.toolbar.messagesButton.click(),
+    ]);
+    if (!res.ok()) {
+      throw new Error(`Listing received messages failed: ${res.status()}`);
+    }
     const dialog = new MessagesAndRequestsDialogComponent(this.page);
-    await dialog.waitUntilVisible();
+    await dialog.waitUntilListed();
     return dialog;
   }
 
