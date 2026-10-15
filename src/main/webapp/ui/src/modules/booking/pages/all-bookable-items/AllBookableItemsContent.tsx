@@ -57,6 +57,7 @@ function AllBookableItemsContentForUser({
     failedBulkAction,
     selectionPending,
     setFailedBulkAction,
+    rows,
     ...data
   } = useAllBookableItemsData({
     clock,
@@ -71,7 +72,7 @@ function AllBookableItemsContentForUser({
     page,
     pageSize,
   });
-  const { filters, rows, setSelectedRowIds, userToday } = data;
+  const { filters, setSelectedRowIds, userToday } = data;
 
   const setDate = (nextDate: string) => {
     setSelectedRowIds(new Set());
@@ -196,12 +197,10 @@ function AllBookableItemsContentForUser({
       maximumCount: 100,
       getRowLabel: (row) => row.target?.value.name ?? commonT("values.unknownItem"),
       renderActions: (selection) => {
-        const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
         return (
           <>
             <BookingNotificationBulkActions
               selection={selection}
-              selectedConfigurationIds={selectedConfigurationIds}
               pending={notificationSubscriptionMutation.isPending}
               onAction={(configurationIds, enabled) =>
                 notificationSubscriptionMutation.mutateAsync({ configurationIds, enabled })

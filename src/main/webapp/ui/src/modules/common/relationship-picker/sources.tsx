@@ -58,8 +58,6 @@ export type RelationshipSource = {
 
 export type RelationshipOptionWithSource = RelationshipOption & {
   sourceId: string;
-  /** Original validated source document, available to consumers needing domain metadata. */
-  sourceDocument?: unknown;
   /** Safe state when a saved value could not be restored; the original value remains in `value`. */
   restoreStatus?: "loading" | "missing" | "failed" | "invalid" | "unknown" | "unresolved";
 };

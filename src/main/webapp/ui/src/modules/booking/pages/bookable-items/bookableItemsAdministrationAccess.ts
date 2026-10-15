@@ -16,7 +16,7 @@ const ADMINISTRATION_ACCESS_STALE_TIME = 10 * 60 * 1000;
 const ReadableCountSchema = v.object({ totalDocs: v.number() });
 
 /** Counts the booking configurations the caller can read, with a one-row page of the list endpoint. */
-export async function countReadableBookingConfigurations(token: string, signal?: AbortSignal): Promise<number> {
+async function countReadableBookingConfigurations(token: string, signal?: AbortSignal): Promise<number> {
   const parameters = new URLSearchParams({ limit: "1", "fields[booking-configurations]": "id" });
   const response = await fetchWithUiToken(`/api/v2/booking-configurations?${parameters}`, {
     headers: apiV2Headers(token),
@@ -26,10 +26,10 @@ export async function countReadableBookingConfigurations(token: string, signal?:
   return parseOrThrow(ReadableCountSchema, (await response.json()) as unknown).totalDocs;
 }
 
-export const readableBookingConfigurationCountQueryKey = (authScope: number) =>
+const readableBookingConfigurationCountQueryKey = (authScope: number) =>
   ["api-v2", "booking-configurations", "readable-count", authScope] as const;
 
-export const eligibleBookingTargetsQueryKey = (authScope: number) =>
+const eligibleBookingTargetsQueryKey = (authScope: number) =>
   ["api-v2", "booking-configuration-targets", "browse", authScope] as const;
 
 /** Instruments the caller could set up for booking now: the Add form's blank browse. */

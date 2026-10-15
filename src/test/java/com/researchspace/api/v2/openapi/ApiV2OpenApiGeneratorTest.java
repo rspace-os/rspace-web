@@ -604,7 +604,7 @@ class ApiV2OpenApiGeneratorTest {
 
   @Test
   void publishesTheLocationFilterWithAPickerAndNoRequesterRelationship() {
-    Map<String, Object> bookings = whereParameter(document(), "/api/v2/bookings");
+    Map<String, Object> bookings = where(document(), "/api/v2/bookings");
     Map<String, Object> bookingSelectors =
         objectMap(objectMap(bookings.get("x-rspace-filter")).get("selectors"));
 
@@ -616,8 +616,7 @@ class ApiV2OpenApiGeneratorTest {
         "booking-locations",
         objectMap(objectMap(bookingSelectors.get("location")).get("picker")).get("resource"));
 
-    Map<String, Object> configurations =
-        whereParameter(document(), "/api/v2/booking-configurations");
+    Map<String, Object> configurations = where(document(), "/api/v2/booking-configurations");
     Map<String, Object> configurationSelectors =
         objectMap(objectMap(configurations.get("x-rspace-filter")).get("selectors"));
 
@@ -627,15 +626,6 @@ class ApiV2OpenApiGeneratorTest {
     // Location is resolved through Inventory read access only, so no target field is filterable.
     assertEquals(
         List.of(), objectMap(configurationSelectors.get("location.name")).get("operators"));
-  }
-
-  private static Map<String, Object> whereParameter(Map<String, Object> document, String path) {
-    Map<String, Object> list =
-        objectMap(objectMap(objectMap(document.get("paths")).get(path)).get("get"));
-    return objectMapList(list.get("parameters")).stream()
-        .filter(parameter -> parameter.get("name").equals("where"))
-        .findFirst()
-        .orElseThrow();
   }
 
   @Test

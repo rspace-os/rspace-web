@@ -4,7 +4,6 @@ import com.researchspace.booking.service.BookingCatalogueLocation;
 import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.hibernate.InstrumentDaoHibernateImpl.InstrumentScalarRow;
 import com.researchspace.dao.query.LikeEscaper;
-import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfigurationState;
@@ -45,15 +44,9 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
         || (containerIds != null && containerIds.isEmpty())) {
       return new ResourcePage<>(List.of(), 0);
     }
-    List<String> groupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(caller);
-    List<String> groupNames = caller.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(caller);
-    String bookingAccess =
-        getInventoryReadPermissionSqlPredicate(
-            caller, groupMembers, groupNames, visibleOwners, "instrument.");
-    String containerAccess =
-        readableContainerPredicate(caller, groupMembers, groupNames, visibleOwners, "parent");
+    InventoryReadQueryContext context = readQueryContext(caller);
+    String bookingAccess = context.permissionPredicate(this, "instrument.");
+    String containerAccess = context.readableContainerPredicate(this, "parent");
     String nameFilter =
         query == null || query.isBlank()
             ? ""
@@ -89,10 +82,17 @@ public class BookingInstrumentQueryDaoHibernate extends InventoryDaoHibernate<In
                     + " order by lower(parent.editInfo.name), parent.id",
                 Object[].class)
             .setMaxResults(limit);
-    setBookingCatalogueLocationParameters(
-        countQuery, caller, groupMembers, groupNames, visibleOwners, query);
-    setBookingCatalogueLocationParameters(
-        pageQuery, caller, groupMembers, groupNames, visibleOwners, query);
+    countQuery.setParameter("targetType", BookableTargetType.INSTRUMENT);
+    countQuery.setParameter("configurationState", BookingConfigurationState.ACTIVE);
+    context.bind(countQuery, null);
+    pageQuery.setParameter("targetType", BookableTargetType.INSTRUMENT);
+    pageQuery.setParameter("configurationState", BookingConfigurationState.ACTIVE);
+    context.bind(pageQuery, null);
+    if (query != null && !query.isBlank()) {
+      String locationQuery = "%" + LikeEscaper.escape(query.trim().toLowerCase(Locale.ROOT)) + "%";
+      countQuery.setParameter("locationQuery", locationQuery);
+      pageQuery.setParameter("locationQuery", locationQuery);
+    }
     if (containerIds != null) {
       countQuery.setParameterList("locationIds", containerIds);
       pageQuery.setParameterList("locationIds", containerIds);
