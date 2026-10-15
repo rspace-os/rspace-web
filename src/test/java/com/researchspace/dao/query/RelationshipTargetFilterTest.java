@@ -135,10 +135,6 @@ class RelationshipTargetFilterTest {
     assertTrue(compiled.parameters().containsValue("%confocal%"));
   }
 
-  private static String where(Predicate predicate) {
-    return predicate.subqueries().values().iterator().next().whereExpression();
-  }
-
   @Test
   void refusesANegativeOperatorOnARelationshipField() {
     assertThrows(
@@ -232,5 +228,9 @@ class RelationshipTargetFilterTest {
     assertEquals(2, compiled.parameters().values().stream().filter(Boolean.FALSE::equals).count());
     assertTrue(compiled.parameters().containsValue("%alpha%"));
     assertTrue(compiled.parameters().containsValue("%beta%"));
+  }
+
+  private static String where(Predicate predicate) {
+    return predicate.subqueries().values().iterator().next().whereExpression();
   }
 }

@@ -156,10 +156,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }
     BookingConfigurationDefaults defaults =
-        defaultsDao
-            .getSafeNull(BookingConfigurationDefaults.SINGLETON_ID)
-            .orElseThrow(
-                () -> new IllegalStateException("Booking configuration defaults row is missing"));
+        BookingConfigurationDefaultsManagerImpl.requiredDefaults(defaultsDao);
     Date now = new Date();
     List<BookingConfiguration> configurations =
         creates.stream()
@@ -171,7 +168,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       if (!targets.add(configuration.getTarget())) {
         throw new BookingConfigurationTargetConflictException();
       }
-      requireTargetAvailable(configuration.getTarget(), null);
+      requireTargetAvailable(configuration.getTarget());
     }
     List<BookingConfiguration> saved = configurations.stream().map(this::save).toList();
     saved.forEach(configuration -> notifyAudit(actor, subject, configuration, AuditAction.CREATE));
@@ -339,7 +336,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       prepareAccessProjection(List.of(existing), subject);
       return configuration;
     }
-    BookingConfiguration archived = archive(existing, subject, actor);
+    BookingConfiguration archived = archive(existing, subject, actor, new Date());
     notifyAudit(actor, subject, archived, AuditAction.DELETE);
     prepareAccessProjection(List.of(archived), subject);
     return Optional.of(archived);
@@ -502,11 +499,6 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   }
 
   private BookingConfiguration archive(
-      BookingConfiguration configuration, User subject, User actor) {
-    return archive(configuration, subject, actor, new Date());
-  }
-
-  private BookingConfiguration archive(
       BookingConfiguration configuration, User subject, User actor, Date timestamp) {
     for (TimeSlotBooking booking :
         BookingCurrentReads.read(
@@ -640,10 +632,9 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
         IncludeTree.empty());
   }
 
-  private void requireTargetAvailable(BookableTargetReference target, Long configurationId) {
+  private void requireTargetAvailable(BookableTargetReference target) {
     bookingConfigurationDao
         .findByTarget(target)
-        .filter(existing -> !Objects.equals(existing.getId(), configurationId))
         .ifPresent(
             existing -> {
               throw new BookingConfigurationTargetConflictException();

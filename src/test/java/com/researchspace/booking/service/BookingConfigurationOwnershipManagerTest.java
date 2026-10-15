@@ -2,8 +2,8 @@ package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
@@ -17,6 +17,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class BookingConfigurationOwnershipManagerTest {
+
+  private static final BookableTargetReference TARGET =
+      new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
 
   private final BookingConfigurationDao configurationDao = mock(BookingConfigurationDao.class);
   private final BookingConfigurationProtectedResourceAccess protectedAccess =
@@ -32,24 +35,19 @@ class BookingConfigurationOwnershipManagerTest {
 
   @Test
   void unconfiguredInstrumentNeedsNoBookingMutation() {
-    BookableTargetReference target =
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
-    when(configurationDao.lockByTarget(target)).thenReturn(Optional.empty());
+    when(configurationDao.lockByTarget(TARGET)).thenReturn(Optional.empty());
 
     manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
 
-    verify(accessManager, never())
-        .transferDirectOwnership(protectedAccess, 9L, outgoing, incoming, subject, actor);
+    verifyNoInteractions(accessManager);
   }
 
   @Test
   void configuredInstrumentDelegatesToTheLockedGenericOwnershipCommand() {
-    BookableTargetReference target =
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
     BookingConfiguration configuration = mock(BookingConfiguration.class);
     when(configuration.getId()).thenReturn(9L);
     when(configuration.getState()).thenReturn(BookingConfigurationState.ACTIVE);
-    when(configurationDao.lockByTarget(target)).thenReturn(Optional.of(configuration));
+    when(configurationDao.lockByTarget(TARGET)).thenReturn(Optional.of(configuration));
 
     manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor);
 
@@ -59,17 +57,14 @@ class BookingConfigurationOwnershipManagerTest {
 
   @Test
   void archivedConfigurationAbortsTheCoordinatedTransfer() {
-    BookableTargetReference target =
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, 17L);
     BookingConfiguration configuration = mock(BookingConfiguration.class);
     when(configuration.getState()).thenReturn(BookingConfigurationState.ARCHIVED);
-    when(configurationDao.lockByTarget(target)).thenReturn(Optional.of(configuration));
+    when(configurationDao.lockByTarget(TARGET)).thenReturn(Optional.of(configuration));
 
     assertThrows(
         BookingConfigurationLifecycleException.class,
         () -> manager.transferInstrumentOwnership(17L, outgoing, incoming, subject, actor));
 
-    verify(accessManager, never())
-        .transferDirectOwnership(protectedAccess, 9L, outgoing, incoming, subject, actor);
+    verifyNoInteractions(accessManager);
   }
 }

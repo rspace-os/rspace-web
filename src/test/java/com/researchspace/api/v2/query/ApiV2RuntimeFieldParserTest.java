@@ -73,12 +73,21 @@ class ApiV2RuntimeFieldParserTest {
 
   private static final class StubFields implements RuntimeCollectionFields<Instrument> {
 
+    private final boolean projectsThroughRelationship;
     private int resolveCalls;
     private int resolveAllCalls;
 
+    private StubFields() {
+      this(true);
+    }
+
+    private StubFields(boolean projectsThroughRelationship) {
+      this.projectsThroughRelationship = projectsThroughRelationship;
+    }
+
     @Override
     public boolean projectsThroughRelationship() {
-      return true;
+      return projectsThroughRelationship;
     }
 
     @Override
@@ -460,7 +469,7 @@ class ApiV2RuntimeFieldParserTest {
         new RuntimeFieldContext(
             List.of(),
             READER,
-            name -> "instruments".equals(name) ? List.of(new FilterOnlyFields()) : List.of());
+            name -> "instruments".equals(name) ? List.of(new StubFields(false)) : List.of());
 
     assertThrows(
         CollectionQueryException.class,
@@ -471,37 +480,6 @@ class ApiV2RuntimeFieldParserTest {
                 HOLDERS,
                 HOLDER_REGISTRY,
                 context));
-  }
-
-  private static final class FilterOnlyFields implements RuntimeCollectionFields<Instrument> {
-
-    private final StubFields delegate = new StubFields();
-
-    @Override
-    public String namespace() {
-      return delegate.namespace();
-    }
-
-    @Override
-    public boolean projectsThroughRelationship() {
-      return false;
-    }
-
-    @Override
-    public RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query) {
-      return delegate.discover(actor, query);
-    }
-
-    @Override
-    public Optional<ResolvedRuntimeField> resolve(String selector, User actor) {
-      return delegate.resolve(selector, actor);
-    }
-
-    @Override
-    public Map<Object, Map<String, Object>> values(
-        List<Instrument> resources, Set<String> fieldIds, User actor) {
-      return delegate.values(resources, fieldIds, actor);
-    }
   }
 
   @Test

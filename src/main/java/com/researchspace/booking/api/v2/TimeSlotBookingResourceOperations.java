@@ -8,6 +8,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.service.BookingConcurrentModificationException;
 import com.researchspace.booking.service.BookingDurationException;
 import com.researchspace.booking.service.BookingOverlapException;
@@ -18,20 +19,14 @@ import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.booking.service.TimeSlotBookingManager.Create;
 import com.researchspace.booking.service.TimeSlotBookingManager.Patch;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.BookableTargetReference;
-import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
-import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.ParsedDocument;
-import com.researchspace.model.collection.RelationshipTarget;
-import com.researchspace.model.collection.ResolvedResourceReference;
 import com.researchspace.model.collection.ResourcePage;
-import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.FeatureFlagManager;
 import java.util.Date;
 import java.util.EnumSet;
@@ -64,9 +59,7 @@ public final class TimeSlotBookingResourceOperations
   public TimeSlotBookingResourceOperations(
       TimeSlotBookingManager manager,
       FeatureFlagManager featureFlags,
-      @Qualifier(
-              com.researchspace.booking.config.BookingResourceAccessConfiguration
-                  .TIME_SLOT_BOOKING_DESCRIPTION)
+      @Qualifier(BookingResourceAccessConfiguration.TIME_SLOT_BOOKING_DESCRIPTION)
           CollectionDescription<TimeSlotBooking> description) {
     this.manager = manager;
     this.featureFlags = featureFlags;
@@ -77,22 +70,22 @@ public final class TimeSlotBookingResourceOperations
   ApiV2ResourceSpec<TimeSlotBooking, Long> timeSlotBookingApiV2Resource() {
     List<ApiV2ErrorMapping> commonErrors =
         List.of(
-            mapping(
+            ApiV2ErrorMapping.of(
                 BookingWindowException.class,
                 HttpStatus.BAD_REQUEST,
                 "errors.api.v2.booking.window",
                 "The booking interval is invalid."),
-            mapping(
+            ApiV2ErrorMapping.of(
                 BookingDurationException.class,
                 HttpStatus.BAD_REQUEST,
                 "errors.api.v2.booking.duration",
                 "The booking interval exceeds 366 days."),
-            mapping(
+            ApiV2ErrorMapping.of(
                 BookingTargetUnavailableException.class,
                 HttpStatus.CONFLICT,
                 "errors.api.v2.booking.target.unavailable",
                 "The selected target is unavailable."),
-            mapping(
+            ApiV2ErrorMapping.of(
                 BookingOverlapException.class,
                 HttpStatus.CONFLICT,
                 "errors.api.v2.booking.overlap",
@@ -101,12 +94,12 @@ public final class TimeSlotBookingResourceOperations
         java.util.stream.Stream.concat(
                 commonErrors.stream(),
                 java.util.stream.Stream.of(
-                    mapping(
+                    ApiV2ErrorMapping.of(
                         BookingStateTransitionException.class,
                         HttpStatus.CONFLICT,
                         "errors.api.v2.booking.state.transition",
                         "The requested state transition is invalid."),
-                    mapping(
+                    ApiV2ErrorMapping.of(
                         BookingConcurrentModificationException.class,
                         HttpStatus.PRECONDITION_FAILED,
                         "errors.api.v2.booking.concurrentModification",
@@ -116,7 +109,7 @@ public final class TimeSlotBookingResourceOperations
         java.util.stream.Stream.concat(
                 commonErrors.stream(),
                 java.util.stream.Stream.of(
-                    mapping(
+                    ApiV2ErrorMapping.of(
                         BookingConcurrentModificationException.class,
                         HttpStatus.CONFLICT,
                         "errors.api.v2.booking.concurrentModification",
@@ -147,7 +140,7 @@ public final class TimeSlotBookingResourceOperations
                         "Image plate 4"))
                 .build()),
         Map.of(ResourceOperation.CREATE, createErrors, ResourceOperation.UPDATE, updateErrors),
-        com.researchspace.model.collection.CollectionMutationLimits.DEFAULT);
+        CollectionMutationLimits.DEFAULT);
   }
 
   @Override
@@ -169,7 +162,7 @@ public final class TimeSlotBookingResourceOperations
 
   @Override
   public Optional<TimeSlotBooking> findByIdForAudit(Long id, User subject) {
-    return enabled(subject) ? manager.getBookingForAudit(id, subject) : Optional.empty();
+    return enabled(subject) ? manager.getBooking(id, subject) : Optional.empty();
   }
 
   @Override
@@ -185,9 +178,7 @@ public final class TimeSlotBookingResourceOperations
 
   @Override
   public Optional<TimeSlotBooking> update(Long id, ParsedDocument document, ApiV2Caller caller) {
-    if (!enabled(caller.subject())) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
-    }
+    requireEnabled(caller.subject());
     return manager.updateBooking(id, patchCommand(document), caller.subject(), caller.actor());
   }
 
@@ -215,38 +206,20 @@ public final class TimeSlotBookingResourceOperations
 
   private Create createCommand(ParsedDocument document) {
     return new Create(
-        target(document),
-        value(document, "start", Date.class),
-        value(document, "end", Date.class),
-        value(document, "purpose", String.class),
-        value(document, "kind", BookingEventKind.class));
+        BookingDocumentValues.target(document, description),
+        BookingDocumentValues.value(document, "start", Date.class),
+        BookingDocumentValues.value(document, "end", Date.class),
+        BookingDocumentValues.value(document, "purpose", String.class),
+        BookingDocumentValues.value(document, "kind", BookingEventKind.class));
   }
 
   private static Patch patchCommand(ParsedDocument document) {
     return new Patch(
-        value(document, "start", Date.class),
-        value(document, "end", Date.class),
+        BookingDocumentValues.value(document, "start", Date.class),
+        BookingDocumentValues.value(document, "end", Date.class),
         document.changed("purpose"),
-        value(document, "purpose", String.class),
-        value(document, "state", BookingState.class));
-  }
-
-  private ResolvedBookableTarget target(ParsedDocument document) {
-    Object value = document.values().get("target");
-    if (value == null) {
-      return null;
-    }
-    ResolvedResourceReference<?, ?> resolved = ResolvedResourceReference.class.cast(value);
-    ResourceReference<?, ?> reference = resolved.reference();
-    BookableTargetType type = BookableTargetType.class.cast(reference.kind());
-    Long id = Long.class.cast(reference.id());
-    RelationshipTarget<?> metadata = description.requireRelationship("target").targetForKind(type);
-    InventoryRecord entity = InventoryRecord.class.cast(resolved.entityAs(metadata.entityType()));
-    return new ResolvedBookableTarget(new BookableTargetReference(type, id), entity);
-  }
-
-  private static <T> T value(ParsedDocument document, String field, Class<T> type) {
-    return type.cast(document.values().get(field));
+        BookingDocumentValues.value(document, "purpose", String.class),
+        BookingDocumentValues.value(document, "state", BookingState.class));
   }
 
   private boolean enabled(User subject) {
@@ -257,10 +230,5 @@ public final class TimeSlotBookingResourceOperations
     if (!enabled(subject)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
-  }
-
-  private static ApiV2ErrorMapping mapping(
-      Class<? extends RuntimeException> type, HttpStatus status, String code, String description) {
-    return ApiV2ErrorMapping.of(type, status, code, description);
   }
 }

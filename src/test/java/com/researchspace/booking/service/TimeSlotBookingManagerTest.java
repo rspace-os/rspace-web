@@ -4,6 +4,7 @@ import static com.researchspace.testutils.BookingTestSchedules.hours;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
@@ -44,26 +46,36 @@ import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 class TimeSlotBookingManagerTest {
 
+  private static final Set<BookingEventKind> CONFLICTING_EVENT_KINDS =
+      Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE);
+
   private final TimeSlotBookingDao bookingDao = mock(TimeSlotBookingDao.class);
   private final BookingConfigurationDao configurationDao = mock(BookingConfigurationDao.class);
   private final InstrumentDao instrumentDao = mock(InstrumentDao.class);
   private final ObjectProvider<ResourceRegistry> registry = mock(ObjectProvider.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
-  private final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicyImpl();
+  private final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicy();
   private final User actor = mock(User.class);
   private final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
   private final TimeSlotBookingManager manager =
@@ -102,12 +114,64 @@ class TimeSlotBookingManagerTest {
     when(accessManager.resolveAll(any(), eq(actor)))
         .thenAnswer(
             invocation -> {
-              java.util.Collection<ResourceAccess> accesses = invocation.getArgument(0);
+              Collection<ResourceAccess> accesses = invocation.getArgument(0);
               return accesses.stream()
-                  .collect(
-                      java.util.stream.Collectors.toMap(
-                          ResourceAccess::getId, ignored -> ownerAccess()));
+                  .collect(Collectors.toMap(ResourceAccess::getId, ignored -> ownerAccess()));
             });
+  }
+
+  @Test
+  void calendarEventFactoryCopiesThePreparedPrivacyFieldsAndItemName() {
+    TimeSlotBooking booking = new TimeSlotBooking();
+    booking.setId(41L);
+    booking.setStartTime(start());
+    booking.setEndTime(end());
+    booking.setCreatedAt(start());
+    booking.setUpdatedAt(end());
+    booking.setKind(BookingEventKind.MAINTENANCE);
+    booking.setRequester(actor);
+    booking.setCreatedBy(actor);
+    booking.setPurpose("Private purpose");
+    booking.prepareView(BookingPrivacy.BUSY, true, true);
+
+    TimeSlotBookingManager.CalendarEvent event =
+        TimeSlotBookingManager.CalendarEvent.of(booking, "Microscope");
+
+    assertEquals(41L, event.id());
+    assertEquals(start(), event.start());
+    assertEquals(end(), event.end());
+    assertEquals(start(), event.createdAt());
+    assertEquals(end(), event.updatedAt());
+    assertEquals(BookingEventKind.MAINTENANCE, event.kind());
+    assertEquals(BookingPrivacy.BUSY, event.privacy());
+    assertNull(event.bookedBy());
+    assertEquals("Ada Lovelace (ada)", event.createdBy());
+    assertNull(event.purpose());
+    assertFalse(event.canEdit());
+    assertEquals("Microscope", event.itemName());
+  }
+
+  @Test
+  void calendarRequestValidationAndLimitPrecedePreparation() {
+    Date refreshedAt = instant("2026-10-01T00:00:00Z");
+
+    assertThrows(
+        IllegalArgumentException.class, () -> manager.getCalendarSource(4L, actor, refreshedAt, 0));
+    assertThrows(
+        IllegalArgumentException.class, () -> manager.getUserCalendarSource(actor, refreshedAt, 0));
+
+    verifyNoInteractions(bookingDao, configurationDao, instrumentDao);
+    when(bookingDao.findUserCalendarBookings(eq(actor.getId()), any(Date.class), eq(2)))
+        .thenReturn(List.of(new TimeSlotBooking(), new TimeSlotBooking()));
+
+    assertThrows(
+        TimeSlotBookingManager.CalendarSourceTooLargeException.class,
+        () -> manager.getUserCalendarSource(actor, refreshedAt, 1));
+
+    ArgumentCaptor<Date> cutoff = ArgumentCaptor.forClass(Date.class);
+    verify(bookingDao).findUserCalendarBookings(eq(actor.getId()), cutoff.capture(), eq(2));
+    assertEquals(instant("2026-09-01T00:00:00Z"), cutoff.getValue());
+    verify(accessManager, never()).resolveAll(any(), eq(actor));
   }
 
   @Test
@@ -116,13 +180,7 @@ class TimeSlotBookingManagerTest {
     ResolvedBookableTarget target = target(12L);
     when(configurationDao.lockActiveByTarget(target.reference()))
         .thenReturn(Optional.of(configuration));
-    when(bookingDao.overlaps(
-            4L,
-            start(),
-            end(),
-            null,
-            Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE)))
-        .thenReturn(false);
+    when(bookingDao.overlaps(4L, start(), end(), null, CONFLICTING_EVENT_KINDS)).thenReturn(false);
 
     TimeSlotBooking created =
         manager.createBooking(
@@ -139,13 +197,7 @@ class TimeSlotBookingManagerTest {
     assertTrue(created.isCanEdit());
     assertFalse(created.isDeleted());
     verify(configurationDao).lockActiveByTarget(target.reference());
-    verify(bookingDao)
-        .overlaps(
-            4L,
-            start(),
-            end(),
-            null,
-            Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
+    verify(bookingDao).overlaps(4L, start(), end(), null, CONFLICTING_EVENT_KINDS);
     verify(events).publishEvent(any(TimeSlotBookingAuditEvent.class));
   }
 
@@ -170,9 +222,7 @@ class TimeSlotBookingManagerTest {
   @Test
   void rejectsMovingAFutureBookingIntoThePast() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    stubReadableBookingAndConfigurationLock(existing);
     assertThrows(
         BookingWindowException.class,
         () ->
@@ -209,13 +259,7 @@ class TimeSlotBookingManagerTest {
         () ->
             manager.createBooking(
                 new TimeSlotBookingManager.Create(target, start(), end(), null), actor, actor));
-    when(bookingDao.overlaps(
-            4L,
-            start(),
-            end(),
-            null,
-            Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE)))
-        .thenReturn(true);
+    when(bookingDao.overlaps(4L, start(), end(), null, CONFLICTING_EVENT_KINDS)).thenReturn(true);
     assertThrows(
         BookingOverlapException.class,
         () ->
@@ -256,7 +300,7 @@ class TimeSlotBookingManagerTest {
             instant("2026-10-26T22:00:00Z"),
             instant("2026-10-27T02:00:00Z"),
             null,
-            Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
+            CONFLICTING_EVENT_KINDS);
   }
 
   @Test
@@ -280,7 +324,7 @@ class TimeSlotBookingManagerTest {
         AuthorizationException.class,
         () -> manager.createBooking(maintenance, actor, sysadminAuditActor));
 
-    verify(configurationDao, org.mockito.Mockito.times(2)).lockActiveByTarget(target.reference());
+    verify(configurationDao, times(2)).lockActiveByTarget(target.reference());
   }
 
   @Test
@@ -343,9 +387,7 @@ class TimeSlotBookingManagerTest {
 
     TimeSlotBooking existing = booking(41L, 12L, actor);
     existing.getBookingConfiguration().setMaxBookingDurationMinutes(60);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    stubReadableBookingAndConfigurationLock(existing);
 
     BookingPolicyException failure =
         assertThrows(
@@ -381,7 +423,7 @@ class TimeSlotBookingManagerTest {
             instant("2026-08-17T09:40:00Z"),
             instant("2026-08-17T11:10:00Z"),
             null,
-            Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
+            CONFLICTING_EVENT_KINDS);
 
     BookingConfiguration doubleBookable = configuration(5L, 12L, true);
     doubleBookable.setTimeZone("UTC");
@@ -413,13 +455,19 @@ class TimeSlotBookingManagerTest {
     verify(configurationDao, never()).lockActiveByTarget(any());
   }
 
-  @Test
-  void purposeOnlyEditsRemainAllowedWhenTheConfigurationIsDisabled() {
+  @ParameterizedTest
+  @MethodSource("purposeOnlyConfigurationChanges")
+  void purposeOnlyEditsRemainAllowedAfterConfigurationChanges(
+      Boolean enabled, Long maxBookingDurationMinutes) {
     TimeSlotBooking existing = booking(41L, 12L, actor);
-    BookingConfiguration disabled = existing.getBookingConfiguration();
-    disabled.setEnabled(false);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L)).thenReturn(Optional.of(disabled));
+    BookingConfiguration configuration = existing.getBookingConfiguration();
+    if (enabled != null) {
+      configuration.setEnabled(enabled);
+    }
+    if (maxBookingDurationMinutes != null) {
+      configuration.setMaxBookingDurationMinutes(maxBookingDurationMinutes);
+    }
+    stubReadableBookingAndConfigurationLock(existing);
 
     TimeSlotBooking updated =
         manager
@@ -434,25 +482,8 @@ class TimeSlotBookingManagerTest {
     verify(bookingDao, never()).overlaps(any(), any(), any(), any(), any());
   }
 
-  @Test
-  void purposeOnlyEditsRemainAllowedAfterTheMaximumIsLowered() {
-    TimeSlotBooking existing = booking(41L, 12L, actor);
-    BookingConfiguration configuration = existing.getBookingConfiguration();
-    configuration.setMaxBookingDurationMinutes(60);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L)).thenReturn(Optional.of(configuration));
-
-    TimeSlotBooking updated =
-        manager
-            .updateBooking(
-                41L,
-                new TimeSlotBookingManager.Patch(null, null, true, "Changed", null),
-                actor,
-                actor)
-            .orElseThrow();
-
-    assertEquals("Changed", updated.getPurpose());
-    verify(bookingDao, never()).overlaps(any(), any(), any(), any(), any());
+  private static Stream<Arguments> purposeOnlyConfigurationChanges() {
+    return Stream.of(Arguments.of(false, null), Arguments.of(null, 60L));
   }
 
   @Test
@@ -494,9 +525,7 @@ class TimeSlotBookingManagerTest {
   @Test
   void requesterCanCancelButCannotReinstate() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    stubReadableBookingAndConfigurationLock(existing);
 
     TimeSlotBooking cancelled =
         manager
@@ -540,9 +569,7 @@ class TimeSlotBookingManagerTest {
   void anotherTargetReaderCannotEdit() {
     User requester = mock(User.class);
     TimeSlotBooking existing = booking(41L, 12L, requester);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    stubReadableBookingAndConfigurationLock(existing);
     when(accessManager.resolveForMutation(
             existing.getBookingConfiguration().getResourceAccess(), actor))
         .thenReturn(viewerAccess());
@@ -561,12 +588,9 @@ class TimeSlotBookingManagerTest {
   @Test
   void directSysadminCanEditAndCancelMaintenance() {
     when(actor.hasSysadminRole()).thenReturn(true);
-    TimeSlotBooking maintenance = booking(41L, 12L, actor);
-    maintenance.setKind(BookingEventKind.MAINTENANCE);
+    TimeSlotBooking maintenance = maintenanceBooking(41L, 12L, actor);
     maintenance.setCreatedBy(actor);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(maintenance));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(maintenance.getBookingConfiguration()));
+    stubReadableBookingAndConfigurationLock(maintenance);
 
     TimeSlotBooking updated =
         manager
@@ -591,11 +615,8 @@ class TimeSlotBookingManagerTest {
 
   @Test
   void bookerCannotMutateMaintenanceRegardlessOfTheAuditActor() {
-    TimeSlotBooking maintenance = booking(41L, 12L, actor);
-    maintenance.setKind(BookingEventKind.MAINTENANCE);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(maintenance));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(maintenance.getBookingConfiguration()));
+    TimeSlotBooking maintenance = maintenanceBooking(41L, 12L, actor);
+    stubReadableBookingAndConfigurationLock(maintenance);
     when(accessManager.resolveForMutation(
             maintenance.getBookingConfiguration().getResourceAccess(), actor))
         .thenReturn(bookerAccess());
@@ -625,9 +646,7 @@ class TimeSlotBookingManagerTest {
   @Test
   void mapsAStaleWriteToTheStableConcurrencyException() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    stubReadableBookingAndConfigurationLock(existing);
     when(bookingDao.saveAndFlush(existing))
         .thenThrow(new ObjectOptimisticLockingFailureException(TimeSlotBooking.class, 41L));
 
@@ -644,9 +663,7 @@ class TimeSlotBookingManagerTest {
   @Test
   void unreadableBookingIsConcealedRegardlessOfExpectedVersion() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+    stubReadableBookingAndConfigurationLock(existing);
     when(accessManager.resolveForMutation(
             existing.getBookingConfiguration().getResourceAccess(), actor))
         .thenReturn(noAccess());
@@ -663,6 +680,18 @@ class TimeSlotBookingManagerTest {
               .isEmpty());
     }
     assertEquals("Private purpose", existing.getPurpose());
+  }
+
+  private void stubReadableBookingAndConfigurationLock(TimeSlotBooking booking) {
+    when(bookingDao.findReadableById(eq(booking.getId()), any())).thenReturn(Optional.of(booking));
+    when(configurationDao.lockActiveById(booking.getBookingConfiguration().getId()))
+        .thenReturn(Optional.of(booking.getBookingConfiguration()));
+  }
+
+  private static TimeSlotBooking maintenanceBooking(long id, long targetId, User requester) {
+    TimeSlotBooking booking = booking(id, targetId, requester);
+    booking.setKind(BookingEventKind.MAINTENANCE);
+    return booking;
   }
 
   private static TimeSlotBooking booking(long id, long targetId, User requester) {

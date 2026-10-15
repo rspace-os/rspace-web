@@ -18,6 +18,7 @@ import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
 import com.researchspace.model.collection.ApiV2UserResource;
+import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.IncludeTree;
@@ -27,7 +28,6 @@ import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.ResourceFieldSelections;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
@@ -54,6 +54,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
 
+  private static final FilterExpression NO_INSTRUMENT_IS_READABLE =
+      new FilterExpression.Comparison("name", Operator.EQUAL, List.of("nothing"), false);
+
   @Autowired private InstrumentDao instrumentDao;
   @Autowired private BookingConfigurationDao bookingConfigurationDao;
   @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
@@ -77,7 +80,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             Set.of(),
             ignored -> access == null ? AccessResult.allowed() : AccessResult.allowedWhere(access));
     var bookingTarget =
-        new com.researchspace.model.collection.CollectionDescription<>(
+        new CollectionDescription<>(
             ApiV2BookingInstrumentResource.RESOURCE_NAME,
             Instrument.class,
             ApiV2BookingInstrumentResource.DESCRIPTION.fields(),
@@ -92,23 +95,30 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
   }
 
   private static ResourceRequest narrowedByTargetName(String term, List<Long> instrumentIds) {
-    FilterExpression original =
-        new FilterExpression.Comparison("target.name", Operator.LIKE, List.of(term), false);
-    return new ResourceRequest(
-        new FilterExpression.And(
-            List.of(
-                new FilterExpression.Comparison(
-                    "target.value", Operator.IN, List.copyOf(instrumentIds), false),
-                original)),
-        List.of(new Sort("id", true)),
-        new ResourceRequest.Page(1, 20),
-        FieldSelection.all(),
-        IncludeTree.empty());
+    return targetNameRequest(
+        new FilterExpression.Comparison("target.name", Operator.LIKE, List.of(term), false),
+        instrumentIds);
   }
 
   private static ResourceRequest byTargetName(String term) {
-    return new ResourceRequest(
+    return targetNameRequest(
         new FilterExpression.Comparison("target.name", Operator.CONTAINS, List.of(term), false),
+        null);
+  }
+
+  private static ResourceRequest targetNameRequest(
+      FilterExpression nameFilter, List<Long> instrumentIds) {
+    FilterExpression filter = nameFilter;
+    if (instrumentIds != null) {
+      filter =
+          new FilterExpression.And(
+              List.of(
+                  new FilterExpression.Comparison(
+                      "target.value", Operator.IN, List.copyOf(instrumentIds), false),
+                  nameFilter));
+    }
+    return new ResourceRequest(
+        filter,
         List.of(new Sort("id", true)),
         new ResourceRequest.Page(1, 20),
         FieldSelection.all(),
@@ -125,30 +135,6 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
         ResourceFieldSelections.root(FieldSelection.all()),
         IncludeTree.empty(),
         new RuntimeFieldSelection(Map.of(selector, field), Set.of(), Map.of(selector, "target")));
-  }
-
-  private ResolvedRuntimeField definitionOf(User actor, ApiInstrumentTemplate template) {
-    String templateId = String.valueOf(template.getId());
-    return customFields
-        .discover(actor, new RuntimeFieldCatalogQuery(null, Set.of(), 1, 50))
-        .fields()
-        .stream()
-        .filter(field -> field.sourceId().endsWith(templateId))
-        .findFirst()
-        .flatMap(field -> customFields.resolve(field.selector(), actor))
-        .orElseThrow(() -> new AssertionError("No readable definition for template " + templateId));
-  }
-
-  private Instrument instrumentFromTemplate(
-      User owner, ApiInstrumentTemplate template, String name, String value) {
-    ApiInstrument request = new ApiInstrument();
-    request.setName(name);
-    request.setTemplateId(template.getId());
-    ApiInstrument created = instrumentApiManager.createNewApiInstrument(request, owner);
-    Instrument instrument = instrumentDao.get(created.getId());
-    instrument.getActiveFields().forEach(field -> field.setFieldData(value));
-    instrumentDao.save(instrument);
-    return instrument;
   }
 
   private BookingConfiguration configurationFor(Long instrumentId, User owner) {
@@ -196,8 +182,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     User owner = createInitAndLoginAnyUser();
     String marker = UUID.randomUUID().toString();
     configurationFor(createBasicInstrumentForUser(owner, "Confocal " + marker).getId(), owner);
-    FilterExpression noInstrumentIsReadable =
-        new FilterExpression.Comparison("name", Operator.EQUAL, List.of("nothing"), false);
+    FilterExpression noInstrumentIsReadable = NO_INSTRUMENT_IS_READABLE;
 
     assertEquals(1, count(byTargetName(marker), targets(null)));
     assertEquals(0, count(byTargetName(marker), targets(noInstrumentIsReadable)));
@@ -207,11 +192,16 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
   void filtersByACustomFieldOfTheTargetInstrument() {
     User owner = createInitAndLoginAnyUser();
     ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(owner, "Cell line");
-    Instrument matching = instrumentFromTemplate(owner, template, "Readable scope", "BSL-2");
-    Instrument other = instrumentFromTemplate(owner, template, "Other scope", "BSL-1");
+    Instrument matching =
+        InstrumentCustomFieldTestUtils.instrumentFromTemplate(
+            instrumentDao, instrumentApiManager, owner, template, "Readable scope", "BSL-2");
+    Instrument other =
+        InstrumentCustomFieldTestUtils.instrumentFromTemplate(
+            instrumentDao, instrumentApiManager, owner, template, "Other scope", "BSL-1");
     configurationFor(matching.getId(), owner);
     configurationFor(other.getId(), owner);
-    ResolvedRuntimeField field = definitionOf(owner, template);
+    ResolvedRuntimeField field =
+        InstrumentCustomFieldTestUtils.definitionOf(customFields, owner, template);
 
     assertEquals(1, count(byTargetCustomField(field, "BSL-2"), targets(null)));
     assertEquals(
@@ -225,8 +215,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
                 targets(null))
             .resources()
             .size());
-    FilterExpression noInstrumentIsReadable =
-        new FilterExpression.Comparison("name", Operator.EQUAL, List.of("nothing"), false);
+    FilterExpression noInstrumentIsReadable = NO_INSTRUMENT_IS_READABLE;
     assertEquals(0, count(byTargetCustomField(field, "BSL-2"), targets(noInstrumentIsReadable)));
     assertEquals(0, count(byTargetCustomField(field, "BSL-9"), targets(null)));
   }
@@ -260,8 +249,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     ApiInstrument centrifuge = createBasicInstrumentForUser(owner, "Centrifuge");
     configurationFor(confocal.getId(), owner);
     configurationFor(centrifuge.getId(), owner);
-    FilterExpression noInstrumentIsReadable =
-        new FilterExpression.Comparison("name", Operator.EQUAL, List.of("nothing"), false);
+    FilterExpression noInstrumentIsReadable = NO_INSTRUMENT_IS_READABLE;
 
     assertEquals(
         1, count(narrowedByTargetName("confocal", List.of(confocal.getId())), targets(null)));

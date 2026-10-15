@@ -2,6 +2,7 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.model.booking.BookingSchedulingSettings.MAX_BOOKING_DURATION_MINUTES;
 
+import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
@@ -30,6 +31,7 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentReadSummary;
+import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.service.resourceaccess.ResourceRoleScheme;
@@ -78,13 +80,9 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       ObjectProvider<ResourceRegistry> resourceRegistry,
       ApplicationEventPublisher events,
       ResourceAccessManager accessManager,
-      @Qualifier(
-              com.researchspace.booking.config.BookingResourceAccessConfiguration
-                  .TIME_SLOT_BOOKING_DESCRIPTION)
+      @Qualifier(BookingResourceAccessConfiguration.TIME_SLOT_BOOKING_DESCRIPTION)
           CollectionDescription<TimeSlotBooking> bookingDescription,
-      @Qualifier(
-              com.researchspace.booking.config.BookingResourceAccessConfiguration
-                  .BOOKING_CONFIGURATION_DESCRIPTION)
+      @Qualifier(BookingResourceAccessConfiguration.BOOKING_CONFIGURATION_DESCRIPTION)
           CollectionDescription<BookingConfiguration> configurationDescription,
       @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock clock) {
     this.bookingDao = bookingDao;
@@ -97,29 +95,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     this.bookingDescription = bookingDescription;
     this.configurationDescription = configurationDescription;
     this.clock = clock;
-  }
-
-  TimeSlotBookingManagerImpl(
-      TimeSlotBookingDao bookingDao,
-      BookingConfigurationDao configurationDao,
-      BookingSchedulingPolicy schedulingPolicy,
-      InstrumentDao instrumentDao,
-      ObjectProvider<ResourceRegistry> resourceRegistry,
-      ApplicationEventPublisher events,
-      ResourceAccessManager accessManager,
-      CollectionDescription<TimeSlotBooking> bookingDescription,
-      CollectionDescription<BookingConfiguration> configurationDescription) {
-    this(
-        bookingDao,
-        configurationDao,
-        schedulingPolicy,
-        instrumentDao,
-        resourceRegistry,
-        events,
-        accessManager,
-        bookingDescription,
-        configurationDescription,
-        Clock.systemUTC());
   }
 
   @Override
@@ -154,11 +129,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   }
 
   @Override
-  public Optional<TimeSlotBooking> getBookingForAudit(Long id, User actor) {
-    return getBooking(id, actor);
-  }
-
-  @Override
   public void requireCanViewAudit(TimeSlotBooking booking, User actor) {
     requireAuthenticated(actor);
     requireCapability(
@@ -168,11 +138,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   @Override
   public Optional<CalendarSource> getCalendarSource(
       Long configurationId, User actor, Date refreshedAt, int maxEvents) {
-    requireAuthenticated(actor);
-    Objects.requireNonNull(refreshedAt, "Calendar refresh time");
-    if (maxEvents < 1) {
-      throw new IllegalArgumentException("Calendar event limit must be positive");
-    }
+    Date cutoff = calendarCutoff(actor, refreshedAt, maxEvents);
 
     Optional<BookingConfiguration> configuration =
         findReadableConfiguration(configurationId, actor);
@@ -189,48 +155,21 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       return Optional.empty();
     }
 
-    Date cutoff = Date.from(refreshedAt.toInstant().minus(30, ChronoUnit.DAYS));
     List<TimeSlotBooking> bookings =
         bookingDao.findCalendarBookings(configurationId, cutoff, maxEvents + 1);
-    if (bookings.size() > maxEvents) {
-      throw new CalendarSourceTooLargeException();
-    }
-    prepare(bookings, actor);
+    validateAndPrepareCalendarBookings(bookings, actor, maxEvents);
     List<CalendarEvent> calendarEvents =
-        bookings.stream()
-            .map(
-                booking ->
-                    new CalendarEvent(
-                        booking.getId(),
-                        booking.getStartTime(),
-                        booking.getEndTime(),
-                        booking.getCreatedAt(),
-                        booking.getUpdatedAt(),
-                        booking.getKind(),
-                        booking.getPrivacy(),
-                        booking.getVisibleBookedBy(),
-                        booking.getVisibleCreatedBy(),
-                        booking.getVisiblePurpose(),
-                        booking.isCanEdit()))
-            .toList();
+        bookings.stream().map(booking -> CalendarEvent.of(booking, null)).toList();
     return Optional.of(
         new CalendarSource(instrument.name(), configuration.get().getTimeZone(), calendarEvents));
   }
 
   @Override
   public CalendarSource getUserCalendarSource(User actor, Date refreshedAt, int maxEvents) {
-    requireAuthenticated(actor);
-    Objects.requireNonNull(refreshedAt, "Calendar refresh time");
-    if (maxEvents < 1) {
-      throw new IllegalArgumentException("Calendar event limit must be positive");
-    }
-    Date cutoff = Date.from(refreshedAt.toInstant().minus(30, ChronoUnit.DAYS));
+    Date cutoff = calendarCutoff(actor, refreshedAt, maxEvents);
     List<TimeSlotBooking> bookings =
         bookingDao.findUserCalendarBookings(actor.getId(), cutoff, maxEvents + 1);
-    if (bookings.size() > maxEvents) {
-      throw new CalendarSourceTooLargeException();
-    }
-    prepare(bookings, actor);
+    validateAndPrepareCalendarBookings(bookings, actor, maxEvents);
     Set<Long> targetIds =
         bookings.stream()
             .map(TimeSlotBooking::getBookingConfiguration)
@@ -249,22 +188,27 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                       target == null || target.type() != BookableTargetType.INSTRUMENT
                           ? null
                           : itemNames.get(target.id());
-                  return new CalendarEvent(
-                      booking.getId(),
-                      booking.getStartTime(),
-                      booking.getEndTime(),
-                      booking.getCreatedAt(),
-                      booking.getUpdatedAt(),
-                      booking.getKind(),
-                      booking.getPrivacy(),
-                      booking.getVisibleBookedBy(),
-                      booking.getVisibleCreatedBy(),
-                      booking.getVisiblePurpose(),
-                      booking.isCanEdit(),
-                      itemName);
+                  return CalendarEvent.of(booking, itemName);
                 })
             .toList();
     return new CalendarSource("booking:calendar.feed.myBookings", "UTC", calendarEvents, true);
+  }
+
+  private Date calendarCutoff(User actor, Date refreshedAt, int maxEvents) {
+    requireAuthenticated(actor);
+    Objects.requireNonNull(refreshedAt, "Calendar refresh time");
+    if (maxEvents < 1) {
+      throw new IllegalArgumentException("Calendar event limit must be positive");
+    }
+    return Date.from(refreshedAt.toInstant().minus(30, ChronoUnit.DAYS));
+  }
+
+  private void validateAndPrepareCalendarBookings(
+      List<TimeSlotBooking> bookings, User actor, int maxEvents) {
+    if (bookings.size() > maxEvents) {
+      throw new CalendarSourceTooLargeException();
+    }
+    prepare(bookings, actor);
   }
 
   @Override
@@ -358,8 +302,6 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
                   !start.equals(booking.getStartTime()) || !end.equals(booking.getEndTime());
               if (intervalChanged) {
                 validateWindow(start, end);
-              }
-              if (intervalChanged) {
                 if (!configuration.isEnabled()) {
                   throw new BookingTargetUnavailableException();
                 }
@@ -427,12 +369,10 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   }
 
   private void prepare(List<TimeSlotBooking> bookings, User actor) {
-    Map<Long, com.researchspace.model.resourceaccess.ResourceAccess> accesses =
-        new LinkedHashMap<>();
+    Map<Long, ResourceAccess> accesses = new LinkedHashMap<>();
     bookings.forEach(
         booking -> {
-          com.researchspace.model.resourceaccess.ResourceAccess access =
-              booking.getBookingConfiguration().getResourceAccess();
+          ResourceAccess access = booking.getBookingConfiguration().getResourceAccess();
           accesses.put(access.getId(), access);
         });
     Map<Long, ResolvedResourceAccess> resolved = accessManager.resolveAll(accesses.values(), actor);

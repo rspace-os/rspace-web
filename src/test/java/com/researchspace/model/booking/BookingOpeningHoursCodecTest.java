@@ -21,7 +21,6 @@ class BookingOpeningHoursCodecTest {
     assertEquals(
         BookingSchedulingSettings.DEFAULT_OPENING_HOURS,
         BookingOpeningHoursCodec.openingHours(json));
-    assertEquals(7, BookingOpeningHoursCodec.openingHours(json).size());
   }
 
   @Test
