@@ -18,6 +18,11 @@ import org.junit.jupiter.api.Test;
 
 class BookingNotificationMessageFormatterTest {
 
+  private static final String OVERLAP_START = "2026-11-01T05:30:00Z";
+  private static final String OVERLAP_END = "2026-11-01T06:30:00Z";
+  private static final String REGIONAL_START = "2026-10-08T04:00:00Z";
+  private static final String REGIONAL_END = "2026-10-08T05:00:00Z";
+
   private final BookingNotificationMessageFormatter formatter =
       new BookingNotificationMessageFormatter(
           new JsonMessageSource(), "https://rspace.example.org//");
@@ -64,7 +69,7 @@ class BookingNotificationMessageFormatterTest {
 
   @Test
   void formatsBothOccurrencesOfTheDstOverlapWithTheirOffsets() {
-    BookingNotificationData data = data("2026-11-01T05:30:00Z", "2026-11-01T06:30:00Z");
+    BookingNotificationData data = data(OVERLAP_START, OVERLAP_END);
 
     String message =
         formatter.format(
@@ -79,7 +84,7 @@ class BookingNotificationMessageFormatterTest {
 
   @Test
   void inAppMessagesLinkTheBookingAndItemWithRootRelativeUrlsAndEscapedValues() {
-    BookingNotificationData data = data("2026-11-01T05:30:00Z", "2026-11-01T06:30:00Z");
+    BookingNotificationData data = data(OVERLAP_START, OVERLAP_END);
     data.setInstrumentName("<script>alert(\"x\")</script> & scope");
 
     String message =
@@ -96,7 +101,7 @@ class BookingNotificationMessageFormatterTest {
 
   @Test
   void emailMessagesUseAbsoluteLinksFromTheServerUrl() {
-    BookingNotificationData data = data("2026-11-01T05:30:00Z", "2026-11-01T06:30:00Z");
+    BookingNotificationData data = data(OVERLAP_START, OVERLAP_END);
 
     String message =
         formatter.formatForEmail(
@@ -113,7 +118,7 @@ class BookingNotificationMessageFormatterTest {
 
   @Test
   void linkTargetsEncodeAndEscapeTheirIdentifiers() {
-    BookingNotificationData data = data("2026-11-01T05:30:00Z", "2026-11-01T06:30:00Z");
+    BookingNotificationData data = data(OVERLAP_START, OVERLAP_END);
     data.setBookingId("42\"><b>");
     data.setInstrumentGlobalIdentifier("IN12/../x?y");
 
@@ -131,7 +136,11 @@ class BookingNotificationMessageFormatterTest {
     String legacyMessage =
         "Booking 42 was created for instrument Scope "
             + instrumentTimestamp
-            + " (IN12) from 2026-11-01T05:30:00Z to 2026-11-01T06:30:00Z.";
+            + " (IN12) from "
+            + OVERLAP_START
+            + " to "
+            + OVERLAP_END
+            + ".";
 
     String message =
         formatter.formatLegacy(
@@ -147,7 +156,7 @@ class BookingNotificationMessageFormatterTest {
 
   @Test
   void writesTimesWithTheRegionalClockButTheAppLanguagesWordsAndFieldOrder() {
-    BookingNotificationData data = data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z");
+    BookingNotificationData data = data(REGIONAL_START, REGIONAL_END);
     ZoneId berlin = ZoneId.of("Europe/Berlin");
 
     String british =
@@ -172,7 +181,7 @@ class BookingNotificationMessageFormatterTest {
 
   @Test
   void withoutARegionalLocaleFormatsExactlyAsBefore() {
-    BookingNotificationData data = data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z");
+    BookingNotificationData data = data(REGIONAL_START, REGIONAL_END);
     ZoneId berlin = ZoneId.of("Europe/Berlin");
 
     assertEquals(
@@ -186,7 +195,7 @@ class BookingNotificationMessageFormatterTest {
     String message =
         formatter.formatLegacy(
             NotificationType.NOTIFICATION_BOOKING_CREATED,
-            "Booking 42 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.",
+            "Booking 42 from " + REGIONAL_START + " to " + REGIONAL_END + ".",
             ZoneId.of("Europe/Berlin"),
             Locale.US,
             Locale.forLanguageTag("en-GB"));

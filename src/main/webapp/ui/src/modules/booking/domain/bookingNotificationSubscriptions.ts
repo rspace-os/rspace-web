@@ -66,11 +66,7 @@ export async function replaceBookingNotificationPreferences(
   token: string,
 ): Promise<BookingNotificationPreferences> {
   // The API rejects unknown fields, so send exactly the writable preferences.
-  const body = v.parse(BookingNotificationPreferencesInputSchema, {
-    autoSubscribeOwnedItems: input.autoSubscribeOwnedItems,
-    notifyOnCreated: input.notifyOnCreated,
-    notifyOnCancelled: input.notifyOnCancelled,
-  });
+  const body = v.parse(v.object(bookingNotificationPreferenceEntries), input);
   return requestBooking(preferencesPath, token, BookingNotificationPreferencesSchema, {
     method: "PUT",
     body: JSON.stringify(body),

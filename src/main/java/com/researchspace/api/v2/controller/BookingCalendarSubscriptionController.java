@@ -51,7 +51,7 @@ public class BookingCalendarSubscriptionController {
     this.manager = manager;
   }
 
-  private static String isoTimestamp(Date value) {
+  static String isoTimestamp(Date value) {
     return value == null ? null : DateTimeFormatter.ISO_INSTANT.format(value.toInstant());
   }
 
