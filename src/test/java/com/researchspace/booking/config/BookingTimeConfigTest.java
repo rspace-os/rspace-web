@@ -17,7 +17,6 @@ class BookingTimeConfigTest {
 
       Clock clock = new BookingTimeConfig().bookingInstitutionClock();
 
-      assertEquals(ZoneId.systemDefault(), clock.getZone());
       assertEquals(ZoneId.of("Pacific/Auckland"), clock.getZone());
     } finally {
       TimeZone.setDefault(original);

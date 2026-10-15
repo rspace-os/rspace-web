@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.NestedExceptionUtils;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.method.HandlerMethod;
 
@@ -135,7 +136,8 @@ class ApiV2ResourceConfigTest {
       BeanCreationException thrown = assertThrows(BeanCreationException.class, context::refresh);
 
       IllegalArgumentException cause =
-          assertInstanceOf(IllegalArgumentException.class, rootCause(thrown));
+          assertInstanceOf(
+              IllegalArgumentException.class, NestedExceptionUtils.getMostSpecificCause(thrown));
       assertTrue(cause.getMessage().contains("maintenances"), cause.getMessage());
     }
   }
@@ -193,14 +195,6 @@ class ApiV2ResourceConfigTest {
             .filter(method -> method.getName().equals(methodName))
             .findFirst()
             .orElseThrow());
-  }
-
-  private static Throwable rootCause(Throwable thrown) {
-    Throwable current = thrown;
-    while (current.getCause() != null) {
-      current = current.getCause();
-    }
-    return current;
   }
 
   /**

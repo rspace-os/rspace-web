@@ -30,9 +30,9 @@ public class BookingConfigurationTargetController {
       throw new ApiV2AuthenticationException();
     }
     String trimmed = query == null ? "" : query.trim();
-    if (trimmed.length() < 2 || limit < 1 || limit > 50) {
+    if (trimmed.length() < 2) {
       throw new ApiV2BadRequestException("errors.api.v2.invalidRequest");
     }
-    return manager.search(trimmed, limit, caller.subject());
+    return manager.search(trimmed, ResourceAccessController.validateLimit(limit), caller.subject());
   }
 }

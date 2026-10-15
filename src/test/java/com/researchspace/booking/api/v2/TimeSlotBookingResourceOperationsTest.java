@@ -18,17 +18,16 @@ import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
-import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingEventKind;
-import com.researchspace.model.booking.BookingState;
+import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
-import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.testutils.BookingResourceTestFixtures;
 import java.time.Instant;
 import java.util.Date;
 import java.util.EnumSet;
@@ -70,6 +69,7 @@ class TimeSlotBookingResourceOperationsTest {
   @Test
   void mapsSchedulingConflictsForBothCreateAndUpdate() {
     var spec = operations.timeSlotBookingApiV2Resource();
+    BookingConcurrentModificationException conflict = new BookingConcurrentModificationException();
     Map.of(
             ResourceOperation.CREATE, HttpStatus.CONFLICT,
             ResourceOperation.UPDATE, HttpStatus.PRECONDITION_FAILED)
@@ -82,14 +82,14 @@ class TimeSlotBookingResourceOperationsTest {
                               error.exceptionType() == BookingConcurrentModificationException.class)
                       .findFirst()
                       .orElseThrow();
-              assertEquals(
-                  status, mapping.translate(new BookingConcurrentModificationException()).status());
+              assertEquals(status, mapping.translate(conflict).status());
             });
   }
 
   @Test
   void translatesCreateAndPresenceAwarePatchCommands() {
-    ResolvedResourceReference<BookableTargetType, Long> target = resolved(12L);
+    ResolvedResourceReference<BookableTargetType, Long> target =
+        BookingResourceTestFixtures.resolved(12L);
     ParsedDocument create =
         new ParsedDocument(
             WriteOperation.CREATE,
@@ -107,7 +107,7 @@ class TimeSlotBookingResourceOperationsTest {
     TimeSlotBooking booking = new TimeSlotBooking();
     TimeSlotBookingManager.Create command =
         new TimeSlotBookingManager.Create(
-            new com.researchspace.model.booking.ResolvedBookableTarget(
+            new ResolvedBookableTarget(
                 new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L),
                 target.entityAs(Instrument.class)),
             start(),
@@ -155,6 +155,18 @@ class TimeSlotBookingResourceOperationsTest {
   }
 
   @Test
+  void auditReadUsesTheOrdinaryLookupAndKeepsCapabilityCheckSeparate() {
+    TimeSlotBooking booking = booking(actor);
+    when(manager.getBooking(41L, actor)).thenReturn(Optional.of(booking));
+
+    assertEquals(Optional.of(booking), operations.findByIdForAudit(41L, actor));
+    operations.requireAuditAccess(booking, actor);
+
+    verify(manager).getBooking(41L, actor);
+    verify(manager).requireCanViewAudit(booking, actor);
+  }
+
+  @Test
   void featureFlagSuppressesReadsAndRefusesWrites() {
     when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, actor)).thenReturn(false);
     ResourceRequest request = ResourceRequest.unpaged(null);
@@ -162,6 +174,7 @@ class TimeSlotBookingResourceOperationsTest {
     assertEquals(0, operations.find(request, actor).total());
     assertEquals(0, operations.count(request, actor));
     assertEquals(Optional.empty(), operations.findById(1L, actor));
+    assertEquals(Optional.empty(), operations.findByIdForAudit(1L, actor));
     assertThrows(
         AuthorizationException.class,
         () ->
@@ -173,28 +186,8 @@ class TimeSlotBookingResourceOperationsTest {
     verifyNoInteractions(manager);
   }
 
-  private static ResolvedResourceReference<BookableTargetType, Long> resolved(long id) {
-    Instrument instrument = new Instrument();
-    instrument.setId(id);
-    return new ResolvedResourceReference<>(
-        new ResourceReference<>(BookableTargetType.INSTRUMENT, id), instrument);
-  }
-
   private static TimeSlotBooking booking(User requester) {
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setTimeZone("Europe/Berlin");
-    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    TimeSlotBooking booking = new TimeSlotBooking();
-    booking.setId(41L);
-    booking.setBookingConfiguration(configuration);
-    booking.setRequester(requester);
-    booking.setStartTime(start());
-    booking.setEndTime(end());
-    booking.setState(BookingState.CONFIRMED);
-    booking.setPurpose("Secret");
-    booking.setCreatedAt(start());
-    booking.setUpdatedAt(start());
-    return booking;
+    return BookingResourceTestFixtures.booking(requester, start(), end(), start(), start());
   }
 
   private static Date start() {

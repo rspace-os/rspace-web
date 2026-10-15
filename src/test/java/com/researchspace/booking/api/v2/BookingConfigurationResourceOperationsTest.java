@@ -23,20 +23,24 @@ import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResolvedResourceReference;
-import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
+import com.researchspace.testutils.BookingResourceTestFixtures;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class BookingConfigurationResourceOperationsTest {
 
@@ -63,7 +67,8 @@ class BookingConfigurationResourceOperationsTest {
   void translatesRestCreatesToTheSharedManagerInterface() {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setTimeZone("Pacific/Auckland");
-    ResolvedResourceReference<BookableTargetType, Long> resolved = resolved(12L);
+    ResolvedResourceReference<BookableTargetType, Long> resolved =
+        BookingResourceTestFixtures.resolved(12L);
     ResolvedBookableTarget target = target(resolved);
     when(manager.createConfiguration(new Create(true, "Pacific/Auckland", target), actor, actor))
         .thenReturn(configuration);
@@ -91,8 +96,10 @@ class BookingConfigurationResourceOperationsTest {
 
   @Test
   void translatesBulkCreatesToOneSharedManagerCall() {
-    ResolvedResourceReference<BookableTargetType, Long> first = resolved(12L);
-    ResolvedResourceReference<BookableTargetType, Long> second = resolved(13L);
+    ResolvedResourceReference<BookableTargetType, Long> first =
+        BookingResourceTestFixtures.resolved(12L);
+    ResolvedResourceReference<BookableTargetType, Long> second =
+        BookingResourceTestFixtures.resolved(13L);
     List<Create> creates =
         List.of(
             new Create(true, "Pacific/Auckland", target(first)),
@@ -113,16 +120,11 @@ class BookingConfigurationResourceOperationsTest {
   }
 
   @Test
-  void translatesRestPatchesAndDeletesToTheSharedManagerInterface() {
-    ParsedDocument document = ParsedDocument.update(Map.of("enabled", true));
+  void translatesDeletesToTheSharedManagerInterface() {
     BookingConfiguration configuration = new BookingConfiguration();
-    when(manager.updateConfiguration(42L, new Patch(true, null), actor, actor))
-        .thenReturn(Optional.of(configuration));
     when(manager.archiveConfiguration(42L, 3L, actor, actor))
         .thenReturn(Optional.of(configuration));
 
-    assertEquals(
-        configuration, operations.update(42L, document, ApiV2Caller.direct(actor)).orElseThrow());
     assertEquals(
         configuration,
         operations
@@ -131,28 +133,32 @@ class BookingConfigurationResourceOperationsTest {
             .resource()
             .orElseThrow());
 
-    verify(manager).updateConfiguration(42L, new Patch(true, null), actor, actor);
     verify(manager).archiveConfiguration(42L, 3L, actor, actor);
   }
 
-  @Test
-  void translatesMaximumBookingDurationPatchesToSchedulingSettings() {
+  @ParameterizedTest
+  @MethodSource("schedulingPatches")
+  void translatesSchedulingPatchesToTheSharedManagerInterface(
+      ParsedDocument document, Patch expectedPatch) {
     BookingConfiguration configuration = new BookingConfiguration();
-    BookingSchedulingSettings.Patch schedulingPatch =
-        new BookingSchedulingSettings.Patch(null, null, null, null, 60L, null);
-    when(manager.updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor))
+    when(manager.updateConfiguration(42L, expectedPatch, actor, actor))
         .thenReturn(Optional.of(configuration));
 
     assertEquals(
-        configuration,
-        operations
-            .update(
-                42L,
-                ParsedDocument.update(Map.of("maxBookingDurationMinutes", 60L)),
-                ApiV2Caller.direct(actor))
-            .orElseThrow());
+        configuration, operations.update(42L, document, ApiV2Caller.direct(actor)).orElseThrow());
 
-    verify(manager).updateConfiguration(42L, new Patch(null, null, schedulingPatch), actor, actor);
+    verify(manager).updateConfiguration(42L, expectedPatch, actor, actor);
+  }
+
+  private static Stream<Arguments> schedulingPatches() {
+    return Stream.of(
+        Arguments.of(ParsedDocument.update(Map.of("enabled", true)), new Patch(true, null)),
+        Arguments.of(
+            ParsedDocument.update(Map.of("maxBookingDurationMinutes", 60L)),
+            new Patch(
+                null,
+                null,
+                new BookingSchedulingSettings.Patch(null, null, null, null, 60L, null))));
   }
 
   @Test
@@ -176,13 +182,6 @@ class BookingConfigurationResourceOperationsTest {
         () -> operations.delete(42L, new ResourceDeleteOptions(0L, false), caller));
     assertThrows(AuthorizationException.class, () -> operations.deleteMany(request, caller));
     verifyNoInteractions(manager);
-  }
-
-  private static ResolvedResourceReference<BookableTargetType, Long> resolved(long id) {
-    Instrument instrument = new Instrument();
-    instrument.setId(id);
-    return new ResolvedResourceReference<>(
-        new ResourceReference<>(BookableTargetType.INSTRUMENT, id), instrument);
   }
 
   private static ResolvedBookableTarget target(

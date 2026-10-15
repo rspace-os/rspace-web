@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -40,6 +41,8 @@ import org.hibernate.Hibernate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -82,52 +85,86 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
         sysadmin);
   }
 
-  @Test
-  public void editRejectsAccessRevokedAfterItsInitialReadSnapshot() {
+  @ParameterizedTest(name = "{0}")
+  @EnumSource(SnapshotMutation.class)
+  public void editRejectsAccessOrConfigurationChangesCommittedAfterItsInitialReadSnapshot(
+      SnapshotMutation mutation) {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument instrument = createBasicInstrumentForUser(owner, "Access snapshot scope");
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
-    User booker = createInitAndLoginAnyUser();
-    setAudienceRole(setup.configurationId(), owner, "BOOKER");
-    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
-    var existing =
+    User requester = owner;
+    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+      requester = createInitAndLoginAnyUser();
+      setAudienceRole(setup.configurationId(), owner, "BOOKER");
+    }
+    Instant start = sevenDaysFromNow();
+    User bookingRequester = requester;
+    TimeSlotBooking existing =
         bookingManager.createBooking(
             new TimeSlotBookingManager.Create(
                 new ResolvedBookableTarget(setup.target(), setup.instrument()),
                 Date.from(start),
                 Date.from(start.plus(1, ChronoUnit.HOURS)),
                 null),
-            booker,
-            booker);
+            bookingRequester,
+            bookingRequester);
     var competing = new TransactionTemplate(getTxMger());
     competing.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    User subject = bookingRequester;
+
     assertThrows(
         BookingConcurrentModificationException.class,
         () ->
             new TransactionTemplate(getTxMger())
                 .executeWithoutResult(
                     ignored -> {
-                      bookingManager.getBooking(existing.getId(), booker).orElseThrow();
+                      bookingManager.getBooking(existing.getId(), subject).orElseThrow();
                       competing.executeWithoutResult(
-                          other -> setAudienceRole(setup.configurationId(), owner, "NO_ACCESS"));
-                      assertTrue(
-                          bookingManager
-                              .updateBooking(
-                                  existing.getId(),
-                                  new TimeSlotBookingManager.Patch(
-                                      null, null, true, "Revoked edit", null),
-                                  booker,
-                                  booker)
-                              .isEmpty());
+                          other -> {
+                            if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+                              setAudienceRole(setup.configurationId(), owner, "NO_ACCESS");
+                            } else {
+                              configurationManager.updateConfiguration(
+                                  setup.configurationId(),
+                                  new BookingConfigurationManager.Patch(false, null),
+                                  owner,
+                                  owner);
+                            }
+                          });
+                      if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+                        assertTrue(
+                            bookingManager
+                                .updateBooking(
+                                    existing.getId(),
+                                    new TimeSlotBookingManager.Patch(
+                                        null, null, true, "Revoked edit", null),
+                                    subject,
+                                    subject)
+                                .isEmpty());
+                      } else {
+                        bookingManager.updateBooking(
+                            existing.getId(),
+                            new TimeSlotBookingManager.Patch(
+                                Date.from(start.plus(2, ChronoUnit.HOURS)),
+                                Date.from(start.plus(3, ChronoUnit.HOURS)),
+                                false,
+                                null,
+                                null),
+                            owner,
+                            owner);
+                      }
                     }));
-    assertTrue(
-        bookingManager
-            .updateBooking(
-                existing.getId(),
-                new TimeSlotBookingManager.Patch(null, null, true, "Revoked edit", null),
-                booker,
-                booker)
-            .isEmpty());
+
+    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+      assertTrue(
+          bookingManager
+              .updateBooking(
+                  existing.getId(),
+                  new TimeSlotBookingManager.Patch(null, null, true, "Revoked edit", null),
+                  subject,
+                  subject)
+              .isEmpty());
+    }
   }
 
   @Test
@@ -137,7 +174,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     User booker = createInitAndLoginAnyUser();
     setAudienceRole(setup.configurationId(), owner, "BOOKER");
-    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    Instant start = sevenDaysFromNow();
     var existing =
         bookingManager.createBooking(
             new TimeSlotBookingManager.Create(
@@ -201,54 +238,12 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void editUsesConfigurationChangesCommittedAfterItsInitialReadSnapshot() {
-    User owner = createInitAndLoginAnyUser();
-    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Configuration snapshot scope");
-    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
-    ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
-    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
-    var existing =
-        bookingManager.createBooking(
-            new TimeSlotBookingManager.Create(
-                target, Date.from(start), Date.from(start.plus(1, ChronoUnit.HOURS)), null),
-            owner,
-            owner);
-    var competing = new TransactionTemplate(getTxMger());
-    competing.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    assertThrows(
-        BookingConcurrentModificationException.class,
-        () ->
-            new TransactionTemplate(getTxMger())
-                .executeWithoutResult(
-                    ignored -> {
-                      bookingManager.getBooking(existing.getId(), owner).orElseThrow();
-                      competing.executeWithoutResult(
-                          other ->
-                              configurationManager.updateConfiguration(
-                                  setup.configurationId(),
-                                  new BookingConfigurationManager.Patch(false, null),
-                                  owner,
-                                  owner));
-                      bookingManager.updateBooking(
-                          existing.getId(),
-                          new TimeSlotBookingManager.Patch(
-                              Date.from(start.plus(2, ChronoUnit.HOURS)),
-                              Date.from(start.plus(3, ChronoUnit.HOURS)),
-                              false,
-                              null,
-                              null),
-                          owner,
-                          owner);
-                    }));
-  }
-
-  @Test
   public void editRejectsOverlapCommittedAfterItsInitialReadSnapshot() throws Exception {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument instrument = createBasicInstrumentForUser(owner, "Edit snapshot scope");
     Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
     ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
-    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    Instant start = sevenDaysFromNow();
     var existing =
         bookingManager.createBooking(
             new TimeSlotBookingManager.Create(
@@ -364,7 +359,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
                           }));
       assertTrue(archiveLocked.await(10, TimeUnit.SECONDS));
 
-      Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+      Instant start = sevenDaysFromNow();
       var command =
           new TimeSlotBookingManager.Create(
               new ResolvedBookableTarget(setup.target(), setup.instrument()),
@@ -385,13 +380,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
       archive.get(20, TimeUnit.SECONDS);
       assertTrue(create.get(20, TimeUnit.SECONDS) instanceof BookingTargetUnavailableException);
-      assertEquals(
-          Integer.valueOf(0),
-          jdbcTemplate.queryForObject(
-              "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND state ="
-                  + " 'CONFIRMED' AND deleted = 0",
-              Integer.class,
-              setup.configurationId()));
+      assertEquals(Integer.valueOf(0), countLiveBookings(setup.configurationId()));
     } finally {
       createStarted.countDown();
       pool.shutdownNow();
@@ -405,7 +394,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     ApiInstrument created = createBasicInstrumentForUser(owner, "Archive create-wins scope");
     Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
     ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
-    Instant start = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+    Instant start = sevenDaysFromNow();
     TimeSlotBooking existing =
         bookingManager.createBooking(
             new TimeSlotBookingManager.Create(
@@ -458,7 +447,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
       try {
         archive.get(20, TimeUnit.SECONDS);
-      } catch (java.util.concurrent.ExecutionException exception) {
+      } catch (ExecutionException exception) {
         // MariaDB can reject a stale-snapshot locking read instead of returning current rows.
         assertTrue(exception.getCause() instanceof BookingConcurrentModificationException);
         create.get(20, TimeUnit.SECONDS);
@@ -487,13 +476,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
             .orElseThrow();
       }
       create.get(20, TimeUnit.SECONDS);
-      assertEquals(
-          Integer.valueOf(0),
-          jdbcTemplate.queryForObject(
-              "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND state ="
-                  + " 'CONFIRMED' AND deleted = 0",
-              Integer.class,
-              setup.configurationId()));
+      assertEquals(Integer.valueOf(0), countLiveBookings(setup.configurationId()));
     } finally {
       archiveRead.countDown();
       pool.shutdownNow();
@@ -575,9 +558,9 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
               Date.from(start.plus(1, ChronoUnit.HOURS)),
               "Concurrent test");
       Future<Throwable> first =
-          pool.submit(() -> attemptCreate(create, owner, contendersStarted, startContenders));
+          submitCreateAttempt(pool, create, owner, contendersStarted, startContenders);
       Future<Throwable> second =
-          pool.submit(() -> attemptCreate(create, owner, contendersStarted, startContenders));
+          submitCreateAttempt(pool, create, owner, contendersStarted, startContenders);
       assertTrue(contendersStarted.await(10, TimeUnit.SECONDS));
       startContenders.countDown();
       releaseHolder.countDown();
@@ -605,8 +588,30 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     }
   }
 
-  private void create(ResolvedBookableTarget target, User owner, Instant start, Instant end) {
-    bookingManager.createBooking(
+  private static Instant sevenDaysFromNow() {
+    return Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.HOURS);
+  }
+
+  private int countLiveBookings(Long configurationId) {
+    return jdbcTemplate.queryForObject(
+        "SELECT COUNT(*) FROM TimeSlotBooking WHERE bookingConfiguration_id = ? AND state ="
+            + " 'CONFIRMED' AND deleted = 0",
+        Integer.class,
+        configurationId);
+  }
+
+  private Future<Throwable> submitCreateAttempt(
+      ExecutorService pool,
+      TimeSlotBookingManager.Create create,
+      User owner,
+      CountDownLatch started,
+      CountDownLatch start) {
+    return pool.submit(() -> attemptCreate(create, owner, started, start));
+  }
+
+  private TimeSlotBooking create(
+      ResolvedBookableTarget target, User owner, Instant start, Instant end) {
+    return bookingManager.createBooking(
         new TimeSlotBookingManager.Create(target, Date.from(start), Date.from(end), null),
         owner,
         owner);
@@ -659,6 +664,11 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       Thread.currentThread().interrupt();
       throw new AssertionError(exception);
     }
+  }
+
+  private enum SnapshotMutation {
+    REVOKE_BOOKER_ACCESS,
+    DISABLE_CONFIGURATION
   }
 
   private record Setup(
