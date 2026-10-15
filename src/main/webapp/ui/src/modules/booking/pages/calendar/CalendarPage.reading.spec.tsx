@@ -98,7 +98,7 @@ describe("Calendar page", () => {
 
   test("filters Calendar events by target fields and target custom fields", async () => {
     render(<CalendarPageStory history={history} />);
-    await calendar.openFilterPanel();
+    await calendar.filters.click();
 
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     const targetNameField = page.getByRole("combobox", { name: "Field for filter 1" });
@@ -334,14 +334,16 @@ describe("Calendar page", () => {
     await expect
       .poll(() => new URLSearchParams(history.location.search).get("calendar-resources.q"))
       .toBe("no matching event");
-    await calendar.toggleQuickFilter("My Bookings");
-    await calendar.openFilterPanel();
+    await calendar.toolbar.getByRole("button", { name: "My Bookings", exact: true }).click();
+    await calendar.filters.click();
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     await page.getByRole("combobox", { name: "Field for filter 1" }).fill("Purpose");
     await page.getByRole("option", { name: "Purpose", exact: true }).click();
     await page.getByRole("textbox", { name: "Value for filter 1" }).fill("no matching purpose");
     await page.getByRole("button", { name: "Apply filters" }).click();
-    await expect.element(calendar.quickFilter("My Bookings")).toHaveAttribute("aria-pressed", "true");
+    await expect
+      .element(calendar.toolbar.getByRole("button", { name: "My Bookings", exact: true }))
+      .toHaveAttribute("aria-pressed", "true");
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, 1 applied");
     await calendar.chooseView("Week");
     await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Week");
@@ -349,7 +351,9 @@ describe("Calendar page", () => {
     await calendar.reset.click();
     await expect.element(calendar.search).toHaveValue("");
     await expect.element(calendar.removeMine).not.toBeInTheDocument();
-    await expect.element(calendar.quickFilter("My Bookings")).toHaveAttribute("aria-pressed", "false");
+    await expect
+      .element(calendar.toolbar.getByRole("button", { name: "My Bookings", exact: true }))
+      .toHaveAttribute("aria-pressed", "false");
     await expect.element(calendar.viewMenu).toHaveAccessibleName("View: By Item · Day");
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
     await expect.element(calendar.reset).not.toBeInTheDocument();
@@ -614,7 +618,7 @@ describe("Calendar page", () => {
     ).toBe(true);
     await expect.poll(() => page.getByTestId("day-timeline-scroller").all().length).toBe(5);
 
-    await calendar.toggleQuickFilter("My Bookings");
+    await calendar.toolbar.getByRole("button", { name: "My Bookings", exact: true }).click();
     await expect.element(calendar.event("Confocal microscope")).toBeVisible();
     await expect.element(calendar.event("Electron microscope")).not.toBeInTheDocument();
 
