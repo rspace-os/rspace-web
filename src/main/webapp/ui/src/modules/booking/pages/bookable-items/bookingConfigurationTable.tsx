@@ -1,8 +1,12 @@
 import { createElement } from "react";
 import { useTranslation } from "react-i18next";
-import { bookingTimeZoneOptions, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import {
+  bookingTimeZoneOptions,
+  browserTimeZone,
+  useBookingTimeFormat,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
@@ -166,10 +170,6 @@ function ConfigurationUpdatedAt({ value }: { value: string | null | undefined })
   const { i18n, t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   return value
-    ? new Intl.DateTimeFormat(i18n.language, {
-        dateStyle: "medium",
-        timeStyle: "short",
-        hourCycle: bookingHourCycle(timeFormat),
-      }).format(new Date(value))
+    ? formatBookingDateTime(value, browserTimeZone() ?? "UTC", i18n.language, timeFormat)
     : t("bookableItemDetails.notAvailable");
 }

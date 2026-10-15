@@ -22,31 +22,39 @@ type BookingActionProps = {
 
 type BookingCardState = "bookable" | "configured" | "disabled" | "archived" | "setup";
 
+const configuredCardText = {
+  title: "instrument.booking.configured.title",
+  description: "instrument.booking.configured.description",
+} as const;
+
 const cardText = {
   bookable: {
-    title: "instrument.booking.configured.title",
-    description: "instrument.booking.configured.description",
+    ...configuredCardText,
     action: "instrument.booking.configured.book",
+    href: (globalId: string) => `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`,
   },
   configured: {
-    title: "instrument.booking.configured.title",
-    description: "instrument.booking.configured.description",
+    ...configuredCardText,
     action: "instrument.booking.configured.open",
+    href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
   },
   disabled: {
     title: "instrument.booking.disabled.title",
     description: "instrument.booking.disabled.description",
     action: "instrument.booking.configured.open",
+    href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
   },
   archived: {
     title: "instrument.booking.archived.title",
     description: "instrument.booking.archived.description",
     action: "instrument.booking.configured.open",
+    href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
   },
   setup: {
     title: "instrument.booking.notConfigured.title",
     description: "instrument.booking.notConfigured.description",
     action: "instrument.booking.notConfigured.action",
+    href: (globalId: string) => `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`,
   },
 } as const;
 
@@ -108,13 +116,7 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
         </Box>
         <Button
           component="a"
-          href={
-            state === "bookable"
-              ? `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`
-              : state === "setup"
-                ? `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`
-                : `/booking/bookable-items/${encodeURIComponent(globalId)}`
-          }
+          href={text.href(globalId)}
           variant="contained"
           color="callToAction"
           startIcon={<CalendarMonthIcon />}
