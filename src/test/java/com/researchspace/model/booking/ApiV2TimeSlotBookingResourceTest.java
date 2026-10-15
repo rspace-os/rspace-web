@@ -13,8 +13,11 @@ import com.researchspace.model.collection.AccessContext.Operation;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
+import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.model.collection.WriteOperation;
+import com.researchspace.testutils.BookingResourceTestFixtures;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -59,60 +62,67 @@ class ApiV2TimeSlotBookingResourceTest {
 
   @Test
   void parsesOnlyDocumentedCreateAndUpdateFields() throws Exception {
-    var create =
-        ApiV2DocumentParser.parse(
-            mapper.readTree(
-                """
-                {
-                  "target": {"relationTo": "booking-instruments", "value": 12},
-                  "start": "2026-10-25T00:30:00Z",
-                  "end": "2026-10-25T02:30:00Z",
-                  "kind": "MAINTENANCE",
-                  "purpose": "Plate 4"
-                }
-                """),
-            ApiV2TimeSlotBookingResource.DESCRIPTION,
-            WriteOperation.CREATE,
-            "errors.api.v2.booking.create",
-            new AccessContext(null, Operation.CREATE, "bookings"));
+    ParsedDocument create =
+        parse(
+            """
+            {
+              "target": {"relationTo": "booking-instruments", "value": 12},
+              "start": "2026-10-25T00:30:00Z",
+              "end": "2026-10-25T02:30:00Z",
+              "kind": "MAINTENANCE",
+              "purpose": "Plate 4"
+            }
+            """,
+            WriteOperation.CREATE);
 
     assertEquals(
-        new com.researchspace.model.collection.ResourceReference<>(
-            BookableTargetType.INSTRUMENT, 12L),
-        create.values().get("target"));
+        new ResourceReference<>(BookableTargetType.INSTRUMENT, 12L), create.values().get("target"));
     assertEquals(BookingEventKind.MAINTENANCE, create.values().get("kind"));
     assertThrows(
         DocumentValidationException.class,
         () ->
-            ApiV2DocumentParser.parse(
-                mapper.readTree(
-                    """
-                    {"target":{"relationTo":"booking-instruments","value":12},
-                     "start":"2026-10-25T00:30:00Z","end":"2026-10-25T02:30:00Z",
-                     "bookedBy":"forged"}
-                    """),
-                ApiV2TimeSlotBookingResource.DESCRIPTION,
-                WriteOperation.CREATE,
-                "errors.api.v2.booking.create",
-                new AccessContext(null, Operation.CREATE, "bookings")));
+            parse(
+                """
+                {"target":{"relationTo":"booking-instruments","value":12},
+                 "start":"2026-10-25T00:30:00Z","end":"2026-10-25T02:30:00Z",
+                 "bookedBy":"forged"}
+                """,
+                WriteOperation.CREATE));
     assertThrows(
         DocumentValidationException.class,
-        () ->
-            ApiV2DocumentParser.parse(
-                mapper.readTree("{\"target\":\"IN13\"}"),
-                ApiV2TimeSlotBookingResource.DESCRIPTION,
-                WriteOperation.UPDATE,
-                "errors.api.v2.booking.patch",
-                new AccessContext(null, Operation.UPDATE, "bookings", 41L)));
+        () -> parse("{\"target\":\"IN13\"}", WriteOperation.UPDATE));
     assertThrows(
         DocumentValidationException.class,
-        () ->
-            ApiV2DocumentParser.parse(
-                mapper.readTree("{\"kind\":\"MAINTENANCE\"}"),
-                ApiV2TimeSlotBookingResource.DESCRIPTION,
-                WriteOperation.UPDATE,
-                "errors.api.v2.booking.patch",
-                new AccessContext(null, Operation.UPDATE, "bookings", 41L)));
+        () -> parse("{\"kind\":\"MAINTENANCE\"}", WriteOperation.UPDATE));
+  }
+
+  @Test
+  void defensivelyCopiesBookingDatesOnAssignmentAndRead() {
+    TimeSlotBooking booking = new TimeSlotBooking();
+    Date supplied = new Date(1_000L);
+    booking.setStartTime(supplied);
+    booking.setEndTime(supplied);
+    booking.setCreatedAt(supplied);
+    booking.setUpdatedAt(supplied);
+
+    supplied.setTime(2_000L);
+    assertEquals(1_000L, booking.getStartTime().getTime());
+    assertEquals(1_000L, booking.getEndTime().getTime());
+    assertEquals(1_000L, booking.getCreatedAt().getTime());
+    assertEquals(1_000L, booking.getUpdatedAt().getTime());
+
+    for (Date returned :
+        List.of(
+            booking.getStartTime(),
+            booking.getEndTime(),
+            booking.getCreatedAt(),
+            booking.getUpdatedAt())) {
+      returned.setTime(3_000L);
+    }
+    assertEquals(1_000L, booking.getStartTime().getTime());
+    assertEquals(1_000L, booking.getEndTime().getTime());
+    assertEquals(1_000L, booking.getCreatedAt().getTime());
+    assertEquals(1_000L, booking.getUpdatedAt().getTime());
   }
 
   @Test
@@ -141,18 +151,27 @@ class ApiV2TimeSlotBookingResourceTest {
     assertEquals(true, full.get("canViewConfiguration"));
   }
 
+  private ParsedDocument parse(String json, WriteOperation operation) throws Exception {
+    boolean creating = operation == WriteOperation.CREATE;
+    AccessContext context =
+        creating
+            ? new AccessContext(null, Operation.CREATE, "bookings")
+            : new AccessContext(null, Operation.UPDATE, "bookings", 41L);
+    String messageKey = creating ? "errors.api.v2.booking.create" : "errors.api.v2.booking.patch";
+    return ApiV2DocumentParser.parse(
+        mapper.readTree(json),
+        ApiV2TimeSlotBookingResource.DESCRIPTION,
+        operation,
+        messageKey,
+        context);
+  }
+
   private static TimeSlotBooking booking(User requester) {
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setTimeZone("Europe/Berlin");
-    configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    TimeSlotBooking booking = new TimeSlotBooking();
-    booking.setId(41L);
-    booking.setBookingConfiguration(configuration);
-    booking.setRequester(requester);
-    booking.setStartTime(Date.from(Instant.parse("2026-10-25T00:30:00Z")));
-    booking.setEndTime(Date.from(Instant.parse("2026-10-25T02:30:00Z")));
-    booking.setState(BookingState.CONFIRMED);
-    booking.setPurpose("Secret");
-    return booking;
+    return BookingResourceTestFixtures.booking(
+        requester,
+        Date.from(Instant.parse("2026-10-25T00:30:00Z")),
+        Date.from(Instant.parse("2026-10-25T02:30:00Z")),
+        null,
+        null);
   }
 }

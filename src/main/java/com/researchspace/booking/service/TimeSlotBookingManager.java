@@ -71,31 +71,6 @@ public interface TimeSlotBookingManager {
           canEdit, null);
     }
 
-    public CalendarEvent(
-        Long id,
-        Date start,
-        Date end,
-        Date createdAt,
-        Date updatedAt,
-        BookingPrivacy privacy,
-        String bookedBy,
-        String purpose,
-        boolean canEdit) {
-      this(
-          id,
-          start,
-          end,
-          createdAt,
-          updatedAt,
-          BookingEventKind.BOOKING,
-          privacy,
-          bookedBy,
-          bookedBy,
-          purpose,
-          canEdit,
-          null);
-    }
-
     @Override
     public Date start() {
       return copy(start);
@@ -114,6 +89,22 @@ public interface TimeSlotBookingManager {
     @Override
     public Date updatedAt() {
       return copy(updatedAt);
+    }
+
+    static CalendarEvent of(TimeSlotBooking booking, String itemName) {
+      return new CalendarEvent(
+          booking.getId(),
+          booking.getStartTime(),
+          booking.getEndTime(),
+          booking.getCreatedAt(),
+          booking.getUpdatedAt(),
+          booking.getKind(),
+          booking.getPrivacy(),
+          booking.getVisibleBookedBy(),
+          booking.getVisibleCreatedBy(),
+          booking.getVisiblePurpose(),
+          booking.isCanEdit(),
+          itemName);
     }
 
     private static Date copy(Date value) {
@@ -149,9 +140,6 @@ public interface TimeSlotBookingManager {
 
   /** Finds one readable booking and prepares its safe response view. */
   Optional<TimeSlotBooking> getBooking(Long id, User actor);
-
-  /** Finds an ordinarily readable booking for audit, including a cancelled row. */
-  Optional<TimeSlotBooking> getBookingForAudit(Long id, User actor);
 
   /** Requires the parent configuration's audit capability for an already readable booking. */
   void requireCanViewAudit(TimeSlotBooking booking, User actor);

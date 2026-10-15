@@ -1,9 +1,6 @@
 package com.researchspace.model.booking;
 
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.format.ResolverStyle;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -36,9 +33,6 @@ public record BookingSchedulingSettings(
   public static final boolean DEFAULT_ALLOW_DOUBLE_BOOKING = false;
   public static final long MAX_BUFFER_MINUTES = 10_080;
   public static final long MAX_BOOKING_DURATION_MINUTES = 527_040;
-
-  private static final DateTimeFormatter WALL_TIME =
-      DateTimeFormatter.ofPattern("HH:mm").withResolverStyle(ResolverStyle.STRICT);
 
   /** One weekday's opening interval. */
   public record DailyHours(String start, String end) {}
@@ -190,12 +184,6 @@ public record BookingSchedulingSettings(
     if (value == null || value.length() != 5) {
       return false;
     }
-    try {
-      return LocalTime.parse(value, WALL_TIME)
-          .format(DateTimeFormatter.ofPattern("HH:mm"))
-          .equals(value);
-    } catch (DateTimeParseException exception) {
-      return false;
-    }
+    return value.matches(BookingOpeningHoursCodec.WALL_TIME_PATTERN);
   }
 }
