@@ -6,7 +6,7 @@ import {
   OpeningHoursEntrySchema,
   OpeningHoursSchema,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { type BookingTimeFormat, bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -260,16 +260,12 @@ export function recordedValues(
   words?: RecordedValueWords,
   timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): Array<[string, string]> {
-  const dateFormat = new Intl.DateTimeFormat(locale, {
-    dateStyle: "medium",
-    timeStyle: "long",
-    hourCycle: bookingHourCycle(timeFormat),
-    timeZone: "UTC",
-  });
   return Object.entries(payload).map(([key, value]) => {
     if ((key === "start" || key === "end") && (typeof value === "number" || typeof value === "string")) {
       const date = new Date(value);
-      if (Number.isFinite(date.getTime())) return [key, dateFormat.format(date)];
+      if (Number.isFinite(date.getTime())) {
+        return [key, formatBookingDateTime(date.toISOString(), "UTC", locale, timeFormat, { timeStyle: "long" })];
+      }
     }
     const opening = openingValue(key, value, locale);
     if (opening !== undefined) return [key, opening];

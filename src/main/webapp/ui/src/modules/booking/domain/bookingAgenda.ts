@@ -1,7 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
-import { type BookingTimeFormat, bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { type BookingTimeFormat, bookingHourCycle, resolveWallClock } from "@/modules/booking/domain/bookingTime";
 import type { BookingListDocument } from "./booking";
-import { resolveWallClock } from "./bookingTime";
 
 export type BookingAgendaDay = {
   date: string;

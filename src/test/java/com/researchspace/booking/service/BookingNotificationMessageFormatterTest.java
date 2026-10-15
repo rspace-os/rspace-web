@@ -15,7 +15,11 @@ import com.researchspace.model.comms.data.BookingNotificationData;
 import com.researchspace.service.JsonMessageSource;
 import java.time.ZoneId;
 import java.util.Locale;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class BookingNotificationMessageFormatterTest {
 
@@ -175,8 +179,7 @@ class BookingNotificationMessageFormatterTest {
     assertTrue(british.contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)"), british);
     // ICU writes a narrow no-break space before the day period, as browsers do.
     assertTrue(
-        american.replace('\u202f', ' ').contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
-        american);
+        normalised(american).contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"), american);
     assertFalse(american.contains("06:00"), american);
   }
 
@@ -189,22 +192,6 @@ class BookingNotificationMessageFormatterTest {
         formatter.format(NotificationType.NOTIFICATION_BOOKING_CREATED, data, berlin, Locale.US),
         formatter.format(
             NotificationType.NOTIFICATION_BOOKING_CREATED, data, berlin, Locale.US, null));
-  }
-
-  @Test
-  void legacyIntervalsUseTheRegionalClock() {
-    String message =
-        formatter.formatLegacy(
-            NotificationType.NOTIFICATION_BOOKING_CREATED,
-            "Booking 42 from " + REGIONAL_START + " to " + REGIONAL_END + ".",
-            ZoneId.of("Europe/Berlin"),
-            Locale.US,
-            Locale.forLanguageTag("en-GB"));
-
-    assertEquals(
-        "Booking 42 from Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00) to"
-            + " Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00).",
-        message);
   }
 
   @Test
@@ -222,9 +209,7 @@ class BookingNotificationMessageFormatterTest {
         twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
     assertFalse(twentyFourHour.contains("AM"), twentyFourHour);
     assertTrue(
-        twelveHour
-            .replace('\u202f', ' ')
-            .contains("8 Oct 2026, 6:00 am (Europe/Berlin, UTC+02:00)"),
+        normalised(twelveHour).contains("8 Oct 2026, 6:00 am (Europe/Berlin, UTC+02:00)"),
         twelveHour);
     for (BookingTimeFormat automatic :
         new BookingTimeFormat[] {BookingTimeFormat.AUTOMATIC, null}) {
@@ -233,9 +218,7 @@ class BookingNotificationMessageFormatterTest {
           formatter.formatForEmail(created, data, berlin, Locale.US, automatic));
     }
     assertTrue(
-        formatter
-            .formatForEmail(created, data, berlin, Locale.US)
-            .replace('\u202f', ' ')
+        normalised(formatter.formatForEmail(created, data, berlin, Locale.US))
             .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"));
   }
 
@@ -254,9 +237,7 @@ class BookingNotificationMessageFormatterTest {
     assertTrue(
         twentyFourHour.contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"), twentyFourHour);
     assertTrue(
-        twelveHour
-            .replace('\u202f', ' ')
-            .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
+        normalised(twelveHour).contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
         twelveHour);
     assertEquals(
         formatter.format(created, data, berlin, Locale.US, british),
@@ -266,21 +247,37 @@ class BookingNotificationMessageFormatterTest {
         formatter.format(created, data, berlin, Locale.US, null, null));
   }
 
-  @Test
-  void legacyIntervalsPreferTheExplicitClockOverTheBrowserRegion() {
+  @ParameterizedTest
+  @MethodSource("legacyIntervalClockChoices")
+  void legacyIntervalsUseTheRegionalOrExplicitClock(
+      Locale regionalLocale, BookingTimeFormat timeFormat) {
+    String legacyMessage = "Booking 42 from " + REGIONAL_START + " to " + REGIONAL_END + ".";
     String message =
-        formatter.formatLegacy(
-            NotificationType.NOTIFICATION_BOOKING_CREATED,
-            "Booking 42 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.",
-            ZoneId.of("Europe/Berlin"),
-            Locale.US,
-            Locale.US,
-            BookingTimeFormat.H24);
+        timeFormat == null
+            ? formatter.formatLegacy(
+                NotificationType.NOTIFICATION_BOOKING_CREATED,
+                legacyMessage,
+                ZoneId.of("Europe/Berlin"),
+                Locale.US,
+                regionalLocale)
+            : formatter.formatLegacy(
+                NotificationType.NOTIFICATION_BOOKING_CREATED,
+                legacyMessage,
+                ZoneId.of("Europe/Berlin"),
+                Locale.US,
+                regionalLocale,
+                timeFormat);
 
     assertEquals(
         "Booking 42 from Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00) to"
             + " Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00).",
         message);
+  }
+
+  private static Stream<Arguments> legacyIntervalClockChoices() {
+    return Stream.of(
+        Arguments.of(Locale.forLanguageTag("en-GB"), null),
+        Arguments.of(Locale.US, BookingTimeFormat.H24));
   }
 
   @Test
@@ -345,5 +342,9 @@ class BookingNotificationMessageFormatterTest {
     data.setStartTime(start);
     data.setEndTime(end);
     return data;
+  }
+
+  private static String normalised(String value) {
+    return value.replace('\u202f', ' ');
   }
 }

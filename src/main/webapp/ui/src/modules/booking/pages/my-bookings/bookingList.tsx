@@ -37,7 +37,7 @@ function BookingStateBadge({ state }: { state: BookingListDocument["state"] }) {
 
 export function bookingListConfig(
   timeZone: string,
-  timeFormat: BookingTimeFormat = "AUTOMATIC",
+  timeFormat: BookingTimeFormat,
 ): CollectionConfig<BookingListDocument> {
   return {
     slug: "my-bookings",
