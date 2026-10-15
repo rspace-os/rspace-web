@@ -39,6 +39,8 @@ export interface ElnRecordInfoDialogProps {
    * Open rule for ELN targets.
    */
   noAccess?: boolean;
+  /** When the pinned document version cannot be found, Open is hidden too: its route is an error page. */
+  versionNotFound?: boolean;
   onClose: () => void;
 }
 
@@ -158,7 +160,7 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
         )}
       </DialogContent>
       <DialogActions>
-        {!(props.targetDeleted || props.noAccess) && (
+        {!(props.targetDeleted || props.noAccess || props.versionNotFound) && (
           <Button
             size="small"
             startIcon={<OpenInNewIcon />}

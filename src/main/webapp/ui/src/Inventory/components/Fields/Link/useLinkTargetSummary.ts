@@ -18,6 +18,11 @@ export type LinkTargetSummary = {
    * never discloses whether the record exists. The card shows "No access".
    */
   readable: boolean;
+  /**
+   * Whether the version pinned in the requested id has a recorded revision.
+   * Absent for an unpinned request or an unreadable target (ADR-0002).
+   */
+  pinnedVersionFound?: boolean | null;
 };
 
 /**

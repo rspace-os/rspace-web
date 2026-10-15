@@ -18,12 +18,23 @@ vi.mock("../InventoryInfoDialog", () => ({
 }));
 
 vi.mock("../ElnRecordInfoDialog", () => ({
-  default: ({ open, globalId, versionPin }: { open: boolean; globalId: string; versionPin?: number | null }) =>
+  default: ({
+    open,
+    globalId,
+    versionPin,
+    versionNotFound,
+  }: {
+    open: boolean;
+    globalId: string;
+    versionPin?: number | null;
+    versionNotFound?: boolean;
+  }) =>
     open ? (
       <div
         data-testid="eln-info-dialog"
         data-globalid={globalId}
         data-version-pin={versionPin == null ? "" : String(versionPin)}
+        data-version-not-found={String(Boolean(versionNotFound))}
       />
     ) : null,
 }));
@@ -408,5 +419,113 @@ describe("LinkField", () => {
     const containerChip = container.querySelector('[data-test-id="LinkField-target"]');
     expect(containerChip?.querySelector("svg")).toBeInTheDocument();
     /* eslint-enable testing-library/no-node-access, testing-library/no-container */
+  });
+
+  it("asks the summary about the pinned version, not just the target", () => {
+    renderField({ link: { ...baseLink, versionPin: 4 } });
+    expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("SA42v4");
+  });
+
+  it("asks about the bare target when the link is not pinned", () => {
+    renderField();
+    expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("SA42");
+  });
+
+  it("does not double a version suffix a stored target id already carries", () => {
+    // rows written before the backend normalised stored ids can carry "vN" already
+    renderField({ link: { ...baseLink, targetGlobalId: "SA42v4", versionPin: 4 } });
+    expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("SA42v4");
+  });
+
+  it("asks about the bare target when a stored id carries a suffix but the link is not pinned", () => {
+    // the card reads "Latest" for such a row, so its stale suffix must not raise Version not found
+    renderField({ link: { ...baseLink, targetGlobalId: "SA42v4", versionPin: null } });
+    expect(mockUseLinkTargetSummary).toHaveBeenCalledWith("SA42");
+  });
+
+  it("shows the Version not found pill but keeps Open and info when a reader's pinned version is gone", async () => {
+    const user = userEvent.setup();
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: "a sample",
+      type: "SAMPLE",
+      deleted: false,
+      readable: true,
+      pinnedVersionFound: false,
+    });
+    renderField({ link: { ...baseLink, versionPin: 7 } });
+
+    const pill = screen.getByText("inventory:fields.link.linkField.versionNotFound");
+    expect(pill).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toHaveAttribute(
+      "href",
+      "/inventory/sample/42?version=7",
+    );
+    expect(screen.getByRole("button", { name: "inventory:fields.link.linkField.showInfoLabel" })).toBeEnabled();
+    await user.hover(pill);
+    expect(await screen.findByText("inventory:fields.link.linkField.versionNotFoundDetail")).toBeInTheDocument();
+  });
+
+  it("removes Open from the card and its info dialog for an ELN document whose pinned version is gone", async () => {
+    // the document's version route is only an error page once that version is gone
+    const user = userEvent.setup();
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SD5",
+      name: "a doc",
+      type: "DOCUMENT",
+      deleted: false,
+      readable: true,
+      pinnedVersionFound: false,
+    });
+    renderField({ link: { ...baseLink, targetGlobalId: "SD5", versionPin: 7 } });
+
+    expect(screen.getByText("inventory:fields.link.linkField.versionNotFound")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.linkField.showInfoLabel" }));
+    expect(screen.getByTestId("eln-info-dialog")).toHaveAttribute("data-version-not-found", "true");
+  });
+
+  it("keeps Open for a Gallery file whose pinned version is gone: the Gallery says so itself", () => {
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "GL8",
+      name: "a file",
+      type: "MEDIA_FILE",
+      deleted: false,
+      readable: true,
+      pinnedVersionFound: false,
+    });
+    renderField({ link: { ...baseLink, targetGlobalId: "GL8", versionPin: 3 } });
+
+    expect(screen.getByText("inventory:fields.link.linkField.versionNotFound")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toBeInTheDocument();
+  });
+
+  it("shows no Version not found pill when the pinned version resolves", () => {
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: "a sample",
+      type: "SAMPLE",
+      deleted: false,
+      readable: true,
+      pinnedVersionFound: true,
+    });
+    renderField({ link: { ...baseLink, versionPin: 1 } });
+    expect(screen.queryByText("inventory:fields.link.linkField.versionNotFound")).not.toBeInTheDocument();
+  });
+
+  it("never shows Version not found next to No access", () => {
+    // the server leaves pinnedVersionFound out of a redacted summary (ADR-0002); even a stray
+    // false must not add a second pill to a target the viewer cannot read
+    mockUseLinkTargetSummary.mockReturnValue({
+      globalId: "SA42",
+      name: null,
+      type: null,
+      deleted: false,
+      readable: false,
+      pinnedVersionFound: false,
+    });
+    renderField({ link: { ...baseLink, versionPin: 7 } });
+    expect(screen.getByText("inventory:fields.link.linkField.noAccess")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.linkField.versionNotFound")).not.toBeInTheDocument();
   });
 });

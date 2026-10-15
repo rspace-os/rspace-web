@@ -273,4 +273,63 @@ describe("InventoryInfoDialog", () => {
 
     expect(screen.getByTestId("sidebar-body")).toHaveAttribute("data-globalid", "SS7");
   });
+
+  it("explains a 404 on the pinned snapshot in words rather than axios' message", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockRejectedValue(
+      Object.assign(new Error("Request failed with status code 404"), {
+        isAxiosError: true,
+        response: { status: 404 },
+      }),
+    );
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA6" versionPin={7} onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/fields\.link\.infoDialog\.versionNotFound/);
+    expect(alert).not.toHaveTextContent("Request failed");
+  });
+
+  it("keeps the raw message for a 404 on an unpinned target", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockRejectedValue(
+      Object.assign(new Error("Request failed with status code 404"), {
+        isAxiosError: true,
+        response: { status: 404 },
+      }),
+    );
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA6" onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Request failed with status code 404");
+  });
+
+  it("keeps the raw message for any other failure on a pinned snapshot", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockRejectedValue(
+      Object.assign(new Error("Request failed with status code 500"), {
+        isAxiosError: true,
+        response: { status: 500 },
+      }),
+    );
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA6" versionPin={7} onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Request failed with status code 500");
+  });
 });

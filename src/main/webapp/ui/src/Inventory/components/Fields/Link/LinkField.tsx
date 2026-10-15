@@ -17,7 +17,13 @@ import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import type { ExtraInventoryLink } from "../../../../stores/definitions/ExtraField";
 import ElnRecordInfoDialog from "./ElnRecordInfoDialog";
 import InventoryInfoDialog from "./InventoryInfoDialog";
-import { iconForGlobalId, isInventoryGlobalId, openUrlForTarget, supportsVersionPin } from "./iconForGlobalId";
+import {
+  iconForGlobalId,
+  isInventoryGlobalId,
+  openUrlForTarget,
+  prefixOf,
+  supportsVersionPin,
+} from "./iconForGlobalId";
 import { GLOBAL_ID_PATTERN } from "./linkTarget";
 import useLinkTargetSummary from "./useLinkTargetSummary";
 
@@ -49,6 +55,18 @@ function openHrefForLink(link: ExtraInventoryLink, targetIsInventory: boolean): 
   return openUrlForTarget(link.targetGlobalId, link.versionPin);
 }
 
+/**
+ * Asks the summary about the pinned version, or the bare target when unpinned.
+ * Rebuilt from the base id: rows written before ids were normalised can already
+ * carry a suffix, which the pin, not the stored id, decides.
+ */
+function summaryIdForLink(link: ExtraInventoryLink): string {
+  const match = GLOBAL_ID_PATTERN.exec(link.targetGlobalId);
+  if (!match) return link.targetGlobalId;
+  const baseId = `${match[1]}${match[2]}`;
+  return link.versionPin == null ? baseId : `${baseId}v${link.versionPin}`;
+}
+
 export interface LinkFieldProps {
   /** Field name (the user-supplied label of the ExtraLinkField row) */
   name: string;
@@ -75,15 +93,21 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const [infoOpen, setInfoOpen] = useState(false);
   // current state of the target; null while loading or unresolvable, which
   // renders the card exactly as before the summary existed (no pill, Open on)
-  const targetSummary = useLinkTargetSummary(props.link.targetGlobalId);
+  const targetSummary = useLinkTargetSummary(summaryIdForLink(props.link));
   const targetDeleted = targetSummary?.deleted === true;
   // a target the viewer cannot resolve gets "No access", whatever its kind. The server
   // redacts unreadable and nonexistent targets identically (ADR-0002), so this covers both
   // and the card never claims a record is deleted when it cannot see whether it is.
   const noAccess = targetSummary?.readable === false;
+  // links saved before the pin was checked on save, CSV dangling links, or targets whose history
+  // was purged. No access wins: a redacted summary carries no pinnedVersionFound at all.
+  const pinnedVersionMissing = targetSummary?.readable === true && targetSummary.pinnedVersionFound === false;
+  // the Inventory and Gallery views explain a missing version themselves; an ELN document's
+  // version route is just an error page
+  const documentVersionMissing = pinnedVersionMissing && prefixOf(props.link.targetGlobalId) === "SD";
   // deleted inventory items live on in the trash and their viewer works, so they keep Open;
   // a deleted ELN target's route is just an error page, as is any unresolvable target's
-  const openBlocked = noAccess || (!targetIsInventory && targetDeleted);
+  const openBlocked = noAccess || (!targetIsInventory && targetDeleted) || documentVersionMissing;
 
   const openHref = openHrefForLink(props.link, targetIsInventory);
   return (
@@ -165,6 +189,16 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               />
             </Tooltip>
           )}
+          {pinnedVersionMissing && (
+            <Tooltip title={t("fields.link.linkField.versionNotFoundDetail", { version: props.link.versionPin })}>
+              <Chip
+                size="small"
+                color="warning"
+                label={t("fields.link.linkField.versionNotFound")}
+                data-test-id="LinkField-versionNotFound"
+              />
+            </Tooltip>
+          )}
           {!openBlocked && (
             <Button
               size="small"
@@ -207,6 +241,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           // InventoryInfoDialog, which has no Open button.
           targetDeleted={targetDeleted}
           noAccess={noAccess}
+          versionNotFound={documentVersionMissing}
           onClose={() => setInfoOpen(false)}
         />
       )}

@@ -305,6 +305,12 @@ and API field names were ported instead.
      CSV link import (RSDEV-1354) is deliberately more lenient and stores a link whatever state its
      target is in, because a file imports all or nothing and one unreachable target would fail it;
      this import can skip one entry and report it instead.
+     *Amended 2026-10-14 (RSDEV-1530):* the write path now also refuses a pin to a version the
+     item does not have, so such an entry is skipped like any other refusal and reported as
+     `NOT_AVAILABLE`. A truer third reason was considered and rejected again: `canCreateLink`
+     answers false for every failure alike, and the case is rare: a registered address names a
+     version that existed at registration, so it arises only from a pin saved before this check
+     and then exported (ADR 0007), an entry edited outside RSpace, or audit rows purged later.
    - The link gets the field's own relation, `IsDocumentedBy` for Measurement technique and
      `IsCalibratedBy` for Calibration, both in the locked template's whitelist: the registry's
      `IsDescribedBy` is the constant ADR 0007 writes whatever the link stored, so it carries no

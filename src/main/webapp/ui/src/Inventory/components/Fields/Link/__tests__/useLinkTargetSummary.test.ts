@@ -47,4 +47,16 @@ describe("useLinkTargetSummary", () => {
     await waitFor(() => expect(mockGet).toHaveBeenCalled());
     expect(result.current).toBeNull();
   });
+
+  it("passes a versioned id through and exposes whether that version was found", async () => {
+    mockGet.mockResolvedValue({
+      data: { globalId: "SA6", name: "B", type: "SAMPLE", deleted: false, readable: true, pinnedVersionFound: false },
+    });
+
+    const { result } = renderHook(() => useLinkTargetSummary("SA6v7"));
+
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(mockGet).toHaveBeenCalledWith("linkTargets/SA6v7/summary");
+    expect(result.current?.pinnedVersionFound).toBe(false);
+  });
 });

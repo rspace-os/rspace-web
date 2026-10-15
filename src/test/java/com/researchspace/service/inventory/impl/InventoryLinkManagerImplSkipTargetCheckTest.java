@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -11,6 +12,7 @@ import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.dao.InventoryLinkDao;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
@@ -65,6 +67,22 @@ class InventoryLinkManagerImplSkipTargetCheckTest {
     InventoryLink saved = manager.updateLink(new InventoryLink(), apiLink, actor);
 
     assertEquals("SA123", saved.getTargetGlobalId());
+  }
+
+  @Test
+  void importStoresAPinnedLinkWithoutCheckingItsVersionHere() {
+    // the CSV parser has already checked the pin where it could (RSDEV-1530); the write path
+    // must not check again, or an unreadable target's dangling link would be refused
+    apiLink.setSkipTargetCheck(true);
+    apiLink.setTargetGlobalId("SA123v9");
+    when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 123L, 9L)).thenReturn(null);
+    when(linkDao.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+    InventoryLink saved = manager.createLink(apiLink, actor);
+
+    assertEquals(Long.valueOf(9), saved.getVersionPin());
+    assertNull(saved.getTargetRevisionId());
+    verify(linkTargetResolver, never()).targetExistsAndIsReadable(any(), any());
   }
 
   @Test

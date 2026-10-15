@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
@@ -8,7 +9,7 @@ import lombok.NoArgsConstructor;
 /** Summary of an InventoryLink's target as seen at read time. */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"globalId", "name", "type", "deleted", "readable"})
+@JsonPropertyOrder({"globalId", "name", "type", "deleted", "readable", "pinnedVersionFound"})
 public class ApiInventoryLinkTargetSummary {
 
   @JsonProperty("globalId")
@@ -31,4 +32,13 @@ public class ApiInventoryLinkTargetSummary {
    */
   @JsonProperty("readable")
   private boolean readable;
+
+  /**
+   * Whether the version pinned in the requested id has a recorded revision (RSDEV-1530). Null, and
+   * so omitted, unless the id carried a {@code vN} suffix and the actor can read the target: a
+   * redacted summary says nothing about versions (ADR-0002).
+   */
+  @JsonProperty("pinnedVersionFound")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private Boolean pinnedVersionFound;
 }

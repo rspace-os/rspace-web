@@ -88,3 +88,20 @@ knowledge the viewer is not entitled to.
   all return one identical not-found, so it never reveals a gallery file exists
   or which Inventory items attached it. This mirrors the links referencing-items
   endpoint.
+* A pinned version is checked only after the READ check, never before it
+  (RSDEV-1530). The link write path refuses a pin to a version the target does
+  not have (422, `errors.inventory.field.linkTargetVersionNotFound`), and the
+  summary answers `pinnedVersionFound` when asked with a versioned id, but both
+  only once the actor may read the target: an unreadable target fails as "not
+  found" exactly as before, and its summary stays the redacted payload above,
+  so a caller still cannot tell a missing item from an unshared one, nor probe
+  which versions an item they cannot read has. The CSV import keeps the
+  dangling-link rule of the bullet above and adds the same check at parse
+  time, where the row can be named: a pinned cell whose target the importer can
+  read must name a version it has, while a cell whose target they cannot read is
+  still stored unchecked. The PIDINST import reports such an entry with its one
+  `NOT_AVAILABLE` reason (ADR 0009 decision 9). Links saved before this check,
+  dangling links seen by someone who can read their target, and links whose
+  audit rows are purged later keep their pin and are flagged "Version not found" on the card,
+  to readers only; their records still save, because an unchanged link is never
+  re-validated.

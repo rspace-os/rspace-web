@@ -1401,6 +1401,90 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   }
 
   /**
+   * RSDEV-1530: a cell that pins a version its readable target does not have fails its row at
+   * prevalidation, so nothing from the file is saved, and the error names the version. The UI
+   * prefixes the row number.
+   */
+  @Test
+  public void parseAndImportSampleCsvRefusesAPinToAVersionTheReadableTargetLacks()
+      throws Exception {
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(anyUser);
+    String targetGlobalId = "SA" + target.getId();
+    String serverUrl = propertyHolder.getServerUrl();
+    if (serverUrl.endsWith("/")) {
+      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+    }
+    String csv =
+        "Name,Related\n"
+            + "pinned to a real version,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/"
+            + targetGlobalId
+            + "v1\n"
+            + "pinned to a missing version,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/"
+            + targetGlobalId
+            + "v7\n";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/parseFile"))
+                    .file(
+                        new MockMultipartFile(
+                            "file", "links.csv", "text/csv", csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("recordType", "SAMPLES")
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+    ApiInventoryImportSampleParseResult parseResult =
+        getFromJsonResponseBody(result, ApiInventoryImportSampleParseResult.class);
+    ApiSampleTemplatePost templateInfo = parseResult.getTemplateInfo();
+    templateInfo.setExpiryDate(null);
+    templateInfo.getFields().remove(0); // Name column maps to the sample name
+
+    String settingsJson =
+        "{ \"sampleSettings\": { \"fieldMappings\": { \"Name\": \"name\"}, \"templateInfo\": "
+            + JacksonUtil.toJson(templateInfo)
+            + "} }";
+    result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(
+                        new MockMultipartFile(
+                            "samplesFile",
+                            "links.csv",
+                            "text/csv",
+                            csv.getBytes(StandardCharsets.UTF_8)))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    ApiInventoryImportResult importResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class);
+    ApiInventoryImportSampleImportResult sampleResults = importResult.getSampleResult();
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, sampleResults.getStatus());
+    assertEquals(0, sampleResults.getSuccessCount(), "the valid row is not saved either");
+    assertEquals(1, sampleResults.getErrorCount());
+    assertEquals(
+        "Link target '" + targetGlobalId + "' has no version 7.",
+        sampleResults.getResults().get(1).getError().getErrors().get(0));
+
+    // nothing links to the target: the file imports all or nothing
+    List<InventoryLinkField> referencing =
+        doInTransaction(
+            () ->
+                inventoryLinkDao.findReferencingStructuredLinkFields(
+                    GlobalIdPrefix.SA, target.getId()));
+    assertThat(referencing).isEmpty();
+  }
+
+  /**
    * RSDEV-1354: a CSV link whose target exists but is not readable by the importer imports rather
    * than failing its row. Distinguishing "gone" from "not yours" is the disclosure ADR-0002
    * prevents, so import cannot treat the two differently; the summary redacts the target for the

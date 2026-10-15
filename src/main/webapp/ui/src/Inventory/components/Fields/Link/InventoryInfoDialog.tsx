@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { isAxiosError } from "@/common/axios";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import ApiService from "../../../../common/InvApiService";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
@@ -37,6 +38,10 @@ function recordEndpoint(globalId: string, versionPin?: number | null): string | 
   if (!segment) return null;
   const base = `${segment}/${match[2]}`;
   return versionPin == null ? base : `${base}/versions/${versionPin}`;
+}
+
+function isNotFound(error: Error): boolean {
+  return isAxiosError(error) && error.response?.status === 404;
 }
 
 type State =
@@ -98,7 +103,16 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
       <DialogTitle>{props.globalId}</DialogTitle>
       <DialogContent>
         {state.state === "loading" && <Skeleton variant="rectangular" width="100%" height={240} />}
-        {state.state === "fail" && <Alert severity="error">{state.error.message}</Alert>}
+        {state.state === "fail" && (
+          <Alert severity="error">
+            {props.versionPin != null && isNotFound(state.error)
+              ? t("fields.link.infoDialog.versionNotFound", {
+                  versionPin: props.versionPin,
+                  globalId: props.globalId.replace(/v\d+$/, ""),
+                })
+              : state.error.message}
+          </Alert>
+        )}
         {state.state === "success" && (
           <>
             {props.versionPin != null && (
