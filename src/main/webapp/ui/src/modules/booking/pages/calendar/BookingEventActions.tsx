@@ -29,7 +29,7 @@ import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvai
 
 const ACTION_COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
 
-export function isEditableBooking(event: BookingListDocument): event is BookingListDocument & EditableBooking {
+function isEditableBooking(event: BookingListDocument): event is BookingListDocument & EditableBooking {
   return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
 }
 
@@ -231,6 +231,7 @@ export function BookingActions({
   const canViewDetails = event.privacy === "full";
   const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0) + (canDownload ? 1 : 0);
   if (actionCount === 0) return null;
+  const actionClassName = cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2");
   return (
     <div
       className={cn(
@@ -240,20 +241,12 @@ export function BookingActions({
       )}
     >
       {canViewDetails ? (
-        <Link
-          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-          to="/booking/calendar/bookings/$id"
-          params={{ id: String(event.id) }}
-        >
+        <Link className={actionClassName} to="/booking/calendar/bookings/$id" params={{ id: String(event.id) }}>
           {t("calendar.actions.viewDetails")}
         </Link>
       ) : null}
       {editable ? (
-        <button
-          type="button"
-          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
-          onClick={() => setEditing(true)}
-        >
+        <button type="button" className={actionClassName} onClick={() => setEditing(true)}>
           {t("calendar.actions.edit")}
         </button>
       ) : null}

@@ -48,14 +48,8 @@ Paths below are relative to `src/main/webapp/ui/`.
 - `src/__tests__/pageObjects/viewport.ts`: `isFullyInViewport`,
   `moveToastStackIntoViewport`, `clickWhenInViewport`.
 
-Each file has an isolated iframe and MSW client; the worker registration is
-origin-global in every engine. Setup awaits start before tests. Don't call
-`worker.stop()` in teardown; the context cleans up. Do not import the setup file
-from specs, which registers lifecycle hooks again. A synthetic `beforeunload`
-stops MSW, so restart the client before subsequent tests. Keep
-`fileParallelism: false` so Firefox's renewal never overlaps another file, setup
-files in list order, and `retry: 2`. The `browserLifecycle` regression runs
-first in every engine, unretried.
+See the [MSW worker lifecycle reference](REFERENCE.md#msw-worker-lifecycle) for per-file isolation,
+setup and teardown rules, retries, and Firefox renewal.
 
 ## Run and verify
 
