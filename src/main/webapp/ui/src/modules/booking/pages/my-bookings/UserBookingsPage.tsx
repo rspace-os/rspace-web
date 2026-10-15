@@ -24,6 +24,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modu
 import { Heading } from "@/modules/common/ui/typography";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
+import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
@@ -67,7 +68,7 @@ export async function fetchUpcomingBookingCount(
   signal?: AbortSignal,
 ): Promise<v.InferOutput<typeof UpcomingCountSchema>> {
   const parameters = new URLSearchParams({
-    where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOf.toISOString()}`,
+    where: upcomingBookingWhere(requesterId, asOf.toISOString()),
     max: "100",
   });
   const response = await fetchWithUiToken(`/api/v2/bookings/count?${parameters}`, {
