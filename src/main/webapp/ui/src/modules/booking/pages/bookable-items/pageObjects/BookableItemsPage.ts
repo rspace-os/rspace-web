@@ -72,20 +72,7 @@ export class BookableItemsPage {
     await userEvent.click(page.getByRole("option", { name: label }));
   }
 
-  async chooseOperator(label: string): Promise<void> {
-    await userEvent.click(this.operatorSelect);
-    await userEvent.click(page.getByRole("option", { name: label }));
-  }
-
   async chooseCustomFieldSource(): Promise<void> {
     await this.chooseField("Custom field on Bookable item…");
-  }
-
-  async filterByInstrumentName(value: string): Promise<void> {
-    await this.openFilters();
-    await this.chooseField("Bookable item \u2192 Instrument name");
-    await this.chooseOperator("contains");
-    await userEvent.fill(page.getByRole("combobox", { name: "Value for filter 1" }), value);
-    await userEvent.click(page.getByRole("button", { name: "Apply filters" }));
   }
 }

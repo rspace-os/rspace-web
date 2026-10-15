@@ -171,47 +171,12 @@ async function withLocation(
   };
 }
 
-export async function fetchBookingConfiguration(
-  id: number,
-  token: string,
-  signal?: AbortSignal,
-): Promise<BookingConfiguration> {
-  const parameters = new URLSearchParams({
-    ...bookingConfigurationReadParameters,
-  });
-  const response = await fetch(`/api/v2/booking-configurations/${id}?${parameters}`, {
-    headers: apiV2Headers(token),
-    signal,
-  });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
-  return parseOrThrow(BookingConfigurationSchema, (await response.json()) as unknown);
-}
-
 export async function fetchBookingConfigurationByTarget(
   globalId: string,
   token: string,
   signal?: AbortSignal,
 ): Promise<BookingConfiguration> {
-  const where = serializeRsqlExpression<BookingConfiguration>({
-    kind: "comparison",
-    field: "target",
-    operator: "equals",
-    value: globalId,
-  });
-  const parameters = new URLSearchParams({
-    ...bookingConfigurationReadParameters,
-    limit: "2",
-    where,
-  });
-  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
-    headers: apiV2Headers(token),
-    signal,
-  });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
-  const configurations = parseOrThrow(
-    v2ListEnvelope(BookingConfigurationSchema),
-    (await response.json()) as unknown,
-  ).docs;
+  const configurations = await readBookingConfigurationsByTarget(globalId, token, signal);
   if (configurations.length !== 1 || configurations[0].target?.globalId !== globalId) {
     throw new Error(`Expected exactly one booking configuration for ${globalId}`);
   }
@@ -232,6 +197,16 @@ export async function findBookingConfigurationByTarget(
   token: string,
   signal?: AbortSignal,
 ): Promise<BookingConfiguration | null> {
+  const configurations = await readBookingConfigurationsByTarget(globalId, token, signal);
+  if (configurations.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
+  return configurations[0] ?? null;
+}
+
+async function readBookingConfigurationsByTarget(
+  globalId: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingConfiguration[]> {
   const where = serializeRsqlExpression<BookingConfiguration>({
     kind: "comparison",
     field: "target",
@@ -252,34 +227,7 @@ export async function findBookingConfigurationByTarget(
     v2ListEnvelope(BookingConfigurationSchema),
     (await response.json()) as unknown,
   ).docs;
-  if (configurations.length > 1) throw new Error(`Expected at most one booking configuration for ${globalId}`);
-  return configurations[0] ?? null;
-}
-
-/** Returns the readable Booking configurations for a bounded set of Instrument global IDs. */
-export async function fetchBookingOwnershipCandidates(
-  globalIds: readonly string[],
-  token: string,
-  signal?: AbortSignal,
-): Promise<readonly BookingConfiguration[]> {
-  if (globalIds.length === 0) return [];
-  const where = serializeRsqlExpression<BookingConfiguration>({
-    kind: "comparison",
-    field: "target",
-    operator: "in",
-    value: globalIds,
-  });
-  const parameters = new URLSearchParams({
-    ...bookingConfigurationReadParameters,
-    limit: String(Math.min(globalIds.length, 100)),
-    where,
-  });
-  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
-    headers: apiV2Headers(token),
-    signal,
-  });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
-  return parseOrThrow(v2ListEnvelope(BookingConfigurationSchema), (await response.json()) as unknown).docs;
+  return configurations;
 }
 
 export const bookingConfigurationConfig = {

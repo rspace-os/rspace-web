@@ -15,9 +15,11 @@ import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import AddBookableItemPage from "@/modules/booking/pages/bookable-items/AddBookableItemPage";
 import { addBookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import { collectionPage } from "../mocks/bookableItemsMocks";
 
 const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
 const settings = {
@@ -36,21 +38,6 @@ const settings = {
   customTimezone: null,
   institutionTimezone: "UTC",
 };
-
-function collectionPage(docs: readonly unknown[]) {
-  return {
-    docs,
-    totalDocs: docs.length,
-    limit: 20,
-    page: 1,
-    pagingCounter: 1,
-    totalPages: docs.length === 0 ? 0 : 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
-  };
-}
 
 function targetsHandler(onRequest: (url: URL) => void = () => undefined, targets: readonly unknown[] = [confocal]) {
   return http.get("/api/v2/booking-configuration-targets", ({ request }) => {
@@ -133,11 +120,7 @@ async function completeForm(user: ReturnType<typeof userEvent.setup>) {
 describe("AddBookableItemPage", () => {
   it("treats a blank relationship control as an empty selection", async () => {
     const user = userEvent.setup();
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      targetsHandler(),
-      availabilityHandler(),
-    );
+    server.use(targetsHandler(), availabilityHandler());
     renderPage();
 
     await completeForm(user);
@@ -152,7 +135,6 @@ describe("AddBookableItemPage", () => {
     let requestBody: unknown;
     let authorization: string | null = null;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
       targetsHandler(),
       availabilityHandler(),
       http.post("/api/v2/booking-configurations", async ({ request }) => {
@@ -173,7 +155,7 @@ describe("AddBookableItemPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
-    expect(authorization).toBe("Bearer test-token");
+    expect(authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(requestBody).toEqual({
       target: { relationTo: "booking-instruments", value: 123 },
       enabled: true,
@@ -190,7 +172,6 @@ describe("AddBookableItemPage", () => {
     const user = userEvent.setup();
     let requestBody: unknown;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
       targetsHandler(),
       availabilityHandler(),
       http.post("/api/v2/booking-configurations", async ({ request }) => {
@@ -225,10 +206,7 @@ describe("AddBookableItemPage", () => {
     const user = userEvent.setup();
     const targetRequests: URL[] = [];
     const spare = { id: 456, name: "Spare confocal microscope", globalId: "IN456", deleted: false };
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      targetsHandler((url) => targetRequests.push(url), [spare]),
-    );
+    server.use(targetsHandler((url) => targetRequests.push(url), [spare]));
     const { container } = renderPage();
     const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
     await user.type(search, "Conf");
@@ -247,7 +225,6 @@ describe("AddBookableItemPage", () => {
     const user = userEvent.setup();
     let conflict = false;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
       targetsHandler(),
       availabilityHandler(() =>
         conflict ? [{ id: 9, target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" } }] : [],
@@ -275,10 +252,7 @@ describe("AddBookableItemPage", () => {
 
   it("shows an error when eligible instruments cannot be searched", async () => {
     const user = userEvent.setup();
-    server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
-      http.get("/api/v2/booking-configuration-targets", () => new HttpResponse(null, { status: 500 })),
-    );
+    server.use(http.get("/api/v2/booking-configuration-targets", () => new HttpResponse(null, { status: 500 })));
     renderPage();
     const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
     await user.type(search, "Conf");

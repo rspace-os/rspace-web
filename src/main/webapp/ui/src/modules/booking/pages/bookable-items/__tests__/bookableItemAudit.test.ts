@@ -172,6 +172,10 @@ describe("audit UTC date ranges", () => {
     expect(validateAuditDateRange({ from: "2026-02-26", to: "2026-08-27" })).toEqual({
       valid: true,
       range: { from: "2026-02-26", to: "2026-08-27" },
+      dates: {
+        from: new Date("2026-02-26T00:00:00.000Z"),
+        to: new Date("2026-08-27T00:00:00.000Z"),
+      },
     });
     expect(validateAuditDateRange({ from: "2026-02-25", to: "2026-08-27" })).toEqual({
       valid: false,

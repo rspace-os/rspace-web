@@ -3,7 +3,6 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { storyUser } from "./BookableItemPage.story";
 import { BookableItemsStory } from "./BookableItemsPage.story";
 import { bookableItemsHandlers } from "./mocks/bookableItemsMocks";
@@ -16,7 +15,6 @@ beforeEach(() => {
   collectionQuery = "";
   window.history.replaceState({}, "", "/");
   worker.use(
-    oauthTokenHandler(true),
     http.get("/api/v2/users/me", () => HttpResponse.json(storyUser)),
     ...bookableItemsHandlers((request) => {
       collectionQuery = decodeURIComponent(new URL(request.url).search);

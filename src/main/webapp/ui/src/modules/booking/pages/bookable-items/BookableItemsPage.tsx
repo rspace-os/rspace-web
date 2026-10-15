@@ -98,7 +98,7 @@ async function fetchOwnerAttentionIds(token: string, signal: AbortSignal): Promi
   return new Set(documents.flatMap(({ id, ownerHealth }) => (ownerHealth?.hasEffectiveOwner === false ? [id] : [])));
 }
 
-export type BookableItemsBulkAction = "enable" | "disable" | "archive";
+type BookableItemsBulkAction = "enable" | "disable" | "archive";
 
 type BookableItemsBulkMutation = {
   action: BookableItemsBulkAction;

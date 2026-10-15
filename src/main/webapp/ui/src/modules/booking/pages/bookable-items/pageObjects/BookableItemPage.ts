@@ -2,7 +2,6 @@ import { type Locator, page } from "vitest/browser";
 
 export class BookableItemPage {
   readonly heading: Locator = page.getByRole("heading", { level: 1, name: "Confocal microscope" });
-  readonly globalId: Locator = page.getByText("IN123", { exact: true });
   readonly bookingsTab: Locator = page.getByRole("tab", { name: "Bookings" });
   readonly detailsTab: Locator = page.getByRole("tab", { name: "Details" });
   readonly auditTab: Locator = page.getByRole("tab", { name: "Audit log" });
@@ -54,18 +53,6 @@ export class BookableItemPage {
 
   get refreshAudit(): Locator {
     return page.getByRole("button", { name: "Refresh" });
-  }
-
-  get nextAuditPage(): Locator {
-    return page.getByRole("button", { name: /^Next, page/ });
-  }
-
-  get previousAuditPage(): Locator {
-    return page.getByRole("button", { name: /^Previous, page/ });
-  }
-
-  get auditResultsHeading(): Locator {
-    return page.getByRole("heading", { name: "Audit events" });
   }
 
   get edit(): Locator {

@@ -29,9 +29,8 @@ export function BookingConfigurationActionsMenu({
 }) {
   const { t } = useTranslation("booking");
   const editable = configuration.capabilities?.canEditConfiguration === true;
-  const canPermanentlyDelete = directSysadmin;
 
-  if (!editable && !canPermanentlyDelete) return null;
+  if (!editable && !directSysadmin) return null;
 
   return (
     <Menu>
@@ -63,12 +62,14 @@ export function BookingConfigurationActionsMenu({
             {t("bookableItems.actions.restore")}
           </MenuItem>
         ) : null}
-        {canPermanentlyDelete ? <MenuSeparator /> : null}
-        {canPermanentlyDelete ? (
-          <MenuItem className="text-destructive" onClick={() => onAction("permanent-delete")}>
-            <Trash2Icon aria-hidden="true" />
-            {t("bookableItems.actions.deletePermanently")}
-          </MenuItem>
+        {directSysadmin ? (
+          <>
+            <MenuSeparator />
+            <MenuItem className="text-destructive" onClick={() => onAction("permanent-delete")}>
+              <Trash2Icon aria-hidden="true" />
+              {t("bookableItems.actions.deletePermanently")}
+            </MenuItem>
+          </>
         ) : null}
       </MenuContent>
     </Menu>

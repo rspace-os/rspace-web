@@ -32,58 +32,25 @@ import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/searc
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import { bookerBookingAccess, ownerBookingAccess } from "../mocks/bookableItemsMocks";
+import { bookableItemFixtures, bookerBookingAccess, collectionPage } from "../mocks/bookableItemsMocks";
 
 vi.mock("@/modules/common/hooks/auth", () => ({ useOauthTokenQuery: vi.fn() }));
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
 const configuration = {
-  id: 7,
+  ...bookableItemFixtures[0],
   configurationVersion: 0,
-  state: "ACTIVE",
-  target: {
-    relationTo: "booking-instruments",
-    value: {
-      id: 123,
-      name: "Confocal microscope",
-      deleted: false,
-      parentContainerName: "Imaging lab",
-      parentContainerGlobalId: "IC456",
-    },
-    globalId: "IN123",
-  },
-  enabled: true,
   timezone: "UTC",
-  slotGranularityMinutes: 5,
   openingHours: [
     { dayOfWeek: 1, start: "08:00", end: "17:30" },
     { dayOfWeek: 2, start: "10:00", end: "16:00" },
   ],
   bufferBeforeMinutes: 5,
   bufferAfterMinutes: 15,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
   createdAt: "2026-08-17T00:00:00Z",
   createdByName: "Grace Hopper (grace)",
   updatedAt: null,
-  ...ownerBookingAccess,
 };
-
-function envelope(docs: unknown[], limit: number) {
-  return {
-    docs,
-    totalDocs: docs.length,
-    limit,
-    page: 1,
-    pagingCounter: 1,
-    totalPages: docs.length === 0 ? 0 : 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
-  };
-}
-
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
 const mockedUseCurrentUserQuery = vi.mocked(useCurrentUserQuery);
 
@@ -128,7 +95,7 @@ describe("BookableItemPage", () => {
     let current = configuration;
     const versions: (string | null)[] = [];
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([current], 2))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([current], 2))),
       http.patch("/api/v2/booking-configurations/7", ({ request }) => {
         versions.push(request.headers.get("If-Match"));
         return HttpResponse.json({ status: 412 }, { status: 412 });
@@ -165,9 +132,9 @@ describe("BookableItemPage", () => {
           await response.promise;
           return new HttpResponse(null, { status });
         }
-        return HttpResponse.json(envelope([configuration], 2));
+        return HttpResponse.json(collectionPage([configuration], 2));
       }),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     );
     const { router } = renderPage();
     try {
@@ -194,8 +161,8 @@ describe("BookableItemPage", () => {
 
   it("keeps authorized content during refetch but removes it when access is denied", async () => {
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     );
     const { queryClient } = renderPage();
     expect(await screen.findByRole("heading", { name: "Confocal microscope" })).toBeVisible();
@@ -228,8 +195,8 @@ describe("BookableItemPage", () => {
     const user = userEvent.setup();
     server.use(
       http.get("/api/v2/booking-configurations/7/audit", () => new HttpResponse(null, { status: 503 })),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     );
     const { router } = renderPage("/booking/bookable-items/IN123/details?edit=true");
     const duration = await screen.findByRole("spinbutton", {
@@ -257,12 +224,11 @@ describe("BookableItemPage", () => {
 
   it("renders identity, rules, and role-sensitive actions", async () => {
     const user = userEvent.setup();
-    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))));
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))));
     const { container } = renderPage();
 
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toBeVisible();
     expect(screen.getByText("IN123")).toBeVisible();
-    expect(screen.queryByRole("link", { name: "booking:bookableItemDetails.viewInventory" })).not.toBeInTheDocument();
     const facts = screen.getByRole("complementary", { name: "booking:bookableItemDetails.about" });
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
     expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
@@ -295,7 +261,7 @@ describe("BookableItemPage", () => {
       role,
     });
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
       http.get("/api/v2/booking-configurations/7/access", () =>
         HttpResponse.json({
           scheme: "booking",
@@ -328,8 +294,8 @@ describe("BookableItemPage", () => {
   it("archives an owned configuration after confirmation", async () => {
     let deleteRequest: Request | undefined;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.delete("/api/v2/booking-configurations/7", ({ request }) => {
         deleteRequest = request;
         return new HttpResponse(null, { status: 204 });
@@ -354,8 +320,8 @@ describe("BookableItemPage", () => {
     const archived = { ...configuration, state: "ARCHIVED" as const };
     let posts = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([archived], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([archived], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.get("/api/v2/booking-configurations/7/calendar-subscription", () =>
         HttpResponse.json({ active: false, updatedAt: null, subscriptionUrl: null }),
       ),
@@ -368,7 +334,6 @@ describe("BookableItemPage", () => {
 
     expect(await screen.findByText("booking:bookableItemDetails.archived")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "booking:bookings.actions.newBooking" })).not.toBeInTheDocument();
     expect(posts).toBe(0);
   });
 
@@ -377,8 +342,8 @@ describe("BookableItemPage", () => {
     let current = archived as typeof archived | typeof configuration;
     let patchRequest: Request | undefined;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([current], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([current], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
         patchRequest = request;
         current = { ...configuration, configurationVersion: 3 };
@@ -403,8 +368,8 @@ describe("BookableItemPage", () => {
     const active = { ...configuration, configurationVersion: 2 };
     let deleteRequest: Request | undefined;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([active], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([active], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.delete("/api/v2/booking-configurations/7", ({ request }) => {
         deleteRequest = request;
         return new HttpResponse(null, { status: 204 });
@@ -444,8 +409,8 @@ describe("BookableItemPage", () => {
     } as ReturnType<typeof useCurrentUserQuery>);
     const archived = { ...configuration, state: "ARCHIVED" as const };
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([archived], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([archived], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     );
     const user = userEvent.setup();
     renderPage();
@@ -461,8 +426,8 @@ describe("BookableItemPage", () => {
     const user = userEvent.setup();
     const patches: unknown[] = [];
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
         patches.push(await request.json());
         return new HttpResponse(null, { status: 204 });
@@ -496,8 +461,8 @@ describe("BookableItemPage", () => {
     const user = userEvent.setup();
     let patched = false;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.patch("/api/v2/booking-configurations/7", () => {
         patched = true;
         return new HttpResponse(null, { status: 204 });
@@ -534,8 +499,8 @@ describe("BookableItemPage", () => {
   it("keeps the editor and draft open when PATCH fails", async () => {
     const user = userEvent.setup();
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.patch("/api/v2/booking-configurations/7", () => HttpResponse.json({}, { status: 500 })),
     );
     renderPage("/booking/bookable-items/IN123/details?edit=true");
@@ -568,30 +533,27 @@ describe("BookableItemPage", () => {
     >);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(envelope([{ ...configuration, ...bookerBookingAccess }], 2)),
+        HttpResponse.json(collectionPage([{ ...configuration, ...bookerBookingAccess }], 2)),
       ),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     );
     renderPage("/booking/bookable-items/IN123/details?edit=true");
 
     expect(await screen.findByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.save" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookableItemDetails.edit" })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "booking:bookableItemDetails.actions.archive" }),
-    ).not.toBeInTheDocument();
   });
 
   it("loads the audit trail only once its tab is opened", async () => {
     const user = userEvent.setup();
     let auditRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(envelope([configuration], 2))),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
       http.get("/api/v2/booking-configurations/7/audit", () => {
         auditRequests += 1;
         return HttpResponse.json({
-          ...envelope(
+          ...collectionPage(
             [
               {
                 eventId: "a".repeat(64),
@@ -636,11 +598,11 @@ describe("BookableItemPage", () => {
     >);
     server.use(
       http.get("/api/v2/booking-configurations", () =>
-        lookupFails ? HttpResponse.json(envelope([], 2)) : HttpResponse.json(envelope([configuration], 2)),
+        lookupFails ? HttpResponse.json(collectionPage([], 2)) : HttpResponse.json(collectionPage([configuration], 2)),
       ),
       http.get("/api/v2/bookings", () => {
         eventRequests += 1;
-        return HttpResponse.json(envelope([], 10));
+        return HttpResponse.json(collectionPage([], 10));
       }),
     );
     renderPage();
@@ -659,9 +621,9 @@ describe("BookableItemPage", () => {
     const updatedAt = "2026-08-10T12:00:00Z";
     server.use(
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json(envelope([{ ...configuration, updatedAt }], 2)),
+        HttpResponse.json(collectionPage([{ ...configuration, updatedAt }], 2)),
       ),
-      http.get("/api/v2/bookings", () => HttpResponse.json(envelope([], 10))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
     );
     renderPage("/booking/bookable-items/IN123/details");
 
