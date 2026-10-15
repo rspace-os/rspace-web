@@ -11,7 +11,6 @@ import { RowField } from "./field-types/RowField";
 import { SectionField } from "./field-types/SectionField";
 import { SelectField } from "./field-types/SelectField";
 import { TextField } from "./field-types/TextField";
-import { UiField } from "./field-types/UiField";
 import type {
   FieldLayout,
   FormFieldConfig,
@@ -42,7 +41,7 @@ function ConditionalGroup<TDocument>({
   return condition({ data: getInput(form) as Partial<TDocument> }) ? children : null;
 }
 
-// Section, row and ui carry no `name`, or share one with nothing, so they key by position.
+// Section and row carry no `name`, so they key by position.
 function fieldKey<TDocument>(fieldConfig: FormFieldConfig<TDocument>, index: number) {
   if (fieldConfig.type === "section") return `${fieldConfig.labelKey}-${index}`;
   if (fieldConfig.type === "row") return `row-${index}`;
@@ -61,8 +60,6 @@ function RenderField<TDocument extends Record<string, unknown>>({
       return <SectionField {...nestedProps} fieldConfig={fieldConfig} layout={layout} />;
     case "row":
       return <RowField {...nestedProps} fieldConfig={fieldConfig} />;
-    case "ui":
-      return <UiField disabled={disabled} fieldConfig={fieldConfig} form={form} layout={layout} />;
     case "text":
       return <TextField {...props} fieldConfig={fieldConfig} />;
     case "number":
@@ -111,19 +108,11 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
   const nestedProps = { form, relationshipOptionAvailability, relationshipOptions, disabled, density };
 
   const renderedFields = fields
-    .filter(
-      (fieldConfig) =>
-        fieldConfig.type === "section" ||
-        fieldConfig.type === "row" ||
-        fieldConfig.type === "ui" ||
-        fieldConfig.form !== false,
-    )
+    .filter((fieldConfig) => fieldConfig.type === "section" || fieldConfig.type === "row" || fieldConfig.form !== false)
     .map((fieldConfig, index) => {
       const key = fieldKey(fieldConfig, index);
       const condition =
-        fieldConfig.type === "section" || fieldConfig.type === "row" || fieldConfig.type === "ui"
-          ? fieldConfig.condition
-          : undefined;
+        fieldConfig.type === "section" || fieldConfig.type === "row" ? fieldConfig.condition : undefined;
       const field = <RenderField key={key} {...nestedProps} fieldConfig={fieldConfig} layout={layout} />;
       return condition ? (
         <ConditionalGroup key={key} condition={condition} form={form}>
@@ -143,7 +132,7 @@ export function RenderFields<TDocument extends Record<string, unknown>>({
       </div>
     </div>
   ) : (
-    <FieldGroup density={density} className={cn(className)}>
+    <FieldGroup density={density} className={className}>
       {renderedFields}
     </FieldGroup>
   );

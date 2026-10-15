@@ -1,30 +1,24 @@
-import type { ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
+import { format } from "date-fns";
 import { Input } from "@/modules/common/ui/input";
 import { controlAttributes } from "../controlAttributes";
 import { FormField } from "../FormField";
+import { emptyNullableValue } from "../fieldValues";
 import type { ControlProps, FieldRendererProps } from "../RenderFields.types";
-
-type DateTimeFieldControlProps<TDocument> = Omit<ControlProps<TDocument>, "fieldConfig"> & {
-  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: "dateTime" }>;
-};
 
 function toInputValue(value: unknown): string {
   if (typeof value !== "string" || value === "") return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value.slice(0, 16);
-  const part = (number: number) => String(number).padStart(2, "0");
-  return `${date.getFullYear()}-${part(date.getMonth() + 1)}-${part(date.getDate())}T${part(date.getHours())}:${part(
-    date.getMinutes(),
-  )}`;
+  return format(date, "yyyy-MM-dd'T'HH:mm");
 }
 
 function fromInputValue(value: string, nullable: boolean | undefined): string | null | undefined {
-  if (value === "") return nullable ? null : undefined;
+  if (value === "") return emptyNullableValue(nullable);
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toISOString();
 }
 
-function DateTimeFieldControl<TDocument>(props: DateTimeFieldControlProps<TDocument>) {
+function DateTimeFieldControl<TDocument>(props: ControlProps<TDocument, "dateTime">) {
   const { fieldApi, fieldConfig } = props;
   return (
     <Input
