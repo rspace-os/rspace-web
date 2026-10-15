@@ -110,6 +110,7 @@ const FilestoreLoginDialog = ({
             <TextField
               size="small"
               label={t("filestoreLoginDialog.username")}
+              autoComplete="off"
               value={username}
               onChange={({ target: { value } }) => {
                 setUsername(value);
@@ -118,7 +119,7 @@ const FilestoreLoginDialog = ({
             <SecretField
               size="small"
               label={t("filestoreLoginDialog.password")}
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={setPassword}
             />

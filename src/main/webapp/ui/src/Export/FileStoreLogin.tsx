@@ -86,7 +86,7 @@ export default function FileStoreLogin({
                 label={t("export.fileStore.login.username")}
                 value={userName}
                 onChange={({ target: { value } }) => setUserName(value)}
-                autoComplete="username"
+                autoComplete="off"
               />
               {userNameError && (
                 <FormHelperText id="name-error-text">{t("export.fileStore.login.usernameBlank")}</FormHelperText>
@@ -98,7 +98,7 @@ export default function FileStoreLogin({
                 label={t("export.fileStore.login.password")}
                 value={password}
                 onChange={setPassword}
-                autoComplete="current-password"
+                autoComplete="new-password"
               />
               {passwordError && <FormHelperText>{t("export.fileStore.login.passwordBlank")}</FormHelperText>}
               {loginError && <FormHelperText>{t("export.fileStore.login.authProblem")}</FormHelperText>}
