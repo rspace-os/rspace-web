@@ -45,6 +45,16 @@ function andFilters<TDocument>(
   return { kind: "and", children };
 }
 
+function targetFilter(target: string | undefined) {
+  if (!target) return null;
+  return {
+    kind: "comparison",
+    field: "target",
+    operator: "equals",
+    value: target,
+  } as const;
+}
+
 function retypeFilter<TFrom, TTo>(expression: FilterExpression<TFrom>): FilterExpression<TTo> {
   if (expression.kind === "comparison") {
     return { ...expression, field: String(expression.field) as SearchSelector<TTo> };
@@ -202,30 +212,8 @@ export function useCalendarContentData() {
     () => andFilters([eventExpression, requesterFilter]),
     [eventExpression, requesterFilter],
   );
-  const targetItemExpression = React.useMemo(
-    () =>
-      target
-        ? ({
-            kind: "comparison",
-            field: "target",
-            operator: "equals",
-            value: target,
-          } satisfies FilterExpression<BookingConfiguration>)
-        : null,
-    [target],
-  );
-  const targetEventExpression = React.useMemo(
-    () =>
-      target
-        ? ({
-            kind: "comparison",
-            field: "target",
-            operator: "equals",
-            value: target,
-          } satisfies FilterExpression<BookingListDocument>)
-        : null,
-    [target],
-  );
+  const targetItemExpression = React.useMemo(() => targetFilter(target), [target]);
+  const targetEventExpression = React.useMemo(() => targetFilter(target), [target]);
   const calendarEventExpression = React.useMemo(
     () =>
       andFilters<BookingListDocument>([

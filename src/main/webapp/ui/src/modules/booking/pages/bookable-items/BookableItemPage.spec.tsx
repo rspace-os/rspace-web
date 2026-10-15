@@ -337,14 +337,8 @@ describe("BookableItemPage", () => {
 
     await pageObj.accessTab.click();
     await expect.element(pageObj.accessPanel).toBeVisible();
-    await expect
-      .poll(() =>
-        page
-          .getByText("Ada Lovelace", { exact: true })
-          .all()
-          .some((candidate) => candidate.element().getClientRects().length > 0),
-      )
-      .toBe(true);
+    await expect.element(pageObj.accessPanel.getByText("Imaging lab", { exact: true })).toBeVisible();
+    await expect.element(pageObj.accessPanel.getByRole("checkbox").first()).toBeDisabled();
     await expect.element(page.getByRole("combobox", { name: "Add user or group" })).not.toBeInTheDocument();
     await expect.element(page.getByRole("button", { name: "Direct role for", exact: false })).not.toBeInTheDocument();
 
