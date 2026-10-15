@@ -7,9 +7,8 @@ import {
   type BookingDisplayPreferencesDocument,
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
-  bookingDisplayPreferencesQueryKey,
+  bookingDisplayPreferencesQueryOptions,
   browserTimeZone,
-  fetchBookingDisplayPreferences,
   useReplaceBookingDisplayPreferences,
   useResetBookingDisplayPreferences,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -40,10 +39,7 @@ function inputFrom(
 export function BookingPreferencesContent() {
   const { t } = useTranslation("booking");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const document = useSuspenseQuery({
-    queryKey: bookingDisplayPreferencesQueryKey,
-    queryFn: ({ signal }) => fetchBookingDisplayPreferences(token, signal),
-  }).data;
+  const document = useSuspenseQuery(bookingDisplayPreferencesQueryOptions(token)).data;
   const [draft, setDraft] = useState<{
     baseline: BookingDisplayPreferencesInput;
     input: BookingDisplayPreferencesInput;
@@ -105,11 +101,7 @@ export function BookingPreferencesContent() {
             type="submit"
             disabled={pending || !dirty || !valid}
             aria-busy={replace.isPending}
-            className={
-              saved
-                ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
-                : undefined
-            }
+            variant={saved ? "saved" : "default"}
           >
             {saved ? <CheckIcon aria-hidden="true" /> : null}
             {t(saved ? "preferences.actions.saved" : "preferences.actions.save")}

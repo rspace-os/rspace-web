@@ -4,9 +4,9 @@ import type { HiddenEdgeAction, TimelineAdjuster, TimelinePolicy } from "./timel
 
 /** The label of a hidden endpoint's midnight action, naming the displayed day. */
 export function hiddenEdgeLabel(edge: "start" | "end", date: string, t: TFunction<"booking">, locale?: string): string {
-  return edge === "start"
-    ? t("timelineEdit.startAtMidnight", { date: formatPlainDate(date, locale) })
-    : t("timelineEdit.endAtMidnight", { date: formatPlainDate(date, locale) });
+  const formattedDate = formatPlainDate(date, locale);
+  const key = edge === "start" ? "timelineEdit.startAtMidnight" : "timelineEdit.endAtMidnight";
+  return t(key, { date: formattedDate });
 }
 
 /** Why a hidden endpoint cannot snap to midnight, or the instruction when it can. */

@@ -1,58 +1,22 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
-import { server } from "@/__tests__/mswServer";
-import BookingSettingsPage from "../BookingSettingsPage";
+import {
+  createBookingSettingsFixture,
+  renderBookingSettingsPage,
+  serveBookingSettings,
+} from "./bookingSettingsTestHarness";
 
-const settings = {
+const settings = createBookingSettingsFixture({
   slotGranularityMinutes: 15,
-  incrementUnit: "MINUTES",
-  alignToIncrement: true,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-  availabilityWindowStart: "08:00",
-  availabilityWindowEnd: "18:00",
-  timezoneMode: "BROWSER" as const,
-  customTimezone: null,
-  institutionTimezone: "UTC",
-  defaultSharedWith: "ALL_USERS" as const,
-  selectedAccessGrantees: [],
-  configurationVersion: 0,
-};
+});
 
 function serve(initial: Partial<typeof settings> = {}) {
-  const submitted: Record<string, unknown>[] = [];
-  let current = { ...settings, ...initial };
-  server.use(
-    oauthTokenHandler(true),
-    http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
-    http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
-      const body = (await request.json()) as Record<string, unknown>;
-      submitted.push(body);
-      current = { ...current, ...body, configurationVersion: current.configurationVersion + 1 };
-      return HttpResponse.json(current);
-    }),
-  );
-  return submitted;
-}
-
-function renderPage() {
-  return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <Suspense fallback={null}>
-        <BookingSettingsPage />
-      </Suspense>
-    </QueryClientProvider>,
-  );
+  return serveBookingSettings({ ...settings, ...initial });
 }
 
 const increment = () => screen.getByRole("spinbutton", { name: "booking:settings.fields.granularity" });
@@ -83,7 +47,7 @@ describe("Booking settings time increment", () => {
     const submitted = serve({
       openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "09:15", end: "10:15" })),
     });
-    renderPage();
+    renderBookingSettingsPage();
 
     await setNumber(user, await screen.findByRole("spinbutton", { name: "booking:settings.fields.granularity" }), "60");
     expect(increment()).toHaveAttribute("aria-invalid", "true");
@@ -112,7 +76,7 @@ describe("Booking settings time increment", () => {
             [{ dayOfWeek: 3, start: "00:00", end: "24:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
         ),
     });
-    const { container } = renderPage();
+    const { container } = renderBookingSettingsPage();
 
     // A redundant full-day exception still leaves every day open all day.
     await screen.findByRole("spinbutton", { name: "booking:settings.fields.granularity" });
@@ -137,7 +101,7 @@ describe("Booking settings time increment", () => {
   it("keeps Days selected but blocks saving once a weekday closes or the hours narrow", async () => {
     const user = userEvent.setup();
     const submitted = serve();
-    renderPage();
+    renderBookingSettingsPage();
 
     await user.click(await screen.findByRole("button", { name: "booking:settings.fields.incrementDays" }));
     await setNumber(user, increment(), "1");
@@ -172,7 +136,7 @@ describe("Booking settings time increment", () => {
   it("enforces the nominal Days maximum without a multiple-of-increment rule", async () => {
     const user = userEvent.setup();
     const submitted = serve();
-    renderPage();
+    renderBookingSettingsPage();
 
     await user.click(await screen.findByRole("button", { name: "booking:settings.fields.incrementDays" }));
     await setNumber(user, increment(), "1");
@@ -197,7 +161,7 @@ describe("Booking settings time increment", () => {
   it("revalidates an untouched maximum when the unit or quantity changes", async () => {
     const user = userEvent.setup();
     const submitted = serve({ maxBookingDurationMinutes: 90 });
-    renderPage();
+    renderBookingSettingsPage();
 
     await screen.findByRole("spinbutton", { name: "booking:settings.fields.granularity" });
     expect(screen.queryByText("booking:settings.errors.maximumDuration")).not.toBeInTheDocument();
@@ -223,7 +187,7 @@ describe("Booking settings time increment", () => {
     [120, "MINUTES", 120, "Minutes"],
   ] as const)("shows a stored %i %s increment as %i %s", async (minutes, storedUnit, shown, pressed) => {
     serve({ slotGranularityMinutes: minutes, incrementUnit: storedUnit });
-    renderPage();
+    renderBookingSettingsPage();
 
     expect(await screen.findByRole("spinbutton", { name: "booking:settings.fields.granularity" })).toHaveValue(shown);
     expect(unit(pressed)).toHaveAttribute("aria-pressed", "true");
@@ -232,7 +196,7 @@ describe("Booking settings time increment", () => {
   it("keeps the saved unit when the saved settings become the new baseline", async () => {
     const user = userEvent.setup();
     const submitted = serve({ slotGranularityMinutes: 1440, incrementUnit: "HOURS" });
-    renderPage();
+    renderBookingSettingsPage();
 
     await user.click(await screen.findByRole("button", { name: "booking:settings.fields.incrementDays" }));
     await setNumber(user, increment(), "1");
@@ -246,7 +210,7 @@ describe("Booking settings time increment", () => {
   it("shows Start on clock intervals off from one day without changing the stored choice", async () => {
     const user = userEvent.setup();
     const submitted = serve();
-    renderPage();
+    renderBookingSettingsPage();
 
     await screen.findByRole("spinbutton", { name: "booking:settings.fields.granularity" });
     expect(alignment()).toBeChecked();

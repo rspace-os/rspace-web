@@ -1,10 +1,12 @@
 import { Temporal } from "@js-temporal/polyfill";
 import {
+  ALL_ISO_WEEKDAYS,
   effectiveHours,
+  isOpenAllDay,
   longestOpeningMinutes,
   MAX_BOOKING_DURATION_MINUTES,
   type OpeningSchedule,
-  validOpeningHours,
+  openingPeriods,
   validOpeningHoursSchedule,
 } from "@/modules/booking/domain/bookingOpeningHours";
 import { resolveWallClock, type WallClockResolution } from "@/modules/booking/domain/bookingTime";
@@ -16,7 +18,7 @@ export type IncrementUnit = (typeof INCREMENT_UNITS)[number];
 export const INCREMENT_UNIT_MINUTES: Readonly<Record<IncrementUnit, number>> = { MINUTES: 1, HOURS: 60, DAYS: 1440 };
 
 /** Increments this long or longer cannot align to the clock, whatever the stored flag says. */
-export const ALIGNMENT_LIMIT_MINUTES = 1440;
+const ALIGNMENT_LIMIT_MINUTES = 1440;
 
 export type IncrementSettings = {
   slotGranularityMinutes: number;
@@ -25,11 +27,11 @@ export type IncrementSettings = {
 };
 
 /** Elapsed increments count minutes; day increments count calendar days at the same local time. */
-export type IncrementRule = { kind: "elapsed"; minutes: number; aligned: boolean } | { kind: "days"; days: number };
+type IncrementRule = { kind: "elapsed"; minutes: number; aligned: boolean } | { kind: "days"; days: number };
 
 export type IncrementViolation = "precision" | "order" | "alignment" | "duration" | "dayEndMissing";
 
-const MINUTE_NS = 60_000_000_000n;
+export const MINUTE_NS = 60_000_000_000n;
 
 export function alignmentAvailable(settings: Pick<IncrementSettings, "slotGranularityMinutes" | "incrementUnit">) {
   return settings.incrementUnit !== "DAYS" && settings.slotGranularityMinutes < ALIGNMENT_LIMIT_MINUTES;
@@ -59,35 +61,13 @@ export function incrementRule(settings: IncrementSettings): IncrementRule {
 
 /** Every ISO weekday is open from 00:00 to 24:00, which Day increments require. */
 export function openAllDayEveryDay(schedule: OpeningSchedule): boolean {
-  return [1, 2, 3, 4, 5, 6, 7].every((day) => {
-    const hours = effectiveHours(schedule, day);
-    return hours?.start === "00:00" && hours.end === "24:00";
-  });
-}
-
-function minuteOfTime(time: string): number {
-  return time === "24:00" ? 1440 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
-}
-
-/** Continuous opening periods over two unrolled weeks, so a period crossing Sunday into Monday is whole. */
-function continuousPeriods(schedule: OpeningSchedule): { start: number; end: number }[] {
-  const periods: { start: number; end: number }[] = [];
-  for (let day = 0; day < 14; day++) {
-    const hours = effectiveHours(schedule, (day % 7) + 1);
-    if (!hours || !validOpeningHours(hours.start, hours.end)) continue;
-    const start = day * 1440 + minuteOfTime(hours.start);
-    const end = day * 1440 + minuteOfTime(hours.end);
-    const previous = periods.at(-1);
-    if (previous && previous.end === start) previous.end = end;
-    else periods.push({ start, end });
-  }
-  return periods;
+  return ALL_ISO_WEEKDAYS.every((day) => isOpenAllDay(effectiveHours(schedule, day)));
 }
 
 /** Whether some start on the per-day midnight grid leaves room for a whole increment inside one opening period. */
-export function alignedIncrementFitsOpening(schedule: OpeningSchedule, minutes: number): boolean {
+function alignedIncrementFitsOpening(schedule: OpeningSchedule, minutes: number): boolean {
   if (!Number.isInteger(minutes) || minutes < 1) return false;
-  return continuousPeriods(schedule).some(({ start, end }) => {
+  return openingPeriods(schedule).some(({ start, end }) => {
     if (end - start >= 10080) return true;
     for (let day = Math.floor(start / 1440); day * 1440 < end; day++) {
       const dayStart = day * 1440;
@@ -135,7 +115,7 @@ function onWholeMinute(instant: Temporal.Instant): boolean {
 }
 
 /** Local minute of day in the scheduling timezone. */
-export function localMinuteOfDay(instant: string | Temporal.Instant, timezone: string): number {
+function localMinuteOfDay(instant: string | Temporal.Instant, timezone: string): number {
   const zoned = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone);
   return zoned.hour * 60 + zoned.minute;
 }
@@ -145,7 +125,7 @@ export function isStartAligned(rule: IncrementRule, start: string | Temporal.Ins
 }
 
 function localTimeString(zoned: Temporal.ZonedDateTime): string {
-  return `${String(zoned.hour).padStart(2, "0")}:${String(zoned.minute).padStart(2, "0")}`;
+  return zoned.toPlainTime().toString({ smallestUnit: "minute" });
 }
 
 /**
@@ -202,7 +182,7 @@ export function dayIncrementEnd(
 }
 
 /** The elapsed end `start + increments × minutes`. */
-export function elapsedIncrementEnd(start: string | Temporal.Instant, minutes: number, increments: number): string {
+function elapsedIncrementEnd(start: string | Temporal.Instant, minutes: number, increments: number): string {
   return Temporal.Instant.from(start)
     .add({ minutes: minutes * increments })
     .toString();
@@ -216,7 +196,7 @@ function nearestPositiveMultiple(ratio: number): number {
   return Math.max(1, chosen);
 }
 
-export type EndSnap =
+type EndSnap =
   | { kind: "instant"; instant: string }
   | { kind: "ambiguous"; date: string; time: string; earlier: string; later: string }
   | { kind: "dayEndMissing"; date: string; time: string };
@@ -253,7 +233,7 @@ export function snapEndToIncrement(rule: IncrementRule, start: string, typedEnd:
 }
 
 /** Instants of the per-day midnight grid near `instant`, both occurrences of a repeated time, none in a gap. */
-export function nearbyGridStarts(instant: string | Temporal.Instant, minutes: number, timezone: string): string[] {
+function nearbyGridStarts(instant: string | Temporal.Instant, minutes: number, timezone: string): string[] {
   const zoned = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone);
   const minute = zoned.hour * 60 + zoned.minute;
   const candidates: string[] = [];
@@ -272,7 +252,9 @@ export function nearbyGridStarts(instant: string | Temporal.Instant, minutes: nu
     const centre = minute - dayOffset * 1440;
     const first = Math.max(0, Math.floor((centre - reach) / minutes) * minutes);
     for (let gridMinute = first; gridMinute < 1440 && gridMinute <= centre + reach; gridMinute += minutes) {
-      const time = `${String(Math.floor(gridMinute / 60)).padStart(2, "0")}:${String(gridMinute % 60).padStart(2, "0")}`;
+      const time = Temporal.PlainTime.from({ hour: Math.floor(gridMinute / 60), minute: gridMinute % 60 }).toString({
+        smallestUnit: "minute",
+      });
       const resolution = resolveWallClock(date.toString(), time, timezone);
       if (resolution.kind === "unique") candidates.push(resolution.instant);
       else if (resolution.kind === "ambiguous") candidates.push(resolution.earlier, resolution.later);

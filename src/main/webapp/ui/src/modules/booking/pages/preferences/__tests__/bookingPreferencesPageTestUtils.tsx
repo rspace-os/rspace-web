@@ -1,16 +1,18 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
 import { render, screen, waitFor } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { expect } from "vitest";
 import { currentUser } from "@/__tests__/helpers/currentUserFixture";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
-
 import BookingPreferencesPage from "../BookingPreferencesPage";
+import { inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
 
 export function useDefaultBookingPreferencesHandlers() {
   server.use(
+    oauthTokenHandler(true),
+    http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
     http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
     http.get("/api/v2/users/me/booking-notification-preferences", () =>
       HttpResponse.json({

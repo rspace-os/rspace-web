@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import type { IncrementUnit } from "@/modules/booking/domain/bookingIncrement";
 import * as bookingOpeningHours from "@/modules/booking/domain/bookingOpeningHours";
 import { ALL_ISO_WEEKDAYS, type OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
+import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import {
   proposeDayRange,
   type TimelineContext,
   type TimelineRange,
   timelineAdjuster,
   timelinePolicy,
-  timelineRangeToDraft,
   unrestrictedTimelinePolicy,
 } from "../timelineRange";
 
@@ -163,7 +163,7 @@ describe("timeline moves", () => {
     const range = { start: "2026-10-25T00:45:00Z", end: "2026-10-25T01:15:00Z" };
     const moves = adjuster(range, context("2026-10-25", "Europe/Berlin", "Europe/Berlin", 15));
 
-    expect(timelineRangeToDraft(range, "Europe/Berlin")).toMatchObject({
+    expect(wallClockDraftFromInstants(range.start, range.end, "Europe/Berlin")).toMatchObject({
       startTime: "02:45",
       startOccurrence: "earlier",
       endTime: "02:15",
@@ -177,9 +177,10 @@ describe("timeline moves", () => {
     const moves = adjuster(range, context("2026-03-29", "Europe/Berlin", "Europe/Berlin", 15));
 
     expect(moves.step("move", "next")).toEqual({ start: "2026-03-29T01:00:00Z", end: "2026-03-29T01:30:00Z" });
-    expect(
-      timelineRangeToDraft({ start: "2026-03-29T01:00:00Z", end: "2026-03-29T01:30:00Z" }, "Europe/Berlin"),
-    ).toMatchObject({ startTime: "03:00", endTime: "03:30" });
+    expect(wallClockDraftFromInstants("2026-03-29T01:00:00Z", "2026-03-29T01:30:00Z", "Europe/Berlin")).toMatchObject({
+      startTime: "03:00",
+      endTime: "03:30",
+    });
   });
 });
 

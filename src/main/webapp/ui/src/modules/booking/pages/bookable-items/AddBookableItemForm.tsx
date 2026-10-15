@@ -4,7 +4,11 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
-import { type BookingSettings, SchedulingSettingsFields } from "@/modules/booking/configuration/schedulingSettings";
+import {
+  type BookingSettings,
+  SchedulingSettingsFields,
+  schedulingSettingsFieldNames,
+} from "@/modules/booking/configuration/schedulingSettings";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
@@ -29,6 +33,10 @@ import { BookingTargetSchema, MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets 
 
 const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
+
+function pick<T, K extends keyof T>(source: T, keys: readonly K[]): Pick<T, K> {
+  return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;
+}
 
 // The JVM institution zone may be an alias (e.g. Etc/UTC) missing from Intl's canonical list.
 function withInstitutionTimeZone(institutionTimezone: string) {
@@ -124,14 +132,7 @@ export function AddBookableItemForm({
         : { target: { relationTo: "booking-instruments", value: initialTargetId } }),
       enabled: true,
       timezone: defaults.institutionTimezone,
-      slotGranularityMinutes: defaults.slotGranularityMinutes,
-      incrementUnit: defaults.incrementUnit,
-      alignToIncrement: defaults.alignToIncrement,
-      openingHours: defaults.openingHours,
-      bufferBeforeMinutes: defaults.bufferBeforeMinutes,
-      bufferAfterMinutes: defaults.bufferAfterMinutes,
-      maxBookingDurationMinutes: defaults.maxBookingDurationMinutes,
-      allowDoubleBooking: defaults.allowDoubleBooking,
+      ...pick(defaults, schedulingSettingsFieldNames),
     },
   });
   const fields = useMemo(() => withInstitutionTimeZone(defaults.institutionTimezone), [defaults.institutionTimezone]);

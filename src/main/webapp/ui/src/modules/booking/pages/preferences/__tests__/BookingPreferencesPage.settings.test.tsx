@@ -50,10 +50,7 @@ describe("BookingPreferencesPage", () => {
   it("keeps a local draft when preferences are refreshed in the background", async () => {
     const user = userEvent.setup();
     let document = inheritedBrowserBookingPreferences;
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)),
-    );
+    server.use(http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)));
     const { queryClient } = renderPage();
     const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
     await user.clear(start);
@@ -71,8 +68,6 @@ describe("BookingPreferencesPage", () => {
     let body: unknown;
     let writes = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         writes += 1;
         body = await request.json();
@@ -122,7 +117,6 @@ describe("BookingPreferencesPage", () => {
   it("saves an explicit time format, keeping the other preferences", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(customNewYorkBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         body = await request.json();
@@ -160,7 +154,6 @@ describe("BookingPreferencesPage", () => {
   it("shows the custom timezone field only in Custom mode and restores the last custom zone", async () => {
     const bodies: unknown[] = [];
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(customNewYorkBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         const body = await request.json();
@@ -196,7 +189,6 @@ describe("BookingPreferencesPage", () => {
   it("uses 00:00 for end of day while storing 24:00", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json({ ...inheritedBrowserBookingPreferences, availabilityWindowEnd: "24:00" }),
       ),
@@ -236,8 +228,6 @@ describe("BookingPreferencesPage", () => {
   it("restores the custom availability window when Show all day is turned off", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json({ ...inheritedBrowserBookingPreferences, ...(body as object), overridden: true });
@@ -277,7 +267,6 @@ describe("BookingPreferencesPage", () => {
     let reads = 0;
     let deletes = 0;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => {
         reads += 1;
         return HttpResponse.json(reads === 1 ? customNewYorkBookingPreferences : inheritedBrowserBookingPreferences);
@@ -325,7 +314,7 @@ describe("BookingPreferencesPage", () => {
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.reset" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
+    expect(await screen.findByText("booking:preferences.resetComplete")).toHaveAttribute("role", "status");
     expect(deletes).toBe(1);
     expect(reads).toBe(2);
     expect(start).toHaveValue("08:00");
@@ -519,8 +508,6 @@ describe("BookingPreferencesPage", () => {
   it("keeps invalid windows client-side and reports network failures", async () => {
     let writes = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", () => {
         writes += 1;
         return HttpResponse.json({ detail: "failure" }, { status: 503 });

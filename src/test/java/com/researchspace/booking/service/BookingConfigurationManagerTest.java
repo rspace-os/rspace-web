@@ -292,7 +292,30 @@ class BookingConfigurationManagerTest {
                 "UTC",
                 target(12L),
                 new BookingSchedulingSettings.Patch(null, List.of(), null, null, null, null)),
-            InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS));
+            InvalidBookingSchedulingSettingsException.Reason.OPENING_HOURS),
+        Arguments.of(
+            new Create(
+                true,
+                "UTC",
+                target(12L),
+                new BookingSchedulingSettings.Patch(
+                    1441L, BookingIncrementUnit.DAYS, false, null, null, null, null, null)),
+            InvalidBookingSchedulingSettingsException.Reason.GRANULARITY),
+        Arguments.of(
+            new Create(
+                true,
+                "UTC",
+                target(12L),
+                new BookingSchedulingSettings.Patch(
+                    15L,
+                    BookingIncrementUnit.MINUTES,
+                    true,
+                    hours("09:05", "09:20"),
+                    null,
+                    null,
+                    null,
+                    null)),
+            InvalidBookingSchedulingSettingsException.Reason.GRANULARITY));
   }
 
   @ParameterizedTest
