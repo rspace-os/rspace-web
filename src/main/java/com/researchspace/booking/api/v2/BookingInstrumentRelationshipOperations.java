@@ -18,7 +18,7 @@ public class BookingInstrumentRelationshipOperations {
     return new ApiV2RelationshipTargetSpec<>(
         ApiV2BookingInstrumentResource.description(instrumentReadAccess),
         Long.class,
-        (ids, caller) -> targetManager.resolveRelationshipTargets(ids, caller),
+        targetManager::resolveRelationshipTargets,
         "instruments");
   }
 }
