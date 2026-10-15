@@ -1,6 +1,6 @@
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/collectionConfig";
 import { parseColumns, parseSorting, serializeColumns, serializeSorting } from "./queryStringState";
-import { parseRsqlExpression, serializeRsqlExpression } from "./rsql/rsqlCodec";
+import { parseRsqlExpression, type StaleFieldPolicy, serializeRsqlExpression } from "./rsql/rsqlCodec";
 import type { FilterExpression } from "./tableListState";
 
 export type TableViewState = {
@@ -51,10 +51,7 @@ export function serializeTableViewState<TDocument>(
     : JSON.stringify(state);
 }
 
-export type StaleViewFields = {
-  isStale: (name: string) => boolean;
-  onDropped?: (name: string) => void;
-};
+export type StaleViewFields = StaleFieldPolicy;
 
 export function parseTableViewState<TDocument>(
   serialized: string,
