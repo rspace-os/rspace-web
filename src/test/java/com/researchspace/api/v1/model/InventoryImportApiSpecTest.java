@@ -174,7 +174,7 @@ class InventoryImportApiSpecTest {
 
   private static void findNullableReferencesRejectingNull(
       JsonNode node, String path, List<String> found) {
-    if (node.path("nullable").asBoolean() && !node.has("type")) {
+    if (node.path("nullable").asBoolean()) {
       for (JsonNode member : node.path("allOf")) {
         if (declaresTypeWithoutNullable(member)) {
           found.add(path);
