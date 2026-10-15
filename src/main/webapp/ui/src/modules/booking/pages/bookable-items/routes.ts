@@ -1,4 +1,5 @@
 import { type AnyRoute, createRoute } from "@tanstack/react-router";
+import { bookingFormSearch } from "../bookingFormSearch";
 import AddBookableItemPage from "./AddBookableItemPage";
 import BookableItemPage from "./BookableItemPage";
 import BookableItemsPage from "./BookableItemsPage";
@@ -24,9 +25,10 @@ export function createAddBookableItemRoute<TParentRoute extends AnyRoute>(bookin
   return createRoute({
     getParentRoute: () => bookingRoute,
     path: "/bookable-items/add",
-    validateSearch: (search: Record<string, unknown>): { target?: string } => ({
-      ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
-    }),
+    validateSearch: (search: Record<string, unknown>): { target?: string } => {
+      const { target } = bookingFormSearch(search);
+      return target === undefined ? {} : { target };
+    },
     component: AddBookableItemPage,
   });
 }

@@ -18,31 +18,13 @@ import { server } from "@/__tests__/mswServer";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
+import { currentUser as currentUserFixture } from "../../mocks/currentUserFixture";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createAddBookingRoute } from "../routes";
 
 const currentUser: CurrentUser = {
-  id: 1,
-  username: "ada",
-  email: "ada@example.com",
-  firstName: "Ada",
-  lastName: "Lovelace",
-  homeFolderId: 2,
-  workbenchId: 3,
-  hasPiRole: false,
-  hasSysAdminRole: false,
-  profileImageUrl: null,
-  profileImageApiUrl: null,
-  orcid: { available: false, id: null },
-  capabilities: { canUseInventory: false, canPublish: false, canViewSystem: false },
-  livechat: { enabled: false, serverKey: null },
-  session: {
-    operatedAs: false,
-    lastSession: null,
-    canUseDevtools: false,
-    canOverrideFeatureFlags: false,
-    canChangeFeatureFlagBaselines: false,
-  },
+  ...currentUserFixture,
+  capabilities: { ...currentUserFixture.capabilities, canUseInventory: false },
 };
 
 function currentUserHandler(hasSysAdminRole: boolean) {

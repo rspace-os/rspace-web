@@ -1,16 +1,13 @@
-import { createMemoryHistory, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import { createRootRoute, createRoute } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
+import { matchedRoute } from "../../routeTestHelpers";
 import { createMyBookingsRoute } from "../routes";
 
 async function matchedSearch(path: string) {
   const root = createRootRoute();
   const booking = createRoute({ getParentRoute: () => root, path: "/booking" });
-  const router = createRouter({
-    routeTree: root.addChildren([booking.addChildren([createMyBookingsRoute(booking)])]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
-  await router.load();
-  return router.state.matches.at(-1)?.search;
+  const match = await matchedRoute(root.addChildren([booking.addChildren([createMyBookingsRoute(booking)])]), path);
+  return match.search;
 }
 
 describe("My Bookings route", () => {
@@ -19,9 +16,18 @@ describe("My Bookings route", () => {
     await expect(matchedSearch("/booking/my-bookings?period=later")).resolves.toEqual({ period: "upcoming" });
   });
 
-  it("keeps the past period", async () => {
-    await expect(
-      matchedSearch("/booking/my-bookings?period=past&my-bookings.q=scope&unrelated=discarded"),
-    ).resolves.toEqual({ period: "past", "my-bookings.q": "scope", unrelated: "discarded" });
+  it.each([
+    {
+      period: "past",
+      path: "/booking/my-bookings?period=past&my-bookings.q=scope&unrelated=discarded",
+      search: { period: "past", "my-bookings.q": "scope", unrelated: "discarded" },
+    },
+    {
+      period: "cancelled",
+      path: "/booking/my-bookings?period=cancelled",
+      search: { period: "upcoming" },
+    },
+  ])("normalizes the $period period from the matched route", async ({ path, search }) => {
+    await expect(matchedSearch(path)).resolves.toEqual(search);
   });
 });

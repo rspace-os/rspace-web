@@ -20,6 +20,8 @@ import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/sch
 import { createBookingIndexRoute, createBookingRoute } from "@/modules/booking/pages/BookingPage";
 import { ownerBookingAccess } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import { createBookableItemRoute } from "@/modules/booking/pages/bookable-items/routes";
+import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
+import { currentUser as currentUserFixture } from "@/modules/booking/pages/mocks/currentUserFixture";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { getSidebarRenderer } from "@/modules/common/app/AppShell";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -31,27 +33,9 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 }));
 
 const currentUser: CurrentUser = {
-  id: 1,
-  username: "ada",
-  email: "ada@example.com",
-  firstName: "Ada",
-  lastName: "Lovelace",
-  homeFolderId: 2,
-  workbenchId: 3,
-  hasPiRole: false,
+  ...currentUserFixture,
   hasSysAdminRole: true,
-  profileImageUrl: null,
-  profileImageApiUrl: null,
-  orcid: { available: false, id: null },
-  capabilities: { canUseInventory: false, canPublish: false, canViewSystem: true },
-  livechat: { enabled: false, serverKey: null },
-  session: {
-    operatedAs: false,
-    lastSession: null,
-    canUseDevtools: false,
-    canOverrideFeatureFlags: false,
-    canChangeFeatureFlagBaselines: false,
-  },
+  capabilities: { ...currentUserFixture.capabilities, canUseInventory: false, canViewSystem: true },
 };
 
 const mockedUseOauthTokenQuery = vi.mocked(useOauthTokenQuery);
@@ -197,49 +181,30 @@ describe("booking sidebar", () => {
   it("stays mounted on the merged bookable item route", async () => {
     server.use(
       http.get("/api/v2/booking-configurations", () =>
-        HttpResponse.json({
-          docs: [
-            {
-              id: 42,
-              configurationVersion: 0,
-              target: {
-                relationTo: "booking-instruments",
-                value: { id: 123, name: "Confocal microscope", deleted: false },
-                globalId: "IN123",
+        HttpResponse.json(
+          collectionResponse(
+            [
+              {
+                id: 42,
+                configurationVersion: 0,
+                target: {
+                  relationTo: "booking-instruments",
+                  value: { id: 123, name: "Confocal microscope", deleted: false },
+                  globalId: "IN123",
+                },
+                enabled: true,
+                state: "ACTIVE",
+                timezone: "Europe/Berlin",
+                ...DEFAULT_SCHEDULING_SETTINGS,
+                updatedAt: null,
+                ...ownerBookingAccess,
               },
-              enabled: true,
-              state: "ACTIVE",
-              timezone: "Europe/Berlin",
-              ...DEFAULT_SCHEDULING_SETTINGS,
-              updatedAt: null,
-              ...ownerBookingAccess,
-            },
-          ],
-          totalDocs: 1,
-          limit: 2,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 1,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        }),
+            ],
+            { limit: 2 },
+          ),
+        ),
       ),
-      http.get("/api/v2/bookings", () =>
-        HttpResponse.json({
-          docs: [],
-          totalDocs: 0,
-          limit: 10,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 0,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        }),
-      ),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([], { limit: 10 }))),
     );
     renderAt("/booking/bookable-items/IN123/details?edit=true");
 

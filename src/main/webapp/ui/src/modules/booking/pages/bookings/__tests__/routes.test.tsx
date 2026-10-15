@@ -1,20 +1,17 @@
-import { createMemoryHistory, createRootRoute, createRouter } from "@tanstack/react-router";
+import { createRootRoute } from "@tanstack/react-router";
 import { describe, expect, it } from "vitest";
 import { createBookingRoute } from "@/modules/booking/pages/BookingPage";
-import { bookingFormSearch, createAddBookingRoute, createBookingEventRouteTree } from "../routes";
+import { bookingFormSearch } from "../../bookingFormSearch";
+import { matchedRoute } from "../../routeTestHelpers";
+import { createAddBookingRoute, createBookingEventRouteTree } from "../routes";
 
 async function matched(path: string) {
   const root = createRootRoute();
   const booking = createBookingRoute(root);
-  const router = createRouter({
-    routeTree: root.addChildren([
-      booking.addChildren([createAddBookingRoute(booking), createBookingEventRouteTree(booking)]),
-    ]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
-  await router.load();
-  const match = router.state.matches.at(-1);
-  return { params: match?.params, routeId: match?.routeId, search: match?.search };
+  return matchedRoute(
+    root.addChildren([booking.addChildren([createAddBookingRoute(booking), createBookingEventRouteTree(booking)])]),
+    path,
+  );
 }
 
 describe("booking form routes", () => {

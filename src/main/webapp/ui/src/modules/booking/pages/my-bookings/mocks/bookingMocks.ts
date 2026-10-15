@@ -1,4 +1,5 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
+import { bookingTarget, collectionResponse } from "../../mocks/bookingCalendarFixtures";
 
 export const bookingsOpenApi = {
   paths: {
@@ -105,18 +106,12 @@ export const bookingsOpenApi = {
   },
 };
 
-const target = (id: number, name: string) => ({
-  relationTo: "booking-instruments" as const,
-  value: { id, name, deleted: false },
-  globalId: `IN${id}`,
-});
-
 export const upcomingBooking = {
   id: 41,
   version: 0,
   requesterId: 84,
   kind: "BOOKING",
-  target: target(123, "Confocal microscope"),
+  target: bookingTarget(123, "Confocal microscope"),
   canViewConfiguration: true,
   timezone: "Pacific/Auckland",
   start: "2020-08-23T09:00:00Z",
@@ -136,7 +131,7 @@ export const pastBooking = {
   version: 0,
   requesterId: 84,
   kind: "BOOKING",
-  target: target(124, "Electron microscope"),
+  target: bookingTarget(124, "Electron microscope"),
   canViewConfiguration: true,
   timezone: "UTC",
   start: "2020-08-23T09:00:00Z",
@@ -160,21 +155,6 @@ export const roleLostBooking = {
   purpose: "Retained requester details",
 };
 
-function page(docs: readonly unknown[]) {
-  return {
-    docs,
-    totalDocs: docs.length,
-    limit: 20,
-    page: 1,
-    pagingCounter: 1,
-    totalPages: docs.length === 0 ? 0 : 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
-  };
-}
-
 function matchesEndFilter(document: unknown, where: string | null): boolean {
   const filter = where?.match(/end=(gt|le)=([^;)]+)/);
   if (!filter) return true;
@@ -196,7 +176,10 @@ export function bookingHandlers(
       onListRequest(url);
       const source = docs ?? [upcomingBooking, pastBooking];
       return HttpResponse.json(
-        page(source.filter((document) => matchesEndFilter(document, url.searchParams.get("where")))),
+        collectionResponse(
+          source.filter((document) => matchesEndFilter(document, url.searchParams.get("where"))),
+          { limit: 20 },
+        ),
       );
     }),
     http.get("/api/v2/bookings/count", ({ request }) => {

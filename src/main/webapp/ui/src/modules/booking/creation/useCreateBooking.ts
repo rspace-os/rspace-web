@@ -3,44 +3,41 @@ import type { TFunction } from "i18next";
 import { ApiV2ProblemError, createBooking } from "@/modules/booking/domain/booking";
 import type { BookingFormSubmission } from "./BookingForm";
 
-export function bookingProblemKey(
-  error: unknown,
-):
-  | "bookings.errors.generic"
-  | "bookings.errors.endAfterStart"
-  | "bookings.errors.duration"
-  | "bookings.errors.maximumDuration"
-  | "bookings.errors.overlap"
-  | "bookings.errors.granularity"
-  | "bookings.errors.openingHours"
-  | "bookings.errors.targetUnavailable"
-  | "bookings.errors.concurrentModification"
-  | "bookings.errors.forbidden"
-  | "bookings.errors.noLongerEditable" {
+const BOOKING_PROBLEM_KEYS = {
+  "errors.api.v2.booking.window": "bookings.errors.endAfterStart",
+  "errors.api.v2.booking.duration": "bookings.errors.duration",
+  "errors.api.v2.booking.maximumDuration": "bookings.errors.maximumDuration",
+  "errors.api.v2.booking.overlap": "bookings.errors.overlap",
+  "errors.api.v2.booking.granularity": "bookings.errors.granularity",
+  "errors.api.v2.booking.openingHours": "bookings.errors.openingHours",
+  "errors.api.v2.booking.target.unavailable": "bookings.errors.targetUnavailable",
+  "errors.api.v2.forbidden": "bookings.errors.forbidden",
+  "errors.api.v2.booking.state.transition": "bookings.errors.noLongerEditable",
+} as const;
+
+type MappedBookingProblemKey = (typeof BOOKING_PROBLEM_KEYS)[keyof typeof BOOKING_PROBLEM_KEYS];
+type BookingProblemKey = MappedBookingProblemKey | "bookings.errors.generic" | "bookings.errors.concurrentModification";
+
+type BookingProblemCode = keyof typeof BOOKING_PROBLEM_KEYS;
+
+function isMappedBookingProblemCode(code: string | undefined): code is BookingProblemCode {
+  return code !== undefined && Object.hasOwn(BOOKING_PROBLEM_KEYS, code);
+}
+
+export function bookingProblemKey(error: unknown): BookingProblemKey {
   if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
-  if (error.code === "errors.api.v2.booking.window") return "bookings.errors.endAfterStart";
-  if (error.code === "errors.api.v2.booking.duration") return "bookings.errors.duration";
-  if (error.code === "errors.api.v2.booking.maximumDuration") return "bookings.errors.maximumDuration";
-  if (error.code === "errors.api.v2.booking.overlap") return "bookings.errors.overlap";
-  if (error.code === "errors.api.v2.booking.granularity") return "bookings.errors.granularity";
-  if (error.code === "errors.api.v2.booking.openingHours") return "bookings.errors.openingHours";
-  if (error.code === "errors.api.v2.booking.target.unavailable") return "bookings.errors.targetUnavailable";
   if (error.status === 412 || error.code === "errors.api.v2.booking.concurrentModification") {
     return "bookings.errors.concurrentModification";
   }
-  if (error.code === "errors.api.v2.forbidden") return "bookings.errors.forbidden";
-  if (error.code === "errors.api.v2.booking.state.transition") return "bookings.errors.noLongerEditable";
-  return "bookings.errors.generic";
-}
-
-export function bookingCreationProblemKey(
-  error: unknown,
-): ReturnType<typeof bookingProblemKey> | "bookings.errors.outcomeUncertain" {
-  return isBookingCreationOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
+  return isMappedBookingProblemCode(error.code) ? BOOKING_PROBLEM_KEYS[error.code] : "bookings.errors.generic";
 }
 
 export function bookingProblemMessage(error: unknown, t: TFunction<"booking">): string {
   return t(bookingProblemKey(error));
+}
+
+export function bookingCreationProblemKey(error: unknown): BookingProblemKey | "bookings.errors.outcomeUncertain" {
+  return isBookingCreationOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
 }
 
 /** A create request may have committed even when its response was not received. */
@@ -68,18 +65,14 @@ export function useCreateBooking(token: string) {
       void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
     },
     onError: (error) => {
-      if (isBookingCreationOutcomeUncertain(error)) {
-        void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
-      }
+      const invalidateBookings =
+        isBookingCreationOutcomeUncertain(error) ||
+        (error instanceof ApiV2ProblemError &&
+          (error.code === "errors.api.v2.booking.overlap" ||
+            error.code === "errors.api.v2.booking.concurrentModification"));
+      if (invalidateBookings) void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      }
-      if (
-        error instanceof ApiV2ProblemError &&
-        (error.code === "errors.api.v2.booking.overlap" ||
-          error.code === "errors.api.v2.booking.concurrentModification")
-      ) {
-        void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
       }
     },
   });

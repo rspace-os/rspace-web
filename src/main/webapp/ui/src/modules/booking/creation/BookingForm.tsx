@@ -250,6 +250,11 @@ export function BookingForm(props: BookingFormProps) {
   }, [dirty, draft, eventKind, purposeValue, target, window]);
   const compact = props.density === "compact";
   const inline = props.layout === "inline";
+  const submitLabel = editing
+    ? t("bookings.form.save")
+    : eventKind === "MAINTENANCE"
+      ? t("bookings.form.submitMaintenance")
+      : t("bookings.form.submit");
   const firstHours = target?.openingHours[0];
   const uniformHours =
     firstHours &&
@@ -287,10 +292,10 @@ export function BookingForm(props: BookingFormProps) {
           <div className="space-y-1">
             <p className="text-sm font-medium">{t("bookings.form.item")}</p>
             <InventoryItem
-              name={fixedTarget?.name ?? ""}
-              globalId={fixedTarget?.globalId ?? ""}
-              href={`/globalId/${fixedTarget?.globalId ?? ""}`}
-              idLinkLabel={t("bookings.form.openItem", { globalId: fixedTarget?.globalId ?? "" })}
+              name={fixedTarget.name}
+              globalId={fixedTarget.globalId}
+              href={`/globalId/${fixedTarget.globalId}`}
+              idLinkLabel={t("bookings.form.openItem", { globalId: fixedTarget.globalId })}
               compact
               size="xs"
             />
@@ -400,11 +405,7 @@ export function BookingForm(props: BookingFormProps) {
                 ]
               : []),
             {
-              label: editing
-                ? t("bookings.form.save")
-                : eventKind === "MAINTENANCE"
-                  ? t("bookings.form.submitMaintenance")
-                  : t("bookings.form.submit"),
+              label: submitLabel,
               icon: CheckIcon,
               preferred: true,
               alwaysVisible: true,
@@ -417,11 +418,7 @@ export function BookingForm(props: BookingFormProps) {
       ) : (
         <div className="flex gap-3">
           <Button type="submit" disabled={busy || props.submissionBlocked} aria-busy={busy}>
-            {editing
-              ? t("bookings.form.save")
-              : eventKind === "MAINTENANCE"
-                ? t("bookings.form.submitMaintenance")
-                : t("bookings.form.submit")}
+            {submitLabel}
           </Button>
           {props.onCancel ? (
             <Button type="button" variant="outline" disabled={busy} onClick={props.onCancel}>

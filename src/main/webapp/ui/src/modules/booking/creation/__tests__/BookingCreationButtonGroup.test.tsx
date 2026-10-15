@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { expect, it } from "vitest";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
-import { currentUser } from "@/modules/booking/pages/calendar/calendarFixtures";
+import { currentUser } from "@/modules/booking/pages/mocks/currentUserFixture";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { BookingCreationButtonGroup } from "../BookingCreationButtonGroup";
 import { bookableItemOption } from "../bookableItemOption";
