@@ -79,7 +79,11 @@ export function createBookingEventStoryQueryClient() {
   });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
-  queryClient.setQueryData(["api-v2", "bookings", bookingEventFixture.id], bookingEventFixture);
+  queryClient.setQueryData(["api-v2", "bookings", bookingEventFixture.id], {
+    ...bookingEventFixture,
+    start: "2026-10-19T08:00:00Z",
+    end: "2026-10-19T10:00:00Z",
+  });
   queryClient.setQueryData(
     ["api-v2", "booking-configurations", "picker", "target", bookingEventFixture.target.globalId],
     bookableItemFixtures[0],
