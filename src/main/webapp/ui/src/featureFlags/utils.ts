@@ -6,13 +6,10 @@ export const featureFlagRequestHeaders = (token?: string | null): Record<string,
 });
 
 export class FeatureFlagRequestError extends Error {
-  constructor(
-    readonly status: number,
-    statusText: string,
-  ) {
-    super(`${status} ${statusText}`.trim());
+  readonly status: number;
+
+  constructor(response: Response) {
+    super(`${response.status} ${response.statusText}`.trim());
+    this.status = response.status;
   }
 }
-
-export const toFeatureFlagRequestError = (response: Response): FeatureFlagRequestError =>
-  new FeatureFlagRequestError(response.status, response.statusText);

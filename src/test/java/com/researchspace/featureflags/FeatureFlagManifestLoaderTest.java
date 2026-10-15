@@ -53,7 +53,9 @@ class FeatureFlagManifestLoaderTest {
 
   @Test
   void rejectsNonBooleanDefaults() {
-    FeatureFlagManifestLoader loader = loaderFor(validManifestWith("\"default\":\"false\""));
+    FeatureFlagManifestLoader loader =
+        loaderFor(
+            manifest("someFlag", "Description", "RSpace", "2026-01-01", "\"default\":\"false\""));
 
     assertThrows(IllegalStateException.class, loader::loadDefinitions);
   }
@@ -78,14 +80,16 @@ class FeatureFlagManifestLoaderTest {
 
     assertEquals(
         List.of(new FeatureFlagDefinition(name, false)),
-        loaderFor(manifestWithName(name)).loadDefinitions());
+        loaderFor(manifest(name, "Description", "RSpace", "2026-01-01", "")).loadDefinitions());
   }
 
   @Test
   void rejectsNameOverMaximumLength() {
     String name = "a".repeat(FeatureFlagDefinition.MAX_NAME_LENGTH + 1);
 
-    assertThrows(IllegalStateException.class, loaderFor(manifestWithName(name))::loadDefinitions);
+    assertThrows(
+        IllegalStateException.class,
+        loaderFor(manifest(name, "Description", "RSpace", "2026-01-01", ""))::loadDefinitions);
   }
 
   @Test
@@ -99,44 +103,38 @@ class FeatureFlagManifestLoaderTest {
             ::loadDefinitions);
     assertThrows(
         IllegalStateException.class,
-        loaderFor(manifestWithMetadata(" ", "RSpace", "2026-01-01"))::loadDefinitions);
+        loaderFor(manifest("someFlag", " ", "RSpace", "2026-01-01", ""))::loadDefinitions);
     assertThrows(
         IllegalStateException.class,
-        loaderFor(manifestWithMetadata("Description", " ", "2026-01-01"))::loadDefinitions);
+        loaderFor(manifest("someFlag", "Description", " ", "2026-01-01", ""))::loadDefinitions);
   }
 
   @Test
   void rejectsInvalidExpiryDateButAllowsExpiredFlagsAtRuntime() {
     assertThrows(
         IllegalStateException.class,
-        loaderFor(manifestWithMetadata("Description", "RSpace", "not-a-date"))::loadDefinitions);
+        loaderFor(manifest("someFlag", "Description", "RSpace", "not-a-date", ""))
+            ::loadDefinitions);
 
     assertEquals(
         List.of(new FeatureFlagDefinition("someFlag", false)),
-        loaderFor(manifestWithMetadata("Description", "RSpace", "2000-01-01")).loadDefinitions());
+        loaderFor(manifest("someFlag", "Description", "RSpace", "2000-01-01", ""))
+            .loadDefinitions());
   }
 
-  private static String validManifestWith(String fields) {
-    return "{\"flags\":[{\"name\":\"someFlag\",\"description\":\"Description\","
-        + "\"owner\":\"RSpace\",\"expires\":\"2026-01-01\","
-        + fields
-        + "}]}";
-  }
-
-  private static String manifestWithMetadata(String description, String owner, String expires) {
-    return "{\"flags\":[{\"name\":\"someFlag\",\"description\":\""
+  private static String manifest(
+      String name, String description, String owner, String expires, String extra) {
+    return "{\"flags\":[{\"name\":\""
+        + name
+        + "\",\"description\":\""
         + description
         + "\",\"owner\":\""
         + owner
         + "\",\"expires\":\""
         + expires
-        + "\"}]}";
-  }
-
-  private static String manifestWithName(String name) {
-    return "{\"flags\":[{\"name\":\""
-        + name
-        + "\",\"description\":\"Description\",\"owner\":\"RSpace\",\"expires\":\"2026-01-01\"}]}";
+        + "\""
+        + (extra.isEmpty() ? "" : "," + extra)
+        + "}]}";
   }
 
   private FeatureFlagManifestLoader loaderFor(String manifest) {
