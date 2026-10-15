@@ -1,8 +1,6 @@
 package com.researchspace.api.v2.contract;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -71,24 +69,29 @@ class ApiV2AccessContractMVCIT {
      * {@code users} and {@code instruments} declare only {@code LIST}, {@code COUNT} and {@code
      * READ}, so the generic controller's write mappings must refuse before any policy runs. 405
      * rather than 401 or 404 is what an integrator will actually see.
+     *
+     * <p>Instruments hide trashed rows through a row constraint and opt into neither delete nor
+     * soft delete. Both commands remain unavailable to ordinary users as well as administrators.
      */
     @ParameterizedTest(name = "{0} {1} is not an exposed operation")
     @CsvSource(
         delimiter = '|',
         value = {
-          "POST   | /api/v2/users        | {}",
-          "PATCH  | /api/v2/users/1      | {}",
-          "DELETE | /api/v2/users/1      | ",
-          "POST   | /api/v2/instruments  | {}",
-          "PATCH  | /api/v2/instruments/1| {}",
-          "DELETE | /api/v2/instruments/1| ",
+          "POST   | /api/v2/users        | {} | true",
+          "PATCH  | /api/v2/users/1      | {} | true",
+          "DELETE | /api/v2/users/1      |  | true",
+          "POST   | /api/v2/instruments  | {} | true",
+          "PATCH  | /api/v2/instruments/1| {} | true",
+          "DELETE | /api/v2/instruments/1|  | true",
+          "DELETE | /api/v2/instruments/1|  | false",
+          "PATCH  | /api/v2/instruments/1| {\"deleted\":true} | false",
         })
     @DisplayName("a route the resource does not expose answers 405")
-    void aRouteTheResourceDoesNotExposeAnswers405(String method, String path, String body)
-        throws Exception {
+    void aRouteTheResourceDoesNotExposeAnswers405(
+        String method, String path, String body, boolean privilegedCaller) throws Exception {
       MockHttpServletRequestBuilder httpRequest =
           request(HttpMethod.valueOf(method.trim()), path.trim())
-              .header("apiKey", fixture.sysadminKey());
+              .header("apiKey", privilegedCaller ? fixture.sysadminKey() : fixture.userKey());
       if (body != null && !body.isBlank()) {
         httpRequest.contentType(MediaType.APPLICATION_JSON).content(body.trim());
       }
@@ -329,32 +332,6 @@ class ApiV2AccessContractMVCIT {
           .andExpect(jsonPath("$.code").isString())
           .andExpect(jsonPath("$.stackTrace").doesNotExist())
           .andExpect(jsonPath("$.exception").doesNotExist());
-    }
-  }
-
-  @Nested
-  @DisplayName("soft delete")
-  class SoftDelete {
-
-    /**
-     * {@code softDeleteAccess} does not replace {@code deleteAccess}. A resource may explicitly opt
-     * into both commands on its canonical item URI, but a read-only resource opts into neither:
-     * {@code instruments} hides trashed rows through a row constraint and exposes no delete route
-     * at all, so a client cannot reach either behaviour by guessing.
-     */
-    @Test
-    @DisplayName("a read-only collection with soft-deleted rows exposes no delete route")
-    void aReadOnlyCollectionExposesNoDeleteRoute() throws Exception {
-      mockMvc
-          .perform(delete("/api/v2/instruments/1").header("apiKey", fixture.userKey()))
-          .andExpect(status().isMethodNotAllowed());
-      mockMvc
-          .perform(
-              patch("/api/v2/instruments/1")
-                  .header("apiKey", fixture.userKey())
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .content("{\"deleted\":true}"))
-          .andExpect(status().isMethodNotAllowed());
     }
   }
 

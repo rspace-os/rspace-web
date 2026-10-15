@@ -121,20 +121,7 @@ class ApiV2CrudContractMVCIT {
           .andExpect(jsonPath("$.stopUserLoginDate").exists())
           .andExpect(jsonPath("$.message").exists())
           .andExpect(jsonPath("$.canUserLoginNow").isBoolean())
-          .andExpect(jsonPath("$.formattedStartDate").doesNotExist());
-    }
-
-    /**
-     * {@code auditFields = false} on this resource, so the discovered audit fields must be absent.
-     */
-    @Test
-    @DisplayName("a resource that opts out of audit fields does not publish them")
-    void auditFieldsAreAbsentWhenTheResourceOptsOut() throws Exception {
-      long id = fixture.maintenance(start, end);
-
-      mockMvc
-          .perform(get(MAINTENANCES + "/" + id).header("apiKey", sysadminKey))
-          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.formattedStartDate").doesNotExist())
           .andExpect(jsonPath("$.createdAt").doesNotExist())
           .andExpect(jsonPath("$.updatedAt").doesNotExist())
           .andExpect(jsonPath("$.createdBy").doesNotExist())
