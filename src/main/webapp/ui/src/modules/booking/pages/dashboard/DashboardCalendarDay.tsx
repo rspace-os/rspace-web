@@ -6,7 +6,6 @@ import {
   useContext,
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -19,8 +18,7 @@ import { Button } from "@/modules/common/ui/button";
 import { CalendarDayButton } from "@/modules/common/ui/calendar";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle, PopoverTrigger } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
-import { calendarDateKey } from "./dashboardBookings";
-import { dashboardBooking, formatCalendarDate } from "./dashboardHelpers";
+import { calendarDateKey, formatCalendarDate } from "./dashboardHelpers";
 
 export type DashboardCalendarContextValue = {
   bookingsByDay: ReadonlyMap<string, readonly BookingListDocument[]>;
@@ -57,7 +55,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
   const { bookingsByDay, timeZone, locale, openDayKey, setOpenDayKey } = context;
   const { day, children, modifiers, className, ...buttonProps } = props;
   const dateKey = calendarDateKey(day.date);
-  const bookings = useMemo(() => (bookingsByDay.get(dateKey) ?? []).map(dashboardBooking), [bookingsByDay, dateKey]);
+  const bookings = bookingsByDay.get(dateKey) ?? [];
   const bookingSignature = bookings.map((booking) => `${booking.id}:${booking.start}:${booking.end}`).join("|");
   const [requestedPage, setRequestedPage] = useState(0);
   const buttonRef = useRef<HTMLButtonElement>(null);
