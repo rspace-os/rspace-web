@@ -9,6 +9,7 @@ import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { upcomingBookingWhere } from "../my-bookings/bookingCountFilter";
 
 const DASHBOARD_BOOKING_FIELDS = `${BOOKING_READ_FIELDS},requesterId`;
 const DashboardBookingPageSchema = v2ListEnvelope(BookingListDocumentSchema);
@@ -81,21 +82,24 @@ function deduplicateAndSort(bookings: readonly BookingListDocument[]): BookingLi
   return [...byId.values()].sort(compareBookings);
 }
 
-function validatePage(page: DashboardBookingPage, requestedPage: number): void {
+function validatePage(page: DashboardBookingPage, requestedPage: number): number | null {
   if (page.page !== requestedPage) throw new Error("Dashboard booking pagination did not advance");
-  if (page.totalDocs === 0 && page.totalPages !== 0) throw new Error("Malformed dashboard booking pagination");
-  if (page.totalDocs > 0 && page.totalPages === 0) throw new Error("Malformed dashboard booking pagination");
-  if (page.totalPages > 0 && page.page > page.totalPages) throw new Error("Malformed dashboard booking pagination");
-  if (page.hasNextPage !== page.page < page.totalPages) {
+  if (
+    (page.totalDocs === 0 && page.totalPages !== 0) ||
+    (page.totalDocs > 0 && page.totalPages === 0) ||
+    (page.totalPages > 0 && page.page > page.totalPages) ||
+    page.hasNextPage !== page.page < page.totalPages ||
+    (!page.hasNextPage && page.nextPage !== null)
+  ) {
     throw new Error("Malformed dashboard booking pagination");
   }
   if (page.hasNextPage) {
     if (page.nextPage === null || page.nextPage !== page.page + 1 || page.nextPage > page.totalPages) {
       throw new Error("Dashboard booking pagination did not advance");
     }
-  } else if (page.nextPage !== null) {
-    throw new Error("Malformed dashboard booking pagination");
+    return page.nextPage;
   }
+  return null;
 }
 
 export async function fetchUpcomingDashboardBookings({
@@ -104,13 +108,7 @@ export async function fetchUpcomingDashboardBookings({
   token,
   signal,
 }: UpcomingDashboardBookingsRequest): Promise<BookingListDocument[]> {
-  const page = await fetchDashboardBookingPage(
-    `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOf}`,
-    1,
-    token,
-    signal,
-    5,
-  );
+  const page = await fetchDashboardBookingPage(upcomingBookingWhere(requesterId, asOf), 1, token, signal, 5);
   return deduplicateAndSort(page.docs).slice(0, 5);
 }
 
@@ -124,31 +122,20 @@ export async function fetchMonthlyDashboardBookings({
   const where = `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;start=lt=${end};end=gt=${start}`;
   const bookings: BookingListDocument[] = [];
   let pageNumber = 1;
-  let pagesFetched = 0;
 
   while (true) {
-    if (pagesFetched >= MAX_MONTHLY_PAGES) throw new TooManyDashboardBookingsError();
     const page = await fetchDashboardBookingPage(where, pageNumber, token, signal);
-    pagesFetched += 1;
     if (page.totalDocs > MAX_MONTHLY_RAW_DOCUMENTS || page.totalPages > MAX_MONTHLY_PAGES) {
       throw new TooManyDashboardBookingsError();
     }
-    validatePage(page, pageNumber);
+    const nextPage = validatePage(page, pageNumber);
     bookings.push(...page.docs);
     if (bookings.length > MAX_MONTHLY_RAW_DOCUMENTS) throw new TooManyDashboardBookingsError();
-    if (!page.hasNextPage) break;
-    if (page.nextPage === null) throw new Error("Dashboard booking pagination did not advance");
-    pageNumber = page.nextPage;
+    if (nextPage === null) break;
+    pageNumber = nextPage;
   }
 
   return deduplicateAndSort(bookings);
-}
-
-export function calendarDateKey(date: Date): string {
-  const year = String(date.getFullYear()).padStart(4, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 export function dashboardMonthInterval(

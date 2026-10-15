@@ -1,15 +1,16 @@
-import { TZDate } from "react-day-picker";
+import { dateInTimeZone } from "@/modules/booking/bookingDates";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 
 export function monthStartForTimeZone(timeZone: string): Date {
-  const [year, month] = todayInTimeZone(timeZone).split("-").map(Number);
-  return new TZDate(year, month - 1, 1, timeZone);
+  return dateInTimeZone(`${todayInTimeZone(timeZone).slice(0, 7)}-01`, timeZone);
 }
 
-export function dateInTimeZone(date: string, timeZone: string): Date {
-  const [year, month, day] = date.split("-").map(Number);
-  return new TZDate(year, month - 1, day, timeZone);
+export function calendarDateKey(date: Date): string {
+  const year = String(date.getFullYear()).padStart(4, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function formatDayPickerDate(date: Date, locale: string, options: Intl.DateTimeFormatOptions): string {

@@ -2,21 +2,21 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
+import { dateInTimeZone } from "@/modules/booking/bookingDates";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Calendar } from "@/modules/common/ui/calendar";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { DashboardCalendarContext, DashboardCalendarDay } from "./DashboardCalendarDay";
 import { DashboardEmpty, DashboardError } from "./DashboardFeedback";
 import {
-  calendarDateKey,
   dashboardMonthInterval,
   fetchMonthlyDashboardBookings,
   groupDashboardBookingsByDay,
   TooManyDashboardBookingsError,
 } from "./dashboardBookings";
 import {
+  calendarDateKey,
   dashboardBooking,
-  dateInTimeZone,
   formatCalendarDate,
   formatDayPickerDate,
   monthStartForTimeZone,
