@@ -27,7 +27,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class InventoryImportApiSpecTest {
 
   private static final String SPEC_PATH =
-      "src/main/webapp/resources/rspace_api_inventory_specs_2_27_0.yaml";
+      "src/main/webapp/resources/rspace_api_inventory_specs_2_28_0.yaml";
   private static final String SCHEMAS = "#/components/schemas/";
 
   private static JsonNode spec;
