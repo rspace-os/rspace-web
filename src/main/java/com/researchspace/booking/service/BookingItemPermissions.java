@@ -37,6 +37,7 @@ public class BookingItemPermissions {
   private final BookingCalendarSubscriptionDao subscriptions;
   private final BookingCalendarCurrentAccessDao currentAccess;
   private final BookingCalendarPermissionGateDao permissionGate;
+  private final Set<String> ownerCapabilities;
 
   public BookingItemPermissions(
       InventoryPermissionUtils inventoryPermissions,
@@ -51,6 +52,9 @@ public class BookingItemPermissions {
     this.subscriptions = subscriptions;
     this.currentAccess = currentAccess;
     this.permissionGate = permissionGate;
+    this.ownerCapabilities =
+        withNotificationCapability(
+            withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)));
   }
 
   /**
@@ -176,8 +180,7 @@ public class BookingItemPermissions {
   private ResolvedResourceAccess owner() {
     return new ResolvedResourceAccess(
         Optional.of(BookingResourceRoleScheme.OWNER),
-        withNotificationCapability(
-            withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER))),
+        ownerCapabilities,
         List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
   }
 

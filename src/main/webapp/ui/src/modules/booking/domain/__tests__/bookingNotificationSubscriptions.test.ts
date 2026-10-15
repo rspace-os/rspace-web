@@ -5,7 +5,6 @@ import { ApiV2ProblemError } from "../booking";
 import {
   fetchBookingNotificationPreferences,
   fetchBookingNotificationSubscription,
-  lookupBookingNotificationSubscriptions,
   replaceBookingNotificationPreferences,
   replaceBookingNotificationSubscription,
   unsubscribeFromAllBookingNotificationSubscriptions,
@@ -41,10 +40,6 @@ describe("booking notification subscriptions", () => {
         itemBody = await request.json();
         return HttpResponse.json(subscription(7, true, 1));
       }),
-      http.post("/api/v2/users/me/booking-notification-subscriptions/lookup", async ({ request }) => {
-        expect(await request.json()).toEqual({ configurationIds: [7, 8] });
-        return HttpResponse.json([subscription(7), subscription(8, true)]);
-      }),
       http.put("/api/v2/users/me/booking-notification-subscriptions", async ({ request }) => {
         bulkBody = await request.json();
         return HttpResponse.json([subscription(7, true, 1), subscription(8, true, 1)]);
@@ -61,8 +56,6 @@ describe("booking notification subscriptions", () => {
     expect(await fetchBookingNotificationSubscription(7, "token")).toEqual(subscription(7));
     expect(await replaceBookingNotificationSubscription(7, true, 0, "token")).toEqual(subscription(7, true, 1));
     expect(itemBody).toEqual({ enabled: true, version: 0 });
-    expect(await lookupBookingNotificationSubscriptions([7, 8], "token")).toHaveLength(2);
-    expect(await lookupBookingNotificationSubscriptions([], "token")).toEqual([]);
     expect(await updateBookingNotificationSubscriptions([7, 8], true, "token")).toHaveLength(2);
     expect(bulkBody).toEqual({ configurationIds: [7, 8], enabled: true });
     expect(await unsubscribeFromAllBookingNotificationSubscriptions("token")).toBe(2);
