@@ -311,6 +311,8 @@ and API field names were ported instead.
      answers false for every failure alike, and the case is rare: a registered address names a
      version that existed at registration, so it arises only from a pin saved before this check
      and then exported (ADR 0007), an entry edited outside RSpace, or audit rows purged later.
+     The CSV link import checks a pinned version too, but only for an item the importing user can
+     read, so it otherwise stays as lenient as described above.
    - The link gets the field's own relation, `IsDocumentedBy` for Measurement technique and
      `IsCalibratedBy` for Calibration, both in the locked template's whitelist: the registry's
      `IsDescribedBy` is the constant ADR 0007 writes whatever the link stored, so it carries no

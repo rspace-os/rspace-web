@@ -35,8 +35,8 @@ export interface ElnRecordInfoDialogProps {
   /**
    * When the ELN target is not readable by the viewer (e.g. shared then
    * unshared), the Open button is hidden for the same reason: its route is only
-   * an error page. Together with targetDeleted this matches the link card's
-   * Open rule for ELN targets.
+   * an error page. Together with targetDeleted and versionNotFound this matches
+   * the link card's Open rule for ELN targets.
    */
   noAccess?: boolean;
   /** When the pinned document version cannot be found, Open is hidden too: its route is an error page. */

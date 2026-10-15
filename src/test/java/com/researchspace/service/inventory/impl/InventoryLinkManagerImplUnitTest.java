@@ -31,7 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Pure unit tests for the write path of {@link InventoryLinkManagerImpl}: a pinned link captures
  * the resolved Envers revision; a "latest" link leaves it null. The Spring-transactional {@code
- * InventoryLinkManagerImplTest} covers the DB-backed behaviour.
+ * InventoryLinkManagerImplTest} covers the DB-backed behaviour, and {@code
+ * InventoryLinkManagerImplIT} the pinned versions, which need committed audit rows.
  */
 @ExtendWith(MockitoExtension.class)
 class InventoryLinkManagerImplUnitTest {

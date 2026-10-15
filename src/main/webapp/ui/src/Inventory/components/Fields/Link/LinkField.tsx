@@ -229,8 +229,9 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           open={infoOpen}
           globalId={props.link.targetGlobalId}
           versionPin={props.link.versionPin}
-          // a deleted or unreadable ELN target only routes to an error page, so
-          // the dialog drops its Open button (matching the card). Deleted
+          // a deleted or unreadable ELN target, or a document whose pinned version
+          // is gone, only routes to an error page, so the dialog drops its Open
+          // button (matching the card). Deleted
           // inventory targets stay viewable in the trash and use
           // InventoryInfoDialog, which has no Open button.
           targetDeleted={targetDeleted}
