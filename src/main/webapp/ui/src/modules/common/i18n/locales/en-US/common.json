@@ -915,6 +915,9 @@
     },
     "orderLabel": "Sort field"
   },
+  "units": {
+    "items": "items"
+  },
   "userDetails": {
     "accountDisabled": "Disabled",
     "accountEnabled": "Enabled",
@@ -924,6 +927,8 @@
     "openProfile": "Open profile",
     "roleAt": "{role} at",
     "roles": {
+      "groupOwner": "Group Owner",
+      "labAdmin": "Lab Admin",
       "pi": "PI",
       "user": "User"
     },

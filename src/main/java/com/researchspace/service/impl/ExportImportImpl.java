@@ -23,6 +23,7 @@ import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.dtos.ExportSelection;
 import com.researchspace.model.events.ImportCompleted;
+import com.researchspace.model.field.LocalizedException;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Folder;
@@ -64,6 +65,7 @@ import java.util.concurrent.Future;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.Setter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
@@ -71,6 +73,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.AsyncResult;
@@ -141,7 +144,16 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
 
   private void logAndNotifyUserAboutExportFailure(String exportName, User exporter, Exception e) {
     log.error("Unable to export.", e);
-    postArchiveExportFailure(exportName, exporter, e.getMessage());
+    Throwable localizedCause =
+        ExceptionUtils.getThrowableList(e).stream()
+            .filter(
+                cause ->
+                    cause instanceof LocalizedException || cause instanceof MessageSourceResolvable)
+            .findFirst()
+            .orElse(null);
+    String detailMessage =
+        localizedCause == null ? e.getMessage() : messageSource.getExceptionMessage(localizedCause);
+    postArchiveExportFailure(exportName, exporter, detailMessage);
   }
 
   @Override

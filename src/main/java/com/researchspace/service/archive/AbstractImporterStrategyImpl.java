@@ -235,7 +235,7 @@ abstract class AbstractImporterStrategyImpl {
               "Rejected Gallery item {} during import: {} - continuing with import",
               galleryMetaFileName,
               e.getMessage());
-          report.getInfoList().addErrorMsg(messages.getMessage(e.getErrorCode(), e.getArgs()));
+          report.getInfoList().addErrorMsg(messages.getExceptionMessage(e));
         }
       }
       monitor.worked((monitor.getTotalWorkUnits() / numElements));

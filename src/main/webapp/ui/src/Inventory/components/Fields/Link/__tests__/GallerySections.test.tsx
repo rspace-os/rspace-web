@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
+import legacyJsEn from "@/modules/common/i18n/locales/en-US/server.legacyJs.json";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import materialTheme from "../../../../../theme";
 
@@ -62,7 +63,54 @@ function renderGallery(props: Partial<React.ComponentProps<typeof GallerySection
   );
 }
 
+async function renderGalleryWithRealI18n(
+  props: Partial<React.ComponentProps<typeof GallerySections>> = {},
+  legacyJs = legacyJsEn,
+) {
+  return renderWithRealI18n(
+    <ThemeProvider theme={materialTheme}>
+      <QueryClientProvider client={createQueryClient()}>
+        <GallerySections info={imageInfo} onRecordChanged={vi.fn()} {...props} />
+      </QueryClientProvider>
+    </ThemeProvider>,
+    { resources: { inventory: inventoryEn, "server.legacyJs": legacyJs }, defaultNS: "inventory" },
+  );
+}
+
+const legacyJsWithImageLabel = {
+  ...legacyJsEn,
+  legacyjs: {
+    ...legacyJsEn.legacyjs,
+    core: {
+      ...legacyJsEn.legacyjs.core,
+      recordInfoPanel: {
+        ...legacyJsEn.legacyjs.core.recordInfoPanel,
+        type: {
+          ...legacyJsEn.legacyjs.core.recordInfoPanel.type,
+          image: "Localized image category",
+        },
+      },
+    },
+  },
+};
+
 describe("GallerySections", () => {
+  it("translates known record categories and keeps Image preview behavior", async () => {
+    await renderGalleryWithRealI18n({}, legacyJsWithImageLabel);
+
+    expect(screen.getByText("Localized image category")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Microscope.png" })).toHaveAttribute(
+      "src",
+      expect.stringContaining("/gallery/getThumbnail/21/"),
+    );
+  });
+
+  it("preserves the raw display value for an unknown record category", async () => {
+    await renderGalleryWithRealI18n({ info: { ...imageInfo, type: "Future media category" } });
+
+    expect(screen.getByText("Future media category")).toBeInTheDocument();
+  });
+
   it("renders the gallery metadata rows", () => {
     renderGallery();
     expect(screen.getByText("Microscope.png")).toBeInTheDocument();

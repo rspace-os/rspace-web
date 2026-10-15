@@ -188,7 +188,11 @@ class InventoryFileApiManagerImplAttachingTest {
 
   @Test
   void rejectsMalformedGlobalId() {
-    assertThrows(ApiRuntimeException.class, () -> manager.findAttachingItems("not-a-gid", actor));
+    ApiRuntimeException exception =
+        assertThrows(
+            ApiRuntimeException.class, () -> manager.findAttachingItems("not-a-gid", actor));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", exception.getErrorCode());
   }
 
   @Test

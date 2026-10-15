@@ -9,6 +9,11 @@ import com.researchspace.apiutils.BindError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.apiutils.RestControllerAdvice;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
+import com.researchspace.model.field.LocalizedIOException;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.LocalizedNullPointerException;
+import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.MediaContentMismatchException;
@@ -49,8 +54,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
     final String error = messages.getMessage("errors.authorization.apiError");
     final String message =
-        ex instanceof ApiAuthenticationException authException
-            ? messages.getMessage(authException.getMessageKey(), authException.getArgs())
+        ex instanceof ApiAuthenticationException
+            ? messages.getExceptionMessage(ex)
             : ex.getLocalizedMessage();
     final ApiError apiError =
         new ApiError(HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), message, error);
@@ -65,7 +70,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.NOT_FOUND,
             ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
-            ex.getLocalizedMessage(),
+            messages.getExceptionMessage(ex),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
@@ -161,7 +166,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleApiRuntimeException(
       final ApiRuntimeException ex, final WebRequest request) {
     log.error("api runtime error: " + ex.getErrorCode() + ": " + StringUtils.join(ex.getArgs()));
-    String resolvedMessage = messages.getMessage(ex.getErrorCode(), ex.getArgs());
+    String resolvedMessage = messages.getExceptionMessage(ex);
     final ApiError apiError =
         new ApiError(
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -172,12 +177,43 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
+  @ExceptionHandler({
+    LocalizedIllegalStateException.class,
+    LocalizedIOException.class,
+    LocalizedNullPointerException.class,
+    LocalizedIllegalAddChildOperation.class
+  })
+  public ResponseEntity<Object> handleLocalizedIllegalStateException(
+      Exception ex, WebRequest request) {
+    String resolvedMessage = messages.getExceptionMessage(ex);
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            ApiErrorCodes.GENERAL_ERROR.getCode(),
+            resolvedMessage,
+            "");
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ExceptionHandler(LocalizedIllegalArgumentException.class)
+  public ResponseEntity<Object> handleLocalizedIllegalArgumentException(
+      LocalizedIllegalArgumentException ex, WebRequest request) {
+    String resolvedMessage = messages.getMessage(ex);
+    ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            resolvedMessage,
+            resolvedMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
   // 422 with errorCode
   @ExceptionHandler({MediaContentMismatchException.class})
   public ResponseEntity<Object> handleMediaContentMismatch(
       final MediaContentMismatchException ex, final WebRequest request) {
     log.warn("rejected upload: {}", StringUtils.join(ex.getArgs(), ", "));
-    String resolvedMessage = messages.getMessage(ex.getErrorCode(), ex.getArgs());
+    String resolvedMessage = messages.getExceptionMessage(ex);
     final ApiError apiError =
         new ApiError(
             HttpStatus.UNPROCESSABLE_ENTITY,
@@ -241,7 +277,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleChemistryClientException(
       ChemistryClientException ex, WebRequest request) {
     HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    String resolvedMessage = messages.getMessage(ex.getMessageKey(), ex.getArgs());
+    String resolvedMessage = messages.getExceptionMessage(ex);
     ApiError apiError = new ApiError(status, 50001, resolvedMessage, "");
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }

@@ -3,6 +3,7 @@ package com.researchspace.model.oauth;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.model.User;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -33,7 +34,9 @@ public class OAuthApp implements Serializable {
       @NonNull String name,
       @NonNull String clientId,
       @NonNull String hashedClientSecret) {
-    Validate.isTrue(!isBlank(name), "name must be non-empty");
+    if (isBlank(name)) {
+      throw new LocalizedIllegalArgumentException("validation.oauthApp.nameRequired");
+    }
     Validate.isTrue(!isBlank(clientId), "clientId must be non-empty");
 
     this.name = name;
