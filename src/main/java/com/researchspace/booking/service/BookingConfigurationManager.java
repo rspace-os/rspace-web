@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
@@ -59,9 +60,7 @@ public interface BookingConfigurationManager {
 
   /** Reads a Calendar page with its correlated event restriction applied to rows and total. */
   ResourcePage<BookingConfiguration> getConfigurations(
-      ResourceRequest request,
-      User actor,
-      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction);
+      ResourceRequest request, User actor, Predicate restriction);
 
   /** Counts configurations selected by a parsed collection request. */
   long countConfigurations(ResourceRequest request, User actor);
