@@ -2,13 +2,14 @@ import * as v from "valibot";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SNAPSHOT_FINGERPRINT = /^[0-9a-f]{64}$/;
 const DAY_MILLISECONDS = 86_400_000;
-export const MAX_AUDIT_DAYS = 183;
+const MAX_AUDIT_DAYS = 183;
 
-export const AuditEventSchema = v.object({
+const AuditEventSchema = v.object({
   eventId: v.pipe(v.string(), v.regex(SNAPSHOT_FINGERPRINT)),
   timestamp: v.pipe(v.string(), v.isoTimestamp()),
   username: v.string(),
@@ -20,32 +21,25 @@ export const AuditEventSchema = v.object({
   target: v.nullish(v.string()),
 });
 
-export type AuditEvent = v.InferOutput<typeof AuditEventSchema>;
+type AuditEvent = v.InferOutput<typeof AuditEventSchema>;
 export type AuditSnapshot = { snapshotDate: string; snapshotFingerprint: string };
 export type AuditRow = AuditEvent & { rowId: string };
 export type AuditDateRange = { from: string; to: string };
 export type AuditDateField = "from" | "to";
 export type AuditDateError = "required" | "invalid" | "inverted" | "tooWide";
-export type AuditDateValidation =
-  | { valid: true; range: AuditDateRange }
+type AuditDateValidation =
+  | { valid: true; range: AuditDateRange; dates: { from: Date; to: Date } }
   | { valid: false; fields: Partial<Record<AuditDateField, AuditDateError>> };
 
-const AuditPageSchema = v.object({
-  docs: v.array(AuditEventSchema),
-  totalDocs: v.pipe(v.number(), v.integer(), v.minValue(0)),
-  limit: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  page: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  pagingCounter: v.pipe(v.number(), v.integer(), v.minValue(1)),
-  totalPages: v.pipe(v.number(), v.integer(), v.minValue(0)),
-  hasPrevPage: v.boolean(),
-  hasNextPage: v.boolean(),
-  prevPage: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1))),
-  nextPage: v.nullable(v.pipe(v.number(), v.integer(), v.minValue(1))),
-  snapshotDate: v.pipe(v.string(), v.regex(ISO_DATE)),
-  snapshotFingerprint: v.pipe(v.string(), v.regex(SNAPSHOT_FINGERPRINT)),
-});
+const AuditPageSchema = v.intersect([
+  v2ListEnvelope(AuditEventSchema),
+  v.object({
+    snapshotDate: v.pipe(v.string(), v.regex(ISO_DATE)),
+    snapshotFingerprint: v.pipe(v.string(), v.regex(SNAPSHOT_FINGERPRINT)),
+  }),
+]);
 
-export const AUDIT_PAGE_SIZE = 20;
+const AUDIT_PAGE_SIZE = 20;
 
 function utcDate(value: string): Date | null {
   if (!ISO_DATE.test(value)) return null;
@@ -82,15 +76,13 @@ export function validateAuditDateRange(range: AuditDateRange): AuditDateValidati
   if (inclusiveDays > MAX_AUDIT_DAYS) {
     return { valid: false, fields: { from: "tooWide", to: "tooWide" } };
   }
-  return { valid: true, range };
+  return { valid: true, range, dates: { from, to } };
 }
 
 export function auditRangeToQuery(range: AuditDateRange): { dateFrom: string; dateTo: string } {
   const validation = validateAuditDateRange(range);
   if (!validation.valid) throw new RangeError("Invalid audit date range");
-  const from = utcDate(range.from);
-  const to = utcDate(range.to);
-  if (from === null || to === null) throw new RangeError("Invalid audit date range");
+  const { from, to } = validation.dates;
   return {
     dateFrom: from.toISOString(),
     dateTo: new Date(to.getTime() + DAY_MILLISECONDS - 1).toISOString(),
