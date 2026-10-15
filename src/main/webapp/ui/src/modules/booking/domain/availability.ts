@@ -8,7 +8,7 @@ export type AvailabilityInterval = {
 
 export type AvailabilityState = "available" | "booking" | "blockout" | "overlap";
 
-export type AvailabilitySegment = {
+type AvailabilitySegment = {
   startsAt: number;
   endsAt: number;
   state: AvailabilityState;
@@ -32,18 +32,22 @@ export type SourcedAvailabilityInterval = AvailabilityInterval & {
   source: AvailabilitySource;
 };
 
-export type AvailabilitySlice<T extends AvailabilityInterval = AvailabilityInterval> = AvailabilitySegment & {
+type AvailabilitySlice<T extends AvailabilityInterval = AvailabilityInterval> = AvailabilitySegment & {
   intervals: readonly T[];
 };
 
-export type CurrentDayAvailability = "available-now" | "free-later-today" | "unavailable-today";
+type CurrentDayAvailability = "available-now" | "free-later-today" | "unavailable-today";
 
 type TimestampInterval = Omit<AvailabilitySegment, "state">;
 
-function timestamp(date: Date, name: string): number {
+export function timestamp(date: Date, name: string): number {
   const value = date.getTime();
   if (!Number.isFinite(value)) throw new RangeError(`${name} must be a valid Date`);
   return value;
+}
+
+function overlaps(start: number, end: number, otherStart: number, otherEnd: number): boolean {
+  return start < otherEnd && end > otherStart;
 }
 
 function mergeIntervals(intervals: readonly TimestampInterval[]): TimestampInterval[] {
@@ -98,8 +102,8 @@ function buildTimeline<T extends AvailabilityInterval>(
 
   const segments: AvailabilitySegment[] = boundaries.slice(0, -1).map((startsAt, index) => {
     const endsAt = boundaries[index + 1];
-    const booked = bookings.some((interval) => interval.startsAt < endsAt && interval.endsAt > startsAt);
-    const blocked = blockouts.some((interval) => interval.startsAt < endsAt && interval.endsAt > startsAt);
+    const booked = bookings.some((interval) => overlaps(interval.startsAt, interval.endsAt, startsAt, endsAt));
+    const blocked = blockouts.some((interval) => overlaps(interval.startsAt, interval.endsAt, startsAt, endsAt));
     return {
       startsAt,
       endsAt,
@@ -128,8 +132,8 @@ export function buildAvailabilitySlices<T extends AvailabilityInterval>(
     intervals:
       segment.state === "available"
         ? []
-        : clipped.filter(
-            (interval) => interval.startsAt.getTime() < segment.endsAt && interval.endsAt.getTime() > segment.startsAt,
+        : clipped.filter((interval) =>
+            overlaps(interval.startsAt.getTime(), interval.endsAt.getTime(), segment.startsAt, segment.endsAt),
           ),
   }));
 }

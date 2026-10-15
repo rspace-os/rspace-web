@@ -8,25 +8,11 @@ import { describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { FEATURE_FLAGS } from "@/featureFlags/generatedFeatureFlags";
+import { collectionPage } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
 import materialTheme from "@/theme";
 import BookingAction from "../BookingAction";
 
 const globalId = "IN123";
-
-function collectionPage(docs: readonly unknown[]) {
-  return {
-    docs,
-    totalDocs: docs.length,
-    limit: 20,
-    page: 1,
-    pagingCounter: 1,
-    totalPages: docs.length === 0 ? 0 : 1,
-    hasPrevPage: false,
-    hasNextPage: false,
-    prevPage: null,
-    nextPage: null,
-  };
-}
 
 function featureFlagPage(value: boolean) {
   return {
@@ -100,7 +86,6 @@ function configuration({
 
 function bookingHandlers({ enabled, docs }: { enabled: boolean; docs: readonly unknown[] }) {
   return [
-    http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
     http.get("/api/v2/feature-flags", () => HttpResponse.json(featureFlagPage(enabled))),
     http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(docs))),
   ];
@@ -136,7 +121,6 @@ describe("Inventory instrument booking action", () => {
     let featureFlagRequests = 0;
     let configurationRequests = 0;
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
       http.get("/api/v2/feature-flags", () => {
         featureFlagRequests += 1;
         return HttpResponse.json(featureFlagPage(false));

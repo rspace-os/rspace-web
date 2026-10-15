@@ -44,7 +44,7 @@ export const BookingCataloguePageSchema = v.object({
   facets: v.object({ types: v.array(v.string()) }),
 });
 
-export const BookingCatalogueLocationPageSchema = v.object({
+const BookingCatalogueLocationPageSchema = v.object({
   items: v.array(BookingCatalogueLocationSchema),
   page: v.number(),
   pageSize: v.number(),
@@ -52,8 +52,7 @@ export const BookingCatalogueLocationPageSchema = v.object({
 });
 
 export type BookingCatalogueItem = v.InferOutput<typeof BookingCatalogueItemSchema>;
-export type BookingCataloguePage = v.InferOutput<typeof BookingCataloguePageSchema>;
-export type BookingCatalogueLocation = v.InferOutput<typeof BookingCatalogueLocationSchema>;
+type BookingCataloguePage = v.InferOutput<typeof BookingCataloguePageSchema>;
 
 export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
   return {
