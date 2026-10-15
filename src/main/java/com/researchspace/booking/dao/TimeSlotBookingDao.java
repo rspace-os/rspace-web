@@ -6,7 +6,6 @@ import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -45,9 +44,6 @@ public interface TimeSlotBookingDao extends CollectionDao<TimeSlotBooking, Long>
         excludedBookingId,
         Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
   }
-
-  /** Returns target IDs owned by the actor in one query. */
-  Set<Long> findOwnedInstrumentIds(Collection<Long> targetIds, Long actorId);
 
   /** Returns the ordered, fetch-complete rows used to build one calendar feed. */
   List<TimeSlotBooking> findCalendarBookings(Long configurationId, Date cutoff, int maximumRows);

@@ -17,8 +17,11 @@ import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.Relationship;
+import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
+import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
@@ -26,6 +29,7 @@ import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 @ApiV2ResourceDefinition(
     name = "booking-configurations",
@@ -92,6 +96,25 @@ public record ApiV2BookingConfigurationResource(
 
   public static final CollectionMutationLimits MUTATION_LIMITS =
       new CollectionMutationLimits(50, 1000);
+
+  /** Creates the shared instrument relationship binding for booking resources. */
+  static <T> Relationship<T> instrumentTarget(
+      Function<T, ResourceReference<BookableTargetType, Long>> referenceReader,
+      String typeProperty,
+      String idProperty) {
+    return Relationship.polymorphicToOne(
+            "target",
+            CollectionFieldTypes.longNumber(),
+            List.of(
+                new RelationshipTarget<>(
+                    ApiV2BookingInstrumentResource.RESOURCE_NAME,
+                    BookableTargetType.INSTRUMENT,
+                    "IN",
+                    com.researchspace.model.inventory.Instrument.class)),
+            new SplitReferenceBinding<>(referenceReader, typeProperty, idProperty))
+        .required()
+        .writeOnlyOn(WriteOperation.CREATE);
+  }
 
   private record RoleSourceGrantee(String kind, String key, Object id, String name) {
     static RoleSourceGrantee from(ResourceRoleSource source) {

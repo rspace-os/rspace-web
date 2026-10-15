@@ -66,10 +66,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
@@ -77,6 +81,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 class BookingConfigurationManagerTest {
+
+  private static final int OVERSIZED_MUTATION_LIMIT =
+      ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
 
   private final BookingConfigurationDao dao = mock(BookingConfigurationDao.class);
   private final BookingConfigurationDefaultsDao defaultsDao =
@@ -88,7 +95,7 @@ class BookingConfigurationManagerTest {
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
   private final ResourceAccessManager accessManager = mock(ResourceAccessManager.class);
-  private final LocalValidatorFactoryBean validator = validator();
+  private final LocalValidatorFactoryBean validator = BookingSettingsTestFixtures.validator();
   private final BookingConfigurationManager manager =
       new BookingConfigurationManagerImpl(
           dao,
@@ -104,6 +111,8 @@ class BookingConfigurationManagerTest {
 
   @BeforeEach
   void setUp() {
+    when(dao.saveAndFlush(any(BookingConfiguration.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
     when(actor.hasSysadminRole()).thenReturn(true);
     when(actor.isEnabled()).thenReturn(true);
     when(actor.getId()).thenReturn(1L);
@@ -144,13 +153,6 @@ class BookingConfigurationManagerTest {
     validator.close();
   }
 
-  private static LocalValidatorFactoryBean validator() {
-    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-    validator.setValidationMessageSource(new JsonMessageSource());
-    validator.afterPropertiesSet();
-    return validator;
-  }
-
   @Test
   void appliesTargetVisibilityOnlyToRelationshipFilters() {
     when(actor.hasSysadminRole()).thenReturn(false);
@@ -179,9 +181,6 @@ class BookingConfigurationManagerTest {
 
   @Test
   void directServiceCreatesUseSharedAuthorizationAndValidation() {
-    when(dao.saveAndFlush(any(BookingConfiguration.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
-
     BookingConfiguration created =
         manager.createConfiguration(new Create(true, "Europe/Berlin", target(12L)), actor, actor);
 
@@ -221,8 +220,6 @@ class BookingConfigurationManagerTest {
             new BookingOpeningHoursEntry(2, "10:00", "16:00")));
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.of(defaults));
-    when(dao.saveAndFlush(any(BookingConfiguration.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
 
     List<BookingConfiguration> created =
         manager.createConfigurations(
@@ -260,8 +257,6 @@ class BookingConfigurationManagerTest {
 
   @Test
   void existingConfigurationsDoNotChangeWhenDefaultsChange() {
-    when(dao.saveAndFlush(any(BookingConfiguration.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
     BookingConfiguration first =
         manager.createConfiguration(new Create(true, "UTC", target(12L)), actor, actor);
     when(defaultsDao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
@@ -280,24 +275,37 @@ class BookingConfigurationManagerTest {
     assertEquals(120, second.getMaxBookingDurationMinutes());
   }
 
-  @Test
-  void rejectsInvalidSchedulingSettingsBeforeSaving() {
+  @ParameterizedTest
+  @MethodSource("invalidSchedulingCreates")
+  void rejectsInvalidSchedulingSettingsBeforeSaving(
+      Create invalid, InvalidBookingSchedulingSettingsException.Reason reason) {
     assertTrue(BookingSchedulingSettings.isOpeningIntervalValid("08:00", "24:00"));
-    Create invalid =
-        new Create(
-            true,
-            "UTC",
-            target(12L),
-            new BookingSchedulingSettings.Patch(
-                7L, hours("18:00", "08:00"), -1L, 10_081L, 8L, false));
-
     InvalidBookingSchedulingSettingsException failure =
         assertThrows(
             InvalidBookingSchedulingSettingsException.class,
             () -> manager.createConfiguration(invalid, actor, actor));
 
-    assertEquals(InvalidBookingSchedulingSettingsException.Reason.GRANULARITY, failure.reason());
+    assertEquals(reason, failure.reason());
     verify(dao, never()).saveAndFlush(any());
+  }
+
+  private static Stream<Arguments> invalidSchedulingCreates() {
+    return Stream.of(
+        Arguments.of(
+            new Create(
+                true,
+                "UTC",
+                target(12L),
+                new BookingSchedulingSettings.Patch(
+                    7L, hours("18:00", "08:00"), -1L, 10_081L, 8L, false)),
+            InvalidBookingSchedulingSettingsException.Reason.GRANULARITY),
+        Arguments.of(
+            new Create(
+                true,
+                "UTC",
+                target(12L),
+                new BookingSchedulingSettings.Patch(null, null, null, null, 7L, null)),
+            InvalidBookingSchedulingSettingsException.Reason.MAXIMUM_DURATION));
   }
 
   @Test
@@ -315,30 +323,10 @@ class BookingConfigurationManagerTest {
     assertFalse(BookingSchedulingSettings.isMaximumDurationValid(7, 5));
     assertFalse(BookingSchedulingSettings.isMaximumDurationValid(527_041, 1));
     assertFalse(BookingSchedulingSettings.isMaximumDurationValid(5, 0));
-
-    InvalidBookingSchedulingSettingsException failure =
-        assertThrows(
-            InvalidBookingSchedulingSettingsException.class,
-            () ->
-                manager.createConfiguration(
-                    new Create(
-                        true,
-                        "UTC",
-                        target(12L),
-                        new BookingSchedulingSettings.Patch(null, null, null, null, 7L, null)),
-                    actor,
-                    actor));
-
-    assertEquals(
-        InvalidBookingSchedulingSettingsException.Reason.MAXIMUM_DURATION, failure.reason());
-    verify(dao, never()).saveAndFlush(any());
   }
 
   @Test
   void bulkCreateValidatesTheWholeBatchBeforeSavingAndPreservesOrder() {
-    when(dao.saveAndFlush(any(BookingConfiguration.class)))
-        .thenAnswer(invocation -> invocation.getArgument(0));
-
     List<BookingConfiguration> created =
         manager.createConfigurations(
             List.of(
@@ -441,7 +429,6 @@ class BookingConfigurationManagerTest {
     List<BookingOpeningHoursEntry> openingHours = hours("09:00", "17:00", 1, 3);
     configuration.setOpeningHours(openingHours);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
-    when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration updated =
         manager.updateConfiguration(42L, new Patch(true, null), actor, actor).orElseThrow();
@@ -492,7 +479,6 @@ class BookingConfigurationManagerTest {
     TimeSlotBooking second = new TimeSlotBooking();
     second.setState(BookingState.CONFIRMED);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
-    when(dao.saveAndFlush(configuration)).thenReturn(configuration);
     when(timeSlotBookings.findFutureConfirmedByConfiguration(eq(42L), any(Date.class)))
         .thenReturn(List.of(first, second));
 
@@ -539,7 +525,6 @@ class BookingConfigurationManagerTest {
     configuration.setEnabled(true);
     configuration.setState(BookingConfigurationState.ARCHIVED);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
-    when(dao.saveAndFlush(configuration)).thenReturn(configuration);
 
     BookingConfiguration restored =
         manager
@@ -594,7 +579,7 @@ class BookingConfigurationManagerTest {
     BookingConfiguration second = configuration(42L, 12L);
     first.setEnabled(true);
     second.setEnabled(true);
-    int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
+    int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
     when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -619,7 +604,7 @@ class BookingConfigurationManagerTest {
     BookingConfiguration alreadyArchived = configuration(42L, 12L);
     alreadyArchived.setState(BookingConfigurationState.ARCHIVED);
     alreadyArchived.setConfigurationVersion(3L);
-    int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
+    int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any()))
         .thenReturn(List.of(active, alreadyArchived));
     when(dao.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -643,7 +628,7 @@ class BookingConfigurationManagerTest {
     active.setEnabled(true);
     BookingConfiguration archived = configuration(42L, 12L);
     archived.setState(BookingConfigurationState.ARCHIVED);
-    int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
+    int limit = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(active, archived));
 
     assertThrows(
@@ -699,8 +684,7 @@ class BookingConfigurationManagerTest {
 
     when(actor.hasSysadminRole()).thenReturn(true);
     BookingConfiguration configuration = new BookingConfiguration();
-    int oversizedBatch =
-        ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
+    int oversizedBatch = OVERSIZED_MUTATION_LIMIT;
     when(dao.lockResources(eq(request), eq(oversizedBatch), any()))
         .thenReturn(Collections.nCopies(oversizedBatch, configuration));
 
@@ -716,7 +700,7 @@ class BookingConfigurationManagerTest {
         ResourceRequest.unpaged(
             new FilterExpression.Comparison(
                 "target.name", Operator.EQUAL, List.of("Microscope"), false));
-    int limit = ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows() + 1;
+    int limit = OVERSIZED_MUTATION_LIMIT;
     ArgumentCaptor<RelationshipReadAccess> access =
         ArgumentCaptor.forClass(RelationshipReadAccess.class);
     when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of());
@@ -809,7 +793,7 @@ class BookingConfigurationManagerTest {
     configuration.replaceTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, targetId));
     ResourceAccess access =
-        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, null, new java.util.Date());
+        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, null, new Date());
     access.setId(targetId);
     access.addAssignment(ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, actor));
     configuration.setResourceAccess(access);

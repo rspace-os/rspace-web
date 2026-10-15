@@ -7,6 +7,7 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.service.BookingConfigurationDefaultsManager;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDefaultAccessGrantee;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
@@ -19,6 +20,7 @@ import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -41,6 +43,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Singleton REST v2 interface for global Booking defaults. */
@@ -277,9 +280,27 @@ public final class BookingSettingsController {
   }
 
   @GetMapping("/access-grantees")
+  @Operation(
+      operationId = "searchBookingSettingsAccessGrantees",
+      summary = "Search eligible default-access grantees",
+      tags = "booking-directories",
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Eligible users and groups."),
+        @ApiResponse(responseCode = "400"),
+        @ApiResponse(responseCode = "401"),
+        @ApiResponse(responseCode = "403"),
+        @ApiResponse(responseCode = "429"),
+        @ApiResponse(responseCode = "500")
+      })
   public List<ResourceGranteeDirectoryEntry> accessGrantees(
-      @org.springframework.web.bind.annotation.RequestParam String query,
-      @org.springframework.web.bind.annotation.RequestParam(defaultValue = "20") int limit,
+      @Parameter(description = "Case-insensitive search text.", schema = @Schema(minLength = 2))
+          @RequestParam
+          String query,
+      @Parameter(
+              description = "Maximum results to return.",
+              schema = @Schema(minimum = "1", maximum = "50", defaultValue = "20"))
+          @RequestParam(defaultValue = "20")
+          int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     requireEnabledRead(caller.subject());
     return directoryManager.searchForSettings(
@@ -319,13 +340,13 @@ public final class BookingSettingsController {
         institutionClock);
   }
 
-  private void requireEnabledRead(com.researchspace.model.User actor) {
+  private void requireEnabledRead(User actor) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
       throw new NotFoundException();
     }
   }
 
-  private void requireEnabledMutation(com.researchspace.model.User actor) {
+  private void requireEnabledMutation(User actor) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }

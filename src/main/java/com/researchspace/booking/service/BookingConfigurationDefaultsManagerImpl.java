@@ -158,7 +158,7 @@ public class BookingConfigurationDefaultsManagerImpl
         continue;
       }
       ResourceRoleAssignment resolved =
-          resourceAccessDao.resolveAvailable(key, BookingResourceRoleScheme.BOOKER);
+          resourceAccessDao.resolveAvailable(key, BookingResourceRoleScheme.BOOKER, null);
       if (resolved == null || resolved.getGranteeKind() == ResourceGranteeKind.AUDIENCE) {
         throw new InvalidBookingDefaultSharingException();
       }
@@ -172,6 +172,11 @@ public class BookingConfigurationDefaultsManagerImpl
   }
 
   private BookingConfigurationDefaults requiredDefaults() {
+    return requiredDefaults(defaultsDao);
+  }
+
+  static BookingConfigurationDefaults requiredDefaults(
+      BookingConfigurationDefaultsDao defaultsDao) {
     return defaultsDao
         .getSafeNull(BookingConfigurationDefaults.SINGLETON_ID)
         .orElseThrow(

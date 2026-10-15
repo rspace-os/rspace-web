@@ -16,8 +16,10 @@ public record BookingDisplaySettings(
   public static final String DEFAULT_AVAILABILITY_WINDOW_END = "18:00";
   public static final BookingTimezoneMode DEFAULT_TIMEZONE_MODE = BookingTimezoneMode.BROWSER;
 
-  private static final Pattern START_TIME = Pattern.compile("(?:[01]\\d|2[0-3]):[0-5]\\d");
-  private static final Pattern END_TIME = Pattern.compile("(?:(?:[01]\\d|2[0-3]):[0-5]\\d|24:00)");
+  private static final Pattern START_TIME =
+      Pattern.compile(BookingOpeningHoursCodec.WALL_TIME_PATTERN);
+  private static final Pattern END_TIME =
+      Pattern.compile(BookingOpeningHoursCodec.CLOSING_TIME_PATTERN);
 
   public BookingDisplaySettings {
     if (timezoneMode != BookingTimezoneMode.CUSTOM) {
@@ -75,10 +77,10 @@ public record BookingDisplaySettings(
   }
 
   public boolean hasValidAvailabilityWindow() {
-    if (!isCanonicalStart(availabilityWindowStart) || !isCanonicalEnd(availabilityWindowEnd)) {
-      return false;
-    }
-    return minuteOfDay(availabilityWindowStart) < minuteOfDay(availabilityWindowEnd);
+    return isCanonicalStart(availabilityWindowStart)
+        && isCanonicalEnd(availabilityWindowEnd)
+        && BookingSchedulingSettings.isOpeningIntervalValid(
+            availabilityWindowStart, availabilityWindowEnd);
   }
 
   public boolean hasValidTimezoneChoice() {
@@ -99,11 +101,11 @@ public record BookingDisplaySettings(
     }
   }
 
-  public static boolean isCanonicalStart(String value) {
+  private static boolean isCanonicalStart(String value) {
     return value != null && START_TIME.matcher(value).matches();
   }
 
-  public static boolean isCanonicalEnd(String value) {
+  private static boolean isCanonicalEnd(String value) {
     return value != null && END_TIME.matcher(value).matches();
   }
 

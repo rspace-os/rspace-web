@@ -11,14 +11,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 public class BookingInstrumentRelationshipOperations {
 
-  private final BookingConfigurationTargetManager targetManager;
-
-  public BookingInstrumentRelationshipOperations(BookingConfigurationTargetManager targetManager) {
-    this.targetManager = targetManager;
-  }
-
   @Bean
-  ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstrumentRelationshipResource() {
+  ApiV2RelationshipTargetSpec<Instrument, Long> bookingInstrumentRelationshipResource(
+      BookingConfigurationTargetManager targetManager) {
     return new ApiV2RelationshipTargetSpec<>(
         ApiV2BookingInstrumentResource.DESCRIPTION,
         Long.class,

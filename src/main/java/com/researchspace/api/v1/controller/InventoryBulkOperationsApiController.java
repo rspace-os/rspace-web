@@ -16,6 +16,7 @@ import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler.In
 import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
   @Autowired private ApiControllerAdvice apiControllerAdvice;
   @Autowired private UserManager userManager;
 
+  @AllArgsConstructor
   @Setter
   @Getter
   public static class InventoryBulkOperationConfig {
@@ -53,12 +55,13 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
 
     public InventoryBulkOperationConfig(
         ApiInventoryBulkOperationPost apiRequest, User user, User actor) {
-      operationType = apiRequest.getOperationType();
-      records = apiRequest.getRecords();
-      onErrorStopWithException = apiRequest.isRollbackOnError();
-      this.user = user;
-      this.actor = actor;
-      transferBookingConfigurationOwnership = apiRequest.isTransferBookingConfigurationOwnership();
+      this(
+          apiRequest.getOperationType(),
+          apiRequest.getRecords(),
+          apiRequest.isRollbackOnError(),
+          user,
+          actor,
+          apiRequest.isTransferBookingConfigurationOwnership());
     }
 
     public InventoryBulkOperationConfig(
@@ -67,21 +70,6 @@ public class InventoryBulkOperationsApiController extends BaseApiInventoryContro
         boolean onErrorStopWithException,
         User user) {
       this(operationType, records, onErrorStopWithException, user, user, false);
-    }
-
-    public InventoryBulkOperationConfig(
-        BulkApiOperationType operationType,
-        List<ApiInventoryRecordInfo> records,
-        boolean onErrorStopWithException,
-        User user,
-        User actor,
-        boolean transferBookingConfigurationOwnership) {
-      this.operationType = operationType;
-      this.records = records;
-      this.onErrorStopWithException = onErrorStopWithException;
-      this.user = user;
-      this.actor = actor;
-      this.transferBookingConfigurationOwnership = transferBookingConfigurationOwnership;
     }
   }
 

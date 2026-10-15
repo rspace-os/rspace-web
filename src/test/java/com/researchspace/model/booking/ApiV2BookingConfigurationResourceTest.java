@@ -30,11 +30,39 @@ import com.researchspace.model.collection.ResourceRenderer;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 class ApiV2BookingConfigurationResourceTest {
+
+  private static final List<String> COMMON_RESOURCE_FIELDS =
+      List.of(
+          "id",
+          "enabled",
+          "state",
+          "timezone",
+          "slotGranularityMinutes",
+          "openingHours",
+          "bufferBeforeMinutes",
+          "bufferAfterMinutes",
+          "maxBookingDurationMinutes",
+          "allowDoubleBooking",
+          "configurationVersion",
+          "createdByName",
+          "effectiveRole",
+          "roleSources",
+          "capabilities");
+  private static final List<String> AUDIT_FIELDS = List.of("createdAt", "updatedAt");
+  private static final ResourceRegistry REGISTRY =
+      new ResourceRegistry(
+          List.of(
+              ApiV2BookingConfigurationResource.DESCRIPTION,
+              ApiV2UserResource.DESCRIPTION,
+              ApiV2BookingInstrumentResource.DESCRIPTION));
 
   private final ObjectMapper mapper = new ObjectMapper();
 
@@ -47,25 +75,9 @@ class ApiV2BookingConfigurationResourceTest {
   @Test
   void definesSchedulingFieldsAndTheCreateOnlyTargetRelationship() {
     assertEquals(
-        List.of(
-            "id",
-            "enabled",
-            "state",
-            "timezone",
-            "slotGranularityMinutes",
-            "openingHours",
-            "bufferBeforeMinutes",
-            "bufferAfterMinutes",
-            "maxBookingDurationMinutes",
-            "allowDoubleBooking",
-            "configurationVersion",
-            "createdByName",
-            "effectiveRole",
-            "roleSources",
-            "capabilities",
-            "ownerHealth",
-            "createdAt",
-            "updatedAt"),
+        Stream.of(COMMON_RESOURCE_FIELDS, List.of("ownerHealth"), AUDIT_FIELDS)
+            .flatMap(List::stream)
+            .toList(),
         ApiV2BookingConfigurationResource.DESCRIPTION.fields().stream()
             .map(field -> field.name())
             .toList());
@@ -113,18 +125,10 @@ class ApiV2BookingConfigurationResourceTest {
         ApiV2BookingConfigurationResource.DESCRIPTION
             .findFilterSelector("updatedBy.value")
             .orElseThrow());
-    assertFalse(
-        ApiV2BookingConfigurationResource.DESCRIPTION
-            .requireRelationship("target")
-            .acceptsInput(WriteOperation.UPDATE, RelationshipInputForm.GLOBAL_ID));
-    assertTrue(
-        ApiV2BookingConfigurationResource.DESCRIPTION
-            .requireRelationship("target")
-            .writableOn(WriteOperation.CREATE));
-    assertFalse(
-        ApiV2BookingConfigurationResource.DESCRIPTION
-            .requireRelationship("target")
-            .writableOn(WriteOperation.UPDATE));
+    var target = ApiV2BookingConfigurationResource.DESCRIPTION.requireRelationship("target");
+    assertFalse(target.acceptsInput(WriteOperation.UPDATE, RelationshipInputForm.GLOBAL_ID));
+    assertTrue(target.writableOn(WriteOperation.CREATE));
+    assertFalse(target.writableOn(WriteOperation.UPDATE));
     assertTrue(
         ApiV2BookingConfigurationResource.DESCRIPTION.requireRelationship("createdBy").nullable());
     assertTrue(
@@ -223,24 +227,7 @@ class ApiV2BookingConfigurationResourceTest {
     Map<String, Object> rendered =
         ApiV2BookingConfigurationResource.DESCRIPTION.toDocument(configuration);
     assertEquals(
-        List.of(
-            "id",
-            "enabled",
-            "state",
-            "timezone",
-            "slotGranularityMinutes",
-            "openingHours",
-            "bufferBeforeMinutes",
-            "bufferAfterMinutes",
-            "maxBookingDurationMinutes",
-            "allowDoubleBooking",
-            "configurationVersion",
-            "createdByName",
-            "effectiveRole",
-            "roleSources",
-            "capabilities",
-            "createdAt",
-            "updatedAt"),
+        Stream.concat(COMMON_RESOURCE_FIELDS.stream(), AUDIT_FIELDS.stream()).toList(),
         List.copyOf(rendered.keySet()));
     assertNull(rendered.get("id"));
     assertEquals(true, rendered.get("enabled"));
@@ -265,6 +252,23 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
+  void defensivelyCopiesLifecycleDatesOnAssignmentAndRead() {
+    BookingConfiguration configuration = new BookingConfiguration();
+    Date supplied = new Date(1_000L);
+    configuration.setCreatedAt(supplied);
+    configuration.setUpdatedAt(supplied);
+
+    supplied.setTime(2_000L);
+    assertEquals(1_000L, configuration.getCreatedAt().getTime());
+    assertEquals(1_000L, configuration.getUpdatedAt().getTime());
+
+    configuration.getCreatedAt().setTime(3_000L);
+    configuration.getUpdatedAt().setTime(3_000L);
+    assertEquals(1_000L, configuration.getCreatedAt().getTime());
+    assertEquals(1_000L, configuration.getUpdatedAt().getTime());
+  }
+
+  @Test
   void rendersAuditUsersAsReadOnlyUserRelationships() {
     User creator = mock(User.class);
     User updater = mock(User.class);
@@ -275,15 +279,9 @@ class ApiV2BookingConfigurationResourceTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setCreatedBy(creator);
     configuration.setUpdatedBy(updater);
-    ResourceRegistry registry =
-        new ResourceRegistry(
-            List.of(
-                ApiV2BookingConfigurationResource.DESCRIPTION,
-                ApiV2UserResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION));
 
     Map<String, Object> rendered =
-        new ResourceRenderer(registry)
+        new ResourceRenderer(REGISTRY)
             .render(
                 configuration,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
@@ -305,21 +303,15 @@ class ApiV2BookingConfigurationResourceTest {
     configuration.setId(7L);
     configuration.setTimeZone("UTC");
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L));
-    ResourceRegistry registry =
-        new ResourceRegistry(
-            List.of(
-                ApiV2BookingConfigurationResource.DESCRIPTION,
-                ApiV2UserResource.DESCRIPTION,
-                ApiV2BookingInstrumentResource.DESCRIPTION));
 
     Map<String, Object> rendered =
-        new ResourceRenderer(registry)
+        new ResourceRenderer(REGISTRY)
             .render(
                 configuration,
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 FieldSelection.all(),
                 IncludeTree.empty(),
-                (resourceName, id) -> java.util.Optional.empty());
+                (resourceName, id) -> Optional.empty());
 
     assertEquals(7L, rendered.get("id"));
     assertTrue(rendered.containsKey("target"));
@@ -339,15 +331,7 @@ class ApiV2BookingConfigurationResourceTest {
                 "errors.api.v2.bookingConfiguration.create",
                 new AccessContext(null, Operation.CREATE, "booking-configurations")));
 
-    assertThrows(
-        DocumentValidationException.class,
-        () ->
-            ApiV2DocumentParser.parse(
-                mapper.readTree("{\"timezone\":\"Europe/Berlin\"}"),
-                ApiV2BookingConfigurationResource.DESCRIPTION,
-                WriteOperation.UPDATE,
-                "errors.api.v2.bookingConfiguration.patch",
-                new AccessContext(null, Operation.UPDATE, "booking-configurations", 42L)));
+    updateViolation(mapper.readTree("{\"timezone\":\"Europe/Berlin\"}"));
 
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setTimeZone("Not/A_Zone");
@@ -355,16 +339,8 @@ class ApiV2BookingConfigurationResourceTest {
   }
 
   @Test
-  void rejectsTargetPatches() {
-    assertThrows(
-        DocumentValidationException.class,
-        () ->
-            ApiV2DocumentParser.parse(
-                mapper.readTree("{\"target\":\"IN12\"}"),
-                ApiV2BookingConfigurationResource.DESCRIPTION,
-                WriteOperation.UPDATE,
-                "errors.api.v2.bookingConfiguration.patch",
-                new AccessContext(null, Operation.UPDATE, "booking-configurations", 42L)));
+  void rejectsTargetPatches() throws Exception {
+    updateViolation(mapper.readTree("{\"target\":\"IN12\"}"));
   }
 
   @Test
@@ -402,23 +378,18 @@ class ApiV2BookingConfigurationResourceTest {
     JsonNode missingEnd =
         mapper.readTree("{\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\"}]}");
     JsonNode explicitNull = mapper.readTree("{\"openingHours\":null}");
-    DocumentValidationException missing =
-        assertThrows(DocumentValidationException.class, () -> parseUpdate(missingEnd));
+    DocumentValidationException missing = updateViolation(missingEnd);
     assertEquals("openingHours[0].end", missing.getViolations().get(0).field());
     assertEquals(
         DocumentValidationException.Reason.REQUIRED, missing.getViolations().get(0).reason());
-    DocumentValidationException nullValue =
-        assertThrows(DocumentValidationException.class, () -> parseUpdate(explicitNull));
+    DocumentValidationException nullValue = updateViolation(explicitNull);
     assertEquals(
         DocumentValidationException.Reason.NULL_NOT_ALLOWED,
         nullValue.getViolations().get(0).reason());
     JsonNode legacy = mapper.readTree("{\"openingStart\":\"09:00\"}");
     assertEquals(
         DocumentValidationException.Reason.UNKNOWN_FIELD,
-        assertThrows(DocumentValidationException.class, () -> parseUpdate(legacy))
-            .getViolations()
-            .get(0)
-            .reason());
+        updateViolation(legacy).getViolations().get(0).reason());
   }
 
   @Test
@@ -448,6 +419,10 @@ class ApiV2BookingConfigurationResourceTest {
       assertFalse(source.has("nameSnapshot"));
     }
     assertEquals(4, sources.get(2).get("grantee").size());
+  }
+
+  private DocumentValidationException updateViolation(JsonNode body) {
+    return assertThrows(DocumentValidationException.class, () -> parseUpdate(body));
   }
 
   private ParsedDocument parseUpdate(JsonNode body) {

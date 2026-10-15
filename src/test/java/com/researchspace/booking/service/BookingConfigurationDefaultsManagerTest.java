@@ -22,7 +22,6 @@ import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
-import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +37,7 @@ class BookingConfigurationDefaultsManagerTest {
   private final BookingConfigurationDefaultsDao dao = mock(BookingConfigurationDefaultsDao.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   private final ResourceAccessDao resourceAccessDao = mock(ResourceAccessDao.class);
-  private final LocalValidatorFactoryBean validator = validator();
+  private final LocalValidatorFactoryBean validator = BookingSettingsTestFixtures.validator();
   private final BookingConfigurationDefaultsManager manager =
       new BookingConfigurationDefaultsManagerImpl(dao, resourceAccessDao, validator, events);
 
@@ -47,17 +46,9 @@ class BookingConfigurationDefaultsManagerTest {
     validator.close();
   }
 
-  private static LocalValidatorFactoryBean validator() {
-    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-    validator.setValidationMessageSource(new JsonMessageSource());
-    validator.afterPropertiesSet();
-    return validator;
-  }
-
   @Test
   void returnsAndAtomicallyPatchesTheRequiredSingleton() {
-    User sysadmin = mock(User.class);
-    when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    User sysadmin = sysadmin();
     BookingConfigurationDefaults defaults = defaults();
     when(dao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.of(defaults));
@@ -98,8 +89,7 @@ class BookingConfigurationDefaultsManagerTest {
                 member,
                 member));
 
-    User sysadmin = mock(User.class);
-    when(sysadmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    User sysadmin = sysadmin();
     when(dao.getSafeNull(BookingConfigurationDefaults.SINGLETON_ID))
         .thenReturn(Optional.empty())
         .thenReturn(Optional.of(defaults()));
@@ -137,10 +127,8 @@ class BookingConfigurationDefaultsManagerTest {
 
   @Test
   void rejectsASecondAdminsStaleVersion() {
-    User firstAdmin = mock(User.class);
-    User secondAdmin = mock(User.class);
-    when(firstAdmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
-    when(secondAdmin.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
+    User firstAdmin = sysadmin();
+    User secondAdmin = sysadmin();
     BookingConfigurationDefaults defaults = defaults();
     defaults.setConfigurationVersion(1);
     when(dao.lockSingleton()).thenReturn(Optional.of(defaults));
@@ -179,7 +167,7 @@ class BookingConfigurationDefaultsManagerTest {
     when(dao.saveAndFlush(defaults)).thenReturn(defaults);
     ResourceRoleAssignment selectedBooker =
         ResourceRoleAssignment.forUser(BookingResourceRoleScheme.BOOKER, selected);
-    when(resourceAccessDao.resolveAvailable("user:42", BookingResourceRoleScheme.BOOKER))
+    when(resourceAccessDao.resolveAvailable("user:42", BookingResourceRoleScheme.BOOKER, null))
         .thenReturn(selectedBooker);
 
     BookingConfigurationDefaults updated =
@@ -286,7 +274,7 @@ class BookingConfigurationDefaultsManagerTest {
       when(selected.getUsername()).thenReturn("user" + id);
       ResourceRoleAssignment assignment =
           ResourceRoleAssignment.forUser(BookingResourceRoleScheme.BOOKER, selected);
-      when(resourceAccessDao.resolveAvailable("user:" + id, BookingResourceRoleScheme.BOOKER))
+      when(resourceAccessDao.resolveAvailable("user:" + id, BookingResourceRoleScheme.BOOKER, null))
           .thenReturn(assignment);
     }
 
@@ -328,7 +316,7 @@ class BookingConfigurationDefaultsManagerTest {
         sysadmin,
         sysadmin);
     verify(resourceAccessDao, never())
-        .resolveAvailable("user:42", BookingResourceRoleScheme.BOOKER);
+        .resolveAvailable("user:42", BookingResourceRoleScheme.BOOKER, null);
 
     manager.updateDefaults(
         BookingSchedulingSettings.Patch.empty(),

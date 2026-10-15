@@ -114,7 +114,7 @@ class TimeSlotBookingReadMVCIT {
                 .param("where", "id==" + bookingId))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalDocs").value(0));
-    assertTrue(bookingManager.getBookingForAudit(bookingId, fixture.user()).isEmpty());
+    assertTrue(bookingManager.getBooking(bookingId, fixture.user()).isEmpty());
   }
 
   private static Instant alignedStart() {

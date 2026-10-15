@@ -3,12 +3,9 @@ package com.researchspace.booking.dao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.researchspace.booking.service.BookingResourceRoleScheme;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
-import com.researchspace.model.booking.BookableTargetReference;
-import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -28,8 +25,6 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.inventory.Instrument;
-import com.researchspace.model.resourceaccess.ResourceAccess;
-import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.time.Instant;
 import java.util.Date;
@@ -37,11 +32,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-@ExtendWith(SpringExtension.class)
 class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
 
   @Autowired private TimeSlotBookingDao bookingDao;
@@ -187,29 +179,10 @@ class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
   private TimeSlotBooking bookingFor(
       User requester, String instrumentName, boolean deleted, Date start, Date end) {
     Long instrumentId = createBasicInstrumentForUser(requester, instrumentName).getId();
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setEnabled(true);
-    configuration.setTimeZone("UTC");
-    configuration.replaceTarget(
-        new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId));
-    ResourceAccess access =
-        new ResourceAccess(BookingResourceRoleScheme.SCHEME_KEY, requester, new Date());
-    access.addAssignment(
-        ResourceRoleAssignment.forUser(BookingResourceRoleScheme.OWNER, requester));
-    configuration.setResourceAccess(access);
-    sessionFactory.getCurrentSession().persist(configuration);
-
-    TimeSlotBooking booking = new TimeSlotBooking();
-    booking.setBookingConfiguration(configuration);
-    booking.setRequester(requester);
-    booking.setStartTime(start);
-    booking.setEndTime(end);
-    booking.setState(BookingState.CONFIRMED);
-    booking.setDeleted(deleted);
-    booking.setCreatedBy(requester);
-    booking.setUpdatedBy(requester);
-    sessionFactory.getCurrentSession().persist(booking);
-    sessionFactory.getCurrentSession().flush();
-    return booking;
+    var session = sessionFactory.getCurrentSession();
+    BookingConfiguration configuration =
+        BookingDaoTestFixtures.configuration(session, requester, instrumentId);
+    return BookingDaoTestFixtures.booking(
+        session, configuration, requester, start, end, BookingState.CONFIRMED, deleted, null, null);
   }
 }

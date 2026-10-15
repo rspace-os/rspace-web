@@ -5,6 +5,7 @@ import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
 import com.researchspace.model.resourceaccess.ResourceAccess;
+import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.CascadeType;
@@ -27,9 +28,12 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import java.io.Serial;
 import java.io.Serializable;
+import java.lang.reflect.RecordComponent;
 import java.time.DateTimeException;
 import java.time.ZoneId;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
@@ -164,7 +168,7 @@ public class BookingConfiguration implements Serializable {
   private boolean allowDoubleBooking = BookingSchedulingSettings.DEFAULT_ALLOW_DOUBLE_BOOKING;
 
   @Transient private String effectiveRole;
-  @Transient private List<com.researchspace.model.resourceaccess.ResourceRoleSource> roleSources;
+  @Transient private List<ResourceRoleSource> roleSources;
   @Transient private BookingConfigurationCapabilities capabilities;
   @Transient private BookingOwnerHealth ownerHealth;
 
@@ -176,7 +180,7 @@ public class BookingConfiguration implements Serializable {
   }
 
   @Transient
-  public List<com.researchspace.model.resourceaccess.ResourceRoleSource> getRoleSources() {
+  public List<ResourceRoleSource> getRoleSources() {
     return roleSources == null ? List.of() : roleSources;
   }
 
@@ -185,18 +189,15 @@ public class BookingConfiguration implements Serializable {
     if (capabilities == null) {
       return Map.of();
     }
-    return Map.ofEntries(
-        Map.entry("canEditConfiguration", capabilities.canEditConfiguration()),
-        Map.entry("canViewAudit", capabilities.canViewAudit()),
-        Map.entry("canViewAccess", capabilities.canViewAccess()),
-        Map.entry("canManageAssignments", capabilities.canManageAssignments()),
-        Map.entry("canManageOwners", capabilities.canManageOwners()),
-        Map.entry("canCreateBooking", capabilities.canCreateBooking()),
-        Map.entry("canManageOwnBookings", capabilities.canManageOwnBookings()),
-        Map.entry("canManageAllEvents", capabilities.canManageAllEvents()),
-        Map.entry("canCreateBlockout", capabilities.canCreateBlockout()),
-        Map.entry("canSubscribeCalendar", capabilities.canSubscribeCalendar()),
-        Map.entry("canLeaveConfiguration", capabilities.canLeaveConfiguration()));
+    Map<String, Object> values = new LinkedHashMap<>();
+    for (RecordComponent component : BookingConfigurationCapabilities.class.getRecordComponents()) {
+      try {
+        values.put(component.getName(), component.getAccessor().invoke(capabilities));
+      } catch (ReflectiveOperationException ex) {
+        throw new IllegalStateException("Unable to read booking configuration capabilities", ex);
+      }
+    }
+    return Map.copyOf(values);
   }
 
   @Transient
@@ -209,7 +210,7 @@ public class BookingConfiguration implements Serializable {
   /** Sets caller-specific response fields after role resolution inside the read transaction. */
   public void prepareAccessProjection(
       String effectiveRole,
-      List<com.researchspace.model.resourceaccess.ResourceRoleSource> roleSources,
+      List<ResourceRoleSource> roleSources,
       BookingConfigurationCapabilities capabilities,
       BookingOwnerHealth ownerHealth) {
     this.effectiveRole = effectiveRole;
@@ -227,28 +228,26 @@ public class BookingConfiguration implements Serializable {
 
   @Column(nullable = true, updatable = false)
   public Date getCreatedAt() {
-    return createdAt == null ? null : new Date(createdAt.getTime());
+    return TimeSlotBooking.copy(createdAt);
   }
 
   public void setCreatedAt(Date createdAt) {
-    this.createdAt = createdAt == null ? null : new Date(createdAt.getTime());
+    this.createdAt = TimeSlotBooking.copy(createdAt);
   }
 
   /** Returns the creator's non-sensitive display label. */
   @Transient
   public String getCreatedByName() {
-    return createdBy == null
-        ? null
-        : createdBy.getFullName() + " (" + createdBy.getUsername() + ")";
+    return createdBy == null ? null : TimeSlotBooking.formatUserLabel(createdBy);
   }
 
   @Column(nullable = true)
   public Date getUpdatedAt() {
-    return updatedAt == null ? null : new Date(updatedAt.getTime());
+    return TimeSlotBooking.copy(updatedAt);
   }
 
   public void setUpdatedAt(Date updatedAt) {
-    this.updatedAt = updatedAt == null ? null : new Date(updatedAt.getTime());
+    this.updatedAt = TimeSlotBooking.copy(updatedAt);
   }
 
   /** Returns the complete type and ID of the configured bookable entity. */
@@ -295,13 +294,12 @@ public class BookingConfiguration implements Serializable {
             ? null
             : openingHours.stream()
                 .sorted(
-                    java.util.Comparator.nullsLast(
-                        java.util.Comparator.comparingInt(BookingOpeningHoursEntry::dayOfWeek)))
+                    Comparator.nullsLast(
+                        Comparator.comparingInt(BookingOpeningHoursEntry::dayOfWeek)))
                 .toList();
   }
 
   @Transient
-  @AssertTrue(message = "{errors.api.v2.bookingConfiguration.buffer.invalid}")
   public boolean areBuffersValid() {
     return BookingSchedulingSettings.isBufferValid(bufferBeforeMinutes)
         && BookingSchedulingSettings.isBufferValid(bufferAfterMinutes);

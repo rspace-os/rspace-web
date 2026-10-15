@@ -8,6 +8,7 @@ import com.blazebit.persistence.CriteriaBuilderFactory;
 import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.inventory.model.ApiV2ContainerResource;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
+import com.researchspace.Constants;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
@@ -264,7 +265,7 @@ public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
   @Test
   public void locksAndReadsCurrentGroupTransferAuthority() {
-    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), "ROLE_PI");
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
     User ordinaryMember = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
     initialiseContentWithEmptyContent(pi, owner, ordinaryMember);

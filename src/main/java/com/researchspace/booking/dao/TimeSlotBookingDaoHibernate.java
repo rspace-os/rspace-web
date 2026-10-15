@@ -7,17 +7,13 @@ import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
-import com.researchspace.model.collection.FieldSelection;
 import com.researchspace.model.collection.FilterExpression;
-import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import jakarta.persistence.LockModeType;
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -69,12 +65,8 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
   @Override
   public Optional<TimeSlotBooking> findReadableById(Long id, RelationshipReadAccess targetAccess) {
     ResourceRequest request =
-        new ResourceRequest(
-            new FilterExpression.Comparison("id", Operator.EQUAL, List.of(id), false),
-            List.of(),
-            new ResourceRequest.Page(1, 1),
-            FieldSelection.all(),
-            IncludeTree.empty());
+        ResourceRequest.unpaged(
+            new FilterExpression.Comparison("id", Operator.EQUAL, List.of(id), false));
     return getReadableResources(request, targetAccess).resources().stream().findFirst();
   }
 
@@ -106,22 +98,6 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
       query.setParameter("excludedId", excludedBookingId);
     }
     return !query.getResultList().isEmpty();
-  }
-
-  @Override
-  public Set<Long> findOwnedInstrumentIds(Collection<Long> targetIds, Long actorId) {
-    if (targetIds.isEmpty()) {
-      return Set.of();
-    }
-    return new HashSet<>(
-        getSession()
-            .createQuery(
-                "select instrument.id from Instrument instrument where instrument.id in :ids"
-                    + " and instrument.owner.id = :actorId",
-                Long.class)
-            .setParameter("ids", targetIds)
-            .setParameter("actorId", actorId)
-            .getResultList());
   }
 
   @Override
@@ -183,16 +159,14 @@ public class TimeSlotBookingDaoHibernate extends GenericDaoHibernate<TimeSlotBoo
             .setParameter("state", BookingState.CONFIRMED)
             .setParameter("now", now)
             .getResultList();
-    List<TimeSlotBooking> bookings =
-        bookingIds.stream()
-            .map(
-                id -> {
-                  TimeSlotBooking booking = getSession().getReference(TimeSlotBooking.class, id);
-                  getSession().refresh(booking, LockModeType.PESSIMISTIC_WRITE);
-                  return booking;
-                })
-            .toList();
-    return bookings;
+    return bookingIds.stream()
+        .map(
+            id -> {
+              TimeSlotBooking booking = getSession().getReference(TimeSlotBooking.class, id);
+              getSession().refresh(booking, LockModeType.PESSIMISTIC_WRITE);
+              return booking;
+            })
+        .toList();
   }
 
   @Override

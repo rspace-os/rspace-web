@@ -9,8 +9,6 @@ import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.FilterExpression;
-import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
@@ -29,9 +27,6 @@ import org.springframework.stereotype.Repository;
 public class BookingConfigurationDaoHibernate
     extends GenericDaoHibernate<BookingConfiguration, Long> implements BookingConfigurationDao {
 
-  private static final FilterExpression ACTIVE =
-      new FilterExpression.Comparison(
-          "state", Operator.EQUAL, List.of(BookingConfigurationState.ACTIVE), false);
   private final CriteriaBuilderFactory criteriaBuilderFactory;
   private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
 
@@ -69,40 +64,37 @@ public class BookingConfigurationDaoHibernate
 
   @Override
   public Optional<BookingConfiguration> findByTarget(BookableTargetReference target) {
-    return getSession()
-        .createQuery(
-            "from BookingConfiguration where target.type = :type and target.id = :id",
-            BookingConfiguration.class)
-        .setParameter("type", target.type())
-        .setParameter("id", target.id())
-        .uniqueResultOptional();
+    return byTarget(target, false, false);
   }
 
   @Override
   public Optional<BookingConfiguration> lockActiveByTarget(BookableTargetReference target) {
-    return getSession()
-        .createQuery(
-            "from BookingConfiguration where target.type = :type and target.id = :id"
-                + " and state = :state",
-            BookingConfiguration.class)
-        .setParameter("type", target.type())
-        .setParameter("id", target.id())
-        .setParameter("state", BookingConfigurationState.ACTIVE)
-        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-        .uniqueResultOptional()
-        .map(this::refreshSchedulingState);
+    return byTarget(target, true, true).map(this::refreshSchedulingState);
   }
 
   @Override
   public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
-    return getSession()
-        .createQuery(
-            "from BookingConfiguration where target.type = :type and target.id = :id",
-            BookingConfiguration.class)
-        .setParameter("type", target.type())
-        .setParameter("id", target.id())
-        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-        .uniqueResultOptional();
+    return byTarget(target, false, true);
+  }
+
+  private Optional<BookingConfiguration> byTarget(
+      BookableTargetReference target, boolean activeOnly, boolean lock) {
+    String hql = "from BookingConfiguration where target.type = :type and target.id = :id";
+    if (activeOnly) {
+      hql += " and state = :state";
+    }
+    var query =
+        getSession()
+            .createQuery(hql, BookingConfiguration.class)
+            .setParameter("type", target.type())
+            .setParameter("id", target.id());
+    if (activeOnly) {
+      query.setParameter("state", BookingConfigurationState.ACTIVE);
+    }
+    if (lock) {
+      query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+    }
+    return query.uniqueResultOptional();
   }
 
   @Override

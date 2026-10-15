@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 class BookingSchedulingPolicyImplTest {
 
-  private final BookingSchedulingPolicy policy = new BookingSchedulingPolicyImpl();
+  private final BookingSchedulingPolicy policy = new BookingSchedulingPolicy();
 
   @Test
   void usesEachWeekdaysOwnIntervalAndRejectsClosedDays() {

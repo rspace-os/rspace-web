@@ -23,32 +23,31 @@ public final class ApiV2BookingInstrumentResource {
               Field.<Instrument, Long>readOnly(
                       "id", "id", CollectionFieldTypes.longNumber(), Instrument::getId)
                   .documented(
-                      documentation("Instrument ID", "Stable instrument identifier.", "123")),
+                      OpenApiSchemaDocumentation.of(
+                          "Instrument ID", "Stable instrument identifier.", "123")),
               Field.readOnly(
                       "globalId",
                       "globalIdentifier",
                       CollectionFieldTypes.text(),
                       Instrument::getGlobalIdentifier)
                   .withQueryCapabilities(false, false)
-                  .documented(documentation("Global ID", "RSpace global identifier.", "IN123")),
+                  .documented(
+                      OpenApiSchemaDocumentation.of(
+                          "Global ID", "RSpace global identifier.", "IN123")),
               Field.<Instrument, String>readOnly(
                       "name", "editInfo.name", CollectionFieldTypes.text(255), Instrument::getName)
                   .documented(
-                      documentation("Name", "Display name of the instrument.", "Microscope")),
+                      OpenApiSchemaDocumentation.of(
+                          "Name", "Display name of the instrument.", "Microscope")),
               Field.readOnly(
                       "deleted", "deleted", CollectionFieldTypes.bool(), Instrument::isDeleted)
                   .withQueryCapabilities(true, false)
                   .documented(
-                      documentation(
+                      OpenApiSchemaDocumentation.of(
                           "Deleted", "True when the instrument is in the trash.", "false"))),
           "id",
           List.of(new Sort("name", true), new Sort("id", true)),
           AccessPolicy.readOnly(AccessFunction.authenticated()));
-
-  private static OpenApiSchemaDocumentation documentation(
-      String title, String description, String example) {
-    return OpenApiSchemaDocumentation.of(title, description, example);
-  }
 
   private ApiV2BookingInstrumentResource() {}
 }

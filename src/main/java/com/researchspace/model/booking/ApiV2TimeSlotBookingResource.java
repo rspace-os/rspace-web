@@ -7,10 +7,8 @@ import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.InternalFilter;
 import com.researchspace.model.collection.Relationship;
-import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.Sort;
-import com.researchspace.model.collection.SplitReferenceBinding;
 import com.researchspace.model.collection.WriteOperation;
 import java.util.List;
 import java.util.Locale;
@@ -19,21 +17,10 @@ import java.util.Locale;
 public final class ApiV2TimeSlotBookingResource {
 
   private static final Relationship<TimeSlotBooking> TARGET =
-      Relationship.polymorphicToOne(
-              "target",
-              CollectionFieldTypes.longNumber(),
-              List.of(
-                  new RelationshipTarget<>(
-                      ApiV2BookingInstrumentResource.RESOURCE_NAME,
-                      BookableTargetType.INSTRUMENT,
-                      "IN",
-                      com.researchspace.model.inventory.Instrument.class)),
-              new SplitReferenceBinding<>(
-                  ApiV2TimeSlotBookingResource::targetReference,
-                  "bookingConfiguration.target.type",
-                  "bookingConfiguration.target.id"))
-          .writeOnlyOn(WriteOperation.CREATE)
-          .required();
+      ApiV2BookingConfigurationResource.instrumentTarget(
+          ApiV2TimeSlotBookingResource::targetReference,
+          "bookingConfiguration.target.type",
+          "bookingConfiguration.target.id");
 
   public static final CollectionDescription<TimeSlotBooking> DESCRIPTION =
       description(AccessFunction.authenticated());
