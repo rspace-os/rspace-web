@@ -118,14 +118,10 @@ class BookingSchedulingFixtureFactory {
       Instrument instrument,
       BookingConfiguration configuration,
       LocalDate date,
-      int startHour,
-      int startMinute,
-      int endHour,
-      int endMinute,
+      LocalTime startTime,
+      LocalTime endTime,
       String purpose,
       User owner) {
-    LocalTime startTime = LocalTime.of(startHour, startMinute);
-    LocalTime endTime = LocalTime.of(endHour, endMinute);
     LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
     ensureEvent(
         instrument,
