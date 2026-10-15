@@ -3,7 +3,6 @@ import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { cataloguePage as creationCataloguePage } from "@/modules/booking/creation/__tests__/creationTestFixtures";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -14,7 +13,6 @@ import {
 } from "../../bookable-items/mocks/bookableItemsMocks";
 import { busyBooking, collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { bookingPagesHandlers } from "../../mocks/bookingPagesMocks";
-import { currentUser } from "../../mocks/currentUserFixture";
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
 import { renderCalendar } from "./calendarTestHarness";
 
@@ -129,11 +127,7 @@ describe("CalendarPage", () => {
   });
 
   it("opens the week when a link asks for Month in By Item", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))),
-    );
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))));
 
     await renderCalendar("/booking/calendar?view=month");
 
@@ -587,8 +581,6 @@ describe("CalendarPage", () => {
     let serverBooking: BookingListDocument = ownBooking;
     const saves: { ifMatch: string | null; payload: unknown }[] = [];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         const ifMatch = request.headers.get("If-Match");
@@ -641,8 +633,6 @@ describe("CalendarPage", () => {
       purpose: "Calibration",
     };
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () =>
         HttpResponse.json(collectionResponse([auroraBooking, otherPurpose, busyBooking])),
       ),
