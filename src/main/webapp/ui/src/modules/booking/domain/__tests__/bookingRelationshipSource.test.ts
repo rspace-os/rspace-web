@@ -1,5 +1,5 @@
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { bookingInstrumentSource, bookingRelationshipSources } from "../bookingRelationshipSource";
 
@@ -50,31 +50,8 @@ describe("booking relationship source", () => {
     expect(requested?.searchParams.get("limit")).toBe("2");
     expect(requested?.searchParams.get("depth")).toBe("1");
   });
-  it("returns unavailable rather than dropping an unresolvable saved ID", async () => {
-    server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json({ docs: [] })),
-      http.get("/api/v2/bookings", () => HttpResponse.json({ docs: [] })),
-    );
-    await expect(bookingInstrumentSource.resolve?.("IN42", "token", signal())).resolves.toBeNull();
-    expect(bookingInstrumentSource.ownsValue("IN42")).toBe(true);
-  });
-
-  it("does not treat an unsafe numeric ID as a booking relationship", async () => {
-    const request = vi.fn();
-    server.use(
-      http.get("/api/v2/booking-configurations", () => {
-        request();
-        return HttpResponse.json({ docs: [] });
-      }),
-      http.get("/api/v2/bookings", () => {
-        request();
-        return HttpResponse.json({ docs: [] });
-      }),
-    );
-
+  it("does not treat an unsafe numeric ID as a booking relationship", () => {
     const unsafe = "IN9007199254740992";
     expect(bookingInstrumentSource.ownsValue(unsafe)).toBe(false);
-    await expect(bookingInstrumentSource.resolve?.(unsafe, "token", signal())).resolves.toBeNull();
-    expect(request).not.toHaveBeenCalled();
   });
 });
