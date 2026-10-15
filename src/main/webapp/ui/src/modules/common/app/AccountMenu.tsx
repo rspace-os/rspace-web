@@ -10,18 +10,6 @@ import { Menu, MenuContent, MenuItem, MenuLinkItem, MenuSeparator, MenuTrigger }
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { clearStoredToken } from "@/modules/common/utils/auth";
 
-declare global {
-  interface Window {
-    gapi?: {
-      auth2?: {
-        getAuthInstance(): {
-          signOut(): Promise<void>;
-        };
-      };
-    };
-  }
-}
-
 function getInitials(fullName: string) {
   const initials = fullName
     .split(/\s+/)
