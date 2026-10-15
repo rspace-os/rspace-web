@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-export const GranteeKindSchema = v.picklist(["USER", "GROUP", "AUDIENCE"]);
+const GranteeKindSchema = v.picklist(["USER", "GROUP", "AUDIENCE"]);
 export type GranteeKind = v.InferOutput<typeof GranteeKindSchema>;
 
 const SourceGranteeSchema = v.object({
@@ -16,7 +16,7 @@ export const RoleSourceSchema = v.object({
   grantee: v.optional(v.nullable(SourceGranteeSchema)),
 });
 
-export const ResourceGranteeSchema = v.pipe(
+const ResourceGranteeSchema = v.pipe(
   v.object({
     kind: GranteeKindSchema,
     id: v.nullable(v.union([v.number(), v.string()])),
@@ -33,7 +33,7 @@ export const ResourceGranteeSchema = v.pipe(
   ),
 );
 
-export const ResourceAccessAssignmentSchema = v.object({
+const ResourceAccessAssignmentSchema = v.object({
   grantee: ResourceGranteeSchema,
   role: v.string(),
 });
