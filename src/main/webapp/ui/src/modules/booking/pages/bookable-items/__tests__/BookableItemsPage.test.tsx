@@ -1,3 +1,4 @@
+import { bookingCatalogueKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -445,7 +446,7 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json({ data: bookingConfiguration });
       }),
     );
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const { queryClient } = renderBookableItemsPage();
     queryClient.setQueryData(catalogueQueryKey, []);
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
@@ -463,7 +464,7 @@ describe("BookableItemsPage", () => {
     expect(deleteRequest?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
     expect(deleteRequest?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(7) });
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
     expect(screen.getByText("booking:bookableItems.feedback.archived")).toBeVisible();
@@ -487,7 +488,7 @@ describe("BookableItemsPage", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const { queryClient } = renderBookableItemsPage();
     queryClient.setQueryData(catalogueQueryKey, []);
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
@@ -497,7 +498,7 @@ describe("BookableItemsPage", () => {
 
     await waitFor(() => expect(patchRequest).toBeDefined());
     expect(patchRequest?.headers.get("If-Match")).toBe('"2"');
-    await waitFor(() => expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] }));
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: bookingKeys.all }));
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(7) });
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
     expect(screen.getByText("booking:bookableItems.feedback.restored")).toBeVisible();
@@ -600,7 +601,6 @@ describe("BookableItemsPage", () => {
     const user = userEvent.setup();
     const bulkRequests: Array<{ url: string; body: unknown; authorization: string | null }> = [];
     server.use(
-      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
       http.get("/api/v2/booking-configurations", ({ request }) => {
         const page = Number(new URL(request.url).searchParams.get("page"));
@@ -617,7 +617,7 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json({ docs: [{ id: 7 }, { id: 8 }] });
       }),
     );
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const { queryClient } = renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
     queryClient.setQueryData(catalogueQueryKey, []);
 
@@ -633,7 +633,7 @@ describe("BookableItemsPage", () => {
     const enableRequest = bulkRequests[0];
     expect(new URL(enableRequest.url).searchParams.get("where")).toBe("id=in=(7,8)");
     expect(enableRequest.body).toEqual({ enabled: true });
-    expect(enableRequest.authorization).toBe("Bearer new-token");
+    expect(enableRequest.authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(await screen.findByText("2 items are now enabled.")).toBeVisible();
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
@@ -658,7 +658,7 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json({ docs: [{ id: 7 }, { id: 8 }] });
       }),
     );
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const { queryClient } = renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
     queryClient.setQueryData(catalogueQueryKey, []);
 
@@ -692,7 +692,7 @@ describe("BookableItemsPage", () => {
         return HttpResponse.json({ docs: [{ id: 7 }, { id: 8 }] });
       }),
     );
-    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const catalogueQueryKey = bookingCatalogueKeys.all;
     const { queryClient } = renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper(), {
       id: "bookable-item-IN123",
       message: "Bookable item added.",
@@ -720,7 +720,7 @@ describe("BookableItemsPage", () => {
     expect(deleteRequests[0]).toEqual({ where: "id=in=(7,8)", body: "", contentType: null });
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     await waitFor(() => expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "false"));
-    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
+    expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(7) });
     expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: calendarSubscriptionQueryKey(8) });
     await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
