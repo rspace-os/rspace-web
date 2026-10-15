@@ -2,7 +2,7 @@ import { Temporal } from "@js-temporal/polyfill";
 import { CalendarDays, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
+import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
   type BookingWindowDraft,
@@ -12,8 +12,7 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader } from "@/modules/common/ui/card";
-
-import type { DayTimelineEvent } from "./DayTimelineEvent";
+import { type DayTimelineEvent, openingRangesOnDate } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { expandedEventIdAfterChange } from "./expandedEvent";
 import { timeRange, useVerticalDayTimelineInteraction } from "./useVerticalDayTimelineInteraction";
@@ -66,12 +65,7 @@ function openingSegments(
   scheduleWindow: VerticalDayTimelineScheduleWindow | undefined,
 ): Array<{ startMinute: number; endMinute: number }> {
   if (!scheduleWindow) return [];
-  return openingIntervals(scheduleWindow, scheduleWindow.timezone, zonedDayBounds(date, displayTimezone)).map(
-    (opening) => ({
-      startMinute: instantToDayMinute(opening.start, date, displayTimezone),
-      endMinute: instantToDayMinute(opening.end, date, displayTimezone),
-    }),
-  );
+  return openingRangesOnDate(date, displayTimezone, scheduleWindow);
 }
 
 function closedSegments(open: readonly { startMinute: number; endMinute: number }[], dayMinutes: number) {

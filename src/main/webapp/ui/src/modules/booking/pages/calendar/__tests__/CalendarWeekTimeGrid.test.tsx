@@ -6,34 +6,31 @@ import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
+import { ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { CalendarTimeGrid } from "../CalendarTimeGrid";
 import { calendarDates, formatDate } from "../calendarLayoutUtils";
 
 const i18nConfig = { resources: { booking: bookingEnglish, common: commonEnglish }, defaultNS: "common" };
 
 function booking(id: number, start: string, end: string, name = "Confocal microscope"): BookingListDocument {
+  const target = ownBooking.target;
+  if (!target) throw new Error("The shared booking fixture must have a target.");
   return {
+    ...ownBooking,
     id,
     target: {
-      relationTo: "booking-instruments",
+      ...target,
       globalId: `IN${100 + id}`,
-      value: { id: 100 + id, name, deleted: false, parentContainerName: null, parentContainerGlobalId: null },
+      value: {
+        ...target.value,
+        id: 100 + id,
+        name,
+        parentContainerName: null,
+        parentContainerGlobalId: null,
+      },
     },
-    canViewConfiguration: true,
-    requesterId: 1,
-    timezone: "UTC",
     start,
     end,
-    state: "CONFIRMED",
-    purpose: "Cell imaging",
-    bookedBy: "Ada Lovelace (ada)",
-    privacy: "full",
-    canEdit: true,
-    version: 0,
-    kind: "BOOKING",
-    createdAt: "2026-08-01T09:00:00Z",
-    updatedAt: "2026-08-01T09:00:00Z",
-    canCancel: false,
   };
 }
 

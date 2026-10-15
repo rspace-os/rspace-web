@@ -5,7 +5,7 @@ import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
+import { ALL_ISO_WEEKDAYS, ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
 import {
@@ -37,11 +37,8 @@ const booking = (id: number, target: string, start: string, end: string) => ({
   updatedAt: "2026-08-01T09:00:00Z",
 });
 
-const ALWAYS_OPEN = [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }));
-
 const schedule = {
-  openingHours: ALWAYS_OPEN,
-
+  ...ALWAYS_OPEN,
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   allowDoubleBooking: false,

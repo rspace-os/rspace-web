@@ -7,11 +7,9 @@ import {
   ALL_ISO_WEEKDAYS,
   MAX_BOOKING_DURATION_MINUTES,
   OpeningHoursSchema,
-  validOpeningHours,
 } from "@/modules/booking/domain/bookingOpeningHours";
 
 export const MAX_BUFFER_MINUTES = 10_080;
-export { MAX_BOOKING_DURATION_MINUTES, validOpeningHours };
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "openingHours",

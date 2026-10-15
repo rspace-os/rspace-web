@@ -14,11 +14,11 @@ import {
   isBookingConflictError,
   isBookingOutcomeUncertain,
   useCreateBooking,
-  withBookingProblemConflict,
 } from "@/modules/booking/creation/useCreateBooking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { Heading } from "@/modules/common/ui/typography";
+import { bookingFormFeedback } from "./bookingFormFeedback";
 
 export function AddBookingContent() {
   const { t } = useTranslation("booking");
@@ -68,6 +68,16 @@ export function AddBookingContent() {
     target: selectedTarget,
     creation: true,
   });
+  const feedback = bookingFormFeedback({
+    problem,
+    availability,
+    interactionActive: draftBridge.interactionActive,
+    fallbackError:
+      !mutation.error && !draftBridge.interactionActive && availability.violation && availability.conflicts.length === 0
+        ? t("bookings.errors.overlap")
+        : undefined,
+    t,
+  });
   const submit = async (submission: BookingFormSubmission) => {
     await mutation.mutateAsync(submission);
     await navigate({
@@ -96,26 +106,7 @@ export function AddBookingContent() {
               initialPurpose={transferredDraft?.purpose}
               token={token}
               pending={mutation.isPending}
-              error={
-                problem.message ??
-                (!mutation.error &&
-                !draftBridge.interactionActive &&
-                availability.violation &&
-                availability.conflicts.length === 0
-                  ? t("bookings.errors.overlap")
-                  : undefined)
-              }
-              warning={
-                !draftBridge.interactionActive && availability.failed
-                  ? t("bookings.warnings.availabilityUnknown")
-                  : undefined
-              }
-              conflicts={
-                draftBridge.interactionActive
-                  ? []
-                  : withBookingProblemConflict(availability.conflicts, problem.conflict)
-              }
-              conflictSeverity={problem.conflict ? "error" : availability.conflictSeverity}
+              {...feedback}
               outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
               submissionBlocked={
                 draftBridge.adjustmentPending ||

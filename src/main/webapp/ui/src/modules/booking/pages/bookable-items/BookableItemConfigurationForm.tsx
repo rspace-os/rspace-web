@@ -19,7 +19,6 @@ import {
 function configurationInput(configuration: BookingConfiguration): BookingConfigurationUpdateInput {
   return {
     ...pick(configuration, ["enabled", ...schedulingSettingsFieldNames]),
-    openingHours: configuration.openingHours.map((entry) => ({ ...entry })),
   };
 }
 
@@ -51,11 +50,9 @@ export function BookableItemConfigurationForm({
     initialInput: configurationInput(configuration),
   });
   const dirty = isDirty(form);
-  // An unchanged form has nothing to save.
-  const saveBlocked = !dirty;
   useEffect(() => {
-    onSaveBlockedChange?.(saveBlocked);
-  }, [onSaveBlockedChange, saveBlocked]);
+    onSaveBlockedChange?.(!dirty);
+  }, [dirty, onSaveBlockedChange]);
   return (
     <>
       <DirtyNavigationGuard
@@ -71,7 +68,7 @@ export function BookableItemConfigurationForm({
         id={formId}
         of={form}
         className="min-w-0 space-y-4"
-        onSubmit={(input) => (saveBlocked ? undefined : onSubmit(input, version))}
+        onSubmit={(input) => (!dirty ? undefined : onSubmit(input, version))}
       >
         <RenderFields
           fields={bookingConfigurationFields.filter((field) => field.name !== "target" && field.name !== "timezone")}

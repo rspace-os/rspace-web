@@ -1,9 +1,8 @@
-import { Temporal } from "@js-temporal/polyfill";
 import type { DayTimelineEvent } from "@/modules/booking/components/DayTimelineEvent";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { layoutVerticalTimelineEvents } from "@/modules/booking/components/verticalTimelineLayout";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { parsePlainDate } from "@/modules/booking/domain/bookingTime";
+import { instantToWallClockMinute } from "@/modules/booking/domain/bookingTime";
 import { eventsOn } from "./calendarLayoutUtils";
 
 export const WEEK_GRID_DAY_MINUTES = 24 * 60;
@@ -24,12 +23,6 @@ export type WeekGridEvent = {
   continuesAfter: boolean;
 };
 
-/** Minutes after `day`'s wall-clock midnight, so every column shares one hour axis across DST changes. */
-export function wallClockMinute(instant: string, day: string, timezone: string): number {
-  const local = Temporal.Instant.from(instant).toZonedDateTimeISO(timezone).toPlainDateTime();
-  return local.since(parsePlainDate(day).toPlainDateTime(), { largestUnit: "hours" }).total("minutes");
-}
-
 /** Clip each booking to `day` on the wall-clock axis and lay overlapping bookings out side by side. */
 export function layoutWeekGridDay(
   events: readonly BookingListDocument[],
@@ -42,8 +35,8 @@ export function layoutWeekGridDay(
       const event = toTimelineEvent(booking, day, timezone);
       // An open editor keeps its card where it was opened while the card shows the reconciled times.
       const position = editors?.get(booking.id) ?? booking;
-      const startMinute = wallClockMinute(position.start, day, timezone);
-      const wallEndMinute = wallClockMinute(position.end, day, timezone);
+      const startMinute = instantToWallClockMinute(position.start, day, timezone);
+      const wallEndMinute = instantToWallClockMinute(position.end, day, timezone);
       // A booking that ends in the repeated hour of a DST fall-back can end before it starts on the wall clock.
       const endMinute =
         wallEndMinute > startMinute
@@ -77,7 +70,7 @@ export function layoutWeekGridDay(
  * Lanes per overlap group before the rest collapse into one "+N more" slot. A day column is about 200px
  * at 1440px, so a third lane leaves cards too narrow for a readable title next to the expand control.
  */
-export const WEEK_GRID_MAX_LANES = 2;
+const WEEK_GRID_MAX_LANES = 2;
 
 export type WeekGridOverflow = {
   startMinute: number;

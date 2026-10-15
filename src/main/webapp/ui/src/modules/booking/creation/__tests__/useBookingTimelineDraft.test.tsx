@@ -2,22 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import type { BookingFormState } from "../BookingForm";
-import type { BookableItemOption } from "../bookableItemOption";
 import { useBookingTimelineDraft } from "../useBookingTimelineDraft";
+import { confocalTargetWithHours } from "./creationTestFixtures";
 
-const target: BookableItemOption = {
-  configurationId: 7,
-  targetId: 123,
-  globalId: "IN123",
-  name: "Confocal microscope",
-  timezone: "Europe/Berlin",
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "06:00", end: "22:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-};
+const target = confocalTargetWithHours("06:00", "22:00");
 
 const firstDraft: BookingWindowDraft = {
   startDate: "2026-10-19",

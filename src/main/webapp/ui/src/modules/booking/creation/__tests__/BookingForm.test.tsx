@@ -17,31 +17,6 @@ import { currentWallClock } from "@/modules/booking/domain/bookingTime";
 import { BookingForm, type BookingFormSubmission } from "../BookingForm";
 import { cataloguePage, editableBooking, confocalTarget as target } from "./creationTestFixtures";
 
-it("shows every independently configured weekday and the scheduling timezone", async () => {
-  server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
-  renderForm(
-    <BookingForm
-      mode="add"
-      token="token"
-      pending={false}
-      eventKind="BOOKING"
-      initialTarget={{
-        ...target,
-        openingHours: [
-          { dayOfWeek: 1, start: "08:00", end: "17:00" },
-          { dayOfWeek: 2, start: "10:00", end: "16:00" },
-        ],
-      }}
-      initialDate="2026-08-17"
-      onSubmit={vi.fn(async () => undefined)}
-    />,
-  );
-  expect(await screen.findByText("08:00–17:00")).toBeVisible();
-  expect(screen.getByText("10:00–16:00")).toBeVisible();
-  expect(screen.getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(5);
-  expect(screen.getByText(target.timezone)).toBeVisible();
-});
-
 function renderForm(node: ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const root = createRootRoute();

@@ -1,6 +1,8 @@
 import { createLoader, type inferParserType, parseAsStringLiteral } from "nuqs";
 
-export const myBookingsPeriodParser = parseAsStringLiteral(["upcoming", "past", "cancelled"] as const)
+export const myBookingsPeriods = ["upcoming", "past", "cancelled"] as const;
+
+export const myBookingsPeriodParser = parseAsStringLiteral(myBookingsPeriods)
   .withDefault("upcoming")
   .withOptions({ history: "replace", clearOnDefault: false });
 export type MyBookingsPeriod = inferParserType<typeof myBookingsPeriodParser>;

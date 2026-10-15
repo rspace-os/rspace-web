@@ -103,18 +103,14 @@ export function ZonedBookingWindowFields({
   const zones = { start: resolvedDisplayTimezone, end: resolvedEndTimezone };
   const result = useMemo(
     () =>
-      validateBookingWindow(
-        value,
-        { start: resolvedDisplayTimezone, end: resolvedEndTimezone },
-        {
-          schedulingTimezone: resolvedSchedulingTimezone,
-          slotGranularityMinutes,
-          maxBookingDurationMinutes,
-          openingHours,
-          enforceOpeningHours,
-          allowPolicyMismatch,
-        },
-      ),
+      validateBookingWindow(value, zones, {
+        schedulingTimezone: resolvedSchedulingTimezone,
+        slotGranularityMinutes,
+        maxBookingDurationMinutes,
+        openingHours,
+        enforceOpeningHours,
+        allowPolicyMismatch,
+      }),
     [
       value,
       resolvedDisplayTimezone,

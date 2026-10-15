@@ -25,12 +25,9 @@ function schedule(overrides: Partial<OpeningSchedule> = {}): OpeningSchedule {
 
 // 2026-06-01 is a Monday.
 const officeHours = schedule({
-  openingHours: [1, 2, 3, 4, 5, 6, 7]
-    .map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" }))
-    .map(
-      (entry) =>
-        [{ dayOfWeek: 2, start: "10:00", end: "16:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
-    ),
+  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) =>
+    dayOfWeek === 2 ? { dayOfWeek, start: "10:00", end: "16:00" } : { dayOfWeek, start: "09:00", end: "17:00" },
+  ),
 });
 
 describe("opening-hour schemas", () => {
@@ -229,6 +226,21 @@ describe("openingIntervals", () => {
       { start: "2026-06-01T00:00:00Z", end: "2026-06-03T00:00:00Z" },
       { start: "2026-06-04T00:00:00Z", end: "2026-06-05T00:00:00Z" },
     ]);
+  });
+
+  test("merges touching all-day openings across the week boundary", () => {
+    expect(
+      openingIntervals(
+        {
+          openingHours: [
+            { dayOfWeek: 7, start: "00:00", end: "24:00" },
+            { dayOfWeek: 1, start: "00:00", end: "04:00" },
+          ],
+        },
+        "UTC",
+        { start: "2026-08-16T12:00:00Z", end: "2026-08-17T03:00:00Z" },
+      ),
+    ).toEqual([{ start: "2026-08-16T12:00:00Z", end: "2026-08-17T03:00:00Z" }]);
   });
 
   test("resolves Berlin 02:15–02:45 on the spring-forward day to 03:15–03:45", () => {

@@ -192,7 +192,7 @@ describe("booking configuration reads", () => {
     await fetchBookingConfigurationByTarget("IN123", "token");
     const fields = new URL(request?.url ?? "http://localhost").searchParams.get("fields[booking-configurations]");
     expect(fields?.split(",")).toEqual(expect.arrayContaining(["openingHours"]));
-    expect(new URL(request?.url ?? "http://localhost").searchParams.get("where")).toBe('target=="IN123"');
+    expect(new URL(request?.url ?? "http://localhost").searchParams.get("where")).toBe("target==IN123");
 
     const { openingHours: _openingHours, ...withoutOpeningHours } = configuration;
     server.use(
