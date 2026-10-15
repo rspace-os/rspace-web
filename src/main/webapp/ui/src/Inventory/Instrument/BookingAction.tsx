@@ -22,34 +22,6 @@ type BookingActionProps = {
 
 type BookingCardState = "bookable" | "configured" | "disabled" | "archived" | "setup";
 
-const cardText = {
-  bookable: {
-    title: "instrument.booking.configured.title",
-    description: "instrument.booking.configured.description",
-    action: "instrument.booking.configured.book",
-  },
-  configured: {
-    title: "instrument.booking.configured.title",
-    description: "instrument.booking.configured.description",
-    action: "instrument.booking.configured.open",
-  },
-  disabled: {
-    title: "instrument.booking.disabled.title",
-    description: "instrument.booking.disabled.description",
-    action: "instrument.booking.configured.open",
-  },
-  archived: {
-    title: "instrument.booking.archived.title",
-    description: "instrument.booking.archived.description",
-    action: "instrument.booking.configured.open",
-  },
-  setup: {
-    title: "instrument.booking.notConfigured.title",
-    description: "instrument.booking.notConfigured.description",
-    action: "instrument.booking.notConfigured.action",
-  },
-} as const;
-
 function configuredState(configuration: BookingConfiguration): BookingCardState {
   if (configuration.state === "ARCHIVED") return "archived";
   if (!configuration.enabled) return "disabled";
@@ -80,6 +52,42 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
     (eligibleTargets.data?.some((target) => target.globalId.toUpperCase() === globalId.toUpperCase()) ?? false);
   if (current === null && !canSetUp) return null;
   const state = current === null ? "setup" : configuredState(current);
+  const configuredCardText = {
+    title: t("instrument.booking.configured.title"),
+    description: t("instrument.booking.configured.description"),
+  } as const;
+
+  const cardText = {
+    bookable: {
+      ...configuredCardText,
+      action: t("instrument.booking.configured.book"),
+      href: (globalId: string) => `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`,
+    },
+    configured: {
+      ...configuredCardText,
+      action: t("instrument.booking.configured.open"),
+      href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
+    },
+    disabled: {
+      title: t("instrument.booking.disabled.title"),
+      description: t("instrument.booking.disabled.description"),
+      action: t("instrument.booking.configured.open"),
+      href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
+    },
+    archived: {
+      title: t("instrument.booking.archived.title"),
+      description: t("instrument.booking.archived.description"),
+      action: t("instrument.booking.configured.open"),
+      href: (globalId: string) => `/booking/bookable-items/${encodeURIComponent(globalId)}`,
+    },
+    setup: {
+      title: t("instrument.booking.notConfigured.title"),
+      description: t("instrument.booking.notConfigured.description"),
+      action: t("instrument.booking.notConfigured.action"),
+      href: (globalId: string) => `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`,
+    },
+  } as const;
+
   const text = cardText[state];
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -100,27 +108,21 @@ function EnabledBookingAction({ globalId, isOwner }: { globalId: string; isOwner
         </Box>
         <Box sx={{ minWidth: 0, flexGrow: 1 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            {t(text.title)}
+            {text.title}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t(text.description)}
+            {text.description}
           </Typography>
         </Box>
         <Button
           component="a"
-          href={
-            state === "bookable"
-              ? `/booking/calendar/bookings/add?target=${encodeURIComponent(globalId)}`
-              : state === "setup"
-                ? `/booking/bookable-items/add?target=${encodeURIComponent(globalId)}`
-                : `/booking/bookable-items/${encodeURIComponent(globalId)}`
-          }
+          href={text.href(globalId)}
           variant="contained"
           color="callToAction"
           startIcon={<CalendarMonthIcon />}
           sx={{ flex: "0 0 auto", alignSelf: { xs: "stretch", sm: "center" } }}
         >
-          {t(text.action)}
+          {text.action}
         </Button>
       </Stack>
     </Paper>
