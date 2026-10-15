@@ -74,7 +74,6 @@ function ItemNotificationEditor({
     },
   });
   const saved = feedback === "saved" && !dirty;
-  const pending = mutation.isPending;
 
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
@@ -114,9 +113,9 @@ function ItemNotificationEditor({
             <Button
               type="submit"
               size="sm"
-              disabled={pending || !dirty}
-              focusableWhenDisabled={pending || saved}
-              aria-busy={pending}
+              disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
+              aria-busy={mutation.isPending}
               className={
                 saved
                   ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"

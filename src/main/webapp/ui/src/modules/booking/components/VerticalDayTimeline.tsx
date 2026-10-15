@@ -231,6 +231,18 @@ export function VerticalDayTimeline({
     (minute: number): string => dayMinuteToZonedTime(date, timezone, minute).toInstant().toString(),
     [date, timezone],
   );
+  const adjustInteractionRange = React.useCallback(
+    (
+      active: NonNullable<typeof interactionRef.current>,
+      clientY: number,
+      activeAdjuster: NonNullable<typeof adjuster>,
+    ) => {
+      const minute = minuteAt(clientY) - active.pointerOffsetMinutes;
+      const target = rangeAtMinute(minute);
+      return activeAdjuster.adjust(active.edge, target);
+    },
+    [minuteAt, rangeAtMinute],
+  );
 
   const cancelInteraction = React.useCallback(() => {
     const active = interactionRef.current;
@@ -314,9 +326,7 @@ export function VerticalDayTimeline({
     if (!active || active.pointerId !== event.pointerId || !adjuster) return;
     event.preventDefault();
     event.stopPropagation();
-    const minute = minuteAt(event.clientY) - active.pointerOffsetMinutes;
-    const target = rangeAtMinute(minute);
-    const next = adjuster.adjust(active.edge, target);
+    const next = adjustInteractionRange(active, event.clientY, adjuster);
     setPreview(next ?? active.originalRange);
   };
 
@@ -325,9 +335,7 @@ export function VerticalDayTimeline({
     if (!active || active.pointerId !== event.pointerId || !adjuster) return;
     event.preventDefault();
     event.stopPropagation();
-    const minute = minuteAt(event.clientY) - active.pointerOffsetMinutes;
-    const target = rangeAtMinute(minute);
-    const next = adjuster.adjust(active.edge, target);
+    const next = adjustInteractionRange(active, event.clientY, adjuster);
     interactionRef.current = null;
     setGestureActive(false);
     setPreview(null);

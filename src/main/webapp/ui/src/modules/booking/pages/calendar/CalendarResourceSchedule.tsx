@@ -273,7 +273,6 @@ export function CalendarResourceSchedule({
                         showScrollbar={index === resourceRows.length - 1}
                         renderEventActions={renderActions}
                         renderBlockoutActions={renderActions}
-                        snapIncrementMinutes={configuration?.slotGranularityMinutes}
                         proposeSelection={
                           policy ? (range) => proposeDayRange(range, date, timezone, policy) : undefined
                         }

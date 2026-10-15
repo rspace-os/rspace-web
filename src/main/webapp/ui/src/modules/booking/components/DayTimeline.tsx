@@ -13,6 +13,7 @@ import {
   type DayTimelineRange,
   type DayTimelineViewState,
   formatMinuteWithDayOffset,
+  period,
 } from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { expandedEventIdAfterChange } from "./expandedEvent";
@@ -125,7 +126,6 @@ export function DayTimeline({
   variant = "detail",
   itemName,
   expandedCardClassName,
-  snapIncrementMinutes = 5,
   renderEventActions,
   renderBlockoutActions,
   proposeSelection,
@@ -150,7 +150,6 @@ export function DayTimeline({
   variant?: "detail" | "table-row";
   itemName?: string;
   expandedCardClassName?: string | ((event: DayTimelineEvent) => string | undefined);
-  snapIncrementMinutes?: number;
   /**
    * Turns a dragged range into a valid proposal for the item, which may extend past the day; without it the drag
    * selects whole minutes. Returning undefined offers nothing for that range.
@@ -248,11 +247,9 @@ export function DayTimeline({
     scrollerRef.current = node;
     setCollisionBoundary(node);
   }, []);
-  const snapMinute = (minute: number) =>
-    Math.min(dayMinutes, Math.max(0, Math.round(minute / snapIncrementMinutes) * snapIncrementMinutes));
   const minuteAt = (clientX: number, canvas: HTMLElement) => {
     const box = canvas.getBoundingClientRect();
-    return snapMinute(((clientX - box.left) / box.width) * dayMinutes);
+    return Math.min(dayMinutes, Math.max(0, Math.round(((clientX - box.left) / box.width) * dayMinutes)));
   };
   // The proposal a drag would create, so the preview shows exactly what releasing selects.
   const selection = (drag: { from: number; to: number }): DayTimelineRange | undefined => {
@@ -451,7 +448,7 @@ export function DayTimeline({
                 }}
               >
                 <span className="absolute top-1 left-1 rounded-sm bg-primary px-1 text-[10px] font-semibold whitespace-nowrap text-primary-foreground">
-                  {`${formatMinuteWithDayOffset(date, timezone, dragSelection.startMinute, timeFormat)}–${formatMinuteWithDayOffset(date, timezone, dragSelection.endMinute, timeFormat)}`}
+                  {period(dragSelection, date, timezone, "–", timeFormat)}
                 </span>
               </div>
             ) : null}

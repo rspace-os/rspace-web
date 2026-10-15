@@ -76,7 +76,6 @@ export function CalendarTimeGrid({
               showZoomControls={false}
               renderEventActions={renderActions}
               renderBlockoutActions={renderActions}
-              snapIncrementMinutes={schedule?.slotGranularityMinutes}
               proposeSelection={
                 schedule ? (range) => proposeDayRange(range, date, timezone, timelinePolicy(schedule)) : undefined
               }
