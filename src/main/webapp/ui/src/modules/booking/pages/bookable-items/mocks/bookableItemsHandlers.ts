@@ -49,6 +49,10 @@ export function collectionPage(docs: readonly unknown[], limit = 20) {
   return apiV2ListResult(docs, docs.length, limit, 1);
 }
 
+export function bookingCataloguePage(items: readonly unknown[], page: number, pageSize: number, total = items.length) {
+  return { items, page, pageSize, total, facets: { types: total === 0 ? [] : ["INSTRUMENT"] } };
+}
+
 const hazardClass = [
   {
     id: "SF152",
@@ -122,36 +126,31 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
               locations.includes(fixture.target.value.parentContainerGlobalId))),
       );
       const start = (page - 1) * pageSize;
-      return HttpResponse.json({
-        items: matching.slice(start, start + pageSize).map((fixture) => ({
-          configurationId: fixture.id,
-          configurationVersion: fixture.configurationVersion,
-          targetType: "INSTRUMENT",
-          targetId: fixture.target.value.id,
-          globalId: fixture.target.globalId,
-          name: fixture.target.value.name,
-          timezone: fixture.timezone,
-          slotGranularityMinutes: fixture.slotGranularityMinutes,
-          openingHours: fixture.openingHours,
-          bufferBeforeMinutes: fixture.bufferBeforeMinutes,
-          bufferAfterMinutes: fixture.bufferAfterMinutes,
-          maxBookingDurationMinutes: fixture.maxBookingDurationMinutes,
-          allowDoubleBooking: fixture.allowDoubleBooking,
-          effectiveRole: fixture.effectiveRole,
-          capabilities: fixture.capabilities,
-          location:
-            fixture.target.value.parentContainerName && fixture.target.value.parentContainerGlobalId
-              ? {
-                  name: fixture.target.value.parentContainerName,
-                  globalId: fixture.target.value.parentContainerGlobalId,
-                }
-              : null,
-        })),
-        page,
-        pageSize,
-        total: matching.length,
-        facets: { types: ["INSTRUMENT"] },
-      });
+      const items = matching.slice(start, start + pageSize).map((fixture) => ({
+        configurationId: fixture.id,
+        configurationVersion: fixture.configurationVersion,
+        targetType: "INSTRUMENT",
+        targetId: fixture.target.value.id,
+        globalId: fixture.target.globalId,
+        name: fixture.target.value.name,
+        timezone: fixture.timezone,
+        slotGranularityMinutes: fixture.slotGranularityMinutes,
+        openingHours: fixture.openingHours,
+        bufferBeforeMinutes: fixture.bufferBeforeMinutes,
+        bufferAfterMinutes: fixture.bufferAfterMinutes,
+        maxBookingDurationMinutes: fixture.maxBookingDurationMinutes,
+        allowDoubleBooking: fixture.allowDoubleBooking,
+        effectiveRole: fixture.effectiveRole,
+        capabilities: fixture.capabilities,
+        location:
+          fixture.target.value.parentContainerName && fixture.target.value.parentContainerGlobalId
+            ? {
+                name: fixture.target.value.parentContainerName,
+                globalId: fixture.target.value.parentContainerGlobalId,
+              }
+            : null,
+      }));
+      return HttpResponse.json(bookingCataloguePage(items, page, pageSize, matching.length));
     }),
     http.get("/api/v2/booking-catalogue/locations", ({ request }) => {
       const url = new URL(request.url);
