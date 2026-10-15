@@ -818,28 +818,32 @@ describe("Calendar page", () => {
   });
 
   test("keeps the compact form readable in a narrow viewport", async () => {
-    await withViewport(390, async () => {
-      window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-      render(<CalendarPageStory />);
-      await page.getByRole("button", { name: "New Booking" }).click();
-      const dialog = page.getByRole("dialog", { name: "New Booking" });
-      await expect.element(dialog).toBeVisible();
-      await expect
-        .poll(() => {
-          const element = dialog.element();
-          const bounds = element.getBoundingClientRect();
-          return {
-            left: Math.round(bounds.left),
-            right: Math.round(bounds.right),
-            viewport: window.innerWidth,
-            overflow: element.scrollWidth - element.clientWidth,
-          };
-        })
-        .toEqual({ left: 16, right: 374, viewport: 390, overflow: 0 });
-      await expect.element(dialog.getByRole("textbox", { name: "Purpose" })).toBeVisible();
-      await expect.element(dialog.getByRole("button", { name: "Book", exact: true })).toBeVisible();
-      await expect.element(dialog.getByRole("button", { name: "More actions" })).not.toBeInTheDocument();
-      await dialog.getByRole("button", { name: "Cancel" }).click();
-    });
+    await withViewport(
+      390,
+      async () => {
+        window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+        render(<CalendarPageStory />);
+        await page.getByRole("button", { name: "New Booking" }).click();
+        const dialog = page.getByRole("dialog", { name: "New Booking" });
+        await expect.element(dialog).toBeVisible();
+        await expect
+          .poll(() => {
+            const element = dialog.element();
+            const bounds = element.getBoundingClientRect();
+            return {
+              left: Math.round(bounds.left),
+              right: Math.round(bounds.right),
+              viewport: window.innerWidth,
+              overflow: element.scrollWidth - element.clientWidth,
+            };
+          })
+          .toEqual({ left: 16, right: 374, viewport: 390, overflow: 0 });
+        await expect.element(dialog.getByRole("textbox", { name: "Purpose" })).toBeVisible();
+        await expect.element(dialog.getByRole("button", { name: "Book", exact: true })).toBeVisible();
+        await expect.element(dialog.getByRole("button", { name: "More actions" })).not.toBeInTheDocument();
+        await dialog.getByRole("button", { name: "Cancel" }).click();
+      },
+      667,
+    );
   });
 });
