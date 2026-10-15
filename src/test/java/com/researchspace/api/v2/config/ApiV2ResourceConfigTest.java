@@ -134,8 +134,7 @@ class ApiV2ResourceConfigTest {
               .orElseThrow();
       assertEquals("instruments", targetCustomFields.path("viaResource").asText());
       assertEquals(
-          "/api/v2/instruments/fields/customFields",
-          targetCustomFields.path("catalog").asText());
+          "/api/v2/instruments/fields/customFields", targetCustomFields.path("catalog").asText());
       assertEquals(
           "/api/v2/instruments/fields/extraFields",
           StreamSupport.stream(runtimeFields.spliterator(), false)

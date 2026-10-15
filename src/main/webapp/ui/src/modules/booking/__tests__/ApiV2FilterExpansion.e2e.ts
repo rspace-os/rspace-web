@@ -199,9 +199,10 @@ test.describe("REST API v2 filter expansion", { tag: tags.INVENTORY }, () => {
     );
     expect(initialResponse.ok(), await initialResponse.text()).toBe(true);
     const initial = (await initialResponse.json()) as { docs: Array<{ id: number }> };
-    expect(initial.docs.map(({ id }) => id)).toContain(matchingConfiguration.id);
-    expect(initial.docs.map(({ id }) => id)).toContain(otherConfiguration.id);
-    expect(initial.docs.map(({ id }) => id)).not.toContain(privateConfiguration.id);
+    const initialIds = initial.docs.map(({ id }) => id);
+    expect(initialIds).toContain(matchingConfiguration.id);
+    expect(initialIds).toContain(otherConfiguration.id);
+    expect(initialIds).not.toContain(privateConfiguration.id);
 
     const privateIdentityResponse = await apiContext.get(
       `/api/v2/booking-configurations?limit=100&where=target==${privateInstrument.globalId}`,
