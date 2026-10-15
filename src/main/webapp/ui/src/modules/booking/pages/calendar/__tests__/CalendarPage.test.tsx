@@ -1,3 +1,4 @@
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import "@/__tests__/__mocks__/matchMedia";
 import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -157,7 +158,7 @@ describe("CalendarPage", () => {
     );
     await waitFor(() => {
       const eventQueries = queryClient.getQueryCache().findAll({
-        queryKey: ["api-v2", "bookings", "calendar-events"],
+        queryKey: bookingKeys.calendarEvents(),
       });
       expect(eventQueries.some((query) => query.state.data !== undefined && query.state.fetchStatus === "idle")).toBe(
         true,
@@ -165,12 +166,12 @@ describe("CalendarPage", () => {
     });
 
     act(() => {
-      void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
     });
     await refetchHasStarted;
     const cachedRefetch = queryClient
       .getQueryCache()
-      .findAll({ queryKey: ["api-v2", "bookings", "calendar-events"] })
+      .findAll({ queryKey: bookingKeys.calendarEvents() })
       .find((query) => query.state.data !== undefined && query.state.fetchStatus === "fetching");
     expect(cachedRefetch?.state.data).toEqual([]);
 

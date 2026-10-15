@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useRef } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItem } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingDayTimelineAside } from "@/modules/booking/creation/BookingDayTimelineAside";
@@ -45,17 +45,14 @@ export function AddBookingContent() {
   };
   const mutation = useCreateBooking(token);
   const resetMutation = mutation.reset;
-  const updatePageState = useCallback(
-    (state: BookingFormState) => {
-      draftBridge.onStateChange(state);
-      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
-      resetMutation();
-    },
-    [draftBridge.onStateChange, mutation.error, mutation.isError, resetMutation],
-  );
-  const updateTarget = useCallback(() => {
+  const updatePageState = (state: BookingFormState) => {
+    draftBridge.onStateChange(state);
+    if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
+    resetMutation();
+  };
+  const updateTarget = () => {
     draftBridge.onTargetChange();
-  }, [draftBridge.onTargetChange]);
+  };
   const availability = useBookingDraftAvailability({
     formState: draftBridge.formState,
     displayTimezone: preferences.timeZone,

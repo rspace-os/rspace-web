@@ -1,4 +1,5 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import appI18n from "@/modules/common/i18n";
 
 beforeBookingCatalog(async () => {
@@ -222,7 +223,7 @@ describe("CalendarPage", () => {
       expect(
         queryClient
           .getQueriesData<BookingListDocument[]>({
-            queryKey: ["api-v2", "bookings", "calendar-events"],
+            queryKey: bookingKeys.calendarEvents(),
           })
           .map(([, events]) => events),
       ).toContainEqual([expect.objectContaining({ version: 1, start: updated.start, end: updated.end })]);

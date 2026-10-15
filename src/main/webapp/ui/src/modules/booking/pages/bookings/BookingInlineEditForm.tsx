@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CheckIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -19,8 +19,9 @@ import {
   type BookingUpdate,
   updateBooking,
 } from "@/modules/booking/domain/booking";
-import { bookingConfigurationKeys } from "@/modules/booking/domain/bookingKeys";
+import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
+import { useApiV2Mutation } from "@/modules/common/queries/apiV2Mutation";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Panel, useBookingEvent } from "./BookingEventContext";
@@ -60,7 +61,8 @@ export default function BookingInlineEditForm() {
     });
     requestAnimationFrame(() => editButtonRef.current?.focus());
   }, [base.id, editButtonRef, navigate]);
-  const mutation = useMutation({
+  const mutation = useApiV2Mutation({
+    meta: { invalidates: [bookingKeys.all] },
     mutationFn: async (submission: BookingFormSubmission) => {
       const patch: BookingUpdate = {
         ...(submission.window.start !== base.start ? { start: submission.window.start } : {}),
@@ -71,7 +73,6 @@ export default function BookingInlineEditForm() {
       return updateBooking(base.id, base.version, patch, token);
     },
     onSuccess: async (updated) => {
-      await refreshBooking();
       setDirty(false);
       if (updated) reportBookingUpdated(updated, base.target?.value.name ?? t("common:values.unknownItem"));
       await toView();
@@ -89,7 +90,6 @@ export default function BookingInlineEditForm() {
         await refreshBooking();
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
-        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
         await queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all });
       }
     },
@@ -118,16 +118,13 @@ export default function BookingInlineEditForm() {
   }, [conflict, mutation.error, mutation.isError, mutation.isPending]);
 
   const resetMutation = mutation.reset;
-  const handleStateChange = useCallback(
-    (state: BookingFormState) => {
-      draftBridge.onStateChange(state);
-      setDirty(state.dirty);
-      if (mutation.isError && !conflict) {
-        resetMutation();
-      }
-    },
-    [draftBridge.onStateChange, setDirty, resetMutation, mutation.isError, conflict],
-  );
+  const handleStateChange = (state: BookingFormState) => {
+    draftBridge.onStateChange(state);
+    setDirty(state.dirty);
+    if (mutation.isError && !conflict) {
+      resetMutation();
+    }
+  };
 
   const originalDraft = wallClockDraftFromInstants(base.start, base.end, displayTimeZone);
   const availability = useBookingDraftAvailability({
@@ -167,9 +164,9 @@ export default function BookingInlineEditForm() {
     <>
       <div ref={panelRef} className="min-w-0 @4xl:col-start-1 @4xl:row-span-2 @4xl:row-start-1">
         <Panel
-          heading={t(
-            base.kind === "MAINTENANCE" ? "bookings.details.edit.maintenanceTitle" : "bookings.details.edit.title",
-          )}
+          heading={
+            base.kind === "MAINTENANCE" ? t("bookings.details.edit.maintenanceTitle") : t("bookings.details.edit.title")
+          }
           headingId="booking-details-heading"
           headingRef={headingRef}
           action={

@@ -46,7 +46,7 @@ function OverflowBookings({
   const { t } = useTranslation("booking");
   const popupRef = React.useRef<HTMLDivElement>(null);
   const dateLabel = formatDate(day, { dateStyle: "full" });
-  const bookings = React.useMemo(() => overflow.hidden.map(({ booking }) => booking), [overflow.hidden]);
+  const bookings = overflow.hidden.map(({ booking }) => booking);
   return (
     <Popover>
       <PopoverTrigger

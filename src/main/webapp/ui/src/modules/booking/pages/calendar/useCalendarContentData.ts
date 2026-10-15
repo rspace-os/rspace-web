@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { catalogueItemAsConfiguration, fetchBookingCatalogue } from "@/modules/booking/domain/bookingCatalogue";
+import { calendarBookingCatalogueQuery } from "@/modules/booking/domain/bookingCatalogue";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import {
   bookingInstrumentSource,
@@ -16,12 +16,13 @@ import type { CollectionConfig, SearchSelector } from "@/modules/common/collecti
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
 import { useSelectedRelationshipOptions } from "@/modules/common/relationship-picker/queries";
 import { enrichApiV2FilterConfig } from "@/modules/common/table-list/api-v2/filterFields";
 import { useApiV2RuntimeFields } from "@/modules/common/table-list/api-v2/queries";
 import { useTableList } from "@/modules/common/table-list/hooks/state";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "@/modules/common/table-list/rsql";
-import type { FilterExpression } from "@/modules/common/table-list/types";
+import type { CollectionQueryState, FilterExpression } from "@/modules/common/table-list/types";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
 import { useCalendarEventFocus, useCalendarEventFocusResolution } from "./calendarEventFocus";
@@ -112,7 +113,7 @@ function filterIssue<TDocument>({
 }
 
 export function useCalendarContentData() {
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
@@ -163,7 +164,8 @@ export function useCalendarContentData() {
       config: calendarResourceSourceConfig,
       metadata: itemRuntimeFields.metadata,
       runtimeFields: itemRuntimeFields.runtimeFields,
-      translate: (key) => String(t(key as never)),
+      i18n,
+      language: i18n.resolvedLanguage ?? i18n.language,
     });
     return resolveCollectionConfig({
       ...enriched,
@@ -180,7 +182,7 @@ export function useCalendarContentData() {
           field.name === "id" ? { ...field, capabilities: { ...field.capabilities, filterOperators: [] } } : field,
         ),
     } as CollectionConfig<BookingConfiguration>);
-  }, [itemRuntimeFields.metadata, itemRuntimeFields.runtimeFields, t]);
+  }, [itemRuntimeFields.metadata, itemRuntimeFields.runtimeFields, t, i18n, i18n.resolvedLanguage, i18n.language]);
   const eventConfig = React.useMemo(() => {
     const enriched = enrichApiV2FilterConfig({
       config: calendarEventSourceConfig,
@@ -189,7 +191,8 @@ export function useCalendarContentData() {
       localFields: calendarEventSourceConfig.fields
         .filter((field) => field.name !== "target")
         .map((field) => field.name),
-      translate: (key) => String(t(key as never)),
+      i18n,
+      language: i18n.resolvedLanguage ?? i18n.language,
     });
     return resolveCollectionConfig({
       ...enriched,
@@ -206,7 +209,7 @@ export function useCalendarContentData() {
       relationshipSources: bookingRelationshipSources,
       listSearchableFields: ["purpose"],
     } as CollectionConfig<BookingListDocument>);
-  }, [eventRuntimeFields.metadata, eventRuntimeFields.runtimeFields, t]);
+  }, [eventRuntimeFields.metadata, eventRuntimeFields.runtimeFields, t, i18n, i18n.resolvedLanguage, i18n.language]);
   const itemExpression = React.useMemo(
     () => (itemWhere && itemWhere.trim() !== "" ? parseRsqlExpression(itemWhere, itemConfig) : null),
     [itemConfig, itemWhere],
@@ -239,24 +242,14 @@ export function useCalendarContentData() {
         value: currentUser.id,
       } satisfies FilterExpression<BookingListDocument>)
     : null;
-  const scopedEventExpression = React.useMemo(
-    () => andFilters([eventExpression, requesterFilter]),
-    [eventExpression, requesterFilter],
-  );
-  const targetExpression = React.useMemo(() => targetFilter(target), [target]);
-  const calendarEventExpression = React.useMemo(
-    () =>
-      andFilters<BookingListDocument>([
-        scopedEventExpression,
-        targetExpression,
-        itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
-      ]),
-    [itemExpression, scopedEventExpression, targetExpression],
-  );
-  const resourceItemExpression = React.useMemo(
-    () => andFilters([itemExpression, targetExpression]),
-    [itemExpression, targetExpression],
-  );
+  const scopedEventExpression = andFilters([eventExpression, requesterFilter]);
+  const targetExpression = targetFilter(target);
+  const calendarEventExpression = andFilters<BookingListDocument>([
+    scopedEventExpression,
+    targetExpression,
+    itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
+  ]);
+  const resourceItemExpression = andFilters([itemExpression, targetExpression]);
   const itemWhereParameter = resourceItemExpression ? serializeRsqlExpression(resourceItemExpression) : undefined;
   const eventWhereParameter = scopedEventExpression ? serializeRsqlExpression(scopedEventExpression) : undefined;
   const calendarEventWhereParameter = calendarEventExpression
@@ -275,17 +268,11 @@ export function useCalendarContentData() {
   const previousFilterScope = React.useRef(filterScopeSignature);
   const resourceScopeReady = previousFilterScope.current === filterScopeSignature;
   const calendarQueryReady = !resettingControls && !filtersBlocked && resourceScopeReady;
-  const resourceTable = useTableList<BookingConfiguration>({
-    config: itemConfig,
-    dataSource: {
-      type: "remote",
-      queryKey: (state) => [
-        "api-v2",
-        "bookings",
-        "booking-catalogue",
-        "calendar",
-        token,
-        currentUser.id,
+  const identityScope = useQueryIdentityScope(currentUser.id);
+  const calendarCatalogueOptions = (state: CollectionQueryState<BookingConfiguration>) =>
+    calendarBookingCatalogueQuery(
+      identityScope,
+      [
         state,
         start,
         end,
@@ -296,30 +283,28 @@ export function useCalendarContentData() {
         target,
         filtersBlocked,
       ],
+      {
+        q: calendarSearch,
+        totals: true,
+        where: itemWhereParameter,
+        start,
+        end,
+        eventWhere: eventWhereParameter,
+        mine: myItemsOnly,
+        page: state.page.pageIndex + 1,
+        pageSize: state.page.pageSize,
+      },
+      token,
+    );
+  const resourceTable = useTableList<BookingConfiguration>({
+    config: itemConfig,
+    dataSource: {
+      type: "remote",
+      queryKey: (state) => calendarCatalogueOptions(state).queryKey,
       keepPreviousData: true,
       dataScope: currentUser.id,
       enabled: calendarQueryReady && token.length > 0,
-      fetch: async (state, { signal }) => {
-        const result = await fetchBookingCatalogue(
-          {
-            q: calendarSearch,
-            totals: true,
-            where: itemWhereParameter,
-            start,
-            end,
-            eventWhere: eventWhereParameter,
-            mine: myItemsOnly,
-            page: state.page.pageIndex + 1,
-            pageSize: state.page.pageSize,
-          },
-          token,
-          signal,
-        );
-        return {
-          rows: result.items.map(catalogueItemAsConfiguration),
-          rowCount: result.total,
-        };
-      },
+      fetch: (state, { signal }) => calendarCatalogueOptions(state).queryFn({ signal }),
     },
     initialState: { filters: { search: calendarSearch, expression: itemExpression }, visibleFields: ["target"] },
     features: { sorting: false, columns: false },
@@ -391,7 +376,7 @@ export function useCalendarContentData() {
   const targetOptionLabels = React.useMemo(
     () => ({
       unavailableLabel: (value: string) => commonT("relationshipPicker.unavailable", { value }),
-      failedLabel: () => commonT("relationshipPicker.restoreFailed"),
+      failedLabel: (value: string) => commonT("relationshipPicker.restoreFailed", { value }),
     }),
     [commonT],
   );

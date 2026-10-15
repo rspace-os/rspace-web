@@ -126,15 +126,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   };
 
   const resetMutation = mutation.reset;
-  const updateFormState = React.useCallback(
-    (state: BookingFormState) => {
-      setFormState(state);
-      setWindowAdjustment(undefined);
-      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
-      resetMutation();
-    },
-    [mutation.error, mutation.isError, resetMutation],
-  );
+  const updateFormState = (state: BookingFormState) => {
+    setFormState(state);
+    setWindowAdjustment(undefined);
+    if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
+    resetMutation();
+  };
 
   const maintenance = creation.eventKind === "MAINTENANCE";
   const availabilityTarget = formState?.target ?? creation.target;
@@ -204,7 +201,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
         >
           <PopoverHeader className="shrink-0 border-border border-b px-4 py-3 pr-12">
             <PopoverTitle>
-              {t(maintenance ? "bookings.compact.maintenanceTitle" : "bookings.compact.bookingTitle")}
+              {maintenance ? t("bookings.compact.maintenanceTitle") : t("bookings.compact.bookingTitle")}
             </PopoverTitle>
             {maintenance ? (
               <PopoverDescription>{t("bookings.compact.maintenanceDescription")}</PopoverDescription>

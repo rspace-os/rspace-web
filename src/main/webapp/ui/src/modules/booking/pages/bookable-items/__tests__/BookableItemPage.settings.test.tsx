@@ -1,4 +1,5 @@
 import { beforeAll as beforeBookingCatalog } from "vitest";
+import { bookingCatalogueKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import appI18n from "@/modules/common/i18n";
 
 beforeBookingCatalog(async () => {
@@ -39,12 +40,12 @@ describe("BookableItemPage", () => {
     );
     const { queryClient } = renderPage();
     const catalogueQueryKeys = [
-      ["api-v2", "booking-catalogue", "picker"],
-      ["api-v2", "bookings", "booking-catalogue", "all-items", "token", 1],
-      ["api-v2", "bookings", "booking-catalogue", "availability-counts", 1],
+      bookingCatalogueKeys.pickers(),
+      bookingCatalogueKeys.allItemsPrefix([1, null]),
+      bookingCatalogueKeys.availabilityCountsPrefix([1, null]),
     ] as const;
     for (const key of catalogueQueryKeys) queryClient.setQueryData(key, []);
-    const unrelatedBookingKey = ["api-v2", "bookings", "unrelated"] as const;
+    const unrelatedBookingKey = [...bookingKeys.all, "unrelated"];
     queryClient.setQueryData(unrelatedBookingKey, []);
 
     await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));

@@ -126,21 +126,21 @@ export function RelationshipPicker({
   const labels = useMemo(
     () => ({
       unavailableLabel: (value: string) => t("relationshipPicker.unavailable", { value }),
-      failedLabel: () => t("relationshipPicker.restoreFailed"),
+      failedLabel: (value: string) => t("relationshipPicker.restoreFailed", { value }),
       compact,
     }),
     [t, compact],
   );
 
   const selected = useSelectedRelationshipOptions({
-    sources: sources,
+    sources,
     values: splitValue(value, sources),
     token,
     authScope,
     labels,
   });
   const { options, failed, loading } = useRelationshipOptions({
-    sources: sources,
+    sources,
     term,
     token,
     authScope,

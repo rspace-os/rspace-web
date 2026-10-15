@@ -86,7 +86,7 @@ function openingHoursSummary(
   if (windows.length === 0) return t("bookings.form.closedOnDate");
   return t("bookings.form.openingWindowsOnDate", {
     hours: formatList(
-      windows.map((window) => `${window.start} - ${window.end}`),
+      windows.map(({ start, end }) => t("time.openingRange", { start, end })),
       bookingLocale(),
       { type: "unit" },
     ),
@@ -237,7 +237,7 @@ export function BookingForm(props: BookingFormProps) {
   const initialWindow = props.mode === "add" ? props.initialWindow : undefined;
   const initialPurpose = props.mode === "add" ? (props.initialPurpose ?? "") : (props.booking.purpose ?? "");
   const eventKind = props.mode === "add" ? props.eventKind : props.booking.kind;
-  const textFields = useMemo(() => purposeFields(eventKind), [eventKind]);
+  const textFields = purposeFields(eventKind);
   // Drafts crossing the props (initialWindow, windowAdjustment, onDraftChange, onStateChange) use displayTimezone,
   // the viewer's preference. The fields and the draft held here use formTimezones: displayTimezone for both endpoints
   // unless the viewer picks another, optionally a separate one for the end. A picked zone keeps the entered wall clock,
@@ -251,7 +251,10 @@ export function BookingForm(props: BookingFormProps) {
   const formTimezone = timezoneChoice ?? displayTimezone;
   const endFormTimezone = endTimezoneChoice ?? formTimezone;
   const formTimezones = useMemo(() => ({ start: formTimezone, end: endFormTimezone }), [formTimezone, endFormTimezone]);
-  const policy = target ? timelinePolicy(target, eventKind) : unrestrictedTimelinePolicy(formTimezone);
+  const policy = useMemo(
+    () => (target ? timelinePolicy(target, eventKind) : unrestrictedTimelinePolicy(formTimezone)),
+    [target, eventKind, formTimezone],
+  );
   const originalDraft =
     props.mode === "edit" ? draftFromInstants(props.booking.start, props.booking.end, formTimezones) : undefined;
   const addDraft = initialWindow
@@ -516,9 +519,9 @@ export function BookingForm(props: BookingFormProps) {
         />
         <RenderFields fields={textFields} form={form} disabled={busy} density={props.density} layout="stacked" />
         <p className={cn("text-right text-xs text-muted-foreground", compact ? "-mt-2" : "-mt-4")} aria-live="polite">
-          {t(eventKind === "MAINTENANCE" ? "bookings.form.notesCount" : "bookings.form.purposeCount", {
-            count: purposeValue.length,
-          })}
+          {eventKind === "MAINTENANCE"
+            ? t("bookings.form.notesCount", { count: purposeValue.length })
+            : t("bookings.form.purposeCount", { count: purposeValue.length })}
         </p>
       </div>
       {inline ? null : compact ? (
