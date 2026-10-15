@@ -23,24 +23,12 @@ public class AuditTrailHandlerImpl implements AuditTrailHandler {
       PaginationCriteria<AuditTrailSearchResult> pgCrit,
       User subject) {
 
-    AuditTrailSearchElement internalCfg = configureUserRestriction(inputSearchConfig, subject);
+    AuditTrailSearchElement internalCfg = actorVisibility.restrict(inputSearchConfig, subject);
     if (internalCfg.getUsernames().isEmpty() && !actorVisibility.isSysAdmin(subject)) {
       return SearchResultsImpl.emptyResult(pgCrit);
     }
     ISearchResults<AuditTrailSearchResult> res = logSearcher.search(pgCrit, internalCfg);
     auditService.notify(new GenericEvent(subject, internalCfg, AuditAction.SEARCH));
     return res;
-  }
-
-  /**
-   * Gets the users whose audit events the subject is authorised to see.
-   *
-   * @param inputSearchConfig
-   * @param subject
-   * @return
-   */
-  AuditTrailSearchElement configureUserRestriction(
-      IAuditTrailSearchConfig inputSearchConfig, User subject) {
-    return actorVisibility.restrict(inputSearchConfig, subject);
   }
 }

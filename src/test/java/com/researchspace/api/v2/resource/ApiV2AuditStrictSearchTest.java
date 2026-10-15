@@ -60,7 +60,7 @@ class ApiV2AuditStrictSearchTest {
     String event = event("01 Jan 2026 12:00:00,000", "BC1");
     write("RSLogs.txt", "\n" + event + "\n\n" + event + "\n");
 
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(request(10));
 
     assertEquals(2, results.size());
     assertEquals(results.get(0), results.get(1));
@@ -86,8 +86,7 @@ class ApiV2AuditStrictSearchTest {
                   throw new IllegalStateException(error);
                 }
               }
-            },
-            10);
+            });
     var executor = Executors.newFixedThreadPool(2);
     try {
       var first = executor.submit(() -> search.search(request(10)));
@@ -113,7 +112,7 @@ class ApiV2AuditStrictSearchTest {
               + event("01 Jan 2026 13:00:00,000", "BC1").replace("alice(", actor + "(")
               + "\n");
 
-      assertEquals(1, search(ReadObserver.NONE, 10).search(request(10)).size());
+      assertEquals(1, search(ReadObserver.NONE).search(request(10)).size());
     }
   }
 
@@ -122,7 +121,7 @@ class ApiV2AuditStrictSearchTest {
     Path log =
         write("RSLogs.txt", (event("01 Jan 2020 12:00:00,000", "BC1") + "\n").repeat(10_000));
     try (var channels = Mockito.mockStatic(FileChannel.class, Mockito.CALLS_REAL_METHODS)) {
-      assertTrue(search(ReadObserver.NONE, 10).search(request(10)).isEmpty());
+      assertTrue(search(ReadObserver.NONE).search(request(10)).isEmpty());
 
       channels.verify(
           () -> FileChannel.open(log, Set.of(StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)),
@@ -139,7 +138,7 @@ class ApiV2AuditStrictSearchTest {
             + "\n"
             + "02 Jan 2026 15:00:00,000 - [FOLDER CREATE id=42&name=notes] alice(Alice Example)\n");
 
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(request(10));
 
     assertEquals(1, results.size());
   }
@@ -148,7 +147,7 @@ class ApiV2AuditStrictSearchTest {
   void emptyActiveFileIsACompleteSnapshotWithNoEvents() throws IOException {
     write("RSLogs.txt", "");
 
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(request(10));
 
     assertTrue(results.isEmpty());
   }
@@ -164,8 +163,7 @@ class ApiV2AuditStrictSearchTest {
             valid + "\n" + malformedAudit + "\n")) {
       write("RSLogs.txt", body);
 
-      assertThrows(
-          StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+      assertThrows(StrictReadException.class, () -> search(ReadObserver.NONE).search(request(10)));
     }
   }
 
@@ -182,9 +180,7 @@ class ApiV2AuditStrictSearchTest {
 
       StrictReadException error =
           assertThrows(
-              StrictReadException.class,
-              () -> search(ReadObserver.NONE, 10).search(request(10)),
-              line);
+              StrictReadException.class, () -> search(ReadObserver.NONE).search(request(10)), line);
       assertEquals("RSLogs.txt", error.getSafeFile());
       assertTrue(error.getLineNumber() >= 1);
       assertTrue(!error.getMessage().contains(line));
@@ -195,8 +191,7 @@ class ApiV2AuditStrictSearchTest {
   void truncatedEligibleRecordIsFatal() throws IOException {
     write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1"));
 
-    assertThrows(
-        StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+    assertThrows(StrictReadException.class, () -> search(ReadObserver.NONE).search(request(10)));
   }
 
   @Test
@@ -204,8 +199,7 @@ class ApiV2AuditStrictSearchTest {
     write("RSLogs.txt", event("01 Jan 2026 12:00:00,000", "BC1") + "\n");
     write("RSLogs.txt.1", "broken\n");
 
-    assertThrows(
-        StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+    assertThrows(StrictReadException.class, () -> search(ReadObserver.NONE).search(request(10)));
   }
 
   @Test
@@ -214,8 +208,7 @@ class ApiV2AuditStrictSearchTest {
     Set<PosixFilePermission> original = Files.getPosixFilePermissions(log);
     try {
       Files.setPosixFilePermissions(log, Set.of());
-      assertThrows(
-          StrictReadException.class, () -> search(ReadObserver.NONE, 10).search(request(10)));
+      assertThrows(StrictReadException.class, () -> search(ReadObserver.NONE).search(request(10)));
     } finally {
       Files.setPosixFilePermissions(log, original);
     }
@@ -234,7 +227,7 @@ class ApiV2AuditStrictSearchTest {
           }
         };
 
-    List<AuditTrailSearchResult> results = search(appendAfterBoundary, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(appendAfterBoundary).search(request(10));
 
     assertEquals(1, results.size());
   }
@@ -252,7 +245,7 @@ class ApiV2AuditStrictSearchTest {
           }
         };
 
-    List<AuditTrailSearchResult> results = search(appendAfterRead, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(appendAfterRead).search(request(10));
 
     assertEquals(1, results.size());
   }
@@ -270,7 +263,7 @@ class ApiV2AuditStrictSearchTest {
           }
         };
 
-    List<AuditTrailSearchResult> results = search(appendEligible, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(appendEligible).search(request(10));
 
     assertEquals(2, results.size());
   }
@@ -290,8 +283,7 @@ class ApiV2AuditStrictSearchTest {
           }
         };
 
-    assertThrows(
-        StrictReadException.class, () -> search(appendEveryAttempt, 10).search(request(10)));
+    assertThrows(StrictReadException.class, () -> search(appendEveryAttempt).search(request(10)));
   }
 
   @Test
@@ -313,7 +305,7 @@ class ApiV2AuditStrictSearchTest {
           }
         };
 
-    List<AuditTrailSearchResult> results = search(replaceOnce, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(replaceOnce).search(request(10));
 
     assertEquals(1, results.size());
     assertEquals(
@@ -337,7 +329,7 @@ class ApiV2AuditStrictSearchTest {
           }
         };
 
-    List<AuditTrailSearchResult> results = search(truncateOnce, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(truncateOnce).search(request(10));
 
     assertTrue(results.isEmpty());
   }
@@ -359,7 +351,7 @@ class ApiV2AuditStrictSearchTest {
           }
         };
 
-    List<AuditTrailSearchResult> results = search(rolloverOnce, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(rolloverOnce).search(request(10));
 
     assertEquals(2, results.size());
   }
@@ -375,7 +367,7 @@ class ApiV2AuditStrictSearchTest {
             + event("01 Jan 2026 14:00:00,000", "BC1")
             + "\n");
 
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 2).search(request(2));
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(request(2));
 
     assertEquals(3, results.size());
   }
@@ -391,7 +383,7 @@ class ApiV2AuditStrictSearchTest {
             + "\n");
 
     List<AuditTrailSearchResult> results =
-        search(ReadObserver.NONE, 1).search(request(1, "payloadmarker"));
+        search(ReadObserver.NONE).search(request(1, "payloadmarker"));
 
     assertEquals(1, results.size());
     assertEquals(
@@ -408,13 +400,10 @@ class ApiV2AuditStrictSearchTest {
             + "\n");
 
     assertEquals(
-        1,
-        search(ReadObserver.NONE, 10).search(request(10, "related:41", Set.of("target"))).size());
+        1, search(ReadObserver.NONE).search(request(10, "related:41", Set.of("target"))).size());
     assertEquals(
         1,
-        search(ReadObserver.NONE, 10)
-            .search(request(10, "purposemarker", Set.of("purpose")))
-            .size());
+        search(ReadObserver.NONE).search(request(10, "purposemarker", Set.of("purpose"))).size());
   }
 
   @Test
@@ -426,9 +415,7 @@ class ApiV2AuditStrictSearchTest {
             + "\n");
 
     assertTrue(
-        search(ReadObserver.NONE, 10)
-            .search(request(10, "privatemarker", Set.of("name")))
-            .isEmpty());
+        search(ReadObserver.NONE).search(request(10, "privatemarker", Set.of("name"))).isEmpty());
   }
 
   @Test
@@ -452,7 +439,7 @@ class ApiV2AuditStrictSearchTest {
             1,
             true);
 
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 1).search(request);
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(request);
 
     assertEquals(1, results.size());
     assertEquals(identifier, results.get(0).getEvent().getData().getData().get("id"));
@@ -465,13 +452,13 @@ class ApiV2AuditStrictSearchTest {
         "RSLogs.txt",
         event("01 Jan 2026 12:00:00,000", "BC1") + " description:[" + description + "]\r\n\r\n");
 
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE, 10).search(request(10));
+    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(request(10));
 
     assertEquals(1, results.size());
     assertEquals(description, results.get(0).getEvent().getDescription());
   }
 
-  private ApiV2AuditStrictSearch search(ReadObserver observer, int ceiling) {
+  private ApiV2AuditStrictSearch search(ReadObserver observer) {
     return new ApiV2AuditStrictSearch(directory, "RSLogs", ZoneOffset.UTC, visibility, observer);
   }
 

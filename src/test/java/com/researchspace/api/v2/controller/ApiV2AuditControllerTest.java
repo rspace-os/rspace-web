@@ -39,7 +39,11 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class ApiV2AuditControllerTest {
 
   private final ApiV2AuditStrictSearch strictSearch = mock(ApiV2AuditStrictSearch.class);
-  private final ResourceOperations<User, Long> operations = operations();
+
+  @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
+  private final ResourceOperations<User, Long> operations =
+      (ResourceOperations<User, Long>) mock(ResourceOperations.class);
+
   private final User actor = mock(User.class);
   private MockMvc mockMvc;
 
@@ -116,14 +120,5 @@ class ApiV2AuditControllerTest {
     assertEquals(
         List.of("pagedmarker", "countmarker"),
         request.getAllValues().stream().map(Request::search).toList());
-  }
-
-  private static ResourceOperations<User, Long> operations() {
-    return operationsMock();
-  }
-
-  @SuppressWarnings("unchecked") // Mockito creates an erased interface mock; ID use is test-owned.
-  private static <T> ResourceOperations<T, Long> operationsMock() {
-    return (ResourceOperations<T, Long>) mock(ResourceOperations.class);
   }
 }
