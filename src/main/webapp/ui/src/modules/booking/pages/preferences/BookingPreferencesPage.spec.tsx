@@ -7,13 +7,8 @@ import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import type { BookingDisplayPreferencesDocument } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookableItemsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import {
-  busyBooking,
-  collectionResponse,
-  currentUser,
-  otherBooking,
-  ownBooking,
-} from "../calendar/__tests__/calendarTestHarness";
+import { busyBooking, collectionResponse, otherBooking, ownBooking } from "../mocks/bookingCalendarFixtures";
+import { currentUser } from "../mocks/currentUserFixture";
 import { BookingPreferencesPageStory } from "./BookingPreferencesPage.story";
 import { inheritedBrowserBookingPreferences } from "./bookingPreferencesFixtures";
 import { BookingPreferencesPage } from "./pageObjects/BookingPreferencesPage";

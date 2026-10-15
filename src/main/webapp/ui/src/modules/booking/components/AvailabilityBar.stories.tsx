@@ -60,7 +60,6 @@ const meta = {
     intervals: typicalIntervals,
     periodStart,
     timeZone: "UTC",
-    userTimeZone: "UTC",
   },
 } satisfies Meta<typeof AvailabilityBar>;
 

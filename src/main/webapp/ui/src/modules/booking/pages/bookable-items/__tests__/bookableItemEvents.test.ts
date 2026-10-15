@@ -3,43 +3,7 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { fetchBookableItemEvents } from "../bookableItemEvents";
-
-const booking = {
-  id: 41,
-  version: 0,
-  target: {
-    relationTo: "booking-instruments",
-    value: { id: 12, name: "Scope", deleted: false },
-    globalId: "IN12",
-  },
-  timezone: "Europe/Berlin",
-  start: "2026-08-25T09:00:00Z",
-  end: "2026-08-25T10:00:00Z",
-  state: "CONFIRMED",
-  kind: "BOOKING",
-  privacy: "full",
-  purpose: null,
-  bookedBy: "Ada Lovelace (ada)",
-  canEdit: true,
-  canCancel: true,
-  createdAt: "2026-08-17T00:00:00Z",
-  updatedAt: "2026-08-17T00:00:00Z",
-};
-
-function envelope(docs: unknown[], page = 1) {
-  return {
-    docs,
-    totalDocs: docs.length,
-    limit: 10,
-    page,
-    pagingCounter: (page - 1) * 10 + 1,
-    totalPages: docs.length === 0 ? 0 : page,
-    hasPrevPage: page > 1,
-    hasNextPage: false,
-    prevPage: page > 1 ? page - 1 : null,
-    nextPage: null,
-  };
-}
+import { bookableItemEventResponse, booking } from "./bookableItemEventFixtures";
 
 describe("bookable item events", () => {
   it.each([
@@ -50,7 +14,7 @@ describe("bookable item events", () => {
     server.use(
       http.get("/api/v2/bookings", ({ request: received }) => {
         request = received;
-        return HttpResponse.json(envelope([booking], 3));
+        return HttpResponse.json(bookableItemEventResponse([booking], { page: 3 }));
       }),
     );
 
@@ -63,7 +27,7 @@ describe("bookable item events", () => {
         limit: 10,
         token: "token",
       }),
-    ).resolves.toEqual(envelope([booking], 3));
+    ).resolves.toEqual(bookableItemEventResponse([booking], { page: 3 }));
 
     const url = new URL(request?.url ?? "http://localhost");
     expect(url.searchParams.get("where")).toBe(`target==IN12;state==CONFIRMED;${boundary}`);
@@ -85,7 +49,7 @@ describe("bookable item events", () => {
       canEdit: false,
       canCancel: false,
     };
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([booking, busy]))));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(bookableItemEventResponse([booking, busy]))));
 
     await expect(
       fetchBookableItemEvents({
@@ -96,7 +60,7 @@ describe("bookable item events", () => {
         limit: 10,
         token: "token",
       }),
-    ).resolves.toEqual(envelope([booking, busy]));
+    ).resolves.toEqual(bookableItemEventResponse([booking, busy]));
   });
 
   it("escapes the target global id", async () => {
@@ -104,7 +68,7 @@ describe("bookable item events", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         expect(new URL(request.url).searchParams.get("where")).toContain('target=="IN1;state==CANCELLED"');
         return HttpResponse.json(
-          envelope([
+          bookableItemEventResponse([
             {
               ...booking,
               target: { ...booking.target, globalId: "IN1;state==CANCELLED" },
@@ -133,12 +97,12 @@ describe("bookable item events", () => {
       limit: 10,
       token: "token",
     };
-    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(envelope([{ id: 1 }]))));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(bookableItemEventResponse([{ id: 1 }]))));
     await expect(fetchBookableItemEvents(input)).rejects.toThrow();
 
     server.use(
       http.get("/api/v2/bookings", () =>
-        HttpResponse.json(envelope([{ ...booking, target: { ...booking.target, globalId: "IN99" } }])),
+        HttpResponse.json(bookableItemEventResponse([{ ...booking, target: { ...booking.target, globalId: "IN99" } }])),
       ),
     );
     await expect(fetchBookableItemEvents(input)).rejects.toThrow("another target");

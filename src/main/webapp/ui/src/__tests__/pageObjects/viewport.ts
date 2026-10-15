@@ -7,7 +7,17 @@
  * browser runner.
  */
 import { expect } from "vitest";
-import type { Locator } from "vitest/browser";
+import { type Locator, page } from "vitest/browser";
+
+export async function withViewport<T>(width: number, callback: () => Promise<T>): Promise<T> {
+  const originalViewport = { width: window.innerWidth, height: window.innerHeight };
+  try {
+    await page.viewport(width, 900);
+    return await callback();
+  } finally {
+    await page.viewport(originalViewport.width, originalViewport.height);
+  }
+}
 
 const isFullyInViewport = (element: Element): boolean => {
   const rect = element.getBoundingClientRect();

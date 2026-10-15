@@ -13,8 +13,8 @@ import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
-import { currentUser } from "../calendar/calendarFixtures";
 import { createCalendarRoute } from "../calendar/routes";
+import { currentUser } from "../mocks/currentUserFixture";
 import { createBookingPreferencesRoute } from "./routes";
 
 /** Fetches preferences so reload persistence is observable. */
