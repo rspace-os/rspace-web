@@ -19,11 +19,11 @@ import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/pref
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import BookingPage from "../BookingPage";
-import { currentUser } from "../calendar/calendarFixtures";
+import { currentUser } from "../mocks/currentUserFixture";
 import { bookingsOpenApi } from "../my-bookings/mocks/bookingMocks";
 import BookingDashboardPage from "./BookingDashboardPage";
 
-export const bookingDashboardStoryUrl = "/booking";
+const bookingDashboardStoryUrl = "/booking";
 
 function Destination({ title }: { title: string }) {
   return (
