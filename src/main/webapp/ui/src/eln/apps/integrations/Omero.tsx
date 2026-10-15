@@ -114,7 +114,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                     slotProps={{
                       htmlInput: {
                         name: "omerousername",
-                        autoComplete: "username",
+                        autoComplete: "off",
                       },
                     }}
                   />
@@ -125,7 +125,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                     label={t("integrations.omero.fields.password")}
                     sx={{ mt: 1 }}
                     name="omeropassword"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                   />
                   <Button type="submit" sx={{ mt: 1 }}>
                     {t("actions.connect")}

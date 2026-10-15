@@ -317,7 +317,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                                 <TextField
                                   id={id}
                                   value={username}
-                                  autoComplete="username"
+                                  autoComplete="off"
                                   onChange={({ target: { value } }) => {
                                     setUsername(value);
                                   }}
@@ -331,7 +331,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                                 <SecretField
                                   id={id}
                                   value={password}
-                                  autoComplete="current-password"
+                                  autoComplete="new-password"
                                   onChange={setPassword}
                                 />
                               )}
