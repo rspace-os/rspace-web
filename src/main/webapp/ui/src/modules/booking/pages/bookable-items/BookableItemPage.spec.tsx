@@ -110,7 +110,6 @@ afterEach(() => {
 describe("BookableItemPage", () => {
   test("starts immutable maintenance creation from bookable item details for a direct sysadmin", async () => {
     worker.use(
-      ...bookingPagesHandlers(),
       http.get("/api/v2/users/me", () =>
         HttpResponse.json({
           ...currentUser,
@@ -118,6 +117,7 @@ describe("BookableItemPage", () => {
           session: { ...currentUser.session, operatedAs: false },
         }),
       ),
+      ...bookingPagesHandlers(),
     );
     render(<AllBookableItemsStory />);
     await new AllBookableItemsPage().detailsButton.click();
