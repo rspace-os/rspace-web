@@ -2,8 +2,13 @@ package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,6 +27,7 @@ import jakarta.servlet.http.HttpSession;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -192,6 +198,46 @@ class DashboardBookingNotificationMessagesTest {
         messages.get(8L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
         messages.get(8L));
     assertFalse(messages.get(7L).contains("AM"), messages.get(7L));
+  }
+
+  @Test
+  void legacyFormattingFailurePropagatesAfterOneAttempt() {
+    LocaleContextHolder.setLocale(Locale.US);
+    String message = "Booking 9 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.";
+    Notification legacy = bookingNotification(9L, message, null);
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+    BookingNotificationMessageFormatter formatter =
+        spy(
+            new BookingNotificationMessageFormatter(
+                new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(controller, "bookingMessageFormatter", formatter);
+    DateTimeParseException failure = new DateTimeParseException("Formatting failed", message, 0);
+    doThrow(failure)
+        .when(formatter)
+        .formatLegacy(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            message,
+            ZoneId.of("Europe/Berlin"),
+            Locale.US,
+            null,
+            null);
+
+    assertSame(
+        failure,
+        assertThrows(
+            DateTimeParseException.class,
+            () ->
+                controller.bookingNotificationMessages(
+                    List.of(legacy), "recipient", session, null)));
+
+    verify(formatter, times(1))
+        .formatLegacy(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            message,
+            ZoneId.of("Europe/Berlin"),
+            Locale.US,
+            null,
+            null);
   }
 
   private static Notification bookingNotification(

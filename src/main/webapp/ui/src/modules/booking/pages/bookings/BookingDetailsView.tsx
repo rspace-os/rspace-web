@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -11,14 +12,16 @@ import {
 } from "@/modules/common/collection-form/responsiveFieldLayout";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { UserBadge } from "@/modules/common/ui/user-badge";
-import { formatBookingEventDateTime, Panel, useBookingEvent } from "./BookingEventContext";
+import { Panel, useBookingEvent } from "./BookingEventContext";
+
+type BookingFact = [label: string, value: ReactNode];
 
 export function BookingDetailsView() {
   const { t, i18n } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
   const { booking, displayTimeZone, editButtonRef } = useBookingEvent();
   const durationMinutes = Math.max(0, Math.round((Date.parse(booking.end) - Date.parse(booking.start)) / 60000));
-  const facts: Array<[string, ReactNode]> = [
+  const facts: BookingFact[] = [
     [
       t("bookings.details.when"),
       <span key="when">
@@ -30,40 +33,36 @@ export function BookingDetailsView() {
         >
           <span>
             <time dateTime={booking.start}>
-              {formatBookingEventDateTime(booking.start, displayTimeZone, i18n.language, timeFormat)}
+              {formatBookingDateTime(booking.start, displayTimeZone, i18n.language, timeFormat)}
             </time>
             {" – "}
             <time dateTime={booking.end}>
-              {formatBookingEventDateTime(booking.end, displayTimeZone, i18n.language, timeFormat)}
+              {formatBookingDateTime(booking.end, displayTimeZone, i18n.language, timeFormat)}
             </time>
           </span>
         </BookingInstrumentTimeTooltip>
         <span className="text-muted-foreground">{` · ${t("bookableItemDetails.minutes", { count: durationMinutes })}`}</span>
       </span>,
     ],
-    ...(booking.kind === "BOOKING" && booking.bookedBy
-      ? ([[t("bookings.details.bookedBy"), <UserBadge key="booked-by" name={booking.bookedBy} />]] as Array<
-          [string, ReactNode]
-        >)
-      : []),
-    ...(booking.createdBy
-      ? ([[t("bookings.details.createdBy"), <UserBadge key="created-by" name={booking.createdBy} />]] as Array<
-          [string, ReactNode]
-        >)
-      : []),
-    [
-      t(booking.kind === "MAINTENANCE" ? "bookings.form.notes" : "bookings.form.purpose"),
-      booking.purpose ? (
-        <span key="purpose" className="whitespace-pre-line">
-          {booking.purpose}
-        </span>
-      ) : (
-        <span key="purpose" className="text-muted-foreground">
-          {t("bookings.details.noneProvided")}
-        </span>
-      ),
-    ],
   ];
+  if (booking.kind === "BOOKING" && booking.bookedBy) {
+    facts.push([t("bookings.details.bookedBy"), <UserBadge key="booked-by" name={booking.bookedBy} />]);
+  }
+  if (booking.createdBy) {
+    facts.push([t("bookings.details.createdBy"), <UserBadge key="created-by" name={booking.createdBy} />]);
+  }
+  facts.push([
+    t(booking.kind === "MAINTENANCE" ? "bookings.form.notes" : "bookings.form.purpose"),
+    booking.purpose ? (
+      <span key="purpose" className="whitespace-pre-line">
+        {booking.purpose}
+      </span>
+    ) : (
+      <span key="purpose" className="text-muted-foreground">
+        {t("bookings.details.noneProvided")}
+      </span>
+    ),
+  ]);
 
   return (
     <Panel
