@@ -117,6 +117,47 @@ public final class CollectionFieldTypes {
     return text(Integer.MAX_VALUE);
   }
 
+  /** A non-sortable text field with explicit filter operators and wildcard support. */
+  public static CollectionFieldType<String> text(Set<Operator> operators, boolean wildcards) {
+    Set<Operator> supported = Set.copyOf(Objects.requireNonNull(operators, "Text operators"));
+    return new CollectionFieldType<>() {
+      @Override
+      public Class<String> javaType() {
+        return String.class;
+      }
+
+      @Override
+      public InputKind inputKind() {
+        return InputKind.STRING;
+      }
+
+      @Override
+      public String parse(String value) {
+        return value;
+      }
+
+      @Override
+      public Object serialize(String value) {
+        return value;
+      }
+
+      @Override
+      public Set<Operator> operators() {
+        return supported;
+      }
+
+      @Override
+      public boolean supportsWildcards() {
+        return wildcards;
+      }
+
+      @Override
+      public boolean sortable() {
+        return false;
+      }
+    };
+  }
+
   /**
    * A field stored as an enum constant name.
    *

@@ -1,12 +1,11 @@
 package com.researchspace.api.v2.controller;
 
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.service.BookingCalendarSearchManager;
 import com.researchspace.booking.service.BookingCatalogueManager;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
@@ -21,10 +20,10 @@ import com.researchspace.service.FeatureFlagManager;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
-import jakarta.ws.rs.NotFoundException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,9 +51,7 @@ public class BookingCalendarController {
       BookingCalendarSearchManager calendar,
       ApiV2ResourceCatalog resources,
       FeatureFlagManager featureFlags,
-      @Qualifier(
-              com.researchspace.booking.config.BookingResourceAccessConfiguration
-                  .TIME_SLOT_BOOKING_DESCRIPTION)
+      @Qualifier(BookingResourceAccessConfiguration.TIME_SLOT_BOOKING_DESCRIPTION)
           CollectionDescription<TimeSlotBooking> description) {
     this.catalogue = catalogue;
     this.calendar = calendar;
@@ -76,11 +73,11 @@ public class BookingCalendarController {
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabled(caller);
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     validateInterval(calendarStart, calendarEnd);
     return catalogue.searchCalendar(
         q,
-        filtered("booking-configurations", where, caller),
+        filtered("booking-configurations", where, new ApiV2FieldsetQuery(), caller),
         filteredCalendarEvents(eventWhere, new ApiV2FieldsetQuery(), caller),
         calendarStart,
         calendarEnd,
@@ -99,7 +96,7 @@ public class BookingCalendarController {
       @RequestParam(defaultValue = "100") @Min(1) @Max(100) int limit,
       @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabled(caller);
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     validateInterval(start, end);
     ResourceRequest parsed = filteredCalendarEvents(where, fieldsets, caller);
     ResourceRequest request =
@@ -116,7 +113,7 @@ public class BookingCalendarController {
     Set<Object> targetIds =
         result.resources().stream()
             .map(TimeSlotBooking::getVisibleTarget)
-            .filter(java.util.Objects::nonNull)
+            .filter(Objects::nonNull)
             .map(target -> (Object) target.id())
             .collect(Collectors.toSet());
     var targets =
@@ -148,13 +145,13 @@ public class BookingCalendarController {
         fieldsets,
         registration.description(),
         resources.registry(),
-        registration.runtimeFieldContext(caller.subject(), resources::runtimeFieldsOf));
+        registration.runtimeFieldContext(caller.subject()));
   }
 
   private ResourceRequest filteredCalendarEvents(
       String where, ApiV2FieldsetQuery fieldsets, ApiV2Caller caller) {
     var registration = resources.find("bookings").orElseThrow();
-    var runtime = registration.runtimeFieldContext(caller.subject(), resources::runtimeFieldsOf);
+    var runtime = registration.runtimeFieldContext(caller.subject());
     ResourceRequest filter =
         ApiV2ResourceRequestParser.filtered(
             where, filterDescription, resources.registry(), runtime);
@@ -168,16 +165,6 @@ public class BookingCalendarController {
         projection.fieldSelections(),
         IncludeTree.empty(),
         filter.runtime());
-  }
-
-  private ResourceRequest filtered(String resource, String where, ApiV2Caller caller) {
-    return filtered(resource, where, new ApiV2FieldsetQuery(), caller);
-  }
-
-  private void requireEnabled(ApiV2Caller caller) {
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller.subject())) {
-      throw new NotFoundException();
-    }
   }
 
   private static void validateInterval(Instant start, Instant end) {

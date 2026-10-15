@@ -1,7 +1,5 @@
 package com.researchspace.api.v2.controller;
 
-import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
-
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
@@ -11,7 +9,6 @@ import com.researchspace.service.FeatureFlagManager;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
-import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -48,7 +45,7 @@ public class BookingCatalogueController {
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabled(caller);
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     ApiV2ResourceRegistration<?, ?> registration =
         resources.find("booking-configurations").orElseThrow();
     return manager.search(
@@ -58,7 +55,7 @@ public class BookingCatalogueController {
             where,
             registration.description(),
             resources.registry(),
-            registration.runtimeFieldContext(caller.subject(), resources::runtimeFieldsOf)),
+            registration.runtimeFieldContext(caller.subject())),
         targetTypes == null ? List.of() : targetTypes,
         locations == null ? List.of() : locations,
         capability,
@@ -74,14 +71,8 @@ public class BookingCatalogueController {
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabled(caller);
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return manager.searchLocations(
         query, targetTypes == null ? List.of() : targetTypes, page, limit, caller.subject());
-  }
-
-  private void requireEnabled(ApiV2Caller caller) {
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller.subject())) {
-      throw new NotFoundException();
-    }
   }
 }

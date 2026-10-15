@@ -1,5 +1,6 @@
 package com.researchspace.model.booking;
 
+import com.researchspace.inventory.model.InventoryReadFilters;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.CollectionDescription;
@@ -51,7 +52,7 @@ public final class ApiV2BookingInstrumentResource {
         "id",
         List.of(new Sort("name", true), new Sort("id", true)),
         AccessPolicy.readOnly(readAccess),
-        com.researchspace.inventory.model.InventoryReadFilters.ALL);
+        InventoryReadFilters.ALL);
   }
 
   private ApiV2BookingInstrumentResource() {}

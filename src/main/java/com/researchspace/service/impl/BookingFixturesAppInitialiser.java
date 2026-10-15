@@ -22,6 +22,7 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
+import com.researchspace.service.AfterCommit;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
@@ -37,8 +38,6 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Adds idempotent bookable-item and booking fixtures to development deployments. */
@@ -104,17 +103,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
 
   @Override
   public void onAppStartup(ApplicationContext applicationContext) {
-    if (TransactionSynchronizationManager.isSynchronizationActive()) {
-      TransactionSynchronizationManager.registerSynchronization(
-          new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-              createFixturesInCommittedStages();
-            }
-          });
-      return;
-    }
-    createFixturesInCommittedStages();
+    AfterCommit.run(this::createFixturesInCommittedStages);
   }
 
   // GlobalInitManager is transactional. Run only after it commits so its locks cannot deadlock the

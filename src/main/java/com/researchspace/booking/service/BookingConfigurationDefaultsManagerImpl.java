@@ -8,6 +8,8 @@ import com.researchspace.model.booking.BookingConfigurationDefaults;
 import com.researchspace.model.booking.BookingDefaultSharedWith;
 import com.researchspace.model.booking.BookingDisplaySettings;
 import com.researchspace.model.booking.BookingSchedulingSettings;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
+import com.researchspace.service.resourceaccess.ResourceAccessException.Reason;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
@@ -72,9 +74,7 @@ public class BookingConfigurationDefaultsManagerImpl
       User actor) {
     requireSysadmin(subject);
     if (defaultSharedWith != null || selectedGranteeKeys != null) {
-      throw new com.researchspace.service.resourceaccess.ResourceAccessException(
-          com.researchspace.service.resourceaccess.ResourceAccessException.Reason
-              .INHERITED_READ_ONLY);
+      throw new ResourceAccessException(Reason.INHERITED_READ_ONLY);
     }
     BookingConfigurationDefaults defaults = lockedDefaults();
     if (defaults.getConfigurationVersion() != expectedVersion) {
