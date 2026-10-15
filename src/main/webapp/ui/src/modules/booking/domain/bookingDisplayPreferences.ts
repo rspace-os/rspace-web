@@ -3,46 +3,51 @@ import * as v from "valibot";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { bookingApiV2Headers, bookingApiV2JsonHeaders } from "./apiV2";
-import { parseApiV2Problem } from "./booking";
+import { parseApiV2Problem, requireSuccess } from "./booking";
+import { OpeningHoursEndSchema, OpeningHoursStartSchema } from "./bookingOpeningHours";
 
 export const BookingTimezoneModeSchema = v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]);
-const AvailabilityStartSchema = v.pipe(v.string(), v.regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/));
-const AvailabilityEndSchema = v.pipe(v.string(), v.regex(/^(?:(?:[01]\d|2[0-3]):[0-5]\d|24:00)$/));
+export type BookingTimezoneMode = v.InferOutput<typeof BookingTimezoneModeSchema>;
+
+const BookingDisplayPreferencesEntries = {
+  availabilityWindowStart: OpeningHoursStartSchema,
+  availabilityWindowEnd: OpeningHoursEndSchema,
+  timezoneMode: BookingTimezoneModeSchema,
+  customTimezone: v.nullable(v.string()),
+};
+
+type BookingDisplayPreferenceValues = {
+  availabilityWindowStart: string;
+  availabilityWindowEnd: string;
+  timezoneMode: BookingTimezoneMode;
+  customTimezone: string | null;
+};
+
+const hasValidAvailabilityWindow = ({
+  availabilityWindowStart,
+  availabilityWindowEnd,
+}: BookingDisplayPreferenceValues) => minuteOfDay(availabilityWindowStart) < minuteOfDay(availabilityWindowEnd);
+
+const hasValidCustomTimezone = ({ timezoneMode, customTimezone }: BookingDisplayPreferenceValues) =>
+  timezoneMode === "CUSTOM" ? customTimezone !== null && isValidTimeZone(customTimezone) : customTimezone === null;
 
 export const BookingDisplayPreferencesDocumentSchema = v.pipe(
   v.strictObject({
-    availabilityWindowStart: AvailabilityStartSchema,
-    availabilityWindowEnd: AvailabilityEndSchema,
-    timezoneMode: BookingTimezoneModeSchema,
-    customTimezone: v.nullable(v.string()),
+    ...BookingDisplayPreferencesEntries,
     institutionTimezone: v.string(),
     overridden: v.boolean(),
   }),
-  v.check((document) => minuteOfDay(document.availabilityWindowStart) < minuteOfDay(document.availabilityWindowEnd)),
-  v.check((document) =>
-    document.timezoneMode === "CUSTOM"
-      ? document.customTimezone !== null && isValidTimeZone(document.customTimezone)
-      : document.customTimezone === null,
-  ),
+  v.check((document) => hasValidAvailabilityWindow(document)),
+  v.check((document) => hasValidCustomTimezone(document)),
   v.check((document) => isValidTimeZone(document.institutionTimezone)),
 );
 
 export const BookingDisplayPreferencesInputSchema = v.pipe(
-  v.strictObject({
-    availabilityWindowStart: AvailabilityStartSchema,
-    availabilityWindowEnd: AvailabilityEndSchema,
-    timezoneMode: BookingTimezoneModeSchema,
-    customTimezone: v.nullable(v.string()),
-  }),
-  v.check((input) => minuteOfDay(input.availabilityWindowStart) < minuteOfDay(input.availabilityWindowEnd)),
-  v.check((input) =>
-    input.timezoneMode === "CUSTOM"
-      ? input.customTimezone !== null && isValidTimeZone(input.customTimezone)
-      : input.customTimezone === null,
-  ),
+  v.strictObject({ ...BookingDisplayPreferencesEntries }),
+  v.check((document) => hasValidAvailabilityWindow(document)),
+  v.check((document) => hasValidCustomTimezone(document)),
 );
 
-export type BookingTimezoneMode = v.InferOutput<typeof BookingTimezoneModeSchema>;
 export type BookingDisplayPreferencesDocument = v.InferOutput<typeof BookingDisplayPreferencesDocumentSchema>;
 export type BookingDisplayPreferencesInput = v.InferOutput<typeof BookingDisplayPreferencesInputSchema>;
 
@@ -61,11 +66,6 @@ export type ResolvedBookingDisplayPreferences = {
 
 export const bookingDisplayPreferencesQueryKey = ["api-v2", "users", "me", "booking-preferences"] as const;
 const path = "/api/v2/users/me/booking-preferences";
-
-async function requireSuccess(response: Response): Promise<Response> {
-  if (!response.ok) throw await parseApiV2Problem(response);
-  return response;
-}
 
 export async function fetchBookingDisplayPreferences(
   token: string,

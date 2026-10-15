@@ -90,14 +90,14 @@ export default function AppShell() {
   const appBarConfig = useMatches({ select: (matches) => getAppBarConfig(matches) });
   return appBarConfig !== false && appBarConfig.currentPage === "booking" ? (
     <React.Suspense fallback={<p role="status">{t("loading")}</p>}>
-      <BookingAppShell />
+      <BookingAppShell appBarConfig={appBarConfig} />
     </React.Suspense>
   ) : (
-    <LoadedAppShell />
+    <LoadedAppShell appBarConfig={appBarConfig} />
   );
 }
 
-function BookingAppShell() {
+function BookingAppShell({ appBarConfig }: { appBarConfig: AppBarConfig | false }) {
   const { t } = useTranslation("common");
   const flags = useFeatureFlags();
   // Gate the entire shell: the Booking sidebar also fetches booking preferences.
@@ -105,14 +105,11 @@ function BookingAppShell() {
   if (!flags.data?.flags.bookingEnabled.value || flags.isError) {
     return <Navigate from="/booking" href="/workspace" reloadDocument replace />;
   }
-  return <LoadedAppShell />;
+  return <LoadedAppShell appBarConfig={appBarConfig} />;
 }
 
-function LoadedAppShell() {
+function LoadedAppShell({ appBarConfig }: { appBarConfig: AppBarConfig | false }) {
   const { t } = useTranslation("common");
-  const appBarConfig = useMatches({
-    select: (matches) => getAppBarConfig(matches),
-  });
   const renderSidebar = useMatches({
     select: (matches) => getSidebarRenderer(matches),
   });
