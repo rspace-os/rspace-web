@@ -204,8 +204,6 @@ export type CalendarAvailabilityRow = OpeningSchedule & {
   allowDoubleBooking: boolean;
 };
 
-export type DatedCalendarAvailabilityRow = CalendarAvailabilityRow & { date: string };
-
 export function calendarAvailabilityRow(row: {
   globalId: string;
   timezone?: string;
@@ -340,4 +338,4 @@ function bookingInterval(
   );
 }
 
-export { availabilityEnvelope, bookingInterval, closedIntervals, sharedBufferGapMinutes };
+export { availabilityEnvelope, bookingInterval, closedIntervals };
