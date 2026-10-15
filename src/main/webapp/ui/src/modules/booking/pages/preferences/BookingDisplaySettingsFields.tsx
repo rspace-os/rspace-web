@@ -9,6 +9,33 @@ import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 
+type RadioOption<Value extends string> = readonly [value: Value, label: string];
+
+function RadioList<Value extends string>({
+  name,
+  selectedValue,
+  options,
+  onChange,
+}: {
+  name: string;
+  selectedValue: Value;
+  options: readonly RadioOption<Value>[];
+  onChange: (value: Value) => void;
+}) {
+  return options.map(([value, label]) => (
+    <Label key={value} className="flex items-start gap-3 font-normal">
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={selectedValue === value}
+        onChange={() => onChange(value)}
+      />
+      <span>{label}</span>
+    </Label>
+  ));
+}
+
 export function BookingDisplaySettingsFields({
   value,
   onChange,
@@ -30,6 +57,11 @@ export function BookingDisplaySettingsFields({
     [browserTimezone, institutionTimezone, value.customTimezone],
   );
   const patch = (next: Partial<BookingDisplayPreferencesInput>) => onChange({ ...value, ...next });
+  const timezoneModeOptions = [
+    ["BROWSER", t("preferences.timezone.browser", { timezone: browserTimezone })],
+    ["INSTITUTION", t("preferences.timezone.institution", { timezone: institutionTimezone })],
+    ["CUSTOM", t("preferences.timezone.custom")],
+  ] as const satisfies readonly RadioOption<BookingTimezoneMode>[];
 
   return (
     <div className="space-y-6">
@@ -71,29 +103,17 @@ export function BookingDisplaySettingsFields({
 
       <fieldset className="space-y-3" disabled={disabled}>
         <legend className="font-medium">{t("preferences.timezone.legend")}</legend>
-        {(
-          [
-            ["BROWSER", t("preferences.timezone.browser", { timezone: browserTimezone })],
-            ["INSTITUTION", t("preferences.timezone.institution", { timezone: institutionTimezone })],
-            ["CUSTOM", t("preferences.timezone.custom")],
-          ] as const
-        ).map(([mode, label]) => (
-          <Label key={mode} className="flex items-start gap-3 font-normal">
-            <input
-              type="radio"
-              name={`${id}-timezone-mode`}
-              value={mode}
-              checked={value.timezoneMode === mode}
-              onChange={() =>
-                patch({
-                  timezoneMode: mode as BookingTimezoneMode,
-                  customTimezone: mode === "CUSTOM" ? (value.customTimezone ?? "UTC") : null,
-                })
-              }
-            />
-            <span>{label}</span>
-          </Label>
-        ))}
+        <RadioList
+          name={`${id}-timezone-mode`}
+          selectedValue={value.timezoneMode}
+          options={timezoneModeOptions}
+          onChange={(mode) =>
+            patch({
+              timezoneMode: mode,
+              customTimezone: mode === "CUSTOM" ? (value.customTimezone ?? "UTC") : null,
+            })
+          }
+        />
         <div className="space-y-2 pl-6">
           <Label htmlFor={`${id}-custom-timezone`}>{t("preferences.timezone.customLabel")}</Label>
           <Input

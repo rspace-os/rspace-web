@@ -5,12 +5,14 @@ export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
 
 const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const IsoWeekdaySchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7));
+export const OpeningHoursStartSchema = v.pipe(v.string(), v.regex(WALL_TIME));
+export const OpeningHoursEndSchema = v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]);
 
 export const OpeningHoursEntrySchema = v.pipe(
   v.strictObject({
     dayOfWeek: IsoWeekdaySchema,
-    start: v.pipe(v.string(), v.regex(WALL_TIME)),
-    end: v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]),
+    start: OpeningHoursStartSchema,
+    end: OpeningHoursEndSchema,
   }),
   v.forward(
     v.check((entry) => validOpeningHours(entry.start, entry.end)),

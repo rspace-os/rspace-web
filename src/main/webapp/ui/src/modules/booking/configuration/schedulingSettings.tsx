@@ -7,8 +7,10 @@ import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import {
   type BookingDisplayPreferencesInput,
   BookingDisplayPreferencesInputSchema,
+  BookingTimezoneModeSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { ALL_ISO_WEEKDAYS, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
+import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -18,8 +20,6 @@ import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
-
-export { validOpeningHours } from "@/modules/booking/domain/bookingOpeningHours";
 
 export const MAX_BUFFER_MINUTES = 10_080;
 export const MAX_BOOKING_DURATION_MINUTES = 527_040;
@@ -39,6 +39,13 @@ export const schedulingSettingsEntries = {
   maxBookingDurationMinutes: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(MAX_BOOKING_DURATION_MINUTES)),
   allowDoubleBooking: v.boolean(),
 };
+const bookingDisplayPreferencesEntries = {
+  availabilityWindowStart: v.string(),
+  availabilityWindowEnd: v.string(),
+  timezoneMode: BookingTimezoneModeSchema,
+  customTimezone: v.nullable(v.string()),
+  institutionTimezone: v.string(),
+};
 
 export const SchedulingSettingsSchema = v.pipe(
   v.object(schedulingSettingsEntries),
@@ -53,11 +60,7 @@ export const SchedulingSettingsSchema = v.pipe(
 export const BookingSettingsSchema = v.pipe(
   v.object({
     ...schedulingSettingsEntries,
-    availabilityWindowStart: v.string(),
-    availabilityWindowEnd: v.string(),
-    timezoneMode: v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]),
-    customTimezone: v.nullable(v.string()),
-    institutionTimezone: v.string(),
+    ...bookingDisplayPreferencesEntries,
   }),
   v.forward(
     v.check((settings) =>
@@ -70,11 +73,7 @@ export const BookingSettingsSchema = v.pipe(
 export const BookingAdminSettingsSchema = v.pipe(
   v.object({
     ...schedulingSettingsEntries,
-    availabilityWindowStart: v.string(),
-    availabilityWindowEnd: v.string(),
-    timezoneMode: v.picklist(["BROWSER", "INSTITUTION", "CUSTOM"]),
-    customTimezone: v.nullable(v.string()),
-    institutionTimezone: v.string(),
+    ...bookingDisplayPreferencesEntries,
     defaultSharedWith: v.picklist(["ALL_USERS", "SELECTED", "ONLY_ME"]),
     selectedAccessGrantees: v.array(
       v.object({
@@ -105,8 +104,6 @@ export type BookingSettingsInput = SchedulingSettings &
     selectedGranteeKeys: readonly string[];
   };
 
-export const BookingSettingsInputSchema = v.intersect([SchedulingSettingsSchema, BookingDisplayPreferencesInputSchema]);
-
 export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   slotGranularityMinutes: 5,
   openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
@@ -127,7 +124,7 @@ export function validMaximumBookingDuration(maximumMinutes: number, granularityM
 
 export async function loadBookingSettings(token: string, signal?: AbortSignal): Promise<BookingSettings> {
   const response = await fetch("/api/v2/booking-settings", {
-    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
+    headers: apiV2Headers(token),
     signal,
   });
   if (!response.ok) throw new Error(`Booking settings request failed with status ${response.status}`);
@@ -136,7 +133,7 @@ export async function loadBookingSettings(token: string, signal?: AbortSignal): 
 
 export async function loadBookingAdminSettings(token: string, signal?: AbortSignal): Promise<BookingAdminSettings> {
   const response = await fetch("/api/v2/booking-settings/admin", {
-    headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
+    headers: apiV2Headers(token),
     signal,
   });
   if (!response.ok) throw new Error(`Booking admin settings request failed with status ${response.status}`);
@@ -157,11 +154,7 @@ export async function saveBookingSettings(
   });
   const response = await fetch("/api/v2/booking-settings/admin", {
     method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "X-Requested-With": "XMLHttpRequest",
-    },
+    headers: apiV2JsonHeaders(token),
     body: JSON.stringify({
       ...scheduling,
       ...display,
@@ -195,6 +188,13 @@ export function SchedulingSettingsFields({
   const bufferAfter = useField(form, { path: ["bufferAfterMinutes"] });
   const maximumDuration = useField(form, { path: ["maxBookingDurationMinutes"] });
   const allowDoubleBooking = useField(form, { path: ["allowDoubleBooking"] });
+  const doubleBookingCheckboxProps = {
+    id: `${id}-double-booking`,
+    checked: allowDoubleBooking.input === true,
+    disabled,
+    inputRef: allowDoubleBooking.props.ref,
+    onCheckedChange: (checked: boolean | "indeterminate") => allowDoubleBooking.onChange(checked),
+  };
   const values = getInput(form) as Partial<SchedulingSettings>;
   const mixedBuffers = values.bufferBeforeMinutes !== values.bufferAfterMinutes;
   const maximumDurationInvalid =
@@ -211,6 +211,39 @@ export function SchedulingSettingsFields({
     const granularityInvalid = Boolean(granularity.errors?.length);
     const bufferBeforeInvalid = Boolean(bufferBefore.errors?.length);
     const bufferAfterInvalid = Boolean(bufferAfter.errors?.length);
+    const renderInlineBufferField = (
+      field: typeof bufferBefore | typeof bufferAfter,
+      direction: "Before" | "After",
+      label: string,
+      errorId: string,
+      invalid: boolean,
+    ) => {
+      const fieldId = `${id}-buffer-${direction.toLowerCase()}`;
+      return (
+        <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+          <FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
+          <Field>
+            <Input
+              id={fieldId}
+              type="number"
+              min={0}
+              max={MAX_BUFFER_MINUTES}
+              step={1}
+              required
+              disabled={disabled}
+              value={numberInput(field.input) ?? ""}
+              ref={field.props.ref}
+              onFocus={field.props.onFocus}
+              onBlur={field.props.onBlur}
+              aria-invalid={invalid || undefined}
+              aria-describedby={invalid ? errorId : undefined}
+              onChange={(event) => field.onChange(event.currentTarget.valueAsNumber)}
+            />
+            {invalid ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
+          </Field>
+        </div>
+      );
+    };
 
     return (
       <div className={RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME}>
@@ -280,66 +313,25 @@ export function SchedulingSettingsFields({
             </Field>
           </div>
 
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-buffer-before`}>{t("bookableItemDetails.fields.bufferBefore")}</FieldLabel>
-            <Field>
-              <Input
-                id={`${id}-buffer-before`}
-                type="number"
-                min={0}
-                max={MAX_BUFFER_MINUTES}
-                step={1}
-                required
-                disabled={disabled}
-                value={numberInput(bufferBefore.input) ?? ""}
-                ref={bufferBefore.props.ref}
-                onFocus={bufferBefore.props.onFocus}
-                onBlur={bufferBefore.props.onBlur}
-                aria-invalid={bufferBeforeInvalid || undefined}
-                aria-describedby={bufferBeforeInvalid ? bufferBeforeErrorId : undefined}
-                onChange={(event) => bufferBefore.onChange(event.currentTarget.valueAsNumber)}
-              />
-              {bufferBeforeInvalid ? (
-                <FieldError id={bufferBeforeErrorId}>{t("settings.errors.buffer")}</FieldError>
-              ) : null}
-            </Field>
-          </div>
-
-          <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
-            <FieldLabel htmlFor={`${id}-buffer-after`}>{t("bookableItemDetails.fields.bufferAfter")}</FieldLabel>
-            <Field>
-              <Input
-                id={`${id}-buffer-after`}
-                type="number"
-                min={0}
-                max={MAX_BUFFER_MINUTES}
-                step={1}
-                required
-                disabled={disabled}
-                value={numberInput(bufferAfter.input) ?? ""}
-                ref={bufferAfter.props.ref}
-                onFocus={bufferAfter.props.onFocus}
-                onBlur={bufferAfter.props.onBlur}
-                aria-invalid={bufferAfterInvalid || undefined}
-                aria-describedby={bufferAfterInvalid ? bufferAfterErrorId : undefined}
-                onChange={(event) => bufferAfter.onChange(event.currentTarget.valueAsNumber)}
-              />
-              {bufferAfterInvalid ? (
-                <FieldError id={bufferAfterErrorId}>{t("settings.errors.buffer")}</FieldError>
-              ) : null}
-            </Field>
-          </div>
+          {renderInlineBufferField(
+            bufferBefore,
+            "Before",
+            t("bookableItemDetails.fields.bufferBefore"),
+            bufferBeforeErrorId,
+            bufferBeforeInvalid,
+          )}
+          {renderInlineBufferField(
+            bufferAfter,
+            "After",
+            t("bookableItemDetails.fields.bufferAfter"),
+            bufferAfterErrorId,
+            bufferAfterInvalid,
+          )}
 
           <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
             <FieldLabel htmlFor={`${id}-double-booking`}>{t("bookableItemDetails.fields.doubleBooking")}</FieldLabel>
             <div className="flex min-h-9 items-center">
-              <Checkbox
-                id={`${id}-double-booking`}
-                checked={allowDoubleBooking.input === true}
-                disabled={disabled}
-                inputRef={allowDoubleBooking.props.ref}
-                onCheckedChange={(checked) => allowDoubleBooking.onChange(checked)}
-              />
+              <Checkbox {...doubleBookingCheckboxProps} />
             </div>
           </div>
         </fieldset>
@@ -415,13 +407,7 @@ export function SchedulingSettingsFields({
         {maximumDurationInvalid ? <FieldError>{t("settings.errors.maximumDuration")}</FieldError> : null}
       </Field>
       <Field orientation="horizontal">
-        <Checkbox
-          id={`${id}-double-booking`}
-          checked={allowDoubleBooking.input === true}
-          disabled={disabled}
-          inputRef={allowDoubleBooking.props.ref}
-          onCheckedChange={(checked) => allowDoubleBooking.onChange(checked)}
-        />
+        <Checkbox {...doubleBookingCheckboxProps} />
         <FieldLabel htmlFor={`${id}-double-booking`}>{t("settings.fields.allowDoubleBooking")}</FieldLabel>
       </Field>
     </fieldset>

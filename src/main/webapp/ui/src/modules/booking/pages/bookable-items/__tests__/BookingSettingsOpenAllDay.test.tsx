@@ -5,32 +5,14 @@ import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import BookingSettingsPage from "../BookingSettingsPage";
-
-const settings = {
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-  availabilityWindowStart: "08:00",
-  availabilityWindowEnd: "18:00",
-  timezoneMode: "BROWSER" as const,
-  customTimezone: null,
-  institutionTimezone: "UTC",
-  defaultSharedWith: "ALL_USERS" as const,
-  selectedAccessGrantees: [],
-  configurationVersion: 0,
-};
+import { bookingSettingsFixture as settings } from "./bookingSettingsFixture";
 
 function serve(initial: Partial<typeof settings> = {}, saveSucceeds: () => boolean = () => true) {
   const submitted: Record<string, unknown>[] = [];
   let current = { ...settings, ...initial };
   server.use(
-    oauthTokenHandler(true),
     http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
     http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
       const body = (await request.json()) as Record<string, unknown>;
