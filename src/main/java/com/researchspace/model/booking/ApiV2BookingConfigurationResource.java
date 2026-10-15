@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 @ApiV2ResourceDefinition(
     name = "booking-configurations",
@@ -201,11 +202,10 @@ public record ApiV2BookingConfigurationResource(
             access);
     List<Field<BookingConfiguration, ?>> fields = new ArrayList<>(base.fields());
     int afterAlignment =
-        fields.indexOf(
-                fields.stream()
-                    .filter(field -> field.name().equals("alignToIncrement"))
-                    .findFirst()
-                    .orElseThrow())
+        IntStream.range(0, fields.size())
+                .filter(index -> fields.get(index).name().equals("alignToIncrement"))
+                .findFirst()
+                .orElseThrow()
             + 1;
     fields.add(
         afterAlignment,
