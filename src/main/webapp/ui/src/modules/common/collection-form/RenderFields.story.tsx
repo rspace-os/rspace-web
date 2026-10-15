@@ -22,7 +22,7 @@ export type ExampleDocument = {
   collaboratorIds: string[];
 };
 
-function StatusOption({ detail, label }: { detail: string; label: string }) {
+function OptionWithDetail({ detail, label }: { detail: string; label: string }) {
   return (
     <span className="flex flex-col">
       <span>{label}</span>
@@ -84,7 +84,7 @@ export const exampleConfig = resolveCollectionConfig<ExampleDocument>({
         "draft",
         { label: "In review", value: "review" },
         {
-          content: <StatusOption detail="Ready to publish" label="Published" />,
+          content: <OptionWithDetail detail="Ready to publish" label="Published" />,
           label: "Published",
           value: "published",
         },
@@ -209,22 +209,11 @@ function SettingsBooleanToggle({ disabled, form, label }: { disabled: boolean; f
   );
 }
 
-function PersonOption({ detail, name }: { detail: string; name: string }) {
-  return (
-    <span className="flex flex-col">
-      <span>{name}</span>
-      <span className="text-xs text-muted-foreground" aria-hidden="true">
-        {detail}
-      </span>
-    </span>
-  );
-}
-
 const relationshipOptions: RelationshipOptions = {
   users: [
     { label: "Ada Lovelace", value: "user-1" },
     {
-      content: <PersonOption detail="Rear admiral and computer scientist" name="Grace Hopper" />,
+      content: <OptionWithDetail detail="Rear admiral and computer scientist" label="Grace Hopper" />,
       label: "Grace Hopper",
       value: "user-2",
     },
@@ -247,6 +236,15 @@ const defaultValues: ExampleDocument = {
   },
   collaboratorIds: ["user-2"],
 };
+
+function FormWithValues({ children, form }: { children: ReactNode; form: FormStore }) {
+  return (
+    <Form of={form} className="mx-auto max-w-5xl space-y-8 p-8" onSubmit={() => undefined}>
+      {children}
+      <output aria-label="Form values">{JSON.stringify(getInput(form))}</output>
+    </Form>
+  );
+}
 
 export function RenderFieldsStory({
   disabled = false,
@@ -431,12 +429,7 @@ export function RenderFieldsStory({
       );
   }
 
-  return (
-    <Form of={form} className="mx-auto max-w-5xl space-y-8 p-8" onSubmit={() => undefined}>
-      {fields}
-      <output aria-label="Form values">{JSON.stringify(getInput(form))}</output>
-    </Form>
-  );
+  return <FormWithValues form={form}>{fields}</FormWithValues>;
 }
 
 type CardSelectDocument = {
@@ -508,10 +501,9 @@ export function CardSelectStory() {
   });
 
   return (
-    <Form of={form} className="mx-auto max-w-5xl space-y-8 p-8" onSubmit={() => undefined}>
+    <FormWithValues form={form}>
       <RenderFields fields={cardSelectConfig.fields} form={form} />
-      <output aria-label="Form values">{JSON.stringify(getInput(form))}</output>
-    </Form>
+    </FormWithValues>
   );
 }
 
@@ -568,10 +560,9 @@ export function RadioSelectStory({ disabled = false, readOnly = false }: { disab
   );
 
   return (
-    <Form of={form} className="mx-auto max-w-5xl space-y-8 p-8" onSubmit={() => undefined}>
+    <FormWithValues form={form}>
       <RenderFields fields={fields} form={form} disabled={disabled} />
-      <output aria-label="Form values">{JSON.stringify(getInput(form))}</output>
-    </Form>
+    </FormWithValues>
   );
 }
 
