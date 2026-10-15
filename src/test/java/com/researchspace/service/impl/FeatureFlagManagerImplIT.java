@@ -44,10 +44,11 @@ class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
         .executeWithoutResult(
             ignored -> {
               featureFlags.updateFeatureFlag(
-                  BOOKING_ENABLED, new Patch(true, false, null), sysadmin);
+                  BOOKING_ENABLED, new Patch(true, false, null), sysadmin, sysadmin);
               secondResponse.set(
                   featureFlags
-                      .updateFeatureFlag(BOOKING_ENABLED, new Patch(true, false, null), sysadmin)
+                      .updateFeatureFlag(
+                          BOOKING_ENABLED, new Patch(true, false, null), sysadmin, sysadmin)
                       .orElseThrow()
                       .isBaselineValue());
             });
@@ -62,10 +63,11 @@ class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
         .executeWithoutResult(
             ignored -> {
               featureFlags.updateFeatureFlag(
-                  BOOKING_ENABLED, new Patch(true, false, null), sysadmin);
+                  BOOKING_ENABLED, new Patch(true, false, null), sysadmin, sysadmin);
               assertFalse(
                   featureFlags
-                      .updateFeatureFlag(BOOKING_ENABLED, new Patch(false, false, null), sysadmin)
+                      .updateFeatureFlag(
+                          BOOKING_ENABLED, new Patch(false, false, null), sysadmin, sysadmin)
                       .orElseThrow()
                       .isBaselineValue());
             });
@@ -77,6 +79,6 @@ class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
         .executeWithoutResult(
             ignored ->
                 featureFlags.updateFeatureFlag(
-                    BOOKING_ENABLED, new Patch(value, false, null), sysadmin));
+                    BOOKING_ENABLED, new Patch(value, false, null), sysadmin, sysadmin));
   }
 }

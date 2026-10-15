@@ -496,50 +496,44 @@ resolved during design. This file is a glossary only — no implementation detai
 
 ## Platform Configuration
 
-Canonical terms for Feature Flags. Implementation and operational details live
-in `DevDocs/adr/0003-feature-flags.md`.
+Canonical Feature Flag terms. See the [feature-flag ADR](DevDocs/adr/0003-feature-flags.md)
+for behavior and the [manifest generator](scripts/generate-feature-flags.mjs) for generated artifacts.
 
 **Feature Flag**:
-An internal boolean control for rollout, kill switches, and temporary changes.
-It is never an authorization, licensing, tenant-isolation, or secrecy boundary.
+An internal boolean control for rollout, kill switches, or temporary changes. It is not an
+authorization, licensing, tenant-isolation, or secrecy boundary.
 _Avoid_: sysadmin setting, deployment property, app setting, toggle
 
 **Feature Flag Definition**:
-The manifest entry that declares a flag's identity and default state.
+The identity and default state declared for one flag.
 _Avoid_: database row, property key, frontend constant
 
 **Feature Flag Manifest**:
-The checked-in JSONC source of Feature Flag Definitions, read directly at
-runtime and used to generate backend constants and frontend types.
+The checked-in JSONC source of Feature Flag Definitions.
 _Avoid_: Java enum, TypeScript constant list, database seed
 
 **Feature Flag Baseline**:
-The instance-wide value before a User Feature Flag Override is applied.
-Anonymous requests always receive this value.
+The instance-wide value used when a user has no override; anonymous requests use it too.
 _Avoid_: global final value, deployment setting
 
 **User Feature Flag Override**:
-An explicitly stored per-user value that replaces the Feature Flag Baseline for
-that user. Without one, the baseline applies.
+An explicitly stored per-user value that replaces the baseline for that user.
 _Avoid_: targeted rollout, group override, community override
 
 **Feature Flag Override Permission**:
-The capability to set one's own overrides. It applies to every Feature Flag,
-not selected flags.
+The capability to set one's own overrides for any Feature Flag.
 _Avoid_: special user, per-flag permission, sysadmin setting
 
 **Feature Flag Resource**:
-The caller-specific state of one Feature Flag in the REST API v2 collection.
-The resource contains the effective value, baseline, source, and override availability.
+The caller-specific REST API v2 view of a flag, including its effective value and source.
 _Avoid_: database row, manifest entry
 
 **Retired Feature Flag**:
-A flag removed from the manifest. Startup removes its stored baseline and user
-overrides.
+A flag removed from the manifest; startup removes its stored baseline and user overrides.
 _Avoid_: deprecated flag, disabled forever, archived flag
 
 **Expired Feature Flag**:
-A flag whose `expires` date has passed. It fails CI validation but not startup.
+A flag past its `expires` date. CI validation fails, but startup does not.
 _Avoid_: runtime-failing flag, startup blocker
 
 ## Resource role permissions

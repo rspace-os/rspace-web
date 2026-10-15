@@ -9,12 +9,7 @@ import {
   type FeatureFlagResponse,
   featureFlagsFromDocuments,
 } from "./schema";
-import {
-  FEATURE_FLAGS_API_BASE_URL,
-  FeatureFlagRequestError,
-  featureFlagRequestHeaders,
-  toFeatureFlagRequestError,
-} from "./utils";
+import { FEATURE_FLAGS_API_BASE_URL, FeatureFlagRequestError, featureFlagRequestHeaders } from "./utils";
 
 export const featureFlagQueryKeys = {
   all: ["rspace.featureFlags"] as const,
@@ -29,7 +24,7 @@ export async function getFeatureFlags(token: string): Promise<FeatureFlagRespons
       method: "GET",
       headers: featureFlagRequestHeaders(token),
     });
-    if (!response.ok) throw toFeatureFlagRequestError(response);
+    if (!response.ok) throw new FeatureFlagRequestError(response);
 
     const result = parseOrThrow(FeatureFlagPageSchema, (await response.json()) as unknown);
     documents.push(...result.docs);
