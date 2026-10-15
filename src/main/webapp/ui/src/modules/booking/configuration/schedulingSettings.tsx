@@ -14,7 +14,6 @@ import {
   ALL_ISO_WEEKDAYS,
   MAX_BOOKING_DURATION_MINUTES,
   OpeningHoursSchema,
-  validOpeningHours,
 } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
@@ -27,7 +26,6 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/modules/commo
 import { Input } from "@/modules/common/ui/input";
 
 export const MAX_BUFFER_MINUTES = 10_080;
-export { MAX_BOOKING_DURATION_MINUTES, validOpeningHours };
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "openingHours",
@@ -219,28 +217,26 @@ export function SchedulingSettingsFields({
     ) => {
       const fieldId = `${id}-buffer-${direction.toLowerCase()}`;
       return (
-        <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
+        <Field className="min-w-0">
           <FieldLabel htmlFor={fieldId}>{label}</FieldLabel>
-          <Field>
-            <Input
-              id={fieldId}
-              type="number"
-              min={0}
-              max={MAX_BUFFER_MINUTES}
-              step={1}
-              required
-              disabled={disabled}
-              value={numberInput(field.input) ?? ""}
-              ref={field.props.ref}
-              onFocus={field.props.onFocus}
-              onBlur={field.props.onBlur}
-              aria-invalid={invalid || undefined}
-              aria-describedby={invalid ? errorId : undefined}
-              onChange={(event) => field.onChange(event.currentTarget.valueAsNumber)}
-            />
-            {invalid ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
-          </Field>
-        </div>
+          <Input
+            id={fieldId}
+            type="number"
+            min={0}
+            max={MAX_BUFFER_MINUTES}
+            step={1}
+            required
+            disabled={disabled}
+            value={numberInput(field.input) ?? ""}
+            ref={field.props.ref}
+            onFocus={field.props.onFocus}
+            onBlur={field.props.onBlur}
+            aria-invalid={invalid || undefined}
+            aria-describedby={invalid ? errorId : undefined}
+            onChange={(event) => field.onChange(event.currentTarget.valueAsNumber)}
+          />
+          {invalid ? <FieldError id={errorId}>{t("settings.errors.buffer")}</FieldError> : null}
+        </Field>
       );
     };
 
@@ -312,20 +308,22 @@ export function SchedulingSettingsFields({
             </Field>
           </div>
 
-          {renderInlineBufferField(
-            bufferBefore,
-            "Before",
-            t("bookableItemDetails.fields.bufferBefore"),
-            bufferBeforeErrorId,
-            bufferBeforeInvalid,
-          )}
-          {renderInlineBufferField(
-            bufferAfter,
-            "After",
-            t("bookableItemDetails.fields.bufferAfter"),
-            bufferAfterErrorId,
-            bufferAfterInvalid,
-          )}
+          <div className="grid min-w-0 grid-cols-2 items-start gap-4 @md:col-span-2">
+            {renderInlineBufferField(
+              bufferBefore,
+              "Before",
+              t("bookableItemDetails.fields.bufferBefore"),
+              bufferBeforeErrorId,
+              bufferBeforeInvalid,
+            )}
+            {renderInlineBufferField(
+              bufferAfter,
+              "After",
+              t("bookableItemDetails.fields.bufferAfter"),
+              bufferAfterErrorId,
+              bufferAfterInvalid,
+            )}
+          </div>
 
           <div className={RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME}>
             <FieldLabel htmlFor={`${id}-double-booking`}>{t("bookableItemDetails.fields.doubleBooking")}</FieldLabel>

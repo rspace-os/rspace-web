@@ -9,7 +9,7 @@ import {
   verticalTimelineRangeToDraft,
 } from "@/modules/booking/creation/verticalTimelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
-import { type OpeningSchedule, openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
+import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
   type BookingWindowDraft,
@@ -21,7 +21,13 @@ import {
 import { Button } from "@/modules/common/ui/button";
 import { Card, CardContent, CardHeader } from "@/modules/common/ui/card";
 import { cn } from "@/modules/common/utils/cn";
-import { CLOSED_HOURS_CLASS_NAME, type DayTimelineEvent, formatMinuteWithDayOffset, period } from "./DayTimelineEvent";
+import {
+  CLOSED_HOURS_CLASS_NAME,
+  type DayTimelineEvent,
+  formatMinuteWithDayOffset,
+  openingRangesOnDate,
+  period,
+} from "./DayTimelineEvent";
 import { DayTimelineEventCard } from "./DayTimelineEventCard";
 import { expandedEventIdAfterChange } from "./expandedEvent";
 import { layoutVerticalTimelineEvents } from "./verticalTimelineLayout";
@@ -113,12 +119,7 @@ function openingSegments(
   scheduleWindow: VerticalDayTimelineScheduleWindow | undefined,
 ): Array<{ startMinute: number; endMinute: number }> {
   if (!scheduleWindow) return [];
-  return openingIntervals(scheduleWindow, scheduleWindow.timezone, zonedDayBounds(date, displayTimezone)).map(
-    (opening) => ({
-      startMinute: instantToDayMinute(opening.start, date, displayTimezone),
-      endMinute: instantToDayMinute(opening.end, date, displayTimezone),
-    }),
-  );
+  return openingRangesOnDate(date, displayTimezone, scheduleWindow);
 }
 
 function closedSegments(open: readonly { startMinute: number; endMinute: number }[], dayMinutes: number) {

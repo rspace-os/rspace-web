@@ -73,24 +73,20 @@ export class BookableItemPage {
     return page.getByRole("spinbutton").first();
   }
 
-  get setDifferentHours(): Locator {
-    return page.getByRole("button", { name: "Set different hours for some days" });
-  }
-
-  get hoursByDay(): Locator {
-    return page.getByRole("list", { name: "Hours by day" });
+  get openingHours(): Locator {
+    return page.getByRole("list", { name: "Opening hours" });
   }
 
   dayRow(day: string): Locator {
-    return this.hoursByDay.getByRole("listitem").filter({ hasText: day });
+    return this.openingHours.getByRole("listitem").filter({ hasText: day });
   }
 
-  editDayHours(day: string): Locator {
-    return page.getByRole("button", { name: `Edit ${day} hours` });
+  openingStart(day: string): Locator {
+    return this.dayRow(day).getByLabelText("Opening start");
   }
 
-  confirmDayHours(day: string): Locator {
-    return page.getByRole("button", { name: `Confirm ${day} hours` });
+  openingEnd(day: string): Locator {
+    return this.dayRow(day).getByLabelText("Opening end");
   }
 
   async openEditor(): Promise<void> {

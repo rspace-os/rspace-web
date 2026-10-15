@@ -242,27 +242,38 @@ export function bookingHourCycle(): Intl.DateTimeFormatOptions["hourCycle"] {
 
 /** A wall-clock `HH:mm` time as the locale writes it, which is also how native time inputs display it. */
 export function formatWallClockTime(time: string, locale = bookingDateTimeLocale()): string {
-  const [hour, minute] = time.split(":").map(Number);
-  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", hour: "2-digit", minute: "2-digit" }).format(
-    Date.UTC(1970, 0, 1, hour, minute),
-  );
+  return Temporal.PlainTime.from(time === "24:00" ? "00:00" : time).toLocaleString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 /** A plain `YYYY-MM-DD` date as the locale writes it, which is also how native date inputs display it. */
 export function formatPlainDate(date: string, locale = bookingDateTimeLocale()): string {
-  return new Intl.DateTimeFormat(locale, { timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit" }).format(
-    new Date(`${date}T12:00:00.000Z`),
-  );
+  return Temporal.PlainDate.from(date).toLocaleString(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
 }
 
 /** A whole-minute duration in words, for example "2 hours" or "1 day, 30 minutes". */
-export function formatDurationMinutes(totalMinutes: number, locale = bookingLocale()): string {
+export function formatDurationMinutes(
+  totalMinutes: number,
+  locale = bookingLocale(),
+  options: { largestUnit?: "day" | "hour" } = {},
+): string {
   const parts = (
-    [
-      ["day", Math.floor(totalMinutes / 1440)],
-      ["hour", Math.floor((totalMinutes % 1440) / 60)],
-      ["minute", totalMinutes % 60],
-    ] as const
+    options.largestUnit === "hour"
+      ? ([
+          ["hour", Math.floor(totalMinutes / 60)],
+          ["minute", totalMinutes % 60],
+        ] as const)
+      : ([
+          ["day", Math.floor(totalMinutes / 1440)],
+          ["hour", Math.floor((totalMinutes % 1440) / 60)],
+          ["minute", totalMinutes % 60],
+        ] as const)
   ).filter(([, value]) => value > 0);
   return formatList(
     (parts.length > 0 ? parts : [["minute", 0] as const]).map(([unit, value]) =>

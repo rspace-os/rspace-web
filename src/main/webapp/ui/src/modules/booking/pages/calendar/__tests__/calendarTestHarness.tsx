@@ -1,28 +1,16 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  type AnyRouter,
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { type AnyRouter, createBrowserHistory, RouterProvider } from "@tanstack/react-router";
 import { render } from "@testing-library/react";
-import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { onTestFinished } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
-import BookingPage from "../../BookingPage";
-import { createAddBookingRoute, createBookingEventRouteTree } from "../../bookings/routes";
 import { bookingTarget, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import { createCalendarRoute } from "../routes";
-
-export { currentUser } from "../calendarFixtures";
+import { createCalendarRouter } from "../calendarRouter";
 
 export const noParentBooking: BookingListDocument = {
   ...ownBooking,
@@ -45,11 +33,9 @@ export async function renderBookingTestPage<TRouter extends AnyRouter>(
   });
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <NuqsAdapter>
-        <Suspense fallback={null}>
-          <RouterProvider router={router as never} />
-        </Suspense>
-      </NuqsAdapter>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
     </QueryClientProvider>,
     { wrapper },
   );
@@ -58,17 +44,7 @@ export async function renderBookingTestPage<TRouter extends AnyRouter>(
 
 export async function renderCalendar(initialEntry = "/booking/calendar?date=2026-08-17") {
   window.history.replaceState(null, "", initialEntry);
-  const root = createRootRoute({ component: Outlet });
-  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: BookingPage });
-  const router = createRouter({
-    routeTree: root.addChildren([
-      booking.addChildren([
-        createCalendarRoute(booking),
-        createAddBookingRoute(booking),
-        createBookingEventRouteTree(booking),
-      ]),
-    ]),
-    history: createMemoryHistory({ initialEntries: [initialEntry] }),
-  });
+  const router = createCalendarRouter(createBrowserHistory());
+  onTestFinished(() => router.history.destroy());
   return renderBookingTestPage(router);
 }

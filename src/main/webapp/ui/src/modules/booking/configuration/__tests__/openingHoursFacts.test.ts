@@ -57,10 +57,7 @@ describe("weeklyOpeningHours", () => {
       ...berlin,
       openingHours: berlin.openingHours
         .filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek))
-        .map(
-          (entry) =>
-            [{ dayOfWeek: 2, start: "10:00", end: "14:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
-        ),
+        .map((entry) => (entry.dayOfWeek === 2 ? { ...entry, start: "10:00", end: "14:00" } : entry)),
     };
     const week = weeklyOpeningHours(schedule, "Europe/Berlin", "2026-10-07");
     expect(week[1]).toEqual({ dayOfWeek: 2, hours: "10:00 AM - 02:00 PM" });

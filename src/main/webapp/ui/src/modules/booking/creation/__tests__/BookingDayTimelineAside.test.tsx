@@ -9,6 +9,7 @@ import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferen
 import { type BookingWindowDraft, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { BookingDayTimelineAside } from "../BookingDayTimelineAside";
 import type { BookableItemOption } from "../bookableItemOption";
+import { confocalBooking, confocalBookingPage, confocalTargetWithHours } from "./creationTestFixtures";
 
 class ResizeObserverStub {
   observe() {}
@@ -19,19 +20,7 @@ class ResizeObserverStub {
 beforeAll(() => vi.stubGlobal("ResizeObserver", ResizeObserverStub));
 afterAll(() => vi.unstubAllGlobals());
 
-const target: BookableItemOption = {
-  configurationId: 7,
-  targetId: 123,
-  globalId: "IN123",
-  name: "Confocal microscope",
-  timezone: "Europe/Berlin",
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "06:00", end: "22:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-};
+const target = confocalTargetWithHours("06:00", "22:00");
 
 const draft: BookingWindowDraft = {
   startDate: "2026-08-17",
@@ -46,36 +35,17 @@ function queryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
-function emptyPage() {
-  return HttpResponse.json({ docs: [], totalDocs: 0, totalPages: 0, page: 1, hasNextPage: false });
-}
-
 function scheduleBooking({ id, targetId, name }: { id: number; targetId: string; name: string }) {
-  return {
+  return confocalBooking({
     id,
-    version: 0,
-    target: {
-      relationTo: "booking-instruments",
-      globalId: targetId,
-      value: { id, name, deleted: false },
-    },
-    timezone: "Europe/Berlin",
     start: "2026-08-17T07:00:00Z",
     end: "2026-08-17T08:00:00Z",
-    state: "CONFIRMED",
-    kind: "BOOKING",
-    privacy: "full",
+    targetGlobalId: targetId,
+    targetValueId: id,
+    targetName: name,
+    timezone: "Europe/Berlin",
     purpose: "Private purpose",
-    bookedBy: "Ada Lovelace",
-    canEdit: false,
-    canCancel: false,
-    createdAt: "2026-08-17T06:00:00Z",
-    updatedAt: "2026-08-17T06:00:00Z",
-  };
-}
-
-function pageWith(booking: ReturnType<typeof scheduleBooking>) {
-  return HttpResponse.json({ docs: [booking], totalDocs: 1, totalPages: 1, page: 1, hasNextPage: false });
+  });
 }
 
 function asideTree({
@@ -166,7 +136,7 @@ describe("BookingDayTimelineAside acceptance", () => {
       [{ top: "0px", height: "1344px" }],
     ],
   ])("shades the closed periods of %s on the draft day", async (_, selectedTarget, expected) => {
-    server.use(http.get("/api/v2/bookings", () => emptyPage()));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(confocalBookingPage([]))));
     render(asideTree({ client: queryClient(), selectedTarget }));
 
     await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
@@ -195,7 +165,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("booking:dayTimeline.vertical.loading");
     expect(requests).toBe(1);
 
-    request.resolve(emptyPage());
+    request.resolve(HttpResponse.json(confocalBookingPage([])));
     await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
   });
 
@@ -205,7 +175,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     server.use(
       http.get("/api/v2/bookings", () => {
         requests += 1;
-        return requests === 1 ? new HttpResponse(null, { status: 503 }) : emptyPage();
+        return requests === 1 ? new HttpResponse(null, { status: 503 }) : HttpResponse.json(confocalBookingPage([]));
       }),
     );
 
@@ -226,7 +196,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
         where = new URL(request.url).searchParams.get("where");
-        return emptyPage();
+        return HttpResponse.json(confocalBookingPage([]));
       }),
     );
 
@@ -261,7 +231,9 @@ describe("BookingDayTimelineAside acceptance", () => {
           return staleResponse.promise;
         }
         requestedTargets.push("IN124");
-        return pageWith(scheduleBooking({ id: 2, targetId: "IN124", name: "Current target booking" }));
+        return HttpResponse.json(
+          confocalBookingPage([scheduleBooking({ id: 2, targetId: "IN124", name: "Current target booking" })]),
+        );
       }),
     );
 
@@ -273,13 +245,17 @@ describe("BookingDayTimelineAside acceptance", () => {
     view.rerender(asideTree({ client, selectedTarget: nextTarget }));
     await expectVisibleOccurrence("Current target booking");
 
-    staleResponse.resolve(pageWith(scheduleBooking({ id: 1, targetId: "IN123", name: "Previous target booking" })));
+    staleResponse.resolve(
+      HttpResponse.json(
+        confocalBookingPage([scheduleBooking({ id: 1, targetId: "IN123", name: "Previous target booking" })]),
+      ),
+    );
     expect(screen.queryByText("Previous target booking")).not.toBeInTheDocument();
     expect(requestedTargets).toContain("IN124");
   });
 
   it("keeps a cross-day draft visible without day-canvas adjustment handles", async () => {
-    server.use(http.get("/api/v2/bookings", emptyPage));
+    server.use(http.get("/api/v2/bookings", () => HttpResponse.json(confocalBookingPage([]))));
     const crossDayDraft: BookingWindowDraft = {
       startDate: "2026-08-17",
       startTime: "23:00",
@@ -302,7 +278,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     server.use(
       http.get("/api/v2/bookings", () => {
         requests += 1;
-        return emptyPage();
+        return HttpResponse.json(confocalBookingPage([]));
       }),
     );
 
@@ -336,7 +312,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     server.use(
       http.get("/api/v2/bookings", () => {
         requests += 1;
-        return emptyPage();
+        return HttpResponse.json(confocalBookingPage([]));
       }),
     );
 

@@ -10,6 +10,7 @@ import {
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingCalendarFileDownload } from "@/modules/booking/components/BookingCalendarFileButton";
+import { TooltipIconLink } from "@/modules/booking/components/TooltipIconLink";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionRow } from "@/modules/common/collection/collectionConfig";
@@ -77,58 +78,37 @@ export function BookingRowActions({
   return (
     <div ref={actionsRef} className="flex flex-wrap gap-1" data-booking-row-actions={row.id}>
       {row.canViewConfiguration && row.target ? (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Link
-                aria-label={itemCalendarLabel}
-                className={iconButtonClassName}
-                data-slot="button"
-                to="/booking/bookable-items/$globalId/{-$tab}"
-                params={{ globalId: row.target.globalId, tab: undefined }}
-              />
-            }
-          >
-            <CalendarClockIcon aria-hidden="true" />
-          </TooltipTrigger>
-          <TooltipContent role="tooltip">{itemCalendarLabel}</TooltipContent>
-        </Tooltip>
+        <TooltipIconLink label={itemCalendarLabel} icon={<CalendarClockIcon aria-hidden="true" />}>
+          <Link
+            aria-label={itemCalendarLabel}
+            className={iconButtonClassName}
+            data-slot="button"
+            to="/booking/bookable-items/$globalId/{-$tab}"
+            params={{ globalId: row.target.globalId, tab: undefined }}
+          />
+        </TooltipIconLink>
       ) : null}
       {row.privacy === "full" ? (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Link
-                aria-label={viewDetailsLabel}
-                className={iconButtonClassName}
-                data-slot="button"
-                to="/booking/calendar/bookings/$id"
-                params={{ id: String(row.id) }}
-              />
-            }
-          >
-            <EyeIcon aria-hidden="true" />
-          </TooltipTrigger>
-          <TooltipContent role="tooltip">{viewDetailsLabel}</TooltipContent>
-        </Tooltip>
+        <TooltipIconLink label={viewDetailsLabel} icon={<EyeIcon aria-hidden="true" />}>
+          <Link
+            aria-label={viewDetailsLabel}
+            className={iconButtonClassName}
+            data-slot="button"
+            to="/booking/calendar/bookings/$id"
+            params={{ id: String(row.id) }}
+          />
+        </TooltipIconLink>
       ) : null}
       {row.canEdit && row.target && row.timezone ? (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Link
-                aria-label={editLabel}
-                className={iconButtonClassName}
-                data-slot="button"
-                to="/booking/calendar/bookings/$id/edit"
-                params={{ id: String(row.id) }}
-              />
-            }
-          >
-            <PencilIcon aria-hidden="true" />
-          </TooltipTrigger>
-          <TooltipContent role="tooltip">{editLabel}</TooltipContent>
-        </Tooltip>
+        <TooltipIconLink label={editLabel} icon={<PencilIcon aria-hidden="true" />}>
+          <Link
+            aria-label={editLabel}
+            className={iconButtonClassName}
+            data-slot="button"
+            to="/booking/calendar/bookings/$id/edit"
+            params={{ id: String(row.id) }}
+          />
+        </TooltipIconLink>
       ) : null}
       {canDownload || row.canCancel ? (
         <Menu>

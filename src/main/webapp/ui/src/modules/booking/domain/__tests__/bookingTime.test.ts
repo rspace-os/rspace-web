@@ -70,6 +70,9 @@ describe("bookingTime", () => {
 
   test("keeps wall-clock formatting separate from elapsed timeline positions", () => {
     expect(instantToWallClockMinute("2026-03-29T01:30:00Z", "2026-03-29", "Europe/Berlin")).toBe(210);
+    expect(instantToWallClockMinute("2026-03-29T01:00:00Z", "2026-03-29", "Europe/Berlin")).toBe(180);
+    expect(instantToWallClockMinute("2026-03-28T23:00:00Z", "2026-03-29", "Europe/Berlin")).toBe(0);
+    expect(instantToWallClockMinute("2026-03-28T22:00:00Z", "2026-03-29", "Europe/Berlin")).toBe(-60);
     expect(sliceAcrossZonedDay("2026-03-28T22:30:00Z", "2026-03-29T23:30:00Z", "2026-03-29", "Europe/Berlin")).toEqual({
       startMinute: -30,
       endMinute: 1470,
@@ -166,6 +169,7 @@ describe("bookingTime", () => {
   test("spells out durations in the largest whole units", () => {
     expect(formatDurationMinutes(120, "en-US")).toBe("2 hours");
     expect(formatDurationMinutes(1470, "en-US")).toBe("1 day, 30 minutes");
+    expect(formatDurationMinutes(1470, "en-US", { largestUnit: "hour" })).toBe("24 hours, 30 minutes");
     expect(formatDurationMinutes(1, "en-US")).toBe("1 minute");
     expect(formatDurationMinutes(0, "en-US")).toBe("0 minutes");
   });

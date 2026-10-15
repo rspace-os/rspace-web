@@ -1,42 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import {
-  layoutWeekGridDay,
-  WEEK_GRID_MINIMUM_VISUAL_MINUTES,
-  wallClockMinute,
-  weekGridEventBox,
-} from "../calendarWeekLayout";
+import { ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { layoutWeekGridDay, WEEK_GRID_MINIMUM_VISUAL_MINUTES, weekGridEventBox } from "../calendarWeekLayout";
 
 function booking(id: number, start: string, end: string): BookingListDocument {
-  return {
-    id,
-    target: {
-      relationTo: "booking-instruments",
-      globalId: "IN123",
-      value: {
-        id: 123,
-        name: "Confocal microscope",
-        deleted: false,
-        parentContainerName: null,
-        parentContainerGlobalId: null,
-      },
-    },
-    canViewConfiguration: true,
-    requesterId: 1,
-    timezone: "Europe/Berlin",
-    start,
-    end,
-    state: "CONFIRMED",
-    purpose: "Cell imaging",
-    bookedBy: "Ada Lovelace (ada)",
-    privacy: "full",
-    canEdit: true,
-    version: 0,
-    kind: "BOOKING",
-    createdAt: "2026-08-01T09:00:00Z",
-    updatedAt: "2026-08-01T09:00:00Z",
-    canCancel: false,
-  };
+  return { ...ownBooking, id, start, end };
 }
 
 function layoutSummary(events: readonly BookingListDocument[], day: string, timezone = "UTC") {
@@ -141,14 +109,5 @@ describe("layoutWeekGridDay", () => {
 
   it("omits bookings outside the displayed day", () => {
     expect(layoutSummary([booking(1, "2026-08-18T10:00:00Z", "2026-08-18T11:00:00Z")], "2026-08-17")).toEqual([]);
-  });
-});
-
-describe("wallClockMinute", () => {
-  it("counts wall-clock minutes from the day's midnight across a skipped hour", () => {
-    // Europe/Berlin springs forward from 02:00 CET to 03:00 CEST on 2026-03-29.
-    expect(wallClockMinute("2026-03-29T01:00:00Z", "2026-03-29", "Europe/Berlin")).toBe(180);
-    expect(wallClockMinute("2026-03-28T23:00:00Z", "2026-03-29", "Europe/Berlin")).toBe(0);
-    expect(wallClockMinute("2026-03-28T22:00:00Z", "2026-03-29", "Europe/Berlin")).toBe(-60);
   });
 });
