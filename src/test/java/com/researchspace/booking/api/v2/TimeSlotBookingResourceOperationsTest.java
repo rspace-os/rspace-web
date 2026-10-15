@@ -1,5 +1,6 @@
 package com.researchspace.booking.api.v2;
 
+import static com.researchspace.testutils.BookingResourceTestFixtures.translate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -175,17 +176,6 @@ class TimeSlotBookingResourceOperationsTest {
       assertEquals("errors.api.v2.booking.buffer", buffer.errorCode());
       assertEquals(ApiV2Problem.Extensions.bookingBuffer(expected, 15, 30), buffer.extensions());
     }
-  }
-
-  private static ApiV2ResourceException translate(
-      ApiV2ResourceSpec<TimeSlotBooking, Long> spec,
-      ResourceOperation operation,
-      RuntimeException failure) {
-    return spec.errorMappings().get(operation).stream()
-        .filter(error -> error.exceptionType() == failure.getClass())
-        .findFirst()
-        .orElseThrow()
-        .translate(failure);
   }
 
   @Test

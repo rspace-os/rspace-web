@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingEventKind;
 import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -36,37 +39,21 @@ class TimeSlotBookingDaoTest extends SpringTransactionalTest {
             false);
 
     assertFalse(
-        bookingDao
-            .findFirstOverlap(
-                configuration.getId(),
-                instant("2026-08-17T09:00:00Z"),
-                instant("2026-08-17T10:00:00Z"),
-                null)
+        overlap(configuration.getId(), "2026-08-17T09:00:00Z", "2026-08-17T10:00:00Z", null)
             .isPresent());
     assertFalse(
-        bookingDao
-            .findFirstOverlap(
-                configuration.getId(),
-                instant("2026-08-17T11:00:00Z"),
-                instant("2026-08-17T12:00:00Z"),
-                null)
+        overlap(configuration.getId(), "2026-08-17T11:00:00Z", "2026-08-17T12:00:00Z", null)
             .isPresent());
     assertEquals(
         booking.getId(),
-        bookingDao
-            .findFirstOverlap(
-                configuration.getId(),
-                instant("2026-08-17T10:59:00Z"),
-                instant("2026-08-17T11:01:00Z"),
-                null)
+        overlap(configuration.getId(), "2026-08-17T10:59:00Z", "2026-08-17T11:01:00Z", null)
             .orElseThrow()
             .getId());
     assertFalse(
-        bookingDao
-            .findFirstOverlap(
+        overlap(
                 configuration.getId(),
-                instant("2026-08-17T10:30:00Z"),
-                instant("2026-08-17T10:45:00Z"),
+                "2026-08-17T10:30:00Z",
+                "2026-08-17T10:45:00Z",
                 booking.getId())
             .isPresent());
   }
@@ -93,12 +80,7 @@ class TimeSlotBookingDaoTest extends SpringTransactionalTest {
 
     assertEquals(
         earliest.getId(),
-        bookingDao
-            .findFirstOverlap(
-                configuration.getId(),
-                instant("2026-08-17T09:00:00Z"),
-                instant("2026-08-17T14:00:00Z"),
-                null)
+        overlap(configuration.getId(), "2026-08-17T09:00:00Z", "2026-08-17T14:00:00Z", null)
             .orElseThrow()
             .getId());
   }
@@ -123,13 +105,18 @@ class TimeSlotBookingDaoTest extends SpringTransactionalTest {
         true);
 
     assertFalse(
-        bookingDao
-            .findFirstOverlap(
-                configuration.getId(),
-                instant("2026-08-17T10:30:00Z"),
-                instant("2026-08-17T12:30:00Z"),
-                null)
+        overlap(configuration.getId(), "2026-08-17T10:30:00Z", "2026-08-17T12:30:00Z", null)
             .isPresent());
+  }
+
+  private Optional<TimeSlotBooking> overlap(
+      Long configurationId, String start, String end, Long excludedBookingId) {
+    return bookingDao.findFirstOverlap(
+        configurationId,
+        instant(start),
+        instant(end),
+        excludedBookingId,
+        Set.of(BookingEventKind.BOOKING, BookingEventKind.MAINTENANCE));
   }
 
   private BookingConfiguration configurationFor(User owner, String name) {

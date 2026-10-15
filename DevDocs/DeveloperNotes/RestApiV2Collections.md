@@ -564,11 +564,22 @@ Every ARRAY field declares a non-empty list of uniquely named child fields direc
 `CollectionFieldTypes.array(Row.class, fields, adapter)` and `Field.embedded(name, type, reader)`.
 The adapter constructs a row only after child parsing and validation. An overload accepts row and
 whole-array validators plus inclusive minimum/maximum row counts. Use
-`CollectionFieldTypes.object(Row.class, fields, adapter)` for nested groups. Neither embedded values
-nor their children are filterable or sortable. Relationship children and cyclic declarations are
+`CollectionFieldTypes.object(Row.class, fields, adapter)` for nested groups and another declared
+array for nested rows. Neither embedded values nor their children are filterable or sortable. Relationship children and cyclic declarations are
 unsupported. The no-argument array factory and opaque structured ARRAY decoders are removed.
 Array fields cannot be inferred from `@ApiV2ResourceField`; declare them programmatically with their
 children. Annotation inference fails with that guidance rather than creating an opaque placeholder.
+
+For example, this declares an array of labels with one required text child:
+
+```java
+record Label(String text) {}
+
+var labels = CollectionFieldTypes.array(
+    Label.class,
+    List.of(Field.embedded("text", CollectionFieldTypes.text(80), Label::text).required()),
+    values -> new Label((String) values.get("text")));
+```
 
 Each supplied array replaces the entire value. Unknown and non-writable child keys, null/scalar
 rows, and direct array rows fail with indexed paths such as `openingHours[2].start`. Required
@@ -594,11 +605,17 @@ apply to readOverrides or fresh serializer output.
 Defaults and published examples pass declared-child validation, including scalar child constraints.
 OpenAPI publishes object and array examples as JSON values, including additional examples.
 STRING examples retain their raw text, even when that text looks like JSON.
-Recursive `fields` metadata and OpenAPI object `items` come from those definitions, including constraints,
-required keys on CREATE and replacement UPDATE, and `additionalProperties: false`. Read properties
-may be omitted by child access, so read item schemas do not require those keys. Each declared
-property also publishes `x-rspace-fields` for custom frontend renderers. Scalar `hasMany` and generic array row editors
-remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are unchanged.
+Recursive `fields` metadata and OpenAPI object `items` come from those definitions. The declared
+child list controls the public object shape; child constraints, documentation, nullability, and
+operation-specific access shape recursive `properties` and `items`, with `additionalProperties: false`
+on each object. The array factory's inclusive row bounds publish as `minItems` and `maxItems`. Request
+schemas describe a supplied array as a complete replacement: required children and child defaults
+apply to every supplied row on CREATE and UPDATE, while the outer field remains optional on update.
+These schemas do not enable HTTP write routes for read-only collections. Read properties may be
+omitted by child access, so read item schemas do not require those keys. Each declared property also
+publishes `x-rspace-fields` for custom frontend renderers. Scalar `hasMany` and generic array row
+editors remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are
+unchanged.
 
 `CollectionFieldTypes.object()` remains available for read-only opaque objects. Writable non-array
 structured values can still use `structured(...)`; ARRAY values always use declared children.
@@ -1446,31 +1463,6 @@ OpenAPI read schemas declare optional object maps for projected runtime namespac
 eligible relationship prefixes such as `target.customFields`. The document root stays closed;
 the maps accept caller-specific field IDs without publishing those IDs in the cached schema.
 Runtime projection properties are excluded from create and update schemas.
-
-## Declared array fields
-
-Declare each public object array with `CollectionFieldTypes.array(...)` and its children with
-`Field.embedded(...)`. Pass that declared type to the resource field. For example:
-
-```java
-record Label(String text) {}
-
-var labels = CollectionFieldTypes.array(
-    Label.class,
-    List.of(Field.embedded("text", CollectionFieldTypes.text(80), Label::text).required()),
-    values -> new Label((String) values.get("text")));
-```
-
-Use `CollectionFieldTypes.object(...)` for a nested object and another declared array for nested
-rows. OpenAPI derives their recursive `properties` and `items` from these child fields, with
-`additionalProperties: false` on each object. It preserves child constraints, documentation,
-nullability and operation-specific access rules. `x-rspace-fields` contains the same recursive
-field metadata. The declared child list controls the public object shape.
-
-The array factory's row bounds become `minItems` and `maxItems`. Internal create and update body
-schemas describe a supplied array as a complete replacement. Required children and child defaults
-apply to every supplied row on either operation, while the outer field remains optional in an
-update body. These schemas do not enable HTTP write routes for read-only collections.
 
 ## Authentication and request limits
 

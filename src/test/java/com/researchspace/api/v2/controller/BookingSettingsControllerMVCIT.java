@@ -311,20 +311,9 @@ class BookingSettingsControllerMVCIT {
     BookingConfigurationDefaults before = settingsManager.getDefaults(sysadmin);
     long version = before.getConfigurationVersion();
 
-    mockMvc
-        .perform(
-            patch("/api/v2/booking-settings/admin")
-                .header("apiKey", fixture.sysadminKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(version, !before.isAllowDoubleBooking())))
-        .andExpect(status().isOk());
+    patchDefaults(body(version, !before.isAllowDoubleBooking())).andExpect(status().isOk());
 
-    mockMvc
-        .perform(
-            patch("/api/v2/booking-settings/admin")
-                .header("apiKey", fixture.sysadminKey())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body(version, before.isAllowDoubleBooking())))
+    patchDefaults(body(version, before.isAllowDoubleBooking()))
         .andExpect(status().isConflict())
         .andExpect(jsonPath("$.code").value("errors.api.v2.bookingConfiguration.stale"));
   }
