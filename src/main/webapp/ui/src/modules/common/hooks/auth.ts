@@ -3,6 +3,7 @@ import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import {
   fetchOauthToken,
+  isPublicDocumentView,
   saveStoredToken,
   secondsToExpiry,
   TOKEN_EXPIRY_BUFFER_SECONDS,
@@ -22,15 +23,15 @@ export function tokenRefreshInterval(token?: string): number | false {
   return Math.min(2_147_483_647, Math.max(1_000, secondsUntilRefresh * 1_000));
 }
 
+const LegacyOauthTokenSchema = v.object({ data: v.string() });
+const RestApiV2OauthTokenSchema = v.object({ accessToken: v.string() });
+
 /**
  * Fetches a new OAuth token from the server.
  * This is used internally by the useOauthTokenQuery hook.
  */
-const LegacyOauthTokenSchema = v.object({ data: v.string() });
-const RestApiV2OauthTokenSchema = v.object({ accessToken: v.string() });
-
 export async function fetchToken(useRestApiV2 = false): Promise<string> {
-  const legacyUrl = document.getElementById("public_document_view")
+  const legacyUrl = isPublicDocumentView()
     ? "/public/publicView/userform/ajax/inventoryOauthToken"
     : "/userform/ajax/inventoryOauthToken";
   const response = await fetch(useRestApiV2 ? "/api/v2/oauth/tokens" : legacyUrl, {
@@ -86,7 +87,7 @@ export async function fetchToken(useRestApiV2 = false): Promise<string> {
  * the token value from the query result without worrying about staleness.
  */
 export function useOauthTokenQuery(options: { useRestApiV2?: boolean } = {}) {
-  const useRestApiV2 = options.useRestApiV2 ?? document.getElementById("public_document_view") === null;
+  const useRestApiV2 = options.useRestApiV2 ?? !isPublicDocumentView();
   return useSuspenseQuery({
     queryKey: queryKeys.oauthToken(useRestApiV2),
     queryFn: async () => {

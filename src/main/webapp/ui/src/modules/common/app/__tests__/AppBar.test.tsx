@@ -4,13 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { type ComponentProps, type ReactElement, Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { currentUserResponse } from "@/__tests__/helpers/currentUserResponse";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import AccountMenu, { formatFullName, logoutHrefForSession } from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
 import HelpMenu from "@/modules/common/app/HelpMenu";
 import { useLighthouseSdk } from "@/modules/common/app/lighthouse";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
 import { createUserSessionStore, UserSessionStoreProvider } from "@/modules/common/stores/userSessionStore";
 import { ID_TOKEN_KEY } from "@/modules/common/utils/auth";
@@ -41,27 +42,6 @@ vi.mock("@tanstack/react-router", () => ({
   },
 }));
 
-const currentUser: CurrentUser = {
-  id: 1,
-  username: "ada",
-  email: "ada@example.com",
-  firstName: "Ada",
-  lastName: "Lovelace",
-  homeFolderId: 2,
-  workbenchId: 3,
-  hasPiRole: true,
-  hasSysAdminRole: false,
-  profileImageUrl: null,
-  profileImageApiUrl: null,
-  orcid: { available: true, id: null },
-  capabilities: { canUseInventory: true, canPublish: true, canViewSystem: false },
-  livechat: { enabled: false, serverKey: null },
-  session: {
-    operatedAs: false,
-    lastSession: null,
-  },
-};
-
 const appConfig = {
   version: "2.99.1",
   branding: { bannerImageUrl: "" },
@@ -70,23 +50,10 @@ const appConfig = {
   deploymentHelpEmail: null,
 };
 
-const maintenanceEnvelope = (docs: Array<Record<string, unknown>>) => ({
-  docs,
-  totalDocs: docs.length,
-  limit: 1,
-  page: 1,
-  pagingCounter: 1,
-  totalPages: docs.length === 0 ? 0 : 1,
-  hasPrevPage: false,
-  hasNextPage: false,
-  prevPage: null,
-  nextPage: null,
-});
-
 const defaultHandlers = [
-  http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
+  http.get("/api/v2/users/me", () => HttpResponse.json(currentUserResponse)),
   http.get("/api/v2/config", () => HttpResponse.json(appConfig)),
-  http.get("/api/v2/maintenances", () => HttpResponse.json(maintenanceEnvelope([]))),
+  http.get("/api/v2/maintenances", () => HttpResponse.json(v2ListEnvelope([]))),
 ] as const;
 
 function matchMediaWithEnabledFeature(enabledFeature: string | null) {
@@ -140,8 +107,8 @@ describe("NewAppBar (MSW-driven)", () => {
     server.use(
       http.get("/api/v2/users/me", () =>
         HttpResponse.json({
-          ...currentUser,
-          capabilities: { ...currentUser.capabilities, canUseInventory: false, canViewSystem: true },
+          ...currentUserResponse,
+          capabilities: { ...currentUserResponse.capabilities, canUseInventory: false, canViewSystem: true },
         }),
       ),
     );
@@ -159,7 +126,7 @@ describe("NewAppBar (MSW-driven)", () => {
     server.use(
       http.get("/api/v2/maintenances", () =>
         HttpResponse.json(
-          maintenanceEnvelope([
+          v2ListEnvelope([
             {
               id: 1,
               startDate: "2999-01-01T00:00:00.000Z",
@@ -197,7 +164,7 @@ describe("NewAppBar (MSW-driven)", () => {
   it("supplies live-chat data from /api/v2/users/me to the help menu", async () => {
     server.use(
       http.get("/api/v2/users/me", () =>
-        HttpResponse.json({ ...currentUser, livechat: { enabled: true, serverKey: "server-key" } }),
+        HttpResponse.json({ ...currentUserResponse, livechat: { enabled: true, serverKey: "server-key" } }),
       ),
     );
 
@@ -267,7 +234,7 @@ describe("AccountMenu", () => {
     [false, "/userform"],
   ])("links hasPiRole=%s to the expected profile destination", async (hasPiRole, expectedHref) => {
     const user = userEvent.setup();
-    renderAccountMenu(<AccountMenu currentUser={{ ...currentUser, hasPiRole }} bannerImageUrl="" />);
+    renderAccountMenu(<AccountMenu currentUser={{ ...currentUserResponse, hasPiRole }} bannerImageUrl="" />);
 
     await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
 
@@ -282,10 +249,10 @@ describe("AccountMenu", () => {
     renderAccountMenu(
       <AccountMenu
         currentUser={{
-          ...currentUser,
+          ...currentUserResponse,
           profileImageUrl: "/profile.png",
           orcid: { available: true, id: "0000-0001-2345-6789" },
-          session: { ...currentUser.session, operatedAs: true },
+          session: { ...currentUserResponse.session, operatedAs: true },
         }}
         bannerImageUrl="/public/banner"
       />,
@@ -306,11 +273,11 @@ describe("AccountMenu", () => {
   it("clears canonical authentication state when releasing an operated-as session", async () => {
     const user = userEvent.setup();
     const sessionStore = createUserSessionStore();
-    sessionStore.getState().upsertSession({ accountId: String(currentUser.id), token: "token" });
+    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id), token: "token" });
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
     renderAccountMenu(
       <AccountMenu
-        currentUser={{ ...currentUser, session: { ...currentUser.session, operatedAs: true } }}
+        currentUser={{ ...currentUserResponse, session: { ...currentUserResponse.session, operatedAs: true } }}
         bannerImageUrl=""
       />,
       sessionStore,
@@ -326,7 +293,7 @@ describe("AccountMenu", () => {
 
   it("uses the profile image for an ordinary session", () => {
     renderAccountMenu(
-      <AccountMenu currentUser={{ ...currentUser, profileImageUrl: "/profile.png" }} bannerImageUrl="" />,
+      <AccountMenu currentUser={{ ...currentUserResponse, profileImageUrl: "/profile.png" }} bannerImageUrl="" />,
     );
 
     expect(screen.getByAltText("")).toHaveAttribute("src", "/profile.png");
