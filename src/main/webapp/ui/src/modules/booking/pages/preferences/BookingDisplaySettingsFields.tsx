@@ -163,24 +163,16 @@ export function BookingDisplaySettingsFields({
         <p id={timeFormatDescriptionId} className="text-sm text-muted-foreground">
           {t("preferences.timeFormat.description")}
         </p>
-        {(
-          [
+        <RadioList
+          name={`${id}-time-format`}
+          selectedValue={value.timeFormat ?? "AUTOMATIC"}
+          options={[
             ["AUTOMATIC", t("preferences.timeFormat.automatic", { example: timeFormatExample("AUTOMATIC") })],
             ["H12", t("preferences.timeFormat.twelveHour", { example: timeFormatExample("H12") })],
             ["H24", t("preferences.timeFormat.twentyFourHour", { example: timeFormatExample("H24") })],
-          ] as const
-        ).map(([format, label]) => (
-          <Label key={format} className="flex items-start gap-3 font-normal">
-            <input
-              type="radio"
-              name={`${id}-time-format`}
-              value={format}
-              checked={(value.timeFormat ?? "AUTOMATIC") === format}
-              onChange={() => patch({ timeFormat: format })}
-            />
-            <span>{label}</span>
-          </Label>
-        ))}
+          ]}
+          onChange={(format) => patch({ timeFormat: format })}
+        />
       </fieldset>
       {!validation.success ? (
         <p id={errorId} role="alert" className="text-sm text-destructive">
