@@ -3,8 +3,6 @@ import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import { currentUser } from "@/__tests__/helpers/currentUserFixture";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { cataloguePage as creationCataloguePage } from "@/modules/booking/creation/__tests__/creationTestFixtures";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
@@ -102,11 +100,7 @@ describe("CalendarPage", () => {
   });
 
   it("opens the week when a link asks for Month in By Item", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))),
-    );
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([]))));
 
     await renderCalendar("/booking/calendar?view=month");
 

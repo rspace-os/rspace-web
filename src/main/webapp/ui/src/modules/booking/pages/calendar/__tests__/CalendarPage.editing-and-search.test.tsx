@@ -14,8 +14,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { currentUser } from "@/__tests__/helpers/currentUserFixture";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
@@ -345,8 +344,6 @@ describe("CalendarPage", () => {
     let serverBooking: BookingListDocument = ownBooking;
     const saves: { ifMatch: string | null; payload: unknown }[] = [];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([serverBooking]))),
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         const ifMatch = request.headers.get("If-Match");
@@ -399,8 +396,6 @@ describe("CalendarPage", () => {
       purpose: "Calibration",
     };
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () =>
         HttpResponse.json(collectionResponse([auroraBooking, otherPurpose, busyBooking])),
       ),
