@@ -18,7 +18,7 @@ env:
   # --- target (throwaway instance) ---
   RSPACE_BASE_URL: http://localhost:8080
   TARGET_URL: http://localhost:8080
-  PENTEST_REF: "56efd38e1344fb5c550b632b7eb7647cd4315ab6"
+  PENTEST_REF: "309201264ea8c0398db830e805a59a6a342e1f97"
   PLAN: quick-release
   REPORT_DIR: reports
 
@@ -136,10 +136,7 @@ jobs:
 
       - name: Build ZAP image
         working-directory: pentest
-        run: |
-          echo "ZAP_IMAGE=rspace-pentest:pr-${{ github.run_id }}" >> "$GITHUB_ENV"
-          echo "MERGED_PLAN=plans/${PLAN}-merged.yaml" >> "$GITHUB_ENV"
-          docker build -t "rspace-pentest:pr-${{ github.run_id }}" .
+        run: python3 scripts/pr_scan.py build
 
       - name: Wait for RSpace readiness
         run: |
@@ -156,37 +153,13 @@ jobs:
       - name: Prepare reports and merge plan
         id: prepare
         working-directory: pentest
-        run: |
-          mkdir -p "$REPORT_DIR"; chmod 777 "$REPORT_DIR"
-          python3 scripts/spec_versions.py > spec_versions.env
-          # Exactly the two spec-version lines, and nothing else, may reach GITHUB_ENV.
-          keys="$(cut -d= -f1 spec_versions.env | sort | tr '\n' ' ')"
-          if grep -vqxE '(API|INVENTORY_API)_SPEC_VERSION=[A-Za-z0-9._-]+' spec_versions.env \
-            || [ "$keys" != "API_SPEC_VERSION INVENTORY_API_SPEC_VERSION " ]; then
-            echo "::error::Unexpected spec_versions.py output"; exit 1
-          fi
-          cat spec_versions.env >> "$GITHUB_ENV"
-          set -a; . ./spec_versions.env; set +a
-          python3 scripts/validate_plans.py
-          python3 scripts/merge_plan.py "$PLAN"
+        run: python3 scripts/pr_scan.py prepare
 
       - name: Run ZAP automation plan (quick-release)
         id: zap
         continue-on-error: true
         working-directory: pentest
-        run: |
-          docker run --rm --user zap --network host \
-            -v "$PWD:/zap/wrk" -w /zap/wrk \
-            -e ZAP_USERNAME -e ZAP_PASSWORD -e ZAP_APIKEY -e TARGET_URL \
-            -e API_SPEC_VERSION -e INVENTORY_API_SPEC_VERSION \
-            -e ZAP_USER2_USERNAME -e ZAP_USER2_PASSWORD \
-            "$ZAP_IMAGE" zap.sh -cmd -autorun "/zap/wrk/${MERGED_PLAN}" -port 8090 \
-            > "$REPORT_DIR/zap-console.log" 2>&1 || rc=$?
-          # The automation framework exits 1 on plan errors and 2 on warnings only.
-          if [ "${rc:-0}" -eq 2 ]; then
-            echo "::warning::ZAP plan finished with warnings"; exit 0
-          fi
-          exit "${rc:-0}"
+        run: python3 scripts/pr_scan.py scan
 
       # Process reports on this runner; do not publish downloadable artifacts.
       - name: Security gate (informational)
@@ -194,13 +167,7 @@ jobs:
         if: always() && steps.prepare.outcome == 'success'
         continue-on-error: true
         working-directory: pentest
-        run: |
-          set +e
-          python3 scripts/post_process.py > security_gate.out 2>&1
-          rc=$?
-          echo "post_process exit: $rc"
-          grep -E '^\[Post\] Alert counts|^\[Gate\]' security_gate.out || echo "(no gate output)"
-          exit "$rc"
+        run: python3 scripts/pr_scan.py gate
 
       - name: Job summary (counts only)
         if: always()
@@ -219,48 +186,38 @@ jobs:
             echo "_Counts only. Finding detail is sent to the security team's Slack; no names or URLs are published here._"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # PR runs post to Slack ONLY when actionable (High/Medium alert, any
-      # FINDING, or failure).
-      - name: Notify Slack (findings only)
-        if: ${{ always() && env.HAS_SLACK_WEBHOOK == 'true' }}
+      - name: Prepare Slack payload (findings only)
+        id: slack_payload
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && steps.prepare.outcome == 'success' }}
+        working-directory: pentest
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SCAN_STATUS: ${{ (steps.zap.outcome == 'failure' || steps.gate.outcome == 'failure' || job.status == 'failure') && 'failure' || 'success' }}
-          # Preparation makes the reporter available; earlier failures use the fallback.
-          REPORTER_READY: ${{ steps.prepare.outcome == 'success' }}
           SCAN_TITLE: "rspace-web PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
           SCAN_LINK: ${{ github.event.pull_request.html_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          if [ "$REPORTER_READY" = "true" ]; then
-            cd pentest
-            exec python3 scripts/slack_summary.py --only-on-findings
+          python3 scripts/slack_summary.py --only-on-findings --output "$RUNNER_TEMP/zap-slack.json"
+          if [ -s "$RUNNER_TEMP/zap-slack.json" ]; then
+            echo "notify=true" >> "$GITHUB_OUTPUT"
           fi
-          # No checkout or Python dependencies are needed for this fallback notice.
-          cd "$RUNNER_TEMP"
-          python3 -I - <<'PY'
-          import json
-          import os
-          import urllib.request
 
-          reason = "Scan setup did not complete; no security result is available."
-          text = (
-              f"{os.environ['SCAN_TITLE']} ({os.environ['SCAN_STATUS']})\n"
-              f"{reason}\n"
-              f"{os.environ['RUN_URL']}"
-          )
-          payload = {"attachments": [{"color": "danger", "text": text}]}
-          try:
-              request = urllib.request.Request(
-                  os.environ['SLACK_WEBHOOK_URL'],
-                  data=json.dumps(payload).encode('utf-8'),
-                  headers={'Content-Type': 'application/json'},
-                  method='POST',
-              )
-              with urllib.request.urlopen(request, timeout=30) as response:
-                  print(f"[Slack] Posted fallback notice: HTTP {response.status}")
-          except (OSError, ValueError):
-              # Transport errors can contain the secret webhook URL.
-              print("[Slack] Could not post fallback notice: request failed.")
-              raise SystemExit(1)
-          PY
+      - name: Notify Slack (findings only)
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && steps.slack_payload.outputs.notify == 'true' }}
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: ${{ runner.temp }}/zap-slack.json
+          errors: true
+
+      - name: Notify Slack (setup or reporting failure)
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && (steps.prepare.outcome != 'success' || steps.slack_payload.outcome == 'failure') }}
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          errors: true
+          payload: |
+            attachments:
+              - color: danger
+                text: ${{ toJSON(format('rspace-web PR #{0}: {1} (failure). Scan setup or reporting did not complete; no complete security result is available. {2}/{3}/actions/runs/{4}', github.event.pull_request.number, github.event.pull_request.title, github.server_url, github.repository, github.run_id)) }}
