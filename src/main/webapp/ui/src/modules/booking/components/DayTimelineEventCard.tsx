@@ -2,7 +2,7 @@ import { ChevronRight, LockKeyhole, Wrench } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { sameTimeZone, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { instrumentZoneDiffers, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { Popover, PopoverContent, PopoverTrigger } from "@/modules/common/ui/popover";
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
@@ -92,7 +92,7 @@ export function DayTimelineEventCard({
   const instrumentTimezoneDiffers =
     Boolean(event.startInstant) &&
     event.instrumentTimeZone != null &&
-    (!sameTimeZone(event.instrumentTimeZone, timezone) || !sameTimeZone(event.instrumentTimeZone, browserTimezone));
+    instrumentZoneDiffers(event.instrumentTimeZone, timezone, browserTimezone);
   const startDate = dateForMinute(date, timezone, event.startMinute);
   const endDate = dateForMinute(date, timezone, event.endMinute);
   const compactDate =

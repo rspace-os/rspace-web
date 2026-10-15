@@ -1,4 +1,6 @@
+import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
@@ -182,3 +184,15 @@ export async function fetchDayBookings(
   }
   return bookings;
 }
+
+export const dayScheduleQuery = (
+  globalId: string | undefined,
+  bounds: { start: string; end: string },
+  token: string,
+  scope: unknown,
+) =>
+  queryOptions({
+    queryKey: [...bookingKeys.all, "day-schedule", scope, globalId, bounds.start, bounds.end] as const,
+    queryFn: globalId === undefined ? skipToken : ({ signal }) => fetchDayBookings([globalId], bounds, token, signal),
+    staleTime: 30_000,
+  });

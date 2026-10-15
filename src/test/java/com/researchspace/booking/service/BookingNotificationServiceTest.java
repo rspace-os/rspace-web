@@ -79,12 +79,13 @@ class BookingNotificationServiceTest {
     Instrument instrument = instrument("<Mic & scope>");
     TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, actor);
     when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
+    List<BookingNotificationRecipient> recipients =
+        List.of(
+            new BookingNotificationRecipient(
+                recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, false));
     when(recipientReader.selectRecipients(
             INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
-        .thenReturn(
-            List.of(
-                new BookingNotificationRecipient(
-                    recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, false)));
+        .thenReturn(recipients);
 
     service.notify(booking, actor, notificationType);
 
@@ -96,7 +97,6 @@ class BookingNotificationServiceTest {
     assertEquals(true, config.getValue().isBroadcast());
     assertEquals(CommunicationNotifyPolicy.ALWAYS_NOTIFY, config.getValue().getPolicyOverride());
     assertEquals(false, config.getValue().isRecordAuthorisationRequired());
-    assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     assertEquals(Set.of(recipient), config.getValue().getNotificationTargetsOverride());
     assertTrue(config.getValue().isIncludeOriginator());
     // CommunicationManager mutates this set before persisting recipients.
@@ -108,6 +108,7 @@ class BookingNotificationServiceTest {
     assertEquals("IN12", data.getInstrumentGlobalIdentifier());
     assertEquals("2026-01-02T03:04:05Z", data.getStartTime());
     assertEquals("2026-01-02T04:04:05Z", data.getEndTime());
+    assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     // The saved message is also the email body, so it links with absolute URLs.
     String bookingLink =
         "<a href=\"https://rspace.example.org/booking/calendar/bookings/42\">42</a>";

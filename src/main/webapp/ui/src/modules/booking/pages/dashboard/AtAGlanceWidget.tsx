@@ -4,13 +4,13 @@ import { TZDate } from "react-day-picker";
 import { useTranslation } from "react-i18next";
 import { dateInTimeZone } from "@/modules/booking/bookingDates";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { monthlyDashboardBookingsQuery } from "@/modules/booking/pages/dashboard/dashboardBookings";
 import { Calendar } from "@/modules/common/ui/calendar";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { DashboardCalendarContext, DashboardCalendarDay } from "./DashboardCalendarDay";
 import { DashboardEmpty, DashboardError } from "./DashboardFeedback";
 import {
   dashboardMonthInterval,
-  fetchMonthlyDashboardBookings,
   groupDashboardBookingsByDay,
   TooManyDashboardBookingsError,
 } from "./dashboardBookings";
@@ -39,12 +39,8 @@ export function AtAGlanceWidget({
   const [openDayKey, setOpenDayKey] = useState<string | null>(null);
   const interval = useMemo(() => dashboardMonthInterval(month, timeZone), [month, timeZone]);
   const query = useQuery({
-    queryKey: ["api-v2", "bookings", "dashboard", "monthly", requesterId, timeZone, interval.start, interval.end],
-    queryFn: ({ signal }) =>
-      fetchMonthlyDashboardBookings({ requesterId, start: interval.start, end: interval.end, token, signal }),
+    ...monthlyDashboardBookingsQuery(requesterId, timeZone, interval.start, interval.end, token),
     enabled: token.length > 0,
-    retry: false,
-    refetchOnWindowFocus: true,
   });
   const bookingsByDay = useMemo(
     () =>

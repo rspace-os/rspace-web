@@ -37,9 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -428,8 +432,9 @@ class TimeSlotBookingManagerLifecycleTest {
     verify(bookingNotificationService, never()).notifyRestored(any(), any());
   }
 
-  @Test
-  void cancellationReasonIsTrimmedAndStoredOnTheCancellation() {
+  @ParameterizedTest
+  @MethodSource("cancellationReasonInputs")
+  void cancellationReasonIsNormalizedOnTheCancellation(String input, String expected) {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
     when(configurationDao.lockActiveById(4L))
@@ -440,38 +445,20 @@ class TimeSlotBookingManagerLifecycleTest {
             .updateBooking(
                 41L,
                 new TimeSlotBookingManager.Patch(
-                    null,
-                    null,
-                    false,
-                    null,
-                    BookingState.CANCELLED,
-                    "  Instrument needs recalibration  "),
+                    null, null, false, null, BookingState.CANCELLED, input),
                 actor,
                 actor)
             .orElseThrow();
 
-    assertEquals("Instrument needs recalibration", cancelled.getCancellationReason());
+    assertEquals(expected, cancelled.getCancellationReason());
     assertEquals(BookingState.CANCELLED, cancelled.getState());
-    assertEquals("Instrument needs recalibration", cancelled.getVisibleCancellationReason());
+    assertEquals(expected, cancelled.getVisibleCancellationReason());
   }
 
-  @Test
-  void blankCancellationReasonIsStoredAsNull() {
-    TimeSlotBooking existing = booking(41L, 12L, actor);
-    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
-    when(configurationDao.lockActiveById(4L))
-        .thenReturn(Optional.of(existing.getBookingConfiguration()));
-
-    manager
-        .updateBooking(
-            41L,
-            new TimeSlotBookingManager.Patch(
-                null, null, false, null, BookingState.CANCELLED, " \t\n "),
-            actor,
-            actor)
-        .orElseThrow();
-
-    assertNull(existing.getCancellationReason());
+  private static Stream<Arguments> cancellationReasonInputs() {
+    return Stream.of(
+        Arguments.of("  Instrument needs recalibration  ", "Instrument needs recalibration"),
+        Arguments.of(" \t\n ", null));
   }
 
   @Test

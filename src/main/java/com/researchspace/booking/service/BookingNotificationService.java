@@ -13,6 +13,8 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunicationNotifyPolicy;
 import com.researchspace.service.NotificationConfig;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -74,16 +76,17 @@ public class BookingNotificationService {
     BookingNotificationData data = notificationData(booking, targetInstrument);
     data.setRestored(restored);
     Long requesterId = booking.getRequester() == null ? null : booking.getRequester().getId();
-    for (BookingNotificationRecipient recipient :
+    List<BookingNotificationRecipient> recipients =
         recipientReader.selectRecipients(
-            targetInstrument.getId(), notificationType, actor.getId(), requesterId)) {
+            targetInstrument.getId(), notificationType, actor.getId(), requesterId);
+    for (BookingNotificationRecipient recipient : recipients) {
       NotificationConfig config = new NotificationConfig();
       config.setNotificationType(notificationType);
       config.setBroadcast(true);
       config.setIncludeOriginator(true);
       config.setPolicyOverride(CommunicationNotifyPolicy.ALWAYS_NOTIFY);
       config.setRecordAuthorisationRequired(false);
-      config.setNotificationTargetsOverride(new java.util.HashSet<>(Set.of(recipient.user())));
+      config.setNotificationTargetsOverride(new HashSet<>(Set.of(recipient.user())));
       config.setNotificationData(data);
       config.setNotificationEventPreferenceOverride(recipient.requester());
 

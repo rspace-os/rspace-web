@@ -28,7 +28,7 @@ import { ActiveBookingCreationDialog } from "../ActiveBookingCreationDialog";
 import type { BookableItemOption } from "../bookableItemOption";
 import type { BookingCreationContext } from "../bookingCreationStore";
 import { BookingCreationStoreProvider } from "../bookingCreationStore";
-import { confocalTargetWith } from "./creationTestFixtures";
+import { confocalTargetWith, existingBooking } from "./creationTestFixtures";
 
 // Delegates to the real request unless a test rejects with a problem carrying its parsed body.
 vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
@@ -79,31 +79,6 @@ function overlappingEvent(kind: "BOOKING" | "MAINTENANCE", privacy: "full" | "bu
     purpose: privacy === "busy" ? null : "Private purpose",
     cancellationReason: null,
     bookedBy: privacy === "busy" ? null : "Private requester",
-    canEdit: false,
-    canCancel: false,
-    createdAt: "2030-10-01T09:00:00Z",
-    updatedAt: "2030-10-01T09:00:00Z",
-  };
-}
-
-function existingBooking({ id, start, end }: { id: number; start: string; end: string }) {
-  return {
-    id,
-    version: 0,
-    target: {
-      relationTo: "booking-instruments",
-      value: { id: 123, name: "Confocal microscope", deleted: false },
-      globalId: "IN123",
-    },
-    timezone: "UTC",
-    start,
-    end,
-    state: "CONFIRMED",
-    kind: "BOOKING",
-    privacy: "full",
-    purpose: `Purpose ${id}`,
-    cancellationReason: null,
-    bookedBy: "Ada Lovelace",
     canEdit: false,
     canCancel: false,
     createdAt: "2030-10-01T09:00:00Z",

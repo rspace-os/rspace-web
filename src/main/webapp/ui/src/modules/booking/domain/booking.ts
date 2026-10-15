@@ -1,4 +1,6 @@
+import { queryOptions, skipToken } from "@tanstack/react-query";
 import * as v from "valibot";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
@@ -111,10 +113,15 @@ const BookingAvailabilityIdentitySchema = {
   state: v.picklist(["CONFIRMED", "CANCELLED"]),
   kind: v.optional(BookingEventKindSchema, "BOOKING"),
 };
-const BookingFullPrivacyEntries = {
+const BookingListPrivacyEntries = {
   purpose: v.nullable(v.string()),
   bookedBy: v.nullable(v.string()),
   createdBy: v.optional(v.nullable(v.string())),
+};
+
+const BookingFullPrivacyEntries = {
+  ...BookingListPrivacyEntries,
+  cancellationReason: v.nullable(v.string()),
 };
 
 const BookingFullManagementEntries = {
@@ -134,7 +141,6 @@ function bookingSchema<
       ...identity,
       privacy: v.literal("full"),
       ...BookingFullPrivacyEntries,
-      cancellationReason: v.nullable(v.string()),
       ...BookingFullManagementEntries,
     }),
     v.object({
@@ -167,7 +173,6 @@ export const BookingDetailsSchema = withEndAfterStart(
     canViewConfiguration: v.boolean(),
     privacy: v.literal("full"),
     ...BookingFullPrivacyEntries,
-    cancellationReason: v.nullable(v.string()),
     ...BookingFullManagementEntries,
   }),
   ["end"],
@@ -180,7 +185,7 @@ const BookingListDocumentObjectSchema = v.object({
   canViewConfiguration: v.boolean(),
   /** Null when the caller can see only a busy event. */
   requesterId: v.nullable(v.number()),
-  ...BookingFullPrivacyEntries,
+  ...BookingListPrivacyEntries,
   privacy: v.picklist(["full", "busy"]),
   ...BookingFullManagementEntries,
 });
@@ -331,3 +336,15 @@ export function cancelBooking(id: number, version: number, token: string, reason
 export function restoreBooking(id: number, version: number, token: string): Promise<BookingMutation> {
   return updateBooking(id, version, { state: "CONFIRMED" }, token);
 }
+
+export const bookingQueryOptions = (id: number | undefined, token: string) =>
+  queryOptions({
+    queryKey: [...bookingKeys.all, id] as const,
+    queryFn: id === undefined ? skipToken : ({ signal }) => fetchBooking(id, token, signal),
+    retry: (failureCount, error) =>
+      failureCount < 2 &&
+      !(
+        error instanceof BookingUnavailableError ||
+        (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500)
+      ),
+  });

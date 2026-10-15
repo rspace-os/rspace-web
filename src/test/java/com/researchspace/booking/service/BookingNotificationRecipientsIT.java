@@ -228,10 +228,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         Boolean.FALSE.toString(),
         requester.getUsername());
 
-    logoutAndLoginAs(requester);
-    TimeSlotBooking booking = createBooking(setup, requester);
-    assertNoNotification(requester);
-    emailCapture.clear();
+    TimeSlotBooking booking = requesterBookingToCancel(setup, requester);
 
     logoutAndLoginAs(owner);
     TimeSlotBooking cancelled =
@@ -294,10 +291,7 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         Boolean.FALSE.toString(),
         requester.getUsername());
 
-    logoutAndLoginAs(requester);
-    TimeSlotBooking booking = createBooking(setup, requester);
-    assertNoNotification(requester);
-    emailCapture.clear();
+    TimeSlotBooking booking = requesterBookingToCancel(setup, requester);
     applyRequesterIneligibility(requester, ineligibility);
 
     logoutAndLoginAs(owner);
@@ -567,6 +561,15 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         configurationManager.createConfiguration(
             new BookingConfigurationManager.Create(true, "UTC", resolved), owner, owner);
     return new BookingSetup(configuration, resolved, created.getId());
+  }
+
+  private TimeSlotBooking requesterBookingToCancel(BookingSetup setup, User requester)
+      throws Exception {
+    logoutAndLoginAs(requester);
+    TimeSlotBooking booking = createBooking(setup, requester);
+    assertNoNotification(requester);
+    emailCapture.clear();
+    return booking;
   }
 
   private TimeSlotBooking createBooking(BookingSetup setup, User actor) {

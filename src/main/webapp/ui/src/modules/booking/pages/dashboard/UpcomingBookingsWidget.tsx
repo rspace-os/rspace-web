@@ -3,10 +3,10 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingAgenda } from "@/modules/booking/components/BookingAgenda";
+import { upcomingDashboardBookingsQuery } from "@/modules/booking/pages/dashboard/dashboardBookings";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { DashboardEmpty, DashboardError } from "./DashboardFeedback";
-import { fetchUpcomingDashboardBookings } from "./dashboardBookings";
 import { dashboardBooking } from "./dashboardHelpers";
 
 function UpcomingBookingSkeleton() {
@@ -38,14 +38,11 @@ export function UpcomingBookingsWidget({
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
-  const asOfIso = useMemo(() => new Date(asOf).toISOString(), [asOf]);
+  const asOfIso = new Date(asOf).toISOString();
   const [expandedIds, setExpandedIds] = useState<ReadonlySet<number>>(() => new Set());
   const query = useQuery({
-    queryKey: ["api-v2", "bookings", "dashboard", "upcoming", requesterId, timeZone, asOfIso],
-    queryFn: ({ signal }) => fetchUpcomingDashboardBookings({ requesterId, asOf: asOfIso, token, signal }),
+    ...upcomingDashboardBookingsQuery(requesterId, timeZone, asOfIso, token),
     enabled: token.length > 0,
-    retry: false,
-    refetchOnWindowFocus: true,
     placeholderData: keepPreviousData,
   });
   const rows = useMemo(() => (query.isSuccess ? query.data.map(dashboardBooking) : []), [query.data, query.isSuccess]);

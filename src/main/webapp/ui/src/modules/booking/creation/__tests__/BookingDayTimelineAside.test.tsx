@@ -112,21 +112,14 @@ function StatefullyControlledAside({
   onChange: (next: BookingWindowDraft) => void;
 }) {
   const [currentDraft, setCurrentDraft] = useState(draft);
-  return (
-    <QueryClientProvider client={client}>
-      <Suspense fallback={null}>
-        <AsideWithForm
-          selectedTarget={target}
-          selectedDraft={currentDraft}
-          timezone="Europe/Berlin"
-          onChange={(next) => {
-            onChange(next);
-            setCurrentDraft(next);
-          }}
-        />
-      </Suspense>
-    </QueryClientProvider>
-  );
+  return asideTree({
+    client,
+    selectedDraft: currentDraft,
+    onChange: (next) => {
+      onChange(next);
+      setCurrentDraft(next);
+    },
+  });
 }
 
 async function expectVisibleOccurrence(text: string) {
