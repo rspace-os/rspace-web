@@ -83,11 +83,7 @@ describe("BookableItemPage", () => {
     };
     render(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <BookableItemNotificationSubscription
-          configurationId={7}
-          globalId="IN123"
-          canManageNotificationSubscription={true}
-        />
+        <BookableItemNotificationSubscription configurationId={7} globalId="IN123" subjectId={123} />
       </QueryClientProvider>,
     );
 
@@ -446,11 +442,7 @@ describe("BookableItemPage", () => {
   it("gives the item notification options an accessible English group name", async () => {
     await renderWithRealI18n(
       <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-        <BookableItemNotificationSubscription
-          configurationId={7}
-          globalId="IN123"
-          canManageNotificationSubscription={true}
-        />
+        <BookableItemNotificationSubscription configurationId={7} globalId="IN123" subjectId={123} />
       </QueryClientProvider>,
       { resources: { booking: bookingEn }, defaultNS: "booking" },
     );

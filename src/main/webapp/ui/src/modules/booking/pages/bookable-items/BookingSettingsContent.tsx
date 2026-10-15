@@ -1,5 +1,6 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { isEqual, pick } from "es-toolkit";
 import { CheckIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,13 +31,13 @@ import { Heading } from "@/modules/common/ui/typography";
 import { BookingDisplaySettingsFields } from "../preferences/BookingDisplaySettingsFields";
 
 function displayInput(settings: BookingAdminSettings): BookingDisplayPreferencesInput {
-  return {
-    availabilityWindowStart: settings.availabilityWindowStart,
-    availabilityWindowEnd: settings.availabilityWindowEnd,
-    timezoneMode: settings.timezoneMode,
-    customTimezone: settings.customTimezone,
-    timeFormat: settings.timeFormat,
-  };
+  return pick(settings, [
+    "availabilityWindowStart",
+    "availabilityWindowEnd",
+    "timezoneMode",
+    "customTimezone",
+    "timeFormat",
+  ]);
 }
 
 export function BookingSettingsContent() {
@@ -83,7 +84,7 @@ export function BookingSettingsContent() {
     },
   });
   const displaySettingsValid = v.safeParse(BookingDisplayPreferencesInputSchema, displaySettings).success;
-  const dirty = isDirty(form) || JSON.stringify(displaySettings) !== JSON.stringify(displayInput(settings));
+  const dirty = isDirty(form) || !isEqual(displaySettings, displayInput(settings));
 
   // Refresh the server baseline only when no local edits (including weekday hours) would be lost.
   useEffect(() => {

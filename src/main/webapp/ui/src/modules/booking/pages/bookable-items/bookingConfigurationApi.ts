@@ -43,6 +43,9 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
+export const bookingConfigurationTargetQueryKey = (globalId: string) =>
+  ["api-v2", "booking-configurations", "target", globalId] as const;
+
 const bookingConfigurationReadParameters = {
   depth: "2",
   "fields[instruments]": "id,globalId,name,deleted,parentContainer",
@@ -57,7 +60,7 @@ export class BookingConfigurationRequestError extends Error {
 }
 
 /** No readable booking configuration exists for a target: it is unconfigured, missing, or not visible. */
-export class BookingConfigurationNotFoundError extends Error {
+class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
 }
 
@@ -66,12 +69,11 @@ export async function fetchBookingConfigurationByTarget(
   token: string,
   signal?: AbortSignal,
 ): Promise<BookingConfiguration> {
-  const configurations = await readBookingConfigurationsByTarget(globalId, token, signal);
-  if (configurations.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
-  if (configurations.length === 0 || configurations[0].target?.globalId !== globalId) {
+  const configuration = await findBookingConfigurationByTarget(globalId, token, signal);
+  if (!configuration || configuration.target?.globalId !== globalId) {
     throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
   }
-  return configurations[0];
+  return configuration;
 }
 
 export async function fetchBookingConfigurationDetailsByTarget(

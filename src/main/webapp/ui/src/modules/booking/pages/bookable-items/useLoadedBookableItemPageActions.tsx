@@ -13,6 +13,7 @@ import {
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
+  bookingConfigurationTargetQueryKey,
   invalidateBookingCatalogueQueries,
   permanentlyDeleteBookingConfiguration,
   restoreBookingConfiguration,
@@ -102,7 +103,7 @@ export function useLoadedBookableItemPageActions({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         setStaleEdit(true);
-        const queryKey = ["api-v2", "booking-configurations", "target", globalId];
+        const queryKey = bookingConfigurationTargetQueryKey(globalId);
         await queryClient.refetchQueries({ queryKey });
         const latest = queryClient.getQueryData<BookingConfiguration>(queryKey);
         if (latest) setConflictVersion(latest.configurationVersion);
@@ -125,7 +126,7 @@ export function useLoadedBookableItemPageActions({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -145,7 +146,7 @@ export function useLoadedBookableItemPageActions({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -165,7 +166,7 @@ export function useLoadedBookableItemPageActions({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
