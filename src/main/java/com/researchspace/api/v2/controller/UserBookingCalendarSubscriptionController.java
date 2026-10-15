@@ -1,11 +1,11 @@
 package com.researchspace.api.v2.controller;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.controller.BookingCalendarSubscriptionController.CreatedDocument;
+import com.researchspace.api.v2.controller.BookingCalendarSubscriptionController.StatusDocument;
 import com.researchspace.booking.service.BookingCalendarManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,34 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v2/users/me/booking-calendar-subscription")
 public class UserBookingCalendarSubscriptionController {
 
-  /** Current subscription document for the authenticated owner. */
-  public record StatusDocument(boolean active, String updatedAt, String subscriptionUrl) {
-
-    static StatusDocument from(BookingCalendarManager.Status status) {
-      return new StatusDocument(
-          status.active(), isoTimestamp(status.updatedAt()), status.subscriptionUrl());
-    }
-  }
-
-  /** One-time creation response containing the newly issued subscription URL. */
-  public record CreatedDocument(boolean active, String updatedAt, String subscriptionUrl) {
-
-    static CreatedDocument from(BookingCalendarManager.Created created) {
-      return new CreatedDocument(
-          created.status().active(),
-          isoTimestamp(created.status().updatedAt()),
-          created.subscriptionUrl());
-    }
-  }
-
   private final BookingCalendarManager manager;
 
   public UserBookingCalendarSubscriptionController(BookingCalendarManager manager) {
     this.manager = manager;
-  }
-
-  private static String isoTimestamp(Date value) {
-    return value == null ? null : DateTimeFormatter.ISO_INSTANT.format(value.toInstant());
   }
 
   @GetMapping

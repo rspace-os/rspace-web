@@ -95,9 +95,7 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
     };
 
     const onSubmitHandler = () => {
-      if (recipient) {
-        void search.transferRecords(recipient.username, selectedResults, transferBookingOwnership);
-      }
+      if (recipient) void search.transferRecords(recipient.username, selectedResults, transferBookingOwnership);
       handleClose();
     };
 
