@@ -7,11 +7,7 @@ import { server } from "@/__tests__/mswServer";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
 import { collectionResponse } from "../../mocks/bookingCalendarFixtures";
-import {
-  loadCalendarAvailability,
-  loadDatedCalendarAvailability,
-  useCalendarAvailability,
-} from "../calendarAvailability";
+import { loadCalendarAvailability, useCalendarAvailability } from "../calendarAvailability";
 
 const booking = (id: number, target: string, start: string, end: string) => ({
   id,
@@ -154,7 +150,11 @@ describe("calendar availability", () => {
     );
 
     expect(requests).toHaveLength(1);
-    expect(requests[0].searchParams.get("where")).toContain("target=in=(IN1,IN2)");
+    const where = requests[0].searchParams.get("where") ?? "";
+    expect(where).toContain("target=in=(IN1,IN2)");
+    expect(where).toContain("start=lt=2026-03-29T22:00:00Z");
+    expect(where).toContain("end=gt=2026-03-28T23:00:00Z");
+    expect(where).not.toMatch(/start<|end>/);
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(BOOKING_READ_FIELDS);
     expect(result.get("IN1")).toEqual([
       sourced("booking:1", "booking", "2026-03-28T23:00:00Z", "2026-03-29T01:00:00Z", "2026-03-28T22:00:00Z"),
@@ -578,68 +578,6 @@ describe("calendar availability", () => {
     );
     expect(result.get("IN1")).toEqual(
       closures.map(([start, end]) => sourced(closureId("IN1", start, end), "blockout", start, end)),
-    );
-  });
-  it("uses one envelope while clipping rows to different local dates", async () => {
-    let requestUrl: URL | undefined;
-    server.use(
-      http.get("/api/v2/bookings", ({ request }) => {
-        requestUrl = new URL(request.url);
-        return HttpResponse.json(
-          collectionResponse([
-            booking(1, "IN1", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
-            booking(2, "IN2", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
-          ]),
-        );
-      }),
-    );
-
-    const result = await loadDatedCalendarAvailability(
-      [
-        { globalId: "IN1", timezone: "Asia/Tokyo", date: "2026-08-18", ...schedule },
-        { globalId: "IN2", timezone: "America/Los_Angeles", date: "2026-08-17", ...schedule },
-      ],
-      "token",
-      new AbortController().signal,
-    );
-
-    const where = requestUrl?.searchParams.get("where") ?? "";
-    expect(where).toContain("start=lt=2026-08-18T15:00:00Z");
-    expect(where).toContain("end=gt=2026-08-17T07:00:00Z");
-    expect(where).not.toMatch(/start<|end>/);
-    expect(result.get("IN1")).toEqual([
-      sourced("booking:1", "booking", "2026-08-17T22:00:00Z", "2026-08-18T02:00:00Z"),
-    ]);
-    expect(result.get("IN2")).toEqual([
-      sourced("booking:2", "booking", "2026-08-18T03:00:00Z", "2026-08-18T06:00:00Z"),
-    ]);
-  });
-
-  it("uses the largest shared buffer on both sides of a dated availability query", async () => {
-    const requests: URL[] = [];
-    server.use(
-      http.get("/api/v2/bookings", ({ request }) => {
-        requests.push(new URL(request.url));
-        return HttpResponse.json(collectionResponse([]));
-      }),
-    );
-    await loadDatedCalendarAvailability(
-      [
-        {
-          globalId: "IN1",
-          timezone: "UTC",
-          date: "2026-08-17",
-          ...schedule,
-          bufferBeforeMinutes: 10,
-          bufferAfterMinutes: 20,
-        },
-      ],
-      "token",
-      new AbortController().signal,
-    );
-    expect(requests).toHaveLength(1);
-    expect(requests[0].searchParams.get("where")).toBe(
-      "target=in=(IN1);start=lt=2026-08-18T00:20:00Z;end=gt=2026-08-16T23:40:00Z;state==CONFIRMED",
     );
   });
 });
