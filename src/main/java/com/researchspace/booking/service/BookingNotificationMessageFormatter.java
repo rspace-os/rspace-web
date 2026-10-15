@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +58,7 @@ public class BookingNotificationMessageFormatter {
     this.messageSource = messageSource;
     this.absoluteLinkBase = stripTrailingSlashes(serverUrlPrefix);
     // Checked once at startup rather than per email: failing inside a booking transaction would
-    // block
-    // the booking itself over a configuration problem.
+    // block the booking itself over a configuration problem.
     if (!isAbsoluteHttpUrl(absoluteLinkBase)) {
       log.warn(
           "server.urls.prefix '{}' is not an absolute http(s) URL; links in booking notification"
@@ -182,12 +182,7 @@ public class BookingNotificationMessageFormatter {
   }
 
   private static String stripTrailingSlashes(String value) {
-    String trimmed = value == null ? "" : value.trim();
-    int end = trimmed.length();
-    while (end > 0 && trimmed.charAt(end - 1) == '/') {
-      end--;
-    }
-    return trimmed.substring(0, end);
+    return StringUtils.stripEnd(StringUtils.trimToEmpty(value), "/");
   }
 
   /**

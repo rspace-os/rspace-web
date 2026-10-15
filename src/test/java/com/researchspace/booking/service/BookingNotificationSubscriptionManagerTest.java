@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -221,14 +222,10 @@ class BookingNotificationSubscriptionManagerTest {
 
   @Test
   void preferencesExposeTheSharedProfileEventChoicesAndEffectiveEmailDelivery() {
-    when(userManager.getPreferenceForUser(owner, Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS))
-        .thenReturn(preference(Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, true));
-    when(userManager.getPreferenceForUser(owner, Preference.NOTIFICATION_BOOKING_CREATED_PREF))
-        .thenReturn(preference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, false));
-    when(userManager.getPreferenceForUser(owner, Preference.NOTIFICATION_BOOKING_CANCELLED_PREF))
-        .thenReturn(preference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true));
-    when(userManager.getPreferenceForUser(owner, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL))
-        .thenReturn(preference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false));
+    stubPreference(Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, true);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, false);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false);
 
     assertEquals(
         new BookingNotificationSubscriptionManager.Preferences(true, false, true, false),
@@ -237,8 +234,7 @@ class BookingNotificationSubscriptionManagerTest {
 
   @Test
   void replacingPreferencesWritesTheProfileEventChoicesButNotEmailDelivery() {
-    when(userManager.getPreferenceForUser(owner, Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL))
-        .thenReturn(preference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, true));
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, true);
 
     BookingNotificationSubscriptionManager.Preferences saved =
         manager.replacePreferences(
@@ -266,7 +262,7 @@ class BookingNotificationSubscriptionManagerTest {
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
 
     assertThrows(
-        org.apache.shiro.authz.AuthorizationException.class,
+        AuthorizationException.class,
         () ->
             manager.replacePreferences(
                 new BookingNotificationSubscriptionManager.PreferenceChanges(true, true, true),
