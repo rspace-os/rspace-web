@@ -21,8 +21,6 @@ import { BookingEventSkeleton } from "./BookingEventSkeleton";
 import { BookingMetadataAside } from "./BookingMetadataAside";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
 
-const eventColumnsClassName = detailColumnsClassName;
-
 export function BookingEventContent() {
   const { t } = useTranslation(["booking", "common"]);
   const { id } = useParams({ from: "/booking/calendar/bookings/$id" });
@@ -184,7 +182,7 @@ export function BookingEventContent() {
           refreshBooking,
         }}
       >
-        <div className={editing ? "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]" : eventColumnsClassName}>
+        <div className={editing ? "grid gap-6 @2xl:grid-cols-[minmax(0,1fr)_24rem]" : detailColumnsClassName}>
           <Outlet />
           {editing && bookingItem.data ? (
             <div className="hidden @2xl:block">

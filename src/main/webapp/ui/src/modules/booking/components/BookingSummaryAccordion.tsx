@@ -1,18 +1,19 @@
 import { Link } from "@tanstack/react-router";
-import { CalendarClockIcon, ChevronRightIcon, WrenchIcon } from "lucide-react";
+import { ChevronRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
-import { UserBadge } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
+import { BookingDetailRows } from "./BookingDetailRows";
+import { BookingKindIcon } from "./BookingKindIcon";
 
-export type BookingSummaryItem = {
+type BookingSummaryItem = {
   name: string;
   globalId: string;
   location?: { name: string; globalId: string };
 };
 
-export type BookingSummaryAccordionProps = {
+type BookingSummaryAccordionProps = {
   accordionName: string;
   heading: string;
   summaryLabel?: string;
@@ -44,20 +45,7 @@ export function BookingSummaryAccordion({
           aria-label={t("dayTimeline.event.showDetails", { title: heading, period })}
           className="flex min-w-0 cursor-pointer list-none items-center gap-2 px-2 py-1.5 outline-none focus-visible:ring-3 focus-visible:ring-inset focus-visible:ring-ring/50 [&::-webkit-details-marker]:hidden"
         >
-          <span
-            className={cn(
-              "flex size-7 shrink-0 items-center justify-center rounded-sm",
-              maintenance
-                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200"
-                : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-            )}
-          >
-            {maintenance ? (
-              <WrenchIcon className="size-4" aria-hidden="true" />
-            ) : (
-              <CalendarClockIcon className="size-4" aria-hidden="true" />
-            )}
-          </span>
+          <BookingKindIcon maintenance={maintenance} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-xs font-medium">{summaryLabel ?? heading}</span>
             <span className="block truncate text-[11px] text-muted-foreground">{period}</span>
@@ -88,22 +76,14 @@ export function BookingSummaryAccordion({
                 </dd>
               </div>
             ) : null}
-            {actor ? (
-              <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-                <dt className="text-xs text-muted-foreground">
-                  {t(maintenance ? "dayTimeline.expanded.createdBy" : "dayTimeline.expanded.bookedBy")}
-                </dt>
-                <dd className="min-w-0">
-                  <UserBadge name={actor} />
-                </dd>
-              </div>
-            ) : null}
-            <div className="grid grid-cols-[4.5rem_1fr] gap-2 py-2">
-              <dt className="text-xs text-muted-foreground">
-                {t(maintenance ? "dayTimeline.expanded.notes" : "dayTimeline.expanded.purpose")}
-              </dt>
-              <dd className="text-xs leading-4">{purpose ?? t("bookings.details.noneProvided")}</dd>
-            </div>
+            <BookingDetailRows
+              actor={actor}
+              showActor={Boolean(actor)}
+              actorLabel={maintenance ? t("dayTimeline.expanded.createdBy") : t("dayTimeline.expanded.bookedBy")}
+              detailsLabel={maintenance ? t("dayTimeline.expanded.notes") : t("dayTimeline.expanded.purpose")}
+              details={purpose ?? t("bookings.details.noneProvided")}
+              rowClassName="grid grid-cols-[4.5rem_1fr] gap-2 py-2"
+            />
           </dl>
           {detailsBookingId !== undefined ? (
             <Link

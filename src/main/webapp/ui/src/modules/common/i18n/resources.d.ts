@@ -1416,7 +1416,8 @@ export default interface Resources {
         "hideDetails": "Hide details for {title}, {period}",
         "label": "{title}, {period}",
         "labelWithNotes": "{title}, {period}. {notes}",
-        "showDetails": "Show details for {title}, {period}"
+        "showDetails": "Show details for {title}, {period}",
+        "titleWithBooker": "{title} · {booker}"
       },
       "expanded": {
         "bookedBy": "Booked by",

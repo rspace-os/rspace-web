@@ -1,4 +1,3 @@
-import { CalendarClockIcon, WrenchIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
@@ -13,6 +12,7 @@ import { formatList } from "@/modules/common/i18n/listFormat";
 import { PopoverContent, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
 import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
+import { BookingKindIcon } from "./BookingKindIcon";
 
 export type { AvailabilityInterval } from "@/modules/booking/domain/availability";
 
@@ -322,20 +322,7 @@ export function AvailabilityBar({
                           key={source.id}
                           className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5"
                         >
-                          <span
-                            className={cn(
-                              "flex size-7 shrink-0 items-center justify-center rounded-sm",
-                              kind === "booking"
-                                ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
-                                : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
-                            )}
-                          >
-                            {kind === "booking" ? (
-                              <CalendarClockIcon className="size-4" aria-hidden="true" />
-                            ) : (
-                              <WrenchIcon className="size-4" aria-hidden="true" />
-                            )}
-                          </span>
+                          <BookingKindIcon maintenance={kind !== "booking"} />
                           <span className="min-w-0 flex-1">
                             <span className="block text-xs font-medium">
                               {source.booking?.kind === "MAINTENANCE"
