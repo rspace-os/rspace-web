@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/tanstack-react";
+import type { Decorator, Meta, StoryObj } from "@storybook/tanstack-react";
 import { expect, within } from "storybook/test";
 import { InventoryItem, InventoryLocationLink } from "./inventory-item";
 import { ItemGroup } from "./item";
@@ -12,6 +12,12 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+const itemGroupDecorator: Decorator = (Story) => (
+  <ItemGroup style={{ width: "420px" }}>
+    <Story />
+  </ItemGroup>
+);
 
 const confocal = {
   name: "Zeiss LSM 900 confocal",
@@ -28,17 +34,13 @@ const freezer = {
 };
 
 export const IdInTitle: Story = {
+  decorators: [itemGroupDecorator],
   args: {
     ...confocal,
     idPlacement: "title",
     variant: "outline",
     children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
-  render: (args) => (
-    <ItemGroup style={{ width: "420px" }}>
-      <InventoryItem {...args} />
-    </ItemGroup>
-  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const link = canvas.getByRole("link", {
@@ -55,16 +57,12 @@ export const IdInTitle: Story = {
 };
 
 export const IdInDescription: Story = {
+  decorators: [itemGroupDecorator],
   args: {
     ...confocal,
     variant: "outline",
     children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
-  render: (args) => (
-    <ItemGroup style={{ width: "420px" }}>
-      <InventoryItem {...args} />
-    </ItemGroup>
-  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const link = canvas.getByRole("link", {
@@ -97,6 +95,7 @@ export const LocationOnOwnLine: Story = {
 };
 
 export const Compact: Story = {
+  decorators: [itemGroupDecorator],
   args: {
     ...confocal,
     compact: true,
@@ -104,10 +103,10 @@ export const Compact: Story = {
     children: <InventoryLocationLink name="Lab 2.14" globalId="IC456" />,
   },
   render: (args) => (
-    <ItemGroup style={{ width: "420px" }}>
+    <>
       <InventoryItem {...args} />
       <InventoryItem {...freezer} compact variant="outline" />
-    </ItemGroup>
+    </>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -124,6 +123,7 @@ export const Compact: Story = {
 };
 
 export const WithBackground: Story = {
+  decorators: [itemGroupDecorator],
   args: {
     ...confocal,
     variant: "filled",
@@ -137,14 +137,10 @@ export const WithBackground: Story = {
       },
     },
   },
-  render: (args) => (
-    <ItemGroup style={{ width: "420px" }}>
-      <InventoryItem {...args} />
-    </ItemGroup>
-  ),
 };
 
 export const IconAndBadgeBackground: Story = {
+  decorators: [itemGroupDecorator],
   args: {
     ...confocal,
     variant: "accented",
@@ -157,11 +153,6 @@ export const IconAndBadgeBackground: Story = {
       },
     },
   },
-  render: (args) => (
-    <ItemGroup style={{ width: "420px" }}>
-      <InventoryItem {...args} />
-    </ItemGroup>
-  ),
 };
 
 export const VariantComparison: Story = {
@@ -193,9 +184,10 @@ export const VariantComparison: Story = {
 };
 
 export const LocationFixtures: Story = {
+  decorators: [itemGroupDecorator],
   args: confocal,
   render: () => (
-    <ItemGroup style={{ width: "420px" }}>
+    <>
       <InventoryItem {...confocal} variant="outline">
         <InventoryLocationLink name="Imaging lab" globalId="IC456" />
       </InventoryItem>
@@ -211,7 +203,7 @@ export const LocationFixtures: Story = {
       >
         <InventoryLocationLink name="Cell analysis facility with a deliberately long location name" globalId="IC458" />
       </InventoryItem>
-    </ItemGroup>
+    </>
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -222,6 +214,7 @@ export const LocationFixtures: Story = {
 };
 
 export const LongName: Story = {
+  decorators: [itemGroupDecorator],
   args: {
     ...confocal,
     name: "Zeiss LSM 900 confocal with Airyscan 2 detector and environmental chamber",
@@ -229,11 +222,6 @@ export const LongName: Story = {
     variant: "outline",
     children: <InventoryLocationLink name="Imaging suite 1.02" globalId="IC458" />,
   },
-  render: (args) => (
-    <ItemGroup style={{ width: "420px" }}>
-      <InventoryItem {...args} />
-    </ItemGroup>
-  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const link = canvas.getByRole("link", {

@@ -34,8 +34,8 @@
     "storybook:test": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts",
     "feature-flags:generate": "node scripts/generate-feature-flags.mjs",
     "feature-flags:check": "node scripts/generate-feature-flags.mjs --check",
-    "build-storybook": "cd src/main/webapp/ui && storybook build",
-    "test-storybook": "cd src/main/webapp/ui && vitest run --config .storybook/vitest.config.ts"
+    "build-storybook": "pnpm run storybook:build",
+    "test-storybook": "pnpm run storybook:test"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "10.6.0",
