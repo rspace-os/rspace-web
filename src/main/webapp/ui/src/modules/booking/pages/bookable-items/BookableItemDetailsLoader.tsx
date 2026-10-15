@@ -5,7 +5,7 @@ import { Button } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { isPermanentClientError, retryUnlessClientError } from "../queryRetry";
 import { BookableItemSkeleton } from "./BookableItemSkeleton";
-import { fetchBookingConfigurationDetailsByTarget } from "./bookingConfiguration";
+import { bookingConfigurationTargetQueryKey, fetchBookingConfigurationDetailsByTarget } from "./bookingConfiguration";
 import { type BookableItemTab, LoadedBookableItemPage } from "./LoadedBookableItemPage";
 
 export function BookableItemDetailsLoader({ globalId, tab }: { globalId: string; tab: BookableItemTab }) {
@@ -13,7 +13,7 @@ export function BookableItemDetailsLoader({ globalId, tab }: { globalId: string;
   const { t: commonT } = useTranslation("common");
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const configuration = useQuery({
-    queryKey: ["api-v2", "booking-configurations", "target", globalId],
+    queryKey: bookingConfigurationTargetQueryKey(globalId),
     queryFn: ({ signal }) => fetchBookingConfigurationDetailsByTarget(globalId, token, signal),
     // A missing or unreadable item answers the same way on every attempt, so show it at once.
     retry: retryUnlessClientError,
