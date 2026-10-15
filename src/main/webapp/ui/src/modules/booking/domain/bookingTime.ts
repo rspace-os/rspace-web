@@ -48,6 +48,11 @@ export function sameTimeZone(first: string, second: string): boolean {
   return first === second || canonical(first) === canonical(second);
 }
 
+/** Whether instrument-local time differs from either the selected display zone or the browser zone. */
+export function instrumentZoneDiffers(instrument: string, display: string, browser: string | null): boolean {
+  return !sameTimeZone(instrument, display) || (browser !== null && !sameTimeZone(instrument, browser));
+}
+
 export function isPlainDate(value: string): boolean {
   try {
     return parsePlainDate(value).toString() === value;

@@ -35,24 +35,6 @@ public class NotificationConfig {
         notificationTargetsOverride);
   }
 
-  /** Backward-compatible constructor with the default event-preference behavior. */
-  public NotificationConfig(
-      NotificationType notificationType,
-      NotificationData notificationData,
-      boolean broadcast,
-      CommunicationNotifyPolicy policyOverride,
-      boolean recordAuthorisationRequired,
-      Set<User> notificationTargetsOverride) {
-    this(
-        notificationType,
-        notificationData,
-        broadcast,
-        policyOverride,
-        recordAuthorisationRequired,
-        false,
-        notificationTargetsOverride);
-  }
-
   private NotificationType notificationType;
 
   private NotificationData notificationData;
@@ -76,7 +58,7 @@ public class NotificationConfig {
    * This is a server-side override for narrowly defined notification flows; it does not affect
    * email preferences.
    */
-  @Builder.Default private boolean notificationEventPreferenceOverride = false;
+  private boolean notificationEventPreferenceOverride;
 
   /** Whether explicitly selected recipients may include the originator; defaults to false. */
   private boolean includeOriginator;

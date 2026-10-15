@@ -11,11 +11,6 @@ import java.io.Serializable;
 @Entity
 public class Notification extends Communication implements Serializable {
 
-  /**
-   * @deprecated Notification messages are no longer truncated at this former limit.
-   */
-  @Deprecated public static final int MAX_MESSAGE_LENGTH = 2000;
-
   private static final long serialVersionUID = 8300022086445850773L;
 
   private NotificationType notificationType;

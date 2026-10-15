@@ -1,10 +1,12 @@
 import { Temporal } from "@js-temporal/polyfill";
+import { queryOptions } from "@tanstack/react-query";
 import type * as v from "valibot";
 import {
   BOOKING_READ_FIELDS,
   type BookingListDocument,
   BookingListDocumentSchema,
 } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -178,3 +180,25 @@ export function groupDashboardBookingsByDay(
   for (const dayBookings of grouped.values()) dayBookings.sort(compareBookings);
   return grouped;
 }
+
+export const upcomingDashboardBookingsQuery = (requesterId: number, timeZone: string, asOf: string, token: string) =>
+  queryOptions({
+    queryKey: [...bookingKeys.upcoming(), requesterId, timeZone, asOf] as const,
+    queryFn: ({ signal }) => fetchUpcomingDashboardBookings({ requesterId, asOf, token, signal }),
+    retry: false,
+    refetchOnWindowFocus: true,
+  });
+
+export const monthlyDashboardBookingsQuery = (
+  requesterId: number,
+  timeZone: string,
+  start: string,
+  end: string,
+  token: string,
+) =>
+  queryOptions({
+    queryKey: [...bookingKeys.all, "dashboard", "monthly", requesterId, timeZone, start, end] as const,
+    queryFn: ({ signal }) => fetchMonthlyDashboardBookings({ requesterId, start, end, token, signal }),
+    retry: false,
+    refetchOnWindowFocus: true,
+  });

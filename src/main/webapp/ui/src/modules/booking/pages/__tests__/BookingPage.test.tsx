@@ -77,18 +77,9 @@ function renderAt(
     http.get("/api/v2/booking-configurations", ({ request }) =>
       new URL(request.url).searchParams.has("where")
         ? undefined
-        : HttpResponse.json({
-            docs: [],
-            totalDocs: readableConfigurations,
-            limit: 1,
-            page: 1,
-            pagingCounter: 1,
-            totalPages: readableConfigurations,
-            hasPrevPage: false,
-            hasNextPage: readableConfigurations > 1,
-            prevPage: null,
-            nextPage: readableConfigurations > 1 ? 2 : null,
-          }),
+        : HttpResponse.json(
+            collectionResponse([], { limit: 1, totalDocs: readableConfigurations, totalPages: readableConfigurations }),
+          ),
     ),
     http.get("/api/v2/booking-configuration-targets", () =>
       HttpResponse.json(

@@ -106,7 +106,7 @@ class ApiV2TimeSlotBookingResourceTest {
                 """
                 {"target":{"relationTo":"instruments","value":12},
                  "start":"2026-10-25T00:30:00Z","end":"2026-10-25T02:30:00Z",
-                 "bookedBy":"forged"}
+                 "kind":"BOOKING","bookedBy":"forged"}
                 """,
                 WriteOperation.CREATE));
     assertThrows(
@@ -115,6 +115,21 @@ class ApiV2TimeSlotBookingResourceTest {
     assertThrows(
         DocumentValidationException.class,
         () -> parse("{\"kind\":\"MAINTENANCE\"}", WriteOperation.UPDATE));
+    ParsedDocument cancellation =
+        parse(
+            "{\"state\":\"CANCELLED\",\"cancellationReason\":\"Needs recalibration\"}",
+            WriteOperation.UPDATE);
+    assertEquals("Needs recalibration", cancellation.values().get("cancellationReason"));
+    assertThrows(
+        DocumentValidationException.class,
+        () ->
+            parse(
+                "{\"target\":{\"relationTo\":\"booking-instruments\",\"value\":12},"
+                    + "\"start\":\"2026-10-25T00:30:00Z\","
+                    + "\"end\":\"2026-10-25T02:30:00Z\","
+                    + "\"kind\":\"BOOKING\","
+                    + "\"cancellationReason\":\"forged\"}",
+                WriteOperation.CREATE));
   }
 
   @Test

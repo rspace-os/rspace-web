@@ -189,7 +189,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
             Date.from(start),
             Date.from(start.plus(1, ChronoUnit.HOURS)),
             null);
-    var booking = bookingManager.createBooking(create, owner, owner);
+    TimeSlotBooking booking = bookingManager.createBooking(create, owner, owner);
 
     var cancelled =
         bookingManager
