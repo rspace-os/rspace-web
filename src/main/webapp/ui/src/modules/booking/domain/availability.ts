@@ -13,7 +13,7 @@ import {
   type OpeningSchedule,
   openingIntervals,
 } from "@/modules/booking/domain/bookingOpeningHours";
-import { type AbsoluteDisplayInterval, displayInterval, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 
 export type AvailabilityInterval = {
@@ -204,8 +204,6 @@ export type CalendarAvailabilityRow = OpeningSchedule & {
   bufferAfterMinutes: number;
   allowDoubleBooking: boolean;
 };
-
-export type DatedCalendarAvailabilityRow = CalendarAvailabilityRow & { date: string };
 
 export function calendarAvailabilityRow(row: {
   globalId: string;
@@ -584,32 +582,6 @@ export async function loadCalendarAvailability(
   return loadAvailability(
     rows.map((row) => ({ row, interval })),
     availabilityEnvelope(rows, interval),
-    token,
-    signal,
-  );
-}
-
-export async function loadDatedCalendarAvailability(
-  rows: readonly DatedCalendarAvailabilityRow[],
-  token: string,
-  signal: AbortSignal,
-): Promise<ReadonlyMap<string, readonly SourcedAvailabilityInterval[]>> {
-  if (rows.length === 0) return new Map();
-  const bounds = rows.map((row) => zonedDayBounds(row.date, row.timezone));
-  const gap = Math.max(...rows.map(sharedBufferGapMinutes));
-  const envelope = {
-    start: Temporal.Instant.from(
-      bounds.reduce((value, bound) => (bound.start < value ? bound.start : value), bounds[0].start),
-    )
-      .subtract({ minutes: gap })
-      .toString(),
-    end: Temporal.Instant.from(bounds.reduce((value, bound) => (bound.end > value ? bound.end : value), bounds[0].end))
-      .add({ minutes: gap })
-      .toString(),
-  };
-  return loadAvailability(
-    rows.map((row) => ({ row, interval: displayInterval(row.date, row.timezone, "00:00", "24:00") })),
-    envelope,
     token,
     signal,
   );
