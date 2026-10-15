@@ -22,6 +22,7 @@ import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { currentUser as currentUserFixture } from "../../mocks/currentUserFixture";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import { createAddBookingRoute } from "../routes";
+import { bookingCatalogueResponse, bookingScheduleHandler, ResizeObserverStub } from "./bookingFormTestHarness";
 
 // Delegates to the real request unless a test rejects with a problem carrying its parsed body.
 vi.mock("@/modules/booking/domain/booking", async (importOriginal) => {
@@ -33,12 +34,6 @@ function problem(status: number, code: string, body: Record<string, unknown>) {
   return Object.assign(new ApiV2ProblemError(status, code, "private server detail"), {
     problem: { status, code, detail: "private server detail", ...body },
   });
-}
-
-class ResizeObserverStub {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
 }
 
 beforeAll(() => vi.stubGlobal("ResizeObserver", ResizeObserverStub));
@@ -108,31 +103,8 @@ const catalogueOption = {
   location: null,
 };
 
-function page(items: readonly unknown[]) {
-  return {
-    items,
-    page: 1,
-    pageSize: 20,
-    total: items.length,
-    facets: { types: ["INSTRUMENT"] },
-  };
-}
-
 function renderPage(hasSysAdminRole = false, scheduleBookings: readonly unknown[] | null = []) {
-  server.use(
-    currentUserHandler(hasSysAdminRole),
-    http.get("/api/v2/bookings", () =>
-      scheduleBookings === null
-        ? new HttpResponse(null, { status: 503 })
-        : HttpResponse.json({
-            docs: scheduleBookings,
-            totalDocs: scheduleBookings.length,
-            totalPages: scheduleBookings.length ? 1 : 0,
-            page: 1,
-            hasNextPage: false,
-          }),
-    ),
-  );
+  server.use(currentUserHandler(hasSysAdminRole), bookingScheduleHandler(scheduleBookings));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
     ...inheritedBrowserBookingPreferences,
@@ -174,7 +146,7 @@ describe("AddBookingPage", () => {
   it("keeps the picker active when the URL target is unavailable", async () => {
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([]))),
     );
     renderPage();
 
@@ -189,7 +161,7 @@ describe("AddBookingPage", () => {
     let body: unknown;
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
       http.post("/api/v2/bookings", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json(createdBooking, { status: 201 });
@@ -241,7 +213,7 @@ describe("AddBookingPage", () => {
     let body: unknown;
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
       http.post("/api/v2/bookings", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json(createdBooking, { status: 201 });
@@ -286,7 +258,9 @@ describe("AddBookingPage", () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
-        HttpResponse.json(page([{ ...catalogueOption, bufferBeforeMinutes: before, bufferAfterMinutes: after }])),
+        HttpResponse.json(
+          bookingCatalogueResponse([{ ...catalogueOption, bufferBeforeMinutes: before, bufferAfterMinutes: after }]),
+        ),
       ),
     );
     renderPage();
@@ -304,7 +278,7 @@ describe("AddBookingPage", () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
-        HttpResponse.json(page([{ ...catalogueOption, timezone: "America/New_York" }])),
+        HttpResponse.json(bookingCatalogueResponse([{ ...catalogueOption, timezone: "America/New_York" }])),
       ),
     );
     renderPage();
@@ -328,7 +302,7 @@ describe("AddBookingPage", () => {
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
         HttpResponse.json(
-          page([
+          bookingCatalogueResponse([
             {
               ...catalogueOption,
               timezone: "America/New_York",
@@ -356,7 +330,7 @@ describe("AddBookingPage", () => {
     const user = userEvent.setup();
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
       http.post("/api/v2/bookings", () =>
         HttpResponse.json(
           { status: 409, code: "errors.api.v2.booking.overlap", detail: "private server detail" },
@@ -393,7 +367,7 @@ describe("AddBookingPage", () => {
     );
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
     );
     renderPage();
     await fillWindow(user);
@@ -419,7 +393,7 @@ describe("AddBookingPage", () => {
     );
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
     );
     renderPage();
     await fillWindow(user);
@@ -438,7 +412,7 @@ describe("AddBookingPage", () => {
     const user = userEvent.setup();
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
       http.post("/api/v2/bookings", () =>
         HttpResponse.json({ status: 409, code: "errors.api.v2.booking.buffer" }, { status: 409 }),
       ),
@@ -458,7 +432,7 @@ describe("AddBookingPage", () => {
     let body: unknown;
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
       http.post("/api/v2/bookings", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json(createdBooking, { status: 201 });
@@ -486,7 +460,7 @@ describe("AddBookingPage", () => {
   it("hides the booking type from users who are not sysadmins", async () => {
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
     );
     renderPage();
 
@@ -499,7 +473,7 @@ describe("AddBookingPage", () => {
     const user = userEvent.setup();
     server.use(
       oauthTokenHandler(true),
-      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
+      http.get("/api/v2/booking-catalogue", () => HttpResponse.json(bookingCatalogueResponse([catalogueOption]))),
       http.post("/api/v2/bookings", () =>
         HttpResponse.json(
           { status: 400, code: "errors.api.v2.booking.maximumDuration", detail: "private server detail" },
@@ -525,7 +499,7 @@ describe("AddBookingPage", () => {
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () =>
-        HttpResponse.json(page([{ ...catalogueOption, maxBookingDurationMinutes }])),
+        HttpResponse.json(bookingCatalogueResponse([{ ...catalogueOption, maxBookingDurationMinutes }])),
       ),
     );
     renderPage();
