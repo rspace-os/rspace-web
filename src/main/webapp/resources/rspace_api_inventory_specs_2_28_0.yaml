@@ -5231,6 +5231,8 @@ components:
             - attachment
             - reference
             - uri
+            - identifier
+            - link
         content:
           type: string
           description: >

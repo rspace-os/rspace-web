@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
@@ -154,8 +155,8 @@ class InventoryImportApiSpecTest {
         Arguments.of("InventoryImportPartialResult/properties/type", ApiInventoryRecordType.class),
         Arguments.of(
             "InventoryImportPartialResult/properties/status", InventoryBulkOperationStatus.class),
-        Arguments.of(
-            "InventoryImportResult/properties/status", InventoryBulkOperationStatus.class));
+        Arguments.of("InventoryImportResult/properties/status", InventoryBulkOperationStatus.class),
+        Arguments.of("InventoryEntityField/properties/type", ApiFieldType.class));
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
@@ -166,7 +167,7 @@ class InventoryImportApiSpecTest {
 
     assertEquals(
         Arrays.stream(javaEnum.getEnumConstants())
-            .map(Enum::name)
+            .map(value -> new ObjectMapper().convertValue(value, String.class))
             .collect(Collectors.toCollection(TreeSet::new)),
         declared);
   }
