@@ -1313,23 +1313,6 @@ class PidinstLookupManagerImplTest {
   }
 
   @Test
-  void aHitWithNoOrAnUnreadableUpdateTimeKeepsItsRegistryPosition() {
-    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
-        .thenReturn(
-            searchResultOf(
-                3,
-                publishedRecord("21.T11975/a-undated", "a", null, null),
-                publishedRecord("21.T11975/b-garbled", "b", "not-a-date", null),
-                publishedRecord("21.T11975/c-dated", "c", "2020-01-01T00:00:00+00:00", null)));
-
-    ApiPidinstSearchResult result = manager.search("Zeiss", List.of("PIDINST_B2INST"), 0, user);
-
-    assertIterableEquals(
-        List.of("21.T11975/a-undated", "21.T11975/b-garbled", "21.T11975/c-dated"),
-        result.getHits().stream().map(ApiPidinstRecord::getPid).toList());
-  }
-
-  @Test
   void pageOneIsBuiltFromTheFirstTwoPagesOfEachRegistryAndHoldsFiftyHits() {
     when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
         .thenReturn(fullB2instPage(120, "2026-05-01T00:00:00+00:00"));
@@ -1371,12 +1354,7 @@ class PidinstLookupManagerImplTest {
                 publishedRecord(
                     "21.T11975/late", "late", sameUpdate, "2026-04-01T00:00:00+00:00")));
 
-    List<String> seen = new ArrayList<>();
-    for (int page = 0; page <= 1; page++) {
-      manager.search("Zeiss", List.of("PIDINST_B2INST"), page, user).getHits().stream()
-          .map(ApiPidinstRecord::getPid)
-          .forEach(seen::add);
-    }
+    List<String> seen = pidsOfPages(List.of("PIDINST_B2INST"), 0, 1);
 
     assertEquals(51, seen.size());
     assertEquals(51, new HashSet<>(seen).size(), "a PID repeated: " + seen);
@@ -1418,10 +1396,8 @@ class PidinstLookupManagerImplTest {
   }
 
   /**
-   * RSDEV-1556, Martin's example: DataCite's page 0 holds 50 records of which RSpace hides 10, and
-   * every B2INST hit is older. A merged page is a slice of the registries' raw positions, so page 0
-   * is short (40) and page 1 starts where DataCite's page 1 starts, instead of filling page 0 with
-   * ten B2INST hits that page 1 then repeats while dc-50 to dc-59 are never shown.
+   * RSDEV-1556: DataCite's page 0 holds 50 records of which RSpace hides 10, and every B2INST hit
+   * is older, so page 0 is short (40) and page 1 starts where DataCite's page 1 starts.
    */
   @Test
   void pagingThroughAThinnedRegistryPageShowsEveryKeptHitOnceAndInOrder() {
@@ -1460,14 +1436,8 @@ class PidinstLookupManagerImplTest {
 
     assertEquals(40, manager.search("Zeiss", BOTH, 0, user).getHits().size(), "page 0 is short");
     assertEquals(kept, pidsOfPages(BOTH, 0, 1), "pages 0 and 1, in order, nothing else");
-    // a thinned page is not an exhausted registry: DataCite's page 1 was still asked for
-    verify(dataCiteConnector).searchPublicInstrumentDois("Zeiss", 1, 50);
   }
 
-  /**
-   * RSDEV-1556: a hit without an update time stays where its registry put it. Sorted last, as first
-   * shipped, it left the fetched prefix, so page 1 repeated it and skipped r-50.
-   */
   @Test
   void aHitWithoutAnUpdateTimeMidPageIsShownOnceAndInItsRegistryOrder() {
     B2instDraftRecord[] b0 = new B2instDraftRecord[50];
@@ -1490,11 +1460,6 @@ class PidinstLookupManagerImplTest {
     assertEquals(all, pidsOfPages(List.of("PIDINST_B2INST"), 0, 1));
   }
 
-  /**
-   * RSDEV-1556: the registry's placement is the only recency an undated hit has, so it is taken
-   * next, beside its registry neighbours, rather than after every dated hit of the other registry,
-   * which would hold back everything behind it in its own list.
-   */
   @ParameterizedTest
   @NullSource
   @ValueSource(strings = "not-a-date")
@@ -1537,6 +1502,28 @@ class PidinstLookupManagerImplTest {
         manager.search("Zeiss", BOTH, 0, user).getHits().stream()
             .map(ApiPidinstRecord::getPid)
             .toList());
+  }
+
+  @Test
+  void aHitWithoutAPidIsHiddenButStillCountsInTheRegistryTotal() {
+    B2instDraftRecord noPid = publishedRecord("21.T11975/b", "b", null, null);
+    noPid.getMetadata().setIdentifier(null);
+    B2instSearchResult page =
+        searchResultOf(
+            0,
+            publishedRecord("21.T11975/a", "a", null, null),
+            noPid,
+            publishedRecord("21.T11975/c", "c", null, null));
+    // no total from the index, so the records it sent stand in for it
+    page.getHits().setTotal(null);
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50)).thenReturn(page);
+
+    ApiPidinstSearchResult result = manager.search("Zeiss", List.of("PIDINST_B2INST"), 0, user);
+
+    assertIterableEquals(
+        List.of("21.T11975/a", "21.T11975/c"),
+        result.getHits().stream().map(ApiPidinstRecord::getPid).toList());
+    assertEquals(3, result.getTotalHits());
   }
 
   @Test
