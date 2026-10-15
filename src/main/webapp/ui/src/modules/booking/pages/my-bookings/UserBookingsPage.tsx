@@ -23,6 +23,7 @@ import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
+import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
 
@@ -60,7 +61,7 @@ export async function fetchUpcomingBookingCount(
   signal?: AbortSignal,
 ): Promise<number> {
   const parameters = new URLSearchParams({
-    where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOf.toISOString()}`,
+    where: upcomingBookingWhere(requesterId, asOf.toISOString()),
   });
   const response = await fetch(`/api/v2/bookings/count?${parameters}`, {
     headers: apiV2Headers(token),

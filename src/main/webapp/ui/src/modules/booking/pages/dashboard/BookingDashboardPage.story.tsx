@@ -9,6 +9,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { Suspense, useEffect } from "react";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import {
@@ -19,11 +20,10 @@ import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/pref
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import BookingPage from "../BookingPage";
-import { currentUser } from "../calendar/calendarFixtures";
 import { bookingsOpenApi } from "../my-bookings/mocks/bookingMocks";
 import BookingDashboardPage from "./BookingDashboardPage";
 
-export const bookingDashboardStoryUrl = "/booking";
+const bookingDashboardStoryUrl = "/booking";
 
 function Destination({ title }: { title: string }) {
   return (

@@ -1,81 +1,63 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
+import { BOOKING_READ_FIELDS, type BookingListDocument } from "@/modules/booking/domain/booking";
 import {
-  calendarDateKey,
   dashboardMonthInterval,
   fetchMonthlyDashboardBookings,
   fetchUpcomingDashboardBookings,
   groupDashboardBookingsByDay,
   TooManyDashboardBookingsError,
 } from "../dashboardBookings";
+import { calendarDateKey } from "../dashboardHelpers";
+import { bookingTarget, collectionResponse, dashboardBookingFixture } from "../mocks/bookingDashboardMocks";
 
-const target = {
-  relationTo: "booking-instruments" as const,
-  value: { id: 12, name: "Instrument", deleted: false },
-  globalId: "IN12",
+const testBookingOverrides: Partial<BookingListDocument> = {
+  target: bookingTarget(12, "Instrument"),
+  requesterId: -1,
+  timezone: "Europe/Berlin",
 };
-
-function booking(id: number, start: string, end: string, requesterId = -1): BookingListDocument {
-  return {
-    id,
-    version: 0,
-    target,
-    requesterId,
-    canViewConfiguration: true,
-    timezone: "Europe/Berlin",
-    start,
-    end,
-    state: "CONFIRMED",
-    kind: "BOOKING",
-    privacy: "full",
-    purpose: `Purpose ${id}`,
-    bookedBy: "Ada Lovelace (ada)",
-    canEdit: false,
-    canCancel: false,
-    createdAt: start,
-    updatedAt: start,
-  };
-}
-
-function envelope(
-  docs: readonly BookingListDocument[],
-  page = 1,
-  totalDocs = docs.length,
-  totalPages = totalDocs === 0 ? 0 : 1,
-): Record<string, unknown> {
-  return {
-    docs,
-    totalDocs,
-    limit: 100,
-    page,
-    pagingCounter: (page - 1) * 100 + 1,
-    totalPages,
-    hasPrevPage: page > 1,
-    hasNextPage: page < totalPages,
-    prevPage: page > 1 ? page - 1 : null,
-    nextPage: page < totalPages ? page + 1 : null,
-  };
-}
 
 describe("dashboard booking data", () => {
   it("queries upcoming bookings for negative requester IDs with a five-row limit", async () => {
     const requests: URL[] = [];
     const docs = [
-      booking(5, "2026-08-01T12:00:00Z", "2026-08-01T13:00:00Z"),
-      booking(2, "2026-08-01T09:00:00Z", "2026-08-01T10:00:00Z"),
-      booking(1, "2026-08-01T09:00:00Z", "2026-08-01T10:00:00Z"),
-      booking(3, "2026-08-01T10:00:00Z", "2026-08-01T11:00:00Z"),
-      booking(4, "2026-08-01T11:00:00Z", "2026-08-01T12:00:00Z"),
-      booking(6, "2026-08-01T13:00:00Z", "2026-08-01T14:00:00Z"),
+      dashboardBookingFixture(5, 1, {
+        ...testBookingOverrides,
+        start: "2026-08-01T12:00:00Z",
+        end: "2026-08-01T13:00:00Z",
+      }),
+      dashboardBookingFixture(2, 1, {
+        ...testBookingOverrides,
+        start: "2026-08-01T09:00:00Z",
+        end: "2026-08-01T10:00:00Z",
+      }),
+      dashboardBookingFixture(1, 1, {
+        ...testBookingOverrides,
+        start: "2026-08-01T09:00:00Z",
+        end: "2026-08-01T10:00:00Z",
+      }),
+      dashboardBookingFixture(3, 1, {
+        ...testBookingOverrides,
+        start: "2026-08-01T10:00:00Z",
+        end: "2026-08-01T11:00:00Z",
+      }),
+      dashboardBookingFixture(4, 1, {
+        ...testBookingOverrides,
+        start: "2026-08-01T11:00:00Z",
+        end: "2026-08-01T12:00:00Z",
+      }),
+      dashboardBookingFixture(6, 1, {
+        ...testBookingOverrides,
+        start: "2026-08-01T13:00:00Z",
+        end: "2026-08-01T14:00:00Z",
+      }),
     ];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
-        return HttpResponse.json(envelope(docs, 1, docs.length, 2));
+        return HttpResponse.json(collectionResponse(docs, { page: 1, totalDocs: docs.length, totalPages: 2 }));
       }),
     );
 
@@ -100,9 +82,21 @@ describe("dashboard booking data", () => {
   });
 
   it("loads monthly pages, deduplicates IDs, and sorts by start then ID", async () => {
-    const first = booking(2, "2026-08-02T10:00:00Z", "2026-08-02T11:00:00Z");
-    const duplicate = booking(2, "2026-08-02T10:00:00Z", "2026-08-02T11:00:00Z");
-    const second = booking(1, "2026-08-01T10:00:00Z", "2026-08-01T11:00:00Z");
+    const first = dashboardBookingFixture(2, 2, {
+      ...testBookingOverrides,
+      start: "2026-08-02T10:00:00Z",
+      end: "2026-08-02T11:00:00Z",
+    });
+    const duplicate = dashboardBookingFixture(2, 2, {
+      ...testBookingOverrides,
+      start: "2026-08-02T10:00:00Z",
+      end: "2026-08-02T11:00:00Z",
+    });
+    const second = dashboardBookingFixture(1, 1, {
+      ...testBookingOverrides,
+      start: "2026-08-01T10:00:00Z",
+      end: "2026-08-01T11:00:00Z",
+    });
     const requests: URL[] = [];
     server.use(
       http.get("/api/v2/bookings", ({ request }) => {
@@ -110,8 +104,8 @@ describe("dashboard booking data", () => {
         requests.push(url);
         return HttpResponse.json(
           Number(url.searchParams.get("page")) === 1
-            ? envelope([first, duplicate], 1, 3, 2)
-            : envelope([second], 2, 3, 2),
+            ? collectionResponse([first, duplicate], { page: 1, totalDocs: 3, totalPages: 2 })
+            : collectionResponse([second], { page: 2, totalDocs: 3, totalPages: 2 }),
         );
       }),
     );
@@ -138,7 +132,18 @@ describe("dashboard booking data", () => {
     server.use(
       http.get("/api/v2/bookings", () => {
         requests += 1;
-        return HttpResponse.json(envelope([booking(1, "2026-08-01T10:00:00Z", "2026-08-01T11:00:00Z")], 1, 1_001, 11));
+        return HttpResponse.json(
+          collectionResponse(
+            [
+              dashboardBookingFixture(1, 1, {
+                ...testBookingOverrides,
+                start: "2026-08-01T10:00:00Z",
+                end: "2026-08-01T11:00:00Z",
+              }),
+            ],
+            { page: 1, totalDocs: 1_001, totalPages: 11 },
+          ),
+        );
       }),
     );
 
@@ -157,7 +162,16 @@ describe("dashboard booking data", () => {
     server.use(
       http.get("/api/v2/bookings", () =>
         HttpResponse.json({
-          ...envelope([booking(1, "2026-08-01T10:00:00Z", "2026-08-01T11:00:00Z")], 1, 2, 2),
+          ...collectionResponse(
+            [
+              dashboardBookingFixture(1, 1, {
+                ...testBookingOverrides,
+                start: "2026-08-01T10:00:00Z",
+                end: "2026-08-01T11:00:00Z",
+              }),
+            ],
+            { page: 1, totalDocs: 2, totalPages: 2 },
+          ),
           nextPage: 1,
         }),
       ),
@@ -176,7 +190,16 @@ describe("dashboard booking data", () => {
       http.get("/api/v2/bookings", ({ request }) => {
         skippedPageRequests.push(new URL(request.url));
         return HttpResponse.json({
-          ...envelope([booking(1, "2026-08-01T10:00:00Z", "2026-08-01T11:00:00Z")], 1, 3, 3),
+          ...collectionResponse(
+            [
+              dashboardBookingFixture(1, 1, {
+                ...testBookingOverrides,
+                start: "2026-08-01T10:00:00Z",
+                end: "2026-08-01T11:00:00Z",
+              }),
+            ],
+            { page: 1, totalDocs: 3, totalPages: 3 },
+          ),
           nextPage: 3,
         });
       }),
@@ -194,7 +217,18 @@ describe("dashboard booking data", () => {
     server.use(
       http.get("/api/v2/bookings", ({ request }) =>
         Number(new URL(request.url).searchParams.get("page")) === 1
-          ? HttpResponse.json(envelope([booking(1, "2026-08-01T10:00:00Z", "2026-08-01T11:00:00Z")], 1, 2, 2))
+          ? HttpResponse.json(
+              collectionResponse(
+                [
+                  dashboardBookingFixture(1, 1, {
+                    ...testBookingOverrides,
+                    start: "2026-08-01T10:00:00Z",
+                    end: "2026-08-01T11:00:00Z",
+                  }),
+                ],
+                { page: 1, totalDocs: 2, totalPages: 2 },
+              ),
+            )
           : new HttpResponse(null, { status: 503 }),
       ),
     );
@@ -213,13 +247,22 @@ describe("dashboard booking data", () => {
     const requests: RequestInit[] = [];
     const originalFetch = globalThis.fetch;
     const response = (docs: readonly BookingListDocument[], page: number) =>
-      new Response(JSON.stringify(envelope(docs, page, 2, 2)), {
+      new Response(JSON.stringify(collectionResponse(docs, { page, totalDocs: 2, totalPages: 2 })), {
         headers: { "Content-Type": "application/json" },
       });
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
       requests.push(init ?? {});
       controller.abort();
-      return response([booking(1, "2026-08-01T10:00:00Z", "2026-08-01T11:00:00Z")], 1);
+      return response(
+        [
+          dashboardBookingFixture(1, 1, {
+            ...testBookingOverrides,
+            start: "2026-08-01T10:00:00Z",
+            end: "2026-08-01T11:00:00Z",
+          }),
+        ],
+        1,
+      );
     });
 
     try {
@@ -259,8 +302,16 @@ describe("dashboard booking data", () => {
     expect(yearBoundary.dates[0]).toBe("2026-12-28");
     expect(yearBoundary.dates.at(-1)).toBe("2027-02-07");
 
-    const overnight = booking(1, "2026-03-28T23:00:00Z", "2026-03-30T23:00:00Z");
-    const endsAtMidnight = booking(2, "2026-03-29T08:00:00Z", "2026-03-29T22:00:00Z");
+    const overnight = dashboardBookingFixture(1, 28, {
+      ...testBookingOverrides,
+      start: "2026-03-28T23:00:00Z",
+      end: "2026-03-30T23:00:00Z",
+    });
+    const endsAtMidnight = dashboardBookingFixture(2, 29, {
+      ...testBookingOverrides,
+      start: "2026-03-29T08:00:00Z",
+      end: "2026-03-29T22:00:00Z",
+    });
     const grouped = groupDashboardBookingsByDay(
       [overnight, endsAtMidnight],
       ["2026-03-29", "2026-03-30"],

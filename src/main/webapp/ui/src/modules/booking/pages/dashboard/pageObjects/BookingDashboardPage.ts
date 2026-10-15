@@ -45,10 +45,6 @@ export class BookingDashboardPageObject {
     return this.popup.getByText(heading, { exact: true });
   }
 
-  detailsSummary(heading: string, period: string): Locator {
-    return this.popup.getByLabelText(`Show details for ${heading}, ${period}`);
-  }
-
   summaryDisclosure(heading: string): Locator {
     return this.popup.getByLabelText(new RegExp(`^Show details for ${heading},`));
   }
