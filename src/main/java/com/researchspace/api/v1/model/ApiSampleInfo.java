@@ -50,6 +50,7 @@ import org.springframework.web.util.UriComponentsBuilder;
   "templateId",
   "templateVersion",
   "template",
+  "requestable",
   "revisionId",
   "version",
   "historicalVersion",
@@ -74,6 +75,9 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
 
   /* to use when generating image/thumbnail links on controller level, but not sent to front-end */
   @JsonIgnore private boolean templateImageAvailable;
+
+  @JsonProperty("requestable")
+  private Boolean requestable;
 
   @JsonProperty("subSampleAlias")
   private ApiSubSampleAlias subSampleAlias;
@@ -139,6 +143,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
       // the cast still needs the real instance: lazy references (e.g. Envers revision reads)
       // are proxies typed to the abstract SampleEntity root
       Sample nonTemplateSample = unproxy(sample, Sample.class);
+      setRequestable(nonTemplateSample.isRequestable());
       // may be null if the sample isn't created from a template.
       if (nonTemplateSample.getSTemplate() != null) {
         setTemplateId(nonTemplateSample.getSTemplate().getId());
@@ -174,6 +179,14 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     if (sampleSource != null && !sampleSource.equals(sample.getSampleSource())) {
       sample.setSampleSource(sampleSource);
       contentChanged = true;
+    }
+    if (sample.isSample()) {
+      // who may change it is checked by SampleApiManagerImpl.assertRequestableChangeAllowed
+      Sample nonTemplateSample = unproxy(sample, Sample.class);
+      if (requestable != null && nonTemplateSample.isRequestable() != requestable) {
+        nonTemplateSample.setRequestable(requestable);
+        contentChanged = true;
+      }
     }
     // set if is different. Nullify if is explicit null request
     if (expiryDate != null && !expiryDate.equals(sample.getExpiryDate())) {
@@ -239,6 +252,15 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
   @JsonIgnore
   public boolean hasIconImage() {
     return getIconId() != null && getIconId() > 0;
+  }
+
+  @Override
+  protected void populatePublicViewCopy(ApiInventoryRecordInfo apiInvRecCopy) {
+    super.populatePublicViewCopy(apiInvRecCopy);
+    // requestable must survive even the public view, so that a user with no read/edit access to
+    // the sample (e.g. found via an unscoped "requestable" search) can still see whether it's
+    // requestable and use the Request Material UI
+    ((ApiSampleInfo) apiInvRecCopy).setRequestable(getRequestable());
   }
 
   @Override
