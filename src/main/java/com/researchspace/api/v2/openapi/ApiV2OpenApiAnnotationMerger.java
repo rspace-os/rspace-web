@@ -1,5 +1,9 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
@@ -55,9 +59,9 @@ final class ApiV2OpenApiAnnotationMerger {
       Map<String, Object> document,
       Map<RequestMappingInfo, HandlerMethod> handlerMethods,
       ApiV2EndpointCatalog endpoints) {
-    Map<String, Object> paths = objectMap(document.get("paths"));
-    Map<String, Object> components = objectMap(document.get("components"));
-    Map<String, Object> schemas = objectMap(components.get("schemas"));
+    Map<String, Object> paths = mutableObjectMap(document.get("paths"));
+    Map<String, Object> components = mutableObjectMap(document.get("components"));
+    Map<String, Object> schemas = mutableObjectMap(components.get("schemas"));
     for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
       HandlerMethod handler = entry.getValue();
       Operation metadata =
@@ -72,7 +76,7 @@ final class ApiV2OpenApiAnnotationMerger {
         for (RequestMethod method : entry.getKey().getMethodsCondition().getMethods()) {
           Map<String, Object> generated =
               operation(handler, metadata, schemas, entry.getKey(), endpoints);
-          objectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()))
+          mutableObjectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()))
               .put(method.name().toLowerCase(Locale.ROOT), generated);
           ensureTags(document, generated);
         }
@@ -87,7 +91,7 @@ final class ApiV2OpenApiAnnotationMerger {
       boolean present = documentedTags.stream().anyMatch(value -> tag.equals(value.get("name")));
       if (!present) {
         documentedTags.add(
-            map("name", tag, "description", "Operations documented by " + tag + "."));
+            ordered("name", tag, "description", "Operations documented by " + tag + "."));
       }
     }
   }
@@ -150,7 +154,7 @@ final class ApiV2OpenApiAnnotationMerger {
       if (!documented.ref().isBlank()) {
         responses.put(responseCode, Map.of("$ref", documented.ref()));
       } else if (isSuccessResponse(responseCode)) {
-        Map<String, Object> success = map("description", documented.description());
+        Map<String, Object> success = ordered("description", documented.description());
         if (!responseCode.equals("204")
             && !responseCode.equals("205")
             && responseType != Void.class
@@ -168,7 +172,7 @@ final class ApiV2OpenApiAnnotationMerger {
       } else if (responseCode.startsWith("1")
           || responseCode.startsWith("3")
           || documented.content().length > 0) {
-        Map<String, Object> response = map("description", documented.description());
+        Map<String, Object> response = ordered("description", documented.description());
         if (documented.content().length > 0) {
           response.put("content", annotatedContent(documented.content(), responseSchema, schemas));
         }
@@ -197,7 +201,7 @@ final class ApiV2OpenApiAnnotationMerger {
     if (endpoints.authenticationMode(handler) == ApiV2AuthenticationMode.BROWSER_SESSION) {
       return List.of(Map.of("browserSession", List.of()));
     }
-    return List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of()));
+    return ApiV2OpenApiGenerator.AUTHENTICATED_SECURITY;
   }
 
   private static List<Map<String, Object>> parameters(
@@ -216,7 +220,7 @@ final class ApiV2OpenApiAnnotationMerger {
       }
       Map<String, Object> value =
           documented == null
-              ? map(
+              ? ordered(
                   "name",
                   location.name(),
                   "in",
@@ -482,39 +486,15 @@ final class ApiV2OpenApiAnnotationMerger {
   }
 
   private static Map<String, Object> errorResponse(String responseCode) {
-    String component =
-        switch (responseCode) {
-          case "400" -> "BadRequest";
-          case "401" -> "Unauthenticated";
-          case "403" -> "Forbidden";
-          case "404" -> "NotFound";
-          case "406" -> "NotAcceptable";
-          case "415" -> "UnsupportedMediaType";
-          case "422" -> "BulkLimit";
-          case "429" -> "TooManyRequests";
-          case "500" -> "UnexpectedError";
-          default -> null;
-        };
-    return component == null
-        ? map(
+    Map<String, Object> standardResponse =
+        ApiV2OpenApiGenerator.standardResponseReference(responseCode);
+    return standardResponse == null
+        ? ordered(
             "description",
             "Request failed.",
             "content",
             Map.of("application/problem+json", Map.of("schema", ref("ApiV2Problem"))))
-        : Map.of("$ref", "#/components/responses/" + component);
-  }
-
-  private static Map<String, Object> ref(String component) {
-    return Map.of("$ref", "#/components/schemas/" + component);
-  }
-
-  @SuppressWarnings("unchecked") // Key types are checked immediately before the invariant cast.
-  private static Map<String, Object> objectMap(Object value) {
-    if (!(value instanceof Map<?, ?> map)
-        || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
-      throw new IllegalArgumentException("Expected an object with string keys");
-    }
-    return (Map<String, Object>) map;
+        : standardResponse;
   }
 
   private static Map<String, Object> modelMap(Object value) {
@@ -527,7 +507,7 @@ final class ApiV2OpenApiAnnotationMerger {
       throw new IllegalArgumentException(key + " must be an array");
     }
     List<Map<String, Object>> checked = new ArrayList<>(list.size());
-    list.forEach(item -> checked.add(objectMap(item)));
+    list.forEach(item -> checked.add(mutableObjectMap(item)));
     parent.put(key, checked);
     return checked;
   }
@@ -537,14 +517,6 @@ final class ApiV2OpenApiAnnotationMerger {
       throw new IllegalArgumentException("Expected an array of strings");
     }
     return list.stream().map(String.class::cast).toList();
-  }
-
-  private static Map<String, Object> map(Object... entries) {
-    Map<String, Object> result = new LinkedHashMap<>();
-    for (int index = 0; index < entries.length; index += 2) {
-      result.put((String) entries[index], entries[index + 1]);
-    }
-    return result;
   }
 
   private record ParameterLocation(String name, String in, boolean required) {}

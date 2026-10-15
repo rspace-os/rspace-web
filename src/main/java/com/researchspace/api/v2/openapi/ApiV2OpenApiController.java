@@ -7,12 +7,10 @@ import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.util.HexFormat;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.env.Environment;
@@ -108,12 +106,9 @@ public final class ApiV2OpenApiController implements ApplicationListener<Context
     Map<String, Object> value = documents.generate();
     try {
       byte[] json = objectMapper.writeValueAsBytes(value);
-      byte[] digest = MessageDigest.getInstance("SHA-256").digest(json);
-      return new CachedDocument(value, "\"" + HexFormat.of().formatHex(digest) + "\"");
+      return new CachedDocument(value, "\"" + DigestUtils.sha256Hex(json) + "\"");
     } catch (JsonProcessingException ex) {
       throw new IllegalStateException("Generated OpenAPI document cannot be serialized", ex);
-    } catch (NoSuchAlgorithmException ex) {
-      throw new IllegalStateException("SHA-256 is unavailable", ex);
     }
   }
 
