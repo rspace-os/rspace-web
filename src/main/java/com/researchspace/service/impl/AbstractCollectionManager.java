@@ -42,13 +42,6 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
   protected AbstractCollectionManager(
       CollectionDao<T, ID> collectionDao,
       CollectionDescription<T> collectionDescription,
-      ObjectProvider<ResourceRegistry> resourceRegistry) {
-    this(collectionDao, collectionDescription, CollectionMutationLimits.DEFAULT, resourceRegistry);
-  }
-
-  protected AbstractCollectionManager(
-      CollectionDao<T, ID> collectionDao,
-      CollectionDescription<T> collectionDescription,
       CollectionMutationLimits mutationLimits,
       ObjectProvider<ResourceRegistry> resourceRegistry) {
     this.collectionDao = collectionDao;
@@ -198,11 +191,6 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
     return RelationshipReadAccess.forActor(resourceRegistry.getObject(), actor);
   }
 
-  /** Uses the read policy for mutation filters unless a domain explicitly authorizes otherwise. */
-  protected RelationshipReadAccess relationshipMutationAccess(User actor) {
-    return relationshipReadAccess(actor);
-  }
-
   /** Applies an update document in field-definition order. */
   protected void applyPatch(ParsedDocument patch, T resource) {
     if (patch.operation() != WriteOperation.UPDATE) {
@@ -227,9 +215,7 @@ public abstract class AbstractCollectionManager<T, ID extends Serializable>
     }
     List<T> matches =
         collectionDao.getResources(
-            request,
-            mutationLimits.maxBulkUpdateDeleteRows() + 1,
-            relationshipMutationAccess(actor));
+            request, mutationLimits.maxBulkUpdateDeleteRows() + 1, relationshipReadAccess(actor));
     if (matches.size() > mutationLimits.maxBulkUpdateDeleteRows()) {
       throw new CollectionMutationException(CollectionMutationException.Reason.BULK_LIMIT);
     }

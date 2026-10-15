@@ -1,27 +1,24 @@
 package com.researchspace.maintenance.service;
 
+import static com.researchspace.maintenance.service.MaintenanceTestFixtures.filter;
+import static com.researchspace.maintenance.service.MaintenanceTestFixtures.hoursFromNow;
+import static com.researchspace.maintenance.service.MaintenanceTestFixtures.maintenance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.Date;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 public class MaintenanceManagerBulkIT extends RealTransactionSpringTestBase {
@@ -54,7 +51,8 @@ public class MaintenanceManagerBulkIT extends RealTransactionSpringTestBase {
   public void rollsBackEveryRowWhenOneBulkPatchIsInvalid() {
     ScheduledMaintenance first = saveMaintenance(2, 4, "first original");
     ScheduledMaintenance second = saveMaintenance(6, 8, "second original");
-    ResourceRequest request = filter("id=in=(" + first.getId() + "," + second.getId() + ")");
+    ResourceRequest request =
+        ResourceRequest.unpaged(filter("id=in=(%s,%s)".formatted(first.getId(), second.getId())));
 
     // An endDate of now+5h is after the first window's start but before the second's, so the patch
     // is valid for one matched row and invalid for the other.
@@ -81,7 +79,7 @@ public class MaintenanceManagerBulkIT extends RealTransactionSpringTestBase {
   public void rejectsOneThousandAndOnePersistedMatchesBeforeMutatingThem() {
     String message = prefixed("persisted bulk cap");
     insertMaintenances(message, 1001);
-    ResourceRequest request = filter("message=='" + message + "'");
+    ResourceRequest request = ResourceRequest.unpaged(filter("message=='%s'".formatted(message)));
 
     CollectionMutationException exception =
         assertThrows(
@@ -100,50 +98,24 @@ public class MaintenanceManagerBulkIT extends RealTransactionSpringTestBase {
         "no row may be mutated once the cap is exceeded");
   }
 
-  private static ResourceRequest filter(String rsql) {
-    return ResourceRequest.unpaged(
-        new RsqlFilterParser(ApiV2MaintenanceResource.DESCRIPTION).parse(rsql));
-  }
-
   private ScheduledMaintenance saveMaintenance(int startHours, int endHours, String message) {
-    ScheduledMaintenance maintenance =
-        new ScheduledMaintenance(hoursFromNow(startHours), hoursFromNow(endHours));
-    maintenance.setMessage(prefixed(message));
-    return maintenanceManager.saveScheduledMaintenance(maintenance, sysUser);
+    return maintenanceManager.saveScheduledMaintenance(
+        maintenance(startHours, endHours, prefixed(message)), sysUser);
   }
 
   /** Batch SQL rather than 1001 manager calls: the cap is under test here, not persistence. */
   private void insertMaintenances(String message, int count) {
-    Timestamp start = new Timestamp(hoursFromNow(2).getTime());
-    Timestamp end = new Timestamp(hoursFromNow(3).getTime());
+    Timestamp start = Timestamp.from(hoursFromNow(2).toInstant());
+    Timestamp end = Timestamp.from(hoursFromNow(3).toInstant());
     jdbcTemplate.batchUpdate(
         """
         INSERT INTO ScheduledMaintenance (startDate, endDate, stopUserLoginDate, message)
         VALUES (?, ?, ?, ?)
         """,
-        new BatchPreparedStatementSetter() {
-          @Override
-          public void setValues(PreparedStatement statement, int index) throws SQLException {
-            statement.setTimestamp(1, start);
-            statement.setTimestamp(2, end);
-            statement.setTimestamp(3, start);
-            statement.setString(4, message);
-          }
-
-          @Override
-          public int getBatchSize() {
-            return count;
-          }
-        });
+        Collections.nCopies(count, new Object[] {start, end, start, message}));
   }
 
   private static String prefixed(String message) {
     return TEST_PREFIX + message;
-  }
-
-  private static Date hoursFromNow(int hours) {
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.HOUR_OF_DAY, hours);
-    return calendar.getTime();
   }
 }

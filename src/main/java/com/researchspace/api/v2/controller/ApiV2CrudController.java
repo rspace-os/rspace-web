@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -216,9 +217,7 @@ public class ApiV2CrudController {
                 registration.registry(),
                 registration.runtimeFieldContext(user)),
             user);
-    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
-    registration.documentEtag(document).ifPresent(response::eTag);
-    return response.body(document);
+    return okWithDocumentEtag(registration, document);
   }
 
   @PostMapping("/{resource}")
@@ -245,8 +244,7 @@ public class ApiV2CrudController {
   public ResponseEntity<Map<String, Object>> update(
       @PathVariable String resource,
       @PathVariable String id,
-      @RequestHeader(name = org.springframework.http.HttpHeaders.IF_MATCH, required = false)
-          String ifMatch,
+      @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
       @RequestBody JsonNode body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
@@ -258,9 +256,7 @@ public class ApiV2CrudController {
             .map(code -> ApiV2ConditionalRequest.parseVersion(ifMatch, code))
             .orElse(null);
     Map<String, Object> document = registration.update(id, body, expectedVersion, caller);
-    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
-    registration.documentEtag(document).ifPresent(response::eTag);
-    return response.body(document);
+    return okWithDocumentEtag(registration, document);
   }
 
   @PatchMapping("/{resource}")
@@ -286,8 +282,7 @@ public class ApiV2CrudController {
   public ResponseEntity<Map<String, Object>> delete(
       @PathVariable String resource,
       @PathVariable String id,
-      @RequestHeader(name = org.springframework.http.HttpHeaders.IF_MATCH, required = false)
-          String ifMatch,
+      @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
       @RequestParam(defaultValue = "false") boolean permanent,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
@@ -310,6 +305,11 @@ public class ApiV2CrudController {
       return ResponseEntity.noContent().build();
     }
     Map<String, Object> document = result.resource().orElseThrow(NotFoundException::new);
+    return okWithDocumentEtag(registration, document);
+  }
+
+  private static ResponseEntity<Map<String, Object>> okWithDocumentEtag(
+      ApiV2ResourceRegistration<?, ?> registration, Map<String, Object> document) {
     ResponseEntity.BodyBuilder response = ResponseEntity.ok();
     registration.documentEtag(document).ifPresent(response::eTag);
     return response.body(document);
