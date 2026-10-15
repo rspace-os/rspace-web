@@ -24,6 +24,7 @@ import { useTableList } from "@/modules/common/table-list/useTableList";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { type CalendarLayout, type CalendarView, calendarDates } from "./BookingEventsCalendar";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
+import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
 import { useCalendarEvents } from "./calendarEvents";
 
 const calendarResourceSourceConfig = {
@@ -33,140 +34,9 @@ const calendarResourceSourceConfig = {
   pagination: { defaultLimit: 20, limits: [10, 20, 30, 40, 50] },
 } satisfies CollectionConfig<BookingConfiguration>;
 
-const calendarEventSourceConfig = {
-  slug: "booking-events-calendar",
-  idField: "id",
-  useAsTitle: "purpose",
-  defaultColumns: ["purpose"],
-  listSearchableFields: ["purpose"],
-  labels: {
-    singularKey: "booking:calendar.event",
-    pluralKey: "booking:calendar.title",
-  },
-  fields: [
-    { name: "id", type: "number", labelKey: "booking:calendar.fields.id", list: false, form: false },
-    {
-      name: "target",
-      type: "relationship",
-      relationTo: "booking-instruments",
-      hasMany: false,
-      labelKey: "booking:calendar.fields.target",
-      capabilities: { filterOperators: [] },
-    },
-    {
-      name: "requesterId",
-      type: "number",
-      labelKey: "booking:calendar.fields.requester",
-      list: false,
-      form: false,
-      capabilities: { filterOperators: [] },
-    },
-    {
-      name: "purpose",
-      type: "text",
-      maximumLength: 1_000,
-      labelKey: "booking:calendar.fields.purpose",
-      capabilities: {
-        filterOperators: ["equals", "notEquals", "contains", "matches", "exists"],
-        supportsWildcards: true,
-      },
-    },
-    {
-      name: "bookedBy",
-      type: "text",
-      maximumLength: 255,
-      labelKey: "booking:calendar.fields.bookedBy",
-      capabilities: {
-        filterOperators: ["contains", "matches", "exists"],
-        supportsWildcards: true,
-      },
-    },
-    {
-      name: "privacy",
-      type: "select",
-      options: ["full", "busy"],
-      labelKey: "booking:calendar.fields.privacy",
-      capabilities: { filterOperators: ["equals", "notEquals", "in", "notIn", "exists"] },
-    },
-    {
-      name: "timezone",
-      type: "text",
-      labelKey: "booking:calendar.fields.timezone",
-      capabilities: {
-        filterOperators: ["equals", "notEquals", "contains", "matches", "exists"],
-        supportsWildcards: true,
-      },
-    },
-    {
-      name: "start",
-      type: "dateTime",
-      labelKey: "booking:calendar.fields.start",
-      capabilities: {
-        filterOperators: [
-          "equals",
-          "notEquals",
-          "greaterThan",
-          "greaterThanOrEqual",
-          "lessThan",
-          "lessThanOrEqual",
-          "exists",
-        ],
-      },
-    },
-    {
-      name: "end",
-      type: "dateTime",
-      labelKey: "booking:calendar.fields.end",
-      capabilities: {
-        filterOperators: [
-          "equals",
-          "notEquals",
-          "greaterThan",
-          "greaterThanOrEqual",
-          "lessThan",
-          "lessThanOrEqual",
-          "exists",
-        ],
-      },
-    },
-    {
-      name: "kind",
-      type: "select",
-      options: ["BOOKING", "MAINTENANCE"],
-      labelKey: "booking:bookableItemDetails.events.kind",
-      capabilities: { filterOperators: ["equals", "notEquals", "in", "notIn", "exists"] },
-      list: false,
-      form: false,
-    },
-    {
-      name: "canEdit",
-      type: "boolean",
-      labelKey: "booking:calendar.fields.editable",
-      capabilities: { filterOperators: [] },
-      list: false,
-      form: false,
-    },
-    {
-      name: "createdAt",
-      type: "dateTime",
-      labelKey: "booking:calendar.fields.createdAt",
-      capabilities: { filterOperators: [] },
-      list: false,
-      form: false,
-    },
-    {
-      name: "updatedAt",
-      type: "dateTime",
-      labelKey: "booking:calendar.fields.updatedAt",
-      capabilities: { filterOperators: [] },
-      list: false,
-      form: false,
-    },
-  ],
-} satisfies CollectionConfig<BookingListDocument>;
-
-const calendarSearchParser = parseAsString.withDefault("").withOptions({ history: "replace", clearOnDefault: true });
-const calendarWhereParser = parseAsString.withOptions({ history: "replace", clearOnDefault: true });
+const calendarSearchOptions = { history: "replace", clearOnDefault: true } as const;
+const calendarSearchParser = parseAsString.withDefault("").withOptions(calendarSearchOptions);
+const calendarWhereParser = parseAsString.withOptions(calendarSearchOptions);
 
 function andFilters<TDocument>(
   filters: readonly (FilterExpression<TDocument> | null | undefined)[],
@@ -189,16 +59,25 @@ function retypeFilter<TFrom, TTo>(expression: FilterExpression<TFrom>): FilterEx
   };
 }
 
-function filterIssue<TDocument>(
-  kind: CalendarFilterPanelKind,
-  raw: string | null,
-  expression: FilterExpression<TDocument> | null,
-  pending: boolean,
-  error: unknown,
-  missing: readonly string[],
-  retry: () => Promise<unknown>,
-  onReset: () => void,
-) {
+function filterIssue<TDocument>({
+  kind,
+  raw,
+  expression,
+  runtimeFields,
+  onReset,
+}: {
+  kind: CalendarFilterPanelKind;
+  raw: string | null;
+  expression: FilterExpression<TDocument> | null;
+  runtimeFields: {
+    pending: boolean;
+    error: unknown;
+    missing: readonly string[];
+    retry: () => Promise<unknown>;
+  };
+  onReset: () => void;
+}) {
+  const { pending, error, missing, retry } = runtimeFields;
   if (pending) return undefined;
   if (error !== null) {
     return {
@@ -266,21 +145,7 @@ export function useCalendarContentData() {
       config: calendarEventSourceConfig,
       metadata: eventRuntimeFields.metadata,
       runtimeFields: eventRuntimeFields.runtimeFields,
-      localFields: [
-        "id",
-        "target",
-        "requesterId",
-        "purpose",
-        "bookedBy",
-        "privacy",
-        "timezone",
-        "start",
-        "end",
-        "kind",
-        "canEdit",
-        "createdAt",
-        "updatedAt",
-      ],
+      localFields: calendarEventSourceConfig.fields.map((field) => field.name),
       translate: (key) => String(t(key as never)),
     });
     return resolveCollectionConfig({
@@ -311,26 +176,20 @@ export function useCalendarContentData() {
     () => (eventWhere && eventWhere.trim() !== "" ? parseRsqlExpression(eventWhere, eventConfig) : null),
     [eventConfig, eventWhere],
   );
-  const itemIssue = filterIssue(
-    "items",
-    itemWhere,
-    itemExpression,
-    itemRuntimeFields.pending,
-    itemRuntimeFields.error,
-    itemRuntimeFields.missing,
-    itemRuntimeFields.retry,
-    () => void setItemWhere(null),
-  );
-  const eventIssue = filterIssue(
-    "events",
-    eventWhere,
-    eventExpression,
-    eventRuntimeFields.pending,
-    eventRuntimeFields.error,
-    eventRuntimeFields.missing,
-    eventRuntimeFields.retry,
-    () => void setEventWhere(null),
-  );
+  const itemIssue = filterIssue({
+    kind: "items",
+    raw: itemWhere,
+    expression: itemExpression,
+    runtimeFields: itemRuntimeFields,
+    onReset: () => void setItemWhere(null),
+  });
+  const eventIssue = filterIssue({
+    kind: "events",
+    raw: eventWhere,
+    expression: eventExpression,
+    runtimeFields: eventRuntimeFields,
+    onReset: () => void setEventWhere(null),
+  });
   const filtersBlocked =
     itemIssue !== undefined || eventIssue !== undefined || itemRuntimeFields.pending || eventRuntimeFields.pending;
   const requesterFilter = mineOnly
@@ -368,6 +227,7 @@ export function useCalendarContentData() {
   ].join("|");
   const previousFilterScope = React.useRef(filterScopeSignature);
   const resourceScopeReady = previousFilterScope.current === filterScopeSignature;
+  const calendarQueryReady = !resettingControls && !filtersBlocked && resourceScopeReady;
   const resourceTable = useTableList<BookingConfiguration>({
     config: itemConfig,
     dataSource: {
@@ -389,7 +249,7 @@ export function useCalendarContentData() {
       ],
       keepPreviousData: true,
       dataScope: currentUser.id,
-      enabled: !resettingControls && !filtersBlocked && resourceScopeReady && token.length > 0,
+      enabled: calendarQueryReady && token.length > 0,
       fetch: async (state, { signal }) => {
         const result = await fetchBookingCatalogue(
           {
@@ -432,39 +292,31 @@ export function useCalendarContentData() {
     () => resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target.globalId] : [])),
     [resourceTable.tableProps.rows],
   );
-  const events = useCalendarEvents(
-    dates[0],
-    dates.at(-1) ?? dates[0],
-    preferences.timeZone,
+  const resourceTableReady =
+    resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing";
+  const events = useCalendarEvents({
+    firstDate: dates[0],
+    lastDate: dates.at(-1) ?? dates[0],
+    timezone: preferences.timeZone,
     token,
-    layout === "resources" ? resourceTargetIds : undefined,
-    !resettingControls &&
-      !filtersBlocked &&
-      resourceScopeReady &&
-      (layout !== "resources" ||
-        (resourceTable.tableProps.status !== "loading" && resourceTable.tableProps.status !== "refreshing")),
-    currentUser.id,
-    { where: calendarEventWhereParameter, q: calendarSearch },
-  );
+    targetGlobalIds: layout === "resources" ? resourceTargetIds : undefined,
+    enabled: calendarQueryReady && (layout !== "resources" || resourceTableReady),
+    authScope: currentUser.id,
+    scope: { where: calendarEventWhereParameter, q: calendarSearch },
+  });
   // Display filters must not change the events used to propose a free booking window.
   // Without an event filter/Search this uses the display query's cache, avoiding a second request.
-  const blockingEvents = useCalendarEvents(
-    dates[0],
-    dates.at(-1) ?? dates[0],
-    preferences.timeZone,
+  const blockingEvents = useCalendarEvents({
+    firstDate: dates[0],
+    lastDate: dates.at(-1) ?? dates[0],
+    timezone: preferences.timeZone,
     token,
-    resourceTargetIds,
-    layout === "resources" &&
-      view === "day" &&
-      !resettingControls &&
-      !filtersBlocked &&
-      resourceScopeReady &&
-      resourceTable.tableProps.status !== "loading" &&
-      resourceTable.tableProps.status !== "refreshing",
-    currentUser.id,
-    { where: itemWhereParameter, q: "" },
-  );
-  const displayReady = !filtersBlocked && resourceScopeReady && !resettingControls;
+    targetGlobalIds: resourceTargetIds,
+    enabled: layout === "resources" && view === "day" && calendarQueryReady && resourceTableReady,
+    authScope: currentUser.id,
+    scope: { where: itemWhereParameter, q: "" },
+  });
+  const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
   const onItemFiltersChange = (expression: FilterExpression<BookingConfiguration> | null) => {
     void setItemWhere(expression ? serializeRsqlExpression(expression) : null);
