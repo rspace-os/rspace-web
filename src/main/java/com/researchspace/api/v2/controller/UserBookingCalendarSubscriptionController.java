@@ -7,7 +7,6 @@ import com.researchspace.booking.service.BookingCalendarManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +37,7 @@ public class UserBookingCalendarSubscriptionController {
           link.configurationId(),
           "IN" + link.targetId(),
           link.itemName(),
-          isoTimestamp(link.updatedAt()),
+          BookingCalendarSubscriptionController.isoTimestamp(link.updatedAt()),
           link.subscriptionUrl());
     }
   }
@@ -80,10 +79,8 @@ public class UserBookingCalendarSubscriptionController {
       })
   public ResponseEntity<CreatedDocument> create(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    BookingCalendarManager.Created created = manager.createUser(caller.subject(), caller.actor());
-    return ResponseEntity.status(created.newlyIssued() ? HttpStatus.CREATED : HttpStatus.OK)
-        .eTag(created.status().etag())
-        .body(CreatedDocument.from(created));
+    return BookingCalendarSubscriptionController.createdResponse(
+        manager.createUser(caller.subject(), caller.actor()));
   }
 
   @PostMapping(SUBSCRIPTION + "/rotate")
