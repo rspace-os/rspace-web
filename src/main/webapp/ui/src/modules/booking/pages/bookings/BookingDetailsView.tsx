@@ -50,38 +50,6 @@ export function BookingDetailsView() {
         />
       </span>,
     ],
-    ...(booking.kind === "BOOKING" && booking.bookedBy
-      ? ([[t("bookings.details.bookedBy"), <UserBadge key="booked-by" name={booking.bookedBy} />]] as Array<
-          [string, ReactNode]
-        >)
-      : []),
-    ...(booking.createdBy
-      ? ([[t("bookings.details.createdBy"), <UserBadge key="created-by" name={booking.createdBy} />]] as Array<
-          [string, ReactNode]
-        >)
-      : []),
-    [
-      t(booking.kind === "MAINTENANCE" ? "bookings.form.notes" : "bookings.form.purpose"),
-      booking.purpose ? (
-        <span key="purpose" className="whitespace-pre-line">
-          {booking.purpose}
-        </span>
-      ) : (
-        <span key="purpose" className="text-muted-foreground">
-          {t("bookings.details.noneProvided")}
-        </span>
-      ),
-    ],
-    ...(booking.state === "CANCELLED" && booking.cancellationReason
-      ? ([
-          [
-            t("bookings.details.cancellationReason"),
-            <span key="cancellation-reason" className="whitespace-pre-line">
-              {booking.cancellationReason}
-            </span>,
-          ],
-        ] as Array<[string, ReactNode]>)
-      : []),
   ];
   if (booking.kind === "BOOKING" && booking.bookedBy) {
     facts.push([t("bookings.details.bookedBy"), <UserBadge key="booked-by" name={booking.bookedBy} />]);
@@ -101,6 +69,14 @@ export function BookingDetailsView() {
       </span>
     ),
   ]);
+  if (booking.state === "CANCELLED" && booking.cancellationReason) {
+    facts.push([
+      t("bookings.details.cancellationReason"),
+      <span key="cancellation-reason" className="whitespace-pre-line">
+        {booking.cancellationReason}
+      </span>,
+    ]);
+  }
 
   return (
     <Panel

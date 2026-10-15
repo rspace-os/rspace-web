@@ -20,7 +20,6 @@ describe("booking response intervals", () => {
       canViewConfiguration: false,
       privacy: "full",
       purpose: "Retained requester details",
-      cancellationReason: null,
       bookedBy: "Ada Lovelace (ada)",
       createdBy: "Grace Hopper (grace)",
       canEdit: false,
@@ -29,7 +28,8 @@ describe("booking response intervals", () => {
       updatedAt: "2026-08-02T10:00:00Z",
     } as const;
 
-    expect(v.parse(BookingDetailsSchema, redacted)).toEqual(redacted);
+    const details = { ...redacted, cancellationReason: null };
+    expect(v.parse(BookingDetailsSchema, details)).toEqual(details);
     expect(v.parse(BookingListDocumentSchema, { ...redacted, requesterId: 84 })).toEqual({
       ...redacted,
       requesterId: 84,

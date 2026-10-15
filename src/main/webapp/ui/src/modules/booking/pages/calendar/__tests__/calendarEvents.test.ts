@@ -5,7 +5,7 @@ import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import { collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { busyBooking, collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents, useCalendarEvents } from "../calendarEvents";
 
 function calendarBounds(firstDate: string, lastDate: string, timezone: string) {
@@ -14,9 +14,6 @@ function calendarBounds(firstDate: string, lastDate: string, timezone: string) {
     end: zonedDayBounds(lastDate, timezone).end,
   };
 }
-
-// Calendar projections intentionally omit cancellation details.
-const { cancellationReason: _ownReason, ...ownCalendarBooking } = ownBooking;
 
 describe("calendar events", () => {
   it("sends complete item/event grouping and Search before the event limit", async () => {
@@ -40,7 +37,7 @@ describe("calendar events", () => {
         signal: new AbortController().signal,
         scope: { where, q: "purpose-only" },
       }),
-    ).resolves.toEqual([ownCalendarBooking]);
+    ).resolves.toEqual([ownBooking]);
     expect(requests).toHaveLength(1);
     expect(requests[0].searchParams.get("q")).toBe("purpose-only");
     expect(requests[0].searchParams.get("start")).toBe("2026-08-17T00:00:00Z");
@@ -87,6 +84,19 @@ describe("calendar events", () => {
     const selectedFields = requests[0].searchParams.get("fields[bookings]");
     expect(selectedFields).toBe(CALENDAR_BOOKING_FIELDS);
     expect(selectedFields?.split(",")).toContain("canViewConfiguration");
+  });
+
+  it("accepts busy events with a concealed requester identity", async () => {
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([busyBooking]))));
+
+    await expect(
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "Europe/Berlin"),
+        token: "token",
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual([busyBooking]);
+    expect(busyBooking.requesterId).toBeNull();
   });
 
   it("returns no events for an empty target scope while leaving undefined unrestricted", async () => {

@@ -51,7 +51,6 @@ export const ownBooking: BookingListDocument = {
   end: "2026-08-17T10:00:00Z",
   state: "CONFIRMED",
   purpose: "Cell imaging",
-  cancellationReason: null,
   bookedBy: "Ada Lovelace (ada)",
   privacy: "full",
   canEdit: true,
@@ -74,7 +73,7 @@ export const otherBooking: BookingListDocument = {
 export const busyBooking: BookingListDocument = {
   ...otherBooking,
   id: 43,
-  requesterId: 3,
+  requesterId: null,
   start: "2026-08-21T09:00:00Z",
   end: "2026-08-21T11:00:00Z",
   purpose: null,
