@@ -79,7 +79,7 @@ export const SchedulingSettingsSchema = v.pipe(
     ["slotGranularityMinutes"],
   ),
   v.forward(
-    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
+    v.check((settings) => validMaximumForIncrement(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -90,7 +90,7 @@ export const BookingSettingsSchema = v.pipe(
     ...bookingDisplayPreferencesEntries,
   }),
   v.forward(
-    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
+    v.check((settings) => validMaximumForIncrement(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -113,7 +113,7 @@ export const BookingAdminSettingsSchema = v.pipe(
     configurationVersion: v.number(),
   }),
   v.forward(
-    v.check((settings) => validMaximumBookingDuration(settings.maxBookingDurationMinutes, settings)),
+    v.check((settings) => validMaximumForIncrement(settings.maxBookingDurationMinutes, settings)),
     ["maxBookingDurationMinutes"],
   ),
 );
@@ -133,13 +133,6 @@ export const DEFAULT_SCHEDULING_SETTINGS: SchedulingSettings = {
   maxBookingDurationMinutes: 0,
   allowDoubleBooking: false,
 };
-
-export function validMaximumBookingDuration(
-  maximumMinutes: number,
-  increment: Pick<IncrementSettings, "slotGranularityMinutes" | "incrementUnit">,
-): boolean {
-  return validMaximumForIncrement(maximumMinutes, increment);
-}
 
 export async function loadBookingSettings(token: string, signal?: AbortSignal): Promise<BookingSettings> {
   const response = await fetch("/api/v2/booking-settings", {
@@ -365,7 +358,7 @@ function MaximumDurationField({ form, id, disabled }: { form: FormStore; id: str
   const invalid =
     values.maxBookingDurationMinutes !== undefined &&
     increment !== undefined &&
-    !validMaximumBookingDuration(values.maxBookingDurationMinutes, {
+    !validMaximumForIncrement(values.maxBookingDurationMinutes, {
       slotGranularityMinutes: increment,
       incrementUnit: unit,
     });

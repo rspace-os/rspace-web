@@ -1,44 +1,21 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
-import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { server } from "@/__tests__/mswServer";
-import BookingSettingsPage from "../BookingSettingsPage";
-import { bookingSettingsFixture } from "./bookingSettingsFixture";
+import {
+  createBookingSettingsFixture,
+  renderBookingSettingsPage,
+  serveBookingSettings,
+} from "./bookingSettingsTestHarness";
 
-const settings = {
-  ...bookingSettingsFixture,
-  incrementUnit: "MINUTES" as const,
-  alignToIncrement: true,
-};
+const settings = createBookingSettingsFixture({
+  slotGranularityMinutes: 15,
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+});
 
 function serve(initial: Partial<typeof settings> = {}, saveSucceeds: () => boolean = () => true) {
-  const submitted: Record<string, unknown>[] = [];
-  let current = { ...settings, ...initial };
-  server.use(
-    http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
-    http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
-      const body = (await request.json()) as Record<string, unknown>;
-      submitted.push(body);
-      if (!saveSucceeds()) return HttpResponse.json({ status: 500 }, { status: 500 });
-      current = { ...current, ...body, configurationVersion: current.configurationVersion + 1 };
-      return HttpResponse.json(current);
-    }),
-  );
-  return submitted;
-}
-
-function renderPage() {
-  return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <Suspense fallback={null}>
-        <BookingSettingsPage />
-      </Suspense>
-    </QueryClientProvider>,
-  );
+  return serveBookingSettings({ ...settings, ...initial }, saveSucceeds);
 }
 
 type User = ReturnType<typeof userEvent.setup>;
@@ -77,7 +54,7 @@ describe("Open all day", () => {
   it("follows the 00:00 to 24:00 pair and falls back to 09:00-17:00", async () => {
     const user = userEvent.setup();
     serve({ openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })) });
-    const { container } = renderPage();
+    const { container } = renderBookingSettingsPage();
 
     const { start, end, allDay } = controls(await findSharedHours());
     expect(allDay).toBeChecked();
@@ -101,7 +78,7 @@ describe("Open all day", () => {
   it("selects the whole day when typed, moves focus to the checkbox and restores the typed hours", async () => {
     const user = userEvent.setup();
     serve({ openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "01:00", end: "24:00" })) });
-    renderPage();
+    renderBookingSettingsPage();
 
     const { start, allDay } = controls(await findSharedHours());
     expect(allDay).not.toBeChecked();
@@ -121,7 +98,7 @@ describe("Open all day", () => {
   it("remembers custom hours from typing and the checkbox, never blank or invalid drafts", async () => {
     const user = userEvent.setup();
     serve();
-    renderPage();
+    renderBookingSettingsPage();
 
     await setHours(user, await findSharedHours(), "10:00", "16:00");
     const { start, allDay } = controls(sharedHours());
@@ -144,7 +121,7 @@ describe("Open all day", () => {
   it("keeps each weekday's history and closed-day draft independent", async () => {
     const user = userEvent.setup();
     const submitted = serve({ openingHours: settings.openingHours.filter((entry) => entry.dayOfWeek !== 7) });
-    renderPage();
+    renderBookingSettingsPage();
     await findSharedHours();
 
     await setHours(user, dayHours("Tuesday"), "10:00", "16:00");
@@ -173,7 +150,7 @@ describe("Open all day", () => {
     const user = userEvent.setup();
     let succeed = false;
     const submitted = serve({}, () => succeed);
-    renderPage();
+    renderBookingSettingsPage();
 
     await setHours(user, await findSharedHours(), "10:00", "16:00");
     await setHours(user, dayHours("Tuesday"), "11:00", "15:00");
@@ -205,7 +182,7 @@ describe("Open all day", () => {
   it("restores a closed day's unsaved hours and requires at least one open day", async () => {
     const user = userEvent.setup();
     const submitted = serve({ openingHours: settings.openingHours.filter((entry) => entry.dayOfWeek === 1) });
-    const { container } = renderPage();
+    const { container } = renderBookingSettingsPage();
     await setHours(user, await findSharedHours(), "10:00", "16:00");
     const monday = screen.getByRole("checkbox", { name: "Monday" });
 

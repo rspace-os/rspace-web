@@ -5,7 +5,6 @@ import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import { bookingNotificationSubscriptionsQueryKey } from "@/modules/booking/domain/bookingNotificationSubscriptions";
 import { currentUser } from "@/modules/booking/pages/mocks/currentUserFixture";
@@ -37,7 +36,6 @@ describe("BookableItemNotificationSubscription", () => {
       emailEnabled: false,
     };
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-configurations/7/notification-subscription", () => HttpResponse.json(subscription)),
       http.put("/api/v2/booking-configurations/7/notification-subscription", async ({ request }) => {
@@ -75,7 +73,6 @@ describe("BookableItemNotificationSubscription", () => {
     };
     let saved: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-configurations/7/notification-subscription", () => HttpResponse.json(subscription)),
       http.put("/api/v2/booking-configurations/7/notification-subscription", async ({ request }) => {

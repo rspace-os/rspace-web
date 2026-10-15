@@ -7,6 +7,10 @@ const berlin = {
   openingHours: [...ALL_ISO_WEEKDAYS].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "17:00" })),
 };
 const hours = (days: ReturnType<typeof weeklyOpeningHours>) => days.map((day) => day.hours);
+const allDay = {
+  ...berlin,
+  openingHours: berlin.openingHours.map((entry) => ({ ...entry, start: "00:00", end: "24:00" })),
+};
 
 describe("weeklyOpeningHours", () => {
   it("converts each weekday into the viewer's timezone", () => {
@@ -36,28 +40,19 @@ describe("weeklyOpeningHours", () => {
   });
 
   it("reads open around the clock the same in every timezone", () => {
-    const allDay = {
-      ...berlin,
-      openingHours: berlin.openingHours.map((entry) => ({ ...entry, start: "00:00", end: "24:00" })),
-    };
     expect(hours(weeklyOpeningHours(allDay, "Pacific/Auckland", "2026-10-07"))).toEqual(
       Array(7).fill("12:00 AM - 12:00 AM"),
     );
   });
 
   it("labels whole-day openings only where they stay whole local days", () => {
-    const allDay = {
-      ...berlin,
-      openingHours: berlin.openingHours.map((entry) => ({ ...entry, start: "00:00", end: "24:00" })),
-    };
     expect(hours(weeklyOpeningHours(allDay, "Pacific/Auckland", "2026-10-07", undefined, "Open all day"))).toEqual(
       Array(7).fill("Open all day"),
     );
     const mondayAllDay = {
       ...berlin,
-      openingHours: berlin.openingHours.map(
-        (entry) =>
-          [{ dayOfWeek: 1, start: "00:00", end: "24:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+      openingHours: berlin.openingHours.map((entry) =>
+        entry.dayOfWeek === 1 ? { ...entry, start: "00:00", end: "24:00" } : entry,
       ),
     };
     expect(weeklyOpeningHours(mondayAllDay, "Europe/Berlin", "2026-10-07", undefined, "Open all day")[0]?.hours).toBe(
@@ -79,7 +74,7 @@ describe("weeklyOpeningHours", () => {
     const schedule = {
       ...berlin,
       openingHours: berlin.openingHours
-        .filter((entry) => [1, 2, 3, 4, 5].includes(entry.dayOfWeek))
+        .filter((entry) => entry.dayOfWeek <= 5)
         .map((entry) => (entry.dayOfWeek === 2 ? { ...entry, start: "10:00", end: "14:00" } : entry)),
     };
     const week = weeklyOpeningHours(schedule, "Europe/Berlin", "2026-10-07");

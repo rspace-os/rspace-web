@@ -19,9 +19,9 @@ import {
 } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { bookableItemFixtures } from "../bookable-items/mocks/bookableItemsMocks";
 import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
+import { currentUser } from "../mocks/currentUserFixture";
 import { noParentBooking } from "./__tests__/calendarTestHarness";
 import { CalendarPageStory } from "./CalendarPage.story";
-import { currentUser } from "./calendarFixtures";
 import { CalendarPage as CalendarPageObject } from "./pageObjects/CalendarPage";
 
 const calendar = new CalendarPageObject();

@@ -8,7 +8,6 @@ import {
   customOpeningHours,
   effectiveHours,
   formatIsoWeekday,
-  ISO_WEEKDAYS,
   isOpenAllDay,
   longestOpeningMinutes,
   MAX_BOOKING_DURATION_MINUTES,
@@ -89,13 +88,11 @@ describe("effectiveHours", () => {
   test("resolves independent intervals and omitted closed days", () => {
     const settings = {
       ...officeHours,
-      openingHours: officeHours.openingHours.filter((entry) =>
-        [1, 2, 3, 4, 5].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
-      ),
+      openingHours: officeHours.openingHours.filter((entry) => entry.dayOfWeek <= 5),
     };
-    expect(effectiveHours(settings, ISO_WEEKDAYS.MONDAY)).toEqual({ start: "09:00", end: "17:00" });
-    expect(effectiveHours(settings, ISO_WEEKDAYS.TUESDAY)).toEqual({ start: "10:00", end: "16:00" });
-    expect(effectiveHours(settings, ISO_WEEKDAYS.SUNDAY)).toBeNull();
+    expect(effectiveHours(settings, 1)).toEqual({ start: "09:00", end: "17:00" });
+    expect(effectiveHours(settings, 2)).toEqual({ start: "10:00", end: "16:00" });
+    expect(effectiveHours(settings, 7)).toBeNull();
   });
 });
 
@@ -132,9 +129,7 @@ describe("coversInterval", () => {
   test("rejects closed days and empty intervals", () => {
     const weekdays = {
       ...officeHours,
-      openingHours: officeHours.openingHours.filter((entry) =>
-        [1, 2, 3, 4, 5].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
-      ),
+      openingHours: officeHours.openingHours.filter((entry) => entry.dayOfWeek <= 5),
     };
     expect(coversInterval(weekdays, "UTC", { start: "2026-06-07T09:30:00Z", end: "2026-06-07T10:30:00Z" })).toBe(false);
     expect(coversInterval(weekdays, "UTC", { start: "2026-06-01T09:30:00Z", end: "2026-06-01T09:30:00Z" })).toBe(false);
@@ -142,9 +137,7 @@ describe("coversInterval", () => {
 
   test("lets an all-day Monday booking end at Tuesday midnight but not a minute later", () => {
     const mondays = schedule({
-      openingHours: [1, 2, 3, 4, 5, 6, 7]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-        .filter((entry) => [ISO_WEEKDAYS.MONDAY].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
     });
     expect(coversInterval(mondays, "UTC", { start: "2026-06-01T00:00:00Z", end: "2026-06-02T00:00:00Z" })).toBe(true);
     expect(coversInterval(mondays, "UTC", { start: "2026-06-01T00:00:00Z", end: "2026-06-02T00:01:00Z" })).toBe(false);
@@ -155,9 +148,7 @@ describe("coversInterval", () => {
     expect(
       coversInterval(
         schedule({
-          openingHours: [1, 2, 3, 4, 5, 6, 7]
-            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-            .filter((entry) => [1, 2, 3].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+          openingHours: [1, 2, 3].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         }),
         "UTC",
         interval,
@@ -166,9 +157,7 @@ describe("coversInterval", () => {
     expect(
       coversInterval(
         schedule({
-          openingHours: [1, 2, 3, 4, 5, 6, 7]
-            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-            .filter((entry) => [1, 3].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+          openingHours: [1, 3].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         }),
         "UTC",
         interval,
@@ -184,22 +173,18 @@ describe("coversInterval", () => {
 
   test("uses the instrument weekday when the display date is a different weekday", () => {
     const mondays = schedule({
-      openingHours: [1, 2, 3, 4, 5, 6, 7]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-        .filter((entry) => [ISO_WEEKDAYS.MONDAY].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
     });
     // Monday 00:00 at UTC+14 is Sunday 10:00 UTC.
     const interval = { start: "2026-05-31T10:00:00Z", end: "2026-05-31T11:00:00Z" };
-    expect(Temporal.Instant.from(interval.start).toZonedDateTimeISO("UTC").dayOfWeek).toBe(ISO_WEEKDAYS.SUNDAY);
+    expect(Temporal.Instant.from(interval.start).toZonedDateTimeISO("UTC").dayOfWeek).toBe(7);
     expect(coversInterval(mondays, "Pacific/Kiritimati", interval)).toBe(true);
     expect(coversInterval(mondays, "UTC", interval)).toBe(false);
   });
 
   test("uses the instrument weekday at a large negative offset", () => {
     const mondays = schedule({
-      openingHours: [1, 2, 3, 4, 5, 6, 7]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-        .filter((entry) => [ISO_WEEKDAYS.MONDAY].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      openingHours: [{ dayOfWeek: 1, start: "00:00", end: "24:00" }],
     });
     // Monday 00:00 at UTC-12 is Monday 12:00 UTC.
     expect(coversInterval(mondays, "Etc/GMT+12", { start: "2026-06-01T11:00:00Z", end: "2026-06-01T12:00:00Z" })).toBe(
@@ -212,7 +197,7 @@ describe("coversInterval", () => {
 
   test("rejects a booking wholly inside a DST gap", () => {
     const gapHours = schedule({
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "02:00", end: "03:00" })),
+      openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "02:00", end: "03:00" })),
     });
     expect(
       coversInterval(gapHours, "Europe/Berlin", { start: "2026-03-29T00:30:00Z", end: "2026-03-29T01:30:00Z" }),
@@ -226,7 +211,7 @@ describe("openingIntervals", () => {
     // so the view shows the end of Tokyo Monday and the start of Tokyo Tuesday.
     const losAngelesDay = { start: "2026-06-01T07:00:00Z", end: "2026-06-02T07:00:00Z" };
     const tokyo = schedule({
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" })),
+      openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "09:00", end: "17:00" })),
     });
     expect(openingIntervals(tokyo, "Asia/Tokyo", losAngelesDay)).toEqual([
       { start: "2026-06-01T07:00:00Z", end: "2026-06-01T08:00:00Z" },
@@ -236,9 +221,7 @@ describe("openingIntervals", () => {
       openingIntervals(
         {
           ...tokyo,
-          openingHours: tokyo.openingHours.filter((entry) =>
-            [1, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek),
-          ),
+          openingHours: tokyo.openingHours.filter((entry) => entry.dayOfWeek !== 2),
         },
         "Asia/Tokyo",
         losAngelesDay,
@@ -250,9 +233,7 @@ describe("openingIntervals", () => {
     expect(
       openingIntervals(
         schedule({
-          openingHours: [1, 2, 3, 4, 5, 6, 7]
-            .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-            .filter((entry) => [1, 2, 4].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+          openingHours: [1, 2, 4].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
         }),
         "UTC",
         {
@@ -284,7 +265,7 @@ describe("openingIntervals", () => {
   test("resolves Berlin 02:15–02:45 on the spring-forward day to 03:15–03:45", () => {
     const [opening, ...rest] = openingIntervals(
       schedule({
-        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "02:15", end: "02:45" })),
+        openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "02:15", end: "02:45" })),
       }),
       "Europe/Berlin",
       { start: "2026-03-28T23:00:00Z", end: "2026-03-29T22:00:00Z" },
@@ -302,15 +283,13 @@ describe("openingIntervals", () => {
     ["the 25-hour fall-back day", "2026-10-25", "2026-10-24T22:00:00Z", "2026-10-25T23:00:00Z", 1500],
   ])("covers %s", (_, date, start, end, minutes) => {
     const sundays = schedule({
-      openingHours: [1, 2, 3, 4, 5, 6, 7]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-        .filter((entry) => [ISO_WEEKDAYS.SUNDAY].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+      openingHours: [{ dayOfWeek: 7, start: "00:00", end: "24:00" }],
     });
     const week = {
       start: Temporal.Instant.from(start).subtract({ hours: 72 }).toString(),
       end: Temporal.Instant.from(end).add({ hours: 72 }).toString(),
     };
-    expect(Temporal.PlainDate.from(date).dayOfWeek).toBe(ISO_WEEKDAYS.SUNDAY);
+    expect(Temporal.PlainDate.from(date).dayOfWeek).toBe(7);
     const openings = openingIntervals(sundays, "Europe/Berlin", week);
     expect(openings).toEqual([{ start, end }]);
     expect(Temporal.Instant.from(end).since(start).total("minutes")).toBe(minutes);
@@ -320,7 +299,7 @@ describe("openingIntervals", () => {
     expect(
       openingIntervals(
         schedule({
-          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "02:00", end: "03:00" })),
+          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "02:00", end: "03:00" })),
         }),
         "Europe/Berlin",
         {
@@ -335,7 +314,7 @@ describe("openingIntervals", () => {
     expect(
       openingIntervals(
         schedule({
-          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "02:30", end: "17:00" })),
+          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "02:30", end: "17:00" })),
         }),
         "Europe/Berlin",
         {
@@ -383,16 +362,11 @@ describe("duration increments and continuous opening periods", () => {
   });
   test("merges evening, full-day and morning intervals across Sunday", () => {
     const hours = schedule({
-      openingHours: [1, 2, 3, 4, 5, 6, 7]
-        .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-        .filter((entry) => [6, 7, 1].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek))
-        .map(
-          (entry) =>
-            [
-              { dayOfWeek: 6, start: "18:00", end: "24:00" },
-              { dayOfWeek: 1, start: "00:00", end: "06:00" },
-            ].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
-        ),
+      openingHours: [
+        { dayOfWeek: 6, start: "18:00", end: "24:00" },
+        { dayOfWeek: 7, start: "00:00", end: "24:00" },
+        { dayOfWeek: 1, start: "00:00", end: "06:00" },
+      ],
     });
     expect(longestOpeningMinutes(hours)).toBe(2160);
     const increment = (slotGranularityMinutes: number) =>

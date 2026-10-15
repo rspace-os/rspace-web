@@ -7,7 +7,7 @@ import {
   hiddenEdgeLabel,
   resizeDisabledReason,
 } from "@/modules/booking/creation/timelineEditText";
-import { type TimelinePolicy, timelineAdjuster, timelineRangeToDraft } from "@/modules/booking/creation/timelineRange";
+import { type TimelinePolicy, timelineAdjuster } from "@/modules/booking/creation/timelineRange";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import type { OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
@@ -19,6 +19,7 @@ import {
   currentWallClock,
   dayMinuteToZonedTime,
   instantToDayMinute,
+  wallClockDraftFromInstants,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
@@ -264,7 +265,7 @@ export function VerticalDayTimeline({
   const commitRange = React.useCallback(
     (next: IsoRange) => {
       if (!editing || !editingRange || rangesEqual(next, editingRange)) return;
-      editing.onChange(timelineRangeToDraft(next, timezone));
+      editing.onChange(wallClockDraftFromInstants(next.start, next.end, timezone));
       setAnnouncement(
         t("dayTimeline.vertical.intervalChanged", {
           period: timeRange(next, date, timezone, timeFormat),

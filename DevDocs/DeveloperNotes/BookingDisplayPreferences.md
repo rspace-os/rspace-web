@@ -114,11 +114,9 @@ timezone is withheld from the viewer shows no note rather than a guessed one. A 
 hidden live region announces a changed interval, or changed wording such as a new time
 format, once.
 
-The Open all day checkbox selects full-day availability for the applicable open days.
-Shared hours and weekday overrides use the same control. Full-day hours retain the
-API representation `00:00`–`24:00`; users do not need to enter those values. A partial
-day ending at midnight remains distinct from a full day. The Show all day checkbox
-in display preferences changes the visible calendar window, not the item's availability.
+Each weekday has its own hours. Open all day sets the selected weekday to `00:00`–`24:00`; a
+partial day ending at midnight remains distinct from a full day. Show all day changes the visible
+calendar window, not the item's availability.
 
 Day timelines position events and drag selections by elapsed minutes from midnight in the display
 timezone. Clock-change days therefore have 23 or 25 hours, with UTC offsets distinguishing repeated

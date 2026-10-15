@@ -5,11 +5,10 @@ import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/Booki
 import { formatIncrement } from "@/modules/booking/configuration/incrementFacts";
 import { type WeekdayOpening, weeklyOpeningHours } from "@/modules/booking/configuration/openingHoursFacts";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { todayInTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatIsoWeekday } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   bookingDateTimeLocale,
-  currentWallClock,
   formatDurationMinutes,
   isPlainDate,
   sameTimeZone,
@@ -150,8 +149,7 @@ export function BookingItemInformationContent({
 }) {
   const { t } = useTranslation("booking");
   const timeFormat = useBookingTimeFormat();
-  const referenceDate =
-    date && isPlainDate(date) ? date : currentWallClock(new Date().toISOString(), displayTimezone).date;
+  const referenceDate = date && isPlainDate(date) ? date : todayInTimeZone(displayTimezone);
   const allDayLabel = t("settings.openingHours.openAllDay");
   const week = (timezone: string) =>
     weeklyOpeningHours(item, timezone, referenceDate, bookingDateTimeLocale(timeFormat), allDayLabel);

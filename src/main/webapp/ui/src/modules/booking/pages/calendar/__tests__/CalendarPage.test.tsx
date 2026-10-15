@@ -23,9 +23,14 @@ const scrollIntoView = vi.fn();
 // 2026-08-17 is a Monday.
 const closedOnMonday = {
   timezone: "UTC",
-  openingHours: [1, 2, 3, 4, 5, 6, 7]
-    .map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
-    .filter((entry) => [2, 3, 4, 5, 6, 7].some((dayOfWeek) => dayOfWeek === entry.dayOfWeek)),
+  openingHours: [
+    { dayOfWeek: 2, start: "00:00", end: "24:00" },
+    { dayOfWeek: 3, start: "00:00", end: "24:00" },
+    { dayOfWeek: 4, start: "00:00", end: "24:00" },
+    { dayOfWeek: 5, start: "00:00", end: "24:00" },
+    { dayOfWeek: 6, start: "00:00", end: "24:00" },
+    { dayOfWeek: 7, start: "00:00", end: "24:00" },
+  ],
 };
 const readOnlyCapabilities = {
   ...bookableItemFixtures[0].capabilities,

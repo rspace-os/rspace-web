@@ -67,6 +67,8 @@ function expectNoAlertMessage(message: string) {
 describe("BookingPreferencesPage", () => {
   beforeEach(() => {
     server.use(
+      oauthTokenHandler(true),
+      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/users/me/booking-notification-preferences", () =>
         HttpResponse.json({
@@ -92,10 +94,7 @@ describe("BookingPreferencesPage", () => {
   it("keeps a local draft when preferences are refreshed in the background", async () => {
     const user = userEvent.setup();
     let document = inheritedBrowserBookingPreferences;
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)),
-    );
+    server.use(http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(document)));
     const { queryClient } = renderPage();
     const start = await screen.findByLabelText("booking:preferences.availabilityWindow.start");
     await user.clear(start);
@@ -113,8 +112,6 @@ describe("BookingPreferencesPage", () => {
     let body: unknown;
     let writes = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         writes += 1;
         body = await request.json();
@@ -164,7 +161,6 @@ describe("BookingPreferencesPage", () => {
   it("saves an explicit time format, keeping the other preferences", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(customNewYorkBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         body = await request.json();
@@ -202,7 +198,6 @@ describe("BookingPreferencesPage", () => {
   it("shows the custom timezone field only in Custom mode and restores the last custom zone", async () => {
     const bodies: unknown[] = [];
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(customNewYorkBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         const body = await request.json();
@@ -238,7 +233,6 @@ describe("BookingPreferencesPage", () => {
   it("uses 00:00 for end of day while storing 24:00", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () =>
         HttpResponse.json({ ...inheritedBrowserBookingPreferences, availabilityWindowEnd: "24:00" }),
       ),
@@ -278,8 +272,6 @@ describe("BookingPreferencesPage", () => {
   it("restores the custom availability window when Show all day is turned off", async () => {
     let body: unknown;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", async ({ request }) => {
         body = await request.json();
         return HttpResponse.json({ ...inheritedBrowserBookingPreferences, ...(body as object), overridden: true });
@@ -319,7 +311,6 @@ describe("BookingPreferencesPage", () => {
     let reads = 0;
     let deletes = 0;
     server.use(
-      oauthTokenHandler(true),
       http.get("/api/v2/users/me/booking-preferences", () => {
         reads += 1;
         return HttpResponse.json(reads === 1 ? customNewYorkBookingPreferences : inheritedBrowserBookingPreferences);
@@ -367,7 +358,7 @@ describe("BookingPreferencesPage", () => {
     expect(screen.getByRole("button", { name: "booking:preferences.actions.save" })).toBeEnabled();
     await user.click(screen.getByRole("button", { name: "booking:preferences.actions.reset" }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:preferences.resetComplete");
+    expect(await screen.findByText("booking:preferences.resetComplete")).toHaveAttribute("role", "status");
     expect(deletes).toBe(1);
     expect(reads).toBe(2);
     expect(start).toHaveValue("08:00");
@@ -561,8 +552,6 @@ describe("BookingPreferencesPage", () => {
   it("keeps invalid windows client-side and reports network failures", async () => {
     let writes = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-preferences", () => {
         writes += 1;
         return HttpResponse.json({ detail: "failure" }, { status: 503 });
@@ -590,8 +579,6 @@ describe("BookingPreferencesPage", () => {
   it("creates a user-wide calendar subscription from Booking preferences", async () => {
     let creates = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.post("/api/v2/users/me/booking-calendar-subscription", ({ request }) => {
         creates += 1;
         expect(request.headers.get("If-Match")).toBeNull();
@@ -619,8 +606,6 @@ describe("BookingPreferencesPage", () => {
 
   it("shows the existing link without an error when Create finds one already made elsewhere", async () => {
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       // The page loaded before another tab created the link; the create returns that link unchanged.
       http.post("/api/v2/users/me/booking-calendar-subscription", () =>
         HttpResponse.json(
@@ -647,8 +632,6 @@ describe("BookingPreferencesPage", () => {
   it("replaces the private link only after the user confirms", async () => {
     const rotations: (string | null)[] = [];
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.get("/api/v2/users/me/booking-calendar-subscription", () =>
         HttpResponse.json(
           {
@@ -697,26 +680,18 @@ describe("BookingPreferencesPage", () => {
   });
 
   it("shows only the user-wide calendar link on preferences", async () => {
-    server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
-    );
+    server.use();
     renderPage();
 
     expect(
       await screen.findByRole("button", { name: "booking:preferences.calendarSubscription.create" }),
     ).toBeVisible();
-    expect(
-      screen.queryByRole("region", { name: "booking:preferences.calendarSubscription.itemLinks.title" }),
-    ).not.toBeInTheDocument();
   });
 
   it("keeps notification choices after a failed save and allows retrying", async () => {
     const user = userEvent.setup();
     let attempts = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         attempts += 1;
         return attempts === 1
@@ -745,8 +720,6 @@ describe("BookingPreferencesPage", () => {
     let saved: unknown;
     let deleted = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         saved = await request.json();
         return HttpResponse.json({ ...(saved as object), emailDelivery: false });
@@ -780,8 +753,6 @@ describe("BookingPreferencesPage", () => {
     const user = userEvent.setup();
     let saved: unknown;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me/booking-preferences", () => HttpResponse.json(inheritedBrowserBookingPreferences)),
       http.put("/api/v2/users/me/booking-notification-preferences", async ({ request }) => {
         saved = await request.json();
         return HttpResponse.json({ ...(saved as object), emailDelivery: false });

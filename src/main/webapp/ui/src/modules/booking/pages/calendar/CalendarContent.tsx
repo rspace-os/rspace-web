@@ -12,12 +12,7 @@ import {
   bookingInstrumentSource,
   bookingRelationshipSources,
 } from "@/modules/booking/domain/bookingRelationshipSource";
-import {
-  currentWallClock,
-  dayMinuteToZonedTime,
-  wallClockDraftFromInstants,
-  zonedDayBounds,
-} from "@/modules/booking/domain/bookingTime";
+import { dayMinuteToZonedTime, wallClockDraftFromInstants, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, SearchSelector } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -35,6 +30,11 @@ import { useTableList } from "@/modules/common/table-list/useTableList";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import { BookingEventsCalendar } from "./BookingEventsCalendar";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
+import {
+  calendarEventFocusRetryChanges,
+  useCalendarEventFocus,
+  useCalendarEventFocusResolution,
+} from "./calendarEventFocus";
 import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
 import { useCalendarEvents } from "./calendarEvents";
 import { type CalendarView, calendarDates, calendarLayouts, calendarViews } from "./calendarLayoutUtils";
@@ -55,18 +55,6 @@ const calendarLayoutParser = parseAsStringLiteral(calendarLayouts)
   .withDefault("resources")
   .withOptions(calendarSearchOptions);
 const calendarQuickFilterParser = parseAsBoolean.withDefault(false).withOptions(calendarSearchOptions);
-const CALENDAR_FOCUS_TIMEOUT_MS = 15_000;
-const CALENDAR_FOCUS_HIGHLIGHT_MS = 2_500;
-
-function calendarEventFocusRequest(searchStr: string) {
-  const params = new URLSearchParams(searchStr);
-  const rawId = params.get("focus");
-  const request = params.get("focusRequest");
-  if (!request || !rawId || !/^\d+$/.test(rawId)) return undefined;
-  const id = Number(rawId);
-  return Number.isSafeInteger(id) && id > 0 ? { id, request } : undefined;
-}
-
 function andFilters<TDocument>(
   filters: readonly (FilterExpression<TDocument> | null | undefined)[],
 ): FilterExpression<TDocument> | null {
@@ -139,14 +127,16 @@ export function CalendarContent() {
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
   const location = useLocation();
-  const replaceSearch = (key: string, value?: string) => {
+  const replaceSearch = (update: (search: URLSearchParams) => void, resetScroll?: boolean) => {
     const search = new URLSearchParams(location.searchStr);
-    if (value === undefined) search.delete(key);
-    else search.set(key, value);
+    update(search);
     const query = search.toString();
-    void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
+    void navigate({
+      to: query ? `${location.pathname}?${query}` : location.pathname,
+      replace: true,
+      ...(resetScroll === undefined ? {} : { resetScroll }),
+    });
   };
-  const focusRequest = React.useMemo(() => calendarEventFocusRequest(location.searchStr), [location.searchStr]);
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -159,70 +149,8 @@ export function CalendarContent() {
   // Month is not offered in Resources, so a link asking for it opens the week, as switching layouts does.
   const view: CalendarView = layout === "resources" && requestedView === "month" ? "week" : requestedView;
   const [resettingControls, setResettingControls] = React.useState(false);
-  const [focusUnavailableRequest, setFocusUnavailableRequest] =
-    React.useState<ReturnType<typeof calendarEventFocusRequest>>(undefined);
-  const [focusFallback, setFocusFallback] = React.useState<"resources" | "overflow" | null>(null);
-  const focusLifecycleRef = React.useRef<{ request: string; settled: boolean } | null>(null);
-  const focusHighlightRef = React.useRef<{ element: HTMLElement; timer: number } | null>(null);
-  const clearFocusRequest = React.useCallback(
-    (request: string) => {
-      const search = new URLSearchParams(window.location.search);
-      if (search.get("focusRequest") !== request) return;
-      search.delete("focus");
-      search.delete("focusRequest");
-      const query = search.toString();
-      void navigate({
-        to: query ? `${window.location.pathname}?${query}` : window.location.pathname,
-        replace: true,
-        resetScroll: false,
-      });
-    },
-    [navigate],
-  );
-  const settleFocusRequest = React.useCallback(
-    (request: string, unavailable: boolean) => {
-      const lifecycle = focusLifecycleRef.current;
-      if (lifecycle?.request !== request || lifecycle.settled) return;
-      lifecycle.settled = true;
-      if (unavailable) setFocusUnavailableRequest(focusRequest);
-      clearFocusRequest(request);
-    },
-    [clearFocusRequest, focusRequest],
-  );
-  React.useEffect(() => {
-    const request = focusRequest?.request;
-    if (!request) {
-      focusLifecycleRef.current = null;
-      return;
-    }
-
-    const lifecycle = { request, settled: false };
-    focusLifecycleRef.current = lifecycle;
-    setFocusUnavailableRequest(undefined);
-    setFocusFallback(null);
-    const cancel = (event: Event) => {
-      if (event.target instanceof Element && event.target.closest("[data-calendar-focus-keep-pending]")) return;
-      if (lifecycle.settled) return;
-      lifecycle.settled = true;
-      clearFocusRequest(request);
-    };
-    document.addEventListener("pointerdown", cancel, true);
-    document.addEventListener("keydown", cancel, true);
-    return () => {
-      document.removeEventListener("pointerdown", cancel, true);
-      document.removeEventListener("keydown", cancel, true);
-    };
-  }, [focusRequest?.request, clearFocusRequest]);
-  React.useEffect(
-    () => () => {
-      const highlight = focusHighlightRef.current;
-      if (highlight) {
-        window.clearTimeout(highlight.timer);
-        highlight.element.removeAttribute("data-calendar-event-focus-highlight");
-      }
-    },
-    [],
-  );
+  const calendarFocus = useCalendarEventFocus({ location, navigate });
+  const { focusUnavailableRequest, setFocusUnavailableRequest, focusFallback } = calendarFocus;
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -325,20 +253,19 @@ export function CalendarContent() {
     () => andFilters([eventExpression, requesterFilter]),
     [eventExpression, requesterFilter],
   );
-  const targetItemExpression = React.useMemo(() => targetFilter(target), [target]);
-  const targetEventExpression = React.useMemo(() => targetFilter(target), [target]);
+  const targetExpression = React.useMemo(() => targetFilter(target), [target]);
   const calendarEventExpression = React.useMemo(
     () =>
       andFilters<BookingListDocument>([
         scopedEventExpression,
-        targetEventExpression,
+        targetExpression,
         itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
       ]),
-    [itemExpression, scopedEventExpression, targetEventExpression],
+    [itemExpression, scopedEventExpression, targetExpression],
   );
   const resourceItemExpression = React.useMemo(
-    () => andFilters([itemExpression, targetItemExpression]),
-    [itemExpression, targetItemExpression],
+    () => andFilters([itemExpression, targetExpression]),
+    [itemExpression, targetExpression],
   );
   const itemWhereParameter = resourceItemExpression ? serializeRsqlExpression(resourceItemExpression) : undefined;
   const eventWhereParameter = scopedEventExpression ? serializeRsqlExpression(scopedEventExpression) : undefined;
@@ -450,112 +377,26 @@ export function CalendarContent() {
     scope: { where: itemWhereParameter, q: "" },
   });
   const displayReady = calendarQueryReady;
-  React.useEffect(() => {
-    const request = focusRequest?.request;
-    const resourceStatus = resourceTable.tableProps.status;
-    if (
-      !request ||
-      !displayReady ||
-      events.isPending ||
-      events.isFetching ||
-      events.isError ||
-      (layout === "resources" &&
-        (resourceStatus === "loading" || resourceStatus === "refreshing" || resourceStatus === "error"))
-    )
-      return;
-    const timeout = window.setTimeout(() => settleFocusRequest(request, true), CALENDAR_FOCUS_TIMEOUT_MS);
-    return () => window.clearTimeout(timeout);
-  }, [
-    focusRequest?.request,
-    displayReady,
-    events.isPending,
-    events.isFetching,
-    events.isError,
-    layout,
-    resourceTable.tableProps.status,
-    settleFocusRequest,
-  ]);
-  React.useEffect(() => {
-    setFocusUnavailableRequest(undefined);
-  }, [selectedDate, view, layout, target, calendarSearch, itemWhere, eventWhere, mineOnly, myItemsOnly]);
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
-  React.useEffect(() => {
-    const request = focusRequest;
-    const lifecycle = request && focusLifecycleRef.current;
-    if (!request || lifecycle?.request !== request.request || lifecycle.settled) return;
-    if (!displayReady || !target) return;
-    if (layout === "resources") {
-      const resourceStatus = resourceTable.tableProps.status;
-      if (resourceStatus === "loading" || resourceStatus === "refreshing" || resourceStatus === "error") return;
-      if (!resourceTargetIds.includes(target)) {
-        setFocusFallback("resources");
-        void setView("day");
-        void setLayout("time-grid");
-        return;
-      }
-    }
-    if (events.isError || events.isPending || events.isFetching) return;
-
-    const event = events.data?.find((candidate) => candidate.id === request.id);
-    if (!event || event.target?.globalId !== target || event.state === "CANCELLED") {
-      settleFocusRequest(request.request, true);
-      return;
-    }
-
-    const date = currentWallClock(event.start, preferences.timeZone).date;
-    const identity = `${date}:${event.id}`;
-    const focusTask = window.setTimeout(() => {
-      const pending = focusLifecycleRef.current;
-      if (pending?.request !== request.request || pending.settled) return;
-      const eventElement = document.querySelector<HTMLElement>(`[data-calendar-event-focus="${identity}"]`);
-      if (!eventElement) {
-        if (layout === "time-grid" && view === "week") {
-          setFocusFallback("overflow");
-          void setView("day");
-          return;
-        }
-        settleFocusRequest(request.request, true);
-        return;
-      }
-
-      const trigger =
-        eventElement.querySelector<HTMLElement>("button, a[href], [tabindex]:not([tabindex='-1'])") ?? eventElement;
-      if (!trigger.isConnected) return;
-      const previousHighlight = focusHighlightRef.current;
-      if (previousHighlight) {
-        window.clearTimeout(previousHighlight.timer);
-        previousHighlight.element.removeAttribute("data-calendar-event-focus-highlight");
-      }
-      eventElement.dataset.calendarEventFocusHighlight = "true";
-      trigger.scrollIntoView({ block: "center" });
-      trigger.focus({ preventScroll: true });
-      focusHighlightRef.current = {
-        element: eventElement,
-        timer: window.setTimeout(() => {
-          eventElement.removeAttribute("data-calendar-event-focus-highlight");
-          focusHighlightRef.current = null;
-        }, CALENDAR_FOCUS_HIGHLIGHT_MS),
-      };
-      settleFocusRequest(request.request, false);
-    }, 0);
-    return () => window.clearTimeout(focusTask);
-  }, [
+  useCalendarEventFocusResolution({
+    lifecycle: calendarFocus,
     displayReady,
-    events.data,
-    events.isError,
-    events.isFetching,
-    events.isPending,
-    focusRequest,
+    events,
     layout,
-    preferences.timeZone,
-    resourceTable.tableProps.status,
-    resourceTargetIds,
-    setLayout,
-    setView,
-    settleFocusRequest,
-    target,
     view,
-  ]);
+    target,
+    preferencesTimeZone: preferences.timeZone,
+    resourceStatus: resourceTable.tableProps.status,
+    resourceTargetIds,
+    selectedDate,
+    calendarSearch,
+    itemWhere,
+    eventWhere,
+    mineOnly,
+    myItemsOnly,
+    setView,
+    setLayout,
+  });
   const targetOptionLabels = React.useMemo(
     () => ({
       unavailableLabel: (value: string) => commonT("relationshipPicker.unavailable", { value }),
@@ -616,7 +457,7 @@ export function CalendarContent() {
               loading: targetName === undefined && targetOption?.restoreStatus === "loading",
               unresolvedLabel:
                 targetName === undefined && targetOption?.restoreStatus !== "loading" ? targetOption?.label : undefined,
-              onRemove: () => replaceSearch("target"),
+              onRemove: () => replaceSearch((search) => search.delete("target")),
             }
           : undefined
       }
@@ -646,11 +487,8 @@ export function CalendarContent() {
       isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
       onRetry={() => {
         if (focusUnavailableRequest) {
-          const search = new URLSearchParams(window.location.search);
-          search.set("focus", String(focusUnavailableRequest.id));
-          search.set("focusRequest", `${focusUnavailableRequest.request}-retry`);
           setFocusUnavailableRequest(undefined);
-          void navigate({ to: `${location.pathname}?${search.toString()}`, replace: true, resetScroll: false });
+          replaceSearch((search) => calendarEventFocusRetryChanges(search, focusUnavailableRequest), false);
         }
         if (layout === "resources" && resourceTable.tableProps.status === "error") {
           void resourceTable.refetch();
@@ -658,7 +496,7 @@ export function CalendarContent() {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) => replaceSearch("date", nextDate)}
+      onDateChange={(nextDate) => replaceSearch((search) => search.set("date", nextDate))}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);
