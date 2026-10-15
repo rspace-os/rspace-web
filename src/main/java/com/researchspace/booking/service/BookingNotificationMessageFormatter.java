@@ -6,6 +6,7 @@ import com.ibm.icu.util.TimeZone;
 import com.ibm.icu.util.ULocale;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences;
 import com.researchspace.model.booking.BookingTimeFormat;
+import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
 import java.net.URI;
@@ -19,7 +20,10 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
@@ -280,6 +284,60 @@ public class BookingNotificationMessageFormatter {
         + " to "
         + formatInstant(end, zone, locale, hourCycle)
         + message.substring(period);
+  }
+
+  /**
+   * Formats booking notifications for the dashboard, using stored text when structured data is
+   * absent or cannot be formatted.
+   */
+  public Map<Long, String> formatNotifications(
+      List<Notification> notifications,
+      ZoneId zone,
+      Locale locale,
+      Locale regionalLocale,
+      BookingTimeFormat timeFormat) {
+    Map<Long, String> messages = new HashMap<>();
+    for (Notification notification : notifications) {
+      NotificationType type = notification.getNotificationType();
+      if (!isBookingNotification(type)) {
+        continue;
+      }
+      boolean loggedFailure = false;
+      try {
+        if (notification.getNotificationDataObject() instanceof BookingNotificationData data) {
+          messages.put(
+              notification.getId(), format(type, data, zone, locale, regionalLocale, timeFormat));
+          continue;
+        }
+      } catch (RuntimeException ex) {
+        log.warn(
+            "Could not format booking notification [{}]; using its stored message",
+            notification.getId(),
+            ex);
+        loggedFailure = true;
+      }
+      String legacyMessage;
+      try {
+        legacyMessage =
+            formatLegacy(
+                type,
+                notification.getNotificationMessage(),
+                zone,
+                locale,
+                regionalLocale,
+                timeFormat);
+      } catch (RuntimeException ex) {
+        if (!loggedFailure) {
+          log.warn(
+              "Could not format booking notification [{}]; using its stored message",
+              notification.getId(),
+              ex);
+        }
+        throw ex;
+      }
+      messages.put(notification.getId(), legacyMessage);
+    }
+    return messages;
   }
 
   public static boolean isBookingNotification(NotificationType type) {
