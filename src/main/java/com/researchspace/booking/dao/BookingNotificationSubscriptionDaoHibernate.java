@@ -49,25 +49,6 @@ public class BookingNotificationSubscriptionDaoHibernate
   }
 
   @Override
-  public Optional<BookableItemNotificationSubscription> findByUserAndInstrumentForUpdate(
-      Long userId, Long instrumentId) {
-    return getSession()
-        .createQuery(
-            "from BookableItemNotificationSubscription where user.id = :userId"
-                + " and instrument.id = :instrumentId",
-            BookableItemNotificationSubscription.class)
-        .setParameter("userId", userId)
-        .setParameter("instrumentId", instrumentId)
-        .setLockOptions(new LockOptions(LockMode.PESSIMISTIC_WRITE))
-        .uniqueResultOptional()
-        .map(
-            subscription -> {
-              getSession().refresh(subscription, LockMode.PESSIMISTIC_WRITE);
-              return subscription;
-            });
-  }
-
-  @Override
   public List<BookableItemNotificationSubscription> findByUserAndInstruments(
       Long userId, List<Long> instrumentIds) {
     if (instrumentIds.isEmpty()) return List.of();

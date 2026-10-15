@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.researchspace.booking.service.BookingDisplayPreferencesManager;
 import com.researchspace.booking.service.BookingNotificationMessageFormatter;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.comms.data.BookingNotificationData;
@@ -26,32 +27,22 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class DashboardBookingNotificationMessagesTest {
 
-  @AfterEach
-  void resetLocale() {
-    LocaleContextHolder.resetLocaleContext();
-  }
+  private final DashboardController controller = new DashboardController();
+  private final UserManager userManager = mock(UserManager.class);
+  private final User recipient = mock(User.class);
+  private final BookingDisplayPreferencesManager preferences =
+      mock(BookingDisplayPreferencesManager.class);
+  private final HttpSession session = mock(HttpSession.class);
 
-  @Test
-  void rendersForCurrentRecipientAndLeavesStoredMessageUntouched() {
-    LocaleContextHolder.setLocale(Locale.US);
-    DashboardController controller = new DashboardController();
-    UserManager userManager = mock(UserManager.class);
-    User recipient = mock(User.class);
-    BookingDisplayPreferencesManager preferences = mock(BookingDisplayPreferencesManager.class);
-    HttpSession session = mock(HttpSession.class);
-    Notification structured =
-        bookingNotification(
-            1L, "Stored email text", data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z"));
-    Notification other = new Notification();
-    other.setId(3L);
-    other.setNotificationType(NotificationType.PROCESS_COMPLETED);
-
+  @BeforeEach
+  void setUp() {
     controller.setUserManager(userManager);
     ReflectionTestUtils.setField(controller, "bookingDisplayPreferences", preferences);
     ReflectionTestUtils.setField(
@@ -61,18 +52,35 @@ class DashboardBookingNotificationMessagesTest {
     ReflectionTestUtils.setField(
         controller, "institutionClock", Clock.fixed(Instant.EPOCH, ZoneId.of("Europe/Berlin")));
     when(userManager.getUserByUsername("recipient")).thenReturn(recipient);
+  }
+
+  @AfterEach
+  void resetLocale() {
+    LocaleContextHolder.resetLocaleContext();
+  }
+
+  @Test
+  void rendersForCurrentRecipientAndLeavesStoredMessageUntouched() {
+    LocaleContextHolder.setLocale(Locale.US);
+    Notification structured =
+        bookingNotification(
+            1L, "Stored email text", data("2026-01-02T03:04:05Z", "2026-01-02T04:04:05Z"));
     when(preferences.getForNotificationRecipient(recipient))
         .thenReturn(
             Optional.of(
                 new BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences(
                     "08:00",
                     "18:00",
-                    com.researchspace.model.booking.BookingTimezoneMode.CUSTOM,
+                    BookingTimezoneMode.CUSTOM,
                     "America/Los_Angeles",
                     "Europe/Berlin",
                     true)));
     when(session.getAttribute(SessionAttributeUtils.TIMEZONE))
         .thenReturn(TimeZone.getTimeZone("Asia/Tokyo"));
+
+    Notification other = new Notification();
+    other.setId(3L);
+    other.setNotificationType(NotificationType.PROCESS_COMPLETED);
 
     Map<Long, String> messages =
         controller.bookingNotificationMessages(List.of(structured, other), "recipient", session);

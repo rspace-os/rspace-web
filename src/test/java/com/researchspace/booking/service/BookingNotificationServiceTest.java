@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -132,7 +133,7 @@ class BookingNotificationServiceTest {
 
     ArgumentCaptor<NotificationConfig> configs = ArgumentCaptor.forClass(NotificationConfig.class);
     ArgumentCaptor<String> messages = ArgumentCaptor.forClass(String.class);
-    verify(communicationManager, org.mockito.Mockito.times(2))
+    verify(communicationManager, times(2))
         .notify(eq(actor), isNull(), configs.capture(), messages.capture());
     assertEquals(
         Set.of(berlinRecipient), configs.getAllValues().get(0).getNotificationTargetsOverride());
