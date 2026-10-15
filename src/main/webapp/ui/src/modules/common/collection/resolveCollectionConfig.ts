@@ -52,17 +52,8 @@ const defaultCapabilities: Record<FieldConfig<never>["type"], ResolvedFieldCapab
   },
 };
 
-const allowedOperators: Record<FieldConfig<never>["type"], ReadonlySet<FilterOperator>> = {
-  text: new Set(defaultCapabilities.text.filterOperators),
-  number: new Set(defaultCapabilities.number.filterOperators),
-  boolean: new Set(defaultCapabilities.boolean.filterOperators),
-  dateTime: new Set(defaultCapabilities.dateTime.filterOperators),
-  select: new Set(defaultCapabilities.select.filterOperators),
-  relationship: new Set(defaultCapabilities.relationship.filterOperators),
-};
-
 export function isFilterOperatorCompatible(fieldType: FieldConfig<never>["type"], operator: FilterOperator): boolean {
-  return allowedOperators[fieldType].has(operator);
+  return defaultCapabilities[fieldType].filterOperators.includes(operator);
 }
 
 function assertKnownField<TDocument>(
@@ -118,18 +109,6 @@ export function resolveCollectionConfig<
     defaultColumns.add(name);
   }
 
-  const searchableFields = new Set<string>();
-  for (const name of config.listSearchableFields ?? []) {
-    if (searchableFields.has(name)) throw new Error(`Duplicate searchable field: ${name}`);
-    searchableFields.add(name);
-    const field = directSearchField(name, fieldMap);
-    if (!field) continue;
-    if (field.type !== "text" && field.type !== "select") {
-      throw new Error(`Searchable field must be text or select: ${name}`);
-    }
-    if (field.list === false) throw new Error(`Searchable field is not listable: ${name}`);
-  }
-
   const resolvedFields = config.fields.map((field): ResolvedFieldConfig<TDocument> => {
     const defaults = defaultCapabilities[field.type];
     const capabilities = {
@@ -149,12 +128,19 @@ export function resolveCollectionConfig<
   });
 
   const resolvedByName = new Map(resolvedFields.map((field) => [field.name, field]));
+  const searchableFields = new Set<string>();
   for (const name of config.listSearchableFields ?? []) {
-    const field = resolvedByName.get(name as FieldName<TDocument>);
+    if (searchableFields.has(name)) throw new Error(`Duplicate searchable field: ${name}`);
+    searchableFields.add(name);
+    const field = directSearchField(name, fieldMap);
     // API adapters add a field for a published relationship selector. A form-only resolution has
     // no API metadata, so the adapter validates the target field when it creates its configuration.
-    if (!field && String(name).includes(".")) continue;
-    if (!field?.capabilities.filterOperators.includes("contains")) {
+    if (!field) continue;
+    if (field.type !== "text" && field.type !== "select") {
+      throw new Error(`Searchable field must be text or select: ${name}`);
+    }
+    if (field.list === false) throw new Error(`Searchable field is not listable: ${name}`);
+    if (!resolvedByName.get(field.name)?.capabilities.filterOperators.includes("contains")) {
       throw new Error(`Searchable field does not support contains: ${name}`);
     }
   }

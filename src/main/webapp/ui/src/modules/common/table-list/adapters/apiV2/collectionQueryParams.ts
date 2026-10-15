@@ -1,4 +1,5 @@
 import type { FieldName, ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { serializeSorting } from "../../queryStringState";
 import type { CollectionQueryState, FilterExpression } from "../../tableListState";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
 import { serializeRsql } from "./rsql/serializeRsql";
@@ -80,7 +81,7 @@ export function collectionQueryParams<TDocument>(
     limit: String(state.page.pageSize),
   });
   if (state.sorting.length > 0) {
-    params.set("sort", state.sorting.map((rule) => `${rule.direction === "desc" ? "-" : ""}${rule.field}`).join(","));
+    params.set("sort", serializeSorting(state.sorting));
   }
 
   const search = searchExpression(config, state.filters.search);
