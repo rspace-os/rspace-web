@@ -8,6 +8,9 @@ import static org.mockito.Mockito.when;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.controller.ConfigV2Controller;
 import com.researchspace.api.v2.controller.OAuthTokensV2Controller;
+import com.researchspace.api.v2.model.ApiV2Config;
+import com.researchspace.api.v2.model.ApiV2CurrentUser;
+import com.researchspace.api.v2.model.ApiV2UiToken;
 import com.researchspace.api.v2.resource.ApiV2AuthenticationMode;
 import com.researchspace.api.v2.resource.ApiV2EndpointCatalog;
 import com.researchspace.api.v2.resource.ApiV2EndpointSpec;
@@ -24,6 +27,7 @@ import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -71,6 +75,121 @@ class ApiV2OpenApiAnnotationMergerTest {
         List.of("string", "null"),
         objectMap(configProperties.get("deploymentHelpEmail")).get("type"));
     assertTrue(schemas(document).containsKey("Branding"));
+  }
+
+  @Test
+  void generatedDtoSchemasPreserveRequiredFieldsAndNullableMetadata() throws Exception {
+    SchemaController controller = new SchemaController();
+    RequestMappingHandlerMapping handlerMapping = mock(RequestMappingHandlerMapping.class);
+    when(handlerMapping.getHandlerMethods())
+        .thenReturn(
+            Map.of(
+                RequestMappingInfo.paths("/api/v2/schema/config")
+                    .methods(RequestMethod.GET)
+                    .build(),
+                new HandlerMethod(controller, SchemaController.class.getMethod("config")),
+                RequestMappingInfo.paths("/api/v2/schema/current-user")
+                    .methods(RequestMethod.GET)
+                    .build(),
+                new HandlerMethod(controller, SchemaController.class.getMethod("currentUser")),
+                RequestMappingInfo.paths("/api/v2/schema/ui-token")
+                    .methods(RequestMethod.GET)
+                    .build(),
+                new HandlerMethod(controller, SchemaController.class.getMethod("uiToken"))));
+
+    Map<String, Object> document =
+        new ApiV2OpenApiDocumentService(
+                new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of()), "Test API", "2.0.0"),
+                new ApiV2EndpointCatalog(List.of()),
+                () -> Stream.of(handlerMapping))
+            .generate();
+    Map<String, Object> schemas = schemas(document);
+
+    assertRequiredProperties(
+        schemas,
+        "ApiV2Config",
+        Set.of("version", "branding", "helpLinks", "deploymentDescription", "deploymentHelpEmail"));
+    assertRequiredProperties(schemas, "Branding", Set.of("bannerImageUrl"));
+    assertRequiredProperties(schemas, "HelpLink", Set.of("label", "url"));
+    assertRequiredProperties(
+        schemas,
+        "ApiV2CurrentUser",
+        Set.of(
+            "id",
+            "username",
+            "email",
+            "firstName",
+            "lastName",
+            "homeFolderId",
+            "workbenchId",
+            "hasPiRole",
+            "hasSysAdminRole",
+            "profileImageUrl",
+            "profileImageApiUrl",
+            "orcid",
+            "capabilities",
+            "livechat",
+            "session"));
+    assertRequiredProperties(schemas, "Orcid", Set.of("available", "id"));
+    assertRequiredProperties(
+        schemas, "Capabilities", Set.of("canUseInventory", "canPublish", "canViewSystem"));
+    assertRequiredProperties(schemas, "LiveChat", Set.of("enabled", "serverKey"));
+    assertRequiredProperties(schemas, "Session", Set.of("operatedAs", "lastSession"));
+    assertRequiredProperties(schemas, "ApiV2UiToken", Set.of("accessToken"));
+
+    assertEquals(
+        "RSpace application version.",
+        property(schemas, "ApiV2Config", "version").get("description"));
+    assertEquals("v2.24.0", property(schemas, "ApiV2Config", "version").get("example"));
+    assertEquals(
+        List.of("string", "null"),
+        property(schemas, "ApiV2Config", "deploymentDescription").get("type"));
+    assertEquals(
+        List.of("string", "null"),
+        property(schemas, "ApiV2Config", "deploymentHelpEmail").get("type"));
+    assertEquals("email", property(schemas, "ApiV2Config", "deploymentHelpEmail").get("format"));
+    assertEquals(
+        "support@example.org",
+        property(schemas, "ApiV2Config", "deploymentHelpEmail").get("example"));
+    assertEquals("uri-reference", property(schemas, "Branding", "bannerImageUrl").get("format"));
+    assertEquals("/public/banner", property(schemas, "Branding", "bannerImageUrl").get("example"));
+    assertEquals("Help", property(schemas, "HelpLink", "label").get("example"));
+    assertEquals("uri-reference", property(schemas, "HelpLink", "url").get("format"));
+
+    assertEquals(
+        "Stable user identifier.", property(schemas, "ApiV2CurrentUser", "id").get("description"));
+    assertEquals("email", property(schemas, "ApiV2CurrentUser", "email").get("format"));
+    assertEquals(
+        List.of("integer", "null"),
+        property(schemas, "ApiV2CurrentUser", "homeFolderId").get("type"));
+    assertEquals("int64", property(schemas, "ApiV2CurrentUser", "homeFolderId").get("format"));
+    assertEquals(
+        List.of("integer", "null"),
+        property(schemas, "ApiV2CurrentUser", "workbenchId").get("type"));
+    assertEquals(
+        List.of("string", "null"),
+        property(schemas, "ApiV2CurrentUser", "profileImageUrl").get("type"));
+    assertEquals(
+        "uri-reference", property(schemas, "ApiV2CurrentUser", "profileImageUrl").get("format"));
+    assertEquals(
+        List.of("string", "null"),
+        property(schemas, "ApiV2CurrentUser", "profileImageApiUrl").get("type"));
+    assertEquals(
+        "uri-reference", property(schemas, "ApiV2CurrentUser", "profileImageApiUrl").get("format"));
+
+    assertEquals(List.of("string", "null"), property(schemas, "Orcid", "id").get("type"));
+    assertEquals(
+        "^\\d{4}-\\d{4}-\\d{4}-\\d{3}[\\dX]$", property(schemas, "Orcid", "id").get("pattern"));
+    assertEquals("0000-0002-1825-0097", property(schemas, "Orcid", "id").get("example"));
+    assertEquals(List.of("string", "null"), property(schemas, "LiveChat", "serverKey").get("type"));
+    assertEquals(
+        List.of("string", "null"), property(schemas, "Session", "lastSession").get("type"));
+    assertEquals("date-time", property(schemas, "Session", "lastSession").get("format"));
+    assertEquals(
+        "2026-08-01T20:00:00Z", property(schemas, "Session", "lastSession").get("example"));
+    assertEquals(
+        "OAuth bearer token for REST API requests.",
+        property(schemas, "ApiV2UiToken", "accessToken").get("description"));
   }
 
   @Test
@@ -158,12 +277,49 @@ class ApiV2OpenApiAnnotationMergerTest {
     }
   }
 
+  private static final class SchemaController {
+    @Operation(
+        operationId = "schemaConfig",
+        summary = "Config schema",
+        responses = @ApiResponse(responseCode = "200", description = "OK"))
+    public ApiV2Config config() {
+      return null;
+    }
+
+    @Operation(
+        operationId = "schemaCurrentUser",
+        summary = "Current user schema",
+        responses = @ApiResponse(responseCode = "200", description = "OK"))
+    public ApiV2CurrentUser currentUser() {
+      return null;
+    }
+
+    @Operation(
+        operationId = "schemaUiToken",
+        summary = "UI token schema",
+        responses = @ApiResponse(responseCode = "200", description = "OK"))
+    public ApiV2UiToken uiToken() {
+      return null;
+    }
+  }
+
   private record CustomInput(@Schema(description = "Name to assign.", minLength = 1) String name) {}
 
   private record CustomOutput(long id, String name) {}
 
   private static Map<String, Object> schemas(Map<String, Object> document) {
     return objectMap(objectMap(document.get("components")).get("schemas"));
+  }
+
+  private static void assertRequiredProperties(
+      Map<String, Object> schemas, String name, Set<String> expected) {
+    List<?> required = (List<?>) objectMap(schemas.get(name)).get("required");
+    assertEquals(expected, Set.copyOf(required), name);
+  }
+
+  private static Map<String, Object> property(
+      Map<String, Object> schemas, String component, String name) {
+    return objectMap(objectMap(objectMap(schemas.get(component)).get("properties")).get(name));
   }
 
   private static Map<String, Object> objectMap(Object value) {
