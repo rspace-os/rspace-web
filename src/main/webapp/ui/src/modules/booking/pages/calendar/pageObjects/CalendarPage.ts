@@ -36,18 +36,6 @@ export class CalendarPage {
     await userEvent.keyboard("{Escape}");
   }
 
-  quickFilter(name: "My Bookings" | "Owned Items"): Locator {
-    return this.toolbar.getByRole("button", { name, exact: true });
-  }
-
-  async toggleQuickFilter(name: "My Bookings" | "Owned Items"): Promise<void> {
-    await this.quickFilter(name).click();
-  }
-
-  async openFilterPanel(): Promise<void> {
-    await this.filters.click();
-  }
-
   event(itemName: string): Locator {
     return page.getByRole("article", { name: itemName, exact: false });
   }
