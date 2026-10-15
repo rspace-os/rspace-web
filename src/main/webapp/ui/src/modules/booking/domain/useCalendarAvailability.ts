@@ -1,4 +1,3 @@
-import { Temporal } from "@js-temporal/polyfill";
 import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import {
@@ -6,12 +5,10 @@ import {
   bookingInterval,
   type CalendarAvailabilityRow,
   closedIntervals,
-  type DatedCalendarAvailabilityRow,
   type SourcedAvailabilityInterval,
-  sharedBufferGapMinutes,
 } from "@/modules/booking/domain/availability";
 import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "@/modules/booking/domain/booking";
-import { type AbsoluteDisplayInterval, displayInterval, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 
@@ -265,32 +262,6 @@ export async function loadCalendarAvailability(
   return loadAvailability(
     rows.map((row) => ({ row, interval })),
     availabilityEnvelope(rows, interval),
-    token,
-    signal,
-  );
-}
-
-export async function loadDatedCalendarAvailability(
-  rows: readonly DatedCalendarAvailabilityRow[],
-  token: string,
-  signal: AbortSignal,
-): Promise<ReadonlyMap<string, readonly SourcedAvailabilityInterval[]>> {
-  if (rows.length === 0) return new Map();
-  const bounds = rows.map((row) => zonedDayBounds(row.date, row.timezone));
-  const gap = Math.max(...rows.map(sharedBufferGapMinutes));
-  const envelope = {
-    start: Temporal.Instant.from(
-      bounds.reduce((value, bound) => (bound.start < value ? bound.start : value), bounds[0].start),
-    )
-      .subtract({ minutes: gap })
-      .toString(),
-    end: Temporal.Instant.from(bounds.reduce((value, bound) => (bound.end > value ? bound.end : value), bounds[0].end))
-      .add({ minutes: gap })
-      .toString(),
-  };
-  return loadAvailability(
-    rows.map((row) => ({ row, interval: displayInterval(row.date, row.timezone, "00:00", "24:00") })),
-    envelope,
     token,
     signal,
   );
