@@ -269,26 +269,20 @@ export function useSelectedRelationshipOptions({
       cacheQuery?.data !== undefined
         ? cacheQuery.data
         : (query?.data?.[canonical] ?? queryClient.getQueryData(optionCacheKey(owner, scope, canonical)));
+    const failedRestore = (): RelationshipOptionWithSource => ({
+      value,
+      label: failedRestoreLabel(labels, value),
+      sourceId: owner.id,
+      restoreStatus: "failed",
+    });
     if (document !== undefined && document !== null) {
       try {
         return { ...owner.toOption(document, labels), sourceId: owner.id };
       } catch {
-        return {
-          value,
-          label: failedRestoreLabel(labels, value),
-          sourceId: owner.id,
-          restoreStatus: "failed",
-        };
+        return failedRestore();
       }
     }
-    if (query?.isError) {
-      return {
-        value,
-        label: failedRestoreLabel(labels, value),
-        sourceId: owner.id,
-        restoreStatus: "failed",
-      };
-    }
+    if (query?.isError) return failedRestore();
     if (document === null || (query?.isSuccess && !Object.hasOwn(query.data ?? {}, canonical))) {
       return {
         value,
