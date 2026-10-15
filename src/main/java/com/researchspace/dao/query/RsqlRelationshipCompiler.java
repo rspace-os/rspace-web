@@ -17,6 +17,7 @@ import com.researchspace.model.collection.ResourceRegistry.TargetQueryField;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /** Compiles relationship paths, references, and correlated target-access subqueries. */
 final class RsqlRelationshipCompiler {
@@ -66,30 +67,24 @@ final class RsqlRelationshipCompiler {
     if (access.isDenied()) {
       return "1 = 0";
     }
-    String targetAlias = state.nextTargetAlias();
-    RsqlCollectionQuery fieldQuery =
-        new RsqlCollectionQuery(targetDescription, targetAlias, targetAlias + "f");
-    RsqlCollectionQuery accessQuery =
-        new RsqlCollectionQuery(targetDescription, targetAlias, targetAlias + "a");
-    List<String> conjuncts =
-        correlation(path.relationship(), target, targetDescription, targetAlias, state);
-    conjuncts.add(
-        state.merge(
-            fieldQuery.translateNested(
-                new FilterExpression.Comparison(
-                    path.targetField(),
-                    comparison.operator(),
-                    comparison.values(),
-                    comparison.wildcard()),
-                state.enforcesComplexityLimit())));
-    access
-        .constraintOrEmpty()
-        .ifPresent(
-            constraint -> conjuncts.add(state.merge(accessQuery.translateTrusted(constraint))));
-    return "EXISTS "
-        + state.addSubquery(
-            new RsqlCollectionQuery.Subquery(
-                targetDescription.entityType(), targetAlias, String.join(" AND ", conjuncts)));
+    return readableTargetExists(
+        path.relationship(),
+        target,
+        targetDescription,
+        access,
+        state,
+        targetAlias -> {
+          RsqlCollectionQuery fieldQuery =
+              new RsqlCollectionQuery(targetDescription, targetAlias, targetAlias + "f");
+          return state.merge(
+              fieldQuery.translateNested(
+                  new FilterExpression.Comparison(
+                      path.targetField(),
+                      comparison.operator(),
+                      comparison.values(),
+                      comparison.wildcard()),
+                  state.enforcesComplexityLimit()));
+        });
   }
 
   private List<String> correlation(
@@ -157,24 +152,8 @@ final class RsqlRelationshipCompiler {
       if (access.isDenied()) {
         continue;
       }
-      String targetAlias = state.nextTargetAlias();
-      List<String> conjuncts =
-          correlation(relationship, target, targetDescription, targetAlias, state);
-      access
-          .constraintOrEmpty()
-          .ifPresent(
-              constraint -> {
-                RsqlCollectionQuery accessQuery =
-                    new RsqlCollectionQuery(targetDescription, targetAlias, targetAlias + "a");
-                conjuncts.add(state.merge(accessQuery.translateTrusted(constraint)));
-              });
       readableTargets.add(
-          "EXISTS "
-              + state.addSubquery(
-                  new RsqlCollectionQuery.Subquery(
-                      targetDescription.entityType(),
-                      targetAlias,
-                      String.join(" AND ", conjuncts))));
+          readableTargetExists(relationship, target, targetDescription, access, state, null));
     }
     return readableTargets.isEmpty() ? "(1 = 0)" : "(" + String.join(" OR ", readableTargets) + ")";
   }
@@ -187,21 +166,35 @@ final class RsqlRelationshipCompiler {
     if (source == null || access.isDenied()) {
       return "(1 = 0)";
     }
-    String sourceAlias = state.nextTargetAlias();
+    return readableTargetExists(
+        relationship, relationship.targets().get(0), source, access, state, null);
+  }
+
+  private String readableTargetExists(
+      Relationship<?> relationship,
+      RelationshipTarget<?> target,
+      CollectionDescription<?> targetDescription,
+      AccessResult access,
+      RsqlCompilationState state,
+      Function<String, String> additionalPredicate) {
+    String targetAlias = state.nextTargetAlias();
     List<String> conjuncts =
-        correlation(relationship, relationship.targets().get(0), source, sourceAlias, state);
+        correlation(relationship, target, targetDescription, targetAlias, state);
+    if (additionalPredicate != null) {
+      conjuncts.add(additionalPredicate.apply(targetAlias));
+    }
     access
         .constraintOrEmpty()
         .ifPresent(
             constraint ->
                 conjuncts.add(
                     state.merge(
-                        new RsqlCollectionQuery(source, sourceAlias, sourceAlias + "a")
+                        new RsqlCollectionQuery(targetDescription, targetAlias, targetAlias + "a")
                             .translateTrusted(constraint))));
     return "EXISTS "
         + state.addSubquery(
             new RsqlCollectionQuery.Subquery(
-                source.entityType(), sourceAlias, String.join(" AND ", conjuncts)));
+                targetDescription.entityType(), targetAlias, String.join(" AND ", conjuncts)));
   }
 
   private static String compileFixedTargetReference(

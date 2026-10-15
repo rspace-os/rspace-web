@@ -6,6 +6,7 @@ import com.blazebit.persistence.MultipleSubqueryInitiator;
 import com.blazebit.persistence.PagedList;
 import com.blazebit.persistence.SubqueryBuilder;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
+import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.QueryConstraint;
@@ -15,7 +16,10 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
 import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.hibernate.Session;
 
 /** Executes standard typed collection reads against Blaze-Persistence. */
@@ -250,35 +254,39 @@ public final class CollectionQueryExecutor<T> {
     if (predicate == null) {
       return;
     }
-    if (predicate.subqueries().isEmpty()) {
-      query.whereExpression(predicate.expression());
-    } else {
-      // Blaze parses no subquery inside an expression, so each one is built through the initiator
-      // and referenced from the expression by name.
-      MultipleSubqueryInitiator<?> initiator =
-          query.whereExpressionSubqueries(predicate.expression());
-      predicate.subqueries().forEach((name, subquery) -> applySubquery(initiator, name, subquery));
-      initiator.end();
-    }
+    applyWhere(
+        predicate.expression(),
+        predicate.subqueries(),
+        query::whereExpression,
+        query::whereExpressionSubqueries);
     predicate.apply(query);
   }
 
   private static void applySubquery(
-      MultipleSubqueryInitiator<?> parent, String name, RsqlCollectionQuery.Subquery subquery) {
+      MultipleSubqueryInitiator<?> parent, String name, Subquery subquery) {
     SubqueryBuilder<?> builder =
         parent.with(name).from(subquery.entityType(), subquery.alias()).select("1");
-    if (subquery.subqueries().isEmpty()) {
-      builder.whereExpression(subquery.whereExpression());
-    } else {
-      MultipleSubqueryInitiator<?> initiator =
-          builder.whereExpressionSubqueries(subquery.whereExpression());
-      subquery
-          .subqueries()
-          .forEach(
-              (nestedName, nestedSubquery) -> applySubquery(initiator, nestedName, nestedSubquery));
-      initiator.end();
-    }
+    applyWhere(
+        subquery.whereExpression(),
+        subquery.subqueries(),
+        builder::whereExpression,
+        builder::whereExpressionSubqueries);
     builder.end();
+  }
+
+  private static void applyWhere(
+      String expression,
+      Map<String, Subquery> subqueries,
+      Consumer<String> whereExpression,
+      Function<String, MultipleSubqueryInitiator<?>> whereExpressionSubqueries) {
+    if (subqueries.isEmpty()) {
+      whereExpression.accept(expression);
+      return;
+    }
+    // Blaze needs its initiator API to parse subqueries referenced by name inside an expression.
+    MultipleSubqueryInitiator<?> initiator = whereExpressionSubqueries.apply(expression);
+    subqueries.forEach((name, subquery) -> applySubquery(initiator, name, subquery));
+    initiator.end();
   }
 
   /** Uses the page count because Blaze's root-count query fails when there are no restrictions. */

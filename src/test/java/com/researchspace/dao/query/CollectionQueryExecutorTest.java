@@ -211,8 +211,7 @@ class CollectionQueryExecutorTest {
     SubqueryBuilder<?> innerBuilder = erasedMock(SubqueryBuilder.class);
     SubqueryInitiator<?> innerSubquery = erasedMock(SubqueryInitiator.class);
     MultipleSubqueryInitiator<?> innerInitiator = erasedMock(MultipleSubqueryInitiator.class);
-    PaginatedCriteriaBuilder<Widget> paginated = erasedMock(PaginatedCriteriaBuilder.class);
-    PagedList<Widget> page = erasedMock(PagedList.class);
+    stubPage(query, 0, 1, 1);
 
     doReturn(outerInitiator).when(query).whereExpressionSubqueries("EXISTS outerSub");
     doReturn(outerSubquery).when(outerInitiator).with("outerSub");
@@ -222,9 +221,6 @@ class CollectionQueryExecutorTest {
     doReturn(innerSubquery).when(innerInitiator).with("innerSub");
     doReturn(innerBuilder).when(innerSubquery).from(Widget.class, "inner");
     doReturn(innerBuilder).when(innerBuilder).select("1");
-    when(query.page(0, 1)).thenReturn(paginated);
-    when(paginated.getResultList()).thenReturn(page);
-    when(page.getTotalSize()).thenReturn(1L);
 
     Subquery nested = new Subquery(Widget.class, "inner", "inner.entityId = outer.entityId");
     Subquery outer =
