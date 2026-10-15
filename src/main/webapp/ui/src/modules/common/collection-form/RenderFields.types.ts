@@ -1,5 +1,4 @@
 import type { FieldStore, FormSchema, FormStore } from "@formisch/react";
-import type React from "react";
 import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
 import type { RelationshipOptionAvailability, RelationshipOptions } from "@/modules/common/relationship-picker/types";
 
@@ -25,32 +24,12 @@ export type FieldLayout = "stacked" | "inline";
  */
 export type FieldDensity = "comfortable" | "compact";
 
-/** What a ui field is handed. The store is live, so `useField` inside re-renders on edits. */
-export type UiFieldProps = {
-  form: FormStore;
-  disabled: boolean;
-};
-
 /**
- * An arbitrary component placed in the field list. Use it for content that reacts to the values
- * being edited rather than editing one of them itself, such as a conflict or preview panel. It is
- * a component rather than a render callback so that the hooks it uses sit behind their own
- * boundary.
- */
-/**
- * Decides whether a section, row or ui block is shown, from the values currently being edited.
+ * Decides whether a section or row is shown, from the values currently being edited.
  * It re-runs on every edit. A hidden group keeps its values; only its controls are removed.
  * A single field uses `form.condition` on its own config instead.
  */
 export type GroupCondition<TDocument> = (context: { data: Partial<TDocument> }) => boolean;
-
-export type UiFieldConfig<TDocument = Record<string, unknown>> = {
-  type: "ui";
-  /** Distinguishes sibling ui fields; also the React key. */
-  name: string;
-  component: React.ComponentType<UiFieldProps>;
-  condition?: GroupCondition<TDocument>;
-};
 
 export type SectionFieldConfig<TDocument> = {
   type: "section";
@@ -69,8 +48,7 @@ export type RowFieldConfig<TDocument> = {
 export type FormFieldConfig<TDocument> =
   | ResolvedFieldConfig<TDocument>
   | RowFieldConfig<TDocument>
-  | SectionFieldConfig<TDocument>
-  | UiFieldConfig<TDocument>;
+  | SectionFieldConfig<TDocument>;
 
 export type RenderFieldsProps<TDocument extends Record<string, unknown>> = {
   fields: readonly FormFieldConfig<TDocument>[];
@@ -103,11 +81,14 @@ export type FieldRendererProps<
   relationshipOptions: RelationshipOptions;
 };
 
-export type ControlProps<TDocument> = {
+export type ControlProps<
+  TDocument,
+  TType extends ResolvedFieldConfig<TDocument>["type"] = ResolvedFieldConfig<TDocument>["type"],
+> = {
   describedBy: string | undefined;
   disabled: boolean;
   fieldApi: FieldStore<FormSchema, [string]>;
-  fieldConfig: ResolvedFieldConfig<TDocument>;
+  fieldConfig: Extract<ResolvedFieldConfig<TDocument>, { type: TType }>;
   id: string;
   invalid: boolean;
   label: string;
