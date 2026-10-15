@@ -5,18 +5,14 @@ import { useTranslation } from "react-i18next";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import { VerticalDayTimeline } from "@/modules/booking/components/VerticalDayTimeline";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { type BookingWindowDraft, parsePlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import { type BookingWindowDraft, isPlainDate, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { fetchDayBookings } from "@/modules/booking/domain/fetchDayBookings";
 import { Button } from "@/modules/common/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/modules/common/ui/sheet";
 import type { BookableItemOption } from "./bookableItemOption";
 
 function draftDay(value: string): string | undefined {
-  try {
-    return parsePlainDate(value).toString();
-  } catch {
-    return undefined;
-  }
+  return isPlainDate(value) ? value : undefined;
 }
 
 export function BookingDayTimelineAside({
