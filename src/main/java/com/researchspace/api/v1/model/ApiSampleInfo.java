@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.api.v1.controller.BaseApiInventoryController;
 import com.researchspace.core.util.jsonserialisers.LocalDateDeserialiser;
 import com.researchspace.core.util.jsonserialisers.LocalDateSerialiser;
-import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleSource;
@@ -163,7 +162,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
     setVersion(sample.getVersion());
   }
 
-  protected boolean applyChangesToDatabaseSample(SampleEntity sample, User user) {
+  protected boolean applyChangesToDatabaseSample(SampleEntity sample) {
     boolean contentChanged = super.applyChangesToDatabaseInventoryRecord(sample);
 
     if (storageTempMin != null
@@ -182,14 +181,9 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
       contentChanged = true;
     }
     if (sample.isSample()) {
+      // who may change it is checked by SampleApiManagerImpl.assertRequestableChangeAllowed
       Sample nonTemplateSample = unproxy(sample, Sample.class);
-      // only the sample's owner may change whether it is requestable, even though other users
-      // (e.g. a PI or group-shared editor) may otherwise have edit permission on the sample
-      boolean requestedByOwner =
-          user.getUsername().equals(nonTemplateSample.getOwner().getUsername());
-      if (requestable != null
-          && requestedByOwner
-          && nonTemplateSample.isRequestable() != requestable) {
+      if (requestable != null && nonTemplateSample.isRequestable() != requestable) {
         nonTemplateSample.setRequestable(requestable);
         contentChanged = true;
       }

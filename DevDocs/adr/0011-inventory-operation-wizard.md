@@ -102,10 +102,10 @@ form's storage temperature takes, but it does not refuse the point at the keystr
 digit typed after a refused point join the integer, so -18.5 became -185 and was stored. A typed
 decimal stays on screen exactly as typed, the field says "Enter whole degrees only." and Next is
 disabled until the fraction is removed. What the user sees is always what would be stored. The
-operations endpoints enforce the same rule (`OperationQuantityRules.temperature`, whole degrees
-in the unit sent), deliberately stricter than `POST /samples`, which stores 3 decimal places: a
-sample created by an operation from any client must survive the sample form, which shows and
-saves whole degrees only.
+operations endpoints accept storage temperatures to 3 decimal places, the same as
+`POST /samples` (`OperationQuantityRules.temperature`): the API follows the API's rule and the
+wizard, as UI, keeps whole degrees. The sample form truncating a decimal temperature on edit is
+pre-existing Inventory UI behaviour, tracked as RSDEV-1551.
 
 Pool's take-all is `takeAll: true` on the body, not a per-origin mode. The server reads
 each origin's live quantity at processing time, as Destroy does, so the client never states
@@ -221,5 +221,5 @@ amount whose category no longer fits is repaired before it reaches the form.
   and kept suggesting a suffix for a free name. The DAO query now excludes them. This also
   changes the advisory check behind `POST /samples`; there is no unique constraint on
   `Sample.name`, so nothing breaks.
-- **The wizard remounts on every open** (`key` toggled with `open` in `useOperationWizardLauncher`), so
-  no state from a cancelled run survives into the next one.
+- **The wizard remounts on every open**: `useOperationWizardLauncher` mounts it only while it is
+  open, so each launch is a fresh mount and no state from a cancelled run survives into the next one.

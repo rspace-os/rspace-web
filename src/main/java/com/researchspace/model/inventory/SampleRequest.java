@@ -30,8 +30,8 @@ import lombok.Setter;
 
 /**
  * A request from one user for material from another user's sample. The sample's current owner
- * decides it; originalOwner records who was asked. A transfer of ownership rejects any request
- * still open.
+ * decides it; originalOwner records who was asked. A transfer of ownership closes any request still
+ * open: fulfilled if the new owner raised it, rejected otherwise.
  */
 @Entity
 @AuditTrailData(auditDomain = AuditDomain.REQUEST)

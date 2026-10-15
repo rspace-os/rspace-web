@@ -1029,6 +1029,7 @@ export default interface Resources {
       "pyrat": "9kkeooveia-pyrat-integration",
       "pyratCors": "9kkeooveia-pyrat-integration#cors",
       "raid": "zb4c2c8a4b-raid-integration",
+      "sampleRequests": "ewk2epc69e-sample-requests",
       "search": "e0fngo8a5s-search-inventory",
       "slack": "74r6scvv8g-slack-integration",
       "taggingUsers": "zw6o5uh4qv-tagging-users",
@@ -2511,13 +2512,12 @@ export default interface Resources {
         },
         "locationsImage": {
           "alt": "The marked locations of {name}",
-          "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
           "editLocations": "Edit Locations",
           "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
+          "instructions": "Tap on the image to add a location marker.<br />Tap and hold on a marker, and then drag to adjust the marked location.",
           "label": "Locations Image",
           "noMarkers": "No marked locations yet; click on the image to add a location marker.",
           "setPreviewImage": "Set preview image too?",
-          "tapInstruction": "Tap on the image to add a location marker.",
           "warningNoImage": "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
           "warningNoMarkers": "Click on 'Edit Locations' to add locations and start using the visual container."
         },
@@ -2688,6 +2688,7 @@ export default interface Resources {
     },
     "errors": {
       "expandForMoreDetails": "Expand for more details.",
+      "genericActionError": "An error occurred whilst attempting to process this request: {error}",
       "unknownReason": "Unknown reason."
     },
     "export": {
@@ -3429,11 +3430,13 @@ export default interface Resources {
       "batchEditingItemsTitle": "{label} (Click to {open, select, true {close} other {expand}} list)",
       "collapseAll": "Collapse All",
       "collapseSection": "Collapse section",
+      "collapseSectionNamed": "Collapse {section} section",
       "containersBeingEdited": "Containers being edited",
       "customFields": "Custom Fields",
       "details": "Details",
       "expandAll": "Expand All",
       "expandSection": "Expand section",
+      "expandSectionNamed": "Expand {section} section",
       "identifiers": "Identifiers",
       "information": "Information",
       "itemsBeingEdited": "Items being edited",
@@ -4139,9 +4142,10 @@ export default interface Resources {
         "name": "Name",
         "owners": "Owner",
         "pid": "PID",
+        "provider": "Registry",
         "state": "Registry state"
       },
-      "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+      "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
       "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
       "helpTitle": "PIDINST help",
       "importError": "Could not import the instrument.",
@@ -4158,6 +4162,7 @@ export default interface Resources {
         "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
         "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
         "alternateIdentifier": "Alternate identifier",
+        "calibration": "Calibration",
         "commissioned": "Commissioned",
         "decommissioned": "Decommissioned",
         "description": "Description",
@@ -4165,6 +4170,7 @@ export default interface Resources {
         "landingPage": "Landing page",
         "manufacturers": "Manufacturers",
         "measuredVariables": "Measured variables",
+        "measurementTechnique": "Measurement technique",
         "model": "Model",
         "owners": "Owners",
         "pid": "PID",
@@ -4175,22 +4181,37 @@ export default interface Resources {
         "b2inst": "B2INST",
         "datacite": "DataCite"
       },
+      "registries": {
+        "label": "Registries to search",
+        "validation": {
+          "none": "Tick at least one registry to search."
+        }
+      },
       "results": {
         "none": "No published instrument records match this search.",
+        "pageSummary": "Showing {from} to {to} of {total, plural, one {# record} other {# records}} ({breakdown}).",
         "prompt": "Search to list published instrument records.",
-        "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
-        "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+        "registryTotal": "{provider}: {total}"
       },
       "search": {
-        "label": "Search the registry",
+        "label": "Search the registries",
         "placeholder": "Name, manufacturer, owner, DOI or Handle",
-        "searching": "Searching the PID registry…",
+        "searching": "Searching the registries…",
         "validation": {
           "tooShort": "Enter at least {min} characters to search."
         }
       },
       "searchError": "Could not search the PID registry.",
       "selectRadioLabel": "Select record: {name}",
+      "skipped": {
+        "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+        "reasons": {
+          "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+          "notAvailable": "The item it points at is not available to you: <address/>",
+          "otherServer": "It points at another server ({host}): <address/>"
+        },
+        "title": "Some registry entries were not imported"
+      },
       "title": "Import Instrument from PIDINST",
       "validation": {
         "alreadyLinked": "This PID is already linked to instrument {globalId}.",
@@ -4340,6 +4361,10 @@ export default interface Resources {
     },
     "requestsManagement": {
       "browserTitle": "Requests | RSpace Inventory",
+      "chips": {
+        "requests": "Requests: {value}",
+        "status": "Status: {value}"
+      },
       "columns": {
         "id": "Request ID",
         "requester": "Requested by",
@@ -4347,6 +4372,7 @@ export default interface Resources {
         "status": "Status",
         "submitted": "Date Submitted"
       },
+      "deepLinkError": "This request could not be found, or you do not have permission to view it.",
       "detail": {
         "approveButton": "Approve",
         "approvedButton": "✓ Approved",
@@ -4380,6 +4406,8 @@ export default interface Resources {
           "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
           "sampleLocationTooltip": "Samples are located via their subsamples",
           "sampleRequested": "Requested Sample",
+          "selectSubsampleGroupLabel": "Select a subsample",
+          "selectSubsampleLabel": "Select {subsample}",
           "status": "Status",
           "submitted": "Submitted",
           "subsampleColumn": "Subsample",
@@ -4387,7 +4415,8 @@ export default interface Resources {
         },
         "fulfilDialog": {
           "fulfilButton": "Fulfil",
-          "message": "Are you sure you want to fulfil this request without transferring any materials?"
+          "message": "Are you sure you want to fulfil this request without transferring any materials?",
+          "title": "Confirm fulfilment"
         },
         "history": {
           "columns": {
@@ -4422,6 +4451,7 @@ export default interface Resources {
           "rejected": "Closed. Your reason for rejecting is shown in the history."
         },
         "title": "Request {id}: {sampleName}",
+        "transferCancelledErrorMessage": "Sample {sampleName} could not be transferred as the request has already been cancelled.",
         "transferDialog": {
           "bullets": {
             "newSampleMoved": "The new sample and subsamples will be moved to {requester}'s bench",
@@ -4436,10 +4466,11 @@ export default interface Resources {
           "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
           "whatWillHappen": "What will happen:"
         },
+        "transferFailedAfterFulfilMessage": "Request {id} was marked as fulfilled, but transferring sample {sampleName} to {requester} failed. Please transfer ownership of the sample manually.",
         "transferSampleButton": "Transfer Sample",
         "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
       },
-      "feedback": "{count} sample requests found.",
+      "feedback": "{count, plural, one {# sample request found.} other {# sample requests found.}}",
       "filters": {
         "requests": {
           "all": "All",
@@ -4454,10 +4485,20 @@ export default interface Resources {
           "past": "Closed"
         }
       },
+      "helpTitle": "Info on sample requests.",
       "landmark": "Requests",
+      "loadError": "Failed to load your sample requests.",
       "noResults": "No requests found.",
       "noSelection": "Select a request to see its details.",
       "pageTitle": "Requests",
+      "rowLabel": "Request for {sampleGlobalId} from {requester}, {status}",
+      "status": {
+        "approved": "Approved",
+        "cancelled": "Cancelled",
+        "fulfilled": "Fulfilled",
+        "pending": "Pending",
+        "rejected": "Rejected"
+      },
       "userDeleted": "{username} (Deleted)"
     },
     "sample": {
@@ -4578,7 +4619,6 @@ export default interface Resources {
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
       "requestMaterialSection": {
-        "cancelRequestButton": "Cancel",
         "compactDescription": "{owner} reviews each request before producing material.",
         "compactTitle": "Request this sample",
         "dialogTitle": "Request {sampleName}",
@@ -7197,9 +7237,13 @@ export default interface Resources {
           "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
           "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
           "pidinstImportPidRequired": "A PID is required to import an instrument.",
+          "pidinstImportProviderRequired": "The registry the PID belongs to is required to import an instrument: PIDINST_DATACITE or PIDINST_B2INST.",
           "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
-          "pidinstNotFound": "No published instrument record was found for \"{0}\" at the enabled PIDINST provider.",
-          "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registry.",
+          "pidinstNotFound": "No published instrument record was found for \"{0}\" in the public registry.",
+          "pidinstPageOutOfRange": "Only the first {0} pages of results can be shown. Narrow the search to see more.",
+          "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registries.",
+          "pidinstRegistryRequired": "Choose at least one registry to search: PIDINST_DATACITE or PIDINST_B2INST.",
+          "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
@@ -7288,7 +7332,6 @@ export default interface Resources {
           "passageNumberUnreadable": "The parent sample''s passage number ''{0}'' is not a whole number from 0 to 9999. Correct it on the parent sample, then try again.",
           "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
           "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
-          "storageTempNotWhole": "The storage temperature must be whole degrees.",
           "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
           "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
           "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples."
@@ -7324,6 +7367,7 @@ export default interface Resources {
           "ownSample": "You cannot request material from a sample that you own.",
           "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
           "reasonRequired": "A reason is required when rejecting a request.",
+          "requestableNotPermitted": "Only the sample's owner, or a PI or Lab Admin of their group, can change whether it is requestable.",
           "role": {
             "invalid": "Requested role must be one of: REQUESTER or OWNER"
           },
@@ -7429,6 +7473,7 @@ export default interface Resources {
         "label": "List of materials"
       },
       "sampleRequest": {
+        "autoFulfilledReason": "This request was fulfilled by transferring the sample to the requester.",
         "autoRejectedReason": "This request was rejected because the sample was transferred to {0}. If you still need it, make a new request to the new owner."
       }
     }
@@ -7618,13 +7663,16 @@ export default interface Resources {
         },
         "word": {
           "allImported": "All documents imported, reloading page...",
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "chooseFiles": "Please choose some {0} files to upload.",
           "converted": "These documents were converted: {0}",
           "folderChooserPrompt": "{0} to put the imported documents. Otherwise, they will be put in the current folder.",
           "importAction": "Importing Word Documents",
           "importTitle": "Import",
           "importing": "Importing files...",
-          "notConverted": "<br>These documents were not converted: {0}"
+          "notConverted": "<br>These documents were not converted: {0}",
+          "oneFileRequired": "Choose exactly one file to update a document.",
+          "selectOneTarget": "Select exactly one target document, or open a notebook entry, to update from Word."
         }
       },
       "directory": {
@@ -9246,7 +9294,7 @@ export default interface Resources {
           "pyratAvailable": "Makes PyRAT integration available. After enabling the integration, users can link to animals in the PyRAT database.",
           "raidAvailable": "Enables RAiD integration. After enabling the integration, users can set up their RAiD accounts through the 'Apps' page",
           "repoAvailable": "Makes {0} repository integration available. After enabling, users can submit exports to a {0} repository.",
-          "sampleRequestsAvailable": "Enables the ability for users to request and transfer samples.",
+          "sampleRequestsAvailable": "Lets owners make samples requestable, and lets users request material from them.",
           "selfServiceLabgroups": "When true, a user with permissions (e.g. a PI) can create a LabGroup.",
           "slackAvailable": "Makes Slack integration available to the users. After enabling the integration, user can connect to their Slack channels to send messages or forward notifications",
           "snapgeneAvailable": "Enables Snapgene viewer for DNA sequence files. This must only be enabled if the deployment property'snapgene.web.url' is configured to point at an RSpace-Snapgene web-service.",
@@ -9529,7 +9577,12 @@ export default interface Resources {
         "optionalLinkText": "Optionally, choose a folder or notebook"
       },
       "importFromWord": {
-        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:"
+        "afterImport": "After importing:",
+        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:",
+        "newDocuments": "Save as new documents",
+        "newEntries": "Save as new entries",
+        "replaceDocument": "Update selected document",
+        "replaceEntry": "Update current entry"
       },
       "moveRecord": {
         "dialogTitle": "Select move target",
@@ -10427,12 +10480,17 @@ export default interface Resources {
       },
       "word": {
         "import": {
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "createFailed": "Could not create document from {0}",
           "createFailedWithReason": "Could not create document from {0} - {1}",
           "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
           "noImporterForFileType": "No importer for file type {0}",
+          "notAuthorized": "You do not have permission to update this document.",
+          "oneFileRequired": "Choose exactly one file to update a document.",
           "progressDescription": "Processed file ''{0}''. Import is {1}% complete.",
-          "progressStarted": "Importing files..."
+          "progressStarted": "Importing files...",
+          "targetNotEditable": "This document cannot be updated because it is signed, deleted, or not editable.",
+          "updateAction": "update document from Word"
         }
       }
     },

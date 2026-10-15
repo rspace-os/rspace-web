@@ -115,13 +115,9 @@ test.describe("Gallery image versioning", () => {
     pageGallery,
     clientFiles,
   }) => {
-    // Known bug: rotating an image in the Edit Image dialog and clicking "Save as new
-    // image" does not currently produce a new gallery item as expected. Live-reproduced
-    // 2026-08-19 via MCP: Actions -> Edit -> rotate clockwise -> "Save as new image".
-    // Tracked for follow-up; unskip once fixed.
-    test.skip(true, "Known bug: 'Save as new image' after rotating does not create a new item");
-
-    const originalName = `${uniqueName("e2e-gallery-edit")}.png`;
+    const baseName = uniqueName("e2e-gallery-edit");
+    const originalName = `${baseName}.png`;
+    const editedName = `${baseName}_edited.png`;
 
     await test.step("Given an uploaded image", async () => {
       const uploaded = await clientFiles.uploadFile({ name: originalName, mimeType: "image/png", buffer: TINY_PNG });
@@ -140,6 +136,8 @@ test.describe("Gallery image versioning", () => {
 
     await test.step("Then a new gallery item is created alongside the original", async () => {
       await expect.poll(() => pageGallery.itemsCount()).toBe(initialCount + 1);
+      await expect(pageGallery.fileCell(editedName)).toBeVisible();
+      await expect(pageGallery.fileCell(originalName)).toBeVisible();
     });
   });
 });

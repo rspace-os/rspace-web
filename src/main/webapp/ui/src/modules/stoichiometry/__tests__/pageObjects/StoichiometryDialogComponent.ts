@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
 import { PickInventoryItemDialogComponent } from "./PickInventoryItemDialogComponent";
 import { StockUpdateDialogComponent } from "./StockUpdateDialogComponent";
@@ -16,7 +16,7 @@ export type StoichiometryColumnField =
   | "actualYield"
   | "notes";
 
-/** The "Reaction Table" dialog opened via a chem field's "View stoichiometry" context-toolbar button. */
+/** The "Reaction Table" dialog, opened from a chem field, a text field's inserted table, or the "/" command. */
 export class StoichiometryDialogComponent {
   readonly root: Locator;
   readonly calculateButton: Locator;
@@ -39,6 +39,15 @@ export class StoichiometryDialogComponent {
     await this.root.getByText("Loading stoichiometry table...").waitFor({ state: "hidden" });
   }
 
+  /**
+   * For a freshly inserted blank table. The loading text only appears once the table exists, and the
+   * loading placeholder's Close/Delete do nothing; only the loaded editor renders Add Chemical.
+   */
+  async waitForEditorReady(): Promise<void> {
+    await this.root.waitFor({ state: "visible" });
+    await this.addChemicalButton.waitFor({ state: "visible" });
+  }
+
   async calculate(): Promise<void> {
     await this.calculateButton.click();
     await this.grid.waitFor({ state: "visible" });
@@ -54,6 +63,8 @@ export class StoichiometryDialogComponent {
     if (!response.ok()) {
       throw new Error(`PUT .../stoichiometry failed: ${response.status()} ${response.statusText()}`);
     }
+    // The dialog clears its dirty state only after the persisted revision returns.
+    await this.saveChangesButton.waitFor({ state: "hidden" });
   }
 
   async openUpdateInventoryStockDialog(): Promise<StockUpdateDialogComponent> {
@@ -61,6 +72,11 @@ export class StoichiometryDialogComponent {
     const dialog = new StockUpdateDialogComponent(this.page);
     await dialog.waitForOpen();
     return dialog;
+  }
+
+  /** Data rows only; the header row carries `columnheader`s, not `gridcell`s. */
+  dataRows(): Locator {
+    return this.grid.getByRole("row").filter({ has: this.page.getByRole("gridcell") });
   }
 
   row(compoundName: string): Locator {
@@ -105,8 +121,9 @@ export class StoichiometryDialogComponent {
     const result = dialog.getByRole("region", { name: compoundName });
     await result.waitFor({ state: "visible" });
     await result.getByRole("checkbox").check();
-    await dialog.getByRole("button", { name: "Insert", exact: true }).click();
+    await this.waitForMoleculeLookup(() => dialog.getByRole("button", { name: "Insert", exact: true }).click());
     await dialog.waitFor({ state: "detached" });
+    await this.row(compoundName).waitFor({ state: "visible" });
   }
 
   async addFromGallery(filePath: string, fileName: string): Promise<void> {
@@ -127,8 +144,20 @@ export class StoichiometryDialogComponent {
     await dialog.waitFor({ state: "visible" });
     await dialog.getByRole("textbox", { name: "Name" }).fill(name);
     await dialog.getByRole("textbox", { name: "SMILES String" }).fill(smiles);
-    await dialog.getByRole("button", { name: "Add Chemical", exact: true }).click();
+    await this.waitForMoleculeLookup(() => dialog.getByRole("button", { name: "Add Chemical", exact: true }).click());
     await dialog.waitFor({ state: "detached" });
+    await this.row(name).waitFor({ state: "visible" });
+  }
+
+  /** A failed molecule lookup otherwise leaves the dialog open with no row and no visible error. */
+  private async waitForMoleculeLookup(submit: () => Promise<void>): Promise<void> {
+    const [response] = await Promise.all([
+      this.page.waitForResponse(
+        (res) => res.url().endsWith("/stoichiometry/molecule/info") && res.request().method() === "POST",
+      ),
+      submit(),
+    ]);
+    expect(response.ok(), `Molecule lookup returned HTTP ${response.status()}: ${await response.text()}`).toBe(true);
   }
 
   async openAddInventoryLinkDialog(compoundName: string): Promise<PickInventoryItemDialogComponent> {

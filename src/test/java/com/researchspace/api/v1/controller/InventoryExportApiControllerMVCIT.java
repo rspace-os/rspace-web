@@ -61,9 +61,10 @@ public class InventoryExportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertThat(job.getLinks()).hasSize(2);
     Map exportJobResultProps = (Map) job.getResult();
     assertThat(exportJobResultProps).hasSize(4);
-    assertThat((Integer) exportJobResultProps.get("size")).isGreaterThan(500);
 
     result = downloadExportedFileLinkInExportJobResult(job);
+    assertThat(result.getResponse().getContentAsByteArray())
+        .hasSize((Integer) exportJobResultProps.get("size"));
 
     String contentHeader = result.getResponse().getHeader("Content-Disposition");
     assertThat(contentHeader).as(contentHeader).startsWith("attachment; filename=\"RSpace-");

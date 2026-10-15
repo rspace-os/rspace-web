@@ -736,7 +736,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     // assertUserCanEditSample returns a Sample (a template id 404s), so ApiSample is safe
     SampleEntity dbSample = assertUserCanEditSample(apiSample.getId(), user);
     ApiSample original = new ApiSample(dbSample);
-    assertRequestableMayBeTurnedOn(apiSample, original, user);
+    assertRequestableChangeAllowed(apiSample, original, dbSample, user);
 
     boolean temporaryLock = lockItemForEdit(dbSample, user);
     try {
@@ -753,12 +753,21 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     return sample;
   }
 
-  /** Only turning the flag on is gated, so existing requestable samples stay editable. */
-  private void assertRequestableMayBeTurnedOn(
-      ApiSampleWithoutSubSamples update, ApiSample current, User user) {
-    if (Boolean.TRUE.equals(update.getRequestable())
-        && !Boolean.TRUE.equals(current.getRequestable())
-        && !sampleRequestsAvailable(user)) {
+  /**
+   * Whoever may transfer the sample may change whether it is requestable. Resending the current
+   * value is not a change, and only turning it on needs sample requests to be enabled, so existing
+   * requestable samples stay editable.
+   */
+  private void assertRequestableChangeAllowed(
+      ApiSampleWithoutSubSamples update, ApiSample current, SampleEntity dbSample, User user) {
+    Boolean wanted = update.getRequestable();
+    if (wanted == null || wanted.equals(current.getRequestable())) {
+      return;
+    }
+    if (!invPermissions.canUserTransferInventoryRecord(dbSample, user)) {
+      throw new ApiRuntimeException("errors.inventory.sampleRequest.requestableNotPermitted");
+    }
+    if (wanted && !sampleRequestsAvailable(user)) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.notEnabled");
     }
   }
@@ -799,7 +808,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
         }
         publisher.publishEvent(new InventoryTransferEvent(dbSample, user, originalOwner, newOwner));
         if (!dbSample.isSampleTemplate()) {
-          sampleRequestApiManager.autoRejectActiveRequestsForTransferredSample(
+          sampleRequestApiManager.closeActiveRequestsForTransferredSample(
               dbSample.getId(), user, newOwner);
         }
       }

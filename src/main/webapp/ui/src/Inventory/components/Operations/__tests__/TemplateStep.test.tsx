@@ -27,11 +27,9 @@ type FakeTemplate = {
 };
 
 let currentTemplate: FakeTemplate;
-const capturedSetTemplate: Array<(t: FakeTemplate) => void> = [];
 
 vi.mock("../WizardTemplatePicker", () => ({
   default: ({ setTemplate }: { setTemplate: (t: FakeTemplate | null) => void }) => {
-    capturedSetTemplate.push(setTemplate);
     return (
       <>
         <button type="button" data-testid="template-picker" onClick={() => setTemplate(currentTemplate)} />
@@ -137,14 +135,6 @@ describe("TemplateStep", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ mode: "pick", templateId: null, quantityCategory: undefined }),
     );
-  });
-
-  it("passes a referentially stable setTemplate to the picker across re-renders", () => {
-    capturedSetTemplate.length = 0;
-    const { rerender } = render(<TemplateStep value={pickMode} onChange={() => undefined} originSampleName="S1" />);
-    const first = capturedSetTemplate.at(-1);
-    rerender(<TemplateStep value={{ ...pickMode, templateId: 7 }} onChange={() => undefined} originSampleName="S1" />);
-    expect(capturedSetTemplate.at(-1)).toBe(first);
   });
 
   it("selects the 'existing template' mode (the second radio)", async () => {

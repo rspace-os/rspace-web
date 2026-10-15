@@ -19,6 +19,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import ApiService from "@/common/InvApiService";
 import CustomTooltip from "@/components/CustomTooltip";
 import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
 import GlobalId from "@/components/GlobalId";
@@ -26,6 +27,7 @@ import NoValue from "@/components/NoValue";
 import UserDetails from "@/components/UserDetails";
 import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
@@ -33,18 +35,30 @@ import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobal
 import type PersonModel from "@/stores/models/PersonModel";
 import SubSampleModel, { type SubSampleAttrs } from "@/stores/models/SubSampleModel";
 import useStores from "@/stores/use-stores";
+import { getErrorMessage } from "@/util/error";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
 import { isoToLocale } from "@/util/Util";
-import ApiService from "../../common/InvApiService";
 import PeopleField from "../components/Inputs/PeopleField";
 import type { OperationResult } from "../components/Operations/operationsApi";
 import { useOperationWizardLauncher } from "../components/Operations/useOperationWizardLauncher";
+import {
+  SampleOwnershipTransferError,
+  useApproveSampleRequestMutation,
+  useCancelSampleRequestMutation,
+  useFulfilSampleRequestMutation,
+  useRejectSampleRequestMutation,
+  useTransferSampleOwnershipMutation,
+} from "./mutations";
+import {
+  useOtherActiveSampleRequestsQuery,
+  useSampleRequestDetailQuery,
+  useSampleWithSubSamplesQuery,
+} from "./queries";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import { type ApiSampleRequestListItem, userDisplayName } from "./RequestsList";
 import RequestsStatusChip, { STATUS_BACKGROUND } from "./RequestsStatusChip";
-import { notifySampleRequestStatusChanged } from "./sampleRequestEvents";
 
 // Preparing a sample for a request always ends in transferring it to the requester, so
 // destroying the origin has no sensible place in this flow; Pool requires multiple origins,
@@ -59,12 +73,6 @@ const STATUS_HELP_KEY = {
 
 function statusHelpKey(status: string): (typeof STATUS_HELP_KEY)[keyof typeof STATUS_HELP_KEY] | null {
   return status in STATUS_HELP_KEY ? STATUS_HELP_KEY[status as keyof typeof STATUS_HELP_KEY] : null;
-}
-
-/** "Alice", "Alice and Bob", or "Alice, Bob and Carol", for the Transfer Ownership dialog's bullet. */
-function formatNameList(names: ReadonlyArray<string>): string {
-  if (names.length <= 1) return names[0] ?? "";
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 function DetailField({
@@ -99,14 +107,20 @@ function DetailField({
  * shows the requester, submission date, requested sample, and any note.
  */
 export default function RequestDetailPanel({ request }: { request: ApiSampleRequestListItem | null }): React.ReactNode {
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const theme = useTheme();
   const reasonFieldId = useId();
+  // Content region ids for the collapsible sections' aria-controls below - each toggle button's
+  // aria-label also names its own section (rather than the four sharing one generic "Collapse
+  // section"/"Expand section" name, indistinguishable from each other to a screen reader user).
+  const detailsSectionId = useId();
+  const approvalResultSectionId = useId();
+  const sampleLocationsSectionId = useId();
+  const requestHistorySectionId = useId();
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
   const [requestHistoryExpanded, setRequestHistoryExpanded] = useState(true);
   const [sampleLocationsExpanded, setSampleLocationsExpanded] = useState(true);
-  const [status, setStatus] = useState(request?.status);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [fulfilDialogOpen, setFulfilDialogOpen] = useState(false);
@@ -121,14 +135,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // radio route into this dialog) means the dialog acts on request.sample exactly as before.
   const [wizardCreatedSample, setWizardCreatedSample] = useState<OperationResult | null>(null);
   const [transferRecipient, setTransferRecipient] = useState<PersonModel | null>(null);
-  const [statusChanges, setStatusChanges] = useState<Array<ApiSampleRequestStatusChangeItem>>([]);
-  const [sampleOwnerName, setSampleOwnerName] = useState<string | null>(null);
-  const [subSampleCount, setSubSampleCount] = useState<number | null>(null);
-  const [otherActiveRequests, setOtherActiveRequests] = useState<Array<{
-    id: number;
-    requesterName: string;
-    status: "PENDING" | "APPROVED";
-  }> | null>(null);
+  // Separate from transferRecipient: that field can be cleared back to an unrestricted search by
+  // the owner (e.g. to double-check who else is available), but this dialog only ever exists to
+  // hand the sample to the requester specifically, so the field's choices should stay restricted
+  // to them regardless. Fetched once and never cleared, unlike transferRecipient.
+  const [transferRequesterPerson, setTransferRequesterPerson] = useState<PersonModel | null>(null);
   const currentUser = useWhoAmI();
   const { peopleStore, uiStore } = useStores();
   const isSampleOwner = FetchingData.getSuccessValue(currentUser)
@@ -149,6 +160,8 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // sensibly end in a direct transfer; skip straight to it instead of making the owner pick.
   const skipChooseMethodDialog = sampleRequestsAvailable && !operationsAvailable;
 
+  const requestId = request?.id ?? null;
+  const sampleId = request?.sample.id ?? null;
   // Reassigned below, after `request` is known non-null, so it always calls this render's own
   // openTransferDialog rather than a stale one from whichever earlier render first constructed
   // the (necessarily hook-stable) callback this hook-ordering requires declaring up here.
@@ -169,93 +182,50 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     }
   }, [wizardOrigin]);
 
-  useEffect(() => {
-    if (!request) return;
-    let cancelled = false;
-    ApiService.get<{
-      statusChanges: Array<ApiSampleRequestStatusChangeItem>;
-      sample: { owner: { firstName: string; lastName: string } };
-    }>("sampleRequests", request.id)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setStatusChanges(data.statusChanges);
-        setSampleOwnerName(`${data.sample.owner.firstName} ${data.sample.owner.lastName}`);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch sample request status changes", error);
-        setStatusChanges([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [request, status]);
+  // status/statusChanges/sampleOwnerName all come from this one query rather than local state:
+  // every action mutation below invalidates it on success (see ./mutations.ts), so a status change
+  // made here or in any other mounted component sharing this request shows up automatically,
+  // without each action handler needing to set it from its own response.
+  const detailQuery = useSampleRequestDetailQuery(requestId);
+  const status = detailQuery.data?.status ?? request?.status;
+  const statusChanges = detailQuery.data?.statusChanges ?? [];
+  const sampleOwnerName = detailQuery.data
+    ? `${detailQuery.data.sample.owner.firstName} ${detailQuery.data.sample.owner.lastName}`
+    : null;
 
-  // Only needed to size the "transferring will move all subsamples too" warning in the
-  // Choose Sample to Prepare dialog, so a plain count suffices; `subSamples` comes back
-  // null for a restricted (non-owner) viewer, same as in RequestSampleLocations.
-  useEffect(() => {
-    if (!request) return;
-    let cancelled = false;
-    ApiService.get<{ subSamples: Array<{ id: number }> | null }>("samples", request.sample.id)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setSubSampleCount(data.subSamples?.length ?? null);
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch sample subsample count", error);
-        setSubSampleCount(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [request]);
+  // Shared with RequestSampleLocations' own call to the same hook below (one cached fetch, not
+  // two) - this only needs the count, to size the "transferring will move all subsamples too"
+  // warning in the Choose Sample to Prepare dialog; `subSamples` comes back null for a restricted
+  // (non-owner) viewer, in which case there's no count to show.
+  const sampleWithSubSamplesQuery = useSampleWithSubSamplesQuery(sampleId);
+  const subSampleCount = sampleWithSubSamplesQuery.data?.subSamples?.length ?? null;
 
   // Backs both the "other requests will be closed automatically" warning in the Choose Sample to
   // Prepare dialog and the Transfer Ownership dialog's "will be automatically rejected" bullet,
-  // which also needs each other request's requester name. Refetched whenever this request's own
-  // status changes, since that can move it into or out of the "active" set counted here.
-  useEffect(() => {
-    if (!request) return;
-    let cancelled = false;
-    const params = new URLSearchParams({
-      sampleId: String(request.sample.id),
-      status: "PENDING,APPROVED",
-      pageSize: "100",
-    });
-    ApiService.query<{
-      requests: Array<{
-        id: number;
-        status: "PENDING" | "APPROVED";
-        requester: { firstName: string; lastName: string };
-      }>;
-    }>("sampleRequests", params)
-      .then(({ data }) => {
-        if (cancelled) return;
-        setOtherActiveRequests(
-          data.requests
-            .filter((r) => r.id !== request.id)
-            .map((r) => ({
-              id: r.id,
-              requesterName: `${r.requester.firstName} ${r.requester.lastName}`,
-              status: r.status,
-            })),
-        );
-      })
-      .catch((error: unknown) => {
-        if (cancelled) return;
-        console.error("Failed to fetch other active sample requests", error);
-        setOtherActiveRequests(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [request, status]);
+  // which also needs each other request's requester name. Invalidated (and so refetched)
+  // alongside the detail query above whenever this request's own status changes, since that can
+  // move it into or out of the "active" set counted here.
+  const otherActiveRequestsQuery = useOtherActiveSampleRequestsQuery(sampleId, requestId ?? -1);
+  const otherActiveRequests = otherActiveRequestsQuery.data ?? null;
 
   const otherActiveRequestsCount = otherActiveRequests?.length ?? null;
   const hasPendingOtherActiveRequest = (otherActiveRequests ?? []).some((r) => r.status === "PENDING");
   const hasApprovedOtherActiveRequest = (otherActiveRequests ?? []).some((r) => r.status === "APPROVED");
+
+  // Guards every top-level action below (approve/reject/cancel/fulfil/transfer) against
+  // double-clicks and cross-action races - at most one is ever genuinely legitimate at a time,
+  // since each needs the previous one's resulting status change to even become clickable again.
+  const approveMutation = useApproveSampleRequestMutation();
+  const rejectMutation = useRejectSampleRequestMutation();
+  const fulfilMutation = useFulfilSampleRequestMutation();
+  const cancelMutation = useCancelSampleRequestMutation();
+  const transferMutation = useTransferSampleOwnershipMutation();
+  const isProcessingAction =
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    fulfilMutation.isPending ||
+    cancelMutation.isPending ||
+    transferMutation.isPending;
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -264,17 +234,6 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
       null,
     )?.reason;
-
-  // Falls back to the originally requested sample when the fulfilling transition didn't
-  // record a transferredSample (e.g. handled outside of RSpace, via the "Fulfil" dialog).
-  const transferredSampleGlobalId =
-    statusChanges
-      .filter((change) => change.status === "FULFILLED")
-      .reduce<ApiSampleRequestStatusChangeItem | null>(
-        (latest, change) =>
-          !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
-        null,
-      )?.transferredSample?.globalId ?? request?.sample.globalId;
 
   if (!request) {
     return (
@@ -295,54 +254,57 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     );
   }
 
+  // Falls back to the originally requested sample when the fulfilling transition didn't
+  // record a transferredSample (e.g. handled outside of RSpace, via the "Fulfil" dialog) - always
+  // a real globalId, since request.sample.globalId (unlike the lookup above) can't be absent.
+  const transferredSampleGlobalId =
+    statusChanges
+      .filter((change) => change.status === "FULFILLED")
+      .reduce<ApiSampleRequestStatusChangeItem | null>(
+        (latest, change) =>
+          !latest || new Date(change.created).getTime() > new Date(latest.created).getTime() ? change : latest,
+        null,
+      )?.transferredSample?.globalId ?? request.sample.globalId;
+
+  // Shared by every top-level action below: each hits the same "silent failure" shape, so the
+  // user sees nothing go wrong while the UI quietly stays in its pre-click state.
+  const showActionError = (action: string, error: unknown) => {
+    console.error(action, error);
+    uiStore.addAlert(
+      mkAlert({
+        variant: "error",
+        message: t("errors.genericActionError", { error: getErrorMessage(error, t("errors.unknownReason")) }),
+      }),
+    );
+  };
+
   const approveRequest = () => {
-    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "APPROVED",
-    })
-      .then(({ data }) => {
-        setStatus(data.status);
-        notifySampleRequestStatusChanged();
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to approve sample request", error);
-      });
+    if (isProcessingAction) return;
+    approveMutation.mutate(request.id, {
+      onError: (error) => showActionError("Failed to approve sample request", error),
+    });
   };
 
   const rejectRequest = () => {
-    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "REJECTED",
-      reason: rejectReason,
-    })
-      .then(({ data }) => {
-        setStatus(data.status);
-        setRejectDialogOpen(false);
-        notifySampleRequestStatusChanged();
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to reject sample request", error);
-      });
-  };
-
-  // transferredSampleGlobalId is only accepted by the backend when fulfilling, and only ever
-  // names a sample other than the one originally requested when the Operations Wizard created
-  // it (see submitTransfer) - every other caller (this one included) omits it, leaving the
-  // request's history to imply the originally requested sample, which is correct for them too.
-  const markRequestFulfilled = (transferredSampleGlobalId?: string) => {
-    return ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "FULFILLED",
-      ...(transferredSampleGlobalId !== undefined ? { transferredSampleGlobalId } : {}),
-    })
-      .then(({ data }) => {
-        setStatus(data.status);
-        notifySampleRequestStatusChanged();
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to fulfil sample request", error);
-      });
+    if (isProcessingAction) return;
+    rejectMutation.mutate(
+      { requestId: request.id, reason: rejectReason },
+      {
+        onSuccess: () => {
+          setRejectDialogOpen(false);
+          setRejectReason("");
+        },
+        onError: (error) => showActionError("Failed to reject sample request", error),
+      },
+    );
   };
 
   const fulfilRequest = () => {
-    void markRequestFulfilled().then(() => setFulfilDialogOpen(false));
+    if (isProcessingAction) return;
+    fulfilMutation.mutate(request.id, {
+      onSuccess: () => setFulfilDialogOpen(false),
+      onError: (error) => showActionError("Failed to fulfil sample request", error),
+    });
   };
 
   // The requester is pre-fetched as a PersonModel via peopleStore.getUser the first time this
@@ -352,9 +314,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const openTransferDialog = (createdSample: OperationResult | null = null) => {
     setWizardCreatedSample(createdSample);
     setTransferDialogOpen(true);
-    if (!transferRecipient) {
+    if (!transferRecipient || !transferRequesterPerson) {
       void peopleStore.getUser(request.requester.username).then((person) => {
-        if (person) setTransferRecipient(person);
+        if (!person) return;
+        if (!transferRecipient) setTransferRecipient(person);
+        setTransferRequesterPerson(person);
       });
     }
   };
@@ -400,52 +364,73 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // so the follow-up fulfil call would then fail as the caller no longer being party to
   // the request (reported back as 404, to avoid disclosing the request's existence).
   const submitTransfer = () => {
-    if (!transferRecipient) return;
-    const targetId = wizardCreatedSample?.id ?? request.sample.id;
-    const targetName = wizardCreatedSample?.name ?? request.sample.name;
-    void markRequestFulfilled(wizardCreatedSample?.globalId)
-      .then(() =>
-        ApiService.update<{ id: number }>("samples", `${targetId}/actions/changeOwner`, {
-          owner: { username: transferRecipient.username },
-        }),
-      )
-      .then(() => {
-        setTransferDialogOpen(false);
-        // The transfer just took effect, which server-side may have auto-rejected other
-        // requests against the same sample (see SampleApiManagerImpl.changeApiSampleOwner);
-        // notify again, now that's actually happened, so the list picks up their new status
-        // too. The earlier notification from markRequestFulfilled fires before this transfer
-        // call even runs, so it can't have reflected that on its own.
-        notifySampleRequestStatusChanged();
-        uiStore.addAlert(
-          mkAlert({
-            variant: "success",
-            message: t("requestsManagement.detail.transferSuccessMessage", {
-              id: request.id,
-              sampleName: targetName,
-              requester: `${request.requester.firstName} ${request.requester.lastName}`,
+    // transferRequesterPerson also gates the button below, but is re-checked here too: until it
+    // has loaded, PeopleField's restrictToUser is unset and so searches everyone (see
+    // openTransferDialog's comment), meaning transferRecipient could be any user, not just the
+    // requester this dialog exists to hand the sample to.
+    if (!transferRecipient || !transferRequesterPerson || isProcessingAction) return;
+    transferMutation.mutate(
+      {
+        requestId: request.id,
+        // The "wizard" radio transfers the sample the Operations Wizard just created, not the
+        // originally requested one; wizardCreatedSample is null for every other route into this
+        // dialog, in which case it's the same sample as always.
+        sampleId: wizardCreatedSample?.id ?? request.sample.id,
+        newOwnerUsername: transferRecipient.username,
+        transferredSampleGlobalId: wizardCreatedSample?.globalId,
+      },
+      {
+        onSuccess: () => {
+          setTransferDialogOpen(false);
+          uiStore.addAlert(
+            mkAlert({
+              variant: "success",
+              message: t("requestsManagement.detail.transferSuccessMessage", {
+                id: request.id,
+                sampleName: request.sample.name,
+                requester: `${request.requester.firstName} ${request.requester.lastName}`,
+              }),
             }),
-          }),
-        );
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to transfer sample ownership", error);
-      });
+          );
+        },
+        onError: (error) => {
+          console.error("Failed to transfer sample ownership", error);
+          // Closing the dialog rather than leaving it open avoids a retry that, in either case
+          // below, can only fail (or succeed-but-mislead) the same way again; the mutation's own
+          // onError (see ./mutations.ts) has already invalidated every query above, so the status
+          // chip, history, and action buttons pick up whatever the request's real state now is on
+          // their own, without a bespoke refetch-and-resync here.
+          setTransferDialogOpen(false);
+          // Which half of the mutation failed changes what actually happened, and so what's true
+          // to tell the user - see SampleOwnershipTransferError's definition in ./mutations.ts.
+          const sampleTransferItselfFailed =
+            error instanceof SampleOwnershipTransferError && error.step === "changeOwner";
+          uiStore.addAlert(
+            mkAlert({
+              variant: "error",
+              message: sampleTransferItselfFailed
+                ? t("requestsManagement.detail.transferFailedAfterFulfilMessage", {
+                    id: request.id,
+                    sampleName: request.sample.name,
+                    requester: requesterFullName,
+                  })
+                : t("requestsManagement.detail.transferCancelledErrorMessage", {
+                    sampleName: request.sample.name,
+                  }),
+            }),
+          );
+        },
+      },
+    );
   };
 
   // Matches the "Cancel" button behaviour in the Sample form's "Request this sample" box:
   // cancelling is only legal for the requester, and only while the request is PENDING.
   const cancelRequest = () => {
-    void ApiService.update<{ status: string }>("sampleRequests", `${request.id}/status`, {
-      status: "CANCELLED",
-    })
-      .then(({ data }) => {
-        setStatus(data.status);
-        notifySampleRequestStatusChanged();
-      })
-      .catch((error: unknown) => {
-        console.error("Failed to cancel sample request", error);
-      });
+    if (isProcessingAction) return;
+    cancelMutation.mutate(request.id, {
+      onError: (error) => showActionError("Failed to cancel sample request", error),
+    });
   };
 
   const requesterFullName = userDisplayName(request.requester, t);
@@ -538,7 +523,13 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.sections.details")}</Typography>
           <IconButton
             size="small"
-            aria-label={detailsExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            aria-label={
+              detailsExpanded
+                ? t("formSections.collapseSectionNamed", { section: t("requestsManagement.detail.sections.details") })
+                : t("formSections.expandSectionNamed", { section: t("requestsManagement.detail.sections.details") })
+            }
+            aria-expanded={detailsExpanded}
+            aria-controls={detailsSectionId}
             sx={{
               transform: detailsExpanded ? "rotate(180deg)" : "rotate(0deg)",
               transition: theme.transitions.create("transform"),
@@ -548,7 +539,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </IconButton>
         </Box>
         <Divider />
-        <Collapse in={detailsExpanded}>
+        <Collapse in={detailsExpanded} id={detailsSectionId}>
           <HeadingContext level={4}>
             <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <DetailField label={t("requestsManagement.detail.fields.requester")}>
@@ -588,7 +579,17 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approvalResult")}</Typography>
           <IconButton
             size="small"
-            aria-label={approvalResultExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            aria-label={
+              approvalResultExpanded
+                ? t("formSections.collapseSectionNamed", {
+                    section: t("requestsManagement.detail.sections.approvalResult"),
+                  })
+                : t("formSections.expandSectionNamed", {
+                    section: t("requestsManagement.detail.sections.approvalResult"),
+                  })
+            }
+            aria-expanded={approvalResultExpanded}
+            aria-controls={approvalResultSectionId}
             sx={{
               transform: approvalResultExpanded ? "rotate(180deg)" : "rotate(0deg)",
               transition: theme.transitions.create("transform"),
@@ -598,7 +599,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </IconButton>
         </Box>
         <Divider />
-        <Collapse in={approvalResultExpanded}>
+        <Collapse in={approvalResultExpanded} id={approvalResultSectionId}>
           <HeadingContext level={4}>
             <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <DetailField label={t("requestsManagement.detail.fields.status")}>
@@ -611,11 +612,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               </DetailField>
               {status === "FULFILLED" ? (
                 <DetailField label={t("requestsManagement.detail.fields.transferredSample")}>
-                  {transferredSampleGlobalId ? (
-                    <GlobalId record={new LinkableRecordFromGlobalId(transferredSampleGlobalId)} onClick={() => {}} />
-                  ) : (
-                    <NoValue label={t("requestsManagement.detail.fields.noComment")} />
-                  )}
+                  <GlobalId record={new LinkableRecordFromGlobalId(transferredSampleGlobalId)} onClick={() => {}} />
                 </DetailField>
               ) : (
                 <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
@@ -656,7 +653,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
                 </Button>
                 <Button
                   variant="contained"
-                  disabled={status !== "PENDING"}
+                  disabled={status !== "PENDING" || isProcessingAction}
                   sx={
                     status === "PENDING"
                       ? {
@@ -734,6 +731,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Button
                   variant="outlined"
+                  disabled={isProcessingAction}
                   sx={{
                     "&&": {
                       color: theme.palette.grey[700],
@@ -746,7 +744,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
                   }}
                   onClick={cancelRequest}
                 >
-                  {t("sample.requestMaterialSection.cancelRequestButton")}
+                  {t("common:actions.cancel")}
                 </Button>
               </Box>
             </Box>
@@ -771,8 +769,16 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               <IconButton
                 size="small"
                 aria-label={
-                  sampleLocationsExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")
+                  sampleLocationsExpanded
+                    ? t("formSections.collapseSectionNamed", {
+                        section: t("requestsManagement.detail.fields.sampleLocation"),
+                      })
+                    : t("formSections.expandSectionNamed", {
+                        section: t("requestsManagement.detail.fields.sampleLocation"),
+                      })
                 }
+                aria-expanded={sampleLocationsExpanded}
+                aria-controls={sampleLocationsSectionId}
                 sx={{
                   transform: sampleLocationsExpanded ? "rotate(180deg)" : "rotate(0deg)",
                   transition: theme.transitions.create("transform"),
@@ -782,7 +788,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               </IconButton>
             </Box>
             <Divider />
-            <Collapse in={sampleLocationsExpanded}>
+            <Collapse in={sampleLocationsExpanded} id={sampleLocationsSectionId}>
               <Box sx={{ p: 2 }}>
                 <RequestSampleLocations
                   sampleId={request.sample.id}
@@ -811,7 +817,17 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Typography variant="subtitle1">{t("requestsManagement.detail.history.sectionTitle")}</Typography>
           <IconButton
             size="small"
-            aria-label={requestHistoryExpanded ? t("formSections.collapseSection") : t("formSections.expandSection")}
+            aria-label={
+              requestHistoryExpanded
+                ? t("formSections.collapseSectionNamed", {
+                    section: t("requestsManagement.detail.history.sectionTitle"),
+                  })
+                : t("formSections.expandSectionNamed", {
+                    section: t("requestsManagement.detail.history.sectionTitle"),
+                  })
+            }
+            aria-expanded={requestHistoryExpanded}
+            aria-controls={requestHistorySectionId}
             sx={{
               transform: requestHistoryExpanded ? "rotate(180deg)" : "rotate(0deg)",
               transition: theme.transitions.create("transform"),
@@ -821,7 +837,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </IconButton>
         </Box>
         <Divider />
-        <Collapse in={requestHistoryExpanded}>
+        <Collapse in={requestHistoryExpanded} id={requestHistorySectionId}>
           <RequestHistoryTable statusChanges={statusChanges} />
         </Collapse>
       </Box>
@@ -829,7 +845,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         <DialogTitle>{t("requestsManagement.detail.rejectDialog.title")}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-            <Typography variant="body2">{t("requestsManagement.detail.rejectDialog.reasonLabel")}</Typography>
+            {/* component="label" + htmlFor makes this a real, programmatically linked label for
+                the TextField below, rather than inert text sitting above it - with no visual
+                change, since Typography's variant/styling applies regardless of the rendered tag. */}
+            <Typography component="label" htmlFor={reasonFieldId} variant="body2">
+              {t("requestsManagement.detail.rejectDialog.reasonLabel")}
+            </Typography>
             <TextField
               id={reasonFieldId}
               multiline
@@ -844,7 +865,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Button onClick={() => setRejectDialogOpen(false)}>{t("common:actions.cancel")}</Button>
           <Button
             variant="outlined"
-            disabled={!rejectReason.trim()}
+            disabled={!rejectReason.trim() || isProcessingAction}
             sx={
               rejectReason.trim()
                 ? {
@@ -865,6 +886,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         </DialogActions>
       </Dialog>
       <Dialog open={fulfilDialogOpen} onClose={() => setFulfilDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>{t("requestsManagement.detail.fulfilDialog.title")}</DialogTitle>
         <DialogContent>
           <Typography variant="body2">{t("requestsManagement.detail.fulfilDialog.message")}</Typography>
         </DialogContent>
@@ -872,6 +894,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Button onClick={() => setFulfilDialogOpen(false)}>{t("common:actions.cancel")}</Button>
           <Button
             variant="outlined"
+            disabled={isProcessingAction}
             sx={{
               "&&": {
                 ...markAsFulfilledColors,
@@ -918,7 +941,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           </RadioGroup>
           {chooseMethodTransferWarnings.length > 0 && (
             <Alert severity="warning" sx={{ mt: 2 }}>
-              {chooseMethodTransferWarnings.join(" ")}
+              {chooseMethodTransferWarnings.map((warning) => (
+                <Typography key={warning} variant="body2">
+                  {warning}
+                </Typography>
+              ))}
             </Alert>
           )}
         </DialogContent>
@@ -997,7 +1024,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               <Typography component="li" variant="body2">
                 {t("requestsManagement.detail.transferDialog.bullets.otherRequestsRejected", {
                   count: otherActiveRequests.length,
-                  names: formatNameList(otherActiveRequests.map((r) => r.requesterName)),
+                  names: formatList(
+                    otherActiveRequests.map((r) => r.requesterName),
+                    i18n.resolvedLanguage ?? i18n.language,
+                  ),
                 })}
               </Typography>
             )}
@@ -1007,11 +1037,13 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               onSelection={(person) => setTransferRecipient(person as PersonModel | null)}
               label={t("contextMenu.transfer.dialog.recipientLabel")}
               recipient={transferRecipient}
-              restrictToUser={transferRecipient ?? undefined}
-              // The requester is looked up asynchronously (see openTransferDialog), so
-              // restrictToUser above is only set on a later render. disableAutoOpen is
-              // true from this dialog's very first render, avoiding a race against the
-              // field's autoFocus where openOnFocus would still read as unrestricted.
+              restrictToUser={transferRequesterPerson ?? undefined}
+              // Kept separate from transferRecipient (see its declaration): clearing the field
+              // back to an unrestricted search must not lift this restriction. The requester is
+              // looked up asynchronously (see openTransferDialog), so restrictToUser above is
+              // only set on a later render. disableAutoOpen is true from this dialog's very
+              // first render, avoiding a race against the field's autoFocus where openOnFocus
+              // would still read as unrestricted.
               disableAutoOpen
             />
           </FormControl>
@@ -1020,10 +1052,23 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           <Button onClick={() => setTransferDialogOpen(false)}>{t("common:actions.cancel")}</Button>
           <Button
             variant="contained"
+            // transferRequesterPerson === null also disables this: until the requester lookup
+            // in openTransferDialog resolves, PeopleField's restrictToUser is unset and the field
+            // searches every user, not just the requester - submitting before then could hand
+            // the sample to whoever was picked during that window instead. isProcessingAction
+            // disables it while the transfer itself is in flight, so a double-click can't submit
+            // the same transfer twice.
+            disabled={transferRecipient === null || transferRequesterPerson === null || isProcessingAction}
             color="callToAction"
             disableElevation
-            disabled={transferRecipient === null}
             onClick={submitTransfer}
+            sx={{
+              backgroundColor: darken(theme.palette.primary.main, 0.5),
+              color: "white",
+              "&:hover": {
+                backgroundColor: darken(theme.palette.primary.main, 0.55),
+              },
+            }}
           >
             {t("common:actions.transfer")}
           </Button>

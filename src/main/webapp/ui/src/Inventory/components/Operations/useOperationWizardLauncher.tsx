@@ -49,14 +49,24 @@ export function useOperationWizardLauncher(
 
   const unmounted = React.useRef(false);
   // The cleanup can run without an unmount (hot reload, StrictMode, a hidden Activity), so setup
-  // undoes it and `taken` is kept: the open wizard's next renewal re-takes the locks, and close
-  // must still give them back.
+  // undoes it: the locks the cleanup gave back are taken again, and close must still release them.
   React.useEffect(() => {
     unmounted.current = false;
+    const held = taken.current;
+    if (held.length > 0)
+      renewals.current = renewals.current.then(() =>
+        Promise.allSettled(
+          held.map((o) =>
+            o.acquireEditLock().catch((error: unknown) => {
+              console.warn("Could not re-take the edit lock on an operation origin", error);
+            }),
+          ),
+        ),
+      );
     return () => {
       unmounted.current = true;
-      const held = taken.current;
-      void renewals.current.then(() => releaseAll(held));
+      const releasing = taken.current;
+      renewals.current = renewals.current.then(() => releaseAll(releasing));
     };
   }, []);
 

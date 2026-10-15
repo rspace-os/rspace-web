@@ -214,6 +214,20 @@ class ApiControllerAdviceTest {
   }
 
   @Test
+  void deadlockMapsTo409() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleDataAccess(
+            jdbcFailure(1213), new ServletWebRequest(new MockHttpServletRequest()));
+
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertEquals(
+        ApiErrorCodes.EDIT_CONFLICT.getCode(), ((ApiError) response.getBody()).getInternalCode());
+  }
+
+  @Test
   void otherDataAccessFailuresStayServerErrors() {
     ApiControllerAdvice advice = new ApiControllerAdvice();
     advice.messages = new MessageSourceUtils(new JsonMessageSource());

@@ -256,13 +256,12 @@
       },
       "locationsImage": {
         "alt": "The marked locations of {name}",
-        "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
         "editLocations": "Edit Locations",
         "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
+        "instructions": "Tap on the image to add a location marker.<br />Tap and hold on a marker, and then drag to adjust the marked location.",
         "label": "Locations Image",
         "noMarkers": "No marked locations yet; click on the image to add a location marker.",
         "setPreviewImage": "Set preview image too?",
-        "tapInstruction": "Tap on the image to add a location marker.",
         "warningNoImage": "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
         "warningNoMarkers": "Click on 'Edit Locations' to add locations and start using the visual container."
       },
@@ -433,6 +432,7 @@
   },
   "errors": {
     "expandForMoreDetails": "Expand for more details.",
+    "genericActionError": "An error occurred whilst attempting to process this request: {error}",
     "unknownReason": "Unknown reason."
   },
   "export": {
@@ -1174,11 +1174,13 @@
     "batchEditingItemsTitle": "{label} (Click to {open, select, true {close} other {expand}} list)",
     "collapseAll": "Collapse All",
     "collapseSection": "Collapse section",
+    "collapseSectionNamed": "Collapse {section} section",
     "containersBeingEdited": "Containers being edited",
     "customFields": "Custom Fields",
     "details": "Details",
     "expandAll": "Expand All",
     "expandSection": "Expand section",
+    "expandSectionNamed": "Expand {section} section",
     "identifiers": "Identifiers",
     "information": "Information",
     "itemsBeingEdited": "Items being edited",
@@ -1884,9 +1886,10 @@
       "name": "Name",
       "owners": "Owner",
       "pid": "PID",
+      "provider": "Registry",
       "state": "Registry state"
     },
-    "description": "Search the PID registry enabled for this RSpace for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+    "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
     "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
     "helpTitle": "PIDINST help",
     "importError": "Could not import the instrument.",
@@ -1903,6 +1906,7 @@
       "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
       "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
       "alternateIdentifier": "Alternate identifier",
+      "calibration": "Calibration",
       "commissioned": "Commissioned",
       "decommissioned": "Decommissioned",
       "description": "Description",
@@ -1910,6 +1914,7 @@
       "landingPage": "Landing page",
       "manufacturers": "Manufacturers",
       "measuredVariables": "Measured variables",
+      "measurementTechnique": "Measurement technique",
       "model": "Model",
       "owners": "Owners",
       "pid": "PID",
@@ -1920,22 +1925,37 @@
       "b2inst": "B2INST",
       "datacite": "DataCite"
     },
+    "registries": {
+      "label": "Registries to search",
+      "validation": {
+        "none": "Tick at least one registry to search."
+      }
+    },
     "results": {
       "none": "No published instrument records match this search.",
+      "pageSummary": "Showing {from} to {to} of {total, plural, one {# record} other {# records}} ({breakdown}).",
       "prompt": "Search to list published instrument records.",
-      "summary": "{shown} of {total, plural, one {# record} other {# records}} found at {provider}.",
-      "truncated": "Only the first {shown, plural, one {# record is} other {# records are}} shown. Refine the search to find a specific instrument."
+      "registryTotal": "{provider}: {total}"
     },
     "search": {
-      "label": "Search the registry",
+      "label": "Search the registries",
       "placeholder": "Name, manufacturer, owner, DOI or Handle",
-      "searching": "Searching the PID registry…",
+      "searching": "Searching the registries…",
       "validation": {
         "tooShort": "Enter at least {min} characters to search."
       }
     },
     "searchError": "Could not search the PID registry.",
     "selectRadioLabel": "Select record: {name}",
+    "skipped": {
+      "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+      "reasons": {
+        "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+        "notAvailable": "The item it points at is not available to you: <address/>",
+        "otherServer": "It points at another server ({host}): <address/>"
+      },
+      "title": "Some registry entries were not imported"
+    },
     "title": "Import Instrument from PIDINST",
     "validation": {
       "alreadyLinked": "This PID is already linked to instrument {globalId}.",
@@ -2085,6 +2105,10 @@
   },
   "requestsManagement": {
     "browserTitle": "Requests | RSpace Inventory",
+    "chips": {
+      "requests": "Requests: {value}",
+      "status": "Status: {value}"
+    },
     "columns": {
       "id": "Request ID",
       "requester": "Requested by",
@@ -2092,6 +2116,7 @@
       "status": "Status",
       "submitted": "Date Submitted"
     },
+    "deepLinkError": "This request could not be found, or you do not have permission to view it.",
     "detail": {
       "approveButton": "Approve",
       "approvedButton": "✓ Approved",
@@ -2107,7 +2132,7 @@
         "proceedButton": "Proceed",
         "title": "Choose Sample to Prepare",
         "transferOption": "Transfer the existing sample and all subsamples",
-        "transferWarning": "This sample has {count} subsamples - transferring this sample will transfer all subsamples to user {requester}.",
+        "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
         "wizardOption": "Create a new sample derived from the existing sample"
       },
       "fields": {
@@ -2125,6 +2150,8 @@
         "sampleLocationRestricted": "You do not have permission to view locations for subsamples of this sample. To gain full access, please contact the owner, {owner}.",
         "sampleLocationTooltip": "Samples are located via their subsamples",
         "sampleRequested": "Requested Sample",
+        "selectSubsampleGroupLabel": "Select a subsample",
+        "selectSubsampleLabel": "Select {subsample}",
         "status": "Status",
         "submitted": "Submitted",
         "subsampleColumn": "Subsample",
@@ -2132,7 +2159,8 @@
       },
       "fulfilDialog": {
         "fulfilButton": "Fulfil",
-        "message": "Are you sure you want to fulfil this request without transferring any materials?"
+        "message": "Are you sure you want to fulfil this request without transferring any materials?",
+        "title": "Confirm fulfilment"
       },
       "history": {
         "columns": {
@@ -2167,6 +2195,7 @@
         "rejected": "Closed. Your reason for rejecting is shown in the history."
       },
       "title": "Request {id}: {sampleName}",
+      "transferCancelledErrorMessage": "Sample {sampleName} could not be transferred as the request has already been cancelled.",
       "transferDialog": {
         "bullets": {
           "newSampleMoved": "The new sample and subsamples will be moved to {requester}'s bench",
@@ -2181,10 +2210,11 @@
         "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
         "whatWillHappen": "What will happen:"
       },
+      "transferFailedAfterFulfilMessage": "Request {id} was marked as fulfilled, but transferring sample {sampleName} to {requester} failed. Please transfer ownership of the sample manually.",
       "transferSampleButton": "Transfer Sample",
       "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
     },
-    "feedback": "{count} sample requests found.",
+    "feedback": "{count, plural, one {# sample request found.} other {# sample requests found.}}",
     "filters": {
       "requests": {
         "all": "All",
@@ -2199,10 +2229,20 @@
         "past": "Closed"
       }
     },
+    "helpTitle": "Info on sample requests.",
     "landmark": "Requests",
+    "loadError": "Failed to load your sample requests.",
     "noResults": "No requests found.",
     "noSelection": "Select a request to see its details.",
     "pageTitle": "Requests",
+    "rowLabel": "Request for {sampleGlobalId} from {requester}, {status}",
+    "status": {
+      "approved": "Approved",
+      "cancelled": "Cancelled",
+      "fulfilled": "Fulfilled",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
     "userDeleted": "{username} (Deleted)"
   },
   "sample": {
@@ -2323,7 +2363,6 @@
     "newImageAlt": "What the new sample looks like",
     "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
     "requestMaterialSection": {
-      "cancelRequestButton": "Cancel",
       "compactDescription": "{owner} reviews each request before producing material.",
       "compactTitle": "Request this sample",
       "dialogTitle": "Request {sampleName}",

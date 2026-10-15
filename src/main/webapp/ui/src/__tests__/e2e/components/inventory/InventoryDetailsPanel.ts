@@ -48,6 +48,11 @@ export class InventoryDetailsPanel {
     this.moreActions = new MoreActionsMenu(page, this.root.getByRole("button", { name: "More actions" }).first());
   }
 
+  /** The record title heading, matched by its name so another level-2 heading on the page can't stand in. */
+  headingNamed(name: string): Locator {
+    return this.root.getByRole("heading", { level: 2, name, exact: true });
+  }
+
   async name(): Promise<string> {
     return this.heading.innerText();
   }
@@ -124,6 +129,10 @@ export class InventoryDetailsPanel {
     await this.root.getByRole("button", { name: "Save", exact: true }).waitFor({ state: "visible" });
   }
 
+  async rename(name: string): Promise<void> {
+    await this.root.getByRole("textbox", { name: "Name", exact: true }).fill(name);
+  }
+
   customFields(): CustomFieldsEditor {
     return new CustomFieldsEditor(this.page, this.section("Custom Fields"));
   }
@@ -146,7 +155,7 @@ export class InventoryDetailsPanel {
 
   /** Owner-only: whether the sample can be requested by other users. */
   requestableSwitch(): Locator {
-    return this.section("Overview").getByRole("checkbox", { name: "Requestable", exact: true });
+    return this.section("Overview").getByRole("switch", { name: "Requestable", exact: true });
   }
 
   /** Non-owners only: the "Request this sample" box. */

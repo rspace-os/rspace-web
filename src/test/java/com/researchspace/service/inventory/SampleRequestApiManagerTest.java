@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.Constants;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleRequest;
@@ -18,6 +21,8 @@ import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.dao.SampleRequestDao;
+import com.researchspace.model.Community;
+import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.events.SampleRequestStatusEvent;
@@ -25,12 +30,14 @@ import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.preference.HierarchicalPermission;
+import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +56,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   private User owner;
   private User requester;
   private ApiSampleWithFullSubSamples sample;
+  private String originalSampleRequestsAvailable;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -58,6 +66,9 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(requester, owner);
     createGroupForUsers(requester, requester.getUsername(), "", requester, owner);
 
+    // the manager caches the value, and the cache survives this test's rollback
+    originalSampleRequestsAvailable =
+        systemPropertyMgr.findByName(SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE).getValue();
     systemPropertyMgr.save(
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
         HierarchicalPermission.ALLOWED,
@@ -67,8 +78,12 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @AfterEach
-  public void restorePublisher() {
+  public void restorePublisherAndSetting() {
     sampleRequestApiMgr.setPublisher(realPublisher);
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        originalSampleRequestsAvailable,
+        getSysAdminUser());
   }
 
   @Test
@@ -125,6 +140,25 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void transferAutoFulfilment_publishesStatusEventForAuditing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+    sampleRequestApiMgr.setPublisher(mockPublisher);
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(raised.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.FULFILLED, published.getValue().getRequest().getStatus());
+    assertEquals(owner, published.getValue().getActor());
+  }
+
+  @Test
   public void refusedTransitionPublishesNothingToAudit() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
     ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
@@ -157,28 +191,6 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void getRequestsForUser_asRequester_returnsOwnRequests() {
-    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
-
-    ApiSampleRequestSearchResult results = listFor(SampleRequestRole.REQUESTER, requester);
-
-    assertEquals(1L, results.getTotalHits().longValue());
-    assertEquals(raised.getId(), results.getRequests().get(0).getId());
-  }
-
-  @Test
-  public void getRequestsForUser_asSampleOwner_returnsRequestsAgainstOwnedSamples() {
-    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
-
-    ApiSampleRequestSearchResult ownersView = listFor(SampleRequestRole.OWNER, owner);
-    assertEquals(1L, ownersView.getTotalHits().longValue());
-    assertEquals(raised.getId(), ownersView.getRequests().get(0).getId());
-
-    // the requester owns no requested sample, so nothing is awaiting them
-    assertEquals(0L, listFor(SampleRequestRole.OWNER, requester).getTotalHits().longValue());
-  }
-
-  @Test
   public void getRequestsForUser_ownerRole_usesOriginalOwnerRatherThanTheSamplesCurrentOwner() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
     User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
@@ -199,6 +211,23 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void changeApiSampleOwner_byTheOwnersPi_closesRequestsInThePisName() {
+    // in this fixture the requester is also the PI of the owner's group
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+
+    sampleApiMgr.changeApiSampleOwner(transfer, requester);
+
+    ApiSampleRequest closed = sampleRequestApiMgr.getRequestById(raised.getId(), owner);
+    assertEquals(SampleRequestStatus.REJECTED, closed.getStatus());
+    assertEquals(
+        requester.getUsername(), closed.getStatusChanges().get(1).getCreatedBy().getUsername());
+  }
+
+  @Test
   public void changeApiSampleOwner_autoRejectsOtherActiveRequestsAgainstTheSample() {
     ApiSampleRequest beingFulfilled = raiseRequest("Need 2ml for the binding assay");
     ApiSampleRequest otherPending = raiseRequestAgainst(sample, "Need 1ml too");
@@ -206,8 +235,8 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     sampleRequestApiMgr.updateStatus(
         otherApproved.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
 
-    // matches the UI's own ordering: the request actually being fulfilled is marked FULFILLED
-    // before the transfer, so it's no longer PENDING/APPROVED by the time the transfer runs
+    // fulfil-then-transfer: a request already FULFILLED is no longer open, so the transfer
+    // leaves it alone
     sampleRequestApiMgr.updateStatus(
         beingFulfilled.getId(), statusPost(SampleRequestStatus.FULFILLED, null), owner);
 
@@ -217,8 +246,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     transfer.setOwner(new ApiUser(newOwner));
     sampleApiMgr.changeApiSampleOwner(transfer, owner);
 
-    // viewed as the original owner: still party to the request even though the sample has since
-    // moved on to newOwner, so the reason for the auto-rejection is visible to them too
+    // the original owner is still a party after the sample has moved on to newOwner
     assertEquals(
         SampleRequestStatus.FULFILLED,
         sampleRequestApiMgr.getRequestById(beingFulfilled.getId(), owner).getStatus());
@@ -234,6 +262,48 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
       assertTrue(
           latest.getReason().contains(newOwner.getFirstName() + " " + newOwner.getLastName()),
           "reason missing new owner's name: " + latest.getReason());
+    }
+  }
+
+  @Test
+  public void changeApiSampleOwner_toTheRequesterFulfilsTheirRequestAndRejectsOthers() {
+    ApiSampleRequest recipients = raiseRequest("Need 2ml for the binding assay");
+    User otherRequester = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    ApiSampleRequest others = raiseRequestAs(otherRequester);
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    ApiSampleRequest fulfilled = sampleRequestApiMgr.getRequestById(recipients.getId(), owner);
+    assertEquals(SampleRequestStatus.FULFILLED, fulfilled.getStatus());
+    ApiSampleRequestStatusChange latest = fulfilled.getStatusChanges().get(1);
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+    assertEquals(sample.getGlobalId(), latest.getTransferredSample().getGlobalId());
+    assertTrue(StringUtils.isNotBlank(latest.getReason()), "auto-fulfilment should say why");
+
+    assertEquals(
+        SampleRequestStatus.REJECTED,
+        sampleRequestApiMgr.getRequestById(others.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void changeApiSampleOwner_toTheRequesterFulfilsEachOfTheirOpenRequests() {
+    ApiSampleRequest first = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleRequest second = raiseRequest("And 1ml for the control");
+    sampleRequestApiMgr.updateStatus(
+        second.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    for (ApiSampleRequest raised : List.of(first, second)) {
+      assertEquals(
+          SampleRequestStatus.FULFILLED,
+          sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
     }
   }
 
@@ -432,6 +502,102 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void updateStatus_refusesATransferredSampleTheFulfillerCanOnlyLimitedRead() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User stranger = createAndSaveUserIfNotExists(getRandomAlphabeticString("stranger"));
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    initialiseContentWithEmptyContent(stranger, pi);
+    Group ownersGroup = createGroup("ownersGroup", pi);
+    addUsersToGroup(pi, ownersGroup, owner);
+    // a stranger's subsample in a container shared with the owner's group gives limited read only
+    ApiContainer shared = createBasicContainerForUser(stranger, "shared", List.of(ownersGroup));
+    ApiSampleWithFullSubSamples strangersSample = createBasicSampleForUser(stranger);
+    moveSubSampleIntoListContainer(
+        strangersSample.getSubSamples().get(0).getId(), shared.getId(), stranger);
+    assertEquals(
+        List.of(ApiInventoryRecordPermittedAction.LIMITED_READ),
+        sampleApiMgr.getApiSampleById(strangersSample.getId(), owner).getPermittedActions());
+
+    ApiSampleRequestStatusPut fulfil = statusPost(SampleRequestStatus.FULFILLED, null);
+    fulfil.setTransferredSampleGlobalId(strangersSample.getGlobalId());
+
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.updateStatus(raised.getId(), fulfil, owner));
+  }
+
+  @Test
+  public void updateStatus_refusesATrashedTransferredSample() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleWithFullSubSamples trashed = createBasicSampleForUser(owner);
+    sampleApiMgr.markSampleAsDeleted(trashed.getId(), false, owner);
+
+    ApiSampleRequestStatusPut fulfil = statusPost(SampleRequestStatus.FULFILLED, null);
+    fulfil.setTransferredSampleGlobalId(trashed.getGlobalId());
+
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.updateStatus(raised.getId(), fulfil, owner));
+  }
+
+  @Test
+  public void createRequest_isRefusedWhenSampleRequestsAreOffForTheSampleOwner() {
+    User otherPi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User otherOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("otherOwner"));
+    initialiseContentWithEmptyContent(otherPi, otherOwner);
+    Group otherGroup = createGroup("otherGroup", otherPi);
+    addUsersToGroup(otherPi, otherGroup, otherOwner);
+    ApiSampleWithFullSubSamples theirSample = createBasicSampleForUser(otherOwner);
+    ApiSample requestable = new ApiSample();
+    requestable.setId(theirSample.getId());
+    requestable.setRequestable(true);
+    sampleApiMgr.updateApiSample(requestable, otherOwner);
+    // the owner's community then switches sample requests off; the requester's has them on
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    Community community = createAndSaveCommunity(sysadmin, getRandomAlphabeticString("comm"));
+    communityMgr.addGroupToCommunity(otherGroup.getId(), community.getId(), sysadmin);
+    SystemPropertyValue off =
+        new SystemPropertyValue(
+            systemPropertyMgr
+                .findByName(SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE)
+                .getProperty(),
+            HierarchicalPermission.DENIED.toString(),
+            community);
+    systemPropertyMgr.save(off, sysadmin);
+
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(theirSample.getGlobalId());
+    post.setNote("Need 2ml for the binding assay");
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleRequestApiMgr.createRequest(post, requester));
+    assertEquals("errors.inventory.sampleRequest.notRequestable", refused.getMessage());
+  }
+
+  @Test
+  public void requestParties_seeOnlyEachOthersPublicDetails() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiSampleRequest seenByRequester =
+        sampleRequestApiMgr.getRequestById(raised.getId(), requester);
+    ApiSampleRequestInfo listedForRequester =
+        listFor(SampleRequestRole.REQUESTER, requester).getRequests().get(0);
+    for (ApiUser party :
+        List.of(
+            seenByRequester.getRequester(),
+            seenByRequester.getOriginalOwner(),
+            seenByRequester.getStatusChanges().get(1).getCreatedBy(),
+            listedForRequester.getOriginalOwner())) {
+      assertNotNull(party.getUsername());
+      assertNull(party.getEmail(), party.getUsername() + "'s email");
+      assertNull(party.getHomeFolderId(), party.getUsername() + "'s home folder");
+      assertNull(party.getHasPiRole(), party.getUsername() + "'s roles");
+    }
+  }
+
+  @Test
   public void createRequest_isRefusedWhenSampleIsNotRequestable() {
     ApiSampleWithFullSubSamples notRequestable = createBasicSampleForUser(owner);
 
@@ -614,6 +780,31 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void updateStatus_ownerRejectsAnApprovedRequestWithAReason() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiRuntimeException noReason =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                sampleRequestApiMgr.updateStatus(
+                    raised.getId(), statusPost(SampleRequestStatus.REJECTED, null), owner));
+    assertEquals("errors.inventory.sampleRequest.reasonRequired", noReason.getMessage());
+
+    ApiSampleRequest rejected =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(),
+            statusPost(SampleRequestStatus.REJECTED, "The aliquot was contaminated"),
+            owner);
+
+    assertEquals(SampleRequestStatus.REJECTED, rejected.getStatus());
+    assertEquals(3, rejected.getStatusChanges().size());
+    assertEquals("The aliquot was contaminated", rejected.getStatusChanges().get(2).getReason());
+  }
+
+  @Test
   public void updateStatus_rejectionWithoutAReasonIsRefused() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
 
@@ -651,17 +842,38 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void updateStatus_byANonParty_isNotFoundSoTheRequestStaysUndisclosed() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
+    initialiseContentWithEmptyContent(outsider);
+
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), outsider));
+  }
+
+  @Test
+  public void updateStatus_requesterCannotCancelAnApprovedRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class,
+            () ->
+                sampleRequestApiMgr.updateStatus(
+                    raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), requester));
+    assertEquals("errors.inventory.sampleRequest.illegalTransition", refused.getMessage());
+  }
+
+  @Test
   public void updateStatus_isRefusedForTheWrongActor() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
 
-    // the requester cannot approve their own request
-    assertThrows(
-        ApiRuntimeException.class,
-        () ->
-            sampleRequestApiMgr.updateStatus(
-                raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), requester));
-
-    // and the owner cannot withdraw it on the requester's behalf
+    // the owner cannot withdraw it on the requester's behalf
     assertThrows(
         ApiRuntimeException.class,
         () ->

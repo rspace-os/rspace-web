@@ -1,5 +1,5 @@
-import sharedCases from "@testresources/inventory/fieldNameUniquenessCases.json";
 import { describe, expect, it } from "vitest";
+import sharedCases from "../../../../../../../../test/resources/inventory/fieldNameUniquenessCases.json";
 import { buildFacadeRequest, withUniqueFieldNames } from "../buildOperationRequest";
 import type { InventoryOperation } from "../operations";
 import { operations } from "../operations";

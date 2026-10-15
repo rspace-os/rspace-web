@@ -94,12 +94,9 @@ test.describe("Stoichiometry export (RSDEV-911)", { tag: tags.APPS }, () => {
       await exportCurrentDocument(page, componentExportWizard, componentNotifications, "html", description);
 
       await componentNotifications.open();
-      const downloadHref = await componentNotifications.getExportDownloadHref(description);
+      const buffer = await componentNotifications.downloadExportArchive(description);
       await componentNotifications.close();
 
-      const archiveResponse = await page.request.get(downloadHref);
-      expect(archiveResponse.ok()).toBe(true);
-      const buffer = await archiveResponse.body();
       const entries = listZipEntries(buffer);
       const docEntry = entries.find((entry) => entry.includes("/doc_") && entry.endsWith(".html"));
       if (!docEntry) throw new Error("Exported archive has no doc_*/doc_*.html entry");

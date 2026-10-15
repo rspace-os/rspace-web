@@ -400,6 +400,20 @@ public class InventoryOperationFacadesMVCIT extends API_MVC_InventoryTestBase {
   }
 
   @Test
+  public void aWholeCountWrittenWithADecimalPointIsRejectedNamingTheField() throws Exception {
+    ApiSubSample origin = origin();
+    assertRejectedOn(
+        "count",
+        origin,
+        "aliquot",
+        "{\"origin\":"
+            + originJson(origin, q("1", GRAM))
+            + ",\"sampleName\":\"Decimal point\",\"count\":1.0,\"eachAmount\":"
+            + q("0.5", GRAM)
+            + "}");
+  }
+
+  @Test
   public void anAmountTakenTheOriginsOwnUnitCannotExpressRedenominatesTheOrigin() throws Exception {
     // 4999.999 mg from a 5 g origin leaves 0.000001 g, which the origin's own unit cannot store.
     // It IS 0.001 mg, and the descent stops at the FIRST unit that fits, so the remainder is stored

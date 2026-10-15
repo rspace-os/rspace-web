@@ -11,6 +11,10 @@ import java.util.Optional;
  * link validation to reject links to non-existent or unreadable targets, regardless of whether the
  * target lives in the Inventory or in the ELN. Not transactional itself: implementations touch
  * DAOs, so they must be invoked within the transaction of a calling {@code *Manager} service.
+ *
+ * <p>Implementations answer false or empty, and must never let an exception leave a transactional
+ * {@code *Manager} on the way: that marks the caller's transaction rollback-only even when caught,
+ * and callers carry on after a false inside a write transaction (RSDEV-1528).
  */
 public interface LinkTargetResolver {
 
@@ -49,8 +53,7 @@ public interface LinkTargetResolver {
    *
    * <p>Type-exact: samples and sample templates share one numeric id space, so a record whose own
    * Global ID prefix differs from the requested one is not the target. Empty for a non-Inventory
-   * prefix, since resolving ELN records runs through transactional {@code *Manager} proxies that
-   * throw for missing or deleted records and would mark the caller's transaction rollback-only.
+   * prefix: the limited view it answers for is an Inventory notion.
    *
    * @param target the parsed link target GlobalID (any version suffix is ignored)
    * @param user the acting user, whose READ or limited READ permission decides

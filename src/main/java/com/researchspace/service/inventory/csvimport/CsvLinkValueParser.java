@@ -7,6 +7,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryUrls;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,16 +52,16 @@ public class CsvLinkValueParser {
     if (!m.matches() || !DataCiteRelationType.isValid(m.group(1))) {
       return null;
     }
-    String url = m.group(2);
-    String prefix = InventoryUrls.globalIdPagePrefix(properties.getServerUrl()).orElse(null);
-    // no server URL configured: nothing can be shown to name a local record, so accept nothing
-    // rather than letting the prefix collapse to "/globalId/" and match a relative-looking cell
-    if (prefix == null || !url.regionMatches(true, 0, prefix, 0, prefix.length())) {
+    // the same rule the PIDINST import uses to decide an address is this server's own page; empty
+    // without a server URL, so a relative-looking cell never names a local record
+    Optional<String> globalId =
+        InventoryUrls.globalIdOfOwnPage(m.group(2), properties.getServerUrl());
+    if (globalId.isEmpty()) {
       return null;
     }
     GlobalIdentifier gid;
     try {
-      gid = new GlobalIdentifier(url.substring(prefix.length()));
+      gid = new GlobalIdentifier(globalId.get());
     } catch (IllegalArgumentException ex) {
       return null;
     }

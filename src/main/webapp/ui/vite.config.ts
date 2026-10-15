@@ -256,12 +256,6 @@ const useFsPolling = process.env.VITE_USE_POLLING === "true";
 
 const vitestAliases: Alias[] = [
   {
-    // Also defined in tsconfig paths, but must be repeated here: resolve.alias is what
-    // vitest runs actually use for resolution.
-    find: /^@testresources\//,
-    replacement: `${resolveFromRoot("../../../test/resources")}/`,
-  },
-  {
     find: /^@mui\/x-data-grid$/,
     replacement: resolveFromRoot("src/test-stubs/MuiDataGridStub.tsx"),
   },

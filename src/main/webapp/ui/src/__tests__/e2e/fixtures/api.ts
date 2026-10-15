@@ -1,8 +1,11 @@
 import type { APIRequestContext } from "@playwright/test";
 import { request } from "@playwright/test";
+import { B2instClient } from "../api/clients/B2instClient";
+import { DataCiteClient } from "../api/clients/DataCiteClient";
 import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
+import { FormsClient } from "../api/clients/FormsClient";
 import { InventoryClient } from "../api/clients/InventoryClient";
 import { MailpitClient } from "../api/clients/MailpitClient";
 import { ShareClient } from "../api/clients/ShareClient";
@@ -15,10 +18,12 @@ import { SYSADMIN } from "../users";
 import { uiTest } from "./ui";
 
 type ApiFixtures = {
+  clientDataCite: DataCiteClient;
   apiContext: APIRequestContext;
   clientDocuments: DocumentsClient;
   clientFiles: FilesClient;
   clientFolders: FoldersClient;
+  clientForms: FormsClient;
   clientInventory: InventoryClient;
   clientSnippets: SnippetsClient;
   clientShare: ShareClient;
@@ -26,9 +31,26 @@ type ApiFixtures = {
   clientStoichiometry: StoichiometryClient;
   clientSysadmin: SysadminClient;
   clientMailpit: MailpitClient;
+  clientB2inst: B2instClient;
 };
 
 export const apiTest = uiTest.extend<ApiFixtures>({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientDataCite: async ({}, use) => {
+    const context = await request.newContext({
+      baseURL: env.integrationMode === "mock" ? env.mockBaseUrl : env.igsnServerUrl,
+      storageState: { cookies: [], origins: [] },
+      httpCredentials:
+        env.integrationMode === "real"
+          ? { username: env.igsnAccountId, password: env.igsnPassword, send: "always" }
+          : undefined,
+    });
+    try {
+      await use(new DataCiteClient(context));
+    } finally {
+      await context.dispose();
+    }
+  },
   // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
   apiContext: async ({}, use) => {
     // Playwright request contexts inherit the project's storageState by default, which would
@@ -49,6 +71,9 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   },
   clientFolders: async ({ apiContext, appUser }, use) => {
     await use(new FoldersClient(apiContext, appUser.apiKey));
+  },
+  clientForms: async ({ apiContext, appUser }, use) => {
+    await use(new FormsClient(apiContext, appUser.apiKey));
   },
   clientInventory: async ({ apiContext, appUser }, use) => {
     await use(new InventoryClient(apiContext, appUser.apiKey));
@@ -98,6 +123,18 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   clientMailpit: async ({}, use) => {
     const context = await request.newContext({ baseURL: env.mailpitBaseUrl });
     await use(new MailpitClient(context));
+    await context.dispose();
+  },
+
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientB2inst: async ({}, use) => {
+    const real = env.integrationMode === "real";
+    const context = await request.newContext({
+      baseURL: real ? env.pidinstB2instServerUrl : env.mockBaseUrl,
+      extraHTTPHeaders: real ? { Authorization: `Bearer ${env.pidinstB2instToken}` } : {},
+      storageState: { cookies: [], origins: [] },
+    });
+    await use(new B2instClient(context));
     await context.dispose();
   },
 });

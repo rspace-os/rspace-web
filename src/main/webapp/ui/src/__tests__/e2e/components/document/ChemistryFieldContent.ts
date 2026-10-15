@@ -53,7 +53,7 @@ export class ChemistryFieldContent {
   async openStandaloneStoichiometryDialog(): Promise<StoichiometryDialogComponent> {
     await this.container.getByRole("button", { name: "Insert reaction table" }).click();
     const dialog = new StoichiometryDialogComponent(this.page);
-    await dialog.waitForOpen();
+    await dialog.waitForEditorReady();
     return dialog;
   }
 }

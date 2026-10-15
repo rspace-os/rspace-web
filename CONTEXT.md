@@ -107,6 +107,16 @@ resolved during design. This file is a glossary only — no implementation detai
   provider, distinct from a citable public URL: it exists from registration
   onwards and may require signing in to that provider, so it is never presented
   as the identifier's public address.
+- **Public URL** — the citable address a resolver follows to a PID: the doi.org address
+  of a DataCite DOI, the hdl.handle.net address of a B2INST Handle. It is what every place outside
+  RSpace links to for an item's PID, an exported document's List of Materials and a
+  repository deposit's related material among them, and it exists only while the PID
+  resolves: a draft, or a B2INST record still under review, has none, while a retracted
+  DataCite DOI keeps it, because retracting hides a DOI from search without stopping it
+  resolving. For a B2INST PID that RSpace registered, the identifier RSpace stores is
+  the provider's record id, not the Handle, so the public URL is never that value with a
+  resolver in front of it. (RSDEV-1536)
+  _Avoid_: public link (that is the suffix), DOI link, IGSN link, landing page
 - **Public link suffix** — the unguessable random token that names an
   identifier's public landing page. Generated when a new identifier registration
   begins — always before the identifier is created, and before the provider call
@@ -203,7 +213,7 @@ resolved during design. This file is a glossary only — no implementation detai
   identifier.
   _Avoid_: RSpace identifier, own identifier, minted identifier (as a noun)
 - **Linked identifier** — an identifier that records a PID minted by another party, found
-  in a public PID registry and attached to an Instrument on import. It carries the same
+  in a public registry and attached to an Instrument on import. It carries the same
   provider type as a registered identifier and mirrors the state the provider holds, but
   RSpace owns nothing on the provider side: it never pushes metadata to it, never
   refreshes, publishes, retracts or deletes it at the provider, and never serves a public
@@ -222,19 +232,35 @@ resolved during design. This file is a glossary only — no implementation detai
   Instrument does not undo it.
   _Avoid_: detaching, disconnecting, deleting the PID (nothing is deleted at the provider)
 
-- **PID lookup** — searching a PID registry for instrument records, by free text or by a
-  PID, in order to import one. A lookup always goes to the deployment's enabled PIDINST
-  provider, with that provider's configured server and credentials; while no PIDINST
-  provider is enabled there is no lookup, and there is never a choice of registry. A lookup needs
-  at least four characters, so a query shorter than that is refused rather than answered with most
-  of the registry. How free text matches depends on the provider: a B2INST lookup matches a
-  *substring*, so part of a name finds the record that carries it, while a DataCite lookup matches
-  whole indexed words, exactly as a search in DataCite's own portal does. Only
-  *public* records are found: a PID whose registration is still in progress, or has been
-  declined, is not a lookup result and cannot be imported, because it has no resolvable
-  landing page to link to.
-  _Avoid_: federated search (there is one registry per deployment), PIDINST search, DOI
-  search
+- **Public registry** — a PID registry's public search service, reached anonymously and
+  read-only at the address the deployment properties give for it: DataCite's REST API
+  (api.datacite.org) and B2INST's records API (b2inst.gwdg.de). A PID lookup goes to public
+  registries and nowhere else; they exist for every deployment, minting configured or not, and
+  a PIDINST provider pointing at a test server does not move the lookup there (ADR 0011).
+  _Avoid_: lookup server, search endpoint, provider (that is the minting side), registry host
+
+- **PIDINST provider** — the registry, DataCite or B2INST, that a deployment has configured in
+  the Inventory settings with a server, credentials and a prefix or community, to mint and manage
+  registered identifiers. At most one is enabled at a time, and *Enabled* governs minting only:
+  it does not decide whether a PID lookup or an instrument import is offered (ADR 0011).
+  _Avoid_: enabled registry, lookup provider, integration (the settings card's word, too broad)
+
+- **PID lookup** — searching the public registries for instrument records, by free text or by a
+  PID, in order to import one. A lookup is anonymous and independent of any PIDINST provider: it
+  is offered whether or not one is configured, and goes to the public registry of each registry
+  the user has ticked, DataCite, B2INST or both. Hits from both form one list ordered by the
+  registry's update time, newest first, fifty to a page, each hit naming its registry; hits
+  updated at the same moment keep the registry's own order. A lookup needs at least four
+  characters, so a query shorter than that is refused rather than answered with most of a
+  registry. How free text matches depends on the registry: a B2INST lookup matches a *substring*,
+  ignoring case, so part of a name finds the record that carries it however it was typed, while a
+  DataCite lookup matches whole indexed words, exactly as a search in DataCite's own portal does.
+  Only *public* records are found: a PID whose registration is still in progress, or has been
+  declined, is not a lookup result and cannot be imported, because it has no resolvable landing
+  page to link to. A pasted PID is a direct lookup at the registry its shape names, a DOI at
+  DataCite and a Handle at B2INST, and yields nothing from the other.
+  _Avoid_: PIDINST search, DOI search, federated search (the registries are asked side by side,
+  not through a middle service), provider search
 
 - **Already-linked marker** — the note on a PID lookup hit saying that an Instrument in this
   RSpace already links its PID. Every user sees it, so refusing to import the hit always has
@@ -248,13 +274,47 @@ resolved during design. This file is a glossary only — no implementation detai
   principle, recorded for this case as an amendment to ADR 0009).
   _Avoid_: linked-to chip (the chip is only one of the marker's two forms), duplicate warning
 
-- **Instrument import** — creating an Instrument from a PID record found in a public PID
-  registry: RSpace fetches the record itself, fills the default PIDINST template's fields
-  from it by the inverse of the PIDINST mapping, and attaches a linked identifier for the
-  PID, all in one step. The imported values are ordinary field values afterwards: the user
+- **Instrument import** — creating an Instrument from a PID record found in a public
+  registry, which the import names: RSpace fetches the record itself from that registry, fills
+  the default PIDINST template's fields from it by the inverse of the PIDINST mapping, and
+  attaches a linked identifier for the PID, all in one step. The imported values are ordinary field values afterwards: the user
   edits them like any other, and only the identifier stays tied to the registry.
+  The record's two related identifiers that RSpace itself writes at registration, labelled
+  Measurement Technique and Calibration, are read back into the matching link fields, but
+  an RSpace link can only name an item stored in this same RSpace: an entry whose address
+  is this RSpace's own page for an item the importing user can see becomes a real link,
+  with the field's own relation (IsDocumentedBy for Measurement technique, IsCalibratedBy
+  for Calibration, since the registry's IsDescribedBy is a constant that says nothing) and
+  pinned to the same version the address names, if it names one; a trashed item the user
+  can still see is linked and shows as deleted, as by hand, except a trashed notebook, which
+  cannot be linked by hand either. Every other such entry is a skipped entry. Nothing about
+  a skipped entry is stored on the instrument (RSDEV-1528).
   _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
   lookup (that is the search that precedes it), sync
+
+- **Related identifier** — a registry record's pointer to another resource (a manual, a
+  dataset, a paper), of which a PIDINST record may carry any number. RSpace writes exactly
+  two when it registers an instrument, the addresses of the items its Measurement technique
+  and Calibration fields link to (ADR 0007), and reads back only those two, recognised by
+  their labels, when it imports a record; the lookup's preview shows the same two before the
+  import. Every other related identifier is ignored quietly on import, like any registry
+  detail the template has no field for.
+  _Avoid_: alternate identifier (a different PIDINST property: the instrument's own local
+  ids), linked resource, reference
+
+- **Skipped entry** — a related identifier the import read but could not turn into a link,
+  reported to the user in a warning at import time that stays until dismissed, and to an API
+  caller alongside the created instrument: the field it was for, why, and its address. There
+  are only two reasons. Either the address is not an item's page in this RSpace, worded as
+  another server named by its host, whether that server is another RSpace or not at all an
+  RSpace, or, when the address has no host or is on this RSpace's own host, as not the
+  address of an item in this RSpace; or it points at this RSpace but the item is not
+  available to the importing user, which is the one wording for an item they cannot see, an
+  item that does not exist and a kind of item links cannot name, so an import never reveals
+  whether an item exists (the principle of ADR 0002). A server whose
+  address has changed since it registered the PID is not recognised as this one; its own
+  entries are skipped as another server's.
+  _Avoid_: dropped entry, lost link, failed link, unresolved identifier
 
 ## Record version history
 

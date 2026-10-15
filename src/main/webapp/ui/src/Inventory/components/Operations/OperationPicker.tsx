@@ -34,12 +34,7 @@ export default function OperationPicker({
             ? label(availability.reasonKey)
             : undefined;
         return (
-          <ListItemButton
-            key={operation.key}
-            onClick={() => onSelect(operation)}
-            disabled={!availability.enabled}
-            data-test-id={`operation-${operation.key}`}
-          >
+          <ListItemButton key={operation.key} onClick={() => onSelect(operation)} disabled={!availability.enabled}>
             <ListItemIcon sx={{ minWidth: 36 }}>
               <FontAwesomeIcon icon={operation.icon} />
             </ListItemIcon>
