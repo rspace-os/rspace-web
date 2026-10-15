@@ -46,18 +46,27 @@ containers by stable names plus the fixture description, creates missing
 objects through inventory managers, creates or updates booking configurations
 through `BookingConfigurationManager`, and creates bookings through
 `TimeSlotBookingManager`. Booking dates are calculated relative to the current
-date at first deployment. Docker documentation describes the
-behavior and the 500-instrument / 1,003-event development dataset. The
-restricted-location plate reader is the view-only fixture: `user2b` owns it with
-owner-only sharing, so `user1a` reads it only as PI of `user2b`'s group and gets
-the Booking viewer role. Its configuration closes Wednesdays and has a Thursday
-exception. The other smaller examples cover scheduling edge cases: weekend and
-Sunday closures, a shorter Friday, an all-day exception on partial shared hours,
-double booking with an actual overlap, a booking ending at midnight before a
-closed day, a booking across two all-day weekdays, far-east, far-west and
-fractional-offset timezones, and a booking and a maintenance event on weekdays
-closed after they were created. Bookings that depend on an open weekday use the
-first open day on or after the fixture date, because that date floats.
+date at first deployment. The bulk dataset contains 500 instruments and 1,003
+events across the next full Monday-to-Sunday week. Three events have distinctive
+names—Aurora, Beacon, and Comet—for testing Calendar event-name search.
+
+The initial six smaller booking examples use the following calendar date, so
+new bookings start in the future even when the stack starts late in the day.
+Bookings that depend on an open weekday use the first open day on or after the
+fixture date, because that date floats. The smaller examples include these
+access and scheduling cases:
+
+| # | Fixture | Access or schedule to verify |
+|---|---|---|
+| 1 | Restricted-location plate reader | `user2b` owns it with owner-only sharing. As PI of `user2b`'s group, `user1a` sees it in Calendar with the Booking viewer role but can neither book it nor edit its configuration. It is closed on Wednesdays and opens only 10:00–14:00 Europe/Berlin on Thursdays, making closure shading visible on a read-only row. |
+| 2 | Electron microscope (America/New_York) | Closed at weekends and at noon on Fridays. |
+| 3 | Mass spectrometer (UTC) | Closed on Sundays and open all day on Wednesdays despite partial shared hours. It allows double booking and has two overlapping bookings. |
+| 4 | No-parent centrifuge | Open all day except Sundays, with a Saturday booking ending at midnight. |
+| 5 | Deleted-location sequencer | Open all day on weekdays only, with a booking from Monday to Wednesday. |
+| 6 | Auckland PCR cycler (Pacific/Auckland) | Shows day offsets and weekday differences to a European viewer. |
+| 7 | Honolulu X-ray diffractometer (Pacific/Honolulu) | Shows day offsets and weekday differences to a European viewer. |
+| 8 | Kolkata NMR spectrometer (UTC+05:30) | Uses 15-minute increments and shows day offsets and weekday differences to a European viewer. |
+| 9 | Closed-day incubator | Has a booking and a maintenance event on two weekdays closed after the events were created. |
 
 Sources: [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L119-L220),
 [`BookingFixturesAppInitialiser.java`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java#L237-L440),
