@@ -1,11 +1,30 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { createElement, Suspense } from "react";
+import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { tokenExpiringIn } from "@/__tests__/helpers/jwt";
 import { server } from "@/__tests__/mswServer";
 import { fetchToken, tokenRefreshInterval, useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { getStoredToken, saveStoredToken } from "@/modules/common/utils/auth";
+
+function renderTokenConsumer(options: { useRestApiV2?: boolean; queryClient?: QueryClient } = {}) {
+  const queryClient = options.queryClient ?? new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+  function Consumer() {
+    const { data } = useOauthTokenQuery({ useRestApiV2: options.useRestApiV2 });
+    return <output>{data}</output>;
+  }
+
+  const rendered = render(
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={null}>
+        <Consumer />
+      </Suspense>
+    </QueryClientProvider>,
+  );
+  return { ...rendered, queryClient };
+}
 
 beforeEach(() => {
   sessionStorage.clear();
@@ -62,20 +81,7 @@ describe("fetchToken", () => {
         return HttpResponse.json({ accessToken: "token-for-current-context" });
       }),
     );
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-    function Consumer() {
-      const { data } = useOauthTokenQuery({ useRestApiV2: true });
-      return createElement("output", null, data);
-    }
-
-    render(
-      createElement(
-        QueryClientProvider,
-        { client: queryClient },
-        createElement(Suspense, { fallback: null }, createElement(Consumer)),
-      ),
-    );
+    renderTokenConsumer({ useRestApiV2: true });
 
     expect(await screen.findByText("token-for-current-context")).toBeInTheDocument();
     expect(requestCount).toBe(1);
@@ -90,24 +96,11 @@ describe("fetchToken", () => {
         return HttpResponse.json({ accessToken: "authenticated-token" });
       }),
     );
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-    function Consumer() {
-      const { data } = useOauthTokenQuery();
-      return createElement("output", null, data);
-    }
-
-    const rendered = render(
-      createElement(
-        QueryClientProvider,
-        { client: queryClient },
-        createElement(Suspense, { fallback: null }, createElement(Consumer)),
-      ),
-    );
+    const { unmount, queryClient } = renderTokenConsumer();
 
     expect(await screen.findByText("authenticated-token")).toBeInTheDocument();
     expect(requestCount).toBe(1);
-    rendered.unmount();
+    unmount();
     queryClient.clear();
   });
 
@@ -119,46 +112,28 @@ describe("fetchToken", () => {
         HttpResponse.json({ data: "public-token" }),
       ),
     );
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-
-    function Consumer() {
-      const { data } = useOauthTokenQuery();
-      return createElement("output", null, data);
-    }
-
-    const rendered = render(
-      createElement(
-        QueryClientProvider,
-        { client: queryClient },
-        createElement(Suspense, { fallback: null }, createElement(Consumer)),
-      ),
-    );
+    const { unmount, queryClient } = renderTokenConsumer();
 
     expect(await screen.findByText("public-token")).toBeInTheDocument();
     expect(getStoredToken()).toBe("public-token");
-    rendered.unmount();
+    unmount();
     queryClient.clear();
   });
 });
 
 describe("tokenRefreshInterval", () => {
   it("also bounds the query's stale timer for a cached long-lived token", () => {
-    const payload = btoa(JSON.stringify({ exp: 4102444800 }));
     const queryClient = new QueryClient();
-    queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], `header.${payload}.signature`);
+    queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], tokenExpiringIn(4102444800));
     const timeout = vi.spyOn(globalThis, "setTimeout");
     const interval = vi.spyOn(globalThis, "setInterval");
-    function Consumer() {
-      useOauthTokenQuery({ useRestApiV2: true });
-      return null;
-    }
-    const rendered = render(createElement(QueryClientProvider, { client: queryClient }, createElement(Consumer)));
+    const { unmount } = renderTokenConsumer({ useRestApiV2: true, queryClient });
     try {
       for (const [, delay] of [...timeout.mock.calls, ...interval.mock.calls]) {
         expect(delay ?? 0).toBeLessThanOrEqual(2_147_483_647);
       }
     } finally {
-      rendered.unmount();
+      unmount();
       queryClient.clear();
       timeout.mockRestore();
       interval.mockRestore();
@@ -166,16 +141,11 @@ describe("tokenRefreshInterval", () => {
   });
 
   it("keeps long-lived tokens within the platform timer limit", () => {
-    const payload = btoa(JSON.stringify({ exp: 4102444800 }));
-
-    expect(tokenRefreshInterval(`header.${payload}.signature`)).toBe(2_147_483_647);
+    expect(tokenRefreshInterval(tokenExpiringIn(4102444800))).toBe(2_147_483_647);
   });
 
   it("schedules a refresh at the expiry buffer instead of only marking the query stale", () => {
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    const payload = btoa(JSON.stringify({ exp: nowSeconds + 600 }));
-
-    expect(tokenRefreshInterval(`header.${payload}.signature`)).toBe(300_000);
+    expect(tokenRefreshInterval(tokenExpiringIn(600))).toBe(300_000);
     expect(tokenRefreshInterval()).toBe(false);
     expect(tokenRefreshInterval("opaque-test-token")).toBe(false);
   });

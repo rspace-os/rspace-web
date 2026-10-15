@@ -1,21 +1,9 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import { getNextMaintenance } from "@/modules/common/app/queries/nextMaintenance";
-
-const envelope = (docs: Array<Record<string, unknown>>) => ({
-  docs,
-  totalDocs: docs.length,
-  limit: 1,
-  page: 1,
-  pagingCounter: 1,
-  totalPages: docs.length === 0 ? 0 : 1,
-  hasPrevPage: false,
-  hasNextPage: false,
-  prevPage: null,
-  nextPage: null,
-});
 
 describe("getNextMaintenance", () => {
   it("requests the public maintenance list and returns docs[0].startDate", async () => {
@@ -24,7 +12,7 @@ describe("getNextMaintenance", () => {
       http.get("/api/v2/maintenances", ({ request }) => {
         capturedRequest = request;
         return HttpResponse.json(
-          envelope([
+          v2ListEnvelope([
             {
               id: 1,
               startDate: "2999-07-01T09:00:00.000Z",
@@ -48,7 +36,7 @@ describe("getNextMaintenance", () => {
   });
 
   it("returns null when no maintenance is scheduled (empty docs)", async () => {
-    server.use(http.get("/api/v2/maintenances", () => HttpResponse.json(envelope([]))));
+    server.use(http.get("/api/v2/maintenances", () => HttpResponse.json(v2ListEnvelope([]))));
     expect(await getNextMaintenance()).toBeNull();
   });
 
