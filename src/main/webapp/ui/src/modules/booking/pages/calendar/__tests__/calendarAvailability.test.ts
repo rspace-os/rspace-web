@@ -411,10 +411,12 @@ describe("calendar availability", () => {
       timezone: "UTC",
       openingHours: [
         { dayOfWeek: 1, start: "09:00", end: "17:00" },
-        { dayOfWeek: 2, start: "09:00", end: "17:00" },
+        { dayOfWeek: 2, start: "10:00", end: "16:00" },
         { dayOfWeek: 3, start: "09:00", end: "17:00" },
         { dayOfWeek: 4, start: "09:00", end: "17:00" },
-        { dayOfWeek: 5, start: "10:00", end: "16:00" },
+        { dayOfWeek: 5, start: "09:00", end: "17:00" },
+        { dayOfWeek: 6, start: "09:00", end: "17:00" },
+        { dayOfWeek: 7, start: "09:00", end: "17:00" },
       ],
     };
     // Monday 2026-08-17 and Tuesday 2026-08-18.
