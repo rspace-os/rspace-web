@@ -1,5 +1,10 @@
 package com.researchspace.api.v2.openapi;
 
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.researchspace.api.v2.controller.ApiV2Problem;
 import com.researchspace.api.v2.model.ApiV2CountResult;
@@ -57,17 +62,19 @@ public final class ApiV2OpenApiGenerator {
 
   private static final String JSON = "application/json";
   private static final String PROBLEM_JSON = "application/problem+json";
-  private static final Map<ResourceOperation, String> METHODS =
+  static final List<Map<String, List<String>>> AUTHENTICATED_SECURITY =
+      List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of()));
+  private static final Map<String, String> STANDARD_RESPONSE_NAMES =
       Map.of(
-          ResourceOperation.LIST, "get",
-          ResourceOperation.COUNT, "get",
-          ResourceOperation.READ, "get",
-          ResourceOperation.CREATE, "post",
-          ResourceOperation.BULK_CREATE, "post",
-          ResourceOperation.UPDATE, "patch",
-          ResourceOperation.BULK_UPDATE, "patch",
-          ResourceOperation.DELETE, "delete",
-          ResourceOperation.BULK_DELETE, "delete");
+          "400", "BadRequest",
+          "401", "Unauthenticated",
+          "403", "Forbidden",
+          "404", "NotFound",
+          "406", "NotAcceptable",
+          "415", "UnsupportedMediaType",
+          "422", "BulkLimit",
+          "429", "TooManyRequests",
+          "500", "UnexpectedError");
 
   private final ApiV2ResourceCatalog catalog;
   private final String title;
@@ -191,7 +198,7 @@ public final class ApiV2OpenApiGenerator {
           };
       Map<String, Object> pathItem =
           mutableObjectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()));
-      String method = METHODS.get(operation);
+      String method = operation.httpMethod().toLowerCase(Locale.ROOT);
       if (pathItem.containsKey(method)) {
         throw new IllegalArgumentException("Duplicate OpenAPI operation " + method + " " + path);
       }
@@ -299,16 +306,13 @@ public final class ApiV2OpenApiGenerator {
     operation.put("operationId", operationKind.operationId(component));
     operation.put("summary", operationKind.summary());
     operation.put("tags", List.of(resource.resourceName()));
-    operation.put(
-        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put("security", AUTHENTICATED_SECURITY);
     operation.put(
         "x-rspace-access",
-        ordered(
-            "description",
+        operationAccessExtension(
             operationKind.managesAssignments()
                 ? "Authenticated callers with the registered assignment-management capability."
                 : "Authenticated callers authorized by the registered protected resource.",
-            "denialReasonCodes",
             List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
     List<Map<String, Object>> parameters = new ArrayList<>();
     FieldSchema id =
@@ -549,16 +553,39 @@ public final class ApiV2OpenApiGenerator {
     };
   }
 
+  private static AccessDocumentation access(AccessPolicySchema access, WriteOperation operation) {
+    return access(access.readAccess(), access.createAccess(), access.updateAccess(), operation);
+  }
+
+  private static AccessDocumentation access(ResourceFieldSchema field, WriteOperation operation) {
+    return access(field.readAccess(), field.createAccess(), field.updateAccess(), operation);
+  }
+
+  private static AccessDocumentation access(
+      AccessDocumentation read,
+      AccessDocumentation create,
+      AccessDocumentation update,
+      WriteOperation operation) {
+    return operation == null ? read : operation == WriteOperation.CREATE ? create : update;
+  }
+
   private static void applyAccess(Map<String, Object> operation, AccessDocumentation access) {
-    operation.put(
-        "security",
-        access.authenticationRequirement() == AuthenticationRequirement.PUBLIC
-            ? List.of()
-            : List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put("security", security(access.authenticationRequirement()));
     operation.put(
         "x-rspace-access",
-        ordered(
-            "description", access.description(), "denialReasonCodes", access.denialReasonCodes()));
+        operationAccessExtension(access.description(), access.denialReasonCodes()));
+  }
+
+  private static List<Map<String, List<String>>> security(
+      AuthenticationRequirement authenticationRequirement) {
+    return authenticationRequirement == AuthenticationRequirement.PUBLIC
+        ? List.of()
+        : AUTHENTICATED_SECURITY;
+  }
+
+  private static Map<String, Object> operationAccessExtension(
+      String description, Collection<String> denialReasonCodes) {
+    return ordered("description", description, "denialReasonCodes", denialReasonCodes);
   }
 
   private List<Map<String, Object>> runtimeFieldsExtension(
@@ -581,35 +608,12 @@ public final class ApiV2OpenApiGenerator {
                 .map(RuntimeCollectionFields::projectsThroughRelationship)
                 .orElse(false);
         namespaces.add(
-            ordered(
-                "namespace",
+            runtimeNamespace(
                 namespace,
-                "catalog",
                 catalogUrl(targetName, targetNamespace),
-                "responseField",
-                projectable ? namespace : "",
-                "via",
                 relationship.name(),
-                "viaResource",
                 targetName,
-                "filterable",
-                true,
-                "columnSelectable",
-                projectable,
-                "sortable",
-                false,
-                "maximumProjections",
-                projectable ? CollectionQueryLimits.MAX_RUNTIME_PROJECTIONS : 0,
-                "catalogDefaultLimit",
-                RuntimeFieldCatalogQuery.DEFAULT_LIMIT,
-                "catalogMaximumLimit",
-                RuntimeFieldCatalogQuery.MAX_LIMIT,
-                "catalogMaximumIds",
-                RuntimeFieldCatalogQuery.MAX_IDS,
-                "catalogSearchParameter",
-                "search",
-                "catalogIdsParameter",
-                "ids"));
+                projectable));
       }
     }
     return List.copyOf(namespaces);
@@ -619,39 +623,45 @@ public final class ApiV2OpenApiGenerator {
     return "/api/v2/" + resourceName + "/fields/" + namespace;
   }
 
+  private static Map<String, Object> runtimeNamespace(
+      String namespace, String catalog, String via, String viaResource, boolean projectable) {
+    return ordered(
+        "namespace",
+        namespace,
+        "catalog",
+        catalog,
+        "responseField",
+        projectable ? namespace : "",
+        "via",
+        via,
+        "viaResource",
+        viaResource,
+        "filterable",
+        true,
+        "columnSelectable",
+        projectable,
+        "sortable",
+        false,
+        "maximumProjections",
+        projectable ? CollectionQueryLimits.MAX_RUNTIME_PROJECTIONS : 0,
+        "catalogDefaultLimit",
+        RuntimeFieldCatalogQuery.DEFAULT_LIMIT,
+        "catalogMaximumLimit",
+        RuntimeFieldCatalogQuery.MAX_LIMIT,
+        "catalogMaximumIds",
+        RuntimeFieldCatalogQuery.MAX_IDS,
+        "catalogSearchParameter",
+        "search",
+        "catalogIdsParameter",
+        "ids");
+  }
+
   private static List<Map<String, Object>> own(ApiV2ResourceRegistration<?, ?> resource) {
     List<Map<String, Object>> published = new ArrayList<>();
     for (String namespace : resource.runtimeNamespaces()) {
       published.add(
-          ordered(
-              "namespace",
-              namespace,
-              "catalog",
-              catalogUrl(resource.resourceName(), namespace),
-              "responseField",
-              namespace,
-              "via",
-              "",
-              "viaResource",
-              "",
-              "filterable",
-              true,
-              "columnSelectable",
-              true,
-              "sortable",
-              false,
-              "maximumProjections",
-              CollectionQueryLimits.MAX_RUNTIME_PROJECTIONS,
-              "catalogDefaultLimit",
-              RuntimeFieldCatalogQuery.DEFAULT_LIMIT,
-              "catalogMaximumLimit",
-              RuntimeFieldCatalogQuery.MAX_LIMIT,
-              "catalogMaximumIds",
-              RuntimeFieldCatalogQuery.MAX_IDS,
-              "catalogSearchParameter",
-              "search",
-              "catalogIdsParameter",
-              "ids"));
+          runtimeNamespace(
+              namespace, catalogUrl(resource.resourceName(), namespace), "", "", true));
     }
     return List.copyOf(published);
   }
@@ -696,28 +706,8 @@ public final class ApiV2OpenApiGenerator {
               "maximumFields",
               CollectionQueryLimits.MAX_SORT_FIELDS));
       parameters.add(sort);
-      parameters.add(
-          parameter(
-              "page",
-              "query",
-              false,
-              ordered("type", "integer", "minimum", 1, "default", 1),
-              "One-based page number."));
-      parameters.add(
-          parameter(
-              "limit",
-              "query",
-              false,
-              ordered(
-                  "type",
-                  "integer",
-                  "minimum",
-                  1,
-                  "maximum",
-                  CollectionQueryLimits.MAX_PAGE_SIZE,
-                  "default",
-                  20),
-              "Maximum documents per page."));
+      parameters.add(pageParameter());
+      parameters.add(limitParameter());
     }
     if (operation == ResourceOperation.COUNT
         || operation == ResourceOperation.BULK_UPDATE
@@ -868,8 +858,7 @@ public final class ApiV2OpenApiGenerator {
         .forEach(
             filter ->
                 published.put(
-                    filter.selector(),
-                    publishedFilter(filter.selector(), filter, resource, false)));
+                    filter.selector(), publishedFilter(filter.selector(), filter, resource)));
     registry
         .relationshipQueryPaths(resource.name())
         .forEach(
@@ -899,18 +888,12 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static PublishedFilter publishedFilter(
-      String selector, FilterSchema filter, ResourceSchema source, boolean throughRelationship) {
+      String selector, FilterSchema filter, ResourceSchema source) {
     return new PublishedFilter(
         selector,
         filter.selector(),
         source,
-        filter.operators().stream()
-            .filter(
-                operator ->
-                    !throughRelationship
-                        || FilterSelector.relationshipTargetFieldOperators().contains(operator))
-            .map(ApiV2OpenApiGenerator::operatorToken)
-            .toList(),
+        filter.operators().stream().map(ApiV2OpenApiGenerator::operatorToken).toList(),
         filter.supportsWildcards());
   }
 
@@ -1039,6 +1022,32 @@ public final class ApiV2OpenApiGenerator {
         description,
         "schema",
         schema);
+  }
+
+  private static Map<String, Object> pageParameter() {
+    return parameter(
+        "page",
+        "query",
+        false,
+        ordered("type", "integer", "minimum", 1, "default", 1),
+        "One-based page number.");
+  }
+
+  private static Map<String, Object> limitParameter() {
+    return parameter(
+        "limit",
+        "query",
+        false,
+        ordered(
+            "type",
+            "integer",
+            "minimum",
+            1,
+            "maximum",
+            CollectionQueryLimits.MAX_PAGE_SIZE,
+            "default",
+            20),
+        "Maximum documents per page.");
   }
 
   private static Map<String, Object> responses(
@@ -1171,22 +1180,8 @@ public final class ApiV2OpenApiGenerator {
       if (writeOperation != null && !field.writeOperations().contains(writeOperation)) {
         continue;
       }
-      Map<String, Object> property = documentFieldSchema(field, names, writeOperation);
-      applyDocumentation(property, field.openApi());
-      if (writeOperation == WriteOperation.CREATE && field.defaultValue() != null) {
-        property.put("default", field.defaultValue());
-      }
-      property.put(
-          "x-rspace-access",
-          accessExtension(
-              writeOperation == null
-                  ? field.readAccess()
-                  : writeOperation == WriteOperation.CREATE
-                      ? field.createAccess()
-                      : field.updateAccess()));
-      if (writeOperation == null && field.readOnly()) {
-        property.put("readOnly", true);
-      }
+      Map<String, Object> property =
+          documentFieldProperty(field, names, writeOperation, false, false);
       properties.put(field.name(), property);
       if ((writeOperation == WriteOperation.CREATE && field.requiredOnCreate())
           || (writeOperation == null && field.name().equals(resource.idField()))) {
@@ -1198,14 +1193,7 @@ public final class ApiV2OpenApiGenerator {
     if (!required.isEmpty()) {
       schema.put("required", required);
     }
-    schema.put(
-        "x-rspace-access",
-        accessExtension(
-            writeOperation == null
-                ? resource.access().readAccess()
-                : writeOperation == WriteOperation.CREATE
-                    ? resource.access().createAccess()
-                    : resource.access().updateAccess()));
+    schema.put("x-rspace-access", accessExtension(access(resource.access(), writeOperation)));
     return schema;
   }
 
@@ -1238,6 +1226,29 @@ public final class ApiV2OpenApiGenerator {
     return nullable(schema, writeOperation == null ? field.nullableOnRead() : field.nullable());
   }
 
+  private static Map<String, Object> documentFieldProperty(
+      ResourceFieldSchema field,
+      Map<String, String> names,
+      WriteOperation writeOperation,
+      boolean updateDefaults,
+      boolean readOnlyBeforeAccess) {
+    Map<String, Object> property = documentFieldSchema(field, names, writeOperation);
+    applyDocumentation(property, field.openApi());
+    if ((writeOperation == WriteOperation.CREATE
+            || (updateDefaults && writeOperation == WriteOperation.UPDATE))
+        && field.defaultValue() != null) {
+      property.put("default", field.defaultValue());
+    }
+    if (readOnlyBeforeAccess && writeOperation == null && field.readOnly()) {
+      property.put("readOnly", true);
+    }
+    property.put("x-rspace-access", accessExtension(access(field, writeOperation)));
+    if (!readOnlyBeforeAccess && writeOperation == null && field.readOnly()) {
+      property.put("readOnly", true);
+    }
+    return property;
+  }
+
   private static Map<String, Object> embeddedObjectSchema(
       List<FieldSchema> fields, Map<String, String> names, WriteOperation operation) {
     Map<String, Object> properties = new LinkedHashMap<>();
@@ -1246,22 +1257,7 @@ public final class ApiV2OpenApiGenerator {
       if (operation != null && !child.writeOperations().contains(operation)) {
         continue;
       }
-      Map<String, Object> property = documentFieldSchema(child, names, operation);
-      applyDocumentation(property, child.openApi());
-      if (operation != null && child.defaultValue() != null) {
-        property.put("default", child.defaultValue());
-      }
-      if (operation == null && child.readOnly()) {
-        property.put("readOnly", true);
-      }
-      property.put(
-          "x-rspace-access",
-          accessExtension(
-              operation == null
-                  ? child.readAccess()
-                  : operation == WriteOperation.CREATE
-                      ? child.createAccess()
-                      : child.updateAccess()));
+      Map<String, Object> property = documentFieldProperty(child, names, operation, true, true);
       properties.put(child.name(), property);
       if (operation != null && child.requiredOnCreate()) {
         required.add(child.name());
@@ -1290,8 +1286,7 @@ public final class ApiV2OpenApiGenerator {
               variants.add(
                   expandedReferenceSchema(target, ref(names.get(target) + "Read"), prefix));
             });
-    Map<String, Object> value = ordered("oneOf", variants);
-    return value;
+    return ordered("oneOf", variants);
   }
 
   private static Map<String, Object> relationshipInput(
@@ -1538,29 +1533,42 @@ public final class ApiV2OpenApiGenerator {
         ordered("docs", ordered("type", "array", "items", item)));
   }
 
-  private static Map<String, Object> standardResponses() {
+  static Map<String, Object> standardResponses() {
+    return createStandardResponses();
+  }
+
+  private static Map<String, Object> createStandardResponses() {
     return ordered(
-        "BadRequest",
+        STANDARD_RESPONSE_NAMES.get("400"),
         problemResponse("The request is invalid.", 400, "BAD_REQUEST"),
-        "Unauthenticated",
+        STANDARD_RESPONSE_NAMES.get("401"),
         problemResponse("Authentication is required.", 401, "AUTHENTICATION_REQUIRED"),
-        "Forbidden",
+        STANDARD_RESPONSE_NAMES.get("403"),
         problemResponse("The caller is not authorized.", 403, "FORBIDDEN"),
-        "NotFound",
+        STANDARD_RESPONSE_NAMES.get("404"),
         problemResponse("The resource was not found or is not visible.", 404, "NOT_FOUND"),
-        "NotAcceptable",
+        STANDARD_RESPONSE_NAMES.get("406"),
         problemResponse(
             "No acceptable response representation is available.", 406, "NOT_ACCEPTABLE"),
-        "UnsupportedMediaType",
+        STANDARD_RESPONSE_NAMES.get("415"),
         problemResponse("The request media type is unsupported.", 415, "UNSUPPORTED_MEDIA_TYPE"),
-        "BulkLimit",
+        STANDARD_RESPONSE_NAMES.get("422"),
         problemResponse("The bulk operation exceeds the configured limit.", 422, "BULK_LIMIT"),
-        "TooManyRequests",
-        withHeaders(
-            problemResponse("The request was throttled.", 429, "TOO_MANY_REQUESTS"),
+        STANDARD_RESPONSE_NAMES.get("429"),
+        ordered(
+            "description",
+            "The request was throttled.",
+            "content",
+            problemContent("The request was throttled.", 429, "TOO_MANY_REQUESTS"),
+            "headers",
             rateLimitHeaders()),
-        "UnexpectedError",
+        STANDARD_RESPONSE_NAMES.get("500"),
         problemResponse("An unexpected server error occurred.", 500, "INTERNAL_SERVER_ERROR"));
+  }
+
+  static Map<String, Object> standardResponseReference(String status) {
+    String name = STANDARD_RESPONSE_NAMES.get(status);
+    return name == null ? null : Map.of("$ref", "#/components/responses/" + name);
   }
 
   private static Map<String, Object> problemResponse(String description, int status, String code) {
@@ -1606,12 +1614,6 @@ public final class ApiV2OpenApiGenerator {
         "example",
         ordered("title", description, "status", status, "code", code, "detail", description));
     return Map.of(PROBLEM_JSON, media);
-  }
-
-  private static Map<String, Object> withHeaders(
-      Map<String, Object> response, Map<String, Object> headers) {
-    response.put("headers", headers);
-    return response;
   }
 
   private static Map<String, Object> standardHeaders() {
@@ -1681,10 +1683,6 @@ public final class ApiV2OpenApiGenerator {
 
   private static Map<String, Object> headerRef(String name) {
     return Map.of("$ref", "#/components/headers/" + name);
-  }
-
-  private static Map<String, Object> ref(String name) {
-    return Map.of("$ref", "#/components/schemas/" + name);
   }
 
   private static FieldSchema field(ResourceSchema resource, String name) {
@@ -1798,7 +1796,7 @@ public final class ApiV2OpenApiGenerator {
     };
   }
 
-  private static String operatorToken(Operator operator) {
+  public static String operatorToken(Operator operator) {
     return switch (operator) {
       case EQUAL -> "==";
       case NOT_EQUAL -> "!=";
@@ -1830,31 +1828,5 @@ public final class ApiV2OpenApiGenerator {
       throw new IllegalArgumentException(label + " must not be blank");
     }
     return value;
-  }
-
-  private static Map<String, Object> ordered(Object... entries) {
-    if (entries.length % 2 != 0) {
-      throw new IllegalArgumentException("Ordered map entries must be key/value pairs");
-    }
-    Map<String, Object> result = new LinkedHashMap<>();
-    for (int i = 0; i < entries.length; i += 2) {
-      result.put(String.class.cast(entries[i]), entries[i + 1]);
-    }
-    return result;
-  }
-
-  private static Map<String, Object> objectMap(Map<?, ?> source) {
-    Map<String, Object> result = new LinkedHashMap<>();
-    source.forEach((key, value) -> result.put(String.class.cast(key), value));
-    return result;
-  }
-
-  @SuppressWarnings("unchecked") // Every key is checked before returning the mutable view.
-  private static Map<String, Object> mutableObjectMap(Object value) {
-    if (!(value instanceof Map<?, ?> map)
-        || map.keySet().stream().anyMatch(key -> !(key instanceof String))) {
-      throw new IllegalArgumentException("Expected an object with string keys");
-    }
-    return (Map<String, Object>) map;
   }
 }
