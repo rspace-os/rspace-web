@@ -6,44 +6,7 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
 import { BookableItemPicker, loadBookableItems } from "../BookableItemPicker";
-
-function cataloguePage(items: unknown[], page = 1, total = items.length) {
-  return {
-    items,
-    page,
-    pageSize: 20,
-    total,
-    facets: { types: ["INSTRUMENT"] },
-  };
-}
-
-function configuration(id: number, name: string) {
-  return {
-    configurationId: id,
-    configurationVersion: 0,
-    targetType: "INSTRUMENT",
-    targetId: id,
-    globalId: `IN${id}`,
-    name,
-    timezone: "Europe/Berlin",
-    ...DEFAULT_SCHEDULING_SETTINGS,
-    effectiveRole: "BOOKER",
-    capabilities: {
-      canEditConfiguration: false,
-      canViewAudit: false,
-      canViewAccess: false,
-      canManageAssignments: false,
-      canManageOwners: false,
-      canCreateBooking: true,
-      canManageOwnBookings: true,
-      canManageAllEvents: false,
-      canCreateBlockout: false,
-      canSubscribeCalendar: true,
-      canLeaveConfiguration: false,
-    },
-    location: null,
-  };
-}
+import { cataloguePage, configuration } from "./creationTestFixtures";
 
 function renderPicker() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

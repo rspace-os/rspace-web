@@ -54,37 +54,28 @@ export function BookingCreationButtonGroup({
     });
   };
 
-  if (!canManageMaintenance) {
-    return (
-      <Button
-        id={bookingTriggerId}
-        type="button"
-        size={size}
-        className="rounded-sm!"
-        disabled={unavailable}
-        onClick={() => begin("BOOKING", bookingTriggerId)}
-      >
-        <PlusIcon aria-hidden="true" data-icon="inline-start" className="size-3.5!" />
-        {t("bookings.actions.newBooking")}
-      </Button>
-    );
-  }
+  const bookingButton = (
+    <Button
+      id={bookingTriggerId}
+      type="button"
+      size={size}
+      className={canManageMaintenance ? undefined : "rounded-sm!"}
+      disabled={unavailable}
+      onClick={() => begin("BOOKING", bookingTriggerId)}
+    >
+      <PlusIcon aria-hidden="true" data-icon="inline-start" className="size-3.5!" />
+      {t("bookings.actions.newBooking")}
+    </Button>
+  );
+
+  if (!canManageMaintenance) return bookingButton;
 
   return (
     <ButtonGroup
       aria-label={t("bookings.actions.createEvent")}
       className="[&>[data-slot]:first-child]:rounded-l-sm! [&>[data-slot]:not(:has(~[data-slot]))]:rounded-r-sm!"
     >
-      <Button
-        id={bookingTriggerId}
-        type="button"
-        size={size}
-        disabled={unavailable}
-        onClick={() => begin("BOOKING", bookingTriggerId)}
-      >
-        <PlusIcon aria-hidden="true" data-icon="inline-start" className="size-3.5!" />
-        {t("bookings.actions.newBooking")}
-      </Button>
+      {bookingButton}
       <Menu>
         <MenuTrigger
           id={maintenanceTriggerId}

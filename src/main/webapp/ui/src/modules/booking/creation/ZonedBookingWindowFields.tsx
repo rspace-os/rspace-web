@@ -118,7 +118,6 @@ export function validateBookingWindow(
 export function ZonedBookingWindowFields({
   displayTimezone,
   schedulingTimezone,
-  timezone,
   slotGranularityMinutes,
   maxBookingDurationMinutes,
   openingHours,
@@ -132,8 +131,6 @@ export function ZonedBookingWindowFields({
 }: {
   displayTimezone?: string;
   schedulingTimezone?: string;
-  /** @deprecated Pass displayTimezone and schedulingTimezone separately. */
-  timezone?: string;
   slotGranularityMinutes: number;
   maxBookingDurationMinutes: number;
   openingHours: readonly OpeningHoursEntry[];
@@ -148,8 +145,8 @@ export function ZonedBookingWindowFields({
   const { t } = useTranslation("booking");
   const fieldId = `booking-window-${useId()}`;
   const windowErrorId = `${fieldId}-errors`;
-  const resolvedDisplayTimezone = displayTimezone ?? timezone ?? "UTC";
-  const resolvedSchedulingTimezone = schedulingTimezone ?? timezone ?? resolvedDisplayTimezone;
+  const resolvedDisplayTimezone = displayTimezone ?? "UTC";
+  const resolvedSchedulingTimezone = schedulingTimezone ?? resolvedDisplayTimezone;
   const result = useMemo(
     () =>
       validateBookingWindow(value, resolvedDisplayTimezone, {
@@ -196,19 +193,19 @@ export function ZonedBookingWindowFields({
     if (snappedTime !== value[timeKey]) change({ [timeKey]: snappedTime, [occurrenceKey]: undefined });
   };
 
-  const endpointInvalid = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
+  const endpointUnresolved = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
     endpointResolution?.kind === "nonexistent" ||
-    (endpointResolution?.kind === "ambiguous" && !value[`${name}Occurrence`]) ||
+    (endpointResolution?.kind === "ambiguous" && !value[`${name}Occurrence`]);
+
+  const endpointInvalid = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
+    endpointUnresolved(name, endpointResolution) ||
     (name === "end" && result.orderInvalid) ||
     (policyInvalid && !allowPolicyMismatch);
 
   const errorDescription = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
     showErrors
       ? [
-          endpointResolution?.kind === "nonexistent" ||
-          (endpointResolution?.kind === "ambiguous" && !value[`${name}Occurrence`])
-            ? `${fieldId}-${name}-error`
-            : undefined,
+          endpointUnresolved(name, endpointResolution) ? `${fieldId}-${name}-error` : undefined,
           !endpointResolution || result.orderInvalid || (policyInvalid && !allowPolicyMismatch)
             ? windowErrorId
             : undefined,

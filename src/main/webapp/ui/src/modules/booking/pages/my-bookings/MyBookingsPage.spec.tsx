@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { Locator } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
 import { bookableItemDetailsHandlers } from "../bookable-items/mocks/bookableItemsMocks";
-import { currentUser } from "../calendar/__tests__/calendarTestHarness";
+import { currentUser } from "../mocks/currentUserFixture";
 import { MyBookingsPageStory } from "./MyBookingsPage.story";
 import { bookingHandlers, upcomingBooking } from "./mocks/bookingMocks";
 import { MyBookingsPageObject } from "./pageObjects/MyBookingsPage";
