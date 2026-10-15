@@ -20,7 +20,7 @@ import {
   type BookingDisplayPreferencesDocument,
   bookingDisplayPreferencesQueryKey,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { currentUser } from "@/modules/booking/pages/calendar/calendarFixtures";
+import { currentUser } from "@/modules/booking/pages/mocks/currentUserFixture";
 import BookingPreferencesPage from "../BookingPreferencesPage";
 import { customNewYorkBookingPreferences, inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
 

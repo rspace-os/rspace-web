@@ -15,7 +15,6 @@ import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
 import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.Group;
-import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableItemNotificationSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -26,7 +25,6 @@ import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.comms.Communication;
-import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Instrument;
@@ -221,12 +219,12 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
 
     TransactionTemplate transaction = new TransactionTemplate(getTxMger());
     org.junit.jupiter.api.Assertions.assertThrows(
-        ForcedRollback.class,
+        BookingNotificationTestFixtures.ForcedRollback.class,
         () ->
             transaction.executeWithoutResult(
                 ignored -> {
                   createBooking(setup, owner);
-                  throw new ForcedRollback();
+                  throw new BookingNotificationTestFixtures.ForcedRollback();
                 }));
 
     assertNoNotification(owner);
@@ -425,7 +423,8 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
   }
 
   private void assertSingleNotification(User recipient, String expectedTimezone) throws Exception {
-    List<Notification> notifications = notificationsFor(recipient);
+    List<Notification> notifications =
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, recipient, CREATED);
     assertEquals(1, notifications.size(), recipient.getUsername());
     assertTrue(
         notifications.get(0).getNotificationMessage().contains(expectedTimezone),
@@ -446,18 +445,10 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
   }
 
   private void assertNoNotification(User recipient) {
-    assertTrue(notificationsFor(recipient).isEmpty(), recipient.getUsername());
-  }
-
-  private List<Notification> notificationsFor(User recipient) {
-    return communicationMgr
-        .getNewNotificationsForUser(
-            recipient.getUsername(),
-            PaginationCriteria.createDefaultForClass(CommunicationTarget.class))
-        .getResults()
-        .stream()
-        .filter(notification -> notification.getNotificationType() == CREATED)
-        .toList();
+    assertTrue(
+        BookingNotificationTestFixtures.notificationsFor(communicationMgr, recipient, CREATED)
+            .isEmpty(),
+        recipient.getUsername());
   }
 
   private void installRecipientSelectPause(
@@ -533,6 +524,4 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
       return List.copyOf(recorded);
     }
   }
-
-  private static final class ForcedRollback extends RuntimeException {}
 }

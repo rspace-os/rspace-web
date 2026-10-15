@@ -516,7 +516,7 @@ describe("BookableItemPage", () => {
     await expect.element(pageObj.heading).toBeVisible();
     await pageObj.auditTab.click();
 
-    const alert = page.getByRole("alert");
+    const alert = pageObj.auditPanel.getByRole("alert");
     await expect.element(alert).toHaveTextContent(title);
     await expect.element(alert).not.toHaveTextContent("Do not display");
     await expect.element(page.getByText("Ada Lovelace (ada)", { exact: true })).not.toBeInTheDocument();
