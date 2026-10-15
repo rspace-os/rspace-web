@@ -6300,9 +6300,10 @@ components:
             The "imported items" container created on the user's Bench for the items whose row
             names no parent container. Null when every imported item had a parent or the import
             failed its checks; after `REVERTED_ON_ERROR` it can name a container that was rolled
-            back.
+            back. Only the basic record fields are listed here: the object is a full Container, as
+            returned by `GET /containers/{containerId}`.
           allOf:
-            - $ref: "#/components/schemas/Container"
+            - $ref: "#/components/schemas/InventoryRecordInfo"
         containerResults:
           nullable: true
           description: >
