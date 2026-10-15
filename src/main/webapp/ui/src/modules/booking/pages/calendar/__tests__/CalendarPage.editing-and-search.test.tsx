@@ -58,7 +58,7 @@ describe("CalendarPage", () => {
               return HttpResponse.json({ status: 412 }, { status: 412 });
             }
             saved = true;
-            return HttpResponse.json(savedBooking);
+            return HttpResponse.json({ ...savedBooking, cancellationReason: null });
           }
           committed = true;
           return failure === "network" ? HttpResponse.error() : HttpResponse.json({ status: 503 }, { status: 503 });
@@ -130,7 +130,7 @@ describe("CalendarPage", () => {
           return HttpResponse.json({ status: 412 }, { status: 412 });
         }
         saved = true;
-        return HttpResponse.json({ ...updated, version: 2 });
+        return HttpResponse.json({ ...updated, version: 2, cancellationReason: null });
       }),
     );
     await renderCalendar();
