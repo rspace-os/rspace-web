@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
-import { DraftMarker } from "../CompactBookingCreationDialog";
+import { DraftMarker } from "../DraftMarker";
 import type { TimelineMovePolicy } from "../timelineMove";
 
 function mockTimelineBounds() {

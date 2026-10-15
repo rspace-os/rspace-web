@@ -24,7 +24,7 @@ import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/searc
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { mutateBookableItems } from "../BookableItemsPage";
+import { mutateBookableItems } from "../BookableItemsContent";
 import { calendarSubscriptionQueryKey } from "../bookableItemCalendarSubscription";
 import {
   bookableItemFixtures,

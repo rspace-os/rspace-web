@@ -1,5 +1,6 @@
 import * as v from "valibot";
-import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
+import { parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
@@ -9,6 +10,31 @@ const InstrumentLocationSchema = v.object({
   parentContainerName: v.nullable(v.string()),
   parentContainerGlobalId: v.nullable(v.string()),
 });
+
+export async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "DELETE",
+    headers: apiV2Headers(token, { "If-Match": `"${version}"` }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+export async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+    method: "PATCH",
+    headers: apiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
+    body: JSON.stringify({ state: "ACTIVE" }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
+
+export async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
+  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
+    method: "DELETE",
+    headers: apiV2Headers(token, { "If-Match": `"${version}"` }),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+}
 
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";

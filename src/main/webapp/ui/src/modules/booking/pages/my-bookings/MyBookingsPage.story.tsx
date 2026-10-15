@@ -18,8 +18,8 @@ import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/searc
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { createBookingEventTestRouteTree } from "../bookings/__tests__/bookingEventTestHarness";
 import { inheritedBrowserBookingPreferences } from "../preferences/bookingPreferencesFixtures";
-import { MyBookingsRoutePage } from "./MyBookingsPage";
 import { bookingsOpenApi } from "./mocks/bookingMocks";
+import { UserBookingsPage } from "./UserBookingsPage";
 
 const storySearch = new URLSearchParams({
   period: "upcoming",
@@ -54,7 +54,7 @@ export function MyBookingsPageStory({
   const pageRoute = createRoute({
     getParentRoute: () => bookingRoute,
     path: "/my-bookings/",
-    component: () => <MyBookingsRoutePage requesterId={84} title="My Bookings" />,
+    component: () => <UserBookingsPage requesterId={84} title="My Bookings" />,
   });
   const router = createRouter({
     routeTree: root.addChildren([

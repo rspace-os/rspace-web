@@ -40,20 +40,19 @@ import {
 } from "./BookingConfigurationActionsMenu";
 import { BookingEventList } from "./BookingEventList";
 import { calendarSubscriptionQueryKey } from "./bookableItemCalendarSubscription";
+import { lifecycleErrorKey } from "./bookableItemLifecycleHelpers";
 import {
+  archiveBookingConfiguration,
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
+  permanentlyDeleteBookingConfiguration,
+  restoreBookingConfiguration,
 } from "./bookingConfiguration";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
 import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
 
-export { BookableItemSkeleton } from "./BookableItemSkeleton";
-
 export type BookableItemTab = "bookings" | "details" | "audit" | "access";
-
-const itemPageClassName = detailPageClassName;
-const itemColumnsClassName = detailColumnsClassName;
 
 export function bookableItemTab(tab: string | undefined): BookableItemTab {
   return tab === "details" || tab === "audit" || tab === "access" ? tab : "bookings";
@@ -75,55 +74,6 @@ async function updateBookingConfiguration(
     body: JSON.stringify(input),
   });
   if (!response.ok) throw await parseApiV2Problem(response);
-}
-
-async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "If-Match": `"${version}"`,
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
-}
-
-async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
-    method: "PATCH",
-    headers: apiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
-    body: JSON.stringify({ state: "ACTIVE" }),
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
-}
-
-async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "If-Match": `"${version}"`,
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
-}
-
-type BookableItemLifecycleErrorKey =
-  | "bookableItemDetails.lifecycleErrors.restore"
-  | "bookableItemDetails.lifecycleErrors.stale"
-  | "bookableItemDetails.lifecycleErrors.stateChanged"
-  | "bookableItemDetails.permanentDeleteDialog.error";
-
-function lifecycleErrorKey(error: unknown, fallback: BookableItemLifecycleErrorKey): BookableItemLifecycleErrorKey {
-  if (error instanceof ApiV2ProblemError && error.status === 412) {
-    return "bookableItemDetails.lifecycleErrors.stale";
-  }
-  if (error instanceof ApiV2ProblemError && error.status === 409) {
-    return "bookableItemDetails.lifecycleErrors.stateChanged";
-  }
-  return fallback;
 }
 
 function PageTab({ value, disabled, children }: { value: BookableItemTab; disabled: boolean; children: ReactNode }) {
@@ -206,7 +156,7 @@ export function LoadedBookableItemPage({
       setEdit(false);
     },
     onError: async (error) => {
-      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         setStaleEdit(true);
         await queryClient.refetchQueries({
           queryKey: ["api-v2", "booking-configurations", "target", globalId],
@@ -226,7 +176,7 @@ export function LoadedBookableItemPage({
       setSaveAnnouncement("archived");
     },
     onError: async (error) => {
-      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
           queryKey: ["api-v2", "booking-configurations", "target", globalId],
         });
@@ -244,7 +194,7 @@ export function LoadedBookableItemPage({
       setSaveAnnouncement("restored");
     },
     onError: async (error) => {
-      if (typeof error === "object" && error !== null && "status" in error && error.status === 412) {
+      if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
           queryKey: ["api-v2", "booking-configurations", "target", globalId],
         });
@@ -260,12 +210,7 @@ export function LoadedBookableItemPage({
       void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "status" in error &&
-        (error.status === 409 || error.status === 412)
-      ) {
+      if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {
         await queryClient.refetchQueries({
           queryKey: ["api-v2", "booking-configurations", "target", globalId],
         });
@@ -333,7 +278,7 @@ export function LoadedBookableItemPage({
   };
 
   return (
-    <main className={itemPageClassName}>
+    <main className={detailPageClassName}>
       {readError ? (
         <Alert variant="destructive">
           <AlertDescription>
@@ -351,14 +296,20 @@ export function LoadedBookableItemPage({
           value={tab}
           onValueChange={(value) => {
             if (updateMutation.isPending) return;
-            const nextTab = value === "details" || value === "audit" || value === "access" ? value : "bookings";
-            setTab(nextTab);
+            setTab(bookableItemTab(value));
           }}
           className="min-w-0 space-y-6"
         >
           {restoreMutation.isError ? (
             <p role="alert" className="text-sm text-destructive">
-              {t(lifecycleErrorKey(restoreMutation.error, "bookableItemDetails.lifecycleErrors.restore"))}
+              {t(
+                lifecycleErrorKey(
+                  restoreMutation.error,
+                  "bookableItemDetails.lifecycleErrors.restore",
+                  "bookableItemDetails.lifecycleErrors.stale",
+                  "bookableItemDetails.lifecycleErrors.stateChanged",
+                ),
+              )}
             </p>
           ) : null}
           <BookableItemSpotlightHeader
@@ -414,7 +365,7 @@ export function LoadedBookableItemPage({
             ) : null}
           </Tabs.List>
 
-          <div className={itemColumnsClassName}>
+          <div className={detailColumnsClassName}>
             <div className="min-w-0">
               <Tabs.Panel value="bookings" className="space-y-8 outline-none">
                 <section className="space-y-4" aria-labelledby="upcoming-events-heading">
@@ -581,7 +532,14 @@ export function LoadedBookableItemPage({
           </label>
           {permanentDeleteMutation.isError ? (
             <p role="alert" className="text-sm text-destructive">
-              {t(lifecycleErrorKey(permanentDeleteMutation.error, "bookableItemDetails.permanentDeleteDialog.error"))}
+              {t(
+                lifecycleErrorKey(
+                  permanentDeleteMutation.error,
+                  "bookableItemDetails.permanentDeleteDialog.error",
+                  "bookableItemDetails.lifecycleErrors.stale",
+                  "bookableItemDetails.lifecycleErrors.stateChanged",
+                ),
+              )}
             </p>
           ) : null}
           <AlertDialogFooter>
