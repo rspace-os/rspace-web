@@ -5,12 +5,8 @@ import { HttpResponse, http } from "msw";
  * callback URL with a fake auth code, mirroring every simple OAuth-authorize
  * endpoint in this suite.
  */
-export function mockOAuthAuthorize(
-  path: string,
-  mockCode: string,
-  opts: { redirectParam?: string; echoState?: boolean } = {},
-) {
-  const { redirectParam = "redirect_uri", echoState = true } = opts;
+export function mockOAuthAuthorize(path: string, mockCode: string, opts: { redirectParam?: string } = {}) {
+  const { redirectParam = "redirect_uri" } = opts;
   return http.get(path, ({ request }) => {
     const url = new URL(request.url);
     const redirectUri = url.searchParams.get(redirectParam);
@@ -19,10 +15,8 @@ export function mockOAuthAuthorize(
     }
     const target = new URL(redirectUri);
     target.searchParams.set("code", mockCode);
-    if (echoState) {
-      const state = url.searchParams.get("state");
-      if (state) target.searchParams.set("state", state);
-    }
+    const state = url.searchParams.get("state");
+    if (state) target.searchParams.set("state", state);
     return HttpResponse.redirect(target.toString(), 302);
   });
 }

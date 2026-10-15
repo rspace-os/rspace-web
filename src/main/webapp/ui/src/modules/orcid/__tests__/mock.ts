@@ -5,7 +5,7 @@ export const MOCK_ORCID_ID = "0000-0002-1825-0097";
 export const MOCK_ORCID_NAME = "Mock Orcid User";
 
 export const orcidHandlers = [
-  mockOAuthAuthorize("/orcid/oauth/authorize", "mock-orcid-auth-code", { echoState: true }),
+  mockOAuthAuthorize("/orcid/oauth/authorize", "mock-orcid-auth-code"),
   http.post("/orcid/oauth/token", () =>
     HttpResponse.json({
       access_token: "mock-orcid-access-token",
