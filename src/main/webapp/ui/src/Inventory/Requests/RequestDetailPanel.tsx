@@ -369,12 +369,14 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     // openTransferDialog's comment), meaning transferRecipient could be any user, not just the
     // requester this dialog exists to hand the sample to.
     if (!transferRecipient || !transferRequesterPerson || isProcessingAction) return;
+    // The "wizard" radio transfers the sample the Operations Wizard just created, not the
+    // originally requested one; wizardCreatedSample is null for every other route into this
+    // dialog, in which case it's the same sample as always - matching the dialog's own heading
+    // above, which names the same sample the same way.
+    const transferredSampleName = wizardCreatedSample?.name ?? request.sample.name;
     transferMutation.mutate(
       {
         requestId: request.id,
-        // The "wizard" radio transfers the sample the Operations Wizard just created, not the
-        // originally requested one; wizardCreatedSample is null for every other route into this
-        // dialog, in which case it's the same sample as always.
         sampleId: wizardCreatedSample?.id ?? request.sample.id,
         newOwnerUsername: transferRecipient.username,
         transferredSampleGlobalId: wizardCreatedSample?.globalId,
@@ -387,7 +389,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               variant: "success",
               message: t("requestsManagement.detail.transferSuccessMessage", {
                 id: request.id,
-                sampleName: request.sample.name,
+                sampleName: transferredSampleName,
                 requester: `${request.requester.firstName} ${request.requester.lastName}`,
               }),
             }),
@@ -411,11 +413,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               message: sampleTransferItselfFailed
                 ? t("requestsManagement.detail.transferFailedAfterFulfilMessage", {
                     id: request.id,
-                    sampleName: request.sample.name,
+                    sampleName: transferredSampleName,
                     requester: requesterFullName,
                   })
                 : t("requestsManagement.detail.transferCancelledErrorMessage", {
-                    sampleName: request.sample.name,
+                    sampleName: transferredSampleName,
                   }),
             }),
           );
@@ -1062,13 +1064,6 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             color="callToAction"
             disableElevation
             onClick={submitTransfer}
-            sx={{
-              backgroundColor: darken(theme.palette.primary.main, 0.5),
-              color: "white",
-              "&:hover": {
-                backgroundColor: darken(theme.palette.primary.main, 0.55),
-              },
-            }}
           >
             {t("common:actions.transfer")}
           </Button>
