@@ -21,7 +21,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.user.UserResourceOperations;
 import com.researchspace.booking.api.v2.BookingConfigurationResourceOperations;
-import com.researchspace.booking.api.v2.BookingInstrumentRelationshipOperations;
+import com.researchspace.booking.api.v2.BookingRelationshipTargetOperations;
 import com.researchspace.booking.api.v2.TimeSlotBookingResourceOperations;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.config.BookingTimeConfig;
@@ -277,8 +277,7 @@ class ApiV2ResourceConfigTest {
     context.register(
         BookingTimeConfig.class,
         BookingConfigurationResourceOperations.class,
-        BookingInstrumentRelationshipOperations.class,
-        com.researchspace.booking.api.v2.BookingLocationRelationshipOperations.class,
+        BookingRelationshipTargetOperations.class,
         TimeSlotBookingResourceOperations.class,
         InstrumentResourceOperations.class,
         MaintenanceResourceOperations.class,

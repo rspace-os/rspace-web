@@ -60,7 +60,7 @@ class BookingLocationFilterManagerImplTest {
                 enabled,
                 new FilterExpression.Comparison(
                     "target.value", Operator.IN, List.of(3L, 5L), false))),
-        manager.resolveLocations(filter, caller));
+        resolve(filter));
   }
 
   @Test
@@ -72,21 +72,18 @@ class BookingLocationFilterManagerImplTest {
 
     assertEquals(
         targets(Operator.NOT_IN, 5L),
-        manager.resolveLocations(
+        resolve(
             new FilterExpression.Comparison(
-                "location", Operator.NOT_IN, List.of(reference(12L), reference(7L)), false),
-            caller));
+                "location", Operator.NOT_IN, List.of(reference(12L), reference(7L)), false)));
     assertEquals(
         targets(Operator.IN, 5L),
-        manager.resolveLocations(
-            new FilterExpression.Comparison("location.value", Operator.IN, List.of(12L, 7L), false),
-            caller));
+        resolve(
+            new FilterExpression.Comparison(
+                "location.value", Operator.IN, List.of(12L, 7L), false)));
     assertEquals(
-        targets(Operator.IN, 5L, 6L),
-        manager.resolveLocations(comparison("location", Operator.EXISTS, true), caller));
+        targets(Operator.IN, 5L, 6L), resolve(comparison("location", Operator.EXISTS, true)));
     assertEquals(
-        targets(Operator.NOT_IN, 5L, 6L),
-        manager.resolveLocations(comparison("location", Operator.EXISTS, false), caller));
+        targets(Operator.NOT_IN, 5L, 6L), resolve(comparison("location", Operator.EXISTS, false)));
   }
 
   @Test
@@ -96,11 +93,10 @@ class BookingLocationFilterManagerImplTest {
 
     assertEquals(
         ApiV2BookingLocationResource.noTarget(),
-        manager.resolveLocations(comparison("location", Operator.EQUAL, reference(99L)), caller));
+        resolve(comparison("location", Operator.EQUAL, reference(99L))));
     assertEquals(
         targets(Operator.NOT_IN, -1L),
-        manager.resolveLocations(
-            comparison("location", Operator.NOT_EQUAL, reference(99L)), caller));
+        resolve(comparison("location", Operator.NOT_EQUAL, reference(99L))));
   }
 
   @Test
@@ -109,10 +105,10 @@ class BookingLocationFilterManagerImplTest {
         .thenReturn(Set.of(5L));
     FilterExpression location = comparison("location", Operator.EQUAL, reference(12L));
 
-    manager.resolveLocations(new FilterExpression.And(List.of(location, location)), caller);
+    resolve(new FilterExpression.And(List.of(location, location)));
     FilterExpression unrelated = comparison("enabled", Operator.EQUAL, true);
 
-    assertSame(unrelated, manager.resolveLocations(unrelated, caller));
+    assertSame(unrelated, resolve(unrelated));
     verify(instruments, times(1)).findConfiguredInstrumentIdsInReadableParents(Set.of(12L), caller);
   }
 
@@ -230,9 +226,7 @@ class BookingLocationFilterManagerImplTest {
     CollectionQueryException refused =
         assertThrows(
             CollectionQueryException.class,
-            () ->
-                manager.resolveLocations(
-                    comparison("location", Operator.EQUAL, reference(12L)), caller));
+            () -> resolve(comparison("location", Operator.EQUAL, reference(12L))));
     assertEquals(CollectionQueryException.Reason.COMPLEXITY, refused.getReason());
   }
 
@@ -266,6 +260,10 @@ class BookingLocationFilterManagerImplTest {
     assertEquals(
         java.util.Map.of(7L, new ApiV2BookingLocationResource.Location(7L, "BE7", "WB reader")),
         manager.findReadableLocations(Set.of(7L, 12L), caller));
+  }
+
+  private FilterExpression resolve(FilterExpression filter) {
+    return manager.resolveLocations(ResourceRequest.unpaged(filter), caller).filter();
   }
 
   private static RsqlCollectionQuery.Predicate predicate(String expression) {

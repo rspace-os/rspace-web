@@ -5,22 +5,20 @@ import { Button } from "@/modules/common/ui/button";
 
 export function BookingNotificationBulkActions({
   selection,
-  selectedConfigurationIds,
   pending,
   onAction,
 }: {
   selection: TableListSelectionContext;
-  selectedConfigurationIds: readonly number[];
   pending: boolean;
   onAction: (configurationIds: readonly number[], enabled: boolean) => Promise<unknown>;
 }) {
   const { t } = useTranslation("booking");
   const [failed, setFailed] = useState(false);
+  const selectedConfigurationIds = [...selection.selectedRowIds].map(Number);
   const run = async (enabled: boolean) => {
     setFailed(false);
     try {
       await onAction(selectedConfigurationIds, enabled);
-      selection.clearSelection();
     } catch {
       setFailed(true);
     }

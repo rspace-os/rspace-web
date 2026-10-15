@@ -9,6 +9,7 @@ import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
@@ -63,7 +64,7 @@ class RelationshipTargetFilterTest {
                     ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
                     AccessPolicy.readOnly(readAccess)),
-                com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
+                ApiV2BookingLocationResource.DESCRIPTION));
     return RelationshipReadAccess.forActor(registry, null);
   }
 

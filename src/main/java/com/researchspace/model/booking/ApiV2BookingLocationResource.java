@@ -59,17 +59,18 @@ public final class ApiV2BookingLocationResource {
             Field.<Location, Long>readOnly(
                     "id", "id", CollectionFieldTypes.longNumber(), Location::id)
                 .withQueryCapabilities(false, true)
-                .documented(documentation("Location ID", "Container identifier.", "12")),
+                .documented(
+                    OpenApiSchemaDocumentation.of("Location ID", "Container identifier.", "12")),
             Field.<Location, String>readOnly(
                     "globalId", "globalId", CollectionFieldTypes.text(), Location::globalId)
                 .withQueryCapabilities(false, false)
                 .documented(
-                    documentation(
+                    OpenApiSchemaDocumentation.of(
                         "Global ID", "Container or workbench global identifier.", "IC12")),
             Field.<Location, String>readOnly(
                     "name", "name", CollectionFieldTypes.text(255), Location::name)
                 .withQueryCapabilities(false, false)
-                .documented(documentation("Name", "Container name.", "Cold room"))),
+                .documented(OpenApiSchemaDocumentation.of("Name", "Container name.", "Cold room"))),
         "id",
         List.of(new Sort("id", true)),
         AccessPolicy.readOnly(readAccess));
@@ -105,11 +106,6 @@ public final class ApiV2BookingLocationResource {
   /** An always-false target comparison, for a location that names no readable item. */
   public static FilterExpression noTarget() {
     return new FilterExpression.Comparison("target.value", Operator.IN, List.of(-1L), false);
-  }
-
-  private static OpenApiSchemaDocumentation documentation(
-      String title, String description, String example) {
-    return OpenApiSchemaDocumentation.of(title, description, example);
   }
 
   private ApiV2BookingLocationResource() {}

@@ -6,7 +6,11 @@ import {
 } from "@/modules/common/relationship-picker/relationshipSources";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { bookingApiV2Headers } from "./apiV2";
-import { fetchBookingCatalogue, fetchBookingCatalogueLocations } from "./bookingCatalogue";
+import {
+  BookingCatalogueLocationSchema,
+  fetchBookingCatalogue,
+  fetchBookingCatalogueLocations,
+} from "./bookingCatalogue";
 
 const targetSchema = v.object({ id: v.number(), name: v.string(), globalId: v.string() });
 const referenceSchema = v.object({
@@ -86,7 +90,6 @@ export const bookingInstrumentSource: RelationshipSource = {
   },
 };
 
-const locationSchema = v.object({ globalId: v.string(), name: v.string() });
 /** Containers and workbenches share one ID space, so either global ID names the same row. */
 const locationId = (value: string) => databaseIdFromGlobalId(value, "IC") ?? databaseIdFromGlobalId(value, "BE");
 const canonicalLocation = (value: string) => {
@@ -120,7 +123,7 @@ export const bookingLocationSource: RelationshipSource = {
     );
   },
   toOption: (document, context) => {
-    const location = parseOrThrow(locationSchema, document);
+    const location = parseOrThrow(BookingCatalogueLocationSchema, document);
     const value = canonicalLocation(location.globalId);
     if (value === null) throw new Error("Booking location has an invalid global ID");
     return {

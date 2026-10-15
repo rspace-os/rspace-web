@@ -241,13 +241,21 @@ describe("BookingEventPage", () => {
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });
 
-  it("conceals missing or inaccessible ids behind one unavailable state", async () => {
-    server.use(http.get("/api/v2/bookings/41", () => new HttpResponse(null, { status: 404 })));
+  it.each([404, 408, 429])("conceals booking read status %s behind one unavailable state", async (status) => {
+    let requests = 0;
+    server.use(
+      http.get("/api/v2/bookings/41", () => {
+        requests += 1;
+        return new HttpResponse(null, { status });
+      }),
+    );
     renderPage();
 
     expect(await screen.findByText("booking:bookings.details.unavailableTitle")).toBeVisible();
+    expect(screen.getByText("booking:bookings.details.unavailableDescription")).toBeVisible();
     expect(screen.getByRole("link", { name: "booking:bookings.details.returnToMyBookings" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "common:actions.retry" })).not.toBeInTheDocument();
+    expect(requests).toBe(1);
   });
 
   it("conceals a busy-only response behind the unavailable state", async () => {

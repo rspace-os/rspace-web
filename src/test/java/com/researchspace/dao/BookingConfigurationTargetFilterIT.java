@@ -16,6 +16,7 @@ import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -361,7 +362,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             ApiV2BookingConfigurationResource.DESCRIPTION,
             ApiV2UserResource.DESCRIPTION,
             bookingTarget,
-            com.researchspace.model.booking.ApiV2BookingLocationResource.DESCRIPTION));
+            ApiV2BookingLocationResource.DESCRIPTION));
   }
 
   private static CollectionDescription<BookingConfiguration> bookingConfigurations(
