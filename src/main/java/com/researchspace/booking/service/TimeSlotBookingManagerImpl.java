@@ -187,8 +187,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
         bookings.stream()
             .filter(TimeSlotBooking::isCanViewConfiguration)
             .map(TimeSlotBooking::getVisibleTarget)
-            .filter(Objects::nonNull)
-            .filter(target -> target.type() == BookableTargetType.INSTRUMENT)
+            .filter(TimeSlotBookingManagerImpl::isInstrumentTarget)
             .map(BookableTargetReference::id)
             .collect(java.util.stream.Collectors.toSet());
     Map<Long, String> itemNames = instrumentDao.getNamesByIds(targetIds);
@@ -197,14 +196,15 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
             .map(
                 booking -> {
                   BookableTargetReference target = booking.getVisibleTarget();
-                  String itemName =
-                      target == null || target.type() != BookableTargetType.INSTRUMENT
-                          ? null
-                          : itemNames.get(target.id());
+                  String itemName = isInstrumentTarget(target) ? itemNames.get(target.id()) : null;
                   return CalendarEvent.of(booking, itemName);
                 })
             .toList();
     return new CalendarSource("booking:calendar.feed.myBookings", "UTC", calendarEvents, true);
+  }
+
+  private static boolean isInstrumentTarget(BookableTargetReference target) {
+    return target != null && target.type() == BookableTargetType.INSTRUMENT;
   }
 
   private Date calendarCutoff(User actor, Date refreshedAt, int maxEvents) {

@@ -3,6 +3,8 @@ import { GlobeIcon, UsersIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { firstGrapheme } from "@/modules/common/i18n/localeFormat";
+import { useQueryIdentityScope } from "@/modules/common/queries/queryIdentityScope";
+import { resourceAccessQueries } from "@/modules/common/resource-access/resourceAccess";
 import { Avatar, AvatarFallback } from "@/modules/common/ui/avatar";
 import { Badge } from "@/modules/common/ui/badge";
 import {
@@ -14,7 +16,6 @@ import {
   ComboboxList,
 } from "@/modules/common/ui/combobox";
 import { Label } from "@/modules/common/ui/label";
-import { searchResourceGrantees } from "./resourceAccess";
 import type { ResourceGranteeDirectoryEntry } from "./schemas";
 
 const MINIMUM_QUERY = 2;
@@ -47,9 +48,9 @@ export function GranteePicker({
   const [input, setInput] = useState("");
   const query = input.trim();
 
+  const scope = useQueryIdentityScope();
   const directory = useQuery({
-    queryKey: ["api-v2", resource, resourceId, "access-grantees", token, query],
-    queryFn: ({ signal }) => searchResourceGrantees(resource, resourceId, query, token, signal),
+    ...resourceAccessQueries.grantees(resource, resourceId, query, token, scope),
     enabled: query.length >= MINIMUM_QUERY,
   });
 

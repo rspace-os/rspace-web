@@ -5,7 +5,6 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingConfiguration;
-import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.service.FeatureFlagManager;
@@ -101,13 +100,6 @@ public class BookingConfigurationProtectedResourceAccess
   @Override
   public String manageOwnersCapability() {
     return BookingResourceRoleScheme.MANAGE_OWNERS;
-  }
-
-  @Override
-  public void beforeAccessMutation(BookingConfiguration configuration) {
-    if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
-      throw new BookingConfigurationLifecycleException();
-    }
   }
 
   @Override
