@@ -198,9 +198,9 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(booking.getByRole("link", { name: "View details" })).toBeVisible();
     await expect.element(booking.getByRole("link", { name: "Edit" })).toBeVisible();
 
-    await timeline.outsideButton.click();
+    await timeline.outsideInput.click();
     await expect.element(booking).not.toBeInTheDocument();
-    await expect.element(timeline.outsideButton).toHaveFocus();
+    await expect.element(timeline.outsideInput).toHaveFocus();
 
     await timeline.open("Scheduled maintenance");
     const blockout = timeline.popup("11:00 AM–12:00 PM");
@@ -216,8 +216,8 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(page.getByText("Cell imaging with the 63x oil objective.")).not.toBeInTheDocument();
     await expect.element(page.getByText("Read-only booking purpose.")).not.toBeInTheDocument();
 
-    await timeline.outsideButton.click();
-    await expect.element(timeline.outsideButton).toHaveFocus();
+    await timeline.outsideInput.click();
+    await expect.element(timeline.outsideInput).toHaveFocus();
   });
 
   test("has no accessibility violations with an expanded event", async () => {
