@@ -40,6 +40,8 @@ import java.time.format.ResolverStyle;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -49,6 +51,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -246,13 +249,13 @@ public final class ApiV2AuditLog {
     return finalMillisecond.isAfter(inclusiveTo) ? containingDay.minusDays(1) : containingDay;
   }
 
-  private static Instant instant(java.util.Date date) {
+  private static Instant instant(Date date) {
     return date == null ? null : date.toInstant();
   }
 
   private static void requireSearchableRange(ApiV2AuditQuery query) {
-    java.util.Date from = query.getDateFrom();
-    java.util.Date to = query.getDateTo();
+    Date from = query.getDateFrom();
+    Date to = query.getDateTo();
     if (from == null || to == null) {
       return;
     }
@@ -356,16 +359,7 @@ public final class ApiV2AuditLog {
             source.getDescription(),
             Collections.unmodifiableMap(payload),
             targetValue == null ? null : targetValue.toString());
-    return new ApiV2AuditEvent(
-        eventId(withoutId),
-        withoutId.timestamp(),
-        withoutId.username(),
-        withoutId.fullName(),
-        withoutId.domain(),
-        withoutId.action(),
-        withoutId.description(),
-        withoutId.payload(),
-        withoutId.target());
+    return withoutId.withEventId(eventId(withoutId));
   }
 
   static String eventId(ApiV2AuditEvent event) {
@@ -380,7 +374,7 @@ public final class ApiV2AuditLog {
         writeString(output, event.description());
         writeValue(output, event.payload());
       }
-      return hex(digest(bytes.toByteArray()));
+      return HexFormat.of().formatHex(digest(bytes.toByteArray()));
     } catch (IOException ex) {
       throw new IllegalStateException("Cannot canonicalize an audit event", ex);
     }
@@ -394,7 +388,7 @@ public final class ApiV2AuditLog {
       digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(id.length).array());
       digest.update(id);
     }
-    return hex(digest.digest());
+    return HexFormat.of().formatHex(digest.digest());
   }
 
   private static void writeValue(DataOutputStream output, Object value) throws IOException {
@@ -414,7 +408,7 @@ public final class ApiV2AuditLog {
       List<?> values =
           iterable instanceof List<?> list
               ? list
-              : java.util.stream.StreamSupport.stream(iterable.spliterator(), false).toList();
+              : StreamSupport.stream(iterable.spliterator(), false).toList();
       output.writeInt(values.size());
       for (Object item : values) {
         writeValue(output, item);
@@ -451,15 +445,6 @@ public final class ApiV2AuditLog {
     } catch (NoSuchAlgorithmException ex) {
       throw new IllegalStateException("SHA-256 is unavailable", ex);
     }
-  }
-
-  private static String hex(byte[] bytes) {
-    StringBuilder result = new StringBuilder(bytes.length * 2);
-    for (byte value : bytes) {
-      result.append(Character.forDigit((value >>> 4) & 0x0f, 16));
-      result.append(Character.forDigit(value & 0x0f, 16));
-    }
-    return result.toString();
   }
 
   private record AuditMetadata(Method identifierMethod) {
