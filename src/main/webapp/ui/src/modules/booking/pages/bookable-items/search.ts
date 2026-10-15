@@ -1,7 +1,8 @@
+import { bookingFormSearch } from "../bookingFormSearch";
+
 export function addBookableItemSearch(search: Record<string, unknown>): { target?: string } {
-  return {
-    ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
-  };
+  const { target } = bookingFormSearch(search);
+  return target === undefined ? {} : { target };
 }
 
 export function bookableItemSearch(search: Record<string, unknown>): { edit?: boolean } {

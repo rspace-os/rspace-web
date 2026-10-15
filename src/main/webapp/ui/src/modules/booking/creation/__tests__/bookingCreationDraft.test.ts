@@ -18,6 +18,38 @@ describe("bookingCreationDraftFromHistoryState", () => {
     expect(bookingCreationDraftFromHistoryState({ bookingCreationDraft: draft }, "IN124")).toBeUndefined();
   });
 
+  it("keeps empty fields, omits undefined optional values, and strips unknown fields", () => {
+    const input = {
+      targetGlobalId: undefined,
+      unknown: "ignored",
+      window: {
+        startDate: "",
+        startTime: "",
+        startOccurrence: undefined,
+        endDate: "",
+        endTime: "",
+        endOccurrence: undefined,
+        unknown: true,
+      },
+      purpose: "",
+    };
+
+    expect(bookingCreationDraftFromHistoryState({ bookingCreationDraft: input }, undefined)).toEqual({
+      window: { startDate: "", startTime: "", endDate: "", endTime: "" },
+      purpose: "",
+    });
+  });
+
+  it("strips unrecognized fields while retaining an explicitly selected occurrence", () => {
+    const input = {
+      ...draft,
+      unknown: "ignored",
+      window: { ...draft.window, extra: true },
+    };
+
+    expect(bookingCreationDraftFromHistoryState({ bookingCreationDraft: input }, "IN123")).toEqual(draft);
+  });
+
   it.each([
     { ...draft, purpose: "x".repeat(1001) },
     { ...draft, targetGlobalId: "SA123" },

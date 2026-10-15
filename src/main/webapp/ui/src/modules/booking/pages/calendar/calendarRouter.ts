@@ -1,7 +1,7 @@
 import { createRootRoute, createRoute, createRouter, Outlet, type RouterHistory } from "@tanstack/react-router";
-import { isPlainDate } from "@/modules/booking/domain/bookingTime";
 import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
 import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import AddBookingPage from "@/modules/booking/pages/bookings/AddBookingPage";
 import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPage from "../BookingPage";
@@ -16,10 +16,7 @@ export function createCalendarRouter(history: RouterHistory) {
         createRoute({
           getParentRoute: () => booking,
           path: "/calendar/",
-          validateSearch: (search: Record<string, unknown>): { date?: string; target?: string } => ({
-            date: typeof search.date === "string" && isPlainDate(search.date) ? search.date : undefined,
-            ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
-          }),
+          validateSearch: bookingFormSearch,
           component: CalendarPage,
         }),
         createRoute({

@@ -12,22 +12,10 @@ import { HttpResponse, http } from "msw";
 import { type ReactNode, Suspense } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { currentWallClock } from "@/modules/booking/domain/bookingTime";
-import { BookingForm, type BookingFormSubmission, type EditableBooking } from "../BookingForm";
-
-const target = {
-  configurationId: 7,
-  targetId: 123,
-  globalId: "IN123",
-  name: "Confocal microscope",
-  timezone: "Europe/Berlin",
-  slotGranularityMinutes: 5,
-  openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-};
+import { BookingForm, type BookingFormSubmission } from "../BookingForm";
+import { cataloguePage, editableBooking, confocalTarget as target } from "./creationTestFixtures";
 
 it("shows every independently configured weekday and the scheduling timezone", async () => {
   renderForm(
@@ -52,57 +40,6 @@ it("shows every independently configured weekday and the scheduling timezone", a
   expect(screen.getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(5);
   expect(screen.getByText(target.timezone)).toBeVisible();
 });
-
-const editableBooking = {
-  id: 41,
-  version: 0,
-  target: {
-    relationTo: "booking-instruments",
-    globalId: "IN123",
-    value: { id: 123, name: "Confocal microscope", deleted: false },
-  },
-  timezone: "Europe/Berlin",
-  start: "2026-10-25T01:30:00Z",
-  end: "2026-10-25T02:30:00Z",
-  state: "CONFIRMED",
-  kind: "BOOKING",
-  privacy: "full",
-  purpose: "Imaging",
-  bookedBy: "Ada Lovelace (ada)",
-  canEdit: true,
-  canCancel: true,
-  createdAt: "2026-08-12T10:00:00Z",
-  updatedAt: "2026-08-12T10:00:00Z",
-} satisfies EditableBooking;
-
-function cataloguePage(options: readonly (typeof target)[]) {
-  return {
-    items: options.map((option) => ({
-      ...option,
-      configurationVersion: 0,
-      targetType: "INSTRUMENT",
-      effectiveRole: "BOOKER",
-      capabilities: {
-        canEditConfiguration: false,
-        canViewAudit: false,
-        canViewAccess: false,
-        canManageAssignments: false,
-        canManageOwners: false,
-        canCreateBooking: true,
-        canManageOwnBookings: true,
-        canManageAllEvents: false,
-        canCreateBlockout: false,
-        canSubscribeCalendar: true,
-        canLeaveConfiguration: false,
-      },
-      location: null,
-    })),
-    page: 1,
-    pageSize: 20,
-    total: options.length,
-    facets: { types: ["INSTRUMENT"] },
-  };
-}
 
 function renderForm(node: ReactNode) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -285,26 +222,45 @@ describe("BookingForm", () => {
     expect(within(end).getByLabelText("booking:bookings.form.time")).toHaveAttribute("step", step);
   });
 
-  it("snaps typed add-form times to the nearest configured interval", async () => {
+  it.each(["add", "edit"] as const)("snaps typed %s-form times to the nearest configured interval", async (mode) => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
-    renderForm(
-      <BookingForm
-        mode="add"
-        eventKind="BOOKING"
-        initialTarget={{ ...target, slotGranularityMinutes: 10 }}
-        initialDate="2026-08-17"
-        token="token"
-        pending={false}
-        onSubmit={submit}
-      />,
-    );
+    const form =
+      mode === "add" ? (
+        <BookingForm
+          mode="add"
+          eventKind="BOOKING"
+          initialTarget={{ ...target, slotGranularityMinutes: 10 }}
+          initialDate="2026-08-17"
+          token="token"
+          pending={false}
+          onSubmit={submit}
+        />
+      ) : (
+        <BookingForm
+          mode="edit"
+          booking={{
+            ...editableBooking,
+            start: "2026-08-17T07:00:00Z",
+            end: "2026-08-17T08:00:00Z",
+          }}
+          configuration={{ ...target, slotGranularityMinutes: 10 }}
+          token="token"
+          pending={false}
+          onSubmit={submit}
+        />
+      );
+    renderForm(form);
 
     const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
     const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
     const startTime = within(start).getByLabelText("booking:bookings.form.time");
     const endTime = within(end).getByLabelText("booking:bookings.form.time");
+    if (mode === "edit") {
+      await user.clear(startTime);
+      await user.clear(endTime);
+    }
     await user.type(startTime, "09:04");
     await user.tab();
     expect(startTime).toHaveValue("09:00");
@@ -312,47 +268,12 @@ describe("BookingForm", () => {
     await user.tab();
     expect(endTime).toHaveValue("10:10");
 
-    await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
-    expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
-    expect(submit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        window: { start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:10:00Z" },
+    await user.click(
+      screen.getByRole("button", {
+        name: mode === "add" ? "booking:bookings.form.submit" : "booking:bookings.form.save",
       }),
     );
-  });
-
-  it("snaps typed edit-form times to the nearest configured interval", async () => {
-    const user = userEvent.setup();
-    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
-    renderForm(
-      <BookingForm
-        mode="edit"
-        booking={{
-          ...editableBooking,
-          start: "2026-08-17T07:00:00Z",
-          end: "2026-08-17T08:00:00Z",
-        }}
-        configuration={{ ...target, slotGranularityMinutes: 10 }}
-        token="token"
-        pending={false}
-        onSubmit={submit}
-      />,
-    );
-
-    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
-    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
-    const startTime = within(start).getByLabelText("booking:bookings.form.time");
-    const endTime = within(end).getByLabelText("booking:bookings.form.time");
-    await user.clear(startTime);
-    await user.type(startTime, "09:04");
-    await user.tab();
-    expect(startTime).toHaveValue("09:00");
-    await user.clear(endTime);
-    await user.type(endTime, "10:06");
-    await user.tab();
-    expect(endTime).toHaveValue("10:10");
-
-    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+    expect(screen.queryByText("booking:bookings.errors.granularity")).not.toBeInTheDocument();
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
         window: { start: "2026-08-17T07:00:00Z", end: "2026-08-17T08:10:00Z" },
@@ -579,7 +500,7 @@ describe("BookingForm", () => {
         initialTarget={{
           ...target,
           timezone: "UTC",
-          openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
+          openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
         }}
         initialWindow={{
           startDate: "2026-08-17",

@@ -8,7 +8,8 @@ describe("ZonedBookingWindowFields", () => {
     const onChange = vi.fn();
     render(
       <ZonedBookingWindowFields
-        timezone="Europe/Berlin"
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
         openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
@@ -140,7 +141,8 @@ describe("ZonedBookingWindowFields", () => {
     (openingStart, openingEnd, maxBookingDurationMinutes, valid) => {
       render(
         <ZonedBookingWindowFields
-          timezone="UTC"
+          displayTimezone="UTC"
+          schedulingTimezone="UTC"
           slotGranularityMinutes={5}
           openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: openingStart, end: openingEnd }))}
           maxBookingDurationMinutes={maxBookingDurationMinutes}
@@ -186,7 +188,8 @@ describe("ZonedBookingWindowFields", () => {
   it("blocks a nonexistent spring-forward time", () => {
     render(
       <ZonedBookingWindowFields
-        timezone="Europe/Berlin"
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
         openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
@@ -208,7 +211,8 @@ describe("ZonedBookingWindowFields", () => {
     const onChange = vi.fn();
     render(
       <ZonedBookingWindowFields
-        timezone="Europe/Berlin"
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={5}
         maxBookingDurationMinutes={0}
         openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
@@ -230,7 +234,8 @@ describe("ZonedBookingWindowFields", () => {
   it("uses elapsed instants for the maximum duration", () => {
     render(
       <ZonedBookingWindowFields
-        timezone="Europe/Berlin"
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={1}
         maxBookingDurationMinutes={60}
         openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
@@ -271,7 +276,8 @@ describe("ZonedBookingWindowFields", () => {
   it("accepts a booking exactly at the maximum elapsed duration", () => {
     render(
       <ZonedBookingWindowFields
-        timezone="Europe/Berlin"
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
         slotGranularityMinutes={1}
         maxBookingDurationMinutes={60}
         openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
