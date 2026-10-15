@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Pins the CSV import schemas of the published Inventory OpenAPI spec to the properties the
@@ -127,6 +129,25 @@ class InventoryImportApiSpecTest {
     assertEquals(List.of(), rejectingNull);
   }
 
+  /**
+   * Scalar overflows its stack rendering a schema that refers back to itself, as Container does.
+   */
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "InventoryImportParseResult",
+        "InventoryImportSampleParseResult",
+        "InventoryImportInstrumentParseResult",
+        "InventoryImportResult",
+        "InventoryImportPartialResult",
+        "InventoryImportSampleImportResult",
+        "InventoryImportInstrumentImportResult",
+        "InventoryBulkOperationRecordResult"
+      })
+  void importSchemaReachesNoCycle(String schemaName) {
+    assertEquals(List.of(), cycleFrom(SCHEMAS + schemaName, new ArrayList<>(), new HashSet<>()));
+  }
+
   static Stream<Arguments> enumAndJavaEnum() {
     return Stream.of(
         Arguments.of("InventoryRecordInfo/properties/type", ApiInventoryRecordType.class),
@@ -170,6 +191,27 @@ class InventoryImportApiSpecTest {
               name ->
                   findNullableReferencesRejectingNull(node.get(name), path + "/" + name, found));
     }
+  }
+
+  private static List<String> cycleFrom(String ref, List<String> path, Set<String> acyclic) {
+    if (path.contains(ref)) {
+      List<String> cycle = new ArrayList<>(path.subList(path.indexOf(ref), path.size()));
+      cycle.add(ref);
+      return cycle;
+    }
+    if (acyclic.contains(ref)) {
+      return List.of();
+    }
+    path.add(ref);
+    for (JsonNode next : spec.at(ref.substring(1)).findValues("$ref")) {
+      List<String> cycle = cycleFrom(next.asText(), path, acyclic);
+      if (!cycle.isEmpty()) {
+        return cycle;
+      }
+    }
+    path.remove(path.size() - 1);
+    acyclic.add(ref);
+    return List.of();
   }
 
   private static boolean declaresTypeWithoutNullable(JsonNode schema) {
