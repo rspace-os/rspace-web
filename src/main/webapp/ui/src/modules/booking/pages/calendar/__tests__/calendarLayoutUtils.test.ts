@@ -100,23 +100,16 @@ describe("scrollCalendarWithArrowKeys", () => {
     const scrollBy = vi.fn();
     Object.defineProperty(region, "scrollBy", { value: scrollBy });
     const preventDefault = vi.fn();
+    const keyEvent = (overrides: Partial<KeyboardEvent> = {}) => ({
+      key: "ArrowRight",
+      target: region,
+      currentTarget: region,
+      defaultPrevented: false,
+      preventDefault,
+      ...overrides,
+    });
 
-    for (const event of [
-      {
-        key: "ArrowLeft",
-        target: child,
-        currentTarget: region,
-        defaultPrevented: false,
-        preventDefault,
-      },
-      {
-        key: "ArrowRight",
-        target: region,
-        currentTarget: region,
-        defaultPrevented: true,
-        preventDefault,
-      },
-    ]) {
+    for (const event of [keyEvent({ key: "ArrowLeft", target: child }), keyEvent({ defaultPrevented: true })]) {
       scrollCalendarWithArrowKeys(event as unknown as Parameters<typeof scrollCalendarWithArrowKeys>[0]);
     }
 

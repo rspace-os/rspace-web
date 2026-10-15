@@ -43,7 +43,7 @@ export type CalendarTargetFilterState = {
   onRemove: () => void;
 };
 
-export type CalendarQuickFilterChipState = {
+type CalendarQuickFilterChipState = {
   id: string;
   label: string;
   onRemove: () => void;
