@@ -11,17 +11,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.booking.service.BookingCalendarManager;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 class BookingCalendarFeedControllerTest {
 
-  private static final String PATH = "/public/booking/calendars/feed.ics";
   private static final String TOKEN = "A".repeat(43);
 
   private BookingCalendarManager manager;
@@ -35,13 +37,12 @@ class BookingCalendarFeedControllerTest {
 
   @Test
   void availableFeedIsAnUndecoratedPrivateCalendar() throws Exception {
-    byte[] calendar =
-        "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    byte[] calendar = "BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n".getBytes(StandardCharsets.UTF_8);
     when(manager.feed(eq(TOKEN), any(Locale.class), any(Date.class)))
         .thenReturn(new BookingCalendarManager.Available(calendar));
 
     mockMvc
-        .perform(get(PATH).param("token", TOKEN))
+        .perform(get(BookingCalendarFeedController.PATH).param("token", TOKEN))
         .andExpect(status().isOk())
         .andExpect(content().contentType("text/calendar;charset=UTF-8"))
         .andExpect(header().string("X-Content-Type-Options", "nosniff"))
@@ -56,19 +57,15 @@ class BookingCalendarFeedControllerTest {
 
   @Test
   void rejectsAnythingOtherThanOneExactTokenParameterBeforeCallingTheManager() throws Exception {
-    mockMvc.perform(get(PATH)).andExpect(status().isNotFound()).andExpect(content().string(""));
-    mockMvc
-        .perform(get(PATH).param("token", TOKEN, TOKEN))
-        .andExpect(status().isNotFound())
-        .andExpect(content().string(""));
-    mockMvc
-        .perform(get(PATH).param("token", TOKEN).param("extra", "x"))
-        .andExpect(status().isNotFound())
-        .andExpect(content().string(""));
-    mockMvc
-        .perform(get(PATH).param("token", "short"))
-        .andExpect(status().isNotFound())
-        .andExpect(content().string(""));
+    List<MockHttpServletRequestBuilder> invalidRequests =
+        List.of(
+            get(BookingCalendarFeedController.PATH),
+            get(BookingCalendarFeedController.PATH).param("token", TOKEN, TOKEN),
+            get(BookingCalendarFeedController.PATH).param("token", TOKEN).param("extra", "x"),
+            get(BookingCalendarFeedController.PATH).param("token", "short"));
+    for (MockHttpServletRequestBuilder request : invalidRequests) {
+      mockMvc.perform(request).andExpect(status().isNotFound()).andExpect(content().string(""));
+    }
 
     verifyNoInteractions(manager);
   }
@@ -81,20 +78,20 @@ class BookingCalendarFeedControllerTest {
         .thenReturn(new BookingCalendarManager.Oversized());
 
     mockMvc
-        .perform(get(PATH).param("token", TOKEN))
+        .perform(get(BookingCalendarFeedController.PATH).param("token", TOKEN))
         .andExpect(status().isNotFound())
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "private, no-store"))
         .andExpect(header().string("X-Content-Type-Options", "nosniff"))
         .andExpect(header().string("Referrer-Policy", "no-referrer"))
         .andExpect(content().string(""));
     mockMvc
-        .perform(get(PATH).param("token", TOKEN))
+        .perform(get(BookingCalendarFeedController.PATH).param("token", TOKEN))
         .andExpect(status().isServiceUnavailable())
         .andExpect(header().string(HttpHeaders.RETRY_AFTER, "30"))
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "private, no-store"))
         .andExpect(content().string(""));
     mockMvc
-        .perform(get(PATH).param("token", TOKEN))
+        .perform(get(BookingCalendarFeedController.PATH).param("token", TOKEN))
         .andExpect(status().isServiceUnavailable())
         .andExpect(header().doesNotExist(HttpHeaders.RETRY_AFTER))
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "private, no-store"))
@@ -107,10 +104,9 @@ class BookingCalendarFeedControllerTest {
         .thenThrow(new IllegalStateException("internal calendar details"));
 
     mockMvc
-        .perform(get(PATH).param("token", TOKEN))
+        .perform(get(BookingCalendarFeedController.PATH).param("token", TOKEN))
         .andExpect(status().isServiceUnavailable())
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "private, no-store"))
-        .andExpect(content().string(org.hamcrest.Matchers.not("internal calendar details")))
         .andExpect(content().string(""));
   }
 }

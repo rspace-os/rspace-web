@@ -64,11 +64,6 @@ public class BookableItemCalendarSubscription implements Serializable {
   protected BookableItemCalendarSubscription() {}
 
   public BookableItemCalendarSubscription(
-      BookingConfiguration bookingConfiguration, User user, String tokenHash, Date updatedAt) {
-    this(bookingConfiguration, user, tokenHash, null, updatedAt);
-  }
-
-  public BookableItemCalendarSubscription(
       BookingConfiguration bookingConfiguration,
       User user,
       String tokenHash,

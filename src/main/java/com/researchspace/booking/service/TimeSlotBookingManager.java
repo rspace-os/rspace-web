@@ -53,24 +53,6 @@ public interface TimeSlotBookingManager {
       updatedAt = copy(updatedAt);
     }
 
-    /** Constructor for item-scoped events whose calendar already names the item. */
-    public CalendarEvent(
-        Long id,
-        Date start,
-        Date end,
-        Date createdAt,
-        Date updatedAt,
-        BookingEventKind kind,
-        BookingPrivacy privacy,
-        String bookedBy,
-        String createdBy,
-        String purpose,
-        boolean canEdit) {
-      this(
-          id, start, end, createdAt, updatedAt, kind, privacy, bookedBy, createdBy, purpose,
-          canEdit, null);
-    }
-
     @Override
     public Date start() {
       return copy(start);

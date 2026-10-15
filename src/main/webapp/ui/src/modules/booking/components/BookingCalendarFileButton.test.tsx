@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 
 vi.unmock("react-i18next");
 
@@ -12,13 +13,7 @@ const { BookingCalendarFileButton } = await import("./BookingCalendarFileButton"
 const resources = {
   booking: {
     calendar: {
-      file: {
-        accessibleLabel: ".ics file for {item}, {period}",
-        downloaded: "Downloaded {filename}. No subscription was created or changed.",
-        failed: "The calendar file for {item}, {period} could not be downloaded. Nothing was saved; try again.",
-        label: ".ics file",
-        preparing: "Preparing the calendar file for {item}, {period}.",
-      },
+      file: bookingEnglish.calendar.file,
     },
   },
 };

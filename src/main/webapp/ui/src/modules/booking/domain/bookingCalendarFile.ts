@@ -5,7 +5,7 @@ import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
  * A one-off calendar file for a single booking. Nothing is stored and no subscription is created:
  * the file is generated per request and never updates itself once saved.
  */
-export async function fetchBookingCalendarFile(
+async function fetchBookingCalendarFile(
   bookingId: number,
   token: string,
   signal?: AbortSignal,
@@ -23,13 +23,13 @@ export async function fetchBookingCalendarFile(
 }
 
 /** Reads the plain `filename="…"` form the download endpoint sends. */
-export function filenameFrom(contentDisposition: string | null): string | null {
+function filenameFrom(contentDisposition: string | null): string | null {
   const match = /filename="([^"]+)"/.exec(contentDisposition ?? "");
   return match ? match[1] : null;
 }
 
 /** Hands a fetched blob to the browser's own download machinery. */
-export function saveBlob(blob: Blob, filename: string, target: Document = document): void {
+function saveBlob(blob: Blob, filename: string, target: Document = document): void {
   const url = URL.createObjectURL(blob);
   const anchor = target.createElement("a");
   anchor.href = url;

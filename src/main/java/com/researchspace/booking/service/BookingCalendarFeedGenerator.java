@@ -42,6 +42,7 @@ import net.fortuna.ical4j.model.property.XProperty;
 import net.fortuna.ical4j.model.property.immutable.ImmutableCalScale;
 import net.fortuna.ical4j.model.property.immutable.ImmutableVersion;
 import net.fortuna.ical4j.validate.ValidationException;
+import org.apache.commons.io.output.ThresholdingOutputStream;
 import org.springframework.stereotype.Component;
 
 /** Deterministically serializes privacy-shaped booking data as iCalendar. */
@@ -112,10 +113,17 @@ public final class BookingCalendarFeedGenerator {
     }
 
     ByteArrayOutputStream bytes = new ByteArrayOutputStream(Math.min(maxBytes, 16_384));
-    try (OutputStream limited = new LimitedOutputStream(bytes, maxBytes)) {
+    if (maxBytes < 1) {
+      throw new IllegalArgumentException("Calendar byte limit must be positive");
+    }
+    try (OutputStream limited =
+        new ThresholdingOutputStream(
+            maxBytes,
+            ignored -> {
+              throw new CalendarTooLargeException();
+            },
+            ignored -> bytes)) {
       new CalendarOutputter().output(calendar, limited);
-    } catch (CalendarTooLargeException ex) {
-      throw ex;
     } catch (IOException | ValidationException ex) {
       throw new CalendarGenerationException("Could not serialize booking calendar", ex);
     }
@@ -217,41 +225,6 @@ public final class BookingCalendarFeedGenerator {
 
     CalendarGenerationException(String message, Throwable cause) {
       super(message, cause);
-    }
-  }
-
-  private static final class LimitedOutputStream extends OutputStream {
-
-    private final OutputStream delegate;
-    private final int maximum;
-    private int count;
-
-    private LimitedOutputStream(OutputStream delegate, int maximum) {
-      if (maximum < 1) {
-        throw new IllegalArgumentException("Calendar byte limit must be positive");
-      }
-      this.delegate = delegate;
-      this.maximum = maximum;
-    }
-
-    @Override
-    public void write(int value) throws IOException {
-      requireCapacity(1);
-      delegate.write(value);
-      count++;
-    }
-
-    @Override
-    public void write(byte[] values, int offset, int length) throws IOException {
-      requireCapacity(length);
-      delegate.write(values, offset, length);
-      count += length;
-    }
-
-    private void requireCapacity(int length) {
-      if (length > maximum - count) {
-        throw new CalendarTooLargeException();
-      }
     }
   }
 }

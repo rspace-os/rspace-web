@@ -61,6 +61,7 @@ import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Repository;
 
@@ -94,7 +95,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
   @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
 
-  @Autowired private org.springframework.context.ApplicationEventPublisher events = event -> {};
+  @Autowired private ApplicationEventPublisher events;
 
   /** Constructor that sets the entity to User.class. */
   public UserDaoHibernate() {
