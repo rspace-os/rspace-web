@@ -9,7 +9,6 @@ export function CalendarContent() {
     navigate,
     calendarSearch,
     setCalendarSearch,
-    currentUser,
     view,
     setView,
     layout,
@@ -78,7 +77,6 @@ export function CalendarContent() {
         value: calendarSearch,
         onChange: onSearchChange,
       }}
-      currentUserId={currentUser.id}
       mineOnly={mineOnly}
       onMineChange={(next) => {
         setMineOnly(next);

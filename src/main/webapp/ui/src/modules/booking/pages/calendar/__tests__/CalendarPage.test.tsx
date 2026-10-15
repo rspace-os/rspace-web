@@ -3,8 +3,6 @@ import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { currentUser } from "@/__tests__/helpers/currentUserFixture";
-import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { busyBooking, collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
@@ -50,8 +48,6 @@ describe("CalendarPage", () => {
   it("offers a retry when booking events cannot be loaded", async () => {
     let requests = 0;
     server.use(
-      oauthTokenHandler(true),
-      http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
       http.get("/api/v2/booking-calendar/events", () => {
         requests += 1;
         return requests === 1
@@ -79,11 +75,7 @@ describe("CalendarPage", () => {
       canCancel: false,
     };
     const showCalendarWith = async (booking: BookingListDocument) => {
-      server.use(
-        oauthTokenHandler(true),
-        http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
-        http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))),
-      );
+      server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([booking]))));
       await renderCalendar(`/booking/calendar?date=${booking.start.slice(0, 10)}`);
       await userEvent.setup().click(await screen.findByRole("button", { name: "Time grid" }));
       await userEvent.setup().click(await screen.findByRole("button", { name: /^Show details for/ }));
