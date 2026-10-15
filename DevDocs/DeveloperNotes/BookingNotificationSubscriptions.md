@@ -94,16 +94,17 @@ booking transaction; a rollback produces no emails or live count updates.
 
 Booking notifications keep their booking ID, instrument identity, and UTC instants in the existing
 JSON data field. The dashboard and notification dialog format these details using the recipient's
-current display preferences. Browser mode uses the timezone captured at login. Custom and Institution
-modes use their configured zones. Each time includes its UTC offset so repeated daylight-saving
-hours remain distinguishable.
+current display preferences. Browser mode uses the timezone captured at login, falling back to the
+institution zone when the session timezone is missing or unusable. Custom and Institution modes use
+their configured zones. Each time includes its UTC offset so repeated daylight-saving hours remain
+distinguishable.
 
 Dashboard messages keep the app language's words and date order. With Automatic, the clock follows
-the browser region from the preferred specific locale in `Accept-Language`; when the header has no
-specific region, the app language supplies the usual clock. `LocaleFilter` replaces the request
-locale with the app language, so the dashboard reads the region from `Accept-Language`. ICU applies
-the Unicode `hc` clock cycle. An explicit H12 or H24 Booking preference overrides the browser-region
-clock.
+the first usable locale in `Accept-Language` preference order. Language-only locales such as `en` are
+accepted; zero-weight and wildcard entries are ignored. When the header is missing, invalid, or has
+no usable locale, the clock follows the app language. `LocaleFilter` replaces the request locale with
+the app language, so the dashboard reads the clock locale from `Accept-Language`. ICU applies the
+Unicode `hc` clock cycle. An explicit H12 or H24 Booking preference overrides that clock.
 
 Email has no browser region. Browser timezone mode falls back to the institution zone; Custom and
 Institution modes use their configured zones. With Automatic, the email clock follows the app
