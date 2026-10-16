@@ -232,7 +232,10 @@ describe("AllBookableItemsPage", () => {
 
     await renderPage();
 
-    await screen.findAllByText(/Instruments from Inventory become bookable/);
+    await screen.findAllByText(
+      "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing.",
+      { exact: true },
+    );
     await vi.waitFor(() => expect(targetsRequested).toBe(true));
     await vi.waitFor(() => expect(screen.queryByRole("link", { name: "Add" })).not.toBeInTheDocument());
     expect(screen.queryByRole("link", { name: "Add Bookable Item" })).not.toBeInTheDocument();
@@ -418,10 +421,8 @@ describe("AllBookableItemsPage", () => {
     await user.click(within(dialog).getByRole("button", { name: "Archive" }));
 
     await waitFor(() => expect(archiveRequests).toHaveLength(1));
-    expect(archiveRequests[0]).toEqual({
-      url: expect.stringMatching(/\/api\/v2\/booking-configurations\/7$/),
-      ifMatch: '"0"',
-    });
+    expect(archiveRequests[0].url.endsWith("/api/v2/booking-configurations/7")).toBe(true);
+    expect(archiveRequests[0].ifMatch).toBe('"0"');
     // The archived row leaves the selection with the list.
     await waitFor(() =>
       expect(screen.queryByRole("region", { name: "Selected rows actions" })).not.toBeInTheDocument(),
@@ -475,8 +476,8 @@ describe("AllBookableItemsPage", () => {
     await renderPage();
 
     expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
-    await waitFor(() => expect(screen.getByRole("button", { name: /^Available now/ })).toHaveTextContent("2"));
-    expect(screen.getByRole("button", { name: /^Free later/ })).toHaveTextContent("1");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent("2"));
+    expect(screen.getByRole("button", { name: "Free later" })).toHaveTextContent("1");
     expect(requests.map(pageRequest)).toEqual(["1/20"]);
     expect(requests[0].searchParams.has("availability")).toBe(false);
     expect(countRequests).toHaveLength(1);
@@ -568,7 +569,7 @@ describe("AllBookableItemsPage", () => {
     await user.click(screen.getByRole("combobox", { name: "Field for filter 1" }));
     await user.click(await screen.findByRole("option", { name: "Location" }));
     await user.click(screen.getByRole("button", { name: commonEnglish.relationshipPicker.openOptions }));
-    await user.click(await screen.findByRole("option", { name: /WB ada/ }));
+    await user.click(await screen.findByRole("option", { name: "WB adaBE7" }));
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
 
     expect(locationRequests[0]?.searchParams.has("q")).toBe(false);
@@ -765,7 +766,7 @@ describe("AllBookableItemsPage", () => {
     );
     await renderPage("/booking/all-items?date=2026-08-20");
     const available = await screen.findByRole("button", { name: "Available now" });
-    const later = screen.getByRole("button", { name: /^Free later/ });
+    const later = screen.getByRole("button", { name: "Free later" });
     // The categories are mutually exclusive, so each chip carries what it counts.
     expect(available).toHaveAccessibleName("Available now");
     expect(available).toHaveAccessibleDescription("Free at this moment");
@@ -774,7 +775,7 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(available).toHaveTextContent("Available now1"));
     expect(later).toHaveTextContent("Free later1");
     // The counts describe today at the page clock's minute, not the displayed 20 August.
-    expect(countRequests[0].searchParams.get("availabilityStart")).toMatch(/^2026-08-17T/);
+    expect(countRequests[0].searchParams.get("availabilityStart")?.startsWith("2026-08-17T")).toBe(true);
     expect(countRequests[0].searchParams.get("now")).toBe("2026-08-17T08:30:00.000Z");
     for (const link of screen.getAllByRole("link", { name: "Book" })) {
       expect(link.getAttribute("href")).toContain("date=2026-08-20");
@@ -844,7 +845,7 @@ describe("AllBookableItemsPage", () => {
         ),
       );
 
-      const available = await screen.findByRole("button", { name: /^Available now/ });
+      const available = await screen.findByRole("button", { name: "Available now" });
       await waitFor(() => expect(available).toHaveTextContent(`Available now${action === "create" ? 2 : 1}`));
       if (action === "create") {
         await waitFor(() => expect(screen.getAllByText("Electron microscope")[0]).toBeVisible());
@@ -956,7 +957,7 @@ describe("AllBookableItemsPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(countRequests).toBe(2));
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
-    expect(screen.getByRole("button", { name: /^Available now/ })).toHaveTextContent("2");
+    expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent("2");
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(router.state.location.search.availability).toBe("free-later-today");
   });
