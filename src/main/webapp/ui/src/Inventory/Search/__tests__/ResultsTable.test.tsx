@@ -53,9 +53,11 @@ const resultsTableTree = (search: Search) => {
 
 const renderResultsTable = (search: Search) => render(resultsTableTree(search));
 
-const realI18nConfig = { resources: { common: commonEn, inventory: inventoryEn }, defaultNS: "inventory" };
-
-const renderResultsTableWithRealI18n = (search: Search) => renderWithRealI18n(resultsTableTree(search), realI18nConfig);
+const renderResultsTableWithRealI18n = (search: Search) =>
+  renderWithRealI18n(resultsTableTree(search), {
+    resources: { common: commonEn, inventory: inventoryEn },
+    defaultNS: "inventory",
+  });
 
 const setSearchResults = (search: Search, ...results: Array<InventoryRecord>) => {
   search.fetcher.setResults(results);
