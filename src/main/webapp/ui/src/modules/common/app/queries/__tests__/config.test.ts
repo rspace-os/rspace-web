@@ -44,7 +44,7 @@ describe("getAppConfig", () => {
     ["a malformed response", () => HttpResponse.json({ unexpected: true })],
     ["a network failure", () => HttpResponse.error()],
   ])("fails soft for %s", async (_description, response) => {
-    const restoreConsole = silenceConsole(["warn"], [/Could not read app configuration/]);
+    const restoreConsole = silenceConsole(["warn"], ["Could not read app configuration"]);
     server.use(http.get("/api/v2/config", response));
 
     await expect(getAppConfig()).resolves.toEqual(DEFAULT_APP_CONFIG);
