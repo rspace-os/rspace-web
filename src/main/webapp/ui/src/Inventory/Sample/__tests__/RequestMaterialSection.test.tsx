@@ -50,6 +50,13 @@ function makeOwnedSample(attrs: Partial<Parameters<typeof makeMockSample>[0]> = 
   return makeMockSample({
     owner: personAttrs({ username: OWNER_USERNAME }),
     requestable: false,
+    // RequestableSwitch/RequestMaterialSection key off canTransfer (CHANGE_OWNER in
+    // permittedActions), matching the backend's own check for toggling requestable
+    // (SampleApiManagerImpl.assertRequestableChangeAllowed -> canUserTransferInventoryRecord) -
+    // the owner, or a PI/Lab Admin of the owner's group, not merely username equality with the
+    // owner. Defaults to the plain non-owner, non-PI set; owner/PI-simulating tests below add
+    // CHANGE_OWNER back in, the same way the real API would for those viewers specifically.
+    permittedActions: ["READ", "UPDATE"],
     ...attrs,
   });
 }
@@ -83,7 +90,7 @@ describe("RequestableSwitch", () => {
   test("the owner can toggle requestable on and off, and the switch has no axe violations.", async () => {
     const user = userEvent.setup();
     setCurrentUser(OWNER_USERNAME);
-    const sample = makeOwnedSample({ requestable: false });
+    const sample = makeOwnedSample({ requestable: false, permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
     sample.setEditable(new Set(["requestable"]), true);
     const { container } = renderWithProviders(<RequestableSwitch activeResult={sample} />);
     await expectAccessible(container);
@@ -102,6 +109,24 @@ describe("RequestableSwitch", () => {
     await user.click(toggle);
     expect(sample.requestable).toBe(false);
   });
+
+  test("a PI of the owner's group can also toggle requestable, not just the owner.", async () => {
+    const user = userEvent.setup();
+    const GROUP_PI_USERNAME = "group-pi";
+    setCurrentUser(GROUP_PI_USERNAME);
+    // Not the owner by username - the API determines CHANGE_OWNER access for a PI or Lab Admin of
+    // the owner's group the same way it does for the owner, so that's what this simulates (see
+    // InventoryPermissionUtils.canUserTransferInventoryRecord/isPiOrAdminOfRecordOwnerGroup).
+    const sample = makeOwnedSample({ requestable: false, permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
+    sample.setEditable(new Set(["requestable"]), true);
+    renderWithProviders(<RequestableSwitch activeResult={sample} />);
+
+    const toggle = screen.getByRole("switch", { name: "inventory:sample.requestsSection.switchLabel" });
+    expect(toggle).not.toBeChecked();
+
+    await user.click(toggle);
+    expect(sample.requestable).toBe(true);
+  });
 });
 
 describe("RequestMaterialSection", () => {
@@ -114,7 +139,14 @@ describe("RequestMaterialSection", () => {
 
   test("renders nothing for the sample's own owner.", () => {
     setCurrentUser(OWNER_USERNAME);
-    const sample = makeOwnedSample();
+    const sample = makeOwnedSample({ permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
+    const { container } = renderWithProviders(<RequestMaterialSection activeResult={sample} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  test("renders nothing for a PI of the owner's group either, since they see RequestableSwitch instead.", () => {
+    setCurrentUser("group-pi");
+    const sample = makeOwnedSample({ permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
     const { container } = renderWithProviders(<RequestMaterialSection activeResult={sample} />);
     expect(container).toBeEmptyDOMElement();
   });

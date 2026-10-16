@@ -65,7 +65,12 @@ export const RequestableSwitch = observer(({ activeResult }: { activeResult: Sam
     .map((value) => value === "ALLOWED")
     .orElse(false);
 
-  if (!sampleRequestsAvailable || !activeResult.currentUserIsOwner) return null;
+  // canTransfer (CHANGE_OWNER in the API's permittedActions) is what the backend itself actually
+  // checks before allowing requestable to change (see SampleApiManagerImpl.
+  // assertRequestableChangeAllowed, which reuses canUserTransferInventoryRecord) - owner, or a PI
+  // or Lab Admin of a group the owner belongs to. A plain currentUserIsOwner check would hide this
+  // switch from a PI who the backend would otherwise let toggle it.
+  if (!sampleRequestsAvailable || !activeResult.canTransfer) return null;
 
   return (
     <Box
@@ -239,7 +244,10 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
     navigate(`/inventory/requests?requestId=${existingRequest.id}`);
   };
 
-  if (!sampleRequestsAvailable || activeResult.currentUserIsOwner) return null;
+  // Mirrors RequestableSwitch's own guard above, so the two stay mutually exclusive: anyone who
+  // can toggle requestable (the owner, or a PI/Lab Admin of the owner's group) sees that switch
+  // instead of a request form for a sample they can already manage directly.
+  if (!sampleRequestsAvailable || activeResult.canTransfer) return null;
 
   const showActionError = (action: string, error: unknown) => {
     console.error(action, error);

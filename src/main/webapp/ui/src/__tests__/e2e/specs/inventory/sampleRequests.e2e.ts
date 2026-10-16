@@ -539,7 +539,6 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await session.requestsPage.approveRequest();
       await expect(session.requestsPage.statusChip("Approved")).toBeVisible();
 
-      await expect(session.requestsPage.transferSampleButton).toBeDisabled();
       await session.requestsPage.selectFirstAvailableSubsample();
       await expect(session.requestsPage.transferSampleButton).toBeEnabled();
 
@@ -616,7 +615,6 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await session.requestsPage.openRequest(requestId);
       await expect(session.requestsPage.statusChip("Pending")).toBeVisible();
 
-      await expect(session.requestsPage.transferSampleButton).toBeDisabled();
       await session.requestsPage.selectFirstAvailableSubsample();
       await expect(session.requestsPage.transferSampleButton).toBeEnabled();
 
@@ -711,7 +709,6 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await session.requestsPage.approveRequest();
       await expect(session.requestsPage.statusChip("Approved")).toBeVisible();
 
-      await expect(session.requestsPage.transferSampleButton).toBeDisabled();
       await session.requestsPage.selectFirstAvailableSubsample();
       await expect(session.requestsPage.transferSampleButton).toBeEnabled();
 

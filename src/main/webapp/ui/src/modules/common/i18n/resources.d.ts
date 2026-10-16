@@ -4425,8 +4425,10 @@ export default interface Resources {
         "markAsFulfilledButton": "Mark as Fulfilled",
         "preparationHint": {
           "approvedNoSelection": "Select a subsample from the list below to prepare the sample for transfer. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "approvedReadyToTransfer": "This sample can now be transferred to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
           "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
-          "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer."
+          "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer.",
+          "pendingTransferOnly": "Approve the request to transfer a sample, or immediately transfer the sample."
         },
         "prepareDialog": {
           "body": "Preparing {subsample} for transfer.",
@@ -4456,7 +4458,7 @@ export default interface Resources {
           "bullets": {
             "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
             "requestFulfilled": "Request {id} will be marked as fulfilled",
-            "subsamplesMoved": "Subsamples will be moved from their current locations to {requester}'s bench",
+            "subsamplesMoved": "Subsamples that are currently on your bench will be moved to {requester}'s bench",
             "subsamplesTransferred": "All {count} subsamples will be transferred to user {requester}",
             "subsamplesTransferredBoth": "Both subsamples will be transferred to user {requester}"
           },
