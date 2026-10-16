@@ -62,11 +62,11 @@ describe("CalendarSubscriptionPopover", () => {
 
     expect(
       await screen.findByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.apple" }),
-    ).toHaveAttribute("href", expect.stringMatching(/^webcal:/));
+    ).toHaveAttribute("href", `webcal://rspace.example/public/booking/calendars/feed.ics?token=${"a".repeat(43)}`);
     expect(screen.getByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.google" })).toHaveFocus();
     expect(
       screen.getByRole("link", { name: "booking:bookableItemDetails.calendarSubscription.other" }),
-    ).toHaveAttribute("href", expect.stringMatching(/^webcal:/));
+    ).toHaveAttribute("href", `webcal://rspace.example/public/booking/calendars/feed.ics?token=${"a".repeat(43)}`);
     const copyGroup = screen.getByRole("group", {
       name: "booking:bookableItemDetails.calendarSubscription.copyPrompt",
     });
