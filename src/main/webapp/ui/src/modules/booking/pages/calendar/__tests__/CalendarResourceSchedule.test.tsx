@@ -57,7 +57,7 @@ describe("CalendarResourceSchedule", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /calendar\.actions\.addForItem/ }));
+    await user.click(screen.getByRole("button", { name: "booking:calendar.actions.addForItem" }));
 
     expect(onResourceRangeSelect).toHaveBeenCalledWith(
       twoDayConfiguration,
