@@ -46,7 +46,7 @@ describe("BookingAgenda", () => {
     const summary = summaryText?.closest("summary");
     if (!summary) throw new Error("Expected a booking row summary");
     expect(screen.queryByText(privatePurpose)).not.toBeInTheDocument();
-    expect(summary).not.toHaveAccessibleName(new RegExp(privatePurpose));
+    expect(summary).not.toHaveAccessibleName(expect.stringContaining(privatePurpose));
     expect(summary).not.toHaveAttribute("title", privatePurpose);
 
     await user.click(summary);
