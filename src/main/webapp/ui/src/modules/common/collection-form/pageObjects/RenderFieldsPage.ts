@@ -2,8 +2,8 @@ import { type Locator, page, userEvent } from "vitest/browser";
 
 export class RenderFieldsPage {
   readonly smallContainer: Locator = page.getByRole("region", { name: "Small form container" });
-  readonly recordDetailsSection: Locator = page.getByRole("group", { name: /record details/i });
-  readonly relationshipsSection: Locator = page.getByRole("group", { name: /relationships/i });
+  readonly recordDetailsSection: Locator = page.getByRole("group", { name: "Record details" });
+  readonly relationshipsSection: Locator = page.getByRole("group", { name: "Relationships" });
   readonly title: Locator = page.getByRole("textbox", { name: "Title" });
   readonly notes: Locator = page.getByRole("textbox", { name: "Notes" });
   readonly notesDescription: Locator = page.getByText("The human-readable name of the record.");

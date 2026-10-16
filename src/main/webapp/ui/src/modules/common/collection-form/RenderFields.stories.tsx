@@ -24,7 +24,7 @@ export const Default: Story = {};
 export const TransparentSectionField: Story = {
   args: { sectionVariant: "transparent" },
   play: async ({ canvasElement }) => {
-    const section = within(canvasElement).getByRole("group", { name: /record details/i });
+    const section = within(canvasElement).getByRole("group", { name: "Record details" });
     const separator = within(section).getByRole("separator");
     const heading = within(section).getByRole("heading");
     await expect(section).toHaveClass("bg-transparent", "ring-0");
