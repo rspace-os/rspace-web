@@ -72,7 +72,12 @@ describe("Booking display preferences", () => {
 
     history.push("/booking/calendar?date=2026-08-17");
     await expect
-      .element(page.getByRole("region", { name: /24-hour calendar for Confocal microscope.*America\/New_York/ }))
+      .element(
+        page.getByRole("region", {
+          name: "24-hour calendar for Confocal microscope on Monday, August 17, 2026 in America/New_York",
+          exact: true,
+        }),
+      )
       .toBeVisible();
     await expect.element(page.getByRole("region", { name: "Resource booking schedule" })).toBeVisible();
 
