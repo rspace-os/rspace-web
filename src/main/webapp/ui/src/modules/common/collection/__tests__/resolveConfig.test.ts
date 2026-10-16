@@ -144,9 +144,9 @@ describe("declared array metadata", () => {
   it("rejects missing, empty, duplicate, cyclic and relationship children", () => {
     const missing = array();
     Reflect.deleteProperty(missing, "fields");
-    expect(() => resolve(missing)).toThrow(/non-empty child fields/);
-    expect(() => resolve({ ...array(), fields: [] })).toThrow(/non-empty child fields/);
-    expect(() => resolve({ ...array(), fields: [fields[0], fields[0]] })).toThrow(/Duplicate/);
+    expect(() => resolve(missing)).toThrow("non-empty child fields");
+    expect(() => resolve({ ...array(), fields: [] })).toThrow("non-empty child fields");
+    expect(() => resolve({ ...array(), fields: [fields[0], fields[0]] })).toThrow("Duplicate");
     const cycle: FieldConfig<Record<string, unknown>>[] = [];
     const nested: FieldConfig<Record<string, unknown>> = {
       name: "cycle",
@@ -156,13 +156,13 @@ describe("declared array metadata", () => {
       fields: cycle,
     };
     cycle.push(nested);
-    expect(() => resolve({ ...array(), fields: cycle })).toThrow(/Cyclic/);
+    expect(() => resolve({ ...array(), fields: cycle })).toThrow("Cyclic");
     expect(() =>
       resolve({
         ...array(),
         fields: [{ name: "target", type: "relationship", relationTo: "items", hasMany: false, labelKey: "target" }],
       }),
-    ).toThrow(/Embedded relationship/);
+    ).toThrow("Embedded relationship");
   });
 
   it.each([{ child: null }, { child: "text" }, { child: { name: "quantity" } }])(
@@ -170,34 +170,34 @@ describe("declared array metadata", () => {
     ({ child }) => {
       const invalid = array();
       Reflect.set(invalid, "fields", [child]);
-      expect(() => resolve(invalid)).toThrow(/Invalid child field declaration/);
+      expect(() => resolve(invalid)).toThrow("Invalid child field declaration");
     },
   );
 
   it("requires nested arrays and objects to declare non-empty named children", () => {
     for (const type of ["array", "object"] as const) {
       const nested: FieldConfig<Record<string, unknown>> = { name: "details", type, labelKey: "details", fields: [] };
-      expect(() => resolve({ ...array(), fields: [nested] })).toThrow(/non-empty child fields/);
+      expect(() => resolve({ ...array(), fields: [nested] })).toThrow("non-empty child fields");
       Reflect.deleteProperty(nested, "fields");
-      expect(() => resolve({ ...array(), fields: [nested] })).toThrow(/non-empty child fields/);
+      expect(() => resolve({ ...array(), fields: [nested] })).toThrow("non-empty child fields");
     }
-    expect(() => resolve({ ...array(), fields: [{ ...fields[0], name: " " }] })).toThrow(/empty child field/);
+    expect(() => resolve({ ...array(), fields: [{ ...fields[0], name: " " }] })).toThrow("empty child field");
   });
 
   it("requires a custom editor and rejects array sorting or filtering", () => {
     const custom = array();
     Reflect.deleteProperty(custom, "form");
-    expect(() => resolve(custom)).toThrow(/custom editor/);
-    expect(() => resolve({ ...array(), capabilities: { sortable: true } })).toThrow(/cannot be filtered or sorted/);
+    expect(() => resolve(custom)).toThrow("custom editor");
+    expect(() => resolve({ ...array(), capabilities: { sortable: true } })).toThrow("cannot be filtered or sorted");
     expect(() => resolve({ ...array(), capabilities: { filterOperators: ["equals"] } })).toThrow(
-      /cannot be filtered or sorted/,
+      "cannot be filtered or sorted",
     );
     expect(() => resolve({ ...array(), fields: [{ ...fields[0], capabilities: { sortable: true } }] })).toThrow(
-      /Embedded field .* cannot be filtered or sorted/,
+      "Embedded field quantity cannot be filtered or sorted",
     );
     expect(() =>
       resolve({ ...array(), fields: [{ ...fields[0], capabilities: { filterOperators: ["equals"] } }] }),
-    ).toThrow(/Embedded field .* cannot be filtered or sorted/);
+    ).toThrow("Embedded field quantity cannot be filtered or sorted");
   });
 
   it("rejects search and sort paths into embedded rows", () => {
@@ -207,10 +207,10 @@ describe("declared array metadata", () => {
       fields: input().fields.map((field) => (field.name === "title" ? array() : field)),
     };
     expect(() => resolveCollectionConfig({ ...value, listSearchableFields: ["title.quantity"] })).toThrow(
-      /root must be a relationship/,
+      "root must be a relationship",
     );
     expect(() => resolveCollectionConfig({ ...value, listSearchableFields: ["title"] })).toThrow(
-      /Searchable field must be text or select/,
+      "Searchable field must be text or select",
     );
     expect(() =>
       resolveCollectionConfig({
@@ -218,11 +218,11 @@ describe("declared array metadata", () => {
         listSearchableFields: [],
         defaultSort: [{ field: "title", direction: "asc" }],
       }),
-    ).toThrow(/not sortable/);
+    ).toThrow("not sortable");
     const sort = { field: "title", direction: "asc" } as const;
     Reflect.set(sort, "field", "title.quantity");
     expect(() => resolveCollectionConfig({ ...value, listSearchableFields: [], defaultSort: [sort] })).toThrow(
-      /Unknown default sort field/,
+      "Unknown default sort field",
     );
   });
 });
