@@ -85,7 +85,7 @@ describe("Booking display preferences", () => {
     // The heading renders before the availability bars, and expect.poll gives up after 1 s.
     for (const name of itemNames) {
       await expect
-        .element(page.getByRole("img", { name: `${name} availability` }).getByTitle(/Current time/))
+        .element(page.getByRole("img", { name: `${name} availability` }).getByTitle("Current time", { exact: false }))
         .toBeInTheDocument();
     }
     await expect
@@ -96,7 +96,7 @@ describe("Booking display preferences", () => {
               (name) =>
                 page
                   .getByRole("img", { name: `${name} availability` })
-                  .getByTitle(/Current time/)
+                  .getByTitle("Current time", { exact: false })
                   .element().style.left,
             ),
           ),
