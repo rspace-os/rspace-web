@@ -122,10 +122,11 @@ the stack's E2E mode instead:
 
 This starts the mock server in the frontend/backend shared network namespace
 and points integrations including PubChem, Fieldmark, Zenodo, Galaxy, PyRAT,
-OMERO, ROR, and the PIDINST registry lookups (DataCite and B2INST) at it. The mock port is unique per worktree and published on host loopback, so the Java backend
-and host Playwright process both use `http://localhost:<mock-port>`. The choice
-persists in `docker/dev/.env`; use `up --no-e2e` to return to real integration
-endpoints.
+OMERO, ROR, and the PIDINST registry lookups (DataCite and B2INST) at it. The
+mock port is unique per worktree and published on host loopback, so the Java
+backend and host Playwright process both use `http://localhost:<mock-port>`.
+The choice persists in `docker/dev/.env`; use `up --no-e2e` to return to real
+integration endpoints.
 
 E2E mode also supplies the local MinIO credentials. To run the filestore tests, start
 their containers on this worktree's Docker network using the
