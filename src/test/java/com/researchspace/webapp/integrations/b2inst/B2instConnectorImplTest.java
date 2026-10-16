@@ -1091,6 +1091,25 @@ class B2instConnectorImplTest {
     server.verify();
   }
 
+  /** The term the manager builds for {@code G1+G2 Glider} (RSDEV-1576). */
+  @Test
+  void searchPublicRecordsSendsAPlusSignAsItselfNotAsASpace() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst.gwdg.de/api/records"
+                    + "?q=%2F.%2A%5BGg%5D1%5C%2B%5BGg%5D2%20"
+                    + "%5BGg%5D%5BLl%5D%5BIi%5D%5BDd%5D%5BEe%5D%5BRr%5D.%2A%2F"
+                    + "&size=50&page=1&sort=updated-desc"))
+        .andRespond(
+            withSuccess("{\"hits\":{\"hits\":[],\"total\":0}}", MediaType.APPLICATION_JSON));
+
+    connector.searchPublicRecords("/.*[Gg]1\\+[Gg]2 [Gg][Ll][Ii][Dd][Ee][Rr].*/", 0, 50);
+
+    server.verify();
+  }
+
   @Test
   void getPublicRecordByHandleReadsThePublishedRecordUnderTheHandleSuffixAnonymously() {
     MockRestServiceServer server = lookupServer();
