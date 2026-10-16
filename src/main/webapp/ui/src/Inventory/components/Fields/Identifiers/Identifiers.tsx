@@ -763,7 +763,7 @@ function Identifiers<
   },
   FieldOwner extends HasEditableFields<Fields> & { recordType: InventoryRecord["recordType"] },
 >({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
-  const isInstrument = fieldOwner.recordType === "instrument" || fieldOwner.recordType === "instrumentTemplate";
+  const isInstrument = fieldOwner.recordType === "instrument";
   return (
     <InputWrapper
       label=""
