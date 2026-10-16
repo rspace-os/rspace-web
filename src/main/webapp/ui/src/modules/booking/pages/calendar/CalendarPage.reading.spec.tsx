@@ -864,7 +864,7 @@ describe("Calendar page", () => {
     render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
     const dialog = await calendar.openTargetlessBookingDialog();
     // A Berlin item seen from New York: the viewer's own hours for the date, with no timezone named.
-    await expect.element(dialog.getByText(/^Open on this date: \d{2}:\d{2} [AP]M - \d{2}:\d{2} [AP]M$/)).toBeVisible();
+    await expect.element(dialog.getByText("Open on this date: 02:00 AM - 11:00 AM", { exact: true })).toBeVisible();
     expect(dialog.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
     const compactDate = dialog.getByLabelText("Date");
     const compactStartTime = dialog.getByLabelText("Start time");
@@ -891,16 +891,17 @@ describe("Calendar page", () => {
       await expect.element(itemInformation).toBeVisible();
       await expect.element(itemInformation.getByText("Open", { exact: true })).toBeVisible();
       // Hours are in the viewer's timezone; the item's own are behind the globe button.
-      await expect
-        .element(itemInformation.getByText(/^Every day: \d{2}:\d{2} [AP]M - \d{2}:\d{2} [AP]M$/))
-        .toBeVisible();
+      await expect.element(itemInformation.getByText("Every day: 02:00 AM - 11:00 AM", { exact: true })).toBeVisible();
       // The item's own hours are in the shared instrument-time tooltip, which the time's button also names.
       await itemInformation
-        .getByRole("button", { name: /^Every day: .*, Instrument time: .+ \(Europe\/Berlin\)$/ })
+        .getByRole("button", {
+          name: "Every day: 02:00 AM - 11:00 AM, Instrument time: 08:00 AM - 05:00 PM (Europe/Berlin)",
+          exact: true,
+        })
         .hover();
       await expect
-        .element(page.getByRole("tooltip"))
-        .toHaveTextContent(/^Instrument time: \d{2}:\d{2}\s[AP]M\s-\s\d{2}:\d{2}\s[AP]M \(Europe\/Berlin\)$/);
+        .poll(() => page.getByRole("tooltip").element().textContent)
+        .toBe("Instrument time: 08:00 AM - 05:00 PM (Europe/Berlin)");
       await userEvent.keyboard("{Escape}");
       await expect.element(page.getByRole("button", { name: "Item information" })).not.toBeInTheDocument();
       expect(itemInformation.element().getBoundingClientRect().top).toBeGreaterThanOrEqual(

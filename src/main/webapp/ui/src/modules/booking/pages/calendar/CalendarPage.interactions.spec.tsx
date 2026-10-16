@@ -83,7 +83,7 @@ describe("Calendar page", () => {
     await calendar.week.click();
 
     const monday = calendar.timeGrid.getByRole("region", { name: "Monday, August 17, 2026" });
-    const cards = monday.getByRole("button", { name: /^Show details for Confocal microscope/ });
+    const cards = monday.getByRole("button", { name: "Show details for Confocal microscope", exact: false });
     await expect.poll(() => cards.all().length).toBe(2);
     // 09:00 New York, at 56px per hour, less the clearance for its label under the sticky header.
     // Firefox reports a sub-pixel scroll offset.
