@@ -40,7 +40,7 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const trigger = canvas.getByRole("button", { name: /open sheet/i });
+    const trigger = canvas.getByRole("button", { name: "Open Sheet" });
     await userEvent.click(trigger);
     const body = within(canvasElement.ownerDocument.body);
     expect(await body.findByText("Edit profile")).toBeInTheDocument();
