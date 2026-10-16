@@ -95,34 +95,34 @@ describe("serializeRsql", () => {
   });
 
   it("enforces backend limits and selector capabilities", () => {
-    expect(() => serializeRsql(comparison("id", "equals", "4*"), selectors, limits)).toThrow(/Wildcards/);
+    expect(() => serializeRsql(comparison("id", "equals", "4*"), selectors, limits)).toThrow("Wildcards");
     expect(() =>
       serializeRsql({ kind: "comparison", field: "name", operator: "in", value: [] }, selectors, limits),
-    ).toThrow(/at least one/);
+    ).toThrow("at least one");
     expect(() =>
       serializeRsql(
         { kind: "and", children: [comparison("name", "equals", "a"), comparison("name", "equals", "b")] },
         selectors,
         { ...limits, maximumComparisons: 1 },
       ),
-    ).toThrow(/comparison limit/);
+    ).toThrow("comparison limit");
     expect(() =>
       serializeRsql(comparison("name", "matches", "A*"), selectors, { ...limits, maximumLikeComparisons: 0 }),
-    ).toThrow(/Pattern comparison limit/);
+    ).toThrow("Pattern comparison limit");
     expect(() =>
       serializeRsql(comparison("name", "contains", "Ada"), selectors, { ...limits, maximumLikeComparisons: 0 }),
-    ).toThrow(/Pattern comparison limit/);
+    ).toThrow("Pattern comparison limit");
     expect(() =>
       serializeRsql({ kind: "comparison", field: "name", operator: "in", value: ["a", "b"] }, selectors, {
         ...limits,
         maximumArguments: 1,
       }),
-    ).toThrow(/argument limit/);
+    ).toThrow("argument limit");
     expect(() =>
       serializeRsql(comparison("name", "equals", "a b"), selectors, { ...limits, maximumWhereLength: 10 }),
-    ).toThrow(/length limit/);
+    ).toThrow("length limit");
     expect(() =>
       serializeRsql({ kind: "comparison", field: "name", operator: "equals", value: null as never }, selectors, limits),
-    ).toThrow(/Null filter values/);
+    ).toThrow("Null filter values");
   });
 });
