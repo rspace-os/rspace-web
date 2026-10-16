@@ -63,7 +63,9 @@ describe("relationship filter picker", () => {
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
     await user.type(screen.getByRole("combobox", { name: "common:tableList.filters.value" }), "Conf");
 
-    const option = await screen.findByRole("option", { name: /Confocal microscope/ });
+    const option = await screen.findByRole("option", {
+      name: "Confocal microscopecommon:relationshipPicker.openRecord",
+    });
     expect(within(option).getByRole("link", { name: "common:relationshipPicker.openRecord" })).toHaveAttribute(
       "href",
       "/globalId/IN123",

@@ -88,7 +88,9 @@ describe("relationship picker search", () => {
 
     await user.type(screen.getByRole("combobox", { name: "Relationship" }), "Conf");
 
-    const option = await screen.findByRole("option", { name: /Confocal microscope/ });
+    const option = await screen.findByRole("option", {
+      name: "Confocal microscope common:relationshipPicker.openRecord",
+    });
     expect(within(option).getByRole("link", { name: "common:relationshipPicker.openRecord" })).toHaveAttribute(
       "href",
       "/globalId/IN123",
@@ -108,7 +110,9 @@ describe("relationship picker search", () => {
 
     await user.type(screen.getByRole("combobox", { name: "Relationship" }), "IN123");
 
-    expect(await screen.findByRole("option", { name: /Confocal microscope/ })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("option", { name: "Confocal microscope common:relationshipPicker.openRecord" }),
+    ).toBeInTheDocument();
     expect(requests.at(-1)?.searchParams.get("where")).toBe("id==123");
   });
 
@@ -137,7 +141,9 @@ describe("relationship picker search", () => {
     const picker = screen.getByRole("combobox", { name: "Relationship" });
     await user.type(picker, "Conf");
 
-    const option = await screen.findByRole("option", { name: /Confocal microscope/ });
+    const option = await screen.findByRole("option", {
+      name: "Confocal microscope common:relationshipPicker.openRecord common:relationshipPicker.availabilityFailed",
+    });
     expect(await within(option).findByText("common:relationshipPicker.availabilityFailed")).toBeVisible();
     expect(option).toHaveAttribute("aria-disabled", "true");
 

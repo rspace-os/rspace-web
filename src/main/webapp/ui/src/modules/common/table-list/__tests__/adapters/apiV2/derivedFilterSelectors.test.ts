@@ -244,9 +244,9 @@ describe("filter selectors derived from published relationship targets", () => {
   });
 
   it.each([
-    ["target.unknown", /not filterable/],
-    ["room.floor", /does not support contains/],
-    ["target.value", /wire field/],
+    ["target.unknown", "not filterable"],
+    ["room.floor", "does not support contains"],
+    ["target.value", "wire field"],
   ] as const)("rejects the invalid API search selector %s", (selector, error) => {
     expect(() => adapterWithSearch([selector])).toThrow(error);
   });
@@ -266,7 +266,7 @@ describe("filter selectors derived from published relationship targets", () => {
         ...metadata,
         filtering: { ...metadata.filtering, selectors },
       }),
-    ).toThrow(/must be text/);
+    ).toThrow("must be text");
   });
 
   it("rejects a search allowlist above the API pattern limit", () => {
@@ -278,6 +278,6 @@ describe("filter selectors derived from published relationship targets", () => {
           limits: { ...metadata.filtering.limits, maximumLikeComparisons: 0 },
         },
       }),
-    ).toThrow(/Search field limit/);
+    ).toThrow("Search field limit");
   });
 });
