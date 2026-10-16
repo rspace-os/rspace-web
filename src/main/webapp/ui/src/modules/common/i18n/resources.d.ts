@@ -2958,7 +2958,8 @@ export default interface Resources {
           "pidinst": "PIDINST"
         },
         "formField": {
-          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
+          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>.",
+          "pidinstExplanation": "See the Documentation for information on <helpDocs docLink=\"pidinstIdentifiers\">adding and publishing identifiers</helpDocs>."
         },
         "geoLocationField": {
           "addValueToPublish": "Add value to enable publishing.",

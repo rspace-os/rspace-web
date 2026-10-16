@@ -1,11 +1,16 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
+import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
+import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "@/stores/stores-context";
 import type { PidinstPublishingState } from "../../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockInstrument } from "../../../../../stores/models/__tests__/InstrumentModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
-import { IdentifiersList } from "../Identifiers";
+import IdentifiersField, { IdentifiersList } from "../Identifiers";
 import { mockIGSNIdentifier } from "./mocking";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
@@ -556,5 +561,31 @@ describe("Identifiers section", () => {
         "https://researchspace.helpdocs.io/article/common:help.pidinstImport",
       );
     });
+  });
+
+  test.each([
+    { recordType: "an Instrument", makeRecord: makeMockInstrument, article: "oahocdfqyg-pidinst-identifiers" },
+    {
+      recordType: "a Sample",
+      makeRecord: makeMockSample,
+      article: "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+    },
+  ])("the field's help text on $recordType links its own identifier article", async ({ makeRecord, article }) => {
+    const record = makeRecord();
+    record.setEditable(new Set(["identifiers"]), true);
+    render(
+      await wrapWithRealI18n(
+        <ThemeProvider theme={materialTheme}>
+          <storesContext.Provider value={makeMockRootStore({ searchStore: { activeResult: record } })}>
+            <IdentifiersField fieldOwner={record} />
+          </storesContext.Provider>
+        </ThemeProvider>,
+        { resources: { common: commonEn, inventory: inventoryEn }, defaultNS: "inventory" },
+      ),
+    );
+    expect(screen.getByRole("link", { name: "adding and publishing identifiers" })).toHaveAttribute(
+      "href",
+      `https://researchspace.helpdocs.io/article/${article}`,
+    );
   });
 });

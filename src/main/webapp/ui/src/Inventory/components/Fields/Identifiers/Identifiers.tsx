@@ -761,15 +761,22 @@ function Identifiers<
   Fields extends {
     identifiers: Array<Identifier>;
   },
-  FieldOwner extends HasEditableFields<Fields>,
+  FieldOwner extends HasEditableFields<Fields> & { recordType: InventoryRecord["recordType"] },
 >({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
+  const isInstrument = fieldOwner.recordType === "instrument" || fieldOwner.recordType === "instrumentTemplate";
   return (
     <InputWrapper
       label=""
       error={false}
       explanation={
         fieldOwner.isFieldEditable("identifiers") ? (
-          <TransRichText i18nKey="inventory:fields.identifiers.formField.explanation" />
+          <TransRichText
+            i18nKey={
+              isInstrument
+                ? "inventory:fields.identifiers.formField.pidinstExplanation"
+                : "inventory:fields.identifiers.formField.explanation"
+            }
+          />
         ) : null
       }
     >
