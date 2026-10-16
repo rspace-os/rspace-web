@@ -113,7 +113,9 @@ function renderPage() {
 async function completeForm(user: ReturnType<typeof userEvent.setup>) {
   const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
   await user.type(search, "Conf");
-  await user.click(await screen.findByRole("option", { name: /Confocal microscope/ }));
+  await user.click(
+    await screen.findByRole("option", { name: "Confocal microscope common:relationshipPicker.openRecord" }),
+  );
   await screen.findByRole("button", { name: "common:relationshipPicker.clear" });
 }
 
@@ -211,8 +213,12 @@ describe("AddBookableItemPage", () => {
     const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
     await user.type(search, "Conf");
 
-    expect(screen.queryByRole("option", { name: /Confocal microscope \(IN123\)/ })).not.toBeInTheDocument();
-    await user.click(await screen.findByRole("option", { name: /Spare confocal microscope/ }));
+    expect(
+      screen.queryByRole("option", { name: "Confocal microscope common:relationshipPicker.openRecord" }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      await screen.findByRole("option", { name: "Spare confocal microscope common:relationshipPicker.openRecord" }),
+    );
     expect(await screen.findByRole("button", { name: "common:relationshipPicker.clear" })).toBeVisible();
 
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();

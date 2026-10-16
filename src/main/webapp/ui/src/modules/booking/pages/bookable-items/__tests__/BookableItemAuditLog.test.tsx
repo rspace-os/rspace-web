@@ -76,8 +76,8 @@ describe("BookableItemAuditLog", () => {
     const parameters = new URL(request?.url ?? "http://invalid").searchParams;
     expect(parameters.get("page")).toBe("1");
     expect(parameters.has("snapshotDate")).toBe(false);
-    expect(parameters.get("dateFrom")).toMatch(/T00:00:00\.000Z$/);
-    expect(parameters.get("dateTo")).toMatch(/T23:59:59\.999Z$/);
+    expect(parameters.get("dateFrom")?.endsWith("T00:00:00.000Z")).toBe(true);
+    expect(parameters.get("dateTo")?.endsWith("T23:59:59.999Z")).toBe(true);
     expect(screen.getByText("booking:bookableItemDetails.audit.resultsThrough")).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent("booking:bookableItemDetails.audit.status.loaded");
     expect(screen.getAllByText("bookings:41")[0]).toBeVisible();
