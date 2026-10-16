@@ -211,7 +211,7 @@ describe("AddBookableItemPage", () => {
 
     const picker = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
     await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
-    expect(await screen.findByRole("option", { name: /Confocal microscope/ })).toBeVisible();
+    expect(await screen.findByRole("option", { name: "Confocal microscope IN123" })).toBeVisible();
     expect(screen.queryByText("common:relationshipPicker.enterSearchTerm")).not.toBeInTheDocument();
     expect(requests[0]?.searchParams.has("query")).toBe(false);
     expect(requests[0]?.searchParams.get("limit")).toBe("20");

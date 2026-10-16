@@ -166,7 +166,9 @@ describe("BookableItemPage", () => {
 
     expect(await screen.findByRole("radio", { name: "booking:notificationSubscriptions.options.on" })).toBeChecked();
     expect(screen.queryByText("booking:notificationSubscriptions.item.description")).not.toBeInTheDocument();
-    expect(screen.queryByText(/^booking:notificationSubscriptions.item.effective\./)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("booking:notificationSubscriptions.item.effective.", { exact: false }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "booking:notificationSubscriptions.item.preferencesLink" }),
     ).not.toBeInTheDocument();
