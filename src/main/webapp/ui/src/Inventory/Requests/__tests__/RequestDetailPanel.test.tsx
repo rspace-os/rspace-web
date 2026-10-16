@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
+import i18n from "@/modules/common/i18n";
 // Constructing SubSampleModel/SampleModel instances (for the Operations Wizard launch tests)
 // touches getRootStore() internally; this registers the real RootStore factory for that.
 import "@/stores/stores/RootStore";
@@ -244,6 +245,7 @@ beforeEach(() => {
   launchOperationWizard.mockResolvedValue(true);
   lastWizardOrigins = [];
   lastExcludedOperationKeys = undefined;
+  lastOnPerformed = undefined;
   server.use(...defaultHandlers());
 });
 
@@ -303,6 +305,10 @@ describe("RequestDetailPanel", () => {
   });
 
   it("shows the requester's username with a 'Deleted' suffix, rather than a user-details lookup, once their account has been deleted", async () => {
+    // cimode rendering (see src/__tests__/setup.ts) shows only the bare translation key, never
+    // the interpolated copy - asserting on rendered text alone can't tell a correct username from
+    // a dropped or wrong one, so this spies on the real t() call itself to check what was passed.
+    const tSpy = vi.spyOn(i18n, "t");
     renderPanel(baseRequest({ requester: { ...REQUESTER, id: null } }));
     await waitForInitialFetches();
 
@@ -310,6 +316,11 @@ describe("RequestDetailPanel", () => {
     // more to look up), and not the account's possibly-stale first/last name either.
     expect(screen.queryByText("Rita Requester")).toBeNull();
     expect(screen.getByText("inventory:requestsManagement.userDeleted")).toBeInTheDocument();
+    expect(tSpy).toHaveBeenCalledWith(
+      "inventory:requestsManagement.userDeleted",
+      expect.objectContaining({ username: REQUESTER.username }),
+    );
+    tSpy.mockRestore();
   });
 
   it("shows a Request History entry's createdBy username with a 'Deleted' suffix once their account has been deleted", async () => {
@@ -331,10 +342,18 @@ describe("RequestDetailPanel", () => {
         });
       }),
     );
+    // See the equivalent requester test above: cimode hides interpolated values from rendered
+    // text, so the username has to be checked via the actual t() call instead.
+    const tSpy = vi.spyOn(i18n, "t");
     renderPanel(baseRequest());
     await waitForInitialFetches();
 
     expect(screen.getByText("inventory:requestsManagement.userDeleted")).toBeInTheDocument();
+    expect(tSpy).toHaveBeenCalledWith(
+      "inventory:requestsManagement.userDeleted",
+      expect.objectContaining({ username: "old-owner" }),
+    );
+    tSpy.mockRestore();
   });
 
   it("hides owner-only actions and shows a Cancel option for a non-owner viewing a pending request", async () => {
@@ -815,6 +834,117 @@ describe("RequestDetailPanel", () => {
     expect(lastExcludedOperationKeys).toEqual(new Set(["destroy", "pool"]));
   });
 
+  it("shows an error alert, not just a console.error, when loading the selected subsample for the wizard fails", async () => {
+    const restoreConsole = silenceConsole(
+      ["error"],
+      ["Failed to load the selected subsample for the Operations Wizard"],
+    );
+    const user = userEvent.setup();
+    server.use(http.get(SUBSAMPLE_URL, () => HttpResponse.json({ message: "Backend unavailable" }, { status: 500 })));
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+
+    // The bug this guards against: the Choose dialog has already closed by this point, so a
+    // console.error alone left the user looking at the unchanged detail pane with no indication
+    // Proceed did anything at all.
+    await waitFor(() =>
+      expect(addAlert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variant: "error",
+          message: "inventory:errors.genericActionError",
+        }),
+      ),
+    );
+    expect(launchOperationWizard).not.toHaveBeenCalled();
+    // isLaunchingWizard must clear on this failure too, or the user could never retry.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }),
+      ).toBeEnabled(),
+    );
+    restoreConsole();
+  });
+
+  it("disables other actions between Proceed and the wizard opening, covering both the subsample fetch and edit-lock acquisition", async () => {
+    const user = userEvent.setup();
+    let resolveSubsampleFetch: (() => void) | undefined;
+    server.use(
+      http.get(SUBSAMPLE_URL, async ({ params }) => {
+        apiGet("subSamples", Number(params.id));
+        await new Promise<void>((resolve) => {
+          resolveSubsampleFetch = resolve;
+        });
+        return HttpResponse.json(
+          subsampleAttrs({ id: 42, globalId: "SS42", name: "Sample Fifty Five.01", sample: sampleAttrs() }),
+        );
+      }),
+    );
+    let resolveWizardLaunch: ((value: boolean) => void) | undefined;
+    launchOperationWizard.mockImplementation(
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveWizardLaunch = resolve;
+        }),
+    );
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+
+    // Still fetching the subsample: the bug this guards against left nothing disabled here, so a
+    // user re-clicking Prepare Sample could fire a second, overlapping launch.
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }),
+      ).toBeDisabled(),
+    );
+
+    resolveSubsampleFetch?.();
+    await waitFor(() => expect(launchOperationWizard).toHaveBeenCalled());
+    // Now acquiring the edit lock (useOperationWizardLauncher's own launch() promise, still
+    // unresolved) - must stay disabled through this half too, not just the fetch.
+    expect(
+      screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }),
+    ).toBeDisabled();
+
+    resolveWizardLaunch?.(true);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }),
+      ).toBeEnabled(),
+    );
+  });
+
   it("opens the Transfer Ownership dialog for the newly-created sample once the Operations Wizard performs an operation", async () => {
     const user = userEvent.setup();
     // defaultHandlers() already covers the sampleRequests/status and samples/changeOwner PUTs
@@ -883,6 +1013,73 @@ describe("RequestDetailPanel", () => {
         owner: { username: REQUESTER.username },
       }),
     );
+  });
+
+  it("omits the subsamples-transferred and other-requests-rejected bullets for a wizard-created sample, since neither happens to the original sample", async () => {
+    const user = userEvent.setup();
+    // Both set up so each bullet *would* show on the direct-transfer path (see the
+    // "adds the ... bullet" tests above) - proving their absence here is the wizard path
+    // suppressing them, not simply there being nothing to show.
+    server.use(
+      http.get(SAMPLE_URL, ({ params }) => {
+        apiGet("samples", Number(params.id));
+        return HttpResponse.json({ subSamples: [{ id: 1 }, { id: 2 }, { id: 3 }] });
+      }),
+      http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+        apiQuery("sampleRequests", new URL(request.url).searchParams);
+        return HttpResponse.json({
+          requests: [{ id: 202, requester: { firstName: "Sam", lastName: "Second" } }],
+        });
+      }),
+      http.get(SUBSAMPLE_URL, ({ params }) => {
+        apiGet("subSamples", Number(params.id));
+        return HttpResponse.json(
+          subsampleAttrs({ id: 42, globalId: "SS42", name: "Sample Fifty Five.01", sample: sampleAttrs() }),
+        );
+      }),
+    );
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+    await waitFor(() => expect(launchOperationWizard).toHaveBeenCalled());
+    act(() => lastOnPerformed?.({ id: 77, globalId: "SA77", name: "Sample Fifty Five.02" }));
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+    // Confirms the data this test's bullets would key off actually arrived, so their absence
+    // below is the wizard-path guard, not these fetches still being in flight.
+    await waitFor(() => expect(apiQuery).toHaveBeenCalled());
+
+    expect(
+      within(transferDialog).getByText("inventory:requestsManagement.detail.transferDialog.bullets.newSampleMoved"),
+    ).toBeInTheDocument();
+    expect(
+      within(transferDialog).queryByText(
+        "inventory:requestsManagement.detail.transferDialog.bullets.subsamplesTransferred",
+      ),
+    ).toBeNull();
+    expect(
+      within(transferDialog).queryByText(
+        "inventory:requestsManagement.detail.transferDialog.bullets.otherRequestsRejected",
+      ),
+    ).toBeNull();
   });
 
   it("skips the Choose Sample to Prepare dialog and goes straight to Transfer when inventory.sampleRequests.available is on and inventory.operations.available is off", async () => {
@@ -965,7 +1162,7 @@ describe("RequestDetailPanel", () => {
       ).toBeInTheDocument();
     });
 
-    it("names the Approved states specifically when every other active request is Approved", async () => {
+    it("names the Approved state specifically when every other active request is Approved", async () => {
       const user = userEvent.setup();
       server.use(
         http.get(SAMPLE_REQUESTS_URL, ({ request }) => {

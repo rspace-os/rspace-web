@@ -129,6 +129,13 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const [chooseMethodDialogOpen, setChooseMethodDialogOpen] = useState(false);
   const [preparationMethod, setPreparationMethod] = useState<"wizard" | "transfer" | null>(null);
   const [wizardOrigin, setWizardOrigin] = useState<SubSampleModel | null>(null);
+  // Covers the gap between clicking Proceed (which has already closed the Choose dialog) on the
+  // "wizard" radio and the wizard actually opening: fetching the selected subsample, then - once
+  // that succeeds and wizardOrigin is set below - useOperationWizardLauncher's own edit-lock
+  // acquisition. Rolled into isProcessingAction so every other action is disabled for the same
+  // window a mutation would disable them, rather than only while a request status mutation is
+  // itself in flight.
+  const [isLaunchingWizard, setIsLaunchingWizard] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   // Set only when the Transfer Ownership dialog is reached via the "wizard" radio's Operations
   // Wizard having just created a new sample; null (the ordinary case, including every "transfer"
@@ -178,7 +185,11 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // than only when a freshly-fetched origin is set.
   useEffect(() => {
     if (wizardOrigin) {
-      void launchOperationWizard();
+      // isLaunchingWizard started true back in launchOperationsWizardForSelectedSubsample, when
+      // the subsample fetch that produced this origin began; it only stops now, once edit-lock
+      // acquisition has also settled - whether that opened the wizard or (as the hook's own alert
+      // already reports) failed to, either way there's nothing left still in flight to show.
+      void launchOperationWizard().finally(() => setIsLaunchingWizard(false));
     }
   }, [wizardOrigin]);
 
@@ -225,7 +236,8 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     rejectMutation.isPending ||
     fulfilMutation.isPending ||
     cancelMutation.isPending ||
-    transferMutation.isPending;
+    transferMutation.isPending ||
+    isLaunchingWizard;
 
   const comment = statusChanges
     .filter((change) => change.status === status)
@@ -333,12 +345,19 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   const launchOperationsWizardForSelectedSubsample = () => {
     if (selectedSubsampleId === null) return;
+    setIsLaunchingWizard(true);
     ApiService.get<SubSampleAttrs>("subSamples", selectedSubsampleId)
       .then(({ data }) => {
         setWizardOrigin(new SubSampleModel(new AlwaysNewFactory(), data));
       })
       .catch((error: unknown) => {
-        console.error("Failed to load the selected subsample for the Operations Wizard", error);
+        // The Choose dialog has already closed by this point (see proceedWithPreparationMethod),
+        // so without this the user is left looking at the unchanged detail pane with no idea
+        // Proceed did anything at all. isLaunchingWizard only clears here, on failure - a success
+        // instead sets wizardOrigin above, and the effect below clears it once edit-lock
+        // acquisition (the rest of what Proceed promised to do) has also settled.
+        setIsLaunchingWizard(false);
+        showActionError("Failed to load the selected subsample for the Operations Wizard", error);
       });
   };
 
@@ -437,7 +456,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   const requesterFullName = userDisplayName(request.requester, t);
   const isActionableState = status === "PENDING" || status === "APPROVED";
-  const prepareSampleEnabled = isActionableState && selectedSubsampleId !== null;
+  const prepareSampleEnabled = isActionableState && selectedSubsampleId !== null && !isProcessingAction;
   const rejectColors = { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" };
   const approveColors = { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" };
   const approvedDisabledColors = { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" };
@@ -998,7 +1017,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             {t("requestsManagement.detail.transferDialog.whatWillHappen")}
           </Typography>
           <Box component="ul" sx={{ mt: 0, mb: 2, pl: 3 }}>
-            {subSampleCount !== null && subSampleCount > 1 && (
+            {/* Both of these describe what happens to the originally requested sample - its
+            subsamples moving with it, and its other active requests being auto-rejected - neither
+            of which applies once the wizard has created a brand new sample to transfer instead:
+            that sample's ownership change leaves the original sample, its subsamples, and any
+            other requests still open against it untouched. */}
+            {!wizardCreatedSample && subSampleCount !== null && subSampleCount > 1 && (
               <Typography component="li" variant="body2">
                 {subSampleCount === 2
                   ? t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferredBoth", {
@@ -1022,7 +1046,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             <Typography component="li" variant="body2">
               {t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: request.id })}
             </Typography>
-            {otherActiveRequests !== null && otherActiveRequests.length > 0 && (
+            {!wizardCreatedSample && otherActiveRequests !== null && otherActiveRequests.length > 0 && (
               <Typography component="li" variant="body2">
                 {t("requestsManagement.detail.transferDialog.bullets.otherRequestsRejected", {
                   count: otherActiveRequests.length,

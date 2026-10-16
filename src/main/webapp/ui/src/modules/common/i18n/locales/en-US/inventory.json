@@ -2124,8 +2124,8 @@
       "chooseMethodDialog": {
         "body": "Choose how you wish to prepare the sample:",
         "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
-        "otherActiveRequestsWarningApproved": "There are other requests against this sample that are in the Approved states - these other requests will be closed automatically when this sample is transferred.",
-        "otherActiveRequestsWarningApprovedCombined": "There are also other requests against this sample that are in the Approved states - these other requests will be closed automatically when this sample is transferred.",
+        "otherActiveRequestsWarningApproved": "There are other requests against this sample that are in the Approved state - these other requests will be closed automatically when this sample is transferred.",
+        "otherActiveRequestsWarningApprovedCombined": "There are also other requests against this sample that are in the Approved state - these other requests will be closed automatically when this sample is transferred.",
         "otherActiveRequestsWarningCombined": "There are also other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
         "otherActiveRequestsWarningPending": "There are other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
         "otherActiveRequestsWarningPendingCombined": "There are also other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
@@ -2218,14 +2218,12 @@
     "filters": {
       "requests": {
         "all": "All",
-        "label": "Requests",
         "received": "Received",
         "sent": "Sent"
       },
       "status": {
         "active": "Open",
         "all": "All",
-        "label": "Show",
         "past": "Closed"
       }
     },

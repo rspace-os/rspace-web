@@ -4380,15 +4380,15 @@ export default interface Resources {
         "chooseMethodDialog": {
           "body": "Choose how you wish to prepare the sample:",
           "otherActiveRequestsWarning": "There are other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
-          "otherActiveRequestsWarningApproved": "There are other requests against this sample that are in the Approved states - these other requests will be closed automatically when this sample is transferred.",
-          "otherActiveRequestsWarningApprovedCombined": "There are also other requests against this sample that are in the Approved states - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningApproved": "There are other requests against this sample that are in the Approved state - these other requests will be closed automatically when this sample is transferred.",
+          "otherActiveRequestsWarningApprovedCombined": "There are also other requests against this sample that are in the Approved state - these other requests will be closed automatically when this sample is transferred.",
           "otherActiveRequestsWarningCombined": "There are also other requests against this sample that are either in the Pending or Approved states - these other requests will be closed automatically when this sample is transferred.",
           "otherActiveRequestsWarningPending": "There are other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
           "otherActiveRequestsWarningPendingCombined": "There are also other requests against this sample that are in the Pending state - these other requests will be closed automatically when this sample is transferred.",
           "proceedButton": "Proceed",
           "title": "Choose Sample to Prepare",
           "transferOption": "Transfer the existing sample and all subsamples",
-          "transferWarning": "This sample has {count} subsamples - transferring this sample will transfer all subsamples to user {requester}.",
+          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
           "wizardOption": "Create a new sample derived from the existing sample"
         },
         "fields": {
@@ -4474,14 +4474,12 @@ export default interface Resources {
       "filters": {
         "requests": {
           "all": "All",
-          "label": "Requests",
           "received": "Received",
           "sent": "Sent"
         },
         "status": {
           "active": "Open",
           "all": "All",
-          "label": "Show",
           "past": "Closed"
         }
       },

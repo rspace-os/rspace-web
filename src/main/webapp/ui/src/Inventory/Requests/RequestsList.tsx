@@ -78,13 +78,19 @@ function getColumnValue(request: ApiSampleRequestListItem, column: ColumnKey): n
     case "sample":
       return request.sample.id;
     case "requester":
-      // Matches the name shown in the UserDetails chip below, rather than the
-      // underlying id, since that's the value a user sorting this column sees.
-      // A deleted account's id is null; sorting them consistently to one end beats a
-      // comparison against null/undefined behaving inconsistently across browsers.
-      return request.requester.id
-        ? `${request.requester.firstName} ${request.requester.lastName}`
-        : Number.NEGATIVE_INFINITY;
+      // Matches the name shown in the UserDetails chip below, rather than the underlying id,
+      // since that's the value a user sorting this column sees. A deleted account's id is null,
+      // with no current name to sort by - comparing a Number.NEGATIVE_INFINITY sentinel against a
+      // name string left the comparator below inconsistent: `<`/`>` coerce the string operand to
+      // NaN, which is neither less than nor greater than anything, so every deleted-vs-live
+      // comparison came out "equal" instead of grouping deleted accounts to one end as intended.
+      // A single string key keeps every comparison the same (string-to-string) type: an order
+      // prefix that always sorts before a live user's name groups deleted accounts together, and
+      // the username (the one field still guaranteed to identify a deleted account - see
+      // userDisplayName above) orders them consistently against each other.
+      return request.requester.id === null
+        ? `0:${request.requester.username}`
+        : `1:${request.requester.firstName} ${request.requester.lastName}`;
     case "status":
       return request.status;
     case "submitted":
