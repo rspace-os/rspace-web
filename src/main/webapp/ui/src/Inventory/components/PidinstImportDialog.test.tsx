@@ -808,4 +808,24 @@ describe("PidinstImportDialog", () => {
     // the code itself, not a catalogue key built from it
     expect(within(warning).queryByText(/skipped\.reasons\./)).toBeNull();
   });
+
+  test("both help links open the Search and Import article", async () => {
+    await renderOpenDialog(
+      await wrapWithRealI18n(<PidinstImportDialogStory />, {
+        resources: { common: commonEn, inventory: inventoryEn },
+        defaultNS: "inventory",
+      }),
+    );
+
+    // computed through the i18n singleton, which stays in cimode under wrapWithRealI18n
+    expect(screen.getByRole("link", { name: "PIDINST help" })).toHaveAttribute(
+      "href",
+      "https://researchspace.helpdocs.io/article/common:help.pidinstImport",
+    );
+    // rendered through the provider's real English catalogue, so this pins the slug itself
+    expect(screen.getByRole("link", { name: "PIDINST identifiers docs" })).toHaveAttribute(
+      "href",
+      "https://researchspace.helpdocs.io/article/dtzsvyhh44-search-and-import-pidinst-instruments-into-your-inventory",
+    );
+  });
 });

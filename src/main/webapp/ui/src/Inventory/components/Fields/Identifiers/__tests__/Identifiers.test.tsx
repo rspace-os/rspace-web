@@ -40,6 +40,17 @@ describe("Identifiers section", () => {
       expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
       expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
     });
+    test("an IGSN keeps the IGSN article", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={sample1} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("link", { name: "inventory:fields.identifiers.list.igsnDocLink" })).toHaveAttribute(
+        "href",
+        "https://researchspace.helpdocs.io/article/common:help.igsnIdentifiers",
+      );
+    });
   });
   describe("When an identifier exists for container", () => {
     test("Required fields are rendered", () => {
@@ -91,6 +102,19 @@ describe("Identifiers section", () => {
       );
       expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
       expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+    });
+    test("a registered PIDINST identifier keeps the registration article", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_DATACITE" }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("link", { name: "inventory:fields.identifiers.list.pidinstDocLink" })).toHaveAttribute(
+        "href",
+        "https://researchspace.helpdocs.io/article/common:help.pidinstIdentifiers",
+      );
     });
   });
   describe("When viewing a historical version", () => {
@@ -519,6 +543,18 @@ describe("Identifiers section", () => {
           name: "inventory:fields.identifiers.wrapper.inventoryFields.includeOnPage",
         }),
       ).not.toBeInTheDocument();
+    });
+
+    test("the help link opens the import article, not the registration one", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("link", { name: "inventory:fields.identifiers.list.pidinstDocLink" })).toHaveAttribute(
+        "href",
+        "https://researchspace.helpdocs.io/article/common:help.pidinstImport",
+      );
     });
   });
 });

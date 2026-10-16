@@ -583,7 +583,9 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
               <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
                 <StateInfo identifierState={id.state} identifierUrl={id.url} isLinked={id.linked} />{" "}
                 <a
-                  href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
+                  href={helpDocsArticleUrl(
+                    id.linked ? "pidinstImport" : isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers",
+                  )}
                   target="_blank"
                   rel="noreferrer"
                 >
