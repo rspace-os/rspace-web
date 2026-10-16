@@ -104,7 +104,6 @@ type Story = StoryObj<typeof meta>;
 // The timeline writes times and dates in the browser region's format, so expected labels come from its formatters.
 const clock = (minute: number) => formatMinuteWithDayOffset(meta.args.date, meta.args.timezone, minute);
 const densePeriod = (index: number) => period(denseBookings[index], meta.args.date, meta.args.timezone);
-const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export const DensityAwareEqualHourWidths: Story = {
   play: async ({ canvasElement }) => {
@@ -157,7 +156,7 @@ export const Sub15MinuteEvents: Story = {
     }
     const heightBeforeOpening = timelineCanvas.getBoundingClientRect().height;
     const firstDetails = canvas.getByRole("button", {
-      name: new RegExp(`show details for Confocal microscope · researcher\\.01, ${escapeRegExp(densePeriod(0))}`, "i"),
+      name: `Show details for Confocal microscope · researcher.01, ${densePeriod(0)}`,
     });
     await userEvent.click(firstDetails);
     expect(firstDetails).toHaveAttribute("aria-expanded", "true");
