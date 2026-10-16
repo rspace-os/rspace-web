@@ -178,8 +178,8 @@ describe("the My Bookings page", () => {
     );
     render(<MyBookingsPageStory history={history} />);
     const alerts = page.getByRole("list", { name: "Recent changes" });
-    const confocalAlert = alerts.getByRole("listitem", { name: /^Cancelled Confocal microscope, / });
-    const electronAlert = alerts.getByRole("listitem", { name: /^Cancelled Electron microscope, / });
+    const confocalAlert = alerts.getByRole("listitem", { name: "Cancelled Confocal microscope, ", exact: false });
+    const electronAlert = alerts.getByRole("listitem", { name: "Cancelled Electron microscope, ", exact: false });
 
     await pageObj.confocalMoreActions.click();
     await pageObj.cancelMenuItem.click();
