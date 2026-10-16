@@ -34,10 +34,10 @@ async function renderStory(narrow = false): Promise<void> {
 }
 
 async function chooseRuntimeField(name: string): Promise<void> {
-  await view.chooseField(1, /Custom field/);
+  await view.chooseField(1, "Custom field…");
   const search = view.runtimeFieldSearch(1);
   await userEvent.fill(search, name);
-  await userEvent.click(page.getByRole("option", { name: new RegExp(name, "i") }));
+  await userEvent.click(page.getByRole("option", { name, exact: false }));
 }
 
 beforeEach(() => {
@@ -176,7 +176,7 @@ describe("API v2 filter expansion", () => {
     await renderStory();
     await view.openFilters();
     await view.addFilter();
-    await view.chooseField(1, /Custom field/);
+    await view.chooseField(1, "Custom field…");
     const search = view.runtimeFieldSearch(1);
     await userEvent.click(search);
     await expect.element(page.getByText("Type 2 characters to search")).toBeVisible();
@@ -194,7 +194,9 @@ describe("API v2 filter expansion", () => {
     await expect.element(page.getByText("Searching…")).toBeVisible();
     await expect.poll(() => Boolean(finishLoading)).toBe(true);
     finishLoading?.();
-    await expect.element(page.getByRole("option", { name: /Loading field/ })).toBeVisible();
+    await expect
+      .element(page.getByRole("option", { name: "Loading field Extra fields · XFt4c6f6164696e67206669656c64" }))
+      .toBeVisible();
   });
 
   test("restores saved runtime selectors in bounded catalog ID batches", async () => {

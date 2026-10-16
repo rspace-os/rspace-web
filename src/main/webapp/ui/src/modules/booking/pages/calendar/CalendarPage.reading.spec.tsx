@@ -79,8 +79,8 @@ describe("Calendar page", () => {
 
     await page.getByRole("button", { name: "Add filter", exact: true }).click();
     const targetNameField = page.getByRole("combobox", { name: "Field for filter 1" });
-    await targetNameField.fill("Instrument name");
-    await page.getByRole("option", { name: /Instrument name/ }).click();
+    await targetNameField.fill("Name");
+    await page.getByRole("option", { name: "Bookable item → Name", exact: true }).click();
     const targetNameValue = page.getByRole("textbox", { name: "Value for filter 1" });
     await targetNameValue.fill("Confocal microscope");
 
@@ -88,12 +88,12 @@ describe("Calendar page", () => {
     const customFieldGroup = page.getByRole("combobox", { name: "Field for filter 2" });
     await customFieldGroup.click();
     const bookableItemFieldGroup = page.getByRole("group", { name: "Bookable item" });
-    await bookableItemFieldGroup.getByRole("option", { name: /Custom field/ }).click();
+    await bookableItemFieldGroup.getByRole("option", { name: "Custom field…", exact: true }).click();
     const customFieldSearch = page.getByRole("combobox", {
       name: "Search Bookable item custom fields for filter 2",
     });
     await customFieldSearch.fill("Hazard class");
-    await page.getByRole("option", { name: /Hazard class/ }).click();
+    await page.getByRole("option", { name: "Hazard class", exact: false }).click();
     await page.getByRole("textbox", { name: "Value for filter 2" }).fill("BSL-2");
     await page.getByRole("button", { name: "Apply filters" }).click();
 
