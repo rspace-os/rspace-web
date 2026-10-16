@@ -117,7 +117,7 @@ describe("filtering on a relationship target's field", () => {
       />,
     );
 
-    await openFilterOn(/fields\.notes/);
+    await openFilterOn("common:tableList.examples.fields.notes");
 
     expect(screen.getByRole("textbox", { name: "common:tableList.filters.value" })).not.toHaveAttribute("list");
   });
