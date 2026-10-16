@@ -290,7 +290,11 @@ describe("AvailabilityBar", () => {
         ],
       });
 
-      await user.hover(await screen.findByRole("button", { name: /Confocal microscope, (Booked|Blocked out)/ }));
+      await user.hover(
+        await screen.findByRole("button", {
+          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Blocked out"}, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event`,
+        }),
+      );
       const dialog = await screen.findByRole("dialog");
       const disclosure = within(dialog).getByLabelText(
         `Show details for ${kind === "BOOKING" ? "Confocal microscope" : "Maintenance blockout"}, 09:00–10:00`,
