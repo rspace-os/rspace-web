@@ -336,7 +336,9 @@ describe("Calendar page", () => {
     const collapsedPosition = indicator?.getBoundingClientRect();
 
     await calendar.showEventDetails("Confocal microscope").click();
-    await expect.element(event.getByRole("button", { name: /Hide details/ })).toHaveAttribute("aria-expanded", "true");
+    await expect
+      .element(event.getByRole("button", { name: "Hide details", exact: false }))
+      .toHaveAttribute("aria-expanded", "true");
     const expandedPosition = indicator?.getBoundingClientRect();
 
     expect(expandedPosition?.top).toBe(collapsedPosition?.top);
@@ -361,14 +363,14 @@ describe("Calendar page", () => {
 
     await calendar.event("Confocal microscope").click();
     await expect
-      .element(calendar.event("Confocal microscope").getByRole("button", { name: /Hide details/ }))
+      .element(calendar.event("Confocal microscope").getByRole("button", { name: "Hide details", exact: false }))
       .toHaveAttribute("aria-expanded", "true");
     await calendar.heading.click();
     await expect.element(calendar.showEventDetails("Confocal microscope")).toHaveAttribute("aria-expanded", "false");
 
     await calendar.event("Busy").click();
     await expect
-      .element(calendar.event("Busy").getByRole("button", { name: /Hide details/ }))
+      .element(calendar.event("Busy").getByRole("button", { name: "Hide details", exact: false }))
       .toHaveAttribute("aria-expanded", "true");
     await calendar.heading.click();
     await expect.element(calendar.showEventDetails("Busy")).toHaveAttribute("aria-expanded", "false");

@@ -26,11 +26,11 @@ export class CalendarPage {
   readonly timeZone: Locator = this.toolbar.getByLabelText(/^Time zone:/);
 
   event(itemName: string): Locator {
-    return page.getByRole("article", { name: new RegExp(itemName) });
+    return page.getByRole("article", { name: itemName, exact: false });
   }
 
   showEventDetails(itemName: string): Locator {
-    return page.getByRole("button", { name: new RegExp(`Show details for ${itemName}`) });
+    return page.getByRole("button", { name: `Show details for ${itemName}`, exact: false });
   }
 
   get viewItemDetails(): Locator {
@@ -52,7 +52,7 @@ export class CalendarPage {
   async openTargetlessBookingDialog(): Promise<Locator> {
     await this.newBooking.click();
     await this.bookingDialog.getByRole("button", { name: "Choose a bookable item" }).click();
-    await page.getByRole("option", { name: /Confocal microscope.*IN123/ }).click();
+    await page.getByRole("option", { name: "Confocal microscope (IN123) — Europe/Berlin", exact: true }).click();
     return this.bookingDialog;
   }
 

@@ -2,7 +2,10 @@ import { type Locator, page, userEvent } from "vitest/browser";
 
 export class DayTimelinePage {
   get scroller(): Locator {
-    return page.getByRole("region", { name: /24-hour calendar for Test instruments/ });
+    return page.getByRole("region", {
+      name: "24-hour calendar for Test instruments on Monday, August 17, 2026 in Europe/Berlin",
+      exact: true,
+    });
   }
 
   get outsideButton(): Locator {
@@ -10,11 +13,11 @@ export class DayTimelinePage {
   }
 
   trigger(title: string): Locator {
-    return page.getByRole("button", { name: new RegExp(`Show details for ${title}`) });
+    return page.getByRole("button", { name: `Show details for ${title}`, exact: false });
   }
 
   hideButton(period: string, title: string): Locator {
-    return this.popup(period).getByRole("button", { name: new RegExp(`Hide details for ${title}`) });
+    return this.popup(period).getByRole("button", { name: `Hide details for ${title}, ${period}`, exact: true });
   }
 
   popup(period: string): Locator {
