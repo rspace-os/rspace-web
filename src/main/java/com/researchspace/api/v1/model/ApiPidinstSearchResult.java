@@ -29,7 +29,10 @@ public class ApiPidinstSearchResult {
   @JsonProperty("totalsByProvider")
   private Map<String, Integer> totalsByProvider = new LinkedHashMap<>();
 
-  /** This page, newest update first; equal update times keep each registry's own order. */
+  /**
+   * This page, up to 50 hits, newest update first; equal update times keep each registry's own
+   * order. Short when a record on it is not offered (RSDEV-1556).
+   */
   @JsonProperty("hits")
   private List<ApiPidinstRecord> hits = new ArrayList<>();
 }
