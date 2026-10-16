@@ -302,7 +302,7 @@ describe("BookableItemsPage", () => {
 
     expect(await screen.findByText("Confocal microscope")).toBeVisible();
     expect(collectionRequests).toBe(1);
-    expect(screen.queryByText(/Validation failed/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Validation failed", { exact: false })).not.toBeInTheDocument();
   });
 
   it("shows selected target fields while keeping the fixed projection", async () => {
@@ -488,7 +488,7 @@ describe("BookableItemsPage", () => {
     );
     const ids = Array.from({ length: 1001 }, (_, index) => String(index + 1));
 
-    await expect(mutateBookableItems("enable", ids, "new-token")).rejects.toThrow(/more than 1000 row IDs/);
+    await expect(mutateBookableItems("enable", ids, "new-token")).rejects.toThrow("more than 1000 row IDs");
     expect(bulkRequests).toBe(0);
   });
 });
