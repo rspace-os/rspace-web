@@ -43,7 +43,7 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
           component="img"
           sx={{ width: theme.spacing(5), maxHeight: "44px" }}
           src={node.thumbnail || ""}
-          alt={t("recordTree.thumbnailAlt")}
+          alt={t("recordTree.thumbnailAlt", { name: node.name })}
           key={2}
         />,
       ],
