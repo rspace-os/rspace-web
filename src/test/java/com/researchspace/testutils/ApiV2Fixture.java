@@ -314,9 +314,9 @@ public final class ApiV2Fixture {
     enableBookings();
     String body =
         """
-        {"enabled":true,"target":{"relationTo":"booking-instruments","value":%d}}\
+        {"enabled":true,"timezone":"%s","target":{"relationTo":"booking-instruments","value":%d}}\
         """
-            .formatted(instrumentId);
+            .formatted(timezone, instrumentId);
     long id = idOf(postJson("/api/v2/booking-configurations", body, apiKey));
     teardown.add(() -> deleteBookingConfigurationAsSysadmin(id));
     return id;
