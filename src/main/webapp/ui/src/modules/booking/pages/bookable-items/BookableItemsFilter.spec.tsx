@@ -38,7 +38,7 @@ describe("the bookable items table", () => {
     await expect.element(page.getByRole("option", { name: "Custom field on Bookable item…" })).toBeVisible();
     await expect.element(page.getByRole("group", { name: "Related record fields" })).toBeVisible();
     await expect.element(page.getByRole("option", { name: "Bookable item → Name" })).toBeVisible();
-    await expect.element(page.getByRole("option", { name: /Hazard class/ })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("option", { name: "Hazard class", exact: false })).not.toBeInTheDocument();
 
     await pageObj.chooseCustomFieldSource();
 
@@ -54,7 +54,7 @@ describe("the bookable items table", () => {
     await pageObj.chooseCustomFieldSource();
     await userEvent.fill(pageObj.customFieldSearch, "haz");
 
-    const definition = page.getByRole("option", { name: /Hazard class/ });
+    const definition = page.getByRole("option", { name: "Hazard class Cell line template · SF152", exact: true });
     await expect.element(definition).toBeVisible();
     await userEvent.click(definition);
 
@@ -74,7 +74,9 @@ describe("the bookable items table", () => {
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
     await userEvent.fill(pageObj.customFieldSearch, "training");
-    await userEvent.click(page.getByRole("option", { name: /Requires training/ }));
+    await userEvent.click(
+      page.getByRole("option", { name: "Requires training Cell line template · SF160", exact: true }),
+    );
 
     await userEvent.click(pageObj.valueInput);
     await expect.element(page.getByRole("option", { name: "supervised only" })).toBeVisible();
@@ -91,7 +93,7 @@ describe("the bookable items table", () => {
     await pageObj.openFilters();
     await pageObj.chooseCustomFieldSource();
     await userEvent.fill(pageObj.customFieldSearch, "haz");
-    await userEvent.click(page.getByRole("option", { name: /Hazard class/ }));
+    await userEvent.click(page.getByRole("option", { name: "Hazard class Cell line template · SF152", exact: true }));
 
     const showAsColumn = page.getByRole("checkbox", { name: "Show as column" });
     await expect.element(showAsColumn).toBeVisible();
