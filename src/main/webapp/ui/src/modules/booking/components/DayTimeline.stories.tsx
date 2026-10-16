@@ -150,7 +150,7 @@ export const Sub15MinuteEvents: Story = {
     }
     const heightBeforeOpening = timelineCanvas.getBoundingClientRect().height;
     const firstDetails = canvas.getByRole("button", {
-      name: /show details for Confocal microscope · researcher\.01, 09:00–09:05/i,
+      name: "Show details for Confocal microscope · researcher.01, 09:00–09:05",
     });
     await userEvent.click(firstDetails);
     expect(firstDetails).toHaveAttribute("aria-expanded", "true");
@@ -171,7 +171,7 @@ export const NowBeforeWindow: Story = {
     await canvas.findByTestId("day-timeline-canvas");
     expect(canvas.getByTestId("day-timeline-now")).toHaveAttribute("data-edge", "before");
     const nowLabel = canvas.getByText("Now 07:15");
-    expect(canvas.queryByText(/before visible window/i)).not.toBeInTheDocument();
+    expect(canvas.queryByText("before visible window", { exact: false })).not.toBeInTheDocument();
     expect(nowLabel.getBoundingClientRect().bottom).toBeLessThan(canvas.getByText("00:00").getBoundingClientRect().top);
   },
 };
@@ -191,7 +191,7 @@ export const ZoomPreservesViewportPosition: Story = {
     expect(centerAfterZoom).toBeCloseTo(centerBeforeZoom, 0);
     for (let step = 0; step < 5; step += 1) await userEvent.click(zoomIn);
     expect(zoomIn).toBeDisabled();
-    expect(canvas.queryByText(/\d+%/)).not.toBeInTheDocument();
+    expect(canvas.queryByText("%", { exact: false })).not.toBeInTheDocument();
   },
 };
 
