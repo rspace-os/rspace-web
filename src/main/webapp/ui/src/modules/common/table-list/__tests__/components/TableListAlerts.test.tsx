@@ -198,10 +198,10 @@ describe("TableList alerts", () => {
     render(<Harness />);
 
     await user.click(screen.getByRole("button", { name: "Report two changes for Alpha" }));
-    const before = within(alertList()).getByRole("listitem", { name: /Second change/ });
+    const before = within(alertList()).getByRole("listitem", { name: "Second change." });
     await user.click(screen.getByRole("button", { name: "Report two changes for Beta" }));
 
-    const after = within(alertList()).getByRole("listitem", { name: /Second change/ });
+    const after = within(alertList()).getByRole("listitem", { name: "Second change." });
     expect(after).not.toBe(before);
     expect(within(alertList()).getAllByRole("listitem")).toHaveLength(2);
   });
