@@ -195,7 +195,7 @@ describe("the All Bookable Items page", () => {
     await slice.hover();
 
     await expect.element(pageObj.availabilityDetails).toBeVisible();
-    await pageObj.availabilityDetails.getByLabelText(/^Show details for Maintenance,/).click();
+    await pageObj.availabilityDetails.getByLabelText("Show details for Maintenance,", { exact: false }).click();
     await expect.element(pageObj.availabilityDetails.getByText("Maintenance", { exact: true })).toBeVisible();
     await expect
       .element(pageObj.availabilityDetails.getByText("Outside opening hours", { exact: true }))
