@@ -102,7 +102,9 @@ describe("BookingCalendarFileButton", () => {
     server.use(http.get(PATH, () => new HttpResponse(null, { status: 404 })));
     await renderButton();
 
-    await userEvent.click(screen.getByRole("button", { name: /\.ics file for/ }));
+    await userEvent.click(
+      screen.getByRole("button", { name: ".ics file for Confocal microscope, 12 Sep 2026, 10:00–12:00" }),
+    );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The calendar file for Confocal microscope, 12 Sep 2026, 10:00–12:00 could not be downloaded.",
