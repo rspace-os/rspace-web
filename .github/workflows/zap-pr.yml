@@ -1,0 +1,226 @@
+name: ZAP Scan
+
+# Shift-left security scan: builds THIS PR's WAR, boots it, and runs the ZAP
+# quick-release plan against it before merge.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zap-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  # --- target (throwaway instance) ---
+  RSPACE_BASE_URL: http://localhost:8080
+  TARGET_URL: http://localhost:8080
+  PENTEST_REF: "309201264ea8c0398db830e805a59a6a342e1f97"
+  PLAN: quick-release
+  REPORT_DIR: reports
+
+jobs:
+  scan:
+    if: github.event.pull_request.head.repo.full_name == github.repository && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      RS_FILE_BASE: /tmp/zap-pr-filestore
+      HAS_SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+
+      ZAP_USERNAME: sysadmin1
+      ZAP_PASSWORD: sysWisc23!
+      # sysadmin1's seeded API key.
+      ZAP_APIKEY: abcdefghijklmnop12
+      # ROLE_USER account for the non-admin active-scan pass
+      ZAP_USER2_USERNAME: user2b
+      ZAP_USER2_PASSWORD: user1234
+
+    services:
+      db:
+        image: mariadb:12.3
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+
+    steps:
+      - name: Checkout rspace-web (PR head)
+        uses: actions/checkout@v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Checkout rspace-pentest (pinned SHA)
+        uses: actions/checkout@v7.0.0
+        with:
+          repository: ResearchSpace-ELN/rspace-pentest
+          ref: ${{ env.PENTEST_REF }}
+          ssh-key: ${{ secrets.PENTEST_DEPLOY_KEY }}
+          path: pentest
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.4.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Set up Node + pnpm
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+      - run: corepack enable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pentest Python deps
+        run: pip install -r pentest/requirements.txt
+
+      - name: Seed dev deployment.properties
+        run: |
+          cp -f src/main/resources/deployments/dev/deployment.properties.example \
+            src/main/resources/deployments/dev/deployment.properties
+
+      - name: Package WAR
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=17 -Djava-vendor=temurin -Dtimestamp=${{ github.run_id }}
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup filestore
+        run: |
+          rm -rf "$RS_FILE_BASE"
+          mkdir -p "$RS_FILE_BASE"
+
+      # Override the dev template so ZAP exercises production CSRF and CORS behavior.
+      - name: Start RSpace (jetty:run-war)
+        run: |
+          set -euo pipefail
+          nohup ./mvnw jetty:run-war \
+            -DskipTests=true -Dmaven.war.skip=true \
+            -Dtimestamp=${{ github.run_id }} \
+            -Djava-version=17 -Djava-vendor=temurin \
+            -Denvironment=drop-recreate-db \
+            -Dspring.profiles.active=run \
+            -DreactDevMode=false \
+            -Demail.enabled=false \
+            -Dcsrf.filters.enabled=true \
+            -Dapi.permissiveCors.enabled=false \
+            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Djdbc.db.maven=rspace \
+            -DRS_FILE_BASE="$RS_FILE_BASE" \
+            -DRS.devlogLevel=INFO \
+            > /tmp/jetty.log 2>&1 &
+
+      - name: Build ZAP image
+        working-directory: pentest
+        run: python3 scripts/pr_scan.py build
+
+      - name: Wait for RSpace readiness
+        run: |
+          set -euo pipefail
+          echo "Waiting for RSpace at ${TARGET_URL}/login ..."
+          for i in $(seq 1 180); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' "${TARGET_URL}/login" || true)" = "200" ]; then
+              echo "Ready after ~$((i*5))s"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::RSpace did not become ready in time"; tail -100 /tmp/jetty.log; exit 1
+
+      - name: Prepare reports and merge plan
+        id: prepare
+        working-directory: pentest
+        run: python3 scripts/pr_scan.py prepare
+
+      - name: Run ZAP automation plan (quick-release)
+        id: zap
+        continue-on-error: true
+        working-directory: pentest
+        run: python3 scripts/pr_scan.py scan
+
+      # Process reports on this runner; do not publish downloadable artifacts.
+      - name: Security gate (informational)
+        id: gate
+        if: always() && steps.prepare.outcome == 'success'
+        continue-on-error: true
+        working-directory: pentest
+        run: python3 scripts/pr_scan.py gate
+
+      - name: Job summary (counts only)
+        if: always()
+        env:
+          ZAP_OUTCOME: ${{ steps.zap.outcome || 'skipped' }}
+          GATE_OUTCOME: ${{ steps.gate.outcome || 'skipped' }}
+        run: |
+          zap_counts="$(grep -oE 'Alert counts: .*' pentest/security_gate.out 2>/dev/null || echo 'unavailable (scan may not have completed)')"
+          {
+            echo "### ZAP PR security scan (informational)"
+            echo ""
+            echo "- Scan execution: ${ZAP_OUTCOME}"
+            echo "- Gate: ${GATE_OUTCOME} (informational)"
+            echo "- ZAP ${zap_counts}"
+            echo ""
+            echo "_Counts only. Finding detail is sent to the security team's Slack; no names or URLs are published here._"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prepare Slack payload (findings only)
+        id: slack_payload
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && steps.prepare.outcome == 'success' }}
+        working-directory: pentest
+        env:
+          SCAN_STATUS: ${{ (steps.zap.outcome == 'failure' || steps.gate.outcome == 'failure' || job.status == 'failure') && 'failure' || 'success' }}
+          SCAN_TITLE: "rspace-web PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+          SCAN_LINK: ${{ github.event.pull_request.html_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 scripts/slack_summary.py --only-on-findings --output "$RUNNER_TEMP/zap-slack.json"
+          if [ -s "$RUNNER_TEMP/zap-slack.json" ]; then
+            echo "notify=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify Slack (findings only)
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && steps.slack_payload.outputs.notify == 'true' }}
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload-file-path: ${{ runner.temp }}/zap-slack.json
+          errors: true
+
+      - name: Notify Slack (setup or reporting failure)
+        if: ${{ !cancelled() && env.HAS_SLACK_WEBHOOK == 'true' && (steps.prepare.outcome != 'success' || steps.slack_payload.outcome == 'failure') }}
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          errors: true
+          payload: |
+            attachments:
+              - color: danger
+                text: ${{ toJSON(format('rspace-web PR #{0}: {1} (failure). Scan setup or reporting did not complete; no complete security result is available. {2}/{3}/actions/runs/{4}', github.event.pull_request.number, github.event.pull_request.title, github.server_url, github.repository, github.run_id)) }}
