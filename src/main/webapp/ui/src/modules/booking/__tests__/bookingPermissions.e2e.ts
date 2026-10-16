@@ -150,20 +150,20 @@ test.describe
         await expect(bookingsTable.getByText(purpose, { exact: true })).toBeVisible();
         await expect(bookingsTable.getByText("Read-only: you no longer have access to this item.")).toBeVisible();
         await expect(bookingsTable.getByText(instrument.name, { exact: true })).toHaveCount(0);
-        await expect(page.getByRole("link", { name: new RegExp(instrument.globalId) })).toHaveCount(0);
+        await expect(page.getByRole("link", { name: instrument.globalId, exact: false })).toHaveCount(0);
         await expect(page.getByRole("link", { name: "View details" })).toHaveCount(1);
         await expect(page.getByRole("link", { name: "Edit" })).toHaveCount(0);
         await expect(page.getByRole("button", { name: "Cancel booking" })).toHaveCount(0);
-        await expect(page.getByRole("button", { name: /^\.ics file/ })).toHaveCount(0);
+        await expect(page.getByRole("button", { name: ".ics file", exact: false })).toHaveCount(0);
 
         await page.getByRole("link", { name: "View details" }).click();
-        await expect(page).toHaveURL(new RegExp(`/booking/calendar/bookings/${bookingId}$`));
+        await expect(page).toHaveURL(new URL(`/booking/calendar/bookings/${bookingId}`, page.url()).href);
         await expect(page.getByText("Unknown item", { exact: true })).toBeVisible();
         await expect(page.getByText(purpose, { exact: true })).toBeVisible();
         await expect(page.getByRole("link", { name: "Edit" })).toHaveCount(0);
         await expect(page.getByRole("button", { name: "Cancel booking" })).toHaveCount(0);
-        await expect(page.getByRole("button", { name: /^\.ics file/ })).toHaveCount(0);
-        await expect(page.getByRole("link", { name: new RegExp(instrument.globalId) })).toHaveCount(0);
+        await expect(page.getByRole("button", { name: ".ics file", exact: false })).toHaveCount(0);
+        await expect(page.getByRole("link", { name: instrument.globalId, exact: false })).toHaveCount(0);
       });
     });
   });
