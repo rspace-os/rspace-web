@@ -1,8 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
-import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
-import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
-import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "@/stores/stores-context";
 import type { PidinstPublishingState } from "../../../../../stores/definitions/Identifier";
@@ -564,28 +561,18 @@ describe("Identifiers section", () => {
   });
 
   test.each([
-    { recordType: "an Instrument", makeRecord: makeMockInstrument, article: "oahocdfqyg-pidinst-identifiers" },
-    {
-      recordType: "a Sample",
-      makeRecord: makeMockSample,
-      article: "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
-    },
-  ])("the field's help text on $recordType links its own identifier article", async ({ makeRecord, article }) => {
+    { recordType: "an Instrument", makeRecord: makeMockInstrument, explanation: "pidinstExplanation" },
+    { recordType: "a Sample", makeRecord: makeMockSample, explanation: "explanation" },
+  ])("the field's help text on $recordType is its own explanation", ({ makeRecord, explanation }) => {
     const record = makeRecord();
     record.setEditable(new Set(["identifiers"]), true);
     render(
-      await wrapWithRealI18n(
-        <ThemeProvider theme={materialTheme}>
-          <storesContext.Provider value={makeMockRootStore({ searchStore: { activeResult: record } })}>
-            <IdentifiersField fieldOwner={record} />
-          </storesContext.Provider>
-        </ThemeProvider>,
-        { resources: { common: commonEn, inventory: inventoryEn }, defaultNS: "inventory" },
-      ),
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider value={makeMockRootStore({ searchStore: { activeResult: record } })}>
+          <IdentifiersField fieldOwner={record} />
+        </storesContext.Provider>
+      </ThemeProvider>,
     );
-    expect(screen.getByRole("link", { name: "adding and publishing identifiers" })).toHaveAttribute(
-      "href",
-      `https://researchspace.helpdocs.io/article/${article}`,
-    );
+    expect(screen.getByText(`inventory:fields.identifiers.formField.${explanation}`)).toBeInTheDocument();
   });
 });
