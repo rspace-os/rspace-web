@@ -14,6 +14,18 @@ replacing the previous ESLint + Prettier setup.
   needed; otherwise install the community types, e.g. `pnpm add -D @types/<package-name>`.
 
 ## Notes
+- Native `fetch` calls to APIs authenticated with a browser UI token should use
+  `fetchWithUiToken` from `modules/common/utils/fetchWithUiToken`. A rejected
+  token triggers a session-token refresh and validation. For the same user,
+  GET requests retry once and later requests use the stored replacement even
+  if their hook or query still holds the expired token. A changed identity
+  reloads the tab to discard the previous Operate As user's caches and UI state.
+  Axios calls (including `axios.create` instances) imported from `common/axios`
+  use the same recovery for same-origin API requests. Pending writes are never
+  replayed. An expired browser session navigates to login; public document views
+  reload their existing URL to restore the anonymous session. Other refresh or
+  validation failures leave the original error with the caller. Concurrent
+  failures share recovery only when their tokens match.
 - Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
 - Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
   in CI and in the pre-commit hook, and any Biome info/warning/error fails the
