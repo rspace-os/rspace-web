@@ -37,7 +37,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     expect(canvas.getByText("Create project")).toBeInTheDocument();
-    expect(canvas.getByRole("button", { name: /deploy/i })).toBeInTheDocument();
+    expect(canvas.getByRole("button", { name: "Deploy" })).toBeInTheDocument();
   },
 };
 
