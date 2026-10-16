@@ -40,7 +40,7 @@ describe("DayTimeline expanded cards", () => {
 
     const popup = timeline.popup("09:30–10:30");
     const period = popup.getByRole("heading", { name: "09:30–10:30" });
-    const duration = popup.getByText(/1 hour/);
+    const duration = popup.getByText("1 hour", { exact: true });
     await expect.element(duration).toBeVisible();
     const periodBox = period.element().getBoundingClientRect();
     const durationBox = duration.element().getBoundingClientRect();
