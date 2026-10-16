@@ -120,7 +120,7 @@ describe("TableList filter buttons", () => {
 
   it("keeps quick filters in the toolbar when there is no filter panel to open", () => {
     render(<Harness presentation="menu" hideFilterPanel />);
-    expect(screen.getByRole("button", { name: /Available now/ })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Available now" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByRole("button", { name: "common:tableList.filters.noneApplied" })).not.toBeInTheDocument();
   });
 });
