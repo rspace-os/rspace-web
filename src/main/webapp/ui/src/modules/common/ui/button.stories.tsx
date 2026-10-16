@@ -19,7 +19,7 @@ export const Default: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole("button", { name: /button/i });
+    const button = canvas.getByRole("button", { name: "Button" });
     const bg = getComputedStyle(button).backgroundColor;
     expect(bg).not.toBe("rgba(0, 0, 0, 0)");
     expect(bg).not.toBe("transparent");

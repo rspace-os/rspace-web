@@ -27,7 +27,7 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const trigger = canvas.getByRole("button", { name: /open menu/i });
+    const trigger = canvas.getByRole("button", { name: "Open menu" });
     await userEvent.click(trigger);
 
     const body = within(document.body);

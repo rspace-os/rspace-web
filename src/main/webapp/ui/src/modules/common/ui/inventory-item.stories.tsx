@@ -208,7 +208,9 @@ export const LocationFixtures: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     expect(canvas.getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
-    expect(canvas.getByRole("link", { name: /Cell analysis facility/ })).toHaveAttribute("href", "/globalId/IC458");
+    expect(
+      canvas.getByRole("link", { name: "Cell analysis facility with a deliberately long location name" }),
+    ).toHaveAttribute("href", "/globalId/IC458");
     expect(canvas.getAllByRole("listitem")).toHaveLength(3);
   },
 };
