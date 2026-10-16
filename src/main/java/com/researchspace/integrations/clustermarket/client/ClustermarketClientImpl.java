@@ -2,8 +2,9 @@ package com.researchspace.integrations.clustermarket.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.User;
-import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.UserConnectionManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -24,13 +25,13 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class ClustermarketClientImpl implements ClustermarketClient {
   private RestTemplate restTemplate = new RestTemplate();
-  private IntegrationsHandler integrationsHandler;
+  private UserConnectionManager userConnectionManager;
 
   @Value("${clustermarket.api.url}")
   private String clustermarketApiUrl;
 
-  public ClustermarketClientImpl(IntegrationsHandler integrationsHandler) {
-    this.integrationsHandler = integrationsHandler;
+  public ClustermarketClientImpl(UserConnectionManager userConnectionManager) {
+    this.userConnectionManager = userConnectionManager;
   }
 
   public JsonNode getBookings(User user, String accessToken) {
@@ -48,9 +49,7 @@ public class ClustermarketClientImpl implements ClustermarketClient {
 
   public JsonNode getBookingDetails(String id, User user) {
     log.debug("call to clustermarket service to get BookingDetails");
-    IntegrationInfo inInfo =
-        integrationsHandler.getIntegration(user, IntegrationsHandler.CLUSTERMARKET_APP_NAME);
-    String token = (String) inInfo.getOptions().get(IntegrationsHandler.ACCESS_TOKEN_SETTING);
+    String token = storedToken(user);
     HttpHeaders headers = new HttpHeaders();
     headers.add("Authorization", String.format("Bearer %s", token));
     return restTemplate
@@ -64,9 +63,7 @@ public class ClustermarketClientImpl implements ClustermarketClient {
 
   public JsonNode getEquipmentDetails(String id, User user) {
     log.debug("call to clustermarket service to get EquipmentDetails");
-    IntegrationInfo inInfo =
-        integrationsHandler.getIntegration(user, IntegrationsHandler.CLUSTERMARKET_APP_NAME);
-    String token = (String) inInfo.getOptions().get(IntegrationsHandler.ACCESS_TOKEN_SETTING);
+    String token = storedToken(user);
     HttpHeaders headers = new HttpHeaders();
     headers.add("Authorization", String.format("Bearer %s", token));
     return restTemplate
@@ -76,5 +73,13 @@ public class ClustermarketClientImpl implements ClustermarketClient {
             new HttpEntity<>(null, headers),
             JsonNode.class)
         .getBody();
+  }
+
+  // RSDEV-1525: IntegrationInfo withholds the token, so read the stored one
+  private String storedToken(User user) {
+    return userConnectionManager
+        .findByUserNameProviderName(user.getUsername(), IntegrationsHandler.CLUSTERMARKET_APP_NAME)
+        .map(UserConnection::getAccessToken)
+        .orElse(null);
   }
 }

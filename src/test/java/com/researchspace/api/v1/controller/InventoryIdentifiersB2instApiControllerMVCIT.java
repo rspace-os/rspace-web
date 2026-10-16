@@ -20,6 +20,7 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSetti
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
 import org.junit.jupiter.api.AfterEach;
@@ -70,6 +71,28 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     originalPidinstDataCiteSettings =
         captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
     setB2instEnabled("true");
+  }
+
+  @Test
+  public void storedSecretIsReturnedAsNullAndNeverInClear() throws Exception {
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    String apiKey = createNewApiKeyForUser(sysadmin);
+    // restored by teardown, which puts the captured real token back
+    sysPropMgr.save(SystemPropertyName.PIDINST_B2INST_TOKEN, "b2inst-stored-token", sysadmin);
+
+    String body =
+        mockMvc
+            .perform(
+                createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/system/settings", sysadmin))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    // the key must be present with a null value: an absent key would read as "no secret"
+    assertThat(body)
+        .containsPattern("\"password\"\\s*:\\s*null")
+        .doesNotContain("b2inst-stored-token");
   }
 
   @AfterEach
