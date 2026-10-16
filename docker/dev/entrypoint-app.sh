@@ -92,6 +92,7 @@ fi
 # Optional third-party integration mocks (rspace-dev up --e2e). The mock
 # server runs beside Vite in the network namespace shared by both containers,
 # so localhost is intentionally correct here.
+# Keep this list in sync with the mock block in .github/workflows/e2e.yml.
 E2E_MOCK_ARGS=()
 if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
   E2E_MOCK_URL="http://localhost:${E2E_MOCK_PORT:-9099}"
