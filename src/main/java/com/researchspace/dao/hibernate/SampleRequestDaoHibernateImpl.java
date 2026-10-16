@@ -47,7 +47,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
       User user) {
 
     boolean hasStatusFilter = CollectionUtils.isNotEmpty(statuses);
-    // a deleted sample must not drive a pending count; the request row itself is kept for history
+    // requests against a trashed sample drop out of listings, but stay readable by id
     String where = " where " + roleClause(role) + " and req.sample.deleted = false";
     if (hasStatusFilter) {
       where += " and req.status in (:statuses)";

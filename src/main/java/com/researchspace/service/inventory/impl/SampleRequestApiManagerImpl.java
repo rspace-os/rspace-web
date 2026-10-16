@@ -65,11 +65,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       SampleRequestStatus to, SampleRequestStatus from, Actor actor, boolean reasonRequired) {}
 
   /**
-   * Every transition a user can make. PENDING is absent: it is written only when a request is
-   * raised. FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a
-   * separate approval step), or after already approving the request. REJECTED likewise: an owner
-   * can withdraw an approval. A sample transfer closes PENDING and APPROVED requests through the
-   * same entries, see closeActiveRequestsForTransferredSample.
+   * Every transition a user can make (ADR D7). PENDING is absent: it is written only when a request
+   * is raised.
    */
   private static final List<Transition> TRANSITIONS =
       List.of(
@@ -140,9 +137,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
-    // locked, so two concurrent transitions serialise and the second sees the committed status.
-    // It must be the transaction's first read: with innodb_snapshot_isolation (on by default from
-    // MariaDB 11.6), locking a row changed since an earlier read fails instead of waiting for it.
+    // locked as the transaction's first read, so concurrent transitions serialise (ADR D10)
     SampleRequest request = sampleRequestDao.getForUpdate(id);
     assertSampleRequestsEnabled(user);
     if (request == null) {
@@ -231,10 +226,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return applyOutgoingSampleRules(detail, request, user);
   }
 
-  /**
-   * Public details only: the parties are often in different groups. A deleted user keeps their
-   * username in the record, with no id or name to resolve.
-   */
+  /** A deleted user keeps their username in the record, with no id or name to resolve. */
   private ApiUser toApiUser(String username) {
     return userDao
         .getOptionalUserByUsername(username)
@@ -278,9 +270,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /**
-   * Absent when none was supplied. A supplied one is only accepted when fulfilling, and must be a
-   * sample the fulfiller can fully read, so a request's history cannot be made to carry a
-   * stranger's: limited read, e.g. through a shared container, is not enough.
+   * Absent when none was supplied. Accepted only when fulfilling, and only for a sample the
+   * fulfiller can fully read (ADR D11).
    */
   private Sample resolveTransferredSample(ApiSampleRequestStatusPut post, User user) {
     String globalId = post.getTransferredSampleGlobalId();

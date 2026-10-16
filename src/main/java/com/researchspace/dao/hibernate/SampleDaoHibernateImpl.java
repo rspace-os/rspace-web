@@ -71,8 +71,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
       User user) {
 
     // requestable=true is an instance-wide search: permission scoping is skipped, so every
-    // requestable sample is visible, but an explicit ownedBy still narrows it. The name
-    // filter below is independent of that and still applies on top of it.
+    // requestable sample is visible, but an explicit ownedBy still narrows it
     boolean unscopedRequestableSearch = Boolean.TRUE.equals(requestable);
     boolean unscopedOwnedBy = unscopedRequestableSearch && StringUtils.isNotEmpty(ownedBy);
 

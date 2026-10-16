@@ -257,9 +257,7 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
   @Override
   protected void populatePublicViewCopy(ApiInventoryRecordInfo apiInvRecCopy) {
     super.populatePublicViewCopy(apiInvRecCopy);
-    // requestable must survive even the public view, so that a user with no read/edit access to
-    // the sample (e.g. found via an unscoped "requestable" search) can still see whether it's
-    // requestable and use the Request Material UI
+    // kept in the public view, so a user who cannot read the sample still sees it is requestable
     ((ApiSampleInfo) apiInvRecCopy).setRequestable(getRequestable());
   }
 

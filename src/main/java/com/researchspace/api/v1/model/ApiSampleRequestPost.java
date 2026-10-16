@@ -1,4 +1,4 @@
-/** RSpace API Access your RSpace documents programmatically. */
+/** RSpace Inventory API Access your RSpace Inventory programmatically. */
 package com.researchspace.api.v1.model;
 
 import com.researchspace.model.inventory.SampleRequest;

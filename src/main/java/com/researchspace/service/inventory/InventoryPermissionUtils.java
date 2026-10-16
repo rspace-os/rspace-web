@@ -310,9 +310,8 @@ public class InventoryPermissionUtils {
   }
 
   /**
-   * The owner, or a PI or Lab Admin of a group the owner belongs to. A locked (default/system)
-   * instrument template cannot be transferred by anyone (transfer does not consult
-   * canUserEditInventoryRecord, so the lock is enforced explicitly here too).
+   * The owner, or a PI or Lab Admin of the owner's group. Nobody may transfer a locked
+   * (default/system) instrument template.
    */
   public boolean canUserTransferInventoryRecord(InventoryRecord record, User user) {
     String invRecOwner = record.getOwner().getUsername();

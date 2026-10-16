@@ -1295,11 +1295,12 @@ paths:
         Raises a request against a requestable Sample. The new request is always
         created in PENDING state; changing that state is a separate operation.
 
-        Requires the `inventory.sampleRequests.available` system property to be enabled, and
-        the sample to be marked `requestable` by its owner. Read access to the
-        sample is not required: marking a sample requestable is the owner's opt-in 
-        to being asked by anyone, and requestable samples are discoverable 
-        instance-wide. A user cannot request material from a sample they own.
+        Requires the `inventory.sampleRequests.available` system property to be
+        enabled, and the sample to be marked `requestable` by its owner. Read
+        access to the sample is not required: marking a sample requestable is the
+        owner's opt-in to being asked by anyone, and requestable samples are
+        discoverable instance-wide. A user cannot request material from a sample
+        they own.
 
         ## Examples of the request body
 
@@ -1404,7 +1405,7 @@ paths:
         required: true
       responses:
         "200":
-          description: The updated request, including its extended status history.
+          description: The updated request, including its updated status history.
         "400":
           description: >-
             The body is malformed, `status` is missing or not a known status, or
@@ -1449,9 +1450,8 @@ paths:
             by transferring the sample to its requester, and `transferredSample`
             summarises the sample the request was fulfilled with, if one was
             recorded, limited to what the current user may read. `requester`,
-            `originalOwner` and each `createdBy` are user objects with public
-            details only (no email, home folder or roles); a user deleted since
-            keeps their username, with a null id.
+            `originalOwner` and each `createdBy` are user objects; a user deleted
+            since keeps their username, with a null id.
         "404":
           description: >-
             No such request, the caller is not a party to it, or sample requests
@@ -4600,9 +4600,8 @@ components:
             $ref: "#/components/schemas/Error"
     ConcurrentChange:
       description: >
-        The same data was changed by someone else at the same time (MariaDB "record has changed
-        since last read", or a deadlock between two concurrent changes). Nothing was saved;
-        reload and try again.
+        The same data was changed by someone else at the same time. Nothing was
+        saved; reload and try again.
       content:
         application/json:
           schema:

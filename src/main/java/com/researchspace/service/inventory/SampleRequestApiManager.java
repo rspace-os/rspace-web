@@ -61,10 +61,8 @@ public interface SampleRequestApiManager {
   void setPublisher(ApplicationEventPublisher publisher);
 
   /**
-   * Closes every request currently PENDING or APPROVED against the given sample. Called as a side
-   * effect of transferring the sample's ownership: the new owner's own requests are fulfilled, with
-   * the sample recorded as the transferred sample, and all others are rejected, since they were
-   * addressed to whoever owned it before. Not exposed via the public API itself.
+   * Closes every PENDING or APPROVED request against a sample whose ownership is being transferred:
+   * the new owner's own requests are fulfilled with it, all others are rejected.
    *
    * @param sampleId the sample whose active requests should be closed
    * @param actor attributed as who made the change; the person who performed the transfer

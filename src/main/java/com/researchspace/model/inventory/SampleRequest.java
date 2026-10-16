@@ -94,11 +94,7 @@ public class SampleRequest implements Serializable {
     return requesterUsername;
   }
 
-  /**
-   * The username of the requested sample's owner at the moment this request was raised, captured so
-   * the request's history is accurate even if the sample is later transferred elsewhere. Set only
-   * at creation; never changed by the API afterwards.
-   */
+  /** Username of who owned the sample when the request was raised. Set at creation only. */
   @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
   public String getOriginalOwner() {
     return originalOwner;
@@ -121,7 +117,7 @@ public class SampleRequest implements Serializable {
     return sample != null ? sample.getGlobalIdentifier() : null;
   }
 
-  /** Free text: what the requester needs and why. Converted into an operation by the fulfiller. */
+  /** Free text: what the requester needs and why. */
   @Column(nullable = false, length = NOTE_COLUMN_LENGTH)
   public String getNote() {
     return note;
@@ -140,7 +136,7 @@ public class SampleRequest implements Serializable {
     return statusChanges;
   }
 
-  /** Records a new current status and appends it to the history. */
+  /** As below, with no transferred sample. */
   public SampleRequestStatusChange recordStatus(
       User author, SampleRequestStatus newStatus, String reason) {
     return recordStatus(author, newStatus, reason, null);

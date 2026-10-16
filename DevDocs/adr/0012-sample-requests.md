@@ -88,13 +88,12 @@ original owner; anyone else gets 404, so its existence is not disclosed.
 
 `requesterUsername`, `originalOwner` and each history entry's `createdByUsername` are
 usernames, not foreign keys, so a request and its history survive the deletion of either
-party. The API returns them as user objects with public details only (no email, home
-folder or roles), since the parties are often in different groups; a deleted user keeps
-their username with a null id. Deleting a user deletes the requests against their own samples, with their
-history. Where usernames are reused (SSO deployments, see `User.getSid`), a
-new account with a deleted requester's username sees that user's old requests as its own,
-and could cancel a pending one; matching on that security identifier would close this, and
-is left until reuse is seen in practice.
+party. The API returns them as user objects; a deleted user keeps their username with a
+null id. Deleting a user deletes the requests against their own samples, with their
+history. Where usernames are reused (SSO deployments, see `User.getSid`), a new account
+with a deleted requester's username sees that user's old requests as its own, and could
+cancel a pending one; matching on that security identifier would close this, and is left
+until reuse is seen in practice.
 
 ### D7 A fixed transition table, enforced in one place
 
@@ -106,10 +105,11 @@ is left until reuse is seen in practice.
 | FULFILLED | PENDING, APPROVED | current owner | not accepted |
 
 REJECTED, CANCELLED and FULFILLED are terminal. PENDING is only written when the request
-is raised. The owner can withdraw an approval by rejecting it, which is also what a transfer
-to someone else does to it (D9), but the requester cannot cancel an approved request: the owner may
-already be preparing the material. CANCELLED is kept separate from REJECTED because
-"withdrawn by the requester" and "refused by the owner" are different facts in the record.
+is raised. The owner can withdraw an approval by rejecting it, which is also what a
+transfer to someone else does to it (D9), but the requester cannot cancel an approved
+request: the owner may already be preparing the material. CANCELLED is kept separate
+from REJECTED because "withdrawn by the requester" and "refused by the owner" are
+different facts in the record.
 
 All transitions go through `updateStatus`, which checks the actor before legality, so a
 caller who may not act at all learns nothing about the request's state. The transfer's
@@ -129,10 +129,10 @@ that change in many ways and may be restored, not a linear state history.
 Changing a sample's owner closes every PENDING or APPROVED request against it, through the
 table's transitions (D7), in the same transaction as the transfer:
 
-- a request raised by the new owner is FULFILLED, recording the sample itself as the
+- every request raised by the new owner is FULFILLED, recording the sample itself as the
   transferred sample and a reason saying it was fulfilled by the transfer. They now hold
   what they asked for, so rejecting it would put the opposite of what happened in the
-  record. All of their open requests against the sample are fulfilled.
+  record.
 - every other request is REJECTED, with a reason naming the new owner. The new owner did
   not agree to anything the previous owner was asked, so carrying the requests across
   would be wrong.
@@ -163,9 +163,9 @@ Where 1020 still occurs, for example a transfer racing a fulfilment, the API ret
 (1213) are mapped the same way: a fulfilment naming the request's own sample can deadlock
 with a transfer of it, because saving the history row checks its foreign key to the sample.
 MariaDB rolls the loser back, so nothing is saved and the client can retry. Lock wait
-timeouts stay 500 for now. The mapping is in
-`ApiControllerAdvice`, so it applies to every API endpoint, not only sample requests: for
-example, one user creating samples in parallel now gets 409 instead of 500.
+timeouts stay 500 for now. The mapping is in `ApiControllerAdvice`, so it applies to every
+API endpoint, not only sample requests: for example, one user creating samples in parallel
+now gets 409 instead of 500.
 
 ### D11 The fulfilled-with sample, by global id, on FULFILLED only
 
@@ -173,10 +173,10 @@ example, one user creating samples in parallel now gets 409 instead of 500.
 was fulfilled with: the requested sample itself, or a new one made from it. It is a global
 id, matching `sampleGlobalId` on create. It is only accepted with FULFILLED (422 otherwise),
 must name a sample (422), and must be fully readable by the fulfiller and not in the trash
-(404), so a request's history cannot be made to carry a stranger's sample. Limited read, as
-granted by a shared container or a List of Materials, is not enough. It is stored as a foreign key, not a global id
-string, and nulled when that sample's owner is deleted. Responses show it limited to what
-the viewer may read.
+(404), so a request's history cannot be made to carry a stranger's sample. Limited read,
+as granted by a shared container or a List of Materials, is not enough. It is stored as a
+foreign key, not a global id string, and nulled when that sample's owner is deleted.
+Responses show it limited to what the viewer may read.
 
 ### D12 The request has no global id of its own
 
@@ -209,6 +209,6 @@ column already shows the requester.
 - An approver column fixed at creation as the actor for approve/reject: it would let a
   previous owner act on a sample they no longer hold (D5).
 - Moving open requests to the new owner on transfer (D9).
-- Storing users and the transferred sample as global-id strings: the codebase stores ids
-  and clears them on deletion (D6, D11).
+- Storing the transferred sample as a global-id string: the codebase stores ids and clears
+  them on deletion (D11).
 - Envers or the audit log as the status history (D8).

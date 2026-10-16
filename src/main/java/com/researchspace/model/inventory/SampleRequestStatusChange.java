@@ -20,8 +20,7 @@ import lombok.Setter;
 
 /**
  * One entry in a sample request's status history, including the PENDING entry written when the
- * request is raised. A table rather than the audit log, which is log-based, so cannot feed a
- * details view. Modelled on GroupMembershipEvent.
+ * request is raised (ADR D8).
  */
 @Entity
 @Setter
@@ -90,7 +89,7 @@ public class SampleRequestStatusChange implements Serializable {
     return status;
   }
 
-  /** Required for a rejection, absent otherwise. */
+  /** Set for a rejection, and for a fulfilment made by a transfer. */
   @Column(length = REASON_COLUMN_LENGTH)
   public String getReason() {
     return reason;
