@@ -289,7 +289,7 @@ describe("BookableItemPage", () => {
       )
       .toBe(true);
     await expect.element(page.getByRole("combobox", { name: "Add user or group" })).not.toBeInTheDocument();
-    await expect.element(page.getByRole("button", { name: /Direct role for/ })).not.toBeInTheDocument();
+    await expect.element(page.getByRole("button", { name: "Direct role for", exact: false })).not.toBeInTheDocument();
 
     await pageObj.lifecycleActions.click();
     await pageObj.permanentDeleteAction.click();
