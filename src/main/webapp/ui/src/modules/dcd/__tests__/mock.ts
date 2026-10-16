@@ -4,7 +4,7 @@ import { mockOAuthAuthorize } from "../../../__tests__/e2e/mocks/mockOAuthAuthor
 export const MOCK_DATASET_ID = "mock-dataset-1";
 
 export const dcdHandlers = [
-  mockOAuthAuthorize("/dcd/oauth2/authorize", "mock-dcd-auth-code", { echoState: true }),
+  mockOAuthAuthorize("/dcd/oauth2/authorize", "mock-dcd-auth-code"),
 
   http.post("/dcd/oauth2/token", () =>
     HttpResponse.json({

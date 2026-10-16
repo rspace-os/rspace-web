@@ -47,7 +47,7 @@ Once an integration is available at the system level (sysadmin toggle is on), in
    - Add your integration to `IntegrationsHandlerImpl.isAppConfigIntegration()` if it has more than one option set per user.
    - Otherwise, if it has only a single option set per user, add it to `isSingleOptionSetAppConfigIntegration()`.
 
-`saveAppOptions` and `deleteAppOptions` accept `appName` in any case and normalize it to the uppercase integration name, which is also the `UserConnection` provider ID and cache key. `UserAppConfigManager` saves and deletes a config set only when it belongs to the expected database app name (for example `app.github`); the comparison is case-insensitive, like the database's.
+`saveAppOptions` and `deleteAppOptions` accept `appName` in any case and normalize it to the uppercase integration name, which is also the `UserConnection` provider ID and cache key. `UserAppConfigManager` saves and deletes a config set only when it belongs to the expected database app name (for example `app.github`); the comparison is case-insensitive, like the database's. When saving config with credentials, use `UserConnectionManager.saveWithNewAppConfigElementSet`, which passes the expected app name for you.
 
 ### 3) Deployment properties (where applicable)
 
@@ -74,11 +74,13 @@ For integrations using OAuth 2.0, implement both of the following:
 2. Create an OAuth controller (see `FigshareOAuthController`, `DMPToolOAuthController` for examples) that:
    - Redirects users to the third-party OAuth authorization page
    - Handles the OAuth callback
-   - Stores the access token using `UserConnectionManager`
+   - Suppresses callback request parameters with `@IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)` so authorization codes and state values never enter request logs
+   - Stores the access token using `UserConnectionManager`, never as an app setting (`AppConfigElement` values are not encrypted)
 
 Tokens are never returned to the browser (RSDEV-1525):
 
 - `IntegrationsHandlerImpl` withholds OAuth tokens in `IntegrationInfo`: a connected app's `ACCESS_TOKEN` key is present with a `null` value. The only exceptions are apps listed in `CLIENT_READABLE_TOKEN_APPS`, whose browser code calls the provider directly. Add an app there only when there is no server-side alternative, and annotate any endpoint or value that sends a secret to the browser with `@ClientReadableSecret("why the browser needs it")`.
+- Finish the setup on the server, so the callback never hands a token to the browser. Where a user can connect several times, key each connection's `UserConnection` by its discriminant: Slack stores one per channel, keyed by the channel's config set id, with the webhook URL in `secret`. GitHub stores each linked repository's token by its config set id; an expiring, user-bound session value holds the pending OAuth token for listing available repositories and linking new repositories. Clear it when restarting OAuth, disabling GitHub, or removing the last repository. Keep a Connect action available in the repository chooser so users can authorize again if the pending token expires or is cleared while the dialog remains open.
 - Use the config-set ID as the connection discriminant for credentials that belong to an individual configuration, including Dataverse API keys (`accessToken`) and Microsoft Teams webhook URLs (`secret`).
 
 #### Single-user token/API key

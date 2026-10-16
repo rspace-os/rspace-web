@@ -10,15 +10,14 @@ import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.ClientReadableSecret;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
+import com.researchspace.webapp.integrations.helper.OAuthTokenPost;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -28,8 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -75,55 +72,35 @@ public class NextCloudController extends BaseOAuth2Controller {
   static class NextCloudControllerConnector {
     String doRedirectCall(String nextCloudUrl, String clientId, String clientSecret)
         throws IOException {
-      URL url = new URL(nextCloudUrl);
-      HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-      urlConn.setRequestMethod("POST");
-
-      // nextCloud OAuth token request uses basic auth with
-      // client id as username and client secret as password
-      // per documentation at https://github.com/owncloud/oauth2
-      String userpass = clientId + ":" + clientSecret;
-      String basicAuth =
-          "Basic "
-              + new String(
-                  Base64.encodeBase64(userpass.getBytes(StandardCharsets.UTF_8)),
-                  StandardCharsets.UTF_8);
-      urlConn.setRequestProperty("Authorization", basicAuth);
-      // rspac-2123
-      urlConn.setRequestProperty("Content-Length", "0");
-
-      return IOUtils.toString(
-          new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8));
+      return OAuthTokenPost.exchange(nextCloudUrl, clientId, clientSecret);
     }
 
     String doRefreshCall(String nextCloudRefreshUrl, String clientId, String clientSecret)
         throws IOException {
-      URL url = new URL(nextCloudRefreshUrl);
-      HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-      urlConn.setRequestMethod("POST");
-      // rspac-2123
-      urlConn.setRequestProperty("Content-Length", "0");
-
-      // nextCloud OAuth token request uses basic auth with
-      // client id as username and client secret as password
-      // per documentation at https://github.com/owncloud/oauth2
-      String userpass = clientId + ":" + clientSecret;
-      String basicAuth =
-          "Basic "
-              + new String(
-                  Base64.encodeBase64(userpass.getBytes(StandardCharsets.UTF_8)),
-                  StandardCharsets.UTF_8);
-      urlConn.setRequestProperty("Authorization", basicAuth);
-
-      return IOUtils.toString(
-          new InputStreamReader(urlConn.getInputStream(), StandardCharsets.UTF_8));
+      return doRedirectCall(nextCloudRefreshUrl, clientId, clientSecret);
     }
   }
 
   NextCloudControllerConnector connector = new NextCloudControllerConnector();
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String handleNextCloudRedirect(@RequestParam Map<String, String> params, Model model) {
+    try {
+      verifyStateParameter(params.get("state"));
+    } catch (IllegalStateException invalidState) {
+      log.warn("Nextcloud OAuth state mismatch");
+      OauthAuthorizationError error =
+          OauthAuthorizationError.builder()
+              .appName("Nextcloud")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"Nextcloud"}))
+              .errorDetails(invalidState.getMessage())
+              .build();
+      ConnectionResultPage.addError(
+          model, "Nextcloud", "rspace.apps.nextcloud.connection", "NEXTCLOUD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
+    }
+
     // param code or error
     if (params.containsKey(ERROR)) {
       OauthAuthorizationError error =
@@ -156,7 +133,7 @@ public class NextCloudController extends BaseOAuth2Controller {
       String nextCloudUrl =
           nextCloudBaseURL
               + "/index.php/apps/oauth2/api/v1/token?grant_type=authorization_code&code="
-              + authorizationCode
+              + URLEncoder.encode(authorizationCode, StandardCharsets.UTF_8)
               + "&redirect_uri="
               + URLEncoder.encode(nextCloudRedirect, StandardCharsets.UTF_8);
 
@@ -185,12 +162,9 @@ public class NextCloudController extends BaseOAuth2Controller {
       log.info("NextCloud response retrieved");
 
     } catch (IOException e) {
-      log.warn("io exception on contacting oauth.access url", e);
+      log.warn("OAuth token exchange failed ({})", e.getClass().getSimpleName());
       OauthAuthorizationError error =
-          getAuthErrorBuilder()
-              .errorMsg("exception during token exchange")
-              .errorDetails(e.getMessage())
-              .build();
+          getAuthErrorBuilder().errorMsg(getText("apps.oauth.errors.tokenExchange")).build();
 
       ConnectionResultPage.addError(
           model, "Nextcloud", "rspace.apps.nextcloud.connection", "NEXTCLOUD_CONNECTED", error);
@@ -237,7 +211,7 @@ public class NextCloudController extends BaseOAuth2Controller {
       String nextCloudRefreshUrl =
           nextCloudBaseURL
               + "/index.php/apps/oauth2/api/v1/token?grant_type=refresh_token&refresh_token="
-              + refreshToken;
+              + URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
 
       try {
         String content = connector.doRefreshCall(nextCloudRefreshUrl, clientId, clientSecret);
@@ -267,7 +241,9 @@ public class NextCloudController extends BaseOAuth2Controller {
 
         return response;
       } catch (IOException e) {
-        log.warn("io exception on contacting nextcloud oauth refresh token url", e);
+        log.warn(
+            "io exception on contacting nextcloud oauth refresh token url" + " ({})",
+            e.getClass().getSimpleName());
         return null;
       }
     } else {
@@ -311,7 +287,7 @@ public class NextCloudController extends BaseOAuth2Controller {
         String.format(
             "%s/index.php/apps/oauth2/authorize?response_type=code&client_id=%s&redirect_uri=%s",
             nextCloudBaseURL, clientId, redirectUrl);
-    return new RedirectView(authURL);
+    return new RedirectView(authURL + "&state=" + generateState());
   }
 
   @DeleteMapping("/connect")

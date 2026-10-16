@@ -19,6 +19,7 @@ import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.AppConfigElement;
 import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.apps.UserAppConfig;
@@ -41,6 +42,7 @@ import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
+import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.webapp.integrations.MultiInstanceClient;
 import com.researchspace.webapp.integrations.ServerConfigurationDTO;
 import com.researchspace.webapp.integrations.pyrat.PyratClient;
@@ -89,13 +91,6 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   @ClientReadableSecret(
       "the protocols.io TinyMCE plugin calls the protocols.io API from the browser")
   private static final Set<String> CLIENT_READABLE_TOKEN_APPS = Set.of(PROTOCOLS_IO_APP_NAME);
-
-  /** App settings that are secret but still sent to the browser. */
-  @ClientReadableSecret(
-      "the GitHub and Slack pages save the token the OAuth flow issues, and the GitHub file tree"
-          + " reads it back, until both keep their credentials in UserConnection")
-  private static final Set<String> CLIENT_READABLE_SECRET_SETTINGS =
-      Set.of("GITHUB_ACCESS_TOKEN", "SLACK_USER_ACCESS_TOKEN", "SLACK_WEBHOOK_URL");
 
   // RSDEV-1525: app settings are secret unless listed here as not secret. A new integration
   // must list its non-secret settings, or the browser receives null in their place.
@@ -438,10 +433,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   private static String hideIfSecret(String settingName, String value) {
-    return CLIENT_READABLE_SETTINGS.contains(settingName)
-            || CLIENT_READABLE_SECRET_SETTINGS.contains(settingName)
-        ? value
-        : secretForBrowser(value);
+    return CLIENT_READABLE_SETTINGS.contains(settingName) ? value : secretForBrowser(value);
   }
 
   /**
@@ -693,6 +685,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   }
 
   private void saveEnablementInUserAppConfig(User user, IntegrationInfo newInfo) {
+    if (GITHUB_APP_NAME.equals(newInfo.getName()) && !newInfo.isEnabled()) {
+      GitHubPendingToken.clear();
+    }
     UserAppConfig userAppConfig = getAppConfig(newInfo.getName(), user);
     if (userAppConfig.isEnabled() != newInfo.isEnabled()) {
       userAppConfig.setEnabled(newInfo.isEnabled());
@@ -720,6 +715,15 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       options = safeMap;
     } else {
       options = originalOptions;
+    }
+    if (GITHUB_APP_NAME.equals(appName) && optionsId == null) {
+      String accessToken = GitHubPendingToken.get(user.getUsername());
+      if (StringUtils.isBlank(accessToken)) {
+        throw new IllegalStateException("GitHub OAuth connection is required");
+      }
+      userConnManager.saveWithNewAppConfigElementSet(
+          options, GITHUB_APP_NAME, accessToken, null, trustedOrigin, user);
+      return;
     }
     String existingAlias = null;
     if (DSW_APP_NAME.equals(appName) && null != optionsId) {
@@ -812,6 +816,16 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       deleteConfigOptionsForAppsWithMultipleOptionSet(user, appName, DSW_ALIAS, removed);
     } else if (GALAXY_APP_NAME.equals(appName)) {
       deleteConfigOptionsForAppsWithMultipleOptionSet(user, appName, GALAXY_ALIAS, removed);
+    } else if (SLACK_APP_NAME.equals(appName)) {
+      // a channel's token and webhook URL are kept under its set id
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
+    } else if (GITHUB_APP_NAME.equals(appName)) {
+      // Each repository's token is stored under its config set id.
+      userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
+      if (appConfigMgr.getByAppName(App.APP_GITHUB, user).getAppConfigElementSets().isEmpty()) {
+        userConnManager.deleteByUserAndProvider(user.getUsername(), appName);
+        GitHubPendingToken.clear();
+      }
     } else if (DATAVERSE_APP_NAME.equals(appName) || MSTEAMS_APP_NAME.equals(appName)) {
       userConnManager.deleteByUserAndProvider(user.getUsername(), appName, optionsId.toString());
     }

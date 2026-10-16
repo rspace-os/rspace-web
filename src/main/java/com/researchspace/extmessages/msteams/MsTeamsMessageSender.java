@@ -39,11 +39,6 @@ public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
   }
 
   @Override
-  protected String getPostUrlSetting() {
-    return "MSTEAMS_WEBHOOK_URL";
-  }
-
-  @Override
   protected String doGetPostUrl(AppConfigElementSet messageConfig) {
     return userConnectionManager
         .findByUserNameProviderName(
