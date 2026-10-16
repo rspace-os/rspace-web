@@ -134,7 +134,7 @@ describe("AvailabilityBar", () => {
 
     const graphic = screen.getByRole("img", { name: "Confocal microscope availability" });
     expect(graphic).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 01:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 12:00 UTC. Blocked out: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 01:00 UTC.",
+      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 01:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 12:00 UTC. Unavailable: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 01:00 UTC.",
     );
   });
 
@@ -156,7 +156,7 @@ describe("AvailabilityBar", () => {
 
     const graphic = screen.getByRole("img", { name: "Confocal microscope availability" });
     expect(graphic).toHaveAccessibleDescription(
-      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC. Blocked out: Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC. Booked and blocked out: Aug 12, 2026, 10:00 UTC–Aug 12, 2026, 11:00 UTC.",
+      "Availability period: Aug 12, 2026, 00:00 UTC–Aug 13, 2026, 00:00 UTC. Available: Aug 12, 2026, 00:00 UTC–Aug 12, 2026, 09:00 UTC and Aug 12, 2026, 12:00 UTC–Aug 13, 2026, 00:00 UTC. Booked: Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC. Unavailable: Aug 12, 2026, 11:00 UTC–Aug 12, 2026, 12:00 UTC. Booked and unavailable: Aug 12, 2026, 10:00 UTC–Aug 12, 2026, 11:00 UTC.",
     );
   });
 
@@ -304,7 +304,7 @@ describe("AvailabilityBar", () => {
 
       await user.hover(
         await screen.findByRole("button", {
-          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Blocked out"}, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event`,
+          name: `Confocal microscope, ${kind === "BOOKING" ? "Booked" : "Unavailable"}, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event`,
         }),
       );
       const dialog = await screen.findByRole("dialog");

@@ -135,7 +135,9 @@ describe("DayTimeline table row", () => {
 
     expect(screen.getByText("08/17/2026")).toBeVisible();
     expect(screen.getByText("08:00 AM - 09:00 AM")).toBeVisible();
-    const details = screen.getByRole("button", { name: "Show details for Confocal microscope · Ada, 08:00–09:00" });
+    const details = screen.getByRole("button", {
+      name: "Show details for Confocal microscope · Ada, 08:00 AM–09:00 AM",
+    });
     details.focus();
     await user.keyboard("{Enter}");
 
@@ -182,7 +184,7 @@ describe("DayTimeline table row", () => {
     expect(screen.getByText("08/16/2026 - 08/18/2026")).toBeVisible();
     expect(screen.getByText("11:30 PM (-1) - 01:30 AM (+1)")).toBeVisible();
     const details = screen.getByRole("button", {
-      name: "Show details for Overnight acquisition · Ada, 23:30 (-1)–01:30 (+1)",
+      name: "Show details for Overnight acquisition · Ada, 11:30 PM (-1)–01:30 AM (+1)",
     });
     await user.click(details);
 
@@ -246,13 +248,13 @@ describe("DayTimeline table row", () => {
 
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
     const editable = screen.getByRole("button", {
-      name: `Show details for ${LONG_ITEM_NAME} · Ada Lovelace · Ada Lovelace, 09:30–10:30`,
+      name: `Show details for ${LONG_ITEM_NAME} · Ada Lovelace · Ada Lovelace, 09:30 AM–10:30 AM`,
     });
     await user.click(editable);
     expect(screen.getByRole("button", { name: "Manage editable" })).toBeVisible();
 
     const readonly = screen.getByRole("button", {
-      name: "Show details for Electron microscope · Grace Hopper, 09:45–10:45",
+      name: "Show details for Electron microscope · Grace Hopper, 09:45 AM–10:45 AM",
     });
     await user.click(readonly);
     expect(screen.getByRole("button", { name: "Manage readonly" })).toBeVisible();
@@ -265,15 +267,15 @@ describe("DayTimeline table row", () => {
     const editablePopup = screen.getByRole("dialog", { name: "09:30 AM–10:30 AM" });
     await user.click(
       within(editablePopup).getByRole("button", {
-        name: `Hide details for ${LONG_ITEM_NAME} · Ada Lovelace · Ada Lovelace, 09:30–10:30`,
+        name: `Hide details for ${LONG_ITEM_NAME} · Ada Lovelace · Ada Lovelace, 09:30 AM–10:30 AM`,
       }),
     );
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
     expect(editable).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: "Show details for Busy, 12:00–13:00" }));
+    await user.click(screen.getByRole("button", { name: "Show details for Busy, 12:00 PM–01:00 PM" }));
     expect(screen.getByRole("button", { name: "Manage busy" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Show details for Scheduled maintenance, 11:00–12:00" }));
+    await user.click(screen.getByRole("button", { name: "Show details for Scheduled maintenance, 11:00 AM–12:00 PM" }));
     expect(screen.queryByRole("button", { name: "Manage busy" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Manage blockout" })).toBeVisible();
     const blockoutPopup = screen.getByRole("dialog", { name: "11:00 AM–12:00 PM" });
@@ -315,12 +317,12 @@ describe("DayTimeline table row", () => {
       />,
       { wrapper },
     );
-    expect(screen.getByRole("article", { name: "Repeated hour · Ada, 02:45 +02:00–02:15 +01:00" })).toBeVisible();
-    expect(screen.getByRole("article", { name: "Busy, 23:30 +01:00–00:00 +01:00 (+1)" })).toBeVisible();
+    expect(screen.getByRole("article", { name: "Repeated hour · Ada, 02:45 AM +02:00–02:15 AM +01:00" })).toBeVisible();
+    expect(screen.getByRole("article", { name: "Busy, 11:30 PM +01:00–12:00 AM +01:00 (+1)" })).toBeVisible();
     expect(screen.getByText("02:00 AM +02:00")).toBeVisible();
     expect(screen.getByText("02:00 AM +01:00")).toBeVisible();
     await user.click(
-      screen.getByRole("button", { name: "Show details for Repeated hour · Ada, 02:45 +02:00–02:15 +01:00" }),
+      screen.getByRole("button", { name: "Show details for Repeated hour · Ada, 02:45 AM +02:00–02:15 AM +01:00" }),
     );
     expect(within(screen.getByRole("dialog")).getByText("30 minutes")).toBeVisible();
     await user.keyboard("{Escape}");
