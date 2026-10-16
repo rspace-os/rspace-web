@@ -51,7 +51,11 @@ describe("Booking display preferences", () => {
     await preferences.start.fill("20:00");
     await preferences.end.fill("18:00");
     await expect.element(preferences.end).toHaveAttribute("aria-invalid", "true");
-    await expect.element(preferences.end).toHaveAccessibleDescription(/Choose a valid same-day window/);
+    await expect
+      .element(preferences.end)
+      .toHaveAccessibleDescription(
+        "00:00 means midnight at the end of the day. Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+      );
     await expect.element(preferences.save).toBeDisabled();
     await preferences.end.fill("00:00");
     await expect.element(preferences.end).toHaveAttribute("aria-invalid", "false");
@@ -59,12 +63,16 @@ describe("Booking display preferences", () => {
     await expect.element(preferences.save).toBeEnabled();
     await preferences.start.fill("");
     await expect.element(preferences.start).toHaveAttribute("aria-invalid", "true");
-    await expect.element(preferences.start).toHaveAccessibleDescription(/Choose a valid same-day window/);
+    await expect
+      .element(preferences.start)
+      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA timezone.");
     await preferences.start.fill("09:00");
     await preferences.custom.click();
     await preferences.customTimezone.fill("Not/A-Timezone");
     await expect.element(preferences.customTimezone).toHaveAttribute("aria-invalid", "true");
-    await expect.element(preferences.customTimezone).toHaveAccessibleDescription(/valid IANA timezone/);
+    await expect
+      .element(preferences.customTimezone)
+      .toHaveAccessibleDescription("Choose a valid same-day window and, for Custom, a valid IANA timezone.");
     await expect.element(preferences.save).toBeDisabled();
     await preferences.customTimezone.fill("Europe/Berlin");
     await expect.element(preferences.customTimezone).toHaveAttribute("aria-invalid", "false");
