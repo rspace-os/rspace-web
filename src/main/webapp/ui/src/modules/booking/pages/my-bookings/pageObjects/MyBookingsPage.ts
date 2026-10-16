@@ -5,7 +5,7 @@ export class MyBookingsPageObject {
   readonly bookableItemDetailsTarget: Locator = page.getByText("IN123", { exact: true });
 
   get upcoming(): Locator {
-    return page.getByRole("button", { name: /Upcoming/ });
+    return page.getByRole("button", { name: "Upcoming", exact: true });
   }
 
   get past(): Locator {
