@@ -109,3 +109,5 @@ knowledge the viewer is not entitled to.
   link is never re-validated. Editing such a link re-validates it; on a template
   link field even a relation-only change does, while a custom link field applies
   one without re-validating (a pre-existing difference, kept on purpose).
+  Exporting such a link to CSV writes its pin, so re-importing that file fails
+  the row, and with it the whole file, until the cell is corrected.
