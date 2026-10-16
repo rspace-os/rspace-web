@@ -866,8 +866,12 @@ describe("Calendar page", () => {
   test("opens the full booking form from compact More options", async () => {
     render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
     const dialog = await calendar.openTargetlessBookingDialog();
+    const timeFormatter = new Intl.DateTimeFormat(undefined, { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
+    const clock = (hour: number) => timeFormatter.format(new Date(Date.UTC(2026, 7, 18, hour)));
+    const viewerHours = `${clock(2)} - ${clock(11)}`;
+    const instrumentHours = `${clock(8)} - ${clock(17)}`;
     // A Berlin item seen from New York: the viewer's own hours for the date, with no timezone named.
-    await expect.element(dialog.getByText(/^Open on this date: \d{2}:\d{2} [AP]M - \d{2}:\d{2} [AP]M$/)).toBeVisible();
+    await expect.element(dialog.getByText(`Open on this date: ${viewerHours}`, { exact: true })).toBeVisible();
     expect(dialog.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
     const compactDate = dialog.getByLabelText("Date");
     const compactStartTime = dialog.getByLabelText("Start time");
@@ -894,16 +898,17 @@ describe("Calendar page", () => {
       await expect.element(itemInformation).toBeVisible();
       await expect.element(itemInformation.getByText("Open", { exact: true })).toBeVisible();
       // Hours are in the viewer's timezone; the item's own are behind the globe button.
-      await expect
-        .element(itemInformation.getByText(/^Every day: \d{2}:\d{2} [AP]M - \d{2}:\d{2} [AP]M$/))
-        .toBeVisible();
+      await expect.element(itemInformation.getByText(`Every day: ${viewerHours}`, { exact: true })).toBeVisible();
       // The item's own hours are in the shared instrument-time tooltip, which the time's button also names.
       await itemInformation
-        .getByRole("button", { name: /^Every day: .*, Instrument time: .+ \(Europe\/Berlin\)$/ })
+        .getByRole("button", {
+          name: `Every day: ${viewerHours}, Instrument time: ${instrumentHours} (Europe/Berlin)`,
+          exact: true,
+        })
         .hover();
       await expect
-        .element(page.getByRole("tooltip"))
-        .toHaveTextContent(/^Instrument time: \d{2}:\d{2}\s[AP]M\s-\s\d{2}:\d{2}\s[AP]M \(Europe\/Berlin\)$/);
+        .poll(() => page.getByRole("tooltip").element().textContent)
+        .toBe(`Instrument time: ${instrumentHours} (Europe/Berlin)`);
       await userEvent.keyboard("{Escape}");
       await expect.element(page.getByRole("button", { name: "Item information" })).not.toBeInTheDocument();
       expect(itemInformation.element().getBoundingClientRect().top).toBeGreaterThanOrEqual(

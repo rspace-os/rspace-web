@@ -331,7 +331,7 @@ describe("CalendarPage", () => {
     await user.click(save);
 
     const alert = await screen.findByRole("alert", {}, { timeout: 3_000 });
-    await waitFor(() => expect(alert).toHaveTextContent(/Too close to another booking/));
+    await waitFor(() => expect(alert).toHaveTextContent("Too close to another booking"));
     expect(alert).not.toHaveTextContent("private server detail");
     expect(within(alert).getByRole("listitem")).toHaveTextContent("Booking #59");
     expect(save).toBeDisabled();
