@@ -40,7 +40,7 @@ it("keeps the midnight continuation for a short visible part of an overnight dra
   );
 
   // Fifteen visible minutes are too short for the move handle, but not for the continuation.
-  expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "booking:dayTimeline.vertical.moveDraft" })).not.toBeInTheDocument();
   const continuation = screen.getByRole("button", { name: "booking:timelineEdit.endAtMidnight" });
   continuation.focus();
   await user.keyboard("{Enter}");
