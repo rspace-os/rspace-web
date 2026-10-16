@@ -54,7 +54,7 @@ describe("AllBookableItemsPage", () => {
     expect(screen.getByRole("button", { name: "Remove filter 4" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Apply filters" }));
     expect(router.state.location.search.where).toBe(original);
-    await user.click(screen.getByRole("button", { name: /^Available now/ }));
+    await user.click(screen.getByRole("button", { name: "Available now" }));
     await waitFor(() => expect(router.state.location.search.where).toBe(`${original};availability==available-now`));
     await user.click(screen.getByRole("button", { name: "Next day" }));
     await waitFor(() => expect(router.state.location.search.where).toBe(original));
