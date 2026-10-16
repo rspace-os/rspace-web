@@ -251,7 +251,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     expect(screen.getByTestId("vertical-day-timeline-draft")).toBeVisible();
     expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.resizeStart/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /booking:dayTimeline.vertical.resizeEnd/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "booking:dayTimeline.vertical.resizeEnd" })).not.toBeInTheDocument();
   });
 
   it("the floating schedule button opens and closes the sheet without changing the draft or refetching", async () => {
@@ -302,7 +302,7 @@ describe("BookingDayTimelineAside acceptance", () => {
     render(<StatefullyControlledAside client={queryClient()} onChange={onChange} />);
     await expectVisibleOccurrence("booking:dayTimeline.vertical.empty");
 
-    screen.getByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ }).focus();
+    screen.getByRole("button", { name: "booking:dayTimeline.vertical.moveDraft" }).focus();
     await user.keyboard("{ArrowDown}");
 
     expect(onChange).toHaveBeenCalledOnce();

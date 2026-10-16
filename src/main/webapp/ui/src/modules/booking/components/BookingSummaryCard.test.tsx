@@ -31,7 +31,7 @@ describe("BookingSummaryCard", () => {
   it("omits busy purpose and actions even when private data and configuration access are supplied", () => {
     render(<BookingSummaryCard booking={busyBooking} timeZone="Europe/Berlin" />);
 
-    expect(screen.getByRole("article")).toHaveAccessibleName(/Confocal microscope/);
+    expect(screen.getByRole("article")).toHaveAccessibleName("Confocal microscopeIN42");
     expect(screen.queryByText(privatePurpose)).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });

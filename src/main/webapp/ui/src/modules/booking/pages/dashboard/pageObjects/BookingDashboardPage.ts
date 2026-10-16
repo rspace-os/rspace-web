@@ -27,7 +27,7 @@ export class BookingDashboardPageObject {
   }
 
   upcomingDetailsLink(name: string): Locator {
-    return this.upcoming.getByRole("link", { name: new RegExp(name) });
+    return this.upcoming.getByRole("link", { name, exact: false });
   }
 
   upcomingPurpose(text: string): Locator {
