@@ -7,11 +7,7 @@ import Grid from "@mui/material/Grid";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
-import Alerts from "@/components/Alerts/Alerts";
-import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
-import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import DnaPreview from "./DnaPreview";
 import EnzymeTable from "./EnzymeTable";
 import FastaView from "./FastaView";
@@ -19,8 +15,6 @@ import OrfTable from "./OrfTable";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const $: any;
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 
 function a11yProps(index: number) {
   return {
@@ -88,46 +82,5 @@ export default function SnapGeneDialog(props: any) {
         </Button>
       </DialogActions>
     </Dialog>
-  );
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-$(document).on("click", ".snapGenePanel .previewActionLink", (e: any) => {
-  e.preventDefault();
-  const target_id = $(e.target).parent().parent()[0].getAttribute("bioid");
-
-  renderDialog(target_id);
-});
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-$(document).on("click", ".imageThumbnail", (e: any) => {
-  if (window.localStorage.getItem("snapgene-available") === "true") {
-    const target = $(e.target).parent();
-
-    if (RS.dnaFiles.includes(target.data("extension"))) {
-      renderDialog(target.data("id"));
-    }
-  }
-});
-
-// detect iframe load and render elements
-document.addEventListener("open-dna-info", (e) => {
-  e.preventDefault();
-  renderDialog((e as CustomEvent).detail);
-});
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-function renderDialog(target_id: any) {
-  $(document.body).append("<span class='snapgene-dialog'></span>");
-  const container = $(".snapgene-dialog")[0];
-  const root = createRoot(container);
-  root.render(
-    <I18nRoot namespaces={["workspace", "common"]}>
-      <MuiCssLayerProvider>
-        <Alerts>
-          <SnapGeneDialog id={target_id} />
-        </Alerts>
-      </MuiCssLayerProvider>
-    </I18nRoot>,
   );
 }

@@ -3,10 +3,8 @@ import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import Alerts from "@/components/Alerts/Alerts";
 import i18n from "../../../modules/common/i18n";
-import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import materialTheme from "../../../theme";
 import GroupAutoshareManager from "./Autoshare/GroupAutoshareManager";
 import GroupBioOntologiesManager from "./GroupBioOntologiesManager";
@@ -24,20 +22,20 @@ class MyLabGroups extends React.Component<any, any> {
   constructor(props: any) {
     super(props);
     this.state = {
-      groupId: domContainer.dataset.groupid,
-      groupDisplayName: domContainer.dataset.displayname,
-      role: domContainer.dataset.role,
-      groupUniqueId: domContainer.dataset.uniquename,
-      groupType: domContainer.dataset.grouptype,
-      canEdit: domContainer.dataset.canedit === "true",
-      canManageAutoshare: domContainer.dataset.canmanageautoshare === "true",
-      canManageOntologies: domContainer.dataset.canmanageontologies === "true",
-      canManagePublish: domContainer.dataset.canmanagepublish === "true",
-      isGroupAutoshareAllowed: domContainer.dataset.isgroupautoshareallowed === "true",
-      isGroupPublicationAllowed: domContainer.dataset.isgrouppublicationallowed === "true",
-      isGroupSEOAllowed: domContainer.dataset.isgroupseoallowed === "true",
-      isCloud: domContainer.dataset.iscloud === "true",
-      isLabGroup: domContainer.dataset.islabgroup === "true",
+      groupId: props.domContainer.dataset.groupid,
+      groupDisplayName: props.domContainer.dataset.displayname,
+      role: props.domContainer.dataset.role,
+      groupUniqueId: props.domContainer.dataset.uniquename,
+      groupType: props.domContainer.dataset.grouptype,
+      canEdit: props.domContainer.dataset.canedit === "true",
+      canManageAutoshare: props.domContainer.dataset.canmanageautoshare === "true",
+      canManageOntologies: props.domContainer.dataset.canmanageontologies === "true",
+      canManagePublish: props.domContainer.dataset.canmanagepublish === "true",
+      isGroupAutoshareAllowed: props.domContainer.dataset.isgroupautoshareallowed === "true",
+      isGroupPublicationAllowed: props.domContainer.dataset.isgrouppublicationallowed === "true",
+      isGroupSEOAllowed: props.domContainer.dataset.isgroupseoallowed === "true",
+      isCloud: props.domContainer.dataset.iscloud === "true",
+      isLabGroup: props.domContainer.dataset.islabgroup === "true",
     };
 
     this.membersDialog = React.createRef();
@@ -145,10 +143,4 @@ class MyLabGroups extends React.Component<any, any> {
   }
 }
 
-const domContainer = document.getElementById("myLabGroups") as HTMLElement;
-const root = createRoot(domContainer);
-root.render(
-  <I18nRoot namespaces={["common"]}>
-    <MyLabGroups />
-  </I18nRoot>,
-);
+export default MyLabGroups;
