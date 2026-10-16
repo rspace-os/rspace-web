@@ -68,7 +68,7 @@ describe("BookingPreferencesPage", () => {
     });
     expect(created).toBeChecked();
     expect(cancelled).toBeChecked();
-    expect(screen.getByText(/booking:notificationSubscriptions\.preferences\.emailDelivery\.off/)).toBeVisible();
+    expect(screen.getByText("booking:notificationSubscriptions.preferences.emailDelivery.off")).toBeVisible();
     expect(
       screen.getByRole("link", { name: "booking:notificationSubscriptions.preferences.emailDelivery.change" }),
     ).toHaveAttribute("href", "/userform#prefContainer");
