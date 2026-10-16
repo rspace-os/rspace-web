@@ -130,16 +130,16 @@ describe("createApiV2CollectionAdapter", () => {
     // `owner` is selected, so its absence is a contract failure.
     expect(() =>
       adapter.parseResponse({ ...envelope, docs: [{ id: "1", title: "A", enabled: true }] }, selected),
-    ).toThrow(/owner/);
+    ).toThrow("owner");
   });
 
   it("rejects the backend sort and page-size limits", () => {
-    expect(() => adapter.toSearchParams({ ...state, page: { pageIndex: 0, pageSize: 101 } })).toThrow(/Page size/);
+    expect(() => adapter.toSearchParams({ ...state, page: { pageIndex: 0, pageSize: 101 } })).toThrow("Page size");
     expect(() =>
       adapter.toSearchParams({
         ...state,
         sorting: Array.from({ length: 6 }, () => ({ field: "title", direction: "asc" as const })),
       }),
-    ).toThrow(/Sort field limit/);
+    ).toThrow("Sort field limit");
   });
 });

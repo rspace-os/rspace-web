@@ -66,13 +66,13 @@ describe("TableList query string sharing", () => {
     });
     render(<RouterProvider router={router as never} />);
 
-    expect(await screen.findByRole("columnheader", { name: /common:tableList.examples.fields.title/ })).toBeVisible();
+    expect(await screen.findByRole("columnheader", { name: "common:tableList.examples.fields.title" })).toBeVisible();
     await waitFor(() =>
       expect(screen.getByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("Ada"),
     );
     expect(screen.getByRole("button", { name: "common:tableList.filters.applied" })).toBeVisible();
     expect(
-      screen.queryByRole("columnheader", { name: /common:tableList.examples.fields.owner/ }),
+      screen.queryByRole("columnheader", { name: "common:tableList.examples.fields.owner" }),
     ).not.toBeInTheDocument();
     expect(window.location.href).toBe(originalLocation);
   });
@@ -92,7 +92,7 @@ describe("TableList query string sharing", () => {
 
     expect(await screen.findByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("Ada");
     expect(screen.getByRole("button", { name: "common:tableList.filters.applied" })).toBeVisible();
-    expect(await screen.findByRole("columnheader", { name: /common:tableList.examples.fields.title/ })).toBeVisible();
+    expect(await screen.findByRole("columnheader", { name: "common:tableList.examples.fields.title" })).toBeVisible();
   });
 
   it("invalidates a saved expression when a known runtime predicate is malformed", async () => {
@@ -223,9 +223,9 @@ describe("TableList query string sharing", () => {
 
     expect(await screen.findByRole("textbox", { name: "common:tableList.search.label" })).toHaveValue("Ada");
     expect(screen.getByRole("button", { name: "common:tableList.filters.applied" })).toBeVisible();
-    expect(screen.getByRole("columnheader", { name: /common:tableList.examples.fields.score/ })).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: "common:tableList.examples.fields.score" })).toBeVisible();
     expect(
-      screen.queryByRole("columnheader", { name: /common:tableList.examples.fields.owner/ }),
+      screen.queryByRole("columnheader", { name: "common:tableList.examples.fields.owner" }),
     ).not.toBeInTheDocument();
     await waitFor(() =>
       expect(JSON.parse(window.localStorage.getItem("rspace.tableList.records.view") as string)).toMatchObject({
@@ -271,7 +271,7 @@ describe("TableList query string sharing", () => {
         <Harness withSorting />
       </NuqsTestingAdapter>,
     );
-    const titleHeader = screen.getByRole("columnheader", { name: /common:tableList.examples.fields.title/ });
+    const titleHeader = screen.getByRole("columnheader", { name: "common:tableList.examples.fields.title" });
 
     await user.click(within(titleHeader).getByRole("button", { name: "common:tableList.actions.sortBy" }));
 
