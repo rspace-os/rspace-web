@@ -133,6 +133,6 @@ describe("bookingTime", () => {
   test("shows a shared timezone only once in an agenda period", () => {
     const period = formatAgendaPeriod("2026-08-18T08:00:00Z", "2026-08-18T09:00:00Z", "Europe/Berlin", "en-GB");
 
-    expect(period.match(/GMT\+2/g)).toHaveLength(1);
+    expect(period.split("GMT+2")).toHaveLength(2);
   });
 });
