@@ -46,7 +46,7 @@ describe("getNextMaintenance", () => {
   });
 
   it("fails soft to null when the envelope is malformed", async () => {
-    const restoreConsole = silenceConsole(["warn"], [/Could not read the next scheduled maintenance/]);
+    const restoreConsole = silenceConsole(["warn"], ["Could not read the next scheduled maintenance"]);
     server.use(http.get("/api/v2/maintenances", () => HttpResponse.json({ unexpected: true })));
     expect(await getNextMaintenance()).toBeNull();
     restoreConsole();
