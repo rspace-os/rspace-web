@@ -16,17 +16,20 @@ public interface InventoryLinkManager {
   /**
    * Persists a new InventoryLink row from the supplied API payload. Does not attach to an
    * ExtraLinkField; the caller is responsible for wiring the returned entity into the parent.
+   * Rejects a pin to a version the target does not have with {@code
+   * errors.inventory.field.linkTargetVersionNotFound}, checked only after the target proved
+   * readable (RSDEV-1530).
    */
   InventoryLink createLink(ApiInventoryLink apiLink, User actor);
 
   /**
    * Whether {@link #createLink} would succeed for this payload and actor: a parseable target of an
    * allowed kind, a valid relation type, and, unless the payload skips the target check as CSV
-   * import does, a target that exists and the actor can READ. The same checks as {@code
-   * createLink}, so a caller that must not fail as a whole on one bad link (the PIDINST import,
-   * RSDEV-1528) can drop that link beforehand. A link field's allowed-relation whitelist is not
-   * among them: the field enforces it on write. False for every failure alike, saying nothing about
-   * which.
+   * import does, a target that exists and the actor can READ and, when pinned, a version that
+   * target has. The same checks as {@code createLink}, so a caller that must not fail as a whole on
+   * one bad link (the PIDINST import, RSDEV-1528) can drop that link beforehand. A link field's
+   * allowed-relation whitelist is not among them: the field enforces it on write. False for every
+   * failure alike, saying nothing about which.
    */
   boolean canCreateLink(ApiInventoryLink apiLink, User actor);
 
@@ -48,10 +51,11 @@ public interface InventoryLinkManager {
   /**
    * Resolves the audit-backed summary (globalId, name, type, deleted) of the CURRENT state of a
    * link target, applying read permission: unreadable targets degrade to a globalId-only summary so
-   * names are never disclosed. Any version suffix on the id is ignored, since the summary backs the
-   * "Target deleted" pill, which reflects the record as it is now rather than as pinned. Malformed
-   * ids and prefixes that are not allowed link target kinds are rejected with the same i18n errors
-   * as the write path.
+   * names are never disclosed. A version suffix on the id does not change the state reported (the
+   * "Target deleted" pill reflects the record as it is now), but for a readable target it sets
+   * {@code pinnedVersionFound} to whether that version has a recorded revision (RSDEV-1530).
+   * Malformed ids and prefixes that are not allowed link target kinds are rejected with the same
+   * i18n errors as the write path.
    */
   ApiInventoryLinkTargetSummary getTargetSummary(String targetGlobalId, User actor);
 }

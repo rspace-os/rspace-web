@@ -3249,6 +3249,7 @@ export default interface Resources {
         },
         "infoDialog": {
           "label": "Info for {globalId}",
+          "versionNotFound": "Version {versionPin} of {globalId} cannot be found. It may never have existed, or its history may have been removed.",
           "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
         },
         "linkField": {
@@ -3259,7 +3260,9 @@ export default interface Resources {
           "openLabel": "Open {globalId}",
           "pinVersionLabel": "Pin version for {globalId}",
           "showInfoLabel": "Show info for {globalId}",
-          "targetDeleted": "Target deleted"
+          "targetDeleted": "Target deleted",
+          "versionNotFound": "Version not found",
+          "versionNotFoundDetail": "Version {version} of this item cannot be found: it may never have existed, or its history may have been removed"
         },
         "relatedInventoryItems": {
           "attachment": "Attachment",
@@ -7018,6 +7021,7 @@ export default interface Resources {
           "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
           "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
           "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+          "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
