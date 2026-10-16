@@ -124,8 +124,8 @@ describe("TableList filters", () => {
     await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
     await chooseFilterField(user, "common:tableList.filters.customField.option");
-    await user.click(screen.getByRole("combobox", { name: /common:tableList.filters.customField.searchLabel/ }));
-    await user.click(await screen.findByRole("option", { name: /Hazard class/ }));
+    await user.click(screen.getByRole("combobox", { name: "common:tableList.filters.customField.searchLabel" }));
+    await user.click(await screen.findByRole("option", { name: "Hazard classCell line template · SF104" }));
 
     expect(onSelectRuntimeField).toHaveBeenCalledWith("customFields", definition);
   });
@@ -270,7 +270,7 @@ describe("TableList filters", () => {
 
     await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
-    await chooseFilterField(user, /status/i);
+    await chooseFilterField(user, "common:tableList.examples.fields.status");
     await chooseFilterOperator(user, "common:tableList.filters.operators.notIn");
     const values = screen.getByRole("combobox", { name: "common:tableList.filters.value" });
     await user.click(values);
@@ -306,7 +306,7 @@ describe("TableList filters", () => {
 
     await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
-    await chooseFilterField(user, /status/i);
+    await chooseFilterField(user, "common:tableList.examples.fields.status");
     await chooseFilterOperator(user, "common:tableList.filters.operators.equals");
     await chooseFilterValue(user, "Draft");
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.applyFilters" }));
@@ -336,7 +336,7 @@ describe("TableList filters", () => {
 
     await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
-    await chooseFilterField(user, /fields\.modified/);
+    await chooseFilterField(user, "common:tableList.examples.fields.modified");
 
     await user.click(screen.getByRole("combobox", { name: "common:tableList.filters.operator" }));
     expect(await screen.findByRole("option", { name: "common:tableList.filters.operators.equals" })).toBeVisible();

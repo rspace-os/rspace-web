@@ -48,7 +48,7 @@ describe("resolveCollectionConfig", () => {
           field.name === "score" ? { ...field, capabilities: { filterOperators: ["contains"] } } : field,
         ),
       }),
-    ).toThrow(/not compatible/);
+    ).toThrow("not compatible");
   });
 
   const relationshipConfig = {
@@ -81,7 +81,7 @@ describe("resolveCollectionConfig", () => {
           ...relationshipConfig,
           listSearchableFields: [selector as "target.name"],
         }),
-      ).toThrow(/searchable|relationship/i);
+      ).toThrow("relationship");
     },
   );
 
@@ -91,6 +91,6 @@ describe("resolveCollectionConfig", () => {
         ...relationshipConfig,
         listSearchableFields: ["target.name", "target.name"],
       }),
-    ).toThrow(/Duplicate searchable/);
+    ).toThrow("Duplicate searchable");
   });
 });

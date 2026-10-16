@@ -10,6 +10,9 @@ import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { TableList } from "../../TableList";
 import { config, firstPage, records, type TestRecord } from "../fixtures/tableListFixtures";
 
+const checkboxForRow = (title: string) =>
+  within(screen.getByRole("row", { name: (accessibleName) => accessibleName.includes(title) })).getByRole("checkbox");
+
 describe("TableList data table", () => {
   it("keeps cards opt-in", () => {
     render(
@@ -223,7 +226,7 @@ describe("TableList data table", () => {
     }
     render(<Harness />);
 
-    const titleHeader = screen.getByRole("columnheader", { name: /common:tableList.examples.fields.title/ });
+    const titleHeader = screen.getByRole("columnheader", { name: "common:tableList.examples.fields.title" });
     expect(titleHeader).toHaveAttribute("aria-sort", "none");
     await user.click(screen.getAllByRole("button", { name: "common:tableList.actions.sortBy" })[0]);
     expect(titleHeader).toHaveAttribute("aria-sort", "ascending");
@@ -433,7 +436,7 @@ describe("TableList data table", () => {
     render(<Harness />);
     const table = screen.getByRole("table");
     const headerCheckbox = within(table).getAllByRole("checkbox")[0];
-    const alphaCheckbox = within(screen.getByRole("row", { name: /Alpha/ })).getByRole("checkbox");
+    const alphaCheckbox = checkboxForRow("Alpha");
 
     await user.click(alphaCheckbox);
     expect(headerCheckbox).toHaveAttribute("aria-checked", "mixed");
@@ -477,14 +480,14 @@ describe("TableList data table", () => {
     }
 
     render(<Harness />);
-    await user.click(within(screen.getByRole("row", { name: /Alpha/ })).getByRole("checkbox"));
+    await user.click(checkboxForRow("Alpha"));
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.nextPage" }));
-    await user.click(within(screen.getByRole("row", { name: /Gamma/ })).getByRole("checkbox"));
+    await user.click(checkboxForRow("Gamma"));
     expect(screen.getByText("2 selected IDs")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.previousPage" }));
-    expect(within(screen.getByRole("row", { name: /Alpha/ })).getByRole("checkbox")).toBeChecked();
-    expect(within(screen.getByRole("row", { name: /Beta/ })).getByRole("checkbox")).not.toBeChecked();
+    expect(checkboxForRow("Alpha")).toBeChecked();
+    expect(checkboxForRow("Beta")).not.toBeChecked();
   });
 
   it("shows singular and plural selected-row counts and clears the full selection", async () => {
@@ -515,7 +518,7 @@ describe("TableList data table", () => {
     });
     expect(screen.getByText("1 row selected")).toBeVisible();
 
-    await user.click(within(screen.getByRole("row", { name: /Beta/ })).getByRole("checkbox"));
+    await user.click(checkboxForRow("Beta"));
     expect(screen.getByText("2 rows selected")).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Clear selection" }));
@@ -551,8 +554,8 @@ describe("TableList data table", () => {
     });
     const table = screen.getByRole("table");
     const headerCheckbox = within(table).getAllByRole("checkbox")[0];
-    const alphaCheckbox = within(screen.getByRole("row", { name: /Alpha/ })).getByRole("checkbox");
-    const betaCheckbox = within(screen.getByRole("row", { name: /Beta/ })).getByRole("checkbox");
+    const alphaCheckbox = checkboxForRow("Alpha");
+    const betaCheckbox = checkboxForRow("Beta");
     expect(headerCheckbox).toHaveAttribute("aria-disabled", "true");
 
     await user.click(alphaCheckbox);
