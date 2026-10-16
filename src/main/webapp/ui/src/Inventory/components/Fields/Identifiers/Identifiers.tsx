@@ -583,7 +583,9 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
               <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
                 <StateInfo identifierState={id.state} identifierUrl={id.url} isLinked={id.linked} />{" "}
                 <a
-                  href={helpDocsArticleUrl(isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers")}
+                  href={helpDocsArticleUrl(
+                    id.linked ? "pidinstImport" : isInstrument ? "pidinstIdentifiers" : "igsnIdentifiers",
+                  )}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -759,15 +761,22 @@ function Identifiers<
   Fields extends {
     identifiers: Array<Identifier>;
   },
-  FieldOwner extends HasEditableFields<Fields>,
+  FieldOwner extends HasEditableFields<Fields> & { recordType: InventoryRecord["recordType"] },
 >({ fieldOwner }: { fieldOwner: FieldOwner }): ReactNode {
+  const isInstrument = fieldOwner.recordType === "instrument";
   return (
     <InputWrapper
       label=""
       error={false}
       explanation={
         fieldOwner.isFieldEditable("identifiers") ? (
-          <TransRichText i18nKey="inventory:fields.identifiers.formField.explanation" />
+          <TransRichText
+            i18nKey={
+              isInstrument
+                ? "inventory:fields.identifiers.formField.pidinstExplanation"
+                : "inventory:fields.identifiers.formField.explanation"
+            }
+          />
         ) : null
       }
     >

@@ -808,4 +808,12 @@ describe("PidinstImportDialog", () => {
     // the code itself, not a catalogue key built from it
     expect(within(warning).queryByText(/skipped\.reasons\./)).toBeNull();
   });
+
+  test("the help icon opens the Search and Import article", async () => {
+    await renderOpenDialog();
+    expect(screen.getByRole("link", { name: "inventory:pidinstImport.helpTitle" })).toHaveAttribute(
+      "href",
+      "https://researchspace.helpdocs.io/article/common:help.pidinstImport",
+    );
+  });
 });

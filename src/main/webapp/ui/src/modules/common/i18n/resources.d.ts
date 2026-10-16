@@ -1023,6 +1023,7 @@ export default interface Resources {
       "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
       "permissions": "n09nmg4ax7-permissions",
       "pidinstIdentifiers": "oahocdfqyg-pidinst-identifiers",
+      "pidinstImport": "dtzsvyhh44-search-and-import-pidinst-instruments-into-your-inventory",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
       "publicationOfDocuments": "lqxsej13hv-publication-of-documents",
@@ -2957,7 +2958,8 @@ export default interface Resources {
           "pidinst": "PIDINST"
         },
         "formField": {
-          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
+          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>.",
+          "pidinstExplanation": "See the Documentation for information on <helpDocs docLink=\"pidinstIdentifiers\">adding and publishing identifiers</helpDocs>."
         },
         "geoLocationField": {
           "addValueToPublish": "Add value to enable publishing.",
@@ -4145,7 +4147,7 @@ export default interface Resources {
         "state": "Registry state"
       },
       "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
-      "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
+      "descriptionLinks": "See our <helpDocs docLink=\"pidinstImport\">PIDINST identifiers docs</helpDocs> for more.",
       "helpTitle": "PIDINST help",
       "importError": "Could not import the instrument.",
       "importSuccess": "Successfully imported the instrument.",
