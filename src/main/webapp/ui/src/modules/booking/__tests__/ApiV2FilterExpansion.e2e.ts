@@ -282,7 +282,7 @@ test.describe("REST API v2 filter expansion", { tag: tags.INVENTORY }, () => {
     await pageBookableItemsFilter.filterPanel.getByRole("button", { name: "Clear all" }).click();
     await pageBookableItemsFilter.openFilters();
     await pageBookableItemsFilter.addFilter();
-    await pageBookableItemsFilter.chooseField(1, /Bookable item → Name/);
+    await pageBookableItemsFilter.chooseField(1, "Bookable item → Name");
     await pageBookableItemsFilter.chooseOperator(1, "contains");
     await pageBookableItemsFilter.scalarValue(1).fill(matchingName);
     await page.keyboard.press("Escape");

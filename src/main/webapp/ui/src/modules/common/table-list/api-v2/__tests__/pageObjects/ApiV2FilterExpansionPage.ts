@@ -34,7 +34,7 @@ export class ApiV2FilterExpansionPage {
   }
 
   runtimeFieldSearch(number: number): Locator {
-    return page.getByRole("combobox", { name: new RegExp(`custom fields for filter ${number}`, "i") });
+    return page.getByRole("combobox", { name: `custom fields for filter ${number}`, exact: false });
   }
 
   get applyFiltersButton(): Locator {
