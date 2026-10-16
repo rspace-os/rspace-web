@@ -421,13 +421,17 @@ export const Default: Story = {
     await userEvent.click(canvas.getByRole("combobox", { name: "Field for filter 1" }));
     const bookableItemGroup = await page.findByRole("group", { name: "Bookable item" });
     await userEvent.click(within(bookableItemGroup).getByRole("option", { name: "Extra fields" }));
-    await expect(canvas.queryByText(/Only choosing one attaches it to this rule/)).not.toBeInTheDocument();
+    await expect(
+      canvas.queryByText("Only choosing one attaches it to this rule", { exact: false }),
+    ).not.toBeInTheDocument();
     await userEvent.type(
       canvas.getByRole("combobox", { name: "Search Bookable item custom fields for filter 1" }),
       "Service",
     );
-    await userEvent.click(await page.findByRole("option", { name: /Service contact.*text/ }));
-    await expect(canvas.queryByText(/This rule filters on the target's field/)).not.toBeInTheDocument();
+    await userEvent.click(await page.findByRole("option", { name: "Service contact text" }));
+    await expect(
+      canvas.queryByText("This rule filters on the target's field", { exact: false }),
+    ).not.toBeInTheDocument();
     const runtimeFieldPicker = canvas.getByRole("combobox", {
       name: "Search Bookable item custom fields for filter 1",
     });
@@ -450,7 +454,7 @@ export const Default: Story = {
     const sampleGroup = await page.findByRole("group", { name: "Sample" });
     await userEvent.click(within(sampleGroup).getByRole("option", { name: "Extra fields" }));
     await userEvent.type(canvas.getByRole("combobox", { name: "Search Sample custom fields for filter 2" }), "Project");
-    await userEvent.click(await page.findByRole("option", { name: /Project.*text/ }));
+    await userEvent.click(await page.findByRole("option", { name: "Project text" }));
     await userEvent.type(canvas.getByRole("textbox", { name: "Value for filter 2" }), "Organoids");
     await userEvent.click(canvas.getByRole("button", { name: "Apply filters" }));
     await expect(canvas.getByText("Cell imaging", { exact: true })).toBeVisible();
@@ -491,8 +495,8 @@ export const CustomAndExtraFields: Story = {
       canvas.getByRole("combobox", { name: "Search Bookable item custom fields for filter 1" }),
       "Hazard",
     );
-    await expect(await page.findByRole("option", { name: /Hazard class.*Analytical template/ })).toBeVisible();
-    await userEvent.click(await page.findByRole("option", { name: /Hazard class.*Microscopy template/ }));
+    await expect(await page.findByRole("option", { name: "Hazard class Analytical template · SF204" })).toBeVisible();
+    await userEvent.click(await page.findByRole("option", { name: "Hazard class Microscopy template · SF104" }));
     await userEvent.click(canvas.getByRole("combobox", { name: "Value for filter 1" }));
     await userEvent.click(await page.findByRole("option", { name: "BSL-2" }));
     await userEvent.click(canvas.getByRole("button", { name: "Add filter" }));
@@ -504,8 +508,8 @@ export const CustomAndExtraFields: Story = {
       canvas.getByRole("combobox", { name: "Search Bookable item custom fields for filter 2" }),
       "Voltage",
     );
-    await expect(await page.findByRole("option", { name: /Voltage.*text/ })).toBeVisible();
-    await userEvent.click(await page.findByRole("option", { name: /Voltage.*number/ }));
+    await expect(await page.findByRole("option", { name: "Voltage text" })).toBeVisible();
+    await userEvent.click(await page.findByRole("option", { name: "Voltage number" }));
     await userEvent.type(canvas.getByRole("spinbutton", { name: "Value for filter 2" }), "230");
     await expect(canvas.getByRole("combobox", { name: "Search Bookable item custom fields for filter 1" })).toHaveValue(
       "Hazard class (Microscopy template · SF104)",
@@ -514,7 +518,7 @@ export const CustomAndExtraFields: Story = {
       "Voltage (number)",
     );
 
-    const addRuntimeFilter = async (number: number, option: RegExp) => {
+    const addRuntimeFilter = async (number: number, option: string) => {
       await userEvent.click(canvas.getByRole("button", { name: "Add filter" }));
       await userEvent.click(canvas.getByRole("combobox", { name: `Field for filter ${number}` }));
       await userEvent.click(
@@ -528,18 +532,18 @@ export const CustomAndExtraFields: Story = {
       await userEvent.click(await page.findByRole("option", { name: option }));
     };
 
-    await addRuntimeFilter(3, /Calibration date.*Microscopy template/);
+    await addRuntimeFilter(3, "Calibration date Microscopy template · SF109");
     await expect(canvas.getByLabelText("Value for filter 3")).toHaveAttribute("type", "date");
 
-    await addRuntimeFilter(4, /Daily cutoff.*Microscopy template/);
+    await addRuntimeFilter(4, "Daily cutoff Microscopy template · SF110");
     await expect(canvas.getByLabelText("Value for filter 4")).toHaveAttribute("type", "time");
 
-    await addRuntimeFilter(5, /Imaging modes.*Microscopy template/);
+    await addRuntimeFilter(5, "Imaging modes Microscopy template · SF111");
     await userEvent.click(canvas.getByRole("combobox", { name: "Value for filter 5" }));
     await expect(await page.findByRole("option", { name: "Fluorescence" })).toBeVisible();
     await userEvent.click(page.getByRole("option", { name: "Fluorescence" }));
 
-    await addRuntimeFilter(6, /Safety notes.*Microscopy template/);
+    await addRuntimeFilter(6, "Safety notes Microscopy template · SF112");
     await expect(canvas.getByRole("textbox", { name: "Value for filter 6" })).toHaveAttribute("type", "text");
   },
 };
