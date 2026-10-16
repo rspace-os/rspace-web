@@ -5020,7 +5020,7 @@ components:
                 totalCount:
                   type: number
                   description: Total number of items stored directly in this container
-                subSamplesCount:
+                subSampleCount:
                   type: number
                   description: Number of subsamples stored directly in this container
                 containerCount:
@@ -5205,7 +5205,7 @@ components:
             totalCount:
               type: number
               description: Total number of items stored directly in this container
-            subSamplesCount:
+            subSampleCount:
               type: number
               description: Number of subsamples stored directly in this container
             containerCount:
