@@ -123,7 +123,7 @@ export class AllBookableItemsPage {
   }
 
   get freeLaterToday(): Locator {
-    return page.getByRole("button", { name: /Busy now, free later/ });
+    return page.getByRole("button", { name: "Busy now, free later", exact: false });
   }
 
   get detailsButton(): Locator {
