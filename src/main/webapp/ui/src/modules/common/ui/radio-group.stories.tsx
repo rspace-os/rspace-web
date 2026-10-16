@@ -33,7 +33,7 @@ export const Default: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const checked = canvas.getByRole("radio", { checked: true });
-    expect(checked).toHaveAccessibleName(/comfortable/i);
+    expect(checked).toHaveAccessibleName("Comfortable");
   },
 };
 

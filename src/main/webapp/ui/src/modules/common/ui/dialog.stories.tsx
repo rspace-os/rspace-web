@@ -52,13 +52,13 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const trigger = canvas.getByRole("button", { name: /edit profile/i });
+    const trigger = canvas.getByRole("button", { name: "Edit profile" });
     await userEvent.click(trigger);
 
     const body = within(canvasElement.ownerDocument.body);
     const dialog = await body.findByRole("dialog");
     expect(dialog).toBeInTheDocument();
-    expect(body.getByText(/make changes to your profile/i)).toBeInTheDocument();
+    expect(body.getByText("Make changes to your profile here. Click save when you're done.")).toBeInTheDocument();
   },
 };
 

@@ -43,10 +43,10 @@ export const Default: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const trigger = canvas.getByRole("button", { name: /delete account/i });
+    const trigger = canvas.getByRole("button", { name: "Delete account" });
     await userEvent.click(trigger);
     const body = within(document.body);
-    expect(await body.findByRole("alertdialog", { name: /are you absolutely sure/i })).toBeInTheDocument();
+    expect(await body.findByRole("alertdialog", { name: "Are you absolutely sure?" })).toBeInTheDocument();
   },
 };
 
