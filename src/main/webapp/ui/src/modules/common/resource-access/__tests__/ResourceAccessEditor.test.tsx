@@ -168,7 +168,9 @@ describe("ResourceAccessEditor", () => {
     const search = await screen.findByLabelText("common:resourceAccess.addUserOrGroup");
 
     await user.type(search, "im");
-    const imagingGroup = await screen.findByRole("option", { name: /Imaging group/ });
+    const imagingGroup = await screen.findByRole("option", {
+      name: "Imaging groupcommon:resourceAccess.kind.groupimaging",
+    });
     expect(screen.queryByRole("option", { name: /Ada Owner/ })).not.toBeInTheDocument();
     await user.click(imagingGroup);
 
@@ -402,7 +404,9 @@ describe("ResourceAccessEditor", () => {
 
     await screen.findByRole("table");
     await user.type(screen.getByLabelText("common:resourceAccess.addUserOrGroup"), "im");
-    await user.click(await screen.findByRole("option", { name: /Imaging group/ }));
+    await user.click(
+      await screen.findByRole("option", { name: "Imaging groupcommon:resourceAccess.kind.groupimaging" }),
+    );
     await user.click(screen.getByRole("button", { name: "common:resourceAccess.saveChanges" }));
 
     expect(await screen.findByText("common:resourceAccess.conflictTitle")).toBeInTheDocument();
