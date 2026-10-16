@@ -125,7 +125,7 @@ describe("VerticalDayTimeline", () => {
     expect(occupancyEventIds).toEqual(expect.arrayContaining(["busy-short", "short-full"]));
 
     const fullEvent = page.getByRole("article", {
-      name: "Flow cytometer · Katherine Johnson, 14:00 +01:00–14:05 +01:00. Calibration run.",
+      name: "Flow cytometer · Katherine Johnson, 02:00 PM +01:00–02:05 PM +01:00. Calibration run.",
       exact: true,
       includeHidden: true,
     });
@@ -133,7 +133,7 @@ describe("VerticalDayTimeline", () => {
     await timeline.eventDetailsSummary.click();
 
     await expect.element(fullEvent).toBeVisible();
-    const busyEvent = page.getByRole("article", { name: "Busy, 12:00 +01:00–12:05 +01:00", exact: true });
+    const busyEvent = page.getByRole("article", { name: "Busy, 12:00 PM +01:00–12:05 PM +01:00", exact: true });
     await expect.element(busyEvent).toBeVisible();
     await expect.element(busyEvent).not.toHaveTextContent("Katherine Johnson");
   });
@@ -181,11 +181,11 @@ describe("VerticalDayTimeline", () => {
     );
 
     const adaBooking = page.getByRole("article", {
-      name: "Confocal microscope · Ada Lovelace, 08:00 +01:00–09:30 +01:00. Cell imaging with the 63x oil objective.",
+      name: "Confocal microscope · Ada Lovelace, 08:00 AM +01:00–09:30 AM +01:00. Cell imaging with the 63x oil objective.",
       exact: true,
     });
     const graceBooking = page.getByRole("article", {
-      name: "Confocal microscope · Grace Hopper, 08:30 +01:00–09:30 +01:00. Cryo-grid screening.",
+      name: "Confocal microscope · Grace Hopper, 08:30 AM +01:00–09:30 AM +01:00. Cryo-grid screening.",
       exact: true,
     });
     await expect.element(adaBooking).toBeVisible();

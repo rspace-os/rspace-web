@@ -152,8 +152,10 @@ describe("AllBookableItemsPage", () => {
 
     await renderPage();
 
-    const [primer] = await screen.findAllByText(/Instruments from Inventory become bookable/);
-    expect(primer).toHaveTextContent("Access follows the instrument's Inventory sharing.");
+    await screen.findAllByText(
+      "Instruments from Inventory become bookable once someone who manages them adds booking rules. Access follows the instrument's Inventory sharing.",
+      { exact: true },
+    );
     const [addLink] = screen.getAllByRole("link", { name: "Add Bookable Item" });
     expect(addLink).toHaveAttribute("href", "/booking/bookable-items/add");
   });
@@ -169,7 +171,7 @@ describe("AllBookableItemsPage", () => {
     await renderPage("/booking/all-items?date=2026-08-17&q=nothing");
 
     expect((await screen.findAllByText(commonEnglish.tableList.empty.title))[0]).toBeVisible();
-    expect(screen.queryByText(/Instruments from Inventory become bookable/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Instruments from Inventory become bookable", { exact: false })).not.toBeInTheDocument();
   });
 
   it("labels the Inventory location and explains workbench names", async () => {
@@ -193,8 +195,8 @@ describe("AllBookableItemsPage", () => {
 
     const [location] = await screen.findAllByRole("link", { name: "WB user1a" });
     expect(location).toHaveAttribute("href", "/globalId/BE1");
-    expect(location.parentElement).toHaveTextContent(/^WB user1a$/);
-    await waitFor(() => expect(screen.getByRole("button", { name: /^Available now/ })).toHaveTextContent(/\d/));
+    expect(location.parentElement?.textContent).toBe("WB user1a");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
     await expectAccessible(container);
   });
 
@@ -320,7 +322,7 @@ describe("AllBookableItemsPage", () => {
     );
     await renderPage();
     await screen.findAllByRole("link", { name: "Book" });
-    await waitFor(() => expect(screen.getByRole("button", { name: /^Available now/ })).toHaveTextContent(/\d/));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
     expect(bookings).toHaveBeenCalledTimes(1);
   });
 
@@ -577,8 +579,8 @@ describe("AllBookableItemsPage", () => {
       ),
     );
     await renderPage("/booking/all-items?date=2026-08-20");
-    const available = await screen.findByRole("button", { name: /^Available now/ });
-    const later = screen.getByRole("button", { name: /^Busy now, free later/ });
+    const available = await screen.findByRole("button", { name: "Available now" });
+    const later = screen.getByRole("button", { name: (name) => name.startsWith("Busy now, free later") });
     // The categories are mutually exclusive, so each chip carries what it counts.
     expect(available).toHaveAccessibleName("Available now");
     expect(available).toHaveAccessibleDescription("Free at this moment");
