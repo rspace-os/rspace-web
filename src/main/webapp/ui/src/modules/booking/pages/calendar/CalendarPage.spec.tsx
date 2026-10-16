@@ -179,7 +179,9 @@ describe("Calendar page", () => {
     if (!actionContainer) throw new Error("Edit action must have a row action container");
     expect(getComputedStyle(actionContainer).position).toBe("sticky");
     expect(getComputedStyle(actionContainer).right).toBe("0px");
-    const instrumentLink = calendar.resourceSchedule.getByRole("link", { name: /Open inventory record/ }).first();
+    const instrumentLink = calendar.resourceSchedule
+      .getByRole("link", { name: "Open inventory record IN123", exact: true })
+      .first();
     const instrumentHeader = instrumentLink.element().closest("header");
     if (!instrumentHeader) throw new Error("Instrument link must have a row header");
     expect(getComputedStyle(instrumentHeader).position).toBe("sticky");
@@ -846,8 +848,12 @@ describe("Calendar page", () => {
       await expect.element(dialog.getByLabelText("Start time")).toHaveValue("02:30");
       await expect.element(dialog.getByLabelText("End time")).toHaveValue("02:30");
       const occurrences = dialog.getByRole("group", { name: "Repeated local time" });
-      await expect.element(occurrences.nth(0).getByRole("radio", { name: /Earlier occurrence/ })).toBeChecked();
-      await expect.element(occurrences.nth(1).getByRole("radio", { name: /Later occurrence/ })).toBeChecked();
+      await expect
+        .element(occurrences.nth(0).getByRole("radio", { name: "Earlier occurrence", exact: false }))
+        .toBeChecked();
+      await expect
+        .element(occurrences.nth(1).getByRole("radio", { name: "Later occurrence", exact: false }))
+        .toBeChecked();
 
       await dialog.getByRole("textbox", { name: "Purpose" }).fill("Berlin repeated hour");
       await dialog.getByRole("button", { name: "Book", exact: true }).click();
