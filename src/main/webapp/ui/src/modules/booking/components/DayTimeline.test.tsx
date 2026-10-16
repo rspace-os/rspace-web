@@ -91,7 +91,7 @@ describe("DayTimeline table row", () => {
 
     expect(screen.getByText("17-08-2026")).toBeVisible();
     expect(screen.getByText("08:00 - 09:00")).toBeVisible();
-    const details = screen.getByRole("button", { name: /Show details for Confocal microscope · Ada/ });
+    const details = screen.getByRole("button", { name: "Show details for Confocal microscope · Ada, 08:00–09:00" });
     details.focus();
     await user.keyboard("{Enter}");
 
@@ -138,7 +138,7 @@ describe("DayTimeline table row", () => {
     expect(screen.getByText("16-08-2026 - 18-08-2026")).toBeVisible();
     expect(screen.getByText("23:30 (-1) - 01:30 (+1)")).toBeVisible();
     const details = screen.getByRole("button", {
-      name: /Show details for Overnight acquisition · Ada, 23:30 \(-1\)–01:30 \(\+1\)/,
+      name: "Show details for Overnight acquisition · Ada, 23:30 (-1)–01:30 (+1)",
     });
     await user.click(details);
 
@@ -169,7 +169,11 @@ describe("DayTimeline table row", () => {
       { wrapper },
     );
 
-    expect(screen.getByRole("region", { name: /Confocal microscope.*Europe\/Berlin/i })).toBeVisible();
+    expect(
+      screen.getByRole("region", {
+        name: "24-hour calendar for Confocal microscope on Monday, August 17, 2026 in Europe/Berlin",
+      }),
+    ).toBeVisible();
     expect(screen.queryByRole("group", { name: "Timeline zoom" })).not.toBeInTheDocument();
   });
 
@@ -197,11 +201,15 @@ describe("DayTimeline table row", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
-    const editable = screen.getByRole("button", { name: new RegExp(`Show details for ${LONG_ITEM_NAME}`) });
+    const editable = screen.getByRole("button", {
+      name: `Show details for ${LONG_ITEM_NAME} · Ada Lovelace · Ada Lovelace, 09:30–10:30`,
+    });
     await user.click(editable);
     expect(screen.getByRole("button", { name: "Manage editable" })).toBeVisible();
 
-    const readonly = screen.getByRole("button", { name: /Show details for Electron microscope · Grace Hopper/ });
+    const readonly = screen.getByRole("button", {
+      name: "Show details for Electron microscope · Grace Hopper, 09:45–10:45",
+    });
     await user.click(readonly);
     expect(screen.getByRole("button", { name: "Manage readonly" })).toBeVisible();
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
@@ -212,14 +220,16 @@ describe("DayTimeline table row", () => {
     await user.click(editable);
     const editablePopup = screen.getByRole("dialog", { name: "09:30–10:30" });
     await user.click(
-      within(editablePopup).getByRole("button", { name: new RegExp(`Hide details for ${LONG_ITEM_NAME}`) }),
+      within(editablePopup).getByRole("button", {
+        name: `Hide details for ${LONG_ITEM_NAME} · Ada Lovelace · Ada Lovelace, 09:30–10:30`,
+      }),
     );
     expect(screen.queryByRole("button", { name: "Manage editable" })).not.toBeInTheDocument();
     expect(editable).toHaveFocus();
 
-    await user.click(screen.getByRole("button", { name: /Show details for Busy/ }));
+    await user.click(screen.getByRole("button", { name: "Show details for Busy, 12:00–13:00" }));
     expect(screen.getByRole("button", { name: "Manage busy" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: /Show details for Scheduled maintenance/ }));
+    await user.click(screen.getByRole("button", { name: "Show details for Scheduled maintenance, 11:00–12:00" }));
     expect(screen.queryByRole("button", { name: "Manage busy" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Manage blockout" })).toBeVisible();
     const blockoutPopup = screen.getByRole("dialog", { name: "11:00–12:00" });
@@ -261,11 +271,13 @@ describe("DayTimeline table row", () => {
       />,
       { wrapper },
     );
-    expect(screen.getByRole("article", { name: /Repeated hour · Ada, 02:45 \+02:00–02:15 \+01:00/ })).toBeVisible();
-    expect(screen.getByRole("article", { name: /Busy, 23:30 \+01:00–00:00 \+01:00/ })).toBeVisible();
+    expect(screen.getByRole("article", { name: "Repeated hour · Ada, 02:45 +02:00–02:15 +01:00" })).toBeVisible();
+    expect(screen.getByRole("article", { name: "Busy, 23:30 +01:00–00:00 +01:00 (+1)" })).toBeVisible();
     expect(screen.getByText("02:00 +02:00")).toBeVisible();
     expect(screen.getByText("02:00 +01:00")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: /Show details for Repeated hour/ }));
+    await user.click(
+      screen.getByRole("button", { name: "Show details for Repeated hour · Ada, 02:45 +02:00–02:15 +01:00" }),
+    );
     expect(within(screen.getByRole("dialog")).getByText("30 minutes")).toBeVisible();
     await user.keyboard("{Escape}");
     const canvas = screen.getByTestId("day-timeline-canvas");
