@@ -397,7 +397,11 @@ describe("AvailabilityBar", () => {
       showBookingContextDetails: false,
     });
 
-    await user.hover(await screen.findByRole("button", { name: /Confocal microscope, Booked/ }));
+    await user.hover(
+      await screen.findByRole("button", {
+        name: "Confocal microscope, Booked, Aug 12, 2026, 09:00 UTC–Aug 12, 2026, 10:00 UTC, 1 event",
+      }),
+    );
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByLabelText("Show details for Confocal microscope, 09:00–10:00"));
 

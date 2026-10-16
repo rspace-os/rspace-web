@@ -826,7 +826,7 @@ describe("Calendar page", () => {
     await expect.element(dialog).toBeVisible();
     await expect.element(dialog.getByRole("radio")).not.toBeInTheDocument();
     await dialog.getByRole("button", { name: "Choose a bookable item" }).click();
-    await page.getByRole("option", { name: /Confocal microscope.*IN123/ }).click();
+    await page.getByRole("option", { name: "Confocal microscope (IN123)", exact: false }).click();
     await dialog.getByLabelText("Start time").fill("18:00");
     await dialog.getByLabelText("End time").fill("19:00");
     await expect.element(dialog.getByRole("button", { name: "Create maintenance event" })).toBeEnabled();
