@@ -24,9 +24,9 @@ async function openFilterRow() {
   return locators;
 }
 
-async function choose(control: ReturnType<typeof page.getByRole>, label: RegExp): Promise<void> {
+async function choose(control: ReturnType<typeof page.getByRole>, label: string): Promise<void> {
   await userEvent.click(control);
-  const option = page.getByRole("option", { name: label });
+  const option = page.getByRole("option", { name: label, exact: true });
   await userEvent.click(option);
   await expect.element(option).not.toBeInTheDocument();
 }
@@ -36,12 +36,12 @@ describe("filtering by a field of a relationship target", () => {
     const { field, operator, value, apply, lastQuery } = await openFilterRow();
 
     // Offered because the API publishes target.name and the adapter derives it.
-    await choose(field, /Bookable item name/);
+    await choose(field, "Owner → Bookable item name");
     await expect.element(field).toHaveValue("Owner → Bookable item name");
 
     // The server permits positive matching only on a target field, so no negative operator here.
     await userEvent.click(operator);
-    const contains = page.getByRole("option", { name: /^contains$/ });
+    const contains = page.getByRole("option", { name: "contains", exact: true });
     await expect.element(contains).toBeInTheDocument();
     expect(await page.getByRole("option", { name: "does not equal" }).elements()).toHaveLength(0);
     await userEvent.click(contains);

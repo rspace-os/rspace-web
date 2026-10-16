@@ -60,7 +60,7 @@ beforeEach(() => {
   }));
 });
 
-async function openFilterOn(field: string | RegExp) {
+async function openFilterOn(field: string) {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
   await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
@@ -85,7 +85,7 @@ describe("filtering on a relationship target's field", () => {
       />,
     );
 
-    const user = await openFilterOn(/Bookable item/);
+    const user = await openFilterOn("Bookable item: Name");
     expect(screen.getByRole("combobox", { name: "common:tableList.filters.field" })).toHaveValue("Bookable item: Name");
     const value = screen.getByRole("combobox", { name: "common:tableList.filters.value" });
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
@@ -116,7 +116,7 @@ describe("filtering on a relationship target's field", () => {
       />,
     );
 
-    const user = await openFilterOn(/Bookable item/);
+    const user = await openFilterOn("Bookable item: Name");
     await user.type(screen.getByRole("combobox", { name: "common:tableList.filters.value" }), "c");
 
     await waitFor(() =>
