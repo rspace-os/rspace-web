@@ -156,11 +156,9 @@ describe("relationship picker search", () => {
 
     await user.type(screen.getByRole("combobox", { name: "Relationship" }), "Conf");
 
-    const option = await screen.findByRole("option", {
-      name: "Confocal microscope common:relationshipPicker.openRecord",
-    });
+    const option = await screen.findByRole("option", { name: "Confocal microscope IN123" });
     // The global ID is plain text: a link inside the listbox would navigate away mid-selection.
-    expect(option).toHaveAccessibleName(/Confocal microscope.*IN123/);
+    expect(option).toHaveAccessibleName("Confocal microscope IN123");
     expect(within(option).queryByRole("link")).not.toBeInTheDocument();
     await user.click(option);
     expect(onChange).toHaveBeenCalledWith("IN123");
@@ -177,9 +175,7 @@ describe("relationship picker search", () => {
 
     await user.type(screen.getByRole("combobox", { name: "Relationship" }), "IN123");
 
-    expect(
-      await screen.findByRole("option", { name: "Confocal microscope common:relationshipPicker.openRecord" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("option", { name: "Confocal microscope IN123" })).toBeInTheDocument();
     expect(requests.at(-1)?.searchParams.get("where")).toBe("id==123");
     // Seeded and baseline rows have negative IDs, such as US-3; zero and malformed IDs are rejected.
     expect(databaseIdFromGlobalId("us-3", "US")).toBe(-3);
@@ -212,7 +208,7 @@ describe("relationship picker search", () => {
     await user.type(picker, "Conf");
 
     const option = await screen.findByRole("option", {
-      name: "Confocal microscope common:relationshipPicker.openRecord common:relationshipPicker.availabilityFailed",
+      name: "Confocal microscope IN123 common:relationshipPicker.availabilityFailed",
     });
     expect(await within(option).findByText("common:relationshipPicker.availabilityFailed")).toBeVisible();
     expect(option).toHaveAttribute("aria-disabled", "true");
