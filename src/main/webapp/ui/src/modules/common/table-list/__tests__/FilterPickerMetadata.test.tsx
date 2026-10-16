@@ -72,9 +72,7 @@ describe("metadata-selected relationship filter controls", () => {
       </QueryClientProvider>,
     );
     await user.type(screen.getByRole("combobox", { name: "common:tableList.filters.value" }), "Meta");
-    await user.click(
-      await screen.findByRole("option", { name: "Metadata microscopecommon:relationshipPicker.openRecord" }),
-    );
+    await user.click(await screen.findByRole("option", { name: "Metadata microscopeIN123" }));
     expect(onChange).toHaveBeenCalledWith("IN123");
     await expectAccessible(document.body);
   });
