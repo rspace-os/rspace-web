@@ -25,7 +25,9 @@ export class MyBookingsPageObject {
       timeStyle: "short",
       timeZone: displayTimeZone,
     }).format(new Date(upcomingBooking.start));
-    return page.getByRole("article", { name: /Confocal microscope/ }).getByText(displayedStart, { exact: true });
+    return page
+      .getByRole("article", { name: "Confocal microscope", exact: false })
+      .getByText(displayedStart, { exact: true });
   }
 
   get confocalDetails(): Locator {
