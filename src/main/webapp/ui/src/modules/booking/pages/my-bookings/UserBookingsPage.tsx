@@ -242,12 +242,21 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                   type="button"
                   size="sm"
                   variant={period === value ? "secondary" : "outline"}
-                  aria-label={label}
+                  aria-label={
+                    value === "upcoming" && upcomingCount.isSuccess
+                      ? t("myBookings.period.withCount", {
+                          label,
+                          count: upcomingCount.data.totalIsLowerBound
+                            ? t("myBookings.count.lowerBound")
+                            : upcomingCount.data.totalDocs,
+                        })
+                      : label
+                  }
                   aria-pressed={period === value}
                   onClick={() => selectPeriod(value)}
                 >
                   <Icon aria-hidden="true" />
-                  {label}
+                  {label}{" "}
                   {value === "upcoming" && upcomingCount.isSuccess && (
                     <Badge
                       variant={period === "upcoming" ? "secondary" : "outline"}

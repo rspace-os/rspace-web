@@ -289,7 +289,8 @@ describe("BookingForm", () => {
     const globe = screen.getByRole("button", { name: "booking:bookings.form.changeTimezone" });
     expect(globe).toHaveAttribute("aria-expanded", "true");
     await user.click(globe);
-    expect(screen.queryByRole("combobox", { name: /bookings\.form\.(start|end)Timezone/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "booking:bookings.form.startTimezone" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "booking:bookings.form.endTimezone" })).not.toBeInTheDocument();
   });
 
   it("prefills only the Calendar date and reports the missing window", async () => {
