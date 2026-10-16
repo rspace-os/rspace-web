@@ -138,14 +138,14 @@ describe("NewAppBar (MSW-driven)", () => {
 
     renderAppBar();
 
-    expect(await screen.findByRole("button", { name: /appBar.maintenancePopup/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "common:appBar.maintenancePopup" })).toBeInTheDocument();
   });
 
   it("hides the maintenance notice when /api/v2/maintenances reports none", async () => {
     renderAppBar();
 
     await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
-    expect(screen.queryByRole("button", { name: /appBar.maintenancePopup/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:appBar.maintenancePopup" })).not.toBeInTheDocument();
   });
 
   it("renders the deployment banner served by /api/v2/config", async () => {
@@ -262,7 +262,7 @@ describe("AccountMenu", () => {
 
     expect(await screen.findByText("common:appBar.operatingAs")).toBeInTheDocument();
     expect(screen.getByText("0000-0001-2345-6789")).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: /common:appBar.published/ })).toHaveAttribute(
+    expect(screen.getByRole("menuitem", { name: "common:appBar.published" })).toHaveAttribute(
       "href",
       "/public/publishedView/publishedDocuments",
     );
