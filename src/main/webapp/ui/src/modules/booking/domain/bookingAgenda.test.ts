@@ -78,9 +78,13 @@ describe("booking agenda date helpers", () => {
     expect(overnight).toContain("Sep 26");
     expect(repeatedHour).toContain("GMT+2");
     expect(repeatedHour).toContain("GMT+1");
-    expect(
-      formatBookingAgendaTimeRange("2026-10-25T00:05:00.000Z", "2026-10-25T00:35:00.000Z", "Europe/Berlin", "en-US"),
-    ).toMatch(/GMT\+2.*GMT\+2/);
+    const sameOffsetRange = formatBookingAgendaTimeRange(
+      "2026-10-25T00:05:00.000Z",
+      "2026-10-25T00:35:00.000Z",
+      "Europe/Berlin",
+      "en-US",
+    );
+    expect(sameOffsetRange.split("GMT+2")).toHaveLength(3);
     expect(
       formatBookingAgendaTimeRange("2026-09-24T12:00:00.000Z", "2026-09-24T14:00:00.000Z", "Europe/Berlin", "de-DE"),
     ).not.toEqual(
