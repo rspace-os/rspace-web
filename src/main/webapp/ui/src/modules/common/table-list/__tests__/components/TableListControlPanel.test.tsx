@@ -123,7 +123,7 @@ describe("TableList control panel", () => {
 
     await user.click(screen.getByRole("button", { name: "common:tableList.toolbar.columns" }));
     await user.type(screen.getByRole("combobox", { name: "common:tableList.filters.customField.option" }), "cab");
-    await user.click(await screen.findByRole("option", { name: "CabinetXFt436162696e6574" }));
+    await user.click(await screen.findByRole("option", { name: "Cabinettext" }));
 
     expect(onSelectRuntimeField).toHaveBeenCalledWith("extraFields", extraDefinition);
     expect(onColumnsChange).toHaveBeenCalledWith([...config.defaultColumns, "extraFields.XFt436162696e6574"]);
