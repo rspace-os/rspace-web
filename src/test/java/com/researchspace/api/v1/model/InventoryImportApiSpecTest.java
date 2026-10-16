@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerContentSummary;
+import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerGridLayoutConfig;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
@@ -59,7 +61,15 @@ class InventoryImportApiSpecTest {
             new ApiInventoryImportInstrumentImportResult()),
         Arguments.of(
             "InventoryBulkOperationRecordResult", new ApiInventoryBulkOperationRecordResult()),
-        Arguments.of("ParentContainerInfo", new ApiContainerInfo()));
+        Arguments.of("ParentContainerInfo", new ApiContainerInfo()),
+        Arguments.of(
+            "ParentContainerInfo/properties/contentSummary", new ApiContainerContentSummary()),
+        Arguments.of(
+            "ParentContainerInfo/properties/gridLayout", new ApiContainerGridLayoutConfig()),
+        Arguments.of(
+            "ContainerInfo/allOf/1/properties/contentSummary", new ApiContainerContentSummary()),
+        Arguments.of(
+            "ContainerInfo/allOf/1/properties/gridLayout", new ApiContainerGridLayoutConfig()));
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
