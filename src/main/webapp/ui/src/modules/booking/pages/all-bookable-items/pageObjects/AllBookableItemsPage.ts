@@ -111,11 +111,11 @@ export class AllBookableItemsPage {
   }
 
   get availableNow(): Locator {
-    return page.getByRole("button", { name: /Available now/ });
+    return page.getByRole("button", { name: "Available now", exact: true });
   }
 
   get freeLaterToday(): Locator {
-    return page.getByRole("button", { name: /Free later today/ });
+    return page.getByRole("button", { name: "Free later today", exact: false });
   }
 
   get detailsButton(): Locator {

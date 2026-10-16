@@ -142,7 +142,7 @@ describe("the All Bookable Items page", () => {
     await expect.element(pageObj.availabilityDetails).not.toHaveTextContent("UTC");
     await expect.element(pageObj.availabilityDetails.getByText("Booked", { exact: true })).not.toBeInTheDocument();
     await pageObj.availabilityDetails
-      .getByLabelText(/^Show details for Confocal microscope/)
+      .getByLabelText("Show details for Confocal microscope", { exact: false })
       .first()
       .click();
     const detailsLink = pageObj.availabilityDetails.getByRole("link", { name: "Details" });
@@ -158,7 +158,9 @@ describe("the All Bookable Items page", () => {
     await slice.hover();
 
     await expect.element(pageObj.availabilityDetails).toBeVisible();
-    await pageObj.availabilityDetails.getByLabelText(/^Show details for Maintenance blockout,/).click();
+    await pageObj.availabilityDetails
+      .getByLabelText("Show details for Maintenance blockout,", { exact: false })
+      .click();
     await expect.element(pageObj.availabilityDetails.getByText("Maintenance blockout", { exact: true })).toBeVisible();
     await expect
       .element(pageObj.availabilityDetails.getByText("Outside opening hours", { exact: true }))
