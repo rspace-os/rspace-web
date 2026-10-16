@@ -1,7 +1,8 @@
 import TableCell from "@mui/material/TableCell";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useEffect, useRef } from "react";
+import React, { type ReactNode, useContext, useEffect, useRef } from "react";
+import SearchContext from "@/stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import useResizeObserver from "../../../components/ResizeObserver";
 import * as DragAndDrop from "../DragAndDrop";
@@ -45,6 +46,12 @@ export type GridCellArgs = {
   columnsUnderHover: Set<number>;
   columnIndex: number;
   hoverEffect: boolean;
+
+  /**
+   * In a selection-only grid, called when the cell is pressed with the mouse, before it takes
+   * keyboard focus, so the arrow keys and Escape act from the clicked cell.
+   */
+  onPointerFocus: (coord: { x: number; y: number }) => void;
 };
 
 function GridCell({
@@ -55,8 +62,11 @@ function GridCell({
   columnsUnderHover,
   columnIndex,
   hoverEffect,
+  onPointerFocus,
 }: GridCellArgs): ReactNode {
   const cellRef = useRef<HTMLTableCellElement>(null);
+  const focusingByPointer = useRef(false);
+  const { search } = useContext(SearchContext);
 
   const resizeObserver = useRef(
     new ResizeObserver(() => {
@@ -84,8 +94,18 @@ function GridCell({
       align="center"
       onMouseDown={(e: React.MouseEvent) => {
         e.preventDefault();
+        if (!search.uiConfig.dragAndDropDisabled) return;
+        // The click itself selects or deselects, so taking focus here must not select as well.
+        onPointerFocus({ x: location.coordX, y: location.coordY });
+        focusingByPointer.current = true;
+        cellRef.current?.querySelector<HTMLElement>("[tabindex]")?.focus({ preventScroll: true });
+        focusingByPointer.current = false;
       }}
       onFocus={() => {
+        if (focusingByPointer.current || location.selected) return;
+        const { uiConfig } = search;
+        const full = (location.parentContainer.selectedLocations?.length ?? 0) >= uiConfig.selectionLimit;
+        if (uiConfig.onlyAllowSelectingEmptyLocations && (full || !location.isSelectable(search))) return;
         location.toggleSelected(true);
       }}
       onMouseEnter={() => {
