@@ -294,7 +294,7 @@ describe("CalendarPage", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "Search Calendar" }));
     await waitFor(() => expect(agenda.querySelectorAll("[data-calendar-search-match]")).toHaveLength(0));
-    expect(within(agenda).queryByText(/Spring Aurora imaging run/)).not.toBeInTheDocument();
+    expect(within(agenda).queryByText("Spring Aurora imaging run", { exact: false })).not.toBeInTheDocument();
   });
 
   it("uses one search for calendar events and bookable items", async () => {
