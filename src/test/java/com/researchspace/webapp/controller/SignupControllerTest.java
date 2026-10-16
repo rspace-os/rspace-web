@@ -4,20 +4,34 @@ import static com.researchspace.testutils.TestFactory.createAnyUser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.axiope.userimport.IPostUserSignup;
+import com.researchspace.Constants;
+import com.researchspace.auth.password.LoginVerificationBusyException;
+import com.researchspace.auth.password.NewPasswordEncodeGate;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.ISignupHandlerPolicy;
+import com.researchspace.service.RoleManager;
 import com.researchspace.service.SignupCaptchaVerifier;
+import com.researchspace.service.UserEnablementUtils;
+import com.researchspace.service.UserExistsException;
 import com.researchspace.webapp.filter.SAMLRemoteUserPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
@@ -29,12 +43,81 @@ public class SignupControllerTest {
   @Mock IPropertyHolder properties;
   private @Mock UserValidator userValidator;
   private @Mock SignupCaptchaVerifier captchaVerifier;
+  private @Mock RoleManager roleManager;
+  private @Mock UserEnablementUtils userEnablementUtils;
+  private @Mock ISignupHandlerPolicy manualSignupPolicy;
+  private @Mock IPostUserSignup postSignup;
+  private @Spy NewPasswordEncodeGate encodeGate = new NewPasswordEncodeGate(1);
   MockHttpServletRequest mockRequest;
   @InjectMocks SignupController signupCtrller;
 
   @BeforeEach
   public void setUp() throws Exception {
     mockRequest = new MockHttpServletRequest();
+  }
+
+  @Test
+  public void signupWithNoFreeEncodePermitIsRefusedWithoutSaving() throws UserExistsException {
+    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+    User user = createAnyUser("refused1");
+    assertTrue(encodeGate.tryAcquire());
+
+    BindingResult errors = new BeanPropertyBindingResult(user, "user");
+    assertEquals("signup", signupCtrller.onSubmit(user, errors, mockRequest));
+    assertTrue(errors.hasGlobalErrors());
+    assertEquals("errors.signup.rateLimited", errors.getGlobalError().getCode());
+    verify(manualSignupPolicy, never()).saveUser(eq(user), any());
+
+    encodeGate.release();
+    when(manualSignupPolicy.saveUser(eq(user), any())).thenReturn(user);
+    when(postSignup.getRedirect(user)).thenReturn("redirect:workspace");
+    BindingResult retryErrors = new BeanPropertyBindingResult(user, "user");
+    assertEquals("redirect:workspace", signupCtrller.onSubmit(user, retryErrors, mockRequest));
+  }
+
+  @Test
+  public void invalidSignupDoesNotTakeAnEncodePermit() throws UserExistsException {
+    User invalid = createAnyUser("invalid1");
+    BindingResult invalidErrors = new BeanPropertyBindingResult(invalid, "user");
+    doAnswer(
+            invocation -> {
+              invalidErrors.rejectValue("email", "errors.required");
+              return null;
+            })
+        .when(userValidator)
+        .validate(invalid, invalidErrors);
+    assertEquals("signup", signupCtrller.onSubmit(invalid, invalidErrors, mockRequest));
+
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  public void existingUserReleasesTheEncodePermit() throws UserExistsException {
+    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+    User user = createAnyUser("exists1");
+    when(manualSignupPolicy.saveUser(eq(user), any())).thenThrow(new UserExistsException("exists"));
+    BindingResult errors = new BeanPropertyBindingResult(user, "user");
+
+    assertEquals("signup", signupCtrller.onSubmit(user, errors, mockRequest));
+
+    assertTrue(encodeGate.tryAcquire());
+  }
+
+  @Test
+  public void busyPostSignupLoginRedirectsToLoginWithTheAccountKept() throws UserExistsException {
+    when(roleManager.getRole(Constants.USER_ROLE)).thenReturn(new Role(Constants.USER_ROLE));
+    User user = createAnyUser("busy1");
+    when(manualSignupPolicy.saveUser(eq(user), any())).thenReturn(user);
+    doThrow(new LoginVerificationBusyException("busy"))
+        .when(postSignup)
+        .postUserCreate(eq(user), any(), any());
+    BindingResult errors = new BeanPropertyBindingResult(user, "user");
+
+    String view = signupCtrller.onSubmit(user, errors, mockRequest);
+
+    assertEquals(SignupController.ACCOUNT_CREATED_LOGIN_BUSY_VIEW, view);
+    verify(manualSignupPolicy).saveUser(eq(user), any());
+    verify(postSignup, never()).getRedirect(user);
   }
 
   @Test
