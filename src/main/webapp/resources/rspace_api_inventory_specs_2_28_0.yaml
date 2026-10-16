@@ -2887,17 +2887,12 @@ paths:
     post:
       summary: Parse the incoming CSV file for import UI
       description: >
-        
+        Reads a CSV file and reports its structure, so that a client can prepare the settings for `/import/importFiles`. The shape of the response depends on `recordType`; the three shapes are the schemas listed under the `200` response.
 
 
         ### Parsing containers/subsamples CSV file
 
-        When provided `recordType` parameter has value: `CONTAINERS` or `SUBSAMPLES`, the endpoint verifies basic structure of the data and returns the object containing:
-
-          * `columnNames`: array of column names in CSV file.
-          * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
-          * `blankColumns`: array of column names with no value in any data row (a cell of only spaces counts as empty)
-          * `rowsCount`: number of data rows found in CSV file
+        When provided `recordType` parameter has value: `CONTAINERS` or `SUBSAMPLES`, the endpoint verifies basic structure of the data and returns an `InventoryImportParseResult`: the column names, which columns are complete or blank, the number of data rows, and any field mappings it can suggest.
 
 
         ### Parsing samples CSV file
@@ -2905,20 +2900,12 @@ paths:
         When provided `recordType` parameter has value: `SAMPLES`, the endpoint verifies basic structure of the data and suggests the template definition that could be used for running an actual import with `/import/importFiles` endpoint.
 
 
-        Upon successful parsing the response object contains:
-          * `templateInfo`: a definition of a suggested template. The template definition can be modified by the client, or can be used immediately to populate `importSettings.sampleSettings.templateInfo` parameter required by `/import/importFiles` endpoint
-          * `fieldNameForColumnName`: map that allows finding suggested field name for given CSV colum name. It could be that column name used in CSV file is not a valid RSpace template field name, in which case the field suggested for `templateInfo` will have a name adjusted to match the rules.
-          * `radioOptionsForColumn`: it could be that particular column in CSV file should be converted to Radio/Choice field, but the parsing algorithm suggested another field type. In such case the client can adjust `templateInfo` field definition and populate radio definition using this map
-          * `quantityUnitForColumn`: lists the columns that could be converted to "Quantity" field, with the id of suggested quantity unit
-          * `columnNames` list of column names in CSV file. This are the names that should be provided in `fieldMappings` object used by `/import/importFiles`.
-          * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
-          * `blankColumns`: array of column names with no value in any data row (a cell of only spaces counts as empty)
-          * `rowsCount`: number of data rows found in CSV file
+        The response is an `InventoryImportSampleParseResult`. Its `templateInfo` is the suggested template: it can be modified by the client, or used immediately to populate the `importSettings.sampleSettings.templateInfo` parameter required by `/import/importFiles`. The other properties help the client adjust that template: the field name suggested for each column (a column name used in the CSV file may not be a valid RSpace template field name, in which case the suggested field has a name adjusted to match the rules), the values that could populate a Radio/Choice field, and the quantity unit a column could be converted to.
 
 
         ### Parsing instruments CSV file
 
-        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response object contains `templateInfo` (an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`), `fieldNameForColumnName`, `radioOptionsForColumn`, `columnNames`, `columnsWithoutBlankValue`, `blankColumns`, and `rowsCount`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
+        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response is an `InventoryImportInstrumentParseResult`, whose `templateInfo` is an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
       tags:
         - Import
       parameters:
@@ -2933,10 +2920,34 @@ paths:
               - INSTRUMENTS
             default: SAMPLES
       requestBody:
-        $ref: "#/components/requestBodies/postSampletemplates_sampletemplateid_icon"
+        description: The CSV file to parse.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: >
+                    The CSV file. Its first line, after any leading `#` comment lines, holds the
+                    column names.
+              required:
+                - file
       responses:
         "200":
-          description: Parse results.
+          description: >
+            Parse results. The shape depends on `recordType`: `InventoryImportParseResult` for
+            `CONTAINERS` and `SUBSAMPLES`, `InventoryImportSampleParseResult` for `SAMPLES`,
+            `InventoryImportInstrumentParseResult` for `INSTRUMENTS`.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/InventoryImportParseResult"
+                  - $ref: "#/components/schemas/InventoryImportSampleParseResult"
+                  - $ref: "#/components/schemas/InventoryImportInstrumentParseResult"
   /import/importFiles:
     post:
       summary: Import Containers, Samples, SubSamples and Instruments from CSV files
@@ -3023,9 +3034,7 @@ paths:
 
         ## Import results
 
-        Import result object contains:
-          * `containerResults`, `sampleResults`, `subSampleResults` and `instrumentResults` objects with details of container/sample/subsample/instrument imports
-          * `status` property, which for successful import will be set to "COMPLETED".
+        The response is an `InventoryImportResult` (see the response schema below): a `status` property, which for successful import will be set to "COMPLETED", and `containerResults`, `sampleResults`, `subSampleResults` and `instrumentResults` objects with details of container/sample/subsample/instrument imports. On any status other than "COMPLETED", nothing was kept and the response holds only the results gathered before the import stopped.
 
         If any error occurs before/during import process, then all changes are reverted, i.e. nothing is created unless the import completes with status "COMPLETED".
 
@@ -3080,6 +3089,10 @@ paths:
       responses:
         "200":
           description: Import results.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryImportResult"
   /fieldmark/notebooks:
     get:
       summary: List Fieldmark notebooks that could be imported by the current user
@@ -4547,6 +4560,8 @@ components:
             - SUBSAMPLE
             - CONTAINER
             - SAMPLE_TEMPLATE
+            - INSTRUMENT
+            - INSTRUMENT_TEMPLATE
         attachments:
           $ref: "#/components/schemas/FileList"
         barcodes:
@@ -5213,6 +5228,8 @@ components:
             - attachment
             - reference
             - uri
+            - identifier
+            - link
         content:
           type: string
           description: >
@@ -6007,3 +6024,313 @@ components:
         httpCode: 422
         internalCode: 42201
         message: Query could not be processed.
+    InventoryImportParseResult:
+      description: >
+        The structure of the CSV file, which `POST /import/parseFile` returns for every
+        `recordType`. `CONTAINERS` and `SUBSAMPLES` get exactly this; `SAMPLES` and `INSTRUMENTS`
+        get one of the two schemas that extend it with a suggested template.
+      type: object
+      properties:
+        columnNames:
+          type: array
+          description: >
+            The column names from the first line of the CSV file after any leading `#` comment
+            lines, in file order. These are the keys to use in `fieldMappings` when calling
+            `/import/importFiles`.
+          items:
+            type: string
+        columnsWithoutBlankValue:
+          type: array
+          description: The columns that have a value in every data row.
+          items:
+            type: string
+        blankColumns:
+          type: array
+          description: >
+            The columns with no value in any data row (a cell of only spaces counts as empty).
+          items:
+            type: string
+        rowsCount:
+          type: integer
+          description: The number of data rows in the file, not counting the column-names line.
+        fieldNameForColumnName:
+          type: object
+          description: >
+            For `SAMPLES` and `INSTRUMENTS`, the template field name suggested for each column:
+            the column name trimmed, with a `_` prefix when it clashes with a reserved field name
+            such as `Name`. Empty for `CONTAINERS` and `SUBSAMPLES`.
+          additionalProperties:
+            type: string
+        fieldMappings:
+          type: object
+          description: >
+            Suggested entries for the `fieldMappings` of `/import/importFiles`, keyed by column
+            name. The only suggestion today is `identifier`, for a column whose every non-blank
+            value is an IGSN identifier; the map is empty when no column qualifies or when the
+            deployment has no IGSN integration.
+          additionalProperties:
+            type: string
+      example:
+        columnNames: ["Name", "Description", "Igsn"]
+        columnsWithoutBlankValue: ["Name", "Igsn"]
+        blankColumns: ["Description"]
+        rowsCount: 2
+        fieldNameForColumnName: {}
+        fieldMappings: { "Igsn": "identifier" }
+    InventoryImportSampleParseResult:
+      description: >
+        What `POST /import/parseFile` returns for `recordType=SAMPLES`: the file structure plus a
+        suggested Sample Template and the per-column hints for adjusting it.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportParseResult"
+        - properties:
+            templateInfo:
+              description: >
+                A suggested Sample Template, named after the file, with one field per column.
+                Edit it, or pass it as it is in `importSettings.sampleSettings.templateInfo` to
+                `/import/importFiles`.
+              allOf:
+                - $ref: "#/components/schemas/SampleTemplatePost"
+            radioOptionsForColumn:
+              type: object
+              description: >
+                For every column except those suggested as Text: the distinct non-blank values,
+                sorted, ready to become the options of a Radio or Choice field if the client
+                changes the suggested field type.
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+            quantityUnitForColumn:
+              type: object
+              description: >
+                The columns that could become a Quantity field, with the id of the suggested unit
+                (see `/units`): the dimensionless unit for a column suggested as Number, otherwise
+                the unit of the first value, when every value is a quantity in a comparable unit.
+              additionalProperties:
+                type: integer
+      example:
+        columnNames: ["Name", "Vendor", "Amount"]
+        columnsWithoutBlankValue: ["Name", "Vendor", "Amount"]
+        blankColumns: []
+        rowsCount: 2
+        fieldNameForColumnName: { "Name": "_Name", "Vendor": "Vendor", "Amount": "Amount" }
+        fieldMappings: {}
+        templateInfo:
+          name: enzymes
+          fields:
+            - name: _Name
+              type: string
+            - name: Vendor
+              type: string
+            - name: Amount
+              type: string
+        radioOptionsForColumn:
+          Name: ["EcoRI", "HindIII"]
+          Vendor: ["NEB", "Sigma"]
+          Amount: ["2 ml", "5 ml"]
+        quantityUnitForColumn: { "Amount": 3 }
+    InventoryImportInstrumentParseResult:
+      description: >
+        What `POST /import/parseFile` returns for `recordType=INSTRUMENTS`: the file structure
+        plus a suggested Instrument Template. There is no `quantityUnitForColumn`: instruments
+        have no quantity.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportParseResult"
+        - properties:
+            templateInfo:
+              description: >
+                A suggested Instrument Template, named after the file, with one field per column.
+                Edit it, or pass it as it is in `importSettings.instrumentSettings.templateInfo`
+                to `/import/importFiles`.
+              allOf:
+                - $ref: "#/components/schemas/InstrumentTemplatePost"
+            radioOptionsForColumn:
+              type: object
+              description: >
+                For every column except those suggested as Text: the distinct non-blank values,
+                sorted, ready to become the options of a Radio or Choice field if the client
+                changes the suggested field type.
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+      example:
+        columnNames: ["Name", "Manufacturer", "Decommissioned"]
+        columnsWithoutBlankValue: ["Name", "Manufacturer"]
+        blankColumns: ["Decommissioned"]
+        rowsCount: 2
+        fieldNameForColumnName:
+          { "Name": "_Name", "Manufacturer": "Manufacturer", "Decommissioned": "Decommissioned" }
+        fieldMappings: {}
+        templateInfo:
+          name: microscopes
+          fields:
+            - name: _Name
+              type: string
+            - name: Manufacturer
+              type: string
+            - name: Decommissioned
+              type: string
+        radioOptionsForColumn:
+          Name: ["Confocal 1", "Confocal 2"]
+          Manufacturer: ["Example Optics Ltd"]
+          Decommissioned: []
+    InventoryBulkOperationRecordResult:
+      description: >
+        The outcome for one row (or for the template): the record it created, or the error that
+        stopped it. In an import result, exactly one of the two is set.
+      type: object
+      properties:
+        record:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/InventoryRecordInfo"
+        error:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Error"
+    InventoryImportPartialResult:
+      description: The outcome of one CSV file within an import.
+      properties:
+        type:
+          type: string
+          description: The kind of item the file holds.
+          enum:
+            - SAMPLE
+            - SUBSAMPLE
+            - CONTAINER
+            - SAMPLE_TEMPLATE
+            - INSTRUMENT
+            - INSTRUMENT_TEMPLATE
+        status:
+          type: string
+          description: >
+            How far this file got. `COMPLETED` when the whole import succeeded,
+            `REVERTED_ON_ERROR` when an error stopped it. When the import failed its checks
+            (top-level `PREVALIDATION_ERROR`), each file keeps its own check result:
+            `PREVALIDATED` if it passed, `PREVALIDATION_ERROR` if it has the errors. Nothing was
+            kept unless the status is `COMPLETED`.
+          enum:
+            - NOT_STARTED
+            - PREVALIDATED
+            - PREVALIDATION_ERROR
+            - REVERTED_ON_ERROR
+            - COMPLETED
+        results:
+          type: array
+          description: >
+            One entry per row, in file order. When creating an item fails, its entry carries the
+            `error` and the import stops there: rows after it were never created, though subsample
+            rows can still be listed.
+          items:
+            $ref: "#/components/schemas/InventoryBulkOperationRecordResult"
+        successCount:
+          type: integer
+          description: >
+            How many rows were imported, when `status` is `COMPLETED`. On any other status
+            nothing was kept, whatever this count says.
+        successCountBeforeFirstError:
+          type: integer
+          description: >
+            How many rows succeeded before the first row that failed; the same as `successCount`
+            when no row failed.
+        errorCount:
+          type: integer
+          description: How many rows failed.
+    InventoryImportSampleImportResult:
+      description: >
+        The outcome of the samples CSV file, with the Sample Template the samples were created
+        from.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportPartialResult"
+        - properties:
+            templateResult:
+              description: >
+                The Sample Template that was used, or the error that stopped the import before
+                any sample was created.
+              allOf:
+                - $ref: "#/components/schemas/InventoryBulkOperationRecordResult"
+            templateCreated:
+              type: boolean
+              description: >
+                `true` when this import created the template from `templateInfo`, `false` when an
+                existing template was used or the template step failed. A created template is
+                rolled back if the import fails.
+    InventoryImportInstrumentImportResult:
+      description: >
+        The outcome of the instruments CSV file, with the Instrument Template the instruments
+        were created from.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportPartialResult"
+        - properties:
+            templateResult:
+              description: >
+                The Instrument Template that was used, or the error that stopped the import
+                before any instrument was created.
+              allOf:
+                - $ref: "#/components/schemas/InventoryBulkOperationRecordResult"
+            templateCreated:
+              type: boolean
+              description: >
+                `true` when this import created the template from `templateInfo`, `false` when an
+                existing template was used or the template step failed. A created template is
+                rolled back if the import fails.
+    InventoryImportResult:
+      description: >
+        What `POST /import/importFiles` returns. The top-level `status` decides the outcome: on
+        `COMPLETED` everything was created; on any other status nothing was kept, and the
+        response holds only the results gathered before the import stopped.
+      type: object
+      properties:
+        status:
+          type: string
+          description: >
+            The outcome of the whole import: `COMPLETED` when everything was created,
+            `PREVALIDATION_ERROR` when a file failed the checks made before anything is created,
+            `REVERTED_ON_ERROR` when an error stopped the import and everything created so far
+            was rolled back.
+          enum:
+            - NOT_STARTED
+            - PREVALIDATED
+            - PREVALIDATION_ERROR
+            - REVERTED_ON_ERROR
+            - COMPLETED
+        defaultContainer:
+          nullable: true
+          description: >
+            The "imported items" container created on the user's Bench for the items whose row
+            names no parent container. Null when every imported item had a parent or the import
+            failed its checks; after `REVERTED_ON_ERROR` it can name a container that was rolled
+            back. Only the basic record fields are listed here: the object is a full Container, as
+            returned by `GET /containers/{containerId}`.
+          allOf:
+            - $ref: "#/components/schemas/InventoryRecordInfo"
+        containerResults:
+          nullable: true
+          description: >
+            The outcome of the containers CSV file. Null unless both `containerSettings` and a
+            containers file were sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportPartialResult"
+        sampleResults:
+          nullable: true
+          description: >
+            The outcome of the samples import, from the Sample Template step on. Null unless
+            `sampleSettings` was sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportSampleImportResult"
+        subSampleResults:
+          nullable: true
+          description: >
+            The outcome of the subsamples CSV file. Null unless both `subSampleSettings` and a
+            subsamples file were sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportPartialResult"
+        instrumentResults:
+          nullable: true
+          description: >
+            The outcome of the instruments import, from the Instrument Template step on. Null
+            unless `instrumentSettings` was sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportInstrumentImportResult"
