@@ -309,9 +309,9 @@ describe("BookingDayTimelineAside acceptance", () => {
     render(asideTree({ client, selectedDraft: crossDayDraft }));
 
     expect(screen.getByTestId("vertical-day-timeline-draft")).toBeVisible();
-    expect(screen.getByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "booking:dayTimeline.vertical.moveDraft" })).toBeInTheDocument();
     // The item closes at 22:00, so no other start keeps the draft valid.
-    expect(screen.getByRole("button", { name: /booking:dayTimeline.vertical.resizeStart/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "booking:dayTimeline.vertical.resizeStart" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
