@@ -253,7 +253,7 @@ describe("BookingInlineEditForm", () => {
     const user = userEvent.setup();
 
     await screen.findByDisplayValue("Cell imaging");
-    screen.getByRole("button", { name: /booking:dayTimeline.vertical.moveDraft/ }).focus();
+    screen.getByRole("button", { name: "booking:dayTimeline.vertical.moveDraft" }).focus();
     await user.keyboard("{ArrowDown}");
 
     const start = screen.getByRole("group", { name: "booking:bookings.form.start" });

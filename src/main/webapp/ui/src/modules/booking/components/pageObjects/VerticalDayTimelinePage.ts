@@ -10,7 +10,7 @@ export class VerticalDayTimelinePage {
   }
 
   get dateHeading(): Locator {
-    return page.getByRole("heading", { name: /Oct 25, 2026/ });
+    return page.getByRole("heading", { name: "Oct 25, 2026", exact: true });
   }
 
   get endResizeHandle(): Locator {
