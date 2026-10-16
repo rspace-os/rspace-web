@@ -154,7 +154,8 @@ describe("calendar availability", () => {
     expect(where).toContain("target=in=(IN1,IN2)");
     expect(where).toContain("start=lt=2026-03-29T22:00:00Z");
     expect(where).toContain("end=gt=2026-03-28T23:00:00Z");
-    expect(where).not.toMatch(/start<|end>/);
+    expect(where).not.toContain("start<");
+    expect(where).not.toContain("end>");
     expect(requests[0].searchParams.get("fields[bookings]")).toBe(BOOKING_READ_FIELDS);
     expect(requests[0].searchParams.get("totals")).toBe("true");
     expect(result.get("IN1")).toEqual([
