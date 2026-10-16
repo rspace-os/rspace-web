@@ -388,13 +388,13 @@ describe("BookableItemPage", () => {
     );
     const { queryClient } = renderPage("/booking/bookable-items/IN123/access");
     const explicitAccessTable = await screen.findByRole("table");
-    const stringFlagsRow = within(explicitAccessTable).getByRole("row", { name: /String flags/ });
-    const booleanOwnerRow = within(explicitAccessTable).getByRole("row", { name: /Boolean owner/ });
+    const stringFlagsCheckbox = within(explicitAccessTable).getByRole("checkbox", { name: "String flags" });
+    const booleanOwnerCheckbox = within(explicitAccessTable).getByRole("checkbox", { name: "Boolean owner" });
 
     expect(within(explicitAccessTable).getAllByRole("row")).toHaveLength(3);
     expect(within(explicitAccessTable).queryByText("Invalid id")).not.toBeInTheDocument();
-    expect(within(stringFlagsRow).getByRole("checkbox")).toHaveAttribute("aria-checked", "false");
-    expect(within(booleanOwnerRow).getByRole("checkbox")).toHaveAttribute("aria-checked", "true");
+    expect(stringFlagsCheckbox).toHaveAttribute("aria-checked", "false");
+    expect(booleanOwnerCheckbox).toHaveAttribute("aria-checked", "true");
 
     sharingMode = "OWNER_GROUPS";
     await act(() => queryClient.refetchQueries({ queryKey: ["inventory", "instruments", 123, "access"] }));
