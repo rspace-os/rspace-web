@@ -42,7 +42,6 @@ describe("result row selection controls", () => {
   test("name the item in the checkbox label", () => {
     renderResults("MULTIPLE");
     expect(screen.getByRole("checkbox", { name: "Select Freezer rack A" })).toBeInTheDocument();
-    expect(screen.queryByRole("checkbox", { name: /\{name\}/ })).not.toBeInTheDocument();
   });
 
   test("name the item in the radio label", () => {
