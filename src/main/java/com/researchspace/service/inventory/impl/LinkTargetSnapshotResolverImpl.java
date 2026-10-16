@@ -47,11 +47,12 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
       return null;
     }
     Number revision = null;
-    // All three branches use the non-throwing "find" lookups: capturing the pinned revision is
-    // best-effort (applyApiToEntity stores null = "resolve latest at read time" when a version has
-    // no audit row), so an unresolved version must degrade to null rather than throw. The throwing
+    // All three branches use the non-throwing "find" lookups: a version with no audit row is an
+    // answer here (the link write path refuses the pin, the CSV import fails that row), so it must
+    // come back as null rather than throw. The throwing
     // getRevisionNumberFor{Document,MediaFile}Version variants would, crossing the transactional
-    // AuditManager boundary, mark the caller's transaction rollback-only and fail the whole save.
+    // AuditManager boundary, mark the caller's transaction rollback-only and fail the whole save or
+    // import.
     if (prefix == GlobalIdPrefix.SD) {
       revision = auditManager.findRevisionNumberForDocumentVersion(dbId, version);
     } else if (prefix == GlobalIdPrefix.GL) {

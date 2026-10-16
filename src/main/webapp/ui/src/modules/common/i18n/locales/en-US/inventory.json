@@ -994,7 +994,8 @@
       },
       "infoDialog": {
         "label": "Info for {globalId}",
-        "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
+        "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version.",
+        "versionNotFound": "Version {versionPin} of {globalId} cannot be found. It may never have existed, or its history may have been removed."
       },
       "linkField": {
         "editLink": "Edit link",
@@ -1004,7 +1005,9 @@
         "openLabel": "Open {globalId}",
         "pinVersionLabel": "Pin version for {globalId}",
         "showInfoLabel": "Show info for {globalId}",
-        "targetDeleted": "Target deleted"
+        "targetDeleted": "Target deleted",
+        "versionNotFound": "Version not found",
+        "versionNotFoundDetail": "Version {version} of this item cannot be found: it may never have existed, or its history may have been removed"
       },
       "relatedInventoryItems": {
         "attachment": "Attachment",

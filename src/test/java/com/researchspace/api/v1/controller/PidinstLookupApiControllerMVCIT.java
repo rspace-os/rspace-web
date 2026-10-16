@@ -473,6 +473,44 @@ public class PidinstLookupApiControllerMVCIT extends API_MVC_InventoryTestBase {
   }
 
   /**
+   * RSDEV-1530: an entry of this server that pins a version the item does not have is refused by
+   * the write path like any other unlinkable entry, so it is skipped with the one NOT_AVAILABLE
+   * reason and the next entry for the field is tried (ADR 0009 decision 9).
+   */
+  @Test
+  public void anEntryPinningAVersionTheItemLacksIsSkippedAndTheNextEntryLinks() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(anyUser);
+    String missingVersion = ownPageOf(target.getGlobalId() + "v7");
+    b2instDummy
+        .getPublishedRecord(recordId)
+        .orElseThrow()
+        .getMetadata()
+        .setRelatedIdentifier(
+            List.of(
+                related("Measurement Technique", missingVersion),
+                related("Measurement Technique", ownPageOf(target.getGlobalId() + "v1")),
+                related("Calibration", missingVersion)));
+
+    JsonNode created = json(importPid(anyUser, apiKey, handle, 201));
+
+    JsonNode technique = created.get("fields").get(6);
+    assertEquals(target.getGlobalId(), technique.get("link").get("targetGlobalId").asText());
+    assertEquals(
+        1,
+        technique.get("link").get("versionPin").asLong(),
+        "the second entry, whose version exists, filled the field");
+    assertNoLink(created.get("fields").get(8));
+    JsonNode skipped = created.get("skippedRelatedIdentifiers");
+    assertEquals(1, skipped.size(), skipped.toString());
+    assertEquals("Calibration", skipped.get(0).get("field").asText());
+    assertEquals("NOT_AVAILABLE", skipped.get(0).get("reason").asText());
+    assertEquals(missingVersion, skipped.get(0).get("address").asText());
+    assertFalse(skipped.get(0).has("host"), skipped.toString());
+  }
+
+  /**
    * ELN targets resolve through transactional managers, unlike Inventory ones: an unreadable
    * notebook and a missing document must be skipped as well, without failing the whole import.
    */

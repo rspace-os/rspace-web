@@ -10,6 +10,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { isAxiosError } from "@/common/axios";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import ApiService from "../../../../common/InvApiService";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
@@ -87,6 +88,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
   }, [props.open, props.globalId, props.versionPin, factory]);
 
   if (!props.open) return null;
+  const baseGlobalId = props.globalId.replace(/v\d+$/, "");
   return (
     <Dialog
       open={props.open}
@@ -98,7 +100,16 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
       <DialogTitle>{props.globalId}</DialogTitle>
       <DialogContent>
         {state.state === "loading" && <Skeleton variant="rectangular" width="100%" height={240} />}
-        {state.state === "fail" && <Alert severity="error">{state.error.message}</Alert>}
+        {state.state === "fail" && (
+          <Alert severity="error">
+            {props.versionPin != null && isAxiosError(state.error) && state.error.response?.status === 404
+              ? t("fields.link.infoDialog.versionNotFound", {
+                  versionPin: props.versionPin,
+                  globalId: baseGlobalId,
+                })
+              : state.error.message}
+          </Alert>
+        )}
         {state.state === "success" && (
           <>
             {props.versionPin != null && (
@@ -117,7 +128,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
                     i18nKey="inventory:fields.link.infoDialog.versionNote"
                     values={{
                       versionPin: props.versionPin,
-                      globalId: props.globalId.replace(/v\d+$/, ""),
+                      globalId: baseGlobalId,
                     }}
                   />
                 </Typography>

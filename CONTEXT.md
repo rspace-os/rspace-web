@@ -285,10 +285,10 @@ resolved during design. This file is a glossary only — no implementation detai
   is this RSpace's own page for an item the importing user can see becomes a real link,
   with the field's own relation (IsDocumentedBy for Measurement technique, IsCalibratedBy
   for Calibration, since the registry's IsDescribedBy is a constant that says nothing) and
-  pinned to the same version the address names, if it names one; a trashed item the user
-  can still see is linked and shows as deleted, as by hand, except a trashed notebook, which
-  cannot be linked by hand either. Every other such entry is a skipped entry. Nothing about
-  a skipped entry is stored on the instrument (RSDEV-1528).
+  pinned to the same version the address names, if it names one and the item has it; a
+  trashed item the user can still see is linked and shows as deleted, as by hand, except a
+  trashed notebook, which cannot be linked by hand either. Every other such entry is a
+  skipped entry. Nothing about a skipped entry is stored on the instrument (RSDEV-1528).
   _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
   lookup (that is the search that precedes it), sync, instrument CSV import (that is the
   CSV import path)
@@ -311,8 +311,9 @@ resolved during design. This file is a glossary only — no implementation detai
   RSpace, or, when the address has no host or is on this RSpace's own host, as not the
   address of an item in this RSpace; or it points at this RSpace but the item is not
   available to the importing user, which is the one wording for an item they cannot see, an
-  item that does not exist and a kind of item links cannot name, so an import never reveals
-  whether an item exists (the principle of ADR 0002). A server whose
+  item that does not exist, a kind of item links cannot name and a version the item does not
+  have, so an import never reveals whether an item, or a version of it, exists (the principle
+  of ADR 0002). A server whose
   address has changed since it registered the PID is not recognised as this one; its own
   entries are skipped as another server's.
   _Avoid_: dropped entry, lost link, failed link, unresolved identifier

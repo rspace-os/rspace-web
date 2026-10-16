@@ -1,13 +1,12 @@
-import { describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../../common/InvApiService";
 import { mockFactory } from "../../../../definitions/__tests__/Factory/mocking";
 import CoreFetcher from "../../CoreFetcher";
 
+const { addAlert } = vi.hoisted(() => ({ addAlert: vi.fn() }));
 vi.mock("../../../../stores/getRootStore", () => ({
   default: () => ({
-    uiStore: {
-      addAlert: () => {},
-    },
+    uiStore: { addAlert },
   }),
 }));
 vi.mock("../../../../../common/InvApiService", () => ({
@@ -18,6 +17,8 @@ vi.mock("../../../../../common/InvApiService", () => ({
 }));
 
 describe("permalinkNotFound", () => {
+  beforeEach(() => addAlert.mockClear());
+
   test("a failed versioned permalink fetch records which version was not found", async () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() =>
       Promise.reject(Object.assign(new Error("Not Found"), { response: { status: 404 } })),
@@ -76,6 +77,7 @@ describe("permalinkNotFound", () => {
 
     // the generic error alert fires, but the not-found panel must not
     expect(fetcher.permalinkNotFound).toBeNull();
+    expect(addAlert).toHaveBeenCalledTimes(1);
   });
 
   test("a successful permalink fetch leaves no not-found state", async () => {
@@ -97,5 +99,29 @@ describe("permalinkNotFound", () => {
     );
 
     expect(fetcher.permalinkNotFound).toBeNull();
+  });
+
+  test("a permalink 404 raises no error toast: the not-found panel says it all", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.reject(Object.assign(new Error("Not Found"), { response: { status: 404 } })),
+    );
+    const fetcher = new CoreFetcher(mockFactory(), null);
+
+    await fetcher.search({ permalink: { type: "sample", id: 6, version: 7 } }, () => {});
+
+    expect(fetcher.permalinkNotFound).toEqual({ type: "sample", id: 6, version: 7 });
+    expect(addAlert).not.toHaveBeenCalled();
+  });
+
+  test("a 404 that is not a permalink still raises the error toast", async () => {
+    vi.spyOn(InvApiService, "query").mockImplementation(() =>
+      Promise.reject(Object.assign(new Error("Not Found"), { response: { status: 404 } })),
+    );
+    const fetcher = new CoreFetcher(mockFactory(), null);
+
+    await fetcher.search({ query: "anything" }, () => {});
+
+    expect(fetcher.permalinkNotFound).toBeNull();
+    expect(addAlert).toHaveBeenCalledTimes(1);
   });
 });
