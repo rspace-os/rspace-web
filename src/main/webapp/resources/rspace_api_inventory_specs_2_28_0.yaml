@@ -4533,10 +4533,10 @@ components:
           description: The last modification time of the item.
         modifiedBy:
           type: string
-          description: Username of the last person modifiying the item.
+          description: Username of the last person modifying the item.
         modifiedByFullName:
           type: string
-          description: Full name of the last person modifiying the item.
+          description: Full name of the last person modifying the item.
         deleted:
           type: boolean
           description: Whether item is deleted or not.
@@ -5031,16 +5031,21 @@ components:
                   description: Number of instruments stored directly in this container
             cType:
               type: string
-              description: container type, one of LIST / GRID / IMAGE
+              description: The container type. A Bench is a WORKBENCH container.
+              enum:
+                - LIST
+                - GRID
+                - IMAGE
+                - WORKBENCH
             gridLayout:
               description: Information about the grid layout (GRID containers only)
               properties:
                 columnsNumber:
                   type: number
-                  description: Number of subsamples stored directly in this container
+                  description: Number of columns in the grid
                 rowsNumber:
                   type: number
-                  description: Number of subsamples stored directly in this container
+                  description: Number of rows in the grid
                 columnsLabelType:
                   type: string
                   description: Columns naming mode one of ABC, CBA, N123, N321
@@ -5116,10 +5121,10 @@ components:
           description: The last modification time of the item.
         modifiedBy:
           type: string
-          description: Username of the last person modifiying the item.
+          description: Username of the last person modifying the item.
         modifiedByFullName:
           type: string
-          description: Full name of the last person modifiying the item.
+          description: Full name of the last person modifying the item.
         deleted:
           type: boolean
           description: Whether item is deleted or not.
@@ -5216,7 +5221,12 @@ components:
               description: Number of instruments stored directly in this container
         cType:
           type: string
-          description: container type, one of LIST / GRID / IMAGE
+          description: The container type. A Bench is a WORKBENCH container.
+          enum:
+            - LIST
+            - GRID
+            - IMAGE
+            - WORKBENCH
         ctype:
           type: string
           description: The same value as `cType`, also sent under this lower-case name.
@@ -5225,10 +5235,10 @@ components:
           properties:
             columnsNumber:
               type: number
-              description: Number of subsamples stored directly in this container
+              description: Number of columns in the grid
             rowsNumber:
               type: number
-              description: Number of subsamples stored directly in this container
+              description: Number of rows in the grid
             columnsLabelType:
               type: string
               description: Columns naming mode one of ABC, CBA, N123, N321

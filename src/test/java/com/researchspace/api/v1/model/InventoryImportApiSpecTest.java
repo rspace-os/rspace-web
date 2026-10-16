@@ -10,7 +10,11 @@ import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerGridLayoutCon
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
+import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.Container.GridLayoutAxisLabelEnum;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -164,7 +168,24 @@ class InventoryImportApiSpecTest {
         Arguments.of(
             "InventoryImportPartialResult/properties/status", InventoryBulkOperationStatus.class),
         Arguments.of("InventoryImportResult/properties/status", InventoryBulkOperationStatus.class),
-        Arguments.of("InventoryEntityField/properties/type", ApiFieldType.class));
+        Arguments.of("InventoryEntityField/properties/type", ApiFieldType.class),
+        Arguments.of(
+            "InventoryRecordInfo/properties/permittedActions/items",
+            ApiInventoryRecordPermittedAction.class),
+        Arguments.of("InventoryRecordInfo/properties/sharingMode", ApiInventorySharingMode.class),
+        Arguments.of("ParentContainerInfo/properties/type", ApiInventoryRecordType.class),
+        Arguments.of(
+            "ParentContainerInfo/properties/permittedActions/items",
+            ApiInventoryRecordPermittedAction.class),
+        Arguments.of("ParentContainerInfo/properties/sharingMode", ApiInventorySharingMode.class),
+        Arguments.of("ParentContainerInfo/properties/cType", ContainerType.class),
+        Arguments.of("ContainerInfo/allOf/1/properties/cType", ContainerType.class),
+        Arguments.of(
+            "ParentContainerInfo/properties/gridLayout/properties/columnsLabelType",
+            GridLayoutAxisLabelEnum.class),
+        Arguments.of(
+            "ParentContainerInfo/properties/gridLayout/properties/rowsLabelType",
+            GridLayoutAxisLabelEnum.class));
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
