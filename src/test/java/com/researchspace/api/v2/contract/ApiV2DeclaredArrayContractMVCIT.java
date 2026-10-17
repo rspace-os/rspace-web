@@ -119,7 +119,13 @@ class ApiV2DeclaredArrayContractMVCIT extends MVCTestBase {
           "id",
           List.of(new Sort("id", true)));
 
-  @Autowired private ArrayOperations operations;
+  private final ArrayOperations operations;
+
+  @Autowired
+  ApiV2DeclaredArrayContractMVCIT(ArrayOperations operations) {
+    this.operations = operations;
+  }
+
   private ApiV2Fixture fixture;
 
   @Override
