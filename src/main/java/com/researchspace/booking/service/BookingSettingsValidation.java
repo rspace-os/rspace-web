@@ -3,11 +3,27 @@ package com.researchspace.booking.service;
 import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException.Reason;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
 import com.researchspace.model.booking.BookingSchedulingSettings;
+import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 
 final class BookingSettingsValidation {
 
+  // Java exposes these legacy IDs even though the supported-browser matrix rejects them.
+  private static final Set<String> LEGACY_BROWSER_INCOMPATIBLE_TIME_ZONES =
+      Set.of("CST6CDT", "EST5EDT", "MST7MDT", "PST8PDT");
+
   private BookingSettingsValidation() {}
+
+  static void requireValidTimeZone(String timeZone) {
+    if (timeZone == null
+        || timeZone.isBlank()
+        || !ZoneId.getAvailableZoneIds().contains(timeZone)
+        || timeZone.startsWith("SystemV/")
+        || LEGACY_BROWSER_INCOMPATIBLE_TIME_ZONES.contains(timeZone)) {
+      throw new InvalidBookingSchedulingSettingsException(Reason.TIME_ZONE);
+    }
+  }
 
   static void requireValid(BookingSchedulingSettings settings) {
     requireValid(
