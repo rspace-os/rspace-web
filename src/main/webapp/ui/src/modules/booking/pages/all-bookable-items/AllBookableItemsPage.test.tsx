@@ -19,6 +19,32 @@ import { createAllBookableItemsRoute } from "./routes";
 
 const fixedClock = () => new Date("2026-08-17T08:30:00Z");
 
+function catalogueItem(configuration: (typeof bookableItemFixtures)[number]) {
+  const target = configuration.target;
+  if (!target) throw new Error("Expected a bookable item fixture with a target");
+  return {
+    configurationId: configuration.id,
+    configurationVersion: configuration.configurationVersion,
+    targetType: "INSTRUMENT",
+    targetId: target.value.id,
+    globalId: target.globalId,
+    name: target.value.name,
+    timezone: configuration.timezone,
+    slotGranularityMinutes: configuration.slotGranularityMinutes,
+    openingHours: configuration.openingHours,
+    bufferBeforeMinutes: configuration.bufferBeforeMinutes,
+    bufferAfterMinutes: configuration.bufferAfterMinutes,
+    maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
+    allowDoubleBooking: configuration.allowDoubleBooking,
+    effectiveRole: configuration.effectiveRole,
+    capabilities: configuration.capabilities,
+    location:
+      target.value.parentContainerName && target.value.parentContainerGlobalId
+        ? { name: target.value.parentContainerName, globalId: target.value.parentContainerGlobalId }
+        : null,
+  };
+}
+
 async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
   const rootRoute = createRootRoute({ component: Outlet });
   const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
@@ -99,6 +125,52 @@ describe("AllBookableItemsPage", () => {
     await user.selectOptions(size, "10");
     await waitFor(() => expect(size).toHaveValue("10"));
     await waitFor(() => expect(requests.at(-1)?.searchParams.get("limit")).toBe("10"));
+  });
+
+  it("preserves saved OR matches outside the availability index when catalogue requests are bounded", async () => {
+    const candidateConfiguration = bookableItemFixtures[0];
+    const candidateItem = catalogueItem(candidateConfiguration);
+    const outsideCandidateItem = catalogueItem(bookableItemFixtures[1]);
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([candidateConfiguration]))),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const url = new URL(request.url);
+        requests.push(url);
+        const where = url.searchParams.get("where") ?? "";
+        if (where.includes(",") && where.includes("target=in=(") && where.includes("target==IN124")) {
+          return new HttpResponse(null, { status: 414 });
+        }
+        const docs =
+          where.includes("target==IN124") && !where.includes("target=in=(")
+            ? [outsideCandidateItem]
+            : where.includes("target=in=(") && !where.includes("target==IN124")
+              ? [candidateItem]
+              : [];
+        const page = Number(url.searchParams.get("page"));
+        const pageSize = Number(url.searchParams.get("limit"));
+        return HttpResponse.json({
+          items: docs,
+          page,
+          pageSize,
+          total: docs.length,
+          facets: { types: ["INSTRUMENT"] },
+        });
+      }),
+    );
+
+    await renderPage(`/booking/all-items?where=${encodeURIComponent("availability==available-now,target==IN124")}`);
+
+    await waitFor(() => expect(requests).toHaveLength(3));
+    expect(requests.map((request) => request.searchParams.get("where"))).toEqual([
+      "target==IN124",
+      "target=in=(IN123)",
+      "target==IN124;target=in=(IN123)",
+    ]);
+    expect(await screen.findAllByText("Confocal microscope")).not.toHaveLength(0);
+    expect(await screen.findAllByText("Electron microscope")).not.toHaveLength(0);
   });
 
   it("shows both availability counts before selecting a filter and after clearing it", async () => {

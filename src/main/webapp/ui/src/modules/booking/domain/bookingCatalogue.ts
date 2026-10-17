@@ -84,7 +84,7 @@ export function catalogueItemAsConfiguration(item: BookingCatalogueItem) {
   };
 }
 
-type CatalogueSearch = {
+export type BookingCatalogueSearch = {
   q?: string;
   where?: string;
   target?: string;
@@ -95,15 +95,14 @@ type CatalogueSearch = {
   pageSize?: number;
 };
 
+const CATALOGUE_PAGE_SIZE = 100;
+const MAX_SAFE_REQUEST_BYTES = 6000;
+
 function appendAll(parameters: URLSearchParams, name: string, values: readonly string[] | undefined) {
   for (const value of values ?? []) parameters.append(name, value);
 }
 
-export async function fetchBookingCatalogue(
-  search: CatalogueSearch,
-  token: string,
-  signal?: AbortSignal,
-): Promise<BookingCataloguePage> {
+function buildBookingCatalogueRequest(search: BookingCatalogueSearch, token: string) {
   const parameters = new URLSearchParams({
     page: String(search.page ?? 1),
     limit: String(search.pageSize ?? 20),
@@ -114,16 +113,138 @@ export async function fetchBookingCatalogue(
   if (search.capability) parameters.set("capability", search.capability);
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
-  const response = await fetch(`/api/v2/booking-catalogue?${parameters}`, {
+  return {
+    url: `/api/v2/booking-catalogue?${parameters.toString()}`,
     headers: bookingApiV2Headers(token),
+  };
+}
+
+function serializedRequestBytes(url: string, headers: Headers): number {
+  const encoder = new TextEncoder();
+  let bytes = encoder.encode(`GET ${url} HTTP/1.1\r\n`).length + encoder.encode("\r\n").length;
+  headers.forEach((value, name) => {
+    bytes += encoder.encode(`${name}: ${value}\r\n`).length;
+  });
+  return bytes;
+}
+
+/** Leaves room below Jetty's 8 KiB limit for browser/proxy headers not visible to the application. */
+export function bookingCatalogueRequestFits(search: BookingCatalogueSearch, token: string): boolean {
+  const request = buildBookingCatalogueRequest(search, token);
+  return serializedRequestBytes(request.url, request.headers) <= MAX_SAFE_REQUEST_BYTES;
+}
+
+export class BookingCatalogueRequestTooLargeError extends Error {
+  constructor() {
+    super("Booking catalogue request exceeds the safe request budget");
+    this.name = "BookingCatalogueRequestTooLargeError";
+  }
+}
+
+function throwIfAborted(signal: AbortSignal): void {
+  if (signal.aborted) throw signal.reason ?? new DOMException("The operation was aborted", "AbortError");
+}
+
+async function requestBookingCatalogue(
+  search: BookingCatalogueSearch,
+  token: string,
+  signal?: AbortSignal,
+  allowRequestSizeRetry = false,
+): Promise<BookingCataloguePage> {
+  const request = buildBookingCatalogueRequest(search, token);
+  const response = await fetch(request.url, {
+    headers: request.headers,
     signal,
   });
+  if (allowRequestSizeRetry && (response.status === 414 || response.status === 431)) {
+    throw new BookingCatalogueRequestTooLargeError();
+  }
   if (!response.ok) throw new Error(`Booking catalogue request failed (${response.status})`);
   return parseOrThrow(BookingCataloguePageSchema, await response.json());
 }
 
+export async function fetchBookingCatalogue(
+  search: BookingCatalogueSearch,
+  token: string,
+  signal?: AbortSignal,
+): Promise<BookingCataloguePage> {
+  return requestBookingCatalogue(search, token, signal);
+}
+
+export async function fetchBookingCataloguePageWithinSafeBudget(
+  search: BookingCatalogueSearch,
+  token: string,
+  signal: AbortSignal,
+): Promise<BookingCataloguePage> {
+  throwIfAborted(signal);
+  if (!bookingCatalogueRequestFits(search, token)) throw new BookingCatalogueRequestTooLargeError();
+  const result = await requestBookingCatalogue(search, token, signal, true);
+  throwIfAborted(signal);
+  return result;
+}
+
+export function assertBookingCataloguePage(
+  page: BookingCataloguePage,
+  requestedPage: number,
+  expectedTotal?: number,
+): void {
+  if (
+    !Number.isSafeInteger(page.page) ||
+    page.page !== requestedPage ||
+    page.pageSize !== CATALOGUE_PAGE_SIZE ||
+    !Number.isSafeInteger(page.total) ||
+    page.total < 0 ||
+    (expectedTotal !== undefined && page.total !== expectedTotal)
+  ) {
+    throw new Error("Booking catalogue returned inconsistent pagination metadata");
+  }
+  const expectedItemCount = Math.min(
+    CATALOGUE_PAGE_SIZE,
+    Math.max(0, page.total - (requestedPage - 1) * CATALOGUE_PAGE_SIZE),
+  );
+  if (page.items.length !== expectedItemCount) {
+    throw new Error("Booking catalogue pagination returned an incomplete page");
+  }
+}
+
+export async function fetchAllBookingCataloguePages(
+  search: BookingCatalogueSearch,
+  token: string,
+  signal: AbortSignal,
+  maximumItems: number,
+): Promise<BookingCataloguePage> {
+  if (!Number.isSafeInteger(maximumItems) || maximumItems < 0) {
+    throw new Error("Booking catalogue page bound must be a non-negative integer");
+  }
+  const first = await fetchBookingCataloguePageWithinSafeBudget(
+    { ...search, page: 1, pageSize: CATALOGUE_PAGE_SIZE },
+    token,
+    signal,
+  );
+  assertBookingCataloguePage(first, 1);
+  if (first.total > maximumItems) {
+    throw new Error("Booking catalogue returned more rows than the scoped target set");
+  }
+  const items = [...first.items];
+  const totalPages = Math.ceil(first.total / CATALOGUE_PAGE_SIZE);
+  for (let page = 2; page <= totalPages; page += 1) {
+    throwIfAborted(signal);
+    const next = await fetchBookingCataloguePageWithinSafeBudget(
+      { ...search, page, pageSize: CATALOGUE_PAGE_SIZE },
+      token,
+      signal,
+    );
+    assertBookingCataloguePage(next, page, first.total);
+    items.push(...next.items);
+  }
+  if (items.length !== first.total) {
+    throw new Error("Booking catalogue pagination returned an incomplete result");
+  }
+  return { ...first, items };
+}
+
 export async function fetchBookingCatalogueLocations(
-  search: Pick<CatalogueSearch, "q" | "types" | "page" | "pageSize">,
+  search: Pick<BookingCatalogueSearch, "q" | "types" | "page" | "pageSize">,
   token: string,
   signal?: AbortSignal,
 ) {
