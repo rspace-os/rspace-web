@@ -1,5 +1,7 @@
 package com.researchspace.api.v2.contract;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -9,7 +11,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
+import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import java.time.Instant;
@@ -17,22 +25,42 @@ import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
-/** HTTP acceptance contract for the Active/Archived booking-configuration lifecycle. */
+/**
+ * HTTP acceptance contract for booking-configuration creation authorization and the Active/Archived
+ * lifecycle.
+ */
 @ApiV2WebIntegrationTest
 class BookingConfigurationLifecycleMVCIT {
 
   private final WebApplicationContext context;
+  private final InstrumentDao instrumentDao;
+  private final BookingConfigurationDao configurationDao;
+  private final InventoryPermissionUtils inventoryPermissions;
+  private final TransactionTemplate transactions;
 
   @Autowired
-  BookingConfigurationLifecycleMVCIT(WebApplicationContext context) {
+  BookingConfigurationLifecycleMVCIT(
+      WebApplicationContext context,
+      InstrumentDao instrumentDao,
+      BookingConfigurationDao configurationDao,
+      InventoryPermissionUtils inventoryPermissions,
+      PlatformTransactionManager transactionManager) {
     this.context = context;
+    this.instrumentDao = instrumentDao;
+    this.configurationDao = configurationDao;
+    this.inventoryPermissions = inventoryPermissions;
+    this.transactions = new TransactionTemplate(transactionManager);
   }
 
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -48,6 +76,69 @@ class BookingConfigurationLifecycleMVCIT {
   @AfterEach
   void tearDown() {
     fixture.cleanUp();
+  }
+
+  @ParameterizedTest(name = "{0} non-owner is denied on {1}")
+  @CsvSource({
+    "OWNER_ONLY, /api/v2/booking-configurations",
+    "OWNER_ONLY, /api/v2/booking-configurations/bulk",
+    "OWNER_GROUPS, /api/v2/booking-configurations",
+    "OWNER_GROUPS, /api/v2/booking-configurations/bulk"
+  })
+  void readerOrEditorNonOwnerCannotCreateConfiguration(
+      InventorySharingMode sharingMode, String path) throws Exception {
+    long instrumentId = instrumentVisibleToNonOwner(sharingMode);
+    String document = configurationDocument(instrumentId);
+    String body = path.endsWith("/bulk") ? "{\"docs\":[" + document + "]}" : document;
+
+    mockMvc
+        .perform(
+            post(path)
+                .header("apiKey", fixture.otherUserKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.forbidden"));
+    assertNoConfiguration(instrumentId);
+  }
+
+  @Test
+  void mixedOwnershipBulkCreationPersistsNothing() throws Exception {
+    long otherInstrumentId = instrumentVisibleToNonOwner(InventorySharingMode.OWNER_GROUPS);
+    long ownedInstrumentId = fixture.instrument(fixture.otherUser(), fixture.marker() + "-owned");
+
+    mockMvc
+        .perform(
+            post("/api/v2/booking-configurations/bulk")
+                .header("apiKey", fixture.otherUserKey())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(
+                    "{\"docs\":["
+                        + configurationDocument(ownedInstrumentId)
+                        + ","
+                        + configurationDocument(otherInstrumentId)
+                        + "]}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.forbidden"));
+    assertNoConfiguration(ownedInstrumentId);
+    assertNoConfiguration(otherInstrumentId);
+  }
+
+  @Test
+  void sysadminCanCreateConfigurationForAnotherOwnersInstrument() throws Exception {
+    long instrumentId = fixture.instrument(fixture.user(), fixture.marker());
+    long configurationId = fixture.bookingConfiguration(instrumentId, "UTC", fixture.sysadminKey());
+
+    transactions.executeWithoutResult(
+        ignored ->
+            assertEquals(
+                configurationId,
+                configurationDao
+                    .findByTarget(
+                        new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId))
+                    .orElseThrow()
+                    .getId()
+                    .longValue()));
   }
 
   @Test
@@ -246,6 +337,45 @@ class BookingConfigurationLifecycleMVCIT {
     mockMvc
         .perform(get(configurationPath + "/audit").header("apiKey", fixture.otherUserKey()))
         .andExpect(status().isNotFound());
+  }
+
+  private long instrumentVisibleToNonOwner(InventorySharingMode sharingMode) throws Exception {
+    fixture.enableBookings();
+    User owner = fixture.user();
+    User nonOwner = fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
+    long instrumentId = fixture.instrument(owner, fixture.marker());
+    transactions.executeWithoutResult(
+        ignored -> {
+          var instrument = instrumentDao.get(instrumentId);
+          instrument.setSharingMode(sharingMode);
+          // PI visibility gives read-only access; group sharing also permits Inventory edits.
+          assertTrue(inventoryPermissions.canUserReadInventoryRecord(instrument, nonOwner));
+          assertEquals(
+              sharingMode == InventorySharingMode.OWNER_GROUPS,
+              inventoryPermissions.canUserEditInventoryRecord(instrument, nonOwner));
+        });
+    mockMvc
+        .perform(
+            get("/api/v2/instruments/" + instrumentId).header("apiKey", fixture.otherUserKey()))
+        .andExpect(status().isOk());
+    return instrumentId;
+  }
+
+  private void assertNoConfiguration(long instrumentId) {
+    transactions.executeWithoutResult(
+        ignored ->
+            assertTrue(
+                configurationDao
+                    .findByTarget(
+                        new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId))
+                    .isEmpty()));
+  }
+
+  private String configurationDocument(long instrumentId) {
+    return """
+    {"enabled":true,"timezone":"UTC","target":{"relationTo":"booking-instruments","value":%d}}
+    """
+        .formatted(instrumentId);
   }
 
   private long createBooking(long instrumentId) throws Exception {
