@@ -39,6 +39,41 @@ describe("calendar events", () => {
     expect(selectedFields?.split(",")).toContain("canViewConfiguration");
   });
 
+  it("returns no events without requesting bookings for an empty target scope", async () => {
+    let requests = 0;
+    server.use(
+      http.get("/api/v2/bookings", () => {
+        requests += 1;
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+
+    await expect(
+      loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal, []),
+    ).resolves.toEqual([]);
+
+    expect(requests).toBe(0);
+  });
+
+  it("filters booking requests to a non-empty target scope", async () => {
+    const requests: URL[] = [];
+    server.use(
+      http.get("/api/v2/bookings", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json(collectionResponse([ownBooking]));
+      }),
+    );
+
+    await expect(
+      loadCalendarEvents("2026-08-17", "2026-08-23", "Europe/Berlin", "token", new AbortController().signal, ["IN123"]),
+    ).resolves.toEqual([ownBooking]);
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].searchParams.get("where")).toBe(
+      "start<2026-08-23T22:00:00Z;end>2026-08-16T22:00:00Z;state==CONFIRMED;target=in=(IN123)",
+    );
+  });
+
   it("rejects unsuccessful responses", async () => {
     server.use(http.get("/api/v2/bookings", () => new HttpResponse(null, { status: 503 })));
 
