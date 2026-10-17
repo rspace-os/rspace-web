@@ -42,10 +42,22 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class BookingOpeningWeekdaysMVCIT {
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private JdbcTemplate jdbcTemplate;
-  @Autowired private SessionFactory sessionFactory;
-  @Autowired private InstrumentEntityApiManager instrumentManager;
+  private final WebApplicationContext context;
+  private final JdbcTemplate jdbcTemplate;
+  private final SessionFactory sessionFactory;
+  private final InstrumentEntityApiManager instrumentManager;
+
+  @Autowired
+  BookingOpeningWeekdaysMVCIT(
+      WebApplicationContext context,
+      JdbcTemplate jdbcTemplate,
+      SessionFactory sessionFactory,
+      InstrumentEntityApiManager instrumentManager) {
+    this.context = context;
+    this.jdbcTemplate = jdbcTemplate;
+    this.sessionFactory = sessionFactory;
+    this.instrumentManager = instrumentManager;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
