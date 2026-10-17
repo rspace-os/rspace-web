@@ -296,6 +296,71 @@ describe("AvailabilityBar", () => {
     await expectAccessible(dialog);
   });
 
+  it("expands full-privacy maintenance details from a blockout source", async () => {
+    const user = userEvent.setup();
+    await renderAvailabilityBar({
+      intervals: [
+        sourced(
+          "maintenance:42",
+          "2026-08-12T09:00:00.000Z",
+          "2026-08-12T10:00:00.000Z",
+          "blockout",
+          undefined,
+          undefined,
+          {
+            id: 42,
+            kind: "MAINTENANCE",
+            privacy: "full",
+            purpose: "Laser alignment and inspection",
+            bookedBy: "Booking initiator",
+            createdBy: "Grace Hopper (grace)",
+          },
+        ),
+      ],
+    });
+
+    await user.click(screen.getByRole("button"));
+    const dialog = await screen.findByRole("dialog");
+    const disclosure = within(dialog).getByLabelText("Show details for Maintenance blockout, 09:00–10:00");
+    await user.click(disclosure);
+
+    expect(within(dialog).getByText("Created by")).toBeVisible();
+    expect(within(dialog).getByText("Grace Hopper (grace)")).toBeVisible();
+    expect(within(dialog).getByText("Notes")).toBeVisible();
+    expect(within(dialog).getByText("Laser alignment and inspection")).toBeVisible();
+  });
+
+  it("keeps busy maintenance actor and purpose metadata hidden", async () => {
+    const user = userEvent.setup();
+    await renderAvailabilityBar({
+      intervals: [
+        sourced(
+          "maintenance:43",
+          "2026-08-12T09:00:00.000Z",
+          "2026-08-12T10:00:00.000Z",
+          "blockout",
+          undefined,
+          undefined,
+          {
+            id: 43,
+            kind: "MAINTENANCE",
+            privacy: "busy",
+            purpose: "Private maintenance reason",
+            bookedBy: "Private maintenance actor",
+            createdBy: "Private maintenance actor",
+          },
+        ),
+      ],
+    });
+
+    await user.click(screen.getByRole("button"));
+    const dialog = await screen.findByRole("dialog");
+
+    expect(within(dialog).getByText("Maintenance blockout")).toBeVisible();
+    expect(screen.queryByText("Private maintenance actor")).not.toBeInTheDocument();
+    expect(screen.queryByText("Private maintenance reason")).not.toBeInTheDocument();
+  });
+
   it("uses an explicitly supplied arbitrary period", async () => {
     await renderAvailabilityBar({
       periodEnd: new Date("2026-08-15T00:00:00.000Z"),

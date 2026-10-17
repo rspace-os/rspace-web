@@ -737,7 +737,7 @@ export function DayTimeline({
           tabIndex={0}
         >
           <div
-            className={cn("relative select-none touch-none", onRangeSelect && !creationDisabled && "cursor-crosshair")}
+            className={cn("relative select-none", onRangeSelect && !creationDisabled && "touch-none cursor-crosshair")}
             style={{
               width: `${(dayMinutes / visibleMinutes) * 100 * zoom}%`,
               minWidth: densityHourWidth * (dayMinutes / 60) * zoom,
