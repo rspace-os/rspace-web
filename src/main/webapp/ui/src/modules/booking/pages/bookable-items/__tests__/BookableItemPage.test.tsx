@@ -103,6 +103,42 @@ describe("BookableItemPage", () => {
     expect(maximum).toHaveValue(60);
   });
 
+  it.each([
+    { status: 408, failure: "a request timeout" },
+    { status: 429, failure: "rate limiting" },
+    { status: 503, failure: "a server failure" },
+    { status: null, failure: "a network failure" },
+  ])("keeps a dirty draft after $failure during a background refresh", async ({ status }) => {
+    const user = userEvent.setup();
+    let saved: unknown;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
+      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
+        saved = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { queryClient } = renderPage("/booking/bookable-items/IN123/details?edit=true");
+    const maximum = await screen.findByRole("spinbutton", {
+      name: "booking:bookableItemDetails.fields.maximumDuration",
+    });
+    await user.clear(maximum);
+    await user.type(maximum, "60");
+    server.use(
+      http.get("/api/v2/booking-configurations", () =>
+        status === null ? HttpResponse.error() : new HttpResponse(null, { status }),
+      ),
+    );
+
+    await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-configurations", "target", "IN123"] }));
+
+    expect(screen.getByRole("spinbutton", { name: "booking:bookableItemDetails.fields.maximumDuration" })).toHaveValue(
+      60,
+    );
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
+    await waitFor(() => expect(saved).toMatchObject({ maxBookingDurationMinutes: 60 }));
+  });
+
   it.each([403, 404])("conceals the previous resource while navigating to a delayed %s response", async (status) => {
     const response = Promise.withResolvers<void>();
     server.use(
@@ -138,7 +174,12 @@ describe("BookableItemPage", () => {
     }
   });
 
-  it("keeps authorized content during refetch but removes it when access is denied", async () => {
+  it.each([
+    { status: 401, reason: "the session expires" },
+    { status: 403, reason: "access is denied" },
+    { status: 404, reason: "the resource is missing" },
+    { status: null, reason: "the collection no longer contains the resource" },
+  ])("keeps authorized content during refetch but removes it when $reason", async ({ status }) => {
     server.use(
       http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))),
       http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
@@ -151,7 +192,7 @@ describe("BookableItemPage", () => {
       http.get("/api/v2/booking-configurations", async () => {
         requested.resolve();
         await response.promise;
-        return new HttpResponse(null, { status: 403 });
+        return status === null ? HttpResponse.json(collectionPage([], 2)) : new HttpResponse(null, { status });
       }),
     );
     try {

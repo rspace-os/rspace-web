@@ -40,6 +40,7 @@ import { Input } from "@/modules/common/ui/input";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { UserBadge } from "@/modules/common/ui/user-badge";
+import { isPermanentClientError } from "../queryRetry";
 import { BookableItemAuditLog } from "./BookableItemAuditLog";
 import {
   BookingConfigurationActionsMenu,
@@ -842,7 +843,13 @@ function Details({ globalId, tab }: { globalId: string; tab: BookableItemTab }) 
   }
 
   const target = configuration.data?.target;
-  if (configuration.isError || target === null || target === undefined || target.globalId !== globalId) {
+  if (
+    configuration.data === undefined ||
+    isPermanentClientError(configuration.error) ||
+    target === null ||
+    target === undefined ||
+    target.globalId !== globalId
+  ) {
     return (
       <main className="p-4 sm:p-8">
         <Empty className="border">
