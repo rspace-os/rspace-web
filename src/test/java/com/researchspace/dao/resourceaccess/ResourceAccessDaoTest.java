@@ -21,7 +21,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class ResourceAccessDaoTest extends SpringTransactionalTest {
 
-  @Autowired private ResourceAccessDao resourceAccessDao;
+  private final ResourceAccessDao resourceAccessDao;
+
+  @Autowired
+  ResourceAccessDaoTest(ResourceAccessDao resourceAccessDao) {
+    this.resourceAccessDao = resourceAccessDao;
+  }
 
   @Test
   void persistsAssignmentsAndBumpsVersionForSemanticChange() {
