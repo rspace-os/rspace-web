@@ -23,9 +23,13 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service("featureFlagManager")
 @Slf4j
@@ -41,6 +45,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
   private final String reactDevMode;
   private final String activeProfiles;
 
+  private TransactionTemplate baselineReadTransaction;
   private volatile RuntimeFeatureFlags runtime;
 
   public FeatureFlagManagerImpl(
@@ -58,6 +63,13 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     this.devModeEnabled = devModeEnabled;
     this.reactDevMode = reactDevMode;
     this.activeProfiles = activeProfiles;
+  }
+
+  @Autowired
+  public void setTransactionManager(PlatformTransactionManager transactionManager) {
+    baselineReadTransaction = new TransactionTemplate(transactionManager);
+    baselineReadTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    baselineReadTransaction.setReadOnly(true);
   }
 
   @Override
@@ -165,7 +177,7 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
     }
     featureFlagDao.upsertBaseline(flagName, value);
     RuntimeFeatureFlags updated = current.withBaseline(flagName, value);
-    updateRuntimeAfterCommit(flagName, value);
+    updateRuntimeAfterCommit();
     return new BaselineUpdate(updated, true);
   }
 
@@ -215,11 +227,17 @@ public class FeatureFlagManagerImpl implements FeatureFlagManager {
             definition, getUserOverrides(actor), canOverrideFeatureFlags(actor)));
   }
 
-  private void updateRuntimeAfterCommit(String flagName, boolean value) {
+  private void updateRuntimeAfterCommit() {
     AfterCommit.run(
         () -> {
           synchronized (this) {
-            runtime = requireRuntime().withBaseline(flagName, value);
+            RuntimeFeatureFlags configured = requireRuntime();
+            // The new transaction reads current DB state; this lock serializes publication.
+            Map<String, Boolean> baselines =
+                baselineReadTransaction.execute(status -> featureFlagDao.getBaselineValues());
+            runtime =
+                new RuntimeFeatureFlags(
+                    configured.definitions(), baselines, configured.forcedValues());
           }
         });
   }
