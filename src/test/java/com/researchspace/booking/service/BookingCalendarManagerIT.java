@@ -8,9 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
 import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
+import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -23,6 +25,7 @@ import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -228,6 +231,176 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void oldSnapshotConcurrentIssueRollsBackTheWholeSourceTransactionOnMariaDb1020() {
+    User owner = createInitAndLoginAnyUser();
+    ItemSetup setup = itemConfiguration(owner, "Post-snapshot token issue");
+    TransactionTemplate competing = requiresNew();
+
+    BookingCalendarManager.Created[] committed = new BookingCalendarManager.Created[1];
+    RuntimeException failure =
+        assertThrows(
+            RuntimeException.class,
+            () ->
+                new TransactionTemplate(getTxMger())
+                    .execute(
+                        ignored -> {
+                          ApiInstrument permissionSource =
+                              instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
+                          jdbcTemplate.queryForObject(
+                              "SELECT COUNT(*) FROM BookableItemCalendarSubscription",
+                              Integer.class);
+                          committed[0] =
+                              competing.execute(
+                                  other ->
+                                      calendarManager.createOrRotate(
+                                          setup.configurationId(), owner, owner, "\"inactive\""));
+                          permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+                          instrumentApiMgr.updateApiInstrument(permissionSource, owner);
+                          return calendarManager.createOrRotate(
+                              setup.configurationId(), owner, owner, "\"inactive\"");
+                        }));
+
+    assertMariaDbConcurrentReadRestart(failure);
+    BookingCalendarManager.Status current =
+        calendarManager.status(setup.configurationId(), owner, owner);
+    assertEquals(committed[0].status().etag(), current.etag());
+    assertEquals(committed[0].subscriptionUrl(), current.subscriptionUrl());
+    assertEquals(
+        ApiInventorySharingMode.OWNER_GROUPS,
+        instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner).getSharingMode());
+  }
+
+  @Test
+  public void preinitializedTokenConcurrentRotationRollsBackTheSourceTransactionOnMariaDb1020() {
+    User owner = createInitAndLoginAnyUser();
+    ItemSetup setup = itemConfiguration(owner, "Post-snapshot token rotation");
+    BookingCalendarManager.Created original =
+        calendarManager.createOrRotate(setup.configurationId(), owner, owner, "\"inactive\"");
+    TransactionTemplate competing = requiresNew();
+
+    BookingCalendarManager.Created[] rotated = new BookingCalendarManager.Created[1];
+    RuntimeException failure =
+        assertThrows(
+            RuntimeException.class,
+            () ->
+                new TransactionTemplate(getTxMger())
+                    .execute(
+                        ignored -> {
+                          ApiInstrument permissionSource =
+                              instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
+                          assertEquals(
+                              original.status().etag(),
+                              calendarManager.status(setup.configurationId(), owner, owner).etag());
+                          rotated[0] =
+                              competing.execute(
+                                  other ->
+                                      calendarManager.createOrRotate(
+                                          setup.configurationId(),
+                                          owner,
+                                          owner,
+                                          original.status().etag()));
+                          permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+                          instrumentApiMgr.updateApiInstrument(permissionSource, owner);
+                          return calendarManager.createOrRotate(
+                              setup.configurationId(), owner, owner, original.status().etag());
+                        }));
+
+    assertMariaDbConcurrentReadRestart(failure);
+    BookingCalendarManager.Status current =
+        calendarManager.status(setup.configurationId(), owner, owner);
+    assertNotEquals(original.status().etag(), rotated[0].status().etag());
+    assertEquals(rotated[0].status().etag(), current.etag());
+    assertEquals(rotated[0].subscriptionUrl(), current.subscriptionUrl());
+    assertEquals(
+        ApiInventorySharingMode.OWNER_GROUPS,
+        instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner).getSharingMode());
+  }
+
+  @Test
+  public void sourceWriteAndCombinedCreatePersistTheReturnedCredential() {
+    User owner = createInitAndLoginAnyUser();
+    ItemSetup setup = itemConfiguration(owner, "Mixed source create");
+
+    BookingCalendarManager.Created created =
+        new TransactionTemplate(getTxMger())
+            .execute(
+                ignored -> {
+                  ApiInstrument permissionSource =
+                      instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
+                  permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+                  instrumentApiMgr.updateApiInstrument(permissionSource, owner);
+                  return calendarManager.createOrRotate(
+                      setup.configurationId(), owner, owner, "\"inactive\"");
+                });
+
+    assertItemWinner(setup.configurationId(), created);
+  }
+
+  @Test
+  public void sourceWriteAndCombinedRotatePersistTheReturnedCredential() {
+    User owner = createInitAndLoginAnyUser();
+    ItemSetup setup = itemConfiguration(owner, "Mixed source rotate");
+    BookingCalendarManager.Created original =
+        calendarManager.createOrRotate(setup.configurationId(), owner, owner, "\"inactive\"");
+
+    BookingCalendarManager.Created rotated =
+        new TransactionTemplate(getTxMger())
+            .execute(
+                ignored -> {
+                  ApiInstrument permissionSource =
+                      instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
+                  permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+                  instrumentApiMgr.updateApiInstrument(permissionSource, owner);
+                  return calendarManager.createOrRotate(
+                      setup.configurationId(), owner, owner, original.status().etag());
+                });
+
+    assertNotEquals(original.status().etag(), rotated.status().etag());
+    assertNotEquals(original.subscriptionUrl(), rotated.subscriptionUrl());
+    assertItemWinner(setup.configurationId(), rotated);
+  }
+
+  @Test
+  public void readCommittedMixedRotationRefreshesAPreinitializedEntity() {
+    User owner = createInitAndLoginAnyUser();
+    ItemSetup setup = itemConfiguration(owner, "Mixed current refresh");
+    BookingCalendarManager.Created original =
+        calendarManager.createOrRotate(setup.configurationId(), owner, owner, "\"inactive\"");
+    TransactionTemplate competing = requiresNew();
+    BookingCalendarManager.Created[] competingWinner = new BookingCalendarManager.Created[1];
+    TransactionTemplate outer = new TransactionTemplate(getTxMger());
+    outer.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+
+    BookingCalendarManager.Created finalWinner =
+        outer.execute(
+            ignored -> {
+              ApiInstrument permissionSource =
+                  instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
+              assertEquals(
+                  original.status().etag(),
+                  calendarManager.status(setup.configurationId(), owner, owner).etag());
+              competingWinner[0] =
+                  competing.execute(
+                      other ->
+                          calendarManager.createOrRotate(
+                              setup.configurationId(), owner, owner, original.status().etag()));
+              permissionSource.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+              instrumentApiMgr.updateApiInstrument(permissionSource, owner);
+              BookingCalendarManager.Created current =
+                  calendarManager.createOrRotate(
+                      setup.configurationId(), owner, owner, competingWinner[0].status().etag());
+              assertEquals(
+                  current.status().etag(),
+                  calendarManager.status(setup.configurationId(), owner, owner).etag());
+              return current;
+            });
+
+    assertNotEquals(original.status().etag(), competingWinner[0].status().etag());
+    assertNotEquals(competingWinner[0].status().etag(), finalWinner.status().etag());
+    assertItemWinner(setup.configurationId(), finalWinner);
+  }
+
+  @Test
   public void recreatingUserSubscriptionInvalidatesTheOldEtag() {
     User user = createInitAndLoginAnyUser();
     BookingCalendarManager.Created initial =
@@ -313,6 +486,80 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
             instrument);
     return configurationManager.createConfiguration(
         new BookingConfigurationManager.Create(true, "UTC", target), owner, owner);
+  }
+
+  private ItemSetup itemConfiguration(User owner, String name) {
+    ApiInstrument created = createBasicInstrumentForUser(owner, name);
+    openTransaction();
+    Instrument instrument = instrumentDao.get(created.getId());
+    Hibernate.initialize(instrument.getOwner());
+    BookableTargetReference target =
+        new BookableTargetReference(BookableTargetType.INSTRUMENT, instrument.getId());
+    commitTransaction();
+    BookingConfiguration configuration =
+        configurationManager.createConfiguration(
+            new BookingConfigurationManager.Create(
+                true, "UTC", new ResolvedBookableTarget(target, instrument)),
+            owner,
+            owner);
+    return new ItemSetup(configuration.getId(), instrument.getId());
+  }
+
+  private record ItemSetup(Long configurationId, Long instrumentId) {}
+
+  private TransactionTemplate requiresNew() {
+    TransactionTemplate transaction = new TransactionTemplate(getTxMger());
+    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    return transaction;
+  }
+
+  private static void assertMariaDbConcurrentReadRestart(RuntimeException failure) {
+    Throwable cause = failure;
+    boolean currentLockFrame = false;
+    StringBuilder messages = new StringBuilder();
+    for (Throwable current = failure; current != null; current = current.getCause()) {
+      if (current.getMessage() != null) {
+        messages.append(current.getMessage()).append('\n');
+      }
+      currentLockFrame |=
+          Arrays.stream(current.getStackTrace())
+              .anyMatch(
+                  frame ->
+                      frame
+                              .getClassName()
+                              .equals(
+                                  "com.researchspace.booking.dao."
+                                      + "BookingCalendarSubscriptionDaoHibernate")
+                          && frame.getMethodName().equals("lockCurrent"));
+    }
+    while (cause != null && !(cause instanceof SQLException)) {
+      cause = cause.getCause();
+    }
+    assertTrue(currentLockFrame);
+    assertTrue(messages.toString().contains("BookableItemCalendarSubscription"));
+    assertTrue(messages.toString().toLowerCase().contains("for update"));
+    assertTrue(cause instanceof SQLException);
+    assertEquals(1020, ((SQLException) cause).getErrorCode());
+  }
+
+  private void assertItemWinner(Long configurationId, BookingCalendarManager.Created expected) {
+    String rawToken = rawToken(expected);
+    String tokenHash = CryptoUtils.hashToken(rawToken);
+    assertEquals("\"" + tokenHash + "\"", expected.status().etag());
+    assertEquals(
+        tokenHash,
+        jdbcTemplate.queryForObject(
+            "SELECT tokenHash FROM BookableItemCalendarSubscription"
+                + " WHERE bookingConfiguration_id = ?",
+            String.class,
+            configurationId));
+    assertEquals(
+        rawToken,
+        jdbcTemplate.queryForObject(
+            "SELECT rawToken FROM BookableItemCalendarSubscription"
+                + " WHERE bookingConfiguration_id = ?",
+            String.class,
+            configurationId));
   }
 
   private void assertStoredItemTokenMatches(

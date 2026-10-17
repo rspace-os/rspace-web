@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
@@ -29,9 +30,11 @@ class BookingConfigurationDefaultsManagerTest {
 
   private final BookingConfigurationDefaultsDao dao = mock(BookingConfigurationDefaultsDao.class);
   private final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+  private final BookingCalendarPermissionGateDao permissionGate =
+      mock(BookingCalendarPermissionGateDao.class);
   private final LocalValidatorFactoryBean validator = BookingSettingsTestFixtures.validator();
   private final BookingConfigurationDefaultsManager manager =
-      new BookingConfigurationDefaultsManagerImpl(dao, validator, events);
+      new BookingConfigurationDefaultsManagerImpl(dao, validator, events, permissionGate);
 
   @AfterEach
   void closeValidators() {

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
@@ -64,6 +65,7 @@ class BookingCalendarManagerFeedTest {
   private BookingItemPermissions accessManager;
   private BookingCalendarFeedGenerator generator;
   private BookingCalendarCreationTransaction creationTransaction;
+  private BookingCalendarPermissionGateDao permissionGate;
   private BookingInstrumentQueryDao instrumentDao;
   private BookingCalendarManager manager;
   private User owner;
@@ -80,6 +82,7 @@ class BookingCalendarManagerFeedTest {
     accessManager = mock(BookingItemPermissions.class);
     generator = mock(BookingCalendarFeedGenerator.class);
     creationTransaction = mock(BookingCalendarCreationTransaction.class);
+    permissionGate = mock(BookingCalendarPermissionGateDao.class);
 
     owner = createOwner();
     configuration = createConfiguration(owner);
@@ -95,7 +98,8 @@ class BookingCalendarManagerFeedTest {
             featureFlags,
             accessManager,
             generator,
-            creationTransaction);
+            creationTransaction,
+            permissionGate);
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
@@ -30,14 +31,17 @@ public class BookingConfigurationDefaultsManagerImpl
   private final BookingConfigurationDefaultsDao defaultsDao;
   private final Validator validator;
   private final ApplicationEventPublisher events;
+  private final BookingCalendarPermissionGateDao permissionGate;
 
   public BookingConfigurationDefaultsManagerImpl(
       @Qualifier("bookingConfigurationDefaultsDao") BookingConfigurationDefaultsDao defaultsDao,
       Validator validator,
-      ApplicationEventPublisher events) {
+      ApplicationEventPublisher events,
+      BookingCalendarPermissionGateDao permissionGate) {
     this.defaultsDao = defaultsDao;
     this.validator = validator;
     this.events = events;
+    this.permissionGate = permissionGate;
   }
 
   @Override
@@ -76,6 +80,7 @@ public class BookingConfigurationDefaultsManagerImpl
     if (defaultSharedWith != null || selectedGranteeKeys != null) {
       throw new ResourceAccessException(Reason.INHERITED_READ_ONLY);
     }
+    permissionGate.lockShared();
     BookingConfigurationDefaults defaults = lockedDefaults();
     if (defaults.getConfigurationVersion() != expectedVersion) {
       throw new StaleBookingSettingsException();

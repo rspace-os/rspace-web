@@ -2,7 +2,6 @@ package com.researchspace.booking.dao;
 
 import com.researchspace.dao.GenericDao;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
-import java.util.List;
 import java.util.Optional;
 
 /** Persistence operations for bookable-item calendar subscriptions. */
@@ -15,17 +14,29 @@ public interface BookingCalendarSubscriptionDao
   Optional<BookableItemCalendarSubscription> findByUserIdAndConfigurationId(
       Long userId, Long configurationId);
 
+  /**
+   * Flushes pending local changes and returns the current committed-or-local scalar row under a
+   * write lock, bypassing the persistence context and an older repeatable-read snapshot.
+   */
+  Optional<CurrentItemCalendarSubscription> lockCurrent(Long userId, Long configurationId);
+
+  /**
+   * Conditionally rotates the locked current row using its token hash as an ETag.
+   *
+   * @throws jakarta.persistence.OptimisticLockException if the current hash no longer matches
+   */
+  CurrentItemCalendarSubscription rotateCurrent(
+      CurrentItemCalendarSubscription current,
+      String expectedTokenHash,
+      String newTokenHash,
+      String newRawToken,
+      java.util.Date updatedAt);
+
+  /** Re-reads and refreshes exactly one newly-created row after its insert has been flushed. */
+  CurrentItemCalendarSubscription reconcileCreated(Long userId, Long configurationId);
+
   /** Finds a subscription by its one-way token hash. */
   Optional<BookableItemCalendarSubscription> findByTokenHash(String tokenHash);
-
-  /** Loads subscription identities to revalidate after a user's status or memberships change. */
-  List<BookingCalendarSubscriptionCandidate> findCandidatesByUserId(Long userId);
-
-  /** Loads subscription identities to revalidate after a configuration's access changes. */
-  List<BookingCalendarSubscriptionCandidate> findCandidatesByConfigurationId(Long configurationId);
-
-  /** Loads subscription identities after changes to shared group/community permission sources. */
-  List<BookingCalendarSubscriptionCandidate> findCandidatesForMembershipRevalidation();
 
   /** Saves and flushes a subscription so uniqueness failures occur inside the manager call. */
   BookableItemCalendarSubscription saveAndFlush(BookableItemCalendarSubscription subscription);

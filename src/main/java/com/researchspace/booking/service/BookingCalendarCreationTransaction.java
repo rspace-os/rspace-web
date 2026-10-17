@@ -1,5 +1,6 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import java.util.function.Function;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class BookingCalendarCreationTransaction {
   private final UserDao users;
+  private final BookingCalendarPermissionGateDao permissionGate;
 
   /**
    * Creates a subscription with a fresh subject inside a READ_COMMITTED transaction.
@@ -25,6 +27,7 @@ public class BookingCalendarCreationTransaction {
   @Transactional(propagation = Propagation.REQUIRES_NEW, isolation = Isolation.READ_COMMITTED)
   public BookingCalendarManager.Created create(
       Long userId, Function<User, BookingCalendarManager.Created> creation) {
+    permissionGate.assertNoSuspendedAncestor();
     return creation.apply(users.get(userId));
   }
 }

@@ -444,7 +444,7 @@ public class TimeSlotBookingManagerConcurrencyIT extends RealTransactionSpringTe
     }
   }
 
-  private static void await(CountDownLatch latch) {
+  static void await(CountDownLatch latch) {
     try {
       assertTrue(latch.await(20, TimeUnit.SECONDS));
     } catch (InterruptedException exception) {

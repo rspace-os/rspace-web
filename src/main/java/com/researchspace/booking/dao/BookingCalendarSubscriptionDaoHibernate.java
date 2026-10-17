@@ -3,9 +3,13 @@ package com.researchspace.booking.dao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.booking.BookableItemCalendarSubscription;
 import com.researchspace.model.booking.BookingConfigurationDefaults;
-import java.util.List;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
+import java.util.Date;
 import java.util.Optional;
 import org.hibernate.SessionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 @Repository("bookingCalendarSubscriptionDao")
@@ -13,12 +17,19 @@ public class BookingCalendarSubscriptionDaoHibernate
     extends GenericDaoHibernate<BookableItemCalendarSubscription, Long>
     implements BookingCalendarSubscriptionDao {
 
-  public BookingCalendarSubscriptionDaoHibernate(SessionFactory sessionFactory) {
+  private static final Logger LOG =
+      LoggerFactory.getLogger(BookingCalendarSubscriptionDaoHibernate.class);
+  private final BookingCalendarPermissionGateDao permissionGate;
+
+  public BookingCalendarSubscriptionDaoHibernate(
+      SessionFactory sessionFactory, BookingCalendarPermissionGateDao permissionGate) {
     super(BookableItemCalendarSubscription.class, sessionFactory);
+    this.permissionGate = permissionGate;
   }
 
   @Override
   public void lockPermissionFence() {
+    permissionGate.requireHeld(BookingCalendarPermissionGateDao.Mode.SHARED);
     // Permission changes are rare. A single fence keeps the creation/revocation protocol bounded;
     // replace with affected-user fences if measured contention warrants the broader mutation audit.
     getSession()
@@ -43,6 +54,109 @@ public class BookingCalendarSubscriptionDaoHibernate
   }
 
   @Override
+  public Optional<CurrentItemCalendarSubscription> lockCurrent(Long userId, Long configurationId) {
+    try {
+      getSession().flush();
+      Optional<CurrentItemCalendarSubscription> current =
+          getSession()
+              .createNativeQuery(
+                  "select id, user_id, bookingConfiguration_id, tokenHash, rawToken, updatedAt"
+                      + " from BookableItemCalendarSubscription where user_id = :userId"
+                      + " and bookingConfiguration_id = :configurationId for update",
+                  Object[].class)
+              .setParameter("userId", userId)
+              .setParameter("configurationId", configurationId)
+              .getResultStream()
+              .map(BookingCalendarSubscriptionDaoHibernate::current)
+              .findFirst();
+      current.ifPresent(this::refreshManaged);
+      return current;
+    } catch (RuntimeException failure) {
+      permissionGate.markRollbackOnly();
+      LOG.warn("Current calendar subscription lookup failed", failure);
+      throw failure;
+    }
+  }
+
+  @Override
+  public CurrentItemCalendarSubscription rotateCurrent(
+      CurrentItemCalendarSubscription current,
+      String expectedTokenHash,
+      String newTokenHash,
+      String newRawToken,
+      Date updatedAt) {
+    try {
+      BookableItemCalendarSubscription managed =
+          getSession()
+              .find(
+                  BookableItemCalendarSubscription.class,
+                  current.id(),
+                  LockModeType.PESSIMISTIC_WRITE);
+      if (managed == null) {
+        throw new OptimisticLockException("Calendar subscription was concurrently removed");
+      }
+      getSession().refresh(managed, LockModeType.PESSIMISTIC_WRITE);
+      int changed =
+          getSession()
+              .createNativeMutationQuery(
+                  "update BookableItemCalendarSubscription set tokenHash = :newTokenHash,"
+                      + " rawToken = :newRawToken, updatedAt = :updatedAt"
+                      + " where id = :id and tokenHash = :expectedTokenHash")
+              .setParameter("newTokenHash", newTokenHash)
+              .setParameter("newRawToken", newRawToken)
+              .setParameter("updatedAt", updatedAt)
+              .setParameter("id", current.id())
+              .setParameter("expectedTokenHash", expectedTokenHash)
+              .executeUpdate();
+      if (changed != 1) {
+        throw new OptimisticLockException("Calendar subscription ETag changed");
+      }
+      getSession().flush();
+      getSession().refresh(managed, LockModeType.PESSIMISTIC_WRITE);
+      return lockCurrent(current.userId(), current.configurationId())
+          .orElseThrow(
+              () -> new OptimisticLockException("Calendar subscription was concurrently removed"));
+    } catch (RuntimeException failure) {
+      permissionGate.markRollbackOnly();
+      LOG.warn("Conditional calendar subscription rotation failed", failure);
+      throw failure;
+    }
+  }
+
+  @Override
+  public CurrentItemCalendarSubscription reconcileCreated(Long userId, Long configurationId) {
+    try {
+      return lockCurrent(userId, configurationId)
+          .orElseThrow(
+              () -> new OptimisticLockException("Created calendar subscription is missing"));
+    } catch (RuntimeException failure) {
+      permissionGate.markRollbackOnly();
+      LOG.warn("Created calendar subscription reconciliation failed", failure);
+      throw failure;
+    }
+  }
+
+  private void refreshManaged(CurrentItemCalendarSubscription current) {
+    // Later status reads may reuse this managed entity. Keep it aligned with the current scalar
+    // credential because native token writes do not update its cached fields.
+    BookableItemCalendarSubscription managed =
+        getSession().find(BookableItemCalendarSubscription.class, current.id());
+    if (managed != null) {
+      getSession().refresh(managed, LockModeType.PESSIMISTIC_WRITE);
+    }
+  }
+
+  private static CurrentItemCalendarSubscription current(Object[] row) {
+    return new CurrentItemCalendarSubscription(
+        ((Number) row[0]).longValue(),
+        ((Number) row[1]).longValue(),
+        ((Number) row[2]).longValue(),
+        (String) row[3],
+        (String) row[4],
+        (Date) row[5]);
+  }
+
+  @Override
   public Optional<BookableItemCalendarSubscription> findByTokenHash(String tokenHash) {
     return getSession()
         .createQuery(
@@ -52,42 +166,6 @@ public class BookingCalendarSubscriptionDaoHibernate
             BookableItemCalendarSubscription.class)
         .setParameter("tokenHash", tokenHash)
         .uniqueResultOptional();
-  }
-
-  @Override
-  public List<BookingCalendarSubscriptionCandidate> findCandidatesByUserId(Long userId) {
-    return candidates("where subscription.user.id = :userId", "userId", userId);
-  }
-
-  @Override
-  public List<BookingCalendarSubscriptionCandidate> findCandidatesByConfigurationId(
-      Long configurationId) {
-    return candidates(
-        "where subscription.bookingConfiguration.id = :configurationId",
-        "configurationId",
-        configurationId);
-  }
-
-  @Override
-  public List<BookingCalendarSubscriptionCandidate> findCandidatesForMembershipRevalidation() {
-    return candidates("", null, null);
-  }
-
-  private List<BookingCalendarSubscriptionCandidate> candidates(
-      String restriction, String parameterName, Object parameterValue) {
-    var query =
-        getSession()
-            .createQuery(
-                "select new"
-                    + " com.researchspace.booking.dao.BookingCalendarSubscriptionCandidate(subscription.id,"
-                    + " subscription.user.id, subscription.bookingConfiguration.id) from"
-                    + " BookableItemCalendarSubscription subscription "
-                    + restriction,
-                BookingCalendarSubscriptionCandidate.class);
-    if (parameterName != null) {
-      query.setParameter(parameterName, parameterValue);
-    }
-    return query.list();
   }
 
   @Override
