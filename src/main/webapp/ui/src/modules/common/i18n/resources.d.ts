@@ -1212,7 +1212,7 @@ export default interface Resources {
       "loadingConfiguration": "Loading bookable item settings.",
       "maintenanceLabel": "Maintenance blockout",
       "warnings": {
-        "past": "This booking is in the past. You can still create it."
+        "past": "A booking must start in the future."
       }
     },
     "calendar": {

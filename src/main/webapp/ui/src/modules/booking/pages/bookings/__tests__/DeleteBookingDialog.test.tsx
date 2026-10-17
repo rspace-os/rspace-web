@@ -1,11 +1,12 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+import { type BookingDetails, fetchBooking } from "@/modules/booking/domain/booking";
 import { DeleteBookingDialog } from "../DeleteBookingDialog";
 
 const cancelledBooking = {
@@ -29,6 +30,21 @@ const cancelledBooking = {
   updatedAt: "2026-08-17T00:00:00Z",
 } as const;
 
+const confirmedBookingDetails = {
+  ...cancelledBooking,
+  version: 0,
+  state: "CONFIRMED",
+  kind: "BOOKING",
+  canCancel: true,
+  canViewConfiguration: true,
+} satisfies BookingDetails;
+
+const cancelledBookingDetails = {
+  ...cancelledBooking,
+  kind: "BOOKING",
+  canViewConfiguration: true,
+} satisfies BookingDetails;
+
 function renderDialog(onDeleted = vi.fn(), iconOnly = false, eventKind: "BOOKING" | "MAINTENANCE" = "BOOKING") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const invalidate = vi.spyOn(queryClient, "invalidateQueries");
@@ -50,6 +66,42 @@ function renderDialog(onDeleted = vi.fn(), iconOnly = false, eventKind: "BOOKING
     },
   );
   return { ...result, invalidate, onDeleted };
+}
+
+function ActiveBookingHarness({ onDeleted }: { onDeleted: ComponentProps<typeof DeleteBookingDialog>["onDeleted"] }) {
+  const { data: booking } = useQuery({
+    queryKey: ["api-v2", "bookings", 41],
+    queryFn: ({ signal }) => fetchBooking(41, "token", signal),
+    retry: false,
+  });
+
+  if (!booking) return null;
+
+  return (
+    <>
+      <p role="status">{booking.state}</p>
+      {booking.state === "CONFIRMED" && booking.canCancel && (
+        <DeleteBookingDialog
+          bookingId={booking.id}
+          bookingVersion={booking.version}
+          itemName="Confocal microscope"
+          period="08:00–09:00"
+          token="token"
+          onDeleted={onDeleted}
+        />
+      )}
+    </>
+  );
+}
+
+function renderActiveBooking(onDeleted: ComponentProps<typeof DeleteBookingDialog>["onDeleted"]) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ActiveBookingHarness onDeleted={onDeleted} />
+    </QueryClientProvider>,
+  );
 }
 
 describe("DeleteBookingDialog", () => {
@@ -153,6 +205,78 @@ describe("DeleteBookingDialog", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.deleteGeneric");
     expect(screen.getByRole("alertdialog")).toBeVisible();
+  });
+
+  it.each(["network", "server"])(
+    "refreshes active booking details and keeps generic feedback after a %s failure",
+    async (failure) => {
+      const user = userEvent.setup();
+      let detailRequests = 0;
+      server.use(
+        http.get("/api/v2/bookings/41", () => {
+          detailRequests += 1;
+          return HttpResponse.json(confirmedBookingDetails);
+        }),
+        http.patch("/api/v2/bookings/41", () => {
+          if (failure === "network") return HttpResponse.error();
+          return HttpResponse.json(
+            { status: 500, code: "errors.api.v2.server.error", detail: "Do not display this" },
+            { status: 500 },
+          );
+        }),
+      );
+      const onDeleted = vi.fn();
+      renderActiveBooking(onDeleted);
+      await screen.findByText("CONFIRMED");
+      const initialDetailRequests = detailRequests;
+
+      await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+      const dialog = screen.getByRole("alertdialog");
+      await user.click(within(dialog).getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent("booking:bookings.errors.deleteGeneric");
+      expect(alert).not.toHaveTextContent("Do not display this");
+      await waitFor(() => expect(detailRequests).toBeGreaterThan(initialDetailRequests));
+      expect(screen.getByText("CONFIRMED")).toBeVisible();
+      expect(screen.getByRole("alertdialog")).toBeVisible();
+      expect(onDeleted).not.toHaveBeenCalled();
+      expect(screen.queryByText("booking:bookings.details.bookingCancelled")).not.toBeInTheDocument();
+    },
+  );
+
+  it("shows a committed cancellation after a failed response is refetched", async () => {
+    const user = userEvent.setup();
+    let detailRequests = 0;
+    let committed = false;
+    server.use(
+      http.get("/api/v2/bookings/41", () => {
+        detailRequests += 1;
+        return HttpResponse.json(committed ? cancelledBookingDetails : confirmedBookingDetails);
+      }),
+      http.patch("/api/v2/bookings/41", () => {
+        committed = true;
+        return HttpResponse.json(
+          { status: 500, code: "errors.api.v2.server.error", detail: "Do not display this" },
+          { status: 500 },
+        );
+      }),
+    );
+    const onDeleted = vi.fn();
+    renderActiveBooking(onDeleted);
+    await screen.findByText("CONFIRMED");
+    const initialDetailRequests = detailRequests;
+
+    await user.click(screen.getByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const dialog = screen.getByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "booking:bookings.actions.cancel" }));
+
+    expect(await screen.findByText("CANCELLED")).toBeVisible();
+    await waitFor(() => expect(detailRequests).toBeGreaterThan(initialDetailRequests));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
+    expect(onDeleted).not.toHaveBeenCalled();
+    expect(screen.queryByText("booking:bookings.details.bookingCancelled")).not.toBeInTheDocument();
   });
 
   it("uses maintenance-specific cancellation wording", async () => {
