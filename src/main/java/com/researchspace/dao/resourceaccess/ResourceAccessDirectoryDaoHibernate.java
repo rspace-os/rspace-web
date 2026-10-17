@@ -1,5 +1,6 @@
 package com.researchspace.dao.resourceaccess;
 
+import com.researchspace.Constants;
 import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.query.NativeQuery;
 import org.springframework.stereotype.Repository;
 
 /** Hibernate implementation that performs one bounded query per principal type. */
@@ -36,7 +38,6 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
   private static final String GROUP_MEMBERSHIP_SCOPE =
       "exists (select membership.id from UserGroup membership "
           + "where membership.group.id = accessGroup.id and membership.user.id = :subjectId)";
-
   private final SessionFactory sessionFactory;
 
   public ResourceAccessDirectoryDaoHibernate(SessionFactory sessionFactory) {
@@ -95,22 +96,29 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
   }
 
   @Override
-  public Map<String, ResourceAccessDirectoryRow> resolveAssignable(Set<String> keys, User subject) {
-    if (keys.isEmpty() || subject == null || !subject.isEnabled()) {
+  public Map<String, ResourceAccessDirectoryRow> resolveAssignable(
+      Set<String> keys,
+      boolean subjectEnabled,
+      Set<Long> currentGroupIds,
+      Set<String> globalRoleNames) {
+    if (keys.isEmpty() || !subjectEnabled) {
       return Map.of();
     }
     Set<Long> userIds = ids(keys, ResourceGranteeKeys::parseUserId);
     Set<Long> groupIds = ids(keys, ResourceGranteeKeys::parseGroupId);
-    boolean sysadmin = subject.hasSysadminRole();
+    boolean sysadmin = globalRoleNames.contains(Constants.SYSADMIN_ROLE);
+    if (!sysadmin && currentGroupIds.isEmpty()) {
+      return Map.of();
+    }
     Session session = sessionFactory.getCurrentSession();
     List<User> users =
         userIds.isEmpty()
             ? List.of()
-            : assignableUsers(session, userIds, subject.getId(), sysadmin);
+            : assignableUsers(session, userIds, currentGroupIds, sysadmin);
     List<Group> groups =
         groupIds.isEmpty()
             ? List.of()
-            : assignableGroups(session, groupIds, subject.getId(), sysadmin);
+            : assignableGroups(session, groupIds, currentGroupIds, sysadmin);
     Map<String, ResourceAccessDirectoryRow> resolved = new LinkedHashMap<>();
     users.stream()
         .map(ResourceAccessDirectoryDaoHibernate::user)
@@ -122,36 +130,44 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
   }
 
   private static List<User> assignableUsers(
-      Session session, Set<Long> ids, Long subjectId, boolean sysadmin) {
-    StringBuilder hql =
-        new StringBuilder(
-            "select user from User user where user.id in :ids and user.enabled = true");
+      Session session, Set<Long> ids, Set<Long> currentGroupIds, boolean sysadmin) {
+    StringBuilder sql = new StringBuilder("SELECT candidate.id FROM User candidate ");
     if (!sysadmin) {
-      hql.append(" and ").append(USER_MEMBERSHIP_SCOPE);
+      sql.append("JOIN UserGroup membership ON membership.user_id = candidate.id ");
     }
-    var query = session.createQuery(hql.toString(), User.class);
-    query.setParameter("ids", ids);
+    sql.append("WHERE candidate.id IN (:ids) AND candidate.account_enabled = true ");
     if (!sysadmin) {
-      query.setParameter("subjectId", subjectId);
+      sql.append("AND membership.group_id IN (:currentGroupIds) ");
     }
-    return query.getResultList();
+    sql.append("FOR UPDATE");
+    NativeQuery<Long> query = session.createNativeQuery(sql.toString(), Long.class);
+    query.setParameterList("ids", ids);
+    if (!sysadmin) {
+      query.setParameterList("currentGroupIds", currentGroupIds);
+    }
+    return new LinkedHashSet<>(query.getResultList())
+        .stream().map(id -> session.find(User.class, id)).filter(Objects::nonNull).toList();
   }
 
   private static List<Group> assignableGroups(
-      Session session, Set<Long> ids, Long subjectId, boolean sysadmin) {
-    StringBuilder hql =
-        new StringBuilder("select accessGroup from Group accessGroup where accessGroup.id in :ids ")
-            .append("and ")
-            .append(GROUP_HAS_ENABLED_MEMBERS);
+      Session session, Set<Long> ids, Set<Long> currentGroupIds, boolean sysadmin) {
+    StringBuilder sql =
+        new StringBuilder(
+            "SELECT candidate.id FROM rsGroup candidate "
+                + "JOIN UserGroup membership ON membership.group_id = candidate.id "
+                + "JOIN User enabledMember ON enabledMember.id = membership.user_id "
+                + "WHERE candidate.id IN (:ids) AND enabledMember.account_enabled = true ");
     if (!sysadmin) {
-      hql.append(" and ").append(GROUP_MEMBERSHIP_SCOPE);
+      sql.append("AND candidate.id IN (:currentGroupIds) ");
     }
-    var query = session.createQuery(hql.toString(), Group.class);
-    query.setParameter("ids", ids);
+    sql.append("FOR UPDATE");
+    NativeQuery<Long> query = session.createNativeQuery(sql.toString(), Long.class);
+    query.setParameterList("ids", ids);
     if (!sysadmin) {
-      query.setParameter("subjectId", subjectId);
+      query.setParameterList("currentGroupIds", currentGroupIds);
     }
-    return query.getResultList();
+    return new LinkedHashSet<>(query.getResultList())
+        .stream().map(id -> session.find(Group.class, id)).filter(Objects::nonNull).toList();
   }
 
   private static Set<Long> ids(Set<String> keys, Function<String, Long> parseId) {

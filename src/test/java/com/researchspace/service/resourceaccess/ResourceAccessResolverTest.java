@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
@@ -101,7 +102,7 @@ class ResourceAccessResolverTest {
   @Test
   void disabledSubjectReceivesNoDirectGroupAudienceOrImplicitAccess() {
     User disabledSysadmin = user(12L, "Disabled", false);
-    when(disabledSysadmin.hasSysadminRole()).thenReturn(true);
+    when(disabledSysadmin.getRoles()).thenReturn(Set.of(Role.SYSTEM_ROLE));
     access.addAssignment(ResourceRoleAssignment.forUser(OWNER, disabledSysadmin));
     access.addAssignment(
         ResourceRoleAssignment.forAudience(READER, ResourceAudience.ALL_USERS, "All users"));
@@ -115,7 +116,7 @@ class ResourceAccessResolverTest {
 
   @Test
   void representedSysadminReceivesImplicitOwnerWithoutPersistedAssignment() {
-    when(subject.hasSysadminRole()).thenReturn(true);
+    when(subject.getRoles()).thenReturn(Set.of(Role.SYSTEM_ROLE));
 
     ResolvedResourceAccess resolved = resolver.resolve(access, subject);
 
@@ -130,6 +131,7 @@ class ResourceAccessResolverTest {
     when(user.getUsername()).thenReturn(name.toLowerCase().replace(' ', '.'));
     when(user.isEnabled()).thenReturn(enabled);
     when(user.getGroups()).thenReturn(Set.of());
+    when(user.getRoles()).thenReturn(Set.of());
     return user;
   }
 
