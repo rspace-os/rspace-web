@@ -42,6 +42,7 @@ export function BookingSettingsContent() {
     availabilityWindowEnd: settings.availabilityWindowEnd,
     timezoneMode: settings.timezoneMode,
     customTimezone: settings.customTimezone,
+    timeFormat: settings.timeFormat,
   });
   const form = useForm({ schema: SchedulingSettingsSchema, initialInput: settings });
   const mutation = useMutation({
@@ -64,6 +65,7 @@ export function BookingSettingsContent() {
         availabilityWindowEnd: saved.availabilityWindowEnd,
         timezoneMode: saved.timezoneMode,
         customTimezone: saved.customTimezone,
+        timeFormat: saved.timeFormat,
       });
       await queryClient.invalidateQueries({ queryKey: bookingDisplayPreferencesQueryKey });
     },
@@ -77,6 +79,7 @@ export function BookingSettingsContent() {
         availabilityWindowEnd: settings.availabilityWindowEnd,
         timezoneMode: settings.timezoneMode,
         customTimezone: settings.customTimezone,
+        timeFormat: settings.timeFormat,
       });
 
   const saved = mutation.isSuccess && !dirty;
