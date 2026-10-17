@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1173-booking-calendar-permission-gate" author="researchspace" context="run">
+    <comment>Serialize booking calendar token creation with permission-source mutations</comment>
+    <createTable tableName="BookingCalendarPermissionGate">
+      <column name="id" type="BIGINT">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+    </createTable>
+    <insert tableName="BookingCalendarPermissionGate">
+      <column name="id" valueNumeric="1"/>
+    </insert>
+    <sql>
+      ALTER TABLE BookingCalendarPermissionGate ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+</databaseChangeLog>
