@@ -182,9 +182,7 @@ describe("AllBookableItemsPage", () => {
     expect((await screen.findAllByText("Scoped baseline 1100"))[0]).toBeVisible();
     expect(oversizedRequests).toBe(1);
     expect(requests.some((url) => url.searchParams.get("page") === "2")).toBe(true);
-    expect(
-      requests.some((url) => url.searchParams.get("where") === "id=ge=1000;target=in=(IN123)"),
-    ).toBe(true);
+    expect(requests.some((url) => url.searchParams.get("where") === "id=ge=1000;target=in=(IN123)")).toBe(true);
     expect(requests.some((url) => url.searchParams.get("where") === "target=in=(IN124)")).toBe(true);
     expect(requests.every((url) => url.searchParams.getAll("type").join(",") === "INSTRUMENT")).toBe(true);
   });
