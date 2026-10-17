@@ -1,6 +1,6 @@
 package com.researchspace.service.resourceaccess;
 
-import com.researchspace.model.User;
+import com.researchspace.Constants;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ class TestScheme implements ResourceRoleScheme {
   private final Map<String, Set<String>> capabilities;
   private final Set<String> requiredPersistedRoles;
   private final Set<ResourceGranteeKind> allowedGranteeKinds;
-  private final Function<User, Optional<String>> implicitRole;
+  private final Function<Set<String>, Optional<String>> implicitRole;
 
   TestScheme(
       List<ResourceRole> roles,
@@ -34,7 +34,7 @@ class TestScheme implements ResourceRoleScheme {
       Map<String, Set<String>> capabilities,
       Set<String> requiredPersistedRoles,
       Set<ResourceGranteeKind> allowedGranteeKinds,
-      Function<User, Optional<String>> implicitRole) {
+      Function<Set<String>, Optional<String>> implicitRole) {
     this.roles = roles;
     this.capabilities = capabilities;
     this.requiredPersistedRoles = requiredPersistedRoles;
@@ -60,7 +60,10 @@ class TestScheme implements ResourceRoleScheme {
         capabilities,
         Set.of("OWNER"),
         ALL_GRANTEES,
-        subject -> subject.hasSysadminRole() ? Optional.of("OWNER") : Optional.empty());
+        globalRoleNames ->
+            globalRoleNames.contains(Constants.SYSADMIN_ROLE)
+                ? Optional.of("OWNER")
+                : Optional.empty());
   }
 
   @Override
@@ -89,7 +92,7 @@ class TestScheme implements ResourceRoleScheme {
   }
 
   @Override
-  public Optional<String> implicitRole(User subject) {
-    return implicitRole.apply(subject);
+  public Optional<String> implicitRole(Set<String> globalRoleNames) {
+    return implicitRole.apply(globalRoleNames);
   }
 }

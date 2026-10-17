@@ -1,6 +1,6 @@
 package com.researchspace.booking.service;
 
-import com.researchspace.model.User;
+import com.researchspace.Constants;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import com.researchspace.service.resourceaccess.ResourceRole;
@@ -122,7 +122,9 @@ public final class BookingResourceRoleScheme implements ResourceRoleScheme {
   }
 
   @Override
-  public Optional<String> implicitRole(User subject) {
-    return subject != null && subject.hasSysadminRole() ? Optional.of(OWNER) : Optional.empty();
+  public Optional<String> implicitRole(Set<String> globalRoleNames) {
+    return globalRoleNames.contains(Constants.SYSADMIN_ROLE)
+        ? Optional.of(OWNER)
+        : Optional.empty();
   }
 }

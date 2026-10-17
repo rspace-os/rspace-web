@@ -3,10 +3,8 @@ package com.researchspace.booking.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.researchspace.model.User;
+import com.researchspace.Constants;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import java.util.Set;
@@ -91,11 +89,9 @@ class BookingResourceRoleSchemeTest {
 
   @Test
   void onlyRepresentedSysadminReceivesImplicitOwner() {
-    User sysadmin = mock(User.class);
-    when(sysadmin.hasSysadminRole()).thenReturn(true);
-    User ordinaryUser = mock(User.class);
-
-    assertEquals(BookingResourceRoleScheme.OWNER, scheme.implicitRole(sysadmin).orElseThrow());
-    assertTrue(scheme.implicitRole(ordinaryUser).isEmpty());
+    assertEquals(
+        BookingResourceRoleScheme.OWNER,
+        scheme.implicitRole(Set.of(Constants.SYSADMIN_ROLE)).orElseThrow());
+    assertTrue(scheme.implicitRole(Set.of()).isEmpty());
   }
 }

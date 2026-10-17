@@ -38,7 +38,7 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
   }
 
   @Override
-  public User lockAuthorizationFacts(ResourceAccess access, User subject) {
+  public AuthorizationFacts lockAuthorizationFacts(ResourceAccess access, User subject) {
     if (access == null || access.getId() == null || subject == null || subject.getId() == null) {
       throw new IllegalArgumentException("Persisted access and subject are required");
     }
@@ -53,10 +53,17 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
         .getResultList();
 
-    User lockedSubject = session.find(User.class, subject.getId(), LockModeType.PESSIMISTIC_WRITE);
-    if (lockedSubject == null) {
+    List<Boolean> enabledRows =
+        session
+            .createNativeQuery(
+                "SELECT account_enabled FROM User WHERE id = :subjectId FOR UPDATE", Boolean.class)
+            .setParameter("subjectId", subject.getId())
+            .getResultList();
+    if (enabledRows.isEmpty()) {
       throw new IllegalArgumentException("Subject no longer exists");
     }
+    boolean enabled = enabledRows.get(0);
+    User lockedSubject = session.find(User.class, subject.getId());
 
     List<Long> currentGroupIds =
         session
@@ -74,13 +81,23 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
           .setLockMode(LockModeType.PESSIMISTIC_WRITE)
           .getResultList();
     }
-    session
-        .createNativeQuery("SELECT role_id FROM user_role WHERE user_id = :subjectId FOR UPDATE")
-        .setParameter("subjectId", subject.getId())
-        .getResultList();
-    lockedSubject.getRoles().size();
-    lockedSubject.getUserGroups().size();
-    return lockedSubject;
+    List<Long> currentRoleIds =
+        session
+            .createNativeQuery(
+                "SELECT role_id FROM user_role WHERE user_id = :subjectId FOR UPDATE", Long.class)
+            .setParameter("subjectId", subject.getId())
+            .getResultList();
+    Set<String> globalRoleNames =
+        currentRoleIds.isEmpty()
+            ? Set.of()
+            : Set.copyOf(
+                session
+                    .createQuery(
+                        "select role.name from Role role where role.id in :roleIds", String.class)
+                    .setParameter("roleIds", currentRoleIds)
+                    .getResultList());
+    return new AuthorizationFacts(
+        lockedSubject, enabled, Set.copyOf(currentGroupIds), globalRoleNames);
   }
 
   @Override
@@ -92,22 +109,30 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
     Session session = sessionFactory.getCurrentSession();
     Long userId = ResourceGranteeKeys.parseUserId(granteeKey);
     if (userId != null) {
-      User user = session.find(User.class, userId);
-      return user != null && user.isEnabled()
-          ? ResourceRoleAssignment.forUser(roleKey, user)
-          : null;
+      List<Boolean> enabledRows =
+          session
+              .createNativeQuery(
+                  "SELECT account_enabled FROM User WHERE id = :userId FOR UPDATE", Boolean.class)
+              .setParameter("userId", userId)
+              .getResultList();
+      User user =
+          enabledRows.size() == 1 && enabledRows.get(0) ? session.find(User.class, userId) : null;
+      return user != null ? ResourceRoleAssignment.forUser(roleKey, user) : null;
     }
     Long groupId = ResourceGranteeKeys.parseGroupId(granteeKey);
     if (groupId != null) {
-      Long enabledMembers =
+      List<Long> groupIds =
           session
-              .createQuery(
-                  "select count(membership) from UserGroup membership "
-                      + "where membership.group.id = :groupId and membership.user.enabled = true",
+              .createNativeQuery(
+                  "SELECT accessGroup.id FROM rsGroup accessGroup "
+                      + "JOIN UserGroup membership ON membership.group_id = accessGroup.id "
+                      + "JOIN User enabledMember ON enabledMember.id = membership.user_id "
+                      + "WHERE accessGroup.id = :groupId "
+                      + "AND enabledMember.account_enabled = true FOR UPDATE",
                   Long.class)
               .setParameter("groupId", groupId)
-              .getSingleResult();
-      Group group = enabledMembers > 0 ? session.find(Group.class, groupId) : null;
+              .getResultList();
+      Group group = groupIds.isEmpty() ? null : session.find(Group.class, groupIds.get(0));
       return group == null ? null : ResourceRoleAssignment.forGroup(roleKey, group);
     }
     if (!ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS).equals(granteeKey)) {

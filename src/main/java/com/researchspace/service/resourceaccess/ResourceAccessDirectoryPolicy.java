@@ -1,5 +1,6 @@
 package com.researchspace.service.resourceaccess;
 
+import com.researchspace.dao.resourceaccess.ResourceAccessDao.AuthorizationFacts;
 import com.researchspace.dao.resourceaccess.ResourceAccessDirectoryDao;
 import com.researchspace.dao.resourceaccess.ResourceAccessDirectoryRow;
 import com.researchspace.model.User;
@@ -27,8 +28,15 @@ public class ResourceAccessDirectoryPolicy {
 
   /** Resolves only keys that the subject may currently assign. */
   public Map<String, ResourceGranteeDirectoryEntry> resolveAssignable(
-      Set<String> keys, User subject) {
-    return directory.resolveAssignable(keys, subject).entrySet().stream()
+      Set<String> keys, AuthorizationFacts authorizationFacts) {
+    return directory
+        .resolveAssignable(
+            keys,
+            authorizationFacts.enabled(),
+            authorizationFacts.currentGroupIds(),
+            authorizationFacts.globalRoleNames())
+        .entrySet()
+        .stream()
         .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, row -> entry(row.getValue())));
   }
 

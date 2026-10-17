@@ -1,6 +1,7 @@
 package com.researchspace.dao.resourceaccess;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -8,11 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.booking.service.BookingResourceRoleScheme;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Date;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -81,6 +84,31 @@ class ResourceAccessDaoTest extends SpringTransactionalTest {
                 "user:" + seededSysadmin.getId(), BookingResourceRoleScheme.MANAGER, null)
             .getUser()
             .getId());
+  }
+
+  @Test
+  void lockAuthorizationFactsReturnsEnabledMembershipAndGlobalRoleFacts() {
+    User subject = createAndSaveUserIfNotExists(getRandomAlphabeticString("factsSubject"));
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("factsOwner"));
+    Role sysadmin =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery("from Role role where role.name = :name", Role.class)
+            .setParameter("name", Constants.SYSADMIN_ROLE)
+            .getSingleResult();
+    subject.addRole(sysadmin);
+    subject.setEnabled(false);
+    ResourceAccess access = accessFor(owner);
+    sessionFactory.getCurrentSession().persist(access);
+    sessionFactory.getCurrentSession().flush();
+
+    ResourceAccessDao.AuthorizationFacts facts =
+        resourceAccessDao.lockAuthorizationFacts(access, subject);
+
+    assertEquals(subject.getId(), facts.subject().getId());
+    assertFalse(facts.enabled());
+    assertEquals(Set.of(), facts.currentGroupIds());
+    assertTrue(facts.globalRoleNames().contains(Constants.SYSADMIN_ROLE));
   }
 
   private static ResourceAccess accessFor(User owner) {
