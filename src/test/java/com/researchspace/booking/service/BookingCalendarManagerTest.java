@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
@@ -41,7 +42,8 @@ class BookingCalendarManagerTest {
       FeatureFlagManager featureFlags,
       BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
-      BookingCalendarCreationTransaction creationTransaction) {
+      BookingCalendarCreationTransaction creationTransaction,
+      BookingCalendarPermissionGateDao permissionGate) {
     IPropertyHolder properties = mock(IPropertyHolder.class);
     when(properties.getServerUrl()).thenReturn("https://rspace.example/context");
     return new BookingCalendarManagerImpl(
@@ -54,6 +56,7 @@ class BookingCalendarManagerTest {
         accessManager,
         generator,
         creationTransaction,
+        permissionGate,
         new BookingCalendarProperties(100, 10_000, 1),
         properties,
         () -> RAW_TOKEN);
