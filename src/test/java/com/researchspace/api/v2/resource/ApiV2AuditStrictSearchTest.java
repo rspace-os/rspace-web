@@ -26,6 +26,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
@@ -64,6 +65,88 @@ class ApiV2AuditStrictSearchTest {
 
     assertEquals(2, results.size());
     assertEquals(results.get(0), results.get(1));
+  }
+
+  @Test
+  void ambiguousBoundaryTimestampCannotHideSecondFallbackOccurrence() throws IOException {
+    write("RSLogs.txt", event("25 Oct 2026 02:30:00,000", "BC1") + "\n");
+
+    StrictReadException error =
+        assertThrows(
+            StrictReadException.class,
+            () ->
+                search(ReadObserver.NONE, ZoneId.of("Europe/Berlin"))
+                    .search(
+                        request(
+                            Instant.parse("2026-10-25T01:00:00Z"),
+                            Instant.parse("2026-10-25T02:00:00Z"))));
+
+    assertEquals("RSLogs.txt", error.getSafeFile());
+    assertEquals(1, error.getLineNumber());
+  }
+
+  @Test
+  void ambiguousInteriorTimestampFailsAfterUnambiguousBoundariesSelectTheFile() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("25 Oct 2026 01:30:00,000", "BC1")
+            + "\n"
+            + event("25 Oct 2026 02:30:00,000", "BC1")
+            + "\n"
+            + event("25 Oct 2026 03:30:00,000", "BC1")
+            + "\n");
+
+    StrictReadException error =
+        assertThrows(
+            StrictReadException.class,
+            () ->
+                search(ReadObserver.NONE, ZoneId.of("Europe/Berlin"))
+                    .search(
+                        request(
+                            Instant.parse("2026-10-25T01:00:00Z"),
+                            Instant.parse("2026-10-25T02:00:00Z"))));
+
+    assertEquals("RSLogs.txt", error.getSafeFile());
+    assertEquals(2, error.getLineNumber());
+  }
+
+  @Test
+  void nonexistentGapTimestampFailsStrictly() throws IOException {
+    write("RSLogs.txt", event("29 Mar 2026 02:30:00,000", "BC1") + "\n");
+
+    assertThrows(
+        StrictReadException.class,
+        () ->
+            search(ReadObserver.NONE, ZoneId.of("Europe/Berlin"))
+                .search(
+                    request(
+                        Instant.parse("2026-03-29T00:00:00Z"),
+                        Instant.parse("2026-03-29T03:00:00Z"))));
+  }
+
+  @Test
+  void unambiguousTimestampsBeforeAndAfterFallbackUseTheirValidOffsets() throws IOException {
+    write(
+        "RSLogs.txt",
+        event("25 Oct 2026 01:30:00,000", "BC1")
+            + "\n"
+            + event("25 Oct 2026 03:30:00,000", "BC1")
+            + "\n");
+
+    List<Long> timestamps =
+        search(ReadObserver.NONE, ZoneId.of("Europe/Berlin"))
+            .search(
+                request(
+                    Instant.parse("2026-10-24T00:00:00Z"), Instant.parse("2026-10-26T00:00:00Z")))
+            .stream()
+            .map(AuditTrailSearchResult::getTimestamp)
+            .toList();
+
+    assertEquals(
+        List.of(
+            Instant.parse("2026-10-24T23:30:00Z").toEpochMilli(),
+            Instant.parse("2026-10-25T02:30:00Z").toEpochMilli()),
+        timestamps);
   }
 
   @Test
@@ -459,7 +542,23 @@ class ApiV2AuditStrictSearchTest {
   }
 
   private ApiV2AuditStrictSearch search(ReadObserver observer) {
-    return new ApiV2AuditStrictSearch(directory, "RSLogs", ZoneOffset.UTC, visibility, observer);
+    return search(observer, ZoneOffset.UTC);
+  }
+
+  private ApiV2AuditStrictSearch search(ReadObserver observer, ZoneId logZone) {
+    return new ApiV2AuditStrictSearch(directory, "RSLogs", logZone, visibility, observer);
+  }
+
+  private Request request(Instant fromInclusive, Instant toExclusive) {
+    return new Request(
+        fromInclusive,
+        toExclusive,
+        Set.of(AuditDomain.UNKNOWN),
+        Set.of(AuditAction.CREATE),
+        "BC1",
+        Set.of(),
+        sysadmin,
+        10);
   }
 
   private Request request(int ceiling) {

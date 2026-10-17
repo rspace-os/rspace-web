@@ -31,6 +31,7 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
@@ -379,7 +380,12 @@ public final class ApiV2AuditStrictSearch {
   }
 
   private Instant timestamp(String value) {
-    return LocalDateTime.parse(value.trim(), TIMESTAMP_FORMAT).atZone(logZone).toInstant();
+    LocalDateTime localTimestamp = LocalDateTime.parse(value.trim(), TIMESTAMP_FORMAT);
+    List<ZoneOffset> validOffsets = logZone.getRules().getValidOffsets(localTimestamp);
+    if (validOffsets.size() != 1) {
+      throw new DateTimeException("Audit timestamp does not identify one instant");
+    }
+    return localTimestamp.toInstant(validOffsets.get(0));
   }
 
   private static boolean matches(
