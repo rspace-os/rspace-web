@@ -52,18 +52,38 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
-  @Autowired private TimeSlotBookingManager bookingManager;
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private BookingConfigurationDao configurationDao;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private JdbcTemplate jdbcTemplate;
-  @Autowired private ResourceAccessManager resourceAccessManager;
-  @Autowired private ProtectedResourceAccess<BookingConfiguration, Long> protectedAccess;
-  @Autowired private FeatureFlagManager featureFlags;
+  private final TimeSlotBookingManager bookingManager;
+  private final BookingConfigurationManager configurationManager;
+  private final BookingConfigurationDao configurationDao;
+  private final InstrumentDao instrumentDao;
+  private final JdbcTemplate jdbcTemplate;
+  private final ResourceAccessManager resourceAccessManager;
+  private final ProtectedResourceAccess<BookingConfiguration, Long> protectedAccess;
+  private final FeatureFlagManager featureFlags;
+
+  private final Clock institutionClock;
 
   @Autowired
-  @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK)
-  private Clock institutionClock;
+  TimeSlotBookingManagerIT(
+      TimeSlotBookingManager bookingManager,
+      BookingConfigurationManager configurationManager,
+      BookingConfigurationDao configurationDao,
+      InstrumentDao instrumentDao,
+      JdbcTemplate jdbcTemplate,
+      ResourceAccessManager resourceAccessManager,
+      ProtectedResourceAccess<BookingConfiguration, Long> protectedAccess,
+      FeatureFlagManager featureFlags,
+      @Qualifier(BookingTimeConfig.INSTITUTION_CLOCK) Clock institutionClock) {
+    this.bookingManager = bookingManager;
+    this.configurationManager = configurationManager;
+    this.configurationDao = configurationDao;
+    this.instrumentDao = instrumentDao;
+    this.jdbcTemplate = jdbcTemplate;
+    this.resourceAccessManager = resourceAccessManager;
+    this.protectedAccess = protectedAccess;
+    this.featureFlags = featureFlags;
+    this.institutionClock = institutionClock;
+  }
 
   private boolean originalBookingBaseline;
 

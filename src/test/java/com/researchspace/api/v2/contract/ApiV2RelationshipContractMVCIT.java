@@ -78,7 +78,12 @@ class ApiV2RelationshipContractMVCIT {
     }
   }
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  ApiV2RelationshipContractMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;

@@ -36,7 +36,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class BookingRelationshipReadRestrictionTest extends SpringTransactionalTest {
 
-  @Autowired private TimeSlotBookingDao bookingDao;
+  private final TimeSlotBookingDao bookingDao;
+
+  @Autowired
+  BookingRelationshipReadRestrictionTest(TimeSlotBookingDao bookingDao) {
+    this.bookingDao = bookingDao;
+  }
 
   @Test
   void filteringThroughTargetsAppliesTheirReadRuleBeforePaginationAndCount() {

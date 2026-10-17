@@ -23,10 +23,22 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 public class BookingConfigurationPermanentDeleteIT extends RealTransactionSpringTestBase {
 
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private TimeSlotBookingManager bookingManager;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private JdbcTemplate jdbcTemplate;
+  private final BookingConfigurationManager configurationManager;
+  private final TimeSlotBookingManager bookingManager;
+  private final InstrumentDao instrumentDao;
+  private final JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  BookingConfigurationPermanentDeleteIT(
+      BookingConfigurationManager configurationManager,
+      TimeSlotBookingManager bookingManager,
+      InstrumentDao instrumentDao,
+      JdbcTemplate jdbcTemplate) {
+    this.configurationManager = configurationManager;
+    this.bookingManager = bookingManager;
+    this.instrumentDao = instrumentDao;
+    this.jdbcTemplate = jdbcTemplate;
+  }
 
   @Test
   public void permanentlyDeletesOnlyLiveGraphAndRetainsEnversHistory() {

@@ -40,7 +40,12 @@ class ApiV2OpenApiContractMVCIT {
 
   private static final String OPENAPI = "/api/v2/openapi.json";
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  ApiV2OpenApiContractMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
 
   private MockMvc mockMvc;
 
