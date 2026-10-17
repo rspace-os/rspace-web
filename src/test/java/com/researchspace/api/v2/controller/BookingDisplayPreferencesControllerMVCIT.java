@@ -26,9 +26,17 @@ class BookingDisplayPreferencesControllerMVCIT {
 
   private static final String PATH = "/api/v2/users/me/booking-preferences";
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private FeatureFlagManager featureFlags;
-  @Autowired private UserManager userManager;
+  private final WebApplicationContext context;
+  private final FeatureFlagManager featureFlags;
+  private final UserManager userManager;
+
+  @Autowired
+  BookingDisplayPreferencesControllerMVCIT(
+      WebApplicationContext context, FeatureFlagManager featureFlags, UserManager userManager) {
+    this.context = context;
+    this.featureFlags = featureFlags;
+    this.userManager = userManager;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
