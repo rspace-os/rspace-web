@@ -49,7 +49,7 @@ export function GranteePicker({
   const [pickCount, setPickCount] = useState(0);
 
   const directory = useQuery({
-    queryKey: ["api-v2", resource, resourceId, "access-grantees", query],
+    queryKey: ["api-v2", resource, resourceId, "access-grantees", token, query],
     queryFn: ({ signal }) => searchResourceGrantees(resource, resourceId, query, token, signal),
     enabled: query.length >= MINIMUM_QUERY,
   });
