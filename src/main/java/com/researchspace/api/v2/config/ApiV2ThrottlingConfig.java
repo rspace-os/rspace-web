@@ -17,25 +17,34 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ApiV2ThrottlingConfig {
 
-  @Value("${api.throttling.enabled:false}")
-  private boolean enabled;
+  private final boolean enabled;
 
-  @Value("${api.user.limit.day:5000}")
-  private int userLimitDay;
+  private final int userLimitDay;
 
-  @Value("${api.user.limit.hour:1000}")
-  private int userLimitHour;
+  private final int userLimitHour;
 
-  @Value("${api.user.limit.15s:15}")
-  private int userLimit15Seconds;
+  private final int userLimit15Seconds;
 
-  @Value("${api.global.limit.15s:75}")
-  private int globalLimit15Seconds;
+  private final int globalLimit15Seconds;
 
   // Matches the per-user throttler's hardcoded minimum interval (0) so the stock configuration
   // doesn't trip ApiV2RequestThrottlingInterceptor's misconfiguration warning on every boot.
-  @Value("${api.global.minInterval:0}")
-  private int globalMinInterval;
+  private final int globalMinInterval;
+
+  public ApiV2ThrottlingConfig(
+      @Value("${api.throttling.enabled:false}") boolean enabled,
+      @Value("${api.user.limit.day:5000}") int userLimitDay,
+      @Value("${api.user.limit.hour:1000}") int userLimitHour,
+      @Value("${api.user.limit.15s:15}") int userLimit15Seconds,
+      @Value("${api.global.limit.15s:75}") int globalLimit15Seconds,
+      @Value("${api.global.minInterval:0}") int globalMinInterval) {
+    this.enabled = enabled;
+    this.userLimitDay = userLimitDay;
+    this.userLimitHour = userLimitHour;
+    this.userLimit15Seconds = userLimit15Seconds;
+    this.globalLimit15Seconds = globalLimit15Seconds;
+    this.globalMinInterval = globalMinInterval;
+  }
 
   @Bean
   ApiV2RequestThrottlingInterceptor apiV2RequestThrottlingInterceptor(
