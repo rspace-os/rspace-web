@@ -137,18 +137,32 @@ class ApiV2ScalarReadTest {
   void singleReadRetainsBothRequestAndPolicyConstraintsAndUsesTheTargetId() {
     FilterExpression filter =
         new FilterExpression.Comparison("name", Operator.EQUAL, List.of("visible"), false);
+    RuntimeCollectionFields<Item> provider =
+        mock(RuntimeCollectionFields.class, CALLS_REAL_METHODS);
+    when(provider.namespace()).thenReturn("customFields");
+    when(provider.projectsThroughRelationship()).thenReturn(true);
+    ResolvedRuntimeField runtime =
+        new ResolvedRuntimeField(
+            new RuntimeFieldDefinition(
+                "SF1", "customFields.SF1", "Custom", RuntimeFieldValueType.TEXT, "", "", List.of()),
+            new RuntimeFieldBinding(Item.class, "id", "name", Map.of()));
+    RuntimeFieldSelection runtimeSelection =
+        new RuntimeFieldSelection(Map.of(runtime.selector(), runtime), Set.of(runtime.selector()));
     QueryConstraint server =
         new FilterExpression.Comparison("id", Operator.LESS_THAN, List.of(20L), false);
-    ResourceRequest request = ResourceRequest.unpaged(filter).restrict(server);
+    ResourceRequest request = ResourceRequest.unpaged(filter, runtimeSelection).restrict(server);
     when(operations.usesReadDocuments()).thenReturn(true);
     when(operations.findReadDocuments(any(), eq(actor)))
         .thenReturn(
             new ResourcePage<>(
                 List.of(Map.of("id", 8L, "name", "visible", "secret", "hidden")), 1));
+    when(provider.valuesForIds(List.of(8L), Set.of("SF1"), actor))
+        .thenReturn(Map.of(8L, Map.of("SF1", "selected")));
 
-    Map<String, Object> result = register(List.of()).get("8", request, actor);
+    Map<String, Object> result = register(List.of(provider)).get("8", request, actor);
 
-    assertEquals(Map.of("id", 8L, "name", "visible"), result);
+    assertEquals(
+        Map.of("id", 8L, "name", "visible", "customFields", Map.of("SF1", "selected")), result);
     assertFalse(result.containsKey("secret"));
     ArgumentCaptor<ResourceRequest> captured = ArgumentCaptor.forClass(ResourceRequest.class);
     verify(operations).findReadDocuments(captured.capture(), eq(actor));
@@ -161,6 +175,8 @@ class ApiV2ScalarReadTest {
         new QueryConstraint.And(List.of(server, ROW_ACCESS)),
         captured.getValue().serverConstraint());
     assertEquals(new ResourceRequest.Page(1, 1), captured.getValue().page());
+    assertEquals(request.runtime(), captured.getValue().runtime());
+    verify(provider).valuesForIds(List.of(8L), Set.of("SF1"), actor);
     verify(operations, never()).findById(any(), any());
     verify(operations, never()).find(any(), any());
   }
