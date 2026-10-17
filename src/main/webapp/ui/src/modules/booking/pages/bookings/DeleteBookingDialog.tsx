@@ -87,12 +87,10 @@ export function DeleteBookingDialog({
     } catch (error) {
       const nextErrorKey = deleteErrorKey(error);
       setErrorKey(nextErrorKey);
-      if (nextErrorKey !== "bookings.errors.deleteGeneric") {
-        try {
-          await invalidateBookingQueries();
-        } catch {
-          setErrorKey("bookings.errors.deleteGeneric");
-        }
+      try {
+        await invalidateBookingQueries();
+      } catch {
+        setErrorKey("bookings.errors.deleteGeneric");
       }
     } finally {
       activeRequest.current = false;

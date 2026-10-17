@@ -1,7 +1,11 @@
 import { Temporal } from "@js-temporal/polyfill";
 import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { coversInterval, type OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  coversInterval,
+  MAX_BOOKING_DURATION_MINUTES,
+  type OpeningHoursEntry,
+} from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingWindowDraft,
   resolveWallClock,
@@ -94,15 +98,22 @@ export function validateBookingWindow(
   const granularityInvalid =
     (startMinute !== undefined && startMinute % slotGranularityMinutes !== 0) ||
     (endMinute !== undefined && endMinute % slotGranularityMinutes !== 0);
-  const openingInvalid =
+  const maximumDurationLimitMinutes =
+    maxBookingDurationMinutes > 0
+      ? Math.min(maxBookingDurationMinutes, MAX_BOOKING_DURATION_MINUTES)
+      : MAX_BOOKING_DURATION_MINUTES;
+  const maximumDurationInvalid = Boolean(
+    result.window &&
+      Temporal.Instant.from(result.window.end).epochMilliseconds -
+        Temporal.Instant.from(result.window.start).epochMilliseconds >
+        maximumDurationLimitMinutes * 60_000,
+  );
+  const openingInvalid = Boolean(
     enforceOpeningHours &&
-    Boolean(result.window && !coversInterval({ openingHours }, resolvedSchedulingTimezone, result.window));
-  const maximumDurationInvalid =
-    Boolean(result.window) &&
-    maxBookingDurationMinutes > 0 &&
-    Temporal.Instant.from(result.window?.end ?? "").epochMilliseconds -
-      Temporal.Instant.from(result.window?.start ?? "").epochMilliseconds >
-      maxBookingDurationMinutes * 60_000;
+      result.window &&
+      !maximumDurationInvalid &&
+      !coversInterval({ openingHours }, resolvedSchedulingTimezone, result.window),
+  );
   const policyInvalid = granularityInvalid || openingInvalid || maximumDurationInvalid;
   const resolvedWindow = policyInvalid && !allowPolicyMismatch ? undefined : result.window;
   return {
@@ -125,6 +136,7 @@ export function ZonedBookingWindowFields({
   value,
   onChange,
   allowPolicyMismatch = false,
+  originalValue,
   disabled = false,
   density = "comfortable",
   showErrors = true,
@@ -138,6 +150,7 @@ export function ZonedBookingWindowFields({
   value: BookingWindowDraft;
   onChange: (value: BookingWindowDraft) => void;
   allowPolicyMismatch?: boolean;
+  originalValue?: BookingWindowDraft;
   disabled?: boolean;
   density?: "comfortable" | "compact";
   showErrors?: boolean;
@@ -173,8 +186,17 @@ export function ZonedBookingWindowFields({
     instant ? Temporal.Instant.from(instant).toZonedDateTimeISO(resolvedSchedulingTimezone) : undefined;
   const change = (patch: Partial<BookingWindowDraft>) => onChange({ ...value, ...patch });
   const snapTime = (name: "start" | "end") => {
+    const dateKey = `${name}Date` as const;
     const timeKey = `${name}Time` as const;
     const occurrenceKey = `${name}Occurrence` as const;
+    if (
+      originalValue &&
+      value[dateKey] === originalValue[dateKey] &&
+      value[timeKey] === originalValue[timeKey] &&
+      value[occurrenceKey] === originalValue[occurrenceKey]
+    ) {
+      return;
+    }
     const endpointResolution = result[name];
     const instant =
       endpointResolution?.kind === "unique"
@@ -354,7 +376,7 @@ export function ZonedBookingWindowFields({
     </div>
   ) : null;
 
-  if (density === "compact") {
+  if (density === "compact" && value.startDate === value.endDate) {
     const dateId = `${fieldId}-date`;
     const dateInvalid = !value.startDate;
     return (

@@ -243,7 +243,7 @@ export function BookingForm(props: BookingFormProps) {
     (target?.globalId ?? "") !== initialState.targetGlobalId ||
     !sameWindowDraft(draft, initialState.draft) ||
     purposeValue !== initialState.purpose;
-  const bookingInPast = window !== undefined && Date.parse(window.end) <= Date.now();
+  const bookingInPast = window !== undefined && Date.parse(window.start) <= Date.now();
   const notifyStateChange = useEffectEvent((state: BookingFormState) => props.onStateChange?.(state));
   useEffect(() => {
     notifyStateChange({ target, draft, window, purpose: purposeValue, eventKind, dirty });
@@ -273,6 +273,7 @@ export function BookingForm(props: BookingFormProps) {
       value={draft}
       onChange={setDraft}
       allowPolicyMismatch={allowPolicyMismatch}
+      originalValue={originalDraft}
       disabled={busy}
       density={props.density}
       showErrors={attempted}

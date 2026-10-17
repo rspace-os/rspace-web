@@ -68,6 +68,34 @@ describe("BookingForm", () => {
     vi.useRealTimers();
   });
 
+  async function submitBookingWithStartTime(startTime: string) {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-17T12:00:00Z"));
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        displayTimezone="UTC"
+        eventKind="BOOKING"
+        initialTarget={target}
+        initialWindow={{
+          startDate: "2026-08-17",
+          startTime,
+          endDate: "2026-08-17",
+          endTime: "13:00",
+        }}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    await user.click(await screen.findByRole("button", { name: "booking:bookings.form.submit" }));
+    return submit;
+  }
+
   it("round-trips an editable repeated-hour booking and renders a read-only item", async () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
@@ -452,10 +480,10 @@ describe("BookingForm", () => {
     const user = userEvent.setup();
     const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
     const stateChanged = vi.fn();
-    const pastEnd = new Date(Math.floor((Date.now() - 5 * 60_000) / (5 * 60_000)) * (5 * 60_000));
-    const pastStart = new Date(pastEnd.getTime() - 60 * 60_000);
+    const pastStart = new Date(Date.now() - 60 * 60_000);
+    const futureEnd = new Date(Date.now() + 30 * 60_000);
     const start = currentWallClock(pastStart.toISOString(), "UTC");
-    const end = currentWallClock(pastEnd.toISOString(), "UTC");
+    const end = currentWallClock(futureEnd.toISOString(), "UTC");
     const clockTime = ({ minute }: { minute: number }) =>
       `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
     server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
@@ -484,6 +512,20 @@ describe("BookingForm", () => {
     );
     expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.warnings.past");
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+    expect(submit).toHaveBeenCalledOnce();
+  });
+
+  it("warns when a booking starts exactly now without blocking submission", async () => {
+    const submit = await submitBookingWithStartTime("12:00");
+
+    expect(screen.getByRole("status")).toHaveTextContent("booking:bookings.warnings.past");
+    expect(submit).toHaveBeenCalledOnce();
+  });
+
+  it("does not warn when a booking starts strictly in the future", async () => {
+    const submit = await submitBookingWithStartTime("12:05");
+
+    expect(screen.queryByText("booking:bookings.warnings.past")).not.toBeInTheDocument();
     expect(submit).toHaveBeenCalledOnce();
   });
 
@@ -542,5 +584,45 @@ describe("BookingForm", () => {
     expect(screen.queryByText("booking:bookings.errors.maximumDuration")).not.toBeInTheDocument();
     await user.click(await screen.findByRole("button", { name: "booking:bookings.form.save" }));
     expect(submit).toHaveBeenCalledOnce();
+  });
+
+  it("preserves off-grid original endpoints during a purpose-only edit", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn<(submission: BookingFormSubmission) => Promise<void>>().mockResolvedValue();
+    renderForm(
+      <BookingForm
+        mode="edit"
+        booking={{
+          ...editableBooking,
+          start: "2026-08-17T07:02:00Z",
+          end: "2026-08-17T08:02:00Z",
+        }}
+        configuration={{ ...target, slotGranularityMinutes: 10 }}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const end = screen.getByRole("group", { name: "booking:bookings.form.end" });
+    const startTime = within(start).getByLabelText("booking:bookings.form.time");
+    const endTime = within(end).getByLabelText("booking:bookings.form.time");
+    await user.click(startTime);
+    await user.tab();
+    expect(startTime).toHaveValue("09:02");
+    await user.click(endTime);
+    await user.tab();
+    expect(endTime).toHaveValue("10:02");
+
+    await user.type(screen.getByRole("textbox", { name: "booking:bookings.form.purpose" }), " updated");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        window: { start: "2026-08-17T07:02:00Z", end: "2026-08-17T08:02:00Z" },
+        purpose: "Imaging updated",
+      }),
+    );
   });
 });

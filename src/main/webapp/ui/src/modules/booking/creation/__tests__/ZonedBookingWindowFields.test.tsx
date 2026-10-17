@@ -1,6 +1,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
+import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import { validateBookingWindow, ZonedBookingWindowFields } from "../ZonedBookingWindowFields";
 
 describe("ZonedBookingWindowFields", () => {
@@ -39,6 +42,36 @@ describe("ZonedBookingWindowFields", () => {
       endTime: "10:00",
       endOccurrence: undefined,
     });
+  });
+
+  it("keeps separate endpoint dates in compact mode for a multiday window", () => {
+    const onChange = vi.fn();
+    const value: BookingWindowDraft = {
+      startDate: "2026-08-17",
+      startTime: "23:00",
+      endDate: "2026-08-19",
+      endTime: "23:00",
+    };
+    render(
+      <ZonedBookingWindowFields
+        displayTimezone="UTC"
+        schedulingTimezone="UTC"
+        slotGranularityMinutes={5}
+        maxBookingDurationMinutes={0}
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        density="compact"
+        value={value}
+        onChange={onChange}
+      />,
+    );
+
+    const startDate = screen.getByLabelText("booking:bookings.form.startDate");
+    expect(startDate).toHaveValue("2026-08-17");
+    expect(screen.getByLabelText("booking:bookings.form.endDate")).toHaveValue("2026-08-19");
+
+    fireEvent.change(startDate, { target: { value: "2026-08-18" } });
+
+    expect(onChange).toHaveBeenLastCalledWith({ ...value, startDate: "2026-08-18" });
   });
 
   it.each([
@@ -97,6 +130,52 @@ describe("ZonedBookingWindowFields", () => {
     expect(onChange).toHaveBeenLastCalledWith(
       expect.objectContaining({ startTime: "09:05", startOccurrence: undefined }),
     );
+  });
+
+  it("preserves unchanged original endpoints while snapping only the edited endpoint", async () => {
+    const user = userEvent.setup();
+    const originalValue: BookingWindowDraft = {
+      startDate: "2026-08-17",
+      startTime: "09:02",
+      endDate: "2026-08-17",
+      endTime: "10:02",
+    };
+    function Form() {
+      const [value, setValue] = useState<BookingWindowDraft>(originalValue);
+      return (
+        <ZonedBookingWindowFields
+          displayTimezone="Europe/Berlin"
+          schedulingTimezone="Asia/Kathmandu"
+          slotGranularityMinutes={10}
+          maxBookingDurationMinutes={0}
+          openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+          originalValue={originalValue}
+          value={value}
+          onChange={setValue}
+        />
+      );
+    }
+
+    render(<Form />);
+    const startTime = screen.getByLabelText("booking:bookings.form.startTime");
+    const endTime = screen.getByLabelText("booking:bookings.form.endTime");
+
+    await user.click(startTime);
+    await user.tab();
+    expect(startTime).toHaveValue("09:02");
+
+    await user.click(endTime);
+    await user.tab();
+    expect(endTime).toHaveValue("10:02");
+
+    await user.clear(startTime);
+    await user.type(startTime, "09:03");
+    await user.tab();
+    expect(startTime).toHaveValue("09:05");
+
+    await user.click(endTime);
+    await user.tab();
+    expect(endTime).toHaveValue("10:02");
   });
 
   it("allows an always-open interval across the scheduling timezone's local date boundary", () => {
@@ -229,6 +308,38 @@ describe("ZonedBookingWindowFields", () => {
     expect(screen.getByText("booking:bookings.errors.occurrenceRequired")).toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: "booking:bookings.form.laterOccurrence" }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ startOccurrence: "later" }));
+  });
+
+  it("preserves an unchanged fall-back occurrence when its endpoint blurs", async () => {
+    const user = userEvent.setup();
+    const originalValue: BookingWindowDraft = {
+      startDate: "2026-10-25",
+      startTime: "02:32",
+      startOccurrence: "later",
+      endDate: "2026-10-25",
+      endTime: "03:32",
+    };
+    const onChange = vi.fn();
+    render(
+      <ZonedBookingWindowFields
+        displayTimezone="Europe/Berlin"
+        schedulingTimezone="Europe/Berlin"
+        slotGranularityMinutes={10}
+        maxBookingDurationMinutes={0}
+        openingHours={[1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))}
+        originalValue={originalValue}
+        value={originalValue}
+        onChange={onChange}
+      />,
+    );
+
+    const startTime = screen.getByLabelText("booking:bookings.form.startTime");
+    expect(screen.getByRole("radio", { name: "booking:bookings.form.laterOccurrence" })).toBeChecked();
+
+    await user.click(startTime);
+    await user.tab();
+
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it("uses elapsed instants for the maximum duration", () => {
@@ -384,6 +495,52 @@ describe("independent weekday booking windows", () => {
     expect(result.openingInvalid).toBe(!valid);
     expect(Boolean(result.window)).toBe(valid);
   });
+
+  it.each([
+    {
+      limit: "configured",
+      maxBookingDurationMinutes: 60,
+      value: { startDate: "2026-06-01", startTime: "09:00", endDate: "2026-06-01", endTime: "11:00" },
+    },
+    {
+      limit: "absolute with no configured maximum",
+      maxBookingDurationMinutes: 0,
+      value: { startDate: "2026-06-01", startTime: "00:00", endDate: "2027-06-02", endTime: "00:01" },
+    },
+    {
+      limit: "absolute below a larger configured maximum",
+      maxBookingDurationMinutes: MAX_BOOKING_DURATION_MINUTES + 1,
+      value: { startDate: "2026-06-01", startTime: "00:00", endDate: "2027-06-02", endTime: "00:01" },
+    },
+  ])(
+    "shows ordinary duration validation for a $limit violation before checking opening hours",
+    ({ maxBookingDurationMinutes, value }) => {
+      const openingHours = [{ dayOfWeek: 1, start: "09:00", end: "10:00" }];
+      const result = validateBookingWindow(value, "UTC", {
+        schedulingTimezone: "UTC",
+        slotGranularityMinutes: 1,
+        maxBookingDurationMinutes,
+        openingHours,
+      });
+      expect(result.maximumDurationInvalid).toBe(true);
+      expect(result.openingInvalid).toBe(false);
+      expect(result.window).toBeUndefined();
+
+      render(
+        <ZonedBookingWindowFields
+          displayTimezone="UTC"
+          schedulingTimezone="UTC"
+          slotGranularityMinutes={1}
+          maxBookingDurationMinutes={maxBookingDurationMinutes}
+          openingHours={openingHours}
+          value={value}
+          onChange={vi.fn()}
+        />,
+      );
+
+      expect(screen.getByText("booking:bookings.errors.maximumDuration")).toBeVisible();
+    },
+  );
 
   it("retains the maintenance bypass and the edit policy-mismatch allowance", () => {
     const draft = { startDate: "2026-08-19", startTime: "10:00", endDate: "2026-08-19", endTime: "11:00" };
