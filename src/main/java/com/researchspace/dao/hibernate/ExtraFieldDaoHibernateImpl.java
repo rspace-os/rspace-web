@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -47,8 +46,14 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
   private static final String NAME_IDENTITY = "LOWER(FUNCTION('HEX', " + NAME + "))";
   private static final String VALUE = FIELD_ALIAS + ".editInfo.description";
 
-  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
-  @Autowired private SessionFactory sessionFactory;
+  private final CriteriaBuilderFactory criteriaBuilderFactory;
+  private final SessionFactory sessionFactory;
+
+  public ExtraFieldDaoHibernateImpl(
+      CriteriaBuilderFactory criteriaBuilderFactory, SessionFactory sessionFactory) {
+    this.criteriaBuilderFactory = criteriaBuilderFactory;
+    this.sessionFactory = sessionFactory;
+  }
 
   @Override
   public Result<Definition> readableDefinitions(
