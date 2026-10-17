@@ -139,7 +139,9 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOfDate, token, signal),
   });
   const rowActions = useMemo<
-    TableListRowActions<CollectionRow<BookingListDocument, "id" | "target" | "canViewConfiguration" | "state">>
+    TableListRowActions<
+      CollectionRow<BookingListDocument, "id" | "target" | "timezone" | "canViewConfiguration" | "state">
+    >
   >(
     () => ({
       id: "actions",
@@ -152,7 +154,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         const itemCalendarLabel = t("myBookings.actions.itemCalendar");
         return (
           <div className="flex flex-wrap gap-1">
-            {row.canViewConfiguration ? (
+            {row.canViewConfiguration && row.target ? (
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -188,7 +190,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                 <TooltipContent role="tooltip">{viewDetailsLabel}</TooltipContent>
               </Tooltip>
             ) : null}
-            {row.canEdit ? (
+            {row.canEdit && row.target && row.timezone ? (
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -206,10 +208,10 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
                 <TooltipContent role="tooltip">{editLabel}</TooltipContent>
               </Tooltip>
             ) : null}
-            {row.canViewConfiguration && row.state === "CONFIRMED" ? (
+            {row.canViewConfiguration && row.target && row.state === "CONFIRMED" ? (
               <BookingCalendarFileButton
                 bookingId={row.id}
-                itemName={row.target.value.name}
+                itemName={row.target?.value.name ?? commonT("values.unknownItem")}
                 period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
                 token={token}
                 iconOnly
@@ -219,7 +221,7 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
               <DeleteBookingDialog
                 bookingId={row.id}
                 bookingVersion={row.version ?? 0}
-                itemName={row.target.value.name}
+                itemName={row.target?.value.name ?? commonT("values.unknownItem")}
                 period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
                 token={token}
                 iconOnly

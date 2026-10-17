@@ -189,6 +189,8 @@ describe("BookingEventPage", () => {
       http.get("/api/v2/bookings/41", () =>
         HttpResponse.json({
           ...document,
+          target: null,
+          timezone: null,
           canViewConfiguration: false,
           canEdit: false,
           canCancel: false,
@@ -198,11 +200,15 @@ describe("BookingEventPage", () => {
     renderPage();
 
     expect(await screen.findByText("Cell imaging")).toBeVisible();
+    expect(screen.getByText("common:values.unknownItem")).toBeVisible();
+    expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
+    expect(screen.queryByText("IN123", { exact: true })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "booking:bookings.details.returnToMyBookings" })).toHaveAttribute(
       "href",
       "/booking/my-bookings?period=upcoming",
     );
     expect(screen.queryByRole("link", { name: "Imaging lab" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "booking:bookings.details.viewItem" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "booking:bookings.actions.edit" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:calendar.file.accessibleLabel" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
