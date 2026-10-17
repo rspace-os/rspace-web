@@ -59,14 +59,34 @@ class ApiV2FilterExpansionMVCIT {
   private static final long P95_BUDGET_MILLIS = 2_000;
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private BookingConfigurationDao bookingConfigurationDao;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private InstrumentEntityApiManager instrumentApiManager;
-  @Autowired private IRecordFactory recordFactory;
-  @Autowired private PlatformTransactionManager transactionManager;
-  @Autowired private SessionFactory sessionFactory;
-  @Autowired private ApiV2ResourceCatalog catalog;
+  private final WebApplicationContext context;
+  private final BookingConfigurationDao bookingConfigurationDao;
+  private final InstrumentDao instrumentDao;
+  private final InstrumentEntityApiManager instrumentApiManager;
+  private final IRecordFactory recordFactory;
+  private final PlatformTransactionManager transactionManager;
+  private final SessionFactory sessionFactory;
+  private final ApiV2ResourceCatalog catalog;
+
+  @Autowired
+  ApiV2FilterExpansionMVCIT(
+      WebApplicationContext context,
+      BookingConfigurationDao bookingConfigurationDao,
+      InstrumentDao instrumentDao,
+      InstrumentEntityApiManager instrumentApiManager,
+      IRecordFactory recordFactory,
+      PlatformTransactionManager transactionManager,
+      SessionFactory sessionFactory,
+      ApiV2ResourceCatalog catalog) {
+    this.context = context;
+    this.bookingConfigurationDao = bookingConfigurationDao;
+    this.instrumentDao = instrumentDao;
+    this.instrumentApiManager = instrumentApiManager;
+    this.recordFactory = recordFactory;
+    this.transactionManager = transactionManager;
+    this.sessionFactory = sessionFactory;
+    this.catalog = catalog;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
