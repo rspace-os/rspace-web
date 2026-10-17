@@ -14,7 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class FeatureFlagDaoTest extends SpringTransactionalTest {
 
-  private @Autowired FeatureFlagDao featureFlagDao;
+  private final FeatureFlagDao featureFlagDao;
+
+  @Autowired
+  FeatureFlagDaoTest(FeatureFlagDao featureFlagDao) {
+    this.featureFlagDao = featureFlagDao;
+  }
+
   private User user;
 
   @BeforeEach
