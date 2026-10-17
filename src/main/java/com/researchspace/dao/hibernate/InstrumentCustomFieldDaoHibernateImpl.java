@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -41,8 +40,14 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
   private static final String INSTRUMENT_ALIAS = "customFieldInstrument";
   private static final String SOURCE_ALIAS = "customFieldSource";
 
-  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
-  @Autowired private SessionFactory sessionFactory;
+  private final CriteriaBuilderFactory criteriaBuilderFactory;
+  private final SessionFactory sessionFactory;
+
+  public InstrumentCustomFieldDaoHibernateImpl(
+      CriteriaBuilderFactory criteriaBuilderFactory, SessionFactory sessionFactory) {
+    this.criteriaBuilderFactory = criteriaBuilderFactory;
+    this.sessionFactory = sessionFactory;
+  }
 
   @Override
   public LookAheadPagination.Result<DefinitionRow> readableDefinitions(
