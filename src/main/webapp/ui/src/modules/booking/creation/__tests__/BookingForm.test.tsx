@@ -11,9 +11,12 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { type ReactNode, Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
+import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
-import { currentWallClock } from "@/modules/booking/domain/bookingTime";
+import { currentWallClock, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import { BookingForm, type BookingFormSubmission } from "../BookingForm";
 import { cataloguePage, editableBooking, confocalTarget as target } from "./creationTestFixtures";
 
@@ -44,7 +47,63 @@ describe("BookingForm", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
   });
+  it.each([
+    ["H12", "en-GB", true, "Open: 02:00 pm - 06:00 pm"],
+    ["H24", "en-US", true, "Open: 14:00 - 18:00"],
+    ["H12", "en-GB", false, "Open on this date: 08:00 am - 12:00 pm"],
+    ["H24", "en-US", false, "Open on this date: 08:00 - 12:00"],
+  ] as const)(
+    "uses %s over the %s browser clock for compact opening hours (uniform: %s)",
+    async (timeFormat, browserLocale, uniform, expected) => {
+      const resolvedOptions = Intl.DateTimeFormat.prototype.resolvedOptions;
+      vi.spyOn(Intl.DateTimeFormat.prototype, "resolvedOptions").mockImplementation(function (
+        this: Intl.DateTimeFormat,
+      ) {
+        const options = resolvedOptions.call(this);
+        return new Intl.Locale(options.locale).hourCycle ? options : { ...options, locale: browserLocale };
+      });
+      expect(formatWallClockTime("14:00")).toBe(browserLocale === "en-US" ? "02:00 PM" : "14:00");
+      const initialTarget = {
+        ...target,
+        openingHours: (uniform ? ALL_ISO_WEEKDAYS : ([1] as const)).map((dayOfWeek) => ({
+          dayOfWeek,
+          start: "14:00",
+          end: "18:00",
+        })),
+      };
+      const startTime = uniform ? "14:00" : "09:00";
+      renderForm(
+        await wrapWithRealI18n(
+          <BookingTimeFormatProvider timeFormat={timeFormat}>
+            <BookingForm
+              mode="add"
+              eventKind="BOOKING"
+              density="compact"
+              displayTimezone={uniform ? "Europe/Berlin" : "America/New_York"}
+              initialTarget={initialTarget}
+              lockTarget
+              initialWindow={{
+                startDate: "2026-08-17",
+                startTime,
+                endDate: "2026-08-17",
+                endTime: uniform ? "15:00" : "10:00",
+              }}
+              token="token"
+              pending={false}
+              onSubmit={vi.fn()}
+            />
+          </BookingTimeFormatProvider>,
+          { resources: { booking: bookingEnglish }, defaultNS: "booking" },
+        ),
+      );
+
+      expect(await screen.findByText(expected)).toBeVisible();
+      expect(screen.getByLabelText("Start time")).toHaveValue(startTime);
+    },
+  );
+
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
