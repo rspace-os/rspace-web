@@ -35,11 +35,25 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
 
-  @Autowired private TimeSlotBookingManager bookingManager;
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private CommunicationDao communicationDao;
-  @Autowired private FeatureFlagManager featureFlags;
+  private final TimeSlotBookingManager bookingManager;
+  private final BookingConfigurationManager configurationManager;
+  private final InstrumentDao instrumentDao;
+  private final CommunicationDao communicationDao;
+  private final FeatureFlagManager featureFlags;
+
+  @Autowired
+  BookingOwnerNotificationIT(
+      TimeSlotBookingManager bookingManager,
+      BookingConfigurationManager configurationManager,
+      InstrumentDao instrumentDao,
+      CommunicationDao communicationDao,
+      FeatureFlagManager featureFlags) {
+    this.bookingManager = bookingManager;
+    this.configurationManager = configurationManager;
+    this.instrumentDao = instrumentDao;
+    this.communicationDao = communicationDao;
+    this.featureFlags = featureFlags;
+  }
 
   private boolean originalBookingBaseline;
 
