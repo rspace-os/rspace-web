@@ -77,12 +77,17 @@ export function useTableList<TDocument extends Record<string, unknown>>({
       return remote.fetch(state, { signal });
     },
     enabled: remote !== null,
-    meta: remote ? viewTransitionQueryMeta : undefined,
+    meta: remote
+      ? { ...viewTransitionQueryMeta, ...(remote.dataScope === undefined ? {} : { dataScope: remote.dataScope }) }
+      : undefined,
     staleTime: remote?.staleTime,
     gcTime: remote?.gcTime,
     retry: remote?.retry,
     refetchInterval: remote?.refetchInterval,
-    placeholderData: remote?.keepPreviousData ? keepPreviousData : undefined,
+    placeholderData: remote?.keepPreviousData
+      ? (previous, previousQuery) =>
+          previousQuery?.meta?.dataScope === remote.dataScope ? keepPreviousData(previous) : undefined
+      : undefined,
   });
 
   const setFilters = useCallback((filters: FilterState<TDocument>) => {
