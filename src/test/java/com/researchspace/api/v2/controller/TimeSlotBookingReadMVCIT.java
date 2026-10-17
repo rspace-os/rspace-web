@@ -28,10 +28,22 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class TimeSlotBookingReadMVCIT {
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private TimeSlotBookingDao bookingDao;
-  @Autowired private TimeSlotBookingManager bookingManager;
-  @Autowired private PlatformTransactionManager transactionManager;
+  private final WebApplicationContext context;
+  private final TimeSlotBookingDao bookingDao;
+  private final TimeSlotBookingManager bookingManager;
+  private final PlatformTransactionManager transactionManager;
+
+  @Autowired
+  TimeSlotBookingReadMVCIT(
+      WebApplicationContext context,
+      TimeSlotBookingDao bookingDao,
+      TimeSlotBookingManager bookingManager,
+      PlatformTransactionManager transactionManager) {
+    this.context = context;
+    this.bookingDao = bookingDao;
+    this.bookingManager = bookingManager;
+    this.transactionManager = transactionManager;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
