@@ -19,7 +19,13 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class BookingConfigurationTargetControllerMVCIT {
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  BookingConfigurationTargetControllerMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
+
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
 
