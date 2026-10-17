@@ -13,6 +13,7 @@ import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
+import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.impl.AbstractAppInitializor;
 import com.researchspace.service.impl.BookingFixturesAppInitialiser;
@@ -41,7 +42,8 @@ class ProductionConfigTest {
             mock(BookingConfigurationDao.class),
             mock(TimeSlotBookingDao.class),
             mock(PlatformTransactionManager.class),
-            false);
+            false,
+            mock(IContentInitializer.class));
 
     assertAll(
         () ->
