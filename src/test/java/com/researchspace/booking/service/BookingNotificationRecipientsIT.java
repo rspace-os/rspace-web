@@ -72,16 +72,40 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
   private static final NotificationType CREATED = NotificationType.NOTIFICATION_BOOKING_CREATED;
   private static final NotificationType CANCELLED = NotificationType.NOTIFICATION_BOOKING_CANCELLED;
 
-  @Autowired private TimeSlotBookingManager bookingManager;
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private BookingConfigurationDao configurationDao;
-  @Autowired private BookingNotificationSubscriptionDao subscriptions;
-  @Autowired private BookingNotificationRecipientReader recipientReader;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private CommunicationDao communicationDao;
-  @Autowired private FeatureFlagManager featureFlags;
-  @Autowired private BookingDisplayPreferencesManager displayPreferences;
-  @Autowired private EmailContentGenerator emailContentGenerator;
+  private final TimeSlotBookingManager bookingManager;
+  private final BookingConfigurationManager configurationManager;
+  private final BookingConfigurationDao configurationDao;
+  private final BookingNotificationSubscriptionDao subscriptions;
+  private final BookingNotificationRecipientReader recipientReader;
+  private final InstrumentDao instrumentDao;
+  private final CommunicationDao communicationDao;
+  private final FeatureFlagManager featureFlags;
+  private final BookingDisplayPreferencesManager displayPreferences;
+  private final EmailContentGenerator emailContentGenerator;
+
+  @Autowired
+  BookingNotificationRecipientsIT(
+      TimeSlotBookingManager bookingManager,
+      BookingConfigurationManager configurationManager,
+      BookingConfigurationDao configurationDao,
+      BookingNotificationSubscriptionDao subscriptions,
+      BookingNotificationRecipientReader recipientReader,
+      InstrumentDao instrumentDao,
+      CommunicationDao communicationDao,
+      FeatureFlagManager featureFlags,
+      BookingDisplayPreferencesManager displayPreferences,
+      EmailContentGenerator emailContentGenerator) {
+    this.bookingManager = bookingManager;
+    this.configurationManager = configurationManager;
+    this.configurationDao = configurationDao;
+    this.subscriptions = subscriptions;
+    this.recipientReader = recipientReader;
+    this.instrumentDao = instrumentDao;
+    this.communicationDao = communicationDao;
+    this.featureFlags = featureFlags;
+    this.displayPreferences = displayPreferences;
+    this.emailContentGenerator = emailContentGenerator;
+  }
 
   private boolean originalBookingBaseline;
   private CommunicationManagerImpl communicationManager;
