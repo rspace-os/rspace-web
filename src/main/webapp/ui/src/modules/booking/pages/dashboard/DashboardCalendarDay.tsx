@@ -61,6 +61,7 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
   const bookingSignature = bookings.map((booking) => `${booking.id}:${booking.start}:${booking.end}`).join("|");
   const [requestedPage, setRequestedPage] = useState(0);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const accordionName = `${dateKey}-${useId()}`;
 
   useEffect(() => {
@@ -113,6 +114,8 @@ export function DashboardCalendarDay(props: ComponentProps<typeof CalendarDayBut
         </Badge>
       </PopoverTrigger>
       <PopoverContent
+        ref={popupRef}
+        initialFocus={popupRef}
         side="bottom"
         align="start"
         sideOffset={8}
