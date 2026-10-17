@@ -1,6 +1,7 @@
 package com.researchspace.service.resourceaccess;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessDocumentation;
 import com.researchspace.model.collection.AccessFunction;
@@ -48,7 +49,7 @@ public final class ResourceRoleReadAccess implements AccessFunction {
       return AccessResult.denied(AccessPolicy.AUTHENTICATION_REQUIRED);
     }
     if (scheme
-        .implicitRole(subject)
+        .implicitRole(currentGlobalRoleNames(subject))
         .filter(
             role -> scheme.capabilities(role).contains(ResourceRoleScheme.READ_RESOURCE_CAPABILITY))
         .isPresent()) {
@@ -62,6 +63,13 @@ public final class ResourceRoleReadAccess implements AccessFunction {
     return AccessResult.allowedWhere(
         new ResourceRoleMembershipConstraint(
             resourceAccessIdPath, subject.getId(), groupIds, readableRoles, supportsAllUsers));
+  }
+
+  private static Set<String> currentGlobalRoleNames(User subject) {
+    if (subject.getRoles() == null) {
+      return Set.of();
+    }
+    return subject.getRoles().stream().map(Role::getName).collect(Collectors.toUnmodifiableSet());
   }
 
   @Override

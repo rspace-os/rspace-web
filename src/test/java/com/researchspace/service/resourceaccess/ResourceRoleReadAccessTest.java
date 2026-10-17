@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
@@ -31,6 +32,7 @@ class ResourceRoleReadAccessTest {
     when(subject.getId()).thenReturn(12L);
     when(subject.isEnabled()).thenReturn(true);
     when(subject.getGroups()).thenReturn(Set.of());
+    when(subject.getRoles()).thenReturn(Set.of());
   }
 
   @Test
@@ -82,7 +84,7 @@ class ResourceRoleReadAccessTest {
 
   @Test
   void implicitReadableRoleNeedsNoRowConstraint() {
-    when(subject.hasSysadminRole()).thenReturn(true);
+    when(subject.getRoles()).thenReturn(Set.of(Role.SYSTEM_ROLE));
 
     assertInstanceOf(
         AccessResult.Allowed.class,
