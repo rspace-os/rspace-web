@@ -18,8 +18,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class InstrumentCustomFieldValuesIT extends RealTransactionSpringTestBase {
 
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private InstrumentCustomFieldManager customFields;
+  private final InstrumentDao instrumentDao;
+  private final InstrumentCustomFieldManager customFields;
+
+  @Autowired
+  InstrumentCustomFieldValuesIT(
+      InstrumentDao instrumentDao, InstrumentCustomFieldManager customFields) {
+    this.instrumentDao = instrumentDao;
+    this.customFields = customFields;
+  }
 
   private User owner;
   private ResolvedRuntimeField hazardClass;

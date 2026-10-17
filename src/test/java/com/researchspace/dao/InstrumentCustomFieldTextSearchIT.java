@@ -32,10 +32,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTestBase {
 
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private InstrumentReadAccess instrumentReadAccess;
-  @Autowired private InstrumentCustomFieldManager customFields;
-  @Autowired private ExtraFieldDao extraFieldDao;
+  private final InstrumentDao instrumentDao;
+  private final InstrumentReadAccess instrumentReadAccess;
+  private final InstrumentCustomFieldManager customFields;
+  private final ExtraFieldDao extraFieldDao;
+
+  @Autowired
+  InstrumentCustomFieldTextSearchIT(
+      InstrumentDao instrumentDao,
+      InstrumentReadAccess instrumentReadAccess,
+      InstrumentCustomFieldManager customFields,
+      ExtraFieldDao extraFieldDao) {
+    this.instrumentDao = instrumentDao;
+    this.instrumentReadAccess = instrumentReadAccess;
+    this.customFields = customFields;
+    this.extraFieldDao = extraFieldDao;
+  }
 
   private User owner;
   private ResolvedRuntimeField hazardClass;
