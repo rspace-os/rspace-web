@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
+
 import { collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, renderPage, setupPage } from "./bookableItemPageTestUtils";
 
