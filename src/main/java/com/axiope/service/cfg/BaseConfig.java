@@ -81,6 +81,7 @@ import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentHTMLPreviewHandler;
 import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.FolderDeletionOrderPolicy;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IAsyncArchiveDepositor;
@@ -544,8 +545,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  public IApplicationInitialisor featureFlagInitialisor() {
-    return new FeatureFlagInitialisor();
+  public IApplicationInitialisor featureFlagInitialisor(FeatureFlagManager featureFlagManager) {
+    return new FeatureFlagInitialisor(featureFlagManager);
   }
 
   @Bean
