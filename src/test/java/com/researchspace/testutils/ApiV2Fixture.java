@@ -30,7 +30,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.test.web.servlet.MockMvc;
@@ -59,14 +58,14 @@ public final class ApiV2Fixture {
   /** Marks rows created by one test method so a query can select only them. */
   private final String marker = "apiv2-it-" + UUID.randomUUID();
 
-  @Autowired private UserManager userManager;
-  @Autowired private UserApiKeyManager apiKeyManager;
-  @Autowired private RoleManager roleManager;
-  @Autowired private GroupManager groupManager;
-  @Autowired private IContentInitializer contentInitializer;
-  @Autowired private ContainerApiManager containerManager;
-  @Autowired private InstrumentEntityApiManager instrumentManager;
-  @Autowired private IPermissionUtils permissionUtils;
+  private final UserManager userManager;
+  private final UserApiKeyManager apiKeyManager;
+  private final RoleManager roleManager;
+  private final GroupManager groupManager;
+  private final IContentInitializer contentInitializer;
+  private final ContainerApiManager containerManager;
+  private final InstrumentEntityApiManager instrumentManager;
+  private final IPermissionUtils permissionUtils;
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final List<Runnable> teardown = new ArrayList<>();
@@ -80,7 +79,24 @@ public final class ApiV2Fixture {
   private User thirdUser;
   private String thirdUserKey;
 
-  private ApiV2Fixture() {}
+  private ApiV2Fixture(
+      UserManager userManager,
+      UserApiKeyManager apiKeyManager,
+      RoleManager roleManager,
+      GroupManager groupManager,
+      IContentInitializer contentInitializer,
+      ContainerApiManager containerManager,
+      InstrumentEntityApiManager instrumentManager,
+      IPermissionUtils permissionUtils) {
+    this.userManager = userManager;
+    this.apiKeyManager = apiKeyManager;
+    this.roleManager = roleManager;
+    this.groupManager = groupManager;
+    this.contentInitializer = contentInitializer;
+    this.containerManager = containerManager;
+    this.instrumentManager = instrumentManager;
+    this.permissionUtils = permissionUtils;
+  }
 
   /**
    * Builds a fixture wired from the test's Spring context.
@@ -92,8 +108,16 @@ public final class ApiV2Fixture {
    * reasons that have nothing to do with the code under test.
    */
   public static ApiV2Fixture in(WebApplicationContext context) {
-    ApiV2Fixture fixture = new ApiV2Fixture();
-    context.getAutowireCapableBeanFactory().autowireBean(fixture);
+    ApiV2Fixture fixture =
+        new ApiV2Fixture(
+            context.getBean(UserManager.class),
+            context.getBean(UserApiKeyManager.class),
+            context.getBean(RoleManager.class),
+            context.getBean(GroupManager.class),
+            context.getBean(IContentInitializer.class),
+            context.getBean(ContainerApiManager.class),
+            context.getBean(InstrumentEntityApiManager.class),
+            context.getBean(IPermissionUtils.class));
     fixture.mockMvc =
         MockMvcBuilders.webAppContextSetup(context)
             .addFilters(localeFilter(context), new ApiV2StatelessRequestFilter())
