@@ -31,10 +31,23 @@ import org.springframework.web.context.WebApplicationContext;
 /** Inventory's filter-only search retains caller-relative Booking and Inventory visibility. */
 @ApiV2WebIntegrationTest
 class InventoryBookableSearchMVCIT {
-  @Autowired private WebApplicationContext context;
-  @Autowired private BookingConfigurationDefaultsManager settingsManager;
-  @Autowired private UserManager userManager;
-  @Autowired private JdbcTemplate jdbcTemplate;
+  private final WebApplicationContext context;
+  private final BookingConfigurationDefaultsManager settingsManager;
+  private final UserManager userManager;
+  private final JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  InventoryBookableSearchMVCIT(
+      WebApplicationContext context,
+      BookingConfigurationDefaultsManager settingsManager,
+      UserManager userManager,
+      JdbcTemplate jdbcTemplate) {
+    this.context = context;
+    this.settingsManager = settingsManager;
+    this.userManager = userManager;
+    this.jdbcTemplate = jdbcTemplate;
+  }
+
   private ApiV2Fixture fixture;
   private SecurityManager previousSecurityManager;
 
