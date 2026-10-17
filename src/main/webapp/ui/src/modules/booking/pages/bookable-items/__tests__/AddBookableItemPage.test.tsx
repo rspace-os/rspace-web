@@ -167,8 +167,9 @@ describe("AddBookableItemPage", () => {
   it("keeps the completed form available when creation fails", async () => {
     const user = userEvent.setup();
     let requestBody: unknown;
+    const spare = { id: 456, name: "Spare confocal microscope", globalId: "IN456", deleted: false };
     server.use(
-      targetsHandler(),
+      targetsHandler(() => undefined, [confocal, spare]),
       availabilityHandler(),
       http.post("/api/v2/booking-configurations", async ({ request }) => {
         requestBody = await request.json();
@@ -196,6 +197,51 @@ describe("AddBookableItemPage", () => {
       openingHours: [{ ...settings.openingHours[0], start: "09:00" }, settings.openingHours[1]],
     });
     expect(settings.openingHours[0].start).toBe("08:00");
+
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.clear" }));
+    await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
+    await user.click(
+      await screen.findByRole("option", { name: "Spare confocal microscope common:relationshipPicker.openRecord" }),
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows a retryable error when creation fails due to a network error", async () => {
+    const user = userEvent.setup();
+    let attempts = 0;
+    const requestBodies: unknown[] = [];
+    server.use(
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBodies.push(await request.json());
+        if (attempts++ === 0) return HttpResponse.error();
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage();
+    await completeForm(user);
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.addError");
+    expect(screen.getByRole("button", { name: "common:relationshipPicker.clear" })).toBeVisible();
+    expect(mondayStart).toHaveValue("09:00");
+    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(attempts).toBe(2);
+    expect(requestBodies[1]).toMatchObject({
+      target: { relationTo: "booking-instruments", value: 123 },
+      openingHours: [{ ...settings.openingHours[0], start: "09:00" }, settings.openingHours[1]],
+    });
   });
 
   it("searches only eligible instruments and selects a result", async () => {
