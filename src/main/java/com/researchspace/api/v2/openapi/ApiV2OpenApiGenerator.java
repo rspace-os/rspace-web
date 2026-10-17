@@ -415,15 +415,24 @@ public final class ApiV2OpenApiGenerator {
                 + " read access to the bookable item.",
             "denialReasonCodes",
             List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
-    operation.put(
-        "parameters",
-        List.of(
-            parameter(
-                "configurationId",
-                "path",
-                true,
-                ordered("type", "integer", "format", "int64"),
-                "Booking configuration identifier.")));
+    List<Map<String, Object>> parameters = new ArrayList<>();
+    parameters.add(
+        parameter(
+            "configurationId",
+            "path",
+            true,
+            ordered("type", "integer", "format", "int64"),
+            "Booking configuration identifier."));
+    if (post) {
+      parameters.add(
+          parameter(
+              "If-Match",
+              "header",
+              true,
+              ordered("type", "string"),
+              "Strong ETag from the latest subscription status."));
+    }
+    operation.put("parameters", parameters);
     operation.put("responses", calendarSubscriptionResponses(get, post));
     operation.put(
         "x-rspace-operation",
@@ -436,20 +445,9 @@ public final class ApiV2OpenApiGenerator {
     if (get || post) {
       responses.put(
           "200",
-          ordered(
-              "description",
+          subscriptionDocument(
               get ? "Current subscription status and URL." : "New subscription URL.",
-              "headers",
-              privateNoStoreHeaders(),
-              "content",
-              Map.of(
-                  JSON,
-                  ordered(
-                      "schema",
-                      ref(
-                          get
-                              ? "BookingCalendarSubscriptionStatus"
-                              : "BookingCalendarSubscriptionCreated")))));
+              get ? "BookingCalendarSubscriptionStatus" : "BookingCalendarSubscriptionCreated"));
     } else {
       responses.put(
           "204",
@@ -460,9 +458,40 @@ public final class ApiV2OpenApiGenerator {
     responses.put("403", responseRef("Forbidden"));
     responses.put("404", responseRef("NotFound"));
     responses.put("406", responseRef("NotAcceptable"));
+    if (post) {
+      responses.put("400", responseRef("BadRequest"));
+      responses.put(
+          "409",
+          problemResponse(
+              "The bookable item is archived or the subscription changed since it was read.",
+              409,
+              Map.of(
+                  "errors.api.v2.bookingConfiguration.lifecycleConflict",
+                  "The bookable item is archived.",
+                  "errors.api.v2.bookingCalendar.subscriptionConflict",
+                  "The subscription changed since it was read.")));
+      responses.put(
+          "428",
+          problemResponse(
+              "A strong If-Match header is required.",
+              428,
+              "errors.api.v2.bookingCalendar.ifMatchRequired"));
+    }
     responses.put("429", responseRef("TooManyRequests"));
     responses.put("500", responseRef("UnexpectedError"));
     return responses;
+  }
+
+  private static Map<String, Object> subscriptionDocument(String description, String schema) {
+    Map<String, Object> headers = new LinkedHashMap<>(privateNoStoreHeaders());
+    headers.put("ETag", headerRef("ETag"));
+    return ordered(
+        "description",
+        description,
+        "headers",
+        headers,
+        "content",
+        Map.of(JSON, ordered("schema", ref(schema))));
   }
 
   private static Map<String, Object> privateNoStoreHeaders() {
@@ -2094,9 +2123,9 @@ public final class ApiV2OpenApiGenerator {
         "ETag",
         ordered(
             "description",
-            "Strong version identifier for conditional resource access replacement.",
+            "Strong entity tag for the returned representation.",
             "schema",
-            ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$")),
+            ordered("type", "string", "pattern", "^\\\"[^\\\"\\x00-\\x20]+\\\"$")),
         "RateLimitLimit",
         integerHeader("Configured request limit for the shortest throttle interval."),
         "RateLimitRemaining",
