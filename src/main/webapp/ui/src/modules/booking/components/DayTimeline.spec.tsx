@@ -2,6 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import { DayTimeline } from "./DayTimeline";
 import { LONG_ITEM_NAME } from "./DayTimeline.fixtures";
 import { DayTimelineStory } from "./DayTimeline.story";
 import { DayTimelinePage } from "./pageObjects/DayTimelinePage";
@@ -97,5 +98,47 @@ describe("DayTimeline expanded cards", () => {
 
     await expect.element(timeline.scroller).not.toHaveAttribute("aria-hidden");
     await expectNoAxeViolations();
+  });
+});
+
+describe("DayTimeline touch navigation", () => {
+  test("sets touch action for scrolling unless active range selection owns the gesture", async () => {
+    const timelineProps = {
+      date: "2026-08-17",
+      timezone: "UTC",
+      events: [],
+      startWindow: 0,
+      endWindow: 1440,
+      showZoomControls: false,
+    };
+    const { rerender } = render(
+      <div style={{ width: 320 }}>
+        <DayTimeline {...timelineProps} />
+      </div>,
+    );
+    const scroller = page.getByTestId("day-timeline-scroller");
+    const canvas = page.getByTestId("day-timeline-canvas");
+
+    await expect
+      .poll(() => {
+        const element = scroller.element();
+        return element.scrollWidth > element.clientWidth;
+      })
+      .toBe(true);
+    await expect.poll(() => getComputedStyle(canvas.element()).touchAction).toBe("auto");
+
+    rerender(
+      <div style={{ width: 320 }}>
+        <DayTimeline {...timelineProps} creationDisabled onRangeSelect={() => undefined} />
+      </div>,
+    );
+    await expect.poll(() => getComputedStyle(canvas.element()).touchAction).toBe("auto");
+
+    rerender(
+      <div style={{ width: 320 }}>
+        <DayTimeline {...timelineProps} onRangeSelect={() => undefined} />
+      </div>,
+    );
+    await expect.poll(() => getComputedStyle(canvas.element()).touchAction).toBe("none");
   });
 });
