@@ -16,9 +16,6 @@ import { Menu } from "../DialogBoundary";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
-// Fallback destination when the external Lighthouse help widget fails to load.
-const RSPACE_DOCS_URL = "https://researchspace.helpdocs.io";
-
 function loadScript(url: string): void {
   const s = document.createElement("script");
   s.type = "text/javascript";
@@ -77,14 +74,6 @@ function HelpDocs() {
 
   const _showLighthouse = () => {
     trackEvent("NeedHelpClicked");
-    // The Lighthouse widget is loaded from an external script that can fail to
-    // initialise on some deployments (e.g. a blocked third-party script). When
-    // it isn't available, fall back to opening the documentation site directly
-    // so the help link still works.
-    if (!window.Lighthouse) {
-      window.open(RSPACE_DOCS_URL, "_blank", "noopener,noreferrer");
-      return;
-    }
     // To show Lighthouse panel, Lighthouse button must be shown first
     showLighthouse();
   };
