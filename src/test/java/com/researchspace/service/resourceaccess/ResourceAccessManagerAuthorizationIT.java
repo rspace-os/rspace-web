@@ -30,7 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 class ResourceAccessManagerAuthorizationIT extends RealTransactionSpringTestBase {
 
-  @Autowired private ResourceAccessManager accessManager;
+  private final ResourceAccessManager accessManager;
 
   private String subjectUsername;
   private String outgoingOwnerUsername;
@@ -40,6 +40,11 @@ class ResourceAccessManagerAuthorizationIT extends RealTransactionSpringTestBase
   private Long groupId;
   private Long candidateGroupId;
   private Long resourceAccessId;
+
+  @Autowired
+  ResourceAccessManagerAuthorizationIT(ResourceAccessManager accessManager) {
+    this.accessManager = accessManager;
+  }
 
   @BeforeEach
   void createAuthorizationFixture() throws Exception {
