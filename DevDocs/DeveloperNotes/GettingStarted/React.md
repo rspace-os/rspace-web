@@ -56,6 +56,17 @@ run `pnpm run lint` / `pnpm run lint:fix` from the command line.
 Some notes on things to watch out for with using React in this codebase.
 
 
+### Shared app shell
+
+`newApp/index.jsp` supplies the servlet context through `#app`'s escaped
+`data-context-path` attribute. The production router uses that value as its
+basepath, so its routes and generated navigation URLs retain the deployment
+prefix. The empty servlet context uses `/`.
+
+Both app-shell and legacy help actions use `showLighthouse()`. It opens the
+widget when its methods are ready, or opens the documentation website when the
+external widget is unavailable. Keep help actions available while it loads.
+
 ### Lazy loading components
 
 React has a mechanism for lazily loading sections of the UI, so that only users
