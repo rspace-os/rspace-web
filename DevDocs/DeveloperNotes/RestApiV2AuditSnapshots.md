@@ -22,6 +22,11 @@ Tail boundaries are read backward in 8 KiB blocks. This retains captured-size
 reads, file identity checks, append/rotation certification, and failure on an
 incomplete final line.
 
+Audit events sort by their instants, newest first, then by descending event ID for ties.
+Offset-free log timestamps must identify exactly one instant in the deployment time zone.
+A timestamp in a DST gap or overlap makes the strict read unavailable (`503`), including
+when it is encountered in a file boundary or appended audit record.
+
 ## Measurement method
 
 `ApiV2AuditSearchStressTest` is opt-in:
