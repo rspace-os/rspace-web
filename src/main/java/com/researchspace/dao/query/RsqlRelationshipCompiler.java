@@ -75,12 +75,13 @@ final class RsqlRelationshipCompiler {
         correlation(path.relationship(), target, targetDescription, targetAlias, state);
     conjuncts.add(
         state.merge(
-            fieldQuery.translate(
+            fieldQuery.translateNested(
                 new FilterExpression.Comparison(
                     path.targetField(),
                     comparison.operator(),
                     comparison.values(),
-                    comparison.wildcard()))));
+                    comparison.wildcard()),
+                state.enforcesComplexityLimit())));
     access
         .constraintOrEmpty()
         .ifPresent(
