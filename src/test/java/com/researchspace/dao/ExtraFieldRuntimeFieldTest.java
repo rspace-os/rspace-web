@@ -28,9 +28,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
 
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private InstrumentReadAccess instrumentReadAccess;
-  @Autowired private ExtraFieldDao extraFieldDao;
+  private final InstrumentDao instrumentDao;
+  private final InstrumentReadAccess instrumentReadAccess;
+  private final ExtraFieldDao extraFieldDao;
+
+  @Autowired
+  ExtraFieldRuntimeFieldTest(
+      InstrumentDao instrumentDao,
+      InstrumentReadAccess instrumentReadAccess,
+      ExtraFieldDao extraFieldDao) {
+    this.instrumentDao = instrumentDao;
+    this.instrumentReadAccess = instrumentReadAccess;
+    this.extraFieldDao = extraFieldDao;
+  }
 
   private ExtraFieldRuntimeManager<Instrument> extraFields;
 
