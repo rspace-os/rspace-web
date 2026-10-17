@@ -76,16 +76,17 @@ const tableListFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 });
 
-function comparable(value: unknown): string | number | boolean {
+function comparable(value: unknown, dateTime = false): string | number | boolean {
   if (value instanceof Date) return value.getTime();
+  if (dateTime && typeof value === "string") return Date.parse(value);
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
   return String(value ?? "");
 }
 
-function equal(left: unknown, right: unknown): boolean {
-  return typeof left === "string" && typeof right === "string"
+function equal(left: unknown, right: unknown, dateTime = false): boolean {
+  return !dateTime && typeof left === "string" && typeof right === "string"
     ? left.localeCompare(right, undefined, { sensitivity: "accent" }) === 0
-    : comparable(left) === comparable(right);
+    : comparable(left, dateTime) === comparable(right, dateTime);
 }
 
 function wildcardPattern(value: string): RegExp {
@@ -96,32 +97,35 @@ function wildcardPattern(value: string): RegExp {
 function matchesExpression<TDocument extends Record<string, unknown>>(
   row: TDocument,
   expression: FilterExpression<TDocument>,
+  config: TableListProps<TDocument>["config"],
 ): boolean {
   if (expression.kind !== "comparison") {
     return expression.kind === "and"
-      ? expression.children.every((child) => matchesExpression(row, child))
-      : expression.children.some((child) => matchesExpression(row, child));
+      ? expression.children.every((child) => matchesExpression(row, child, config))
+      : expression.children.some((child) => matchesExpression(row, child, config));
   }
 
   const rowValue = row[String(expression.field)];
+  const field = config.fields.find((candidate) => String(candidate.name) === String(expression.field));
+  const dateTime = field?.type === "dateTime";
   const filterValues = Array.isArray(expression.value) ? expression.value : [expression.value];
   switch (expression.operator) {
     case "equals":
-      return equal(rowValue, expression.value);
+      return equal(rowValue, expression.value, dateTime);
     case "notEquals":
-      return !equal(rowValue, expression.value);
+      return !equal(rowValue, expression.value, dateTime);
     case "greaterThan":
-      return comparable(rowValue) > comparable(expression.value);
+      return comparable(rowValue, dateTime) > comparable(expression.value, dateTime);
     case "greaterThanOrEqual":
-      return comparable(rowValue) >= comparable(expression.value);
+      return comparable(rowValue, dateTime) >= comparable(expression.value, dateTime);
     case "lessThan":
-      return comparable(rowValue) < comparable(expression.value);
+      return comparable(rowValue, dateTime) < comparable(expression.value, dateTime);
     case "lessThanOrEqual":
-      return comparable(rowValue) <= comparable(expression.value);
+      return comparable(rowValue, dateTime) <= comparable(expression.value, dateTime);
     case "in":
-      return filterValues.some((value) => equal(rowValue, value));
+      return filterValues.some((value) => equal(rowValue, value, dateTime));
     case "notIn":
-      return filterValues.every((value) => !equal(rowValue, value));
+      return filterValues.every((value) => !equal(rowValue, value, dateTime));
     case "contains":
       return String(rowValue ?? "")
         .toLocaleLowerCase()
@@ -170,7 +174,7 @@ function matchesFilters<TDocument extends Record<string, unknown>>(
           .includes(search),
       ),
     );
-  return matchesSearch && (!filters.expression || matchesExpression(row, filters.expression));
+  return matchesSearch && (!filters.expression || matchesExpression(row, filters.expression, config));
 }
 
 function displayValue(value: unknown): string {

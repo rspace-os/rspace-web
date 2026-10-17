@@ -176,6 +176,7 @@ export function FilterValueInput<TDocument>({
       aria-label={ariaLabel}
       className="h-8 rounded-sm text-xs"
       type={field.type === "number" ? "number" : field.type === "dateTime" ? "datetime-local" : "text"}
+      step={field.type === "dateTime" ? "any" : undefined}
       placeholder={t(
         operator === "matches" ? "tableList.filters.placeholders.pattern" : "tableList.filters.placeholders.value",
       )}

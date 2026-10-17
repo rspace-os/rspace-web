@@ -1804,6 +1804,7 @@ export default interface Resources {
           "value": "Enter a value"
         },
         "present": "is present",
+        "savedGroup": "Saved filter group",
         "suggestions": {
           "loading": "Searching…",
           "minimumLength": "Type {count} characters to search",
