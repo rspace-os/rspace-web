@@ -21,6 +21,7 @@ import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingDisplaySettings;
+import com.researchspace.model.booking.BookingState;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.booking.TimeSlotBooking;
@@ -57,6 +58,9 @@ import org.hibernate.Hibernate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -66,6 +70,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
 
   private static final NotificationType CREATED = NotificationType.NOTIFICATION_BOOKING_CREATED;
+  private static final NotificationType CANCELLED = NotificationType.NOTIFICATION_BOOKING_CANCELLED;
 
   @Autowired private TimeSlotBookingManager bookingManager;
   @Autowired private BookingConfigurationManager configurationManager;
@@ -168,6 +173,74 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         emailCapture.deliveries().stream()
             .flatMap(delivery -> delivery.addresses().stream())
             .anyMatch(viewer.getEmail()::equals));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void requesterCancellationOverrideDeliversInAppAndHonorsEmailPreference(boolean emailEnabled)
+      throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    User requester = createInitAndLoginAnyUser();
+    BookingSetup setup = createBookingSetup(owner, "Cancellation requester " + getRandomName(6));
+    Group bookerGroup = createGroupForUsersWithDefaultPi(owner, requester);
+    shareWithBookersOnly(setup.instrumentId(), bookerGroup);
+    setRecipientPreferences(requester, false, emailEnabled, "UTC");
+    userMgr.setPreference(
+        Preference.NOTIFICATION_BOOKING_CANCELLED_PREF,
+        Boolean.FALSE.toString(),
+        requester.getUsername());
+
+    logoutAndLoginAs(requester);
+    TimeSlotBooking booking = createBooking(setup, requester);
+    assertNoNotification(requester);
+    emailCapture.clear();
+
+    logoutAndLoginAs(owner);
+    bookingManager
+        .updateBooking(
+            booking.getId(),
+            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+            owner,
+            owner)
+        .orElseThrow();
+
+    assertSingleNotification(requester, "UTC", CANCELLED);
+    if (emailEnabled) {
+      assertEquals(1, emailCapture.deliveries().size());
+      assertEquals(List.of(requester.getEmail()), emailCapture.deliveries().get(0).addresses());
+    } else {
+      assertTrue(emailCapture.deliveries().isEmpty());
+    }
+  }
+
+  @ParameterizedTest
+  @EnumSource(RequesterIneligibility.class)
+  void excludesInactiveOrBookingDisabledRequesterFromCancellationNotification(
+      RequesterIneligibility ineligibility) throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    User requester = createInitAndLoginAnyUser();
+    BookingSetup setup = createBookingSetup(owner, "Ineligible requester " + getRandomName(6));
+    Group bookerGroup = createGroupForUsersWithDefaultPi(owner, requester);
+    shareWithBookersOnly(setup.instrumentId(), bookerGroup);
+    setRecipientPreferences(requester, false, false, "UTC");
+
+    logoutAndLoginAs(requester);
+    TimeSlotBooking booking = createBooking(setup, requester);
+    assertNoNotification(requester);
+    emailCapture.clear();
+    applyRequesterIneligibility(requester, ineligibility);
+
+    logoutAndLoginAs(owner);
+    bookingManager
+        .updateBooking(
+            booking.getId(),
+            new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CANCELLED),
+            owner,
+            owner)
+        .orElseThrow();
+
+    assertNoNotification(requester, CANCELLED);
+    assertTrue(emailCapture.deliveries().isEmpty(), ineligibility.name());
   }
 
   @Test
@@ -423,8 +496,14 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
   }
 
   private void assertSingleNotification(User recipient, String expectedTimezone) throws Exception {
+    assertSingleNotification(recipient, expectedTimezone, CREATED);
+  }
+
+  private void assertSingleNotification(
+      User recipient, String expectedTimezone, NotificationType notificationType) throws Exception {
     List<Notification> notifications =
-        BookingNotificationTestFixtures.notificationsFor(communicationMgr, recipient, CREATED);
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, recipient, notificationType);
     assertEquals(1, notifications.size(), recipient.getUsername());
     assertTrue(
         notifications.get(0).getNotificationMessage().contains(expectedTimezone),
@@ -445,8 +524,13 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
   }
 
   private void assertNoNotification(User recipient) {
+    assertNoNotification(recipient, CREATED);
+  }
+
+  private void assertNoNotification(User recipient, NotificationType notificationType) {
     assertTrue(
-        BookingNotificationTestFixtures.notificationsFor(communicationMgr, recipient, CREATED)
+        BookingNotificationTestFixtures.notificationsFor(
+                communicationMgr, recipient, notificationType)
             .isEmpty(),
         recipient.getUsername());
   }
@@ -490,6 +574,24 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
         .orElseThrow();
   }
 
+  private void applyRequesterIneligibility(User requester, RequesterIneligibility ineligibility) {
+    if (ineligibility == RequesterIneligibility.BOOKING_FEATURE_DISABLED) {
+      setBookingBaseline(false, getSysAdminUser());
+      return;
+    }
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored -> {
+              User persisted = userDao.get(requester.getId());
+              if (ineligibility == RequesterIneligibility.DISABLED) {
+                persisted.setEnabled(false);
+              } else {
+                persisted.setAccountLocked(true);
+              }
+              userDao.save(persisted);
+            });
+  }
+
   private static void await(CountDownLatch latch) {
     try {
       if (!latch.await(30, TimeUnit.SECONDS)) {
@@ -510,6 +612,12 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
 
   private record EmailDelivery(List<String> addresses, String notificationMessage) {}
 
+  private enum RequesterIneligibility {
+    DISABLED,
+    LOCKED,
+    BOOKING_FEATURE_DISABLED
+  }
+
   private static final class RecordingEmailBroadcast implements EmailBroadcast {
     private final List<EmailDelivery> recorded = new CopyOnWriteArrayList<>();
 
@@ -522,6 +630,10 @@ class BookingNotificationRecipientsIT extends RealTransactionSpringTestBase {
 
     List<EmailDelivery> deliveries() {
       return List.copyOf(recorded);
+    }
+
+    void clear() {
+      recorded.clear();
     }
   }
 }
