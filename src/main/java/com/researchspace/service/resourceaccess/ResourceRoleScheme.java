@@ -1,6 +1,5 @@
 package com.researchspace.service.resourceaccess;
 
-import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKind;
 import java.util.List;
@@ -43,7 +42,7 @@ public interface ResourceRoleScheme {
     return Map.of();
   }
 
-  Optional<String> implicitRole(User subject);
+  Optional<String> implicitRole(Set<String> globalRoleNames);
 
   /** Fails fast when this scheme cannot be resolved safely as one highest effective role. */
   default void validate() {

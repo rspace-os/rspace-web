@@ -11,5 +11,9 @@ public interface ResourceAccessDirectoryDao {
   List<ResourceAccessDirectoryRow> search(String query, int limit, User subject);
 
   /** Resolves the requested keys only when they fall inside the subject's assignment directory. */
-  Map<String, ResourceAccessDirectoryRow> resolveAssignable(Set<String> keys, User subject);
+  Map<String, ResourceAccessDirectoryRow> resolveAssignable(
+      Set<String> keys,
+      boolean subjectEnabled,
+      Set<Long> currentGroupIds,
+      Set<String> globalRoleNames);
 }

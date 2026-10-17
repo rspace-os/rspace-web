@@ -1,6 +1,7 @@
 package com.researchspace.service.resourceaccess;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
@@ -34,7 +35,21 @@ public class ResourceAccessResolver {
       return ResolvedResourceAccess.none();
     }
 
-    return resolve(access, subject, currentGroupIds(subject), true);
+    return resolve(
+        access, subject, currentGroupIds(subject), currentGlobalRoleNames(subject), true);
+  }
+
+  /** Resolves write authorization from the principal facts read with the mutation locks. */
+  ResolvedResourceAccess resolveWithFacts(
+      ResourceAccess access,
+      User subject,
+      boolean subjectEnabled,
+      Set<Long> currentGroupIds,
+      Set<String> globalRoleNames) {
+    if (access == null || subject == null || !subjectEnabled) {
+      return ResolvedResourceAccess.none();
+    }
+    return resolve(access, subject, currentGroupIds, globalRoleNames, true);
   }
 
   /** Resolves only sources represented by this access document and the supplied memberships. */
@@ -43,11 +58,15 @@ public class ResourceAccessResolver {
     if (access == null || subject == null || !subject.isEnabled()) {
       return ResolvedResourceAccess.none();
     }
-    return resolve(access, subject, assignedGroupIds, false);
+    return resolve(access, subject, assignedGroupIds, Set.of(), false);
   }
 
   private ResolvedResourceAccess resolve(
-      ResourceAccess access, User subject, Set<Long> currentGroupIds, boolean includeImplicit) {
+      ResourceAccess access,
+      User subject,
+      Set<Long> currentGroupIds,
+      Set<String> globalRoleNames,
+      boolean includeImplicit) {
     ResourceRoleScheme scheme = schemes.getRequired(access.getSchemeKey());
     Map<String, Integer> ranks = ranksByRole(scheme);
     List<ResourceRoleSource> sources = new ArrayList<>();
@@ -65,7 +84,9 @@ public class ResourceAccessResolver {
     }
 
     if (includeImplicit) {
-      scheme.implicitRole(subject).ifPresent(role -> addImplicitSource(ranks, role, sources));
+      scheme
+          .implicitRole(globalRoleNames)
+          .ifPresent(role -> addImplicitSource(ranks, role, sources));
     }
     if (sources.isEmpty()) {
       return ResolvedResourceAccess.none();
@@ -91,6 +112,13 @@ public class ResourceAccessResolver {
         .filter(group -> group.getId() != null)
         .map(Group::getId)
         .collect(Collectors.toUnmodifiableSet());
+  }
+
+  private static Set<String> currentGlobalRoleNames(User subject) {
+    if (subject.getRoles() == null) {
+      return Set.of();
+    }
+    return subject.getRoles().stream().map(Role::getName).collect(Collectors.toUnmodifiableSet());
   }
 
   private static void validateAssignment(

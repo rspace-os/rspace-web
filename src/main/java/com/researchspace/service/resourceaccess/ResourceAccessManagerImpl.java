@@ -8,6 +8,7 @@ import com.researchspace.model.resourceaccess.ResourceAudience;
 import com.researchspace.model.resourceaccess.ResourceGranteeKeys;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import com.researchspace.service.MessageSourceUtils;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -20,9 +21,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class ResourceAccessManagerImpl implements ResourceAccessManager {
+
+  private static final Logger log = LoggerFactory.getLogger(ResourceAccessManagerImpl.class);
+  private static final int RECORD_CHANGED_SINCE_READ = 1020;
 
   private final ResourceAccessDao gateway;
   private final ResourceRoleSchemeRegistry schemes;
@@ -142,7 +150,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
 
     ResourceRoleScheme scheme = schemes.getRequired(locked.access().getSchemeKey());
     Map<String, ResourceRoleAssignment> before = assignmentsByKey(locked.access());
-    validateAssignableChanges(command.assignments(), before, locked.subject());
+    validateAssignableChanges(command.assignments(), before, locked.authorizationFacts());
     Map<String, ResourceRoleAssignment> after = normalize(command.assignments(), before, scheme);
     requireNamedAssignmentLimit(after.values());
     requireFixedAudiences(after, scheme);
@@ -166,7 +174,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
         resource,
         locked.access(),
         locked.subject(),
-        resolver.resolve(locked.access(), locked.subject()));
+        resolveLocked(locked.access(), locked.authorizationFacts()));
   }
 
   @Override
@@ -209,6 +217,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       }
       after.put(incomingKey, incoming);
     }
+    requireNamedAssignmentLimit(after.values());
     requirePersistedRoles(after.values(), scheme);
     requireFixedAudiences(after, scheme);
     if (semanticRoles(before).equals(semanticRoles(after))) {
@@ -244,8 +253,13 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             .lock(command.resourceId())
             .orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
     ResourceAccess access = resource.access(protectedEntity);
-    User lockedSubject = gateway.lockAuthorizationFacts(access, subject);
-    ResolvedResourceAccess resolved = resolver.resolve(access, lockedSubject);
+    ResourceAccessDao.AuthorizationFacts authorizationFacts =
+        currentAuthorizationRead(() -> gateway.lockAuthorizationFacts(access, subject));
+    User lockedSubject = authorizationFacts.subject();
+    if (!authorizationFacts.enabled()) {
+      throw failure(ResourceAccessException.Reason.FORBIDDEN);
+    }
+    ResolvedResourceAccess resolved = resolveLocked(access, authorizationFacts);
     String subjectKey = ResourceGranteeKeys.user(lockedSubject.getId());
     ResourceRoleAssignment direct = assignmentsByKey(access).get(subjectKey);
     if (direct == null) {
@@ -340,10 +354,22 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     T protectedEntity =
         resource.lock(id).orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
     ResourceAccess access = resource.access(protectedEntity);
-    User lockedSubject = gateway.lockAuthorizationFacts(access, subject);
-    ResolvedResourceAccess resolved = resolver.resolve(access, lockedSubject);
+    ResourceAccessDao.AuthorizationFacts authorizationFacts =
+        currentAuthorizationRead(() -> gateway.lockAuthorizationFacts(access, subject));
+    User lockedSubject = authorizationFacts.subject();
+    ResolvedResourceAccess resolved = resolveLocked(access, authorizationFacts);
     requireRead(resolved);
-    return new Locked<>(protectedEntity, access, lockedSubject, resolved);
+    return new Locked<>(protectedEntity, access, authorizationFacts, resolved);
+  }
+
+  private ResolvedResourceAccess resolveLocked(
+      ResourceAccess access, ResourceAccessDao.AuthorizationFacts authorizationFacts) {
+    return resolver.resolveWithFacts(
+        access,
+        authorizationFacts.subject(),
+        authorizationFacts.enabled(),
+        authorizationFacts.currentGroupIds(),
+        authorizationFacts.globalRoleNames());
   }
 
   private Map<String, ResourceRoleAssignment> normalize(
@@ -380,7 +406,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   private void validateAssignableChanges(
       List<ResourceAccessGrant> requested,
       Map<String, ResourceRoleAssignment> existing,
-      User subject) {
+      ResourceAccessDao.AuthorizationFacts authorizationFacts) {
     String audienceKey = ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS);
     Set<String> keys =
         requested.stream()
@@ -392,7 +418,9 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             .map(ResourceAccessGrant::granteeKey)
             .filter(key -> !audienceKey.equals(key))
             .collect(Collectors.toCollection(LinkedHashSet::new));
-    if (!directory.resolveAssignable(keys, subject).keySet().containsAll(keys)) {
+    Map<String, ResourceGranteeDirectoryEntry> assignable =
+        currentAuthorizationRead(() -> directory.resolveAssignable(keys, authorizationFacts));
+    if (!assignable.keySet().containsAll(keys)) {
       throw failure(ResourceAccessException.Reason.FORBIDDEN);
     }
   }
@@ -415,9 +443,38 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   }
 
   private ResourceRoleAssignment resolveAvailable(String granteeKey, String role) {
-    return ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS).equals(granteeKey)
-        ? gateway.resolveAvailable(granteeKey, role, audienceNameSnapshot())
-        : gateway.resolveAvailable(granteeKey, role, null);
+    return currentAuthorizationRead(
+        () ->
+            ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS).equals(granteeKey)
+                ? gateway.resolveAvailable(granteeKey, role, audienceNameSnapshot())
+                : gateway.resolveAvailable(granteeKey, role, null));
+  }
+
+  private static <T> T currentAuthorizationRead(Supplier<T> read) {
+    try {
+      return read.get();
+    } catch (DataAccessException exception) {
+      if (recordChangedSinceRead(exception)) {
+        log.warn(
+            "Concurrent principal facts changed during a resource-access authorization read",
+            exception);
+        throw failure(ResourceAccessException.Reason.STALE);
+      }
+      throw exception;
+    }
+  }
+
+  private static boolean recordChangedSinceRead(Throwable exception) {
+    Throwable current = exception;
+    while (current != null) {
+      if (current instanceof SQLException sqlException
+          && sqlException.getErrorCode() == RECORD_CHANGED_SINCE_READ) {
+        return true;
+      }
+      Throwable cause = current.getCause();
+      current = cause == current ? null : cause;
+    }
+    return false;
   }
 
   private static void requirePersistedRoles(
@@ -608,5 +665,12 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   }
 
   private record Locked<T>(
-      T resource, ResourceAccess access, User subject, ResolvedResourceAccess resolved) {}
+      T resource,
+      ResourceAccess access,
+      ResourceAccessDao.AuthorizationFacts authorizationFacts,
+      ResolvedResourceAccess resolved) {
+    private User subject() {
+      return authorizationFacts.subject();
+    }
+  }
 }

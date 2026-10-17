@@ -5,12 +5,23 @@ import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceRoleAssignment;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /** Persistence boundary for locked authorization facts and server-side principal resolution. */
 public interface ResourceAccessDao {
 
-  User lockAuthorizationFacts(ResourceAccess access, User subject);
+  AuthorizationFacts lockAuthorizationFacts(ResourceAccess access, User subject);
+
+  /** Current write-time principal facts read under the resource-access transaction locks. */
+  record AuthorizationFacts(
+      User subject, boolean enabled, Set<Long> currentGroupIds, Set<String> globalRoleNames) {
+    public AuthorizationFacts {
+      Objects.requireNonNull(subject, "subject");
+      currentGroupIds = Set.copyOf(currentGroupIds);
+      globalRoleNames = Set.copyOf(globalRoleNames);
+    }
+  }
 
   ResourceRoleAssignment resolveAvailable(
       String granteeKey, String roleKey, String audienceNameSnapshot);
