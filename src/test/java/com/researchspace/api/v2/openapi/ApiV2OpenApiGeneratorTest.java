@@ -765,6 +765,38 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void documentsTargetBrowsingAndKeepsGranteeSearchRequired() {
+    Map<String, Object> paths = objectMap(document().get("paths"));
+    Map<String, Object> targets =
+        objectMap(objectMap(paths.get("/api/v2/booking-configuration-targets")).get("get"));
+    Map<String, Object> grantees =
+        objectMap(objectMap(paths.get("/api/v2/booking-settings/access-grantees")).get("get"));
+
+    Map<String, Object> targetQuery =
+        objectMapList(targets.get("parameters")).stream()
+            .filter(parameter -> "query".equals(parameter.get("name")))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> targetSchema = objectMap(targetQuery.get("schema"));
+    assertEquals(false, targetQuery.get("required"));
+    assertEquals("string", targetSchema.get("type"));
+    assertFalse(targetSchema.containsKey("minLength"));
+    assertTrue(targetQuery.get("description").toString().contains("empty or whitespace-only"));
+    assertTrue(targetQuery.get("description").toString().contains("two characters after trimming"));
+    assertTrue(
+        targets.get("description").toString().contains("Omitted, empty, or whitespace-only"));
+    assertTrue(targets.get("description").toString().contains("two characters after trimming"));
+
+    Map<String, Object> granteeQuery =
+        objectMapList(grantees.get("parameters")).stream()
+            .filter(parameter -> "query".equals(parameter.get("name")))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(true, granteeQuery.get("required"));
+    assertEquals(2, objectMap(granteeQuery.get("schema")).get("minLength"));
+  }
+
+  @Test
   void publishesEnumsFromTheirEnforcingSource() {
     Map<String, Object> document = document();
     Map<String, Object> schemas = schemas(document);
