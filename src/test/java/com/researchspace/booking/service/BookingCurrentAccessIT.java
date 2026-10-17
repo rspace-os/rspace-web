@@ -30,8 +30,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 class BookingCurrentAccessIT extends RealTransactionSpringTestBase {
 
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private InstrumentDao instrumentDao;
+  private final BookingConfigurationManager configurationManager;
+  private final InstrumentDao instrumentDao;
+
+  @Autowired
+  BookingCurrentAccessIT(
+      BookingConfigurationManager configurationManager, InstrumentDao instrumentDao) {
+    this.configurationManager = configurationManager;
+    this.instrumentDao = instrumentDao;
+  }
 
   @BeforeEach
   void initializeBaseFixture() throws Exception {
