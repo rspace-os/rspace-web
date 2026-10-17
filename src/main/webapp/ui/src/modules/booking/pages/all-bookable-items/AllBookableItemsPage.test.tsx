@@ -6,8 +6,14 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
+import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
+import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import { currentUser } from "@/modules/booking/pages/mocks/currentUserFixture";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import {
@@ -19,6 +25,7 @@ import {
   collectionPage,
 } from "../bookable-items/mocks/bookableItemsMocks";
 import { renderBookingTestPage } from "../calendar/__tests__/calendarTestHarness";
+import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 
 const fixedClock = () => new Date("2026-08-17T08:30:00Z");
@@ -96,6 +103,42 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
   return renderBookingTestPage(router, (queryClient) => queryClient.setQueryData(currentUserQueryKeys.me(), { id: 1 }));
+}
+
+async function renderMutationPages(initialEntry: string) {
+  const rootRoute = createRootRoute({
+    component: () => (
+      <BookingCreationStoreProvider>
+        <NuqsAdapter>
+          <Outlet />
+        </NuqsAdapter>
+      </BookingCreationStoreProvider>
+    ),
+  });
+  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([
+      bookingRoute.addChildren([
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/all-items/",
+          validateSearch: allBookableItemsSearch,
+          component: () => <AllBookableItemsPage clock={fixedClock} />,
+        }),
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/bookable-items/$globalId/{-$tab}/",
+          validateSearch: bookableItemSearch,
+          component: BookableItemPage,
+        }),
+      ]),
+    ]),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
+  });
+  return renderBookingTestPage(router, (queryClient) => {
+    queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
+    queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+  });
 }
 
 describe("AllBookableItemsPage", () => {
@@ -442,4 +485,91 @@ describe("AllBookableItemsPage", () => {
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(router.state.location.search.availability).toBe("free-later-today");
   }, 15_000);
+
+  it("refreshes quick-filter availability after a successful configuration save in the stale window", async () => {
+    const user = userEvent.setup();
+    let allowDoubleBooking = false;
+    let configurationVersion: number = bookableItemFixtures[0].configurationVersion;
+    let configuration = {
+      ...bookableItemFixtures[0],
+      roleSources: [...bookableItemFixtures[0].roleSources],
+      allowDoubleBooking,
+      configurationVersion,
+    };
+    const patches: unknown[] = [];
+    const candidateRequests: string[] = [];
+    const catalogueItem = () => ({
+      configurationId: configuration.id,
+      configurationVersion: configuration.configurationVersion,
+      targetType: "INSTRUMENT",
+      targetId: configuration.target.value.id,
+      globalId: configuration.target.globalId,
+      name: configuration.target.value.name,
+      timezone: configuration.timezone,
+      slotGranularityMinutes: configuration.slotGranularityMinutes,
+      openingHours: configuration.openingHours,
+      bufferBeforeMinutes: configuration.bufferBeforeMinutes,
+      bufferAfterMinutes: configuration.bufferAfterMinutes,
+      maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
+      allowDoubleBooking: configuration.allowDoubleBooking,
+      effectiveRole: configuration.effectiveRole,
+      capabilities: configuration.capabilities,
+      location: null,
+    });
+    const startedAt = Date.now();
+    server.use(
+      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
+        patches.push(await request.json());
+        allowDoubleBooking = true;
+        configurationVersion = 1;
+        configuration = { ...configuration, allowDoubleBooking, configurationVersion };
+        return new HttpResponse(null, { status: 204 });
+      }),
+      http.get("/api/v2/booking-configurations", ({ request }) => {
+        const where = new URL(request.url).searchParams.get("where") ?? "";
+        return where.includes("IN123") ? HttpResponse.json(collectionPage([configuration], 2)) : undefined;
+      }),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const url = new URL(request.url);
+        const where = url.searchParams.get("where") ?? "";
+        if (url.searchParams.get("limit") === "100") candidateRequests.push(where);
+        const items = where.includes("id==0") ? [] : [catalogueItem()];
+        const page = Number(url.searchParams.get("page") ?? "1");
+        const pageSize = Number(url.searchParams.get("limit") ?? "20");
+        return HttpResponse.json(bookingCataloguePage(items, page, pageSize, items.length));
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    const { router } = await renderMutationPages("/booking/all-items?date=2026-08-17&availability=available-now");
+
+    expect((await screen.findAllByText("No records found"))[0]).toBeVisible();
+    expect(candidateRequests).toHaveLength(1);
+    await act(async () => {
+      await router.navigate({
+        to: "/booking/bookable-items/$globalId/{-$tab}",
+        params: { globalId: "IN123", tab: "details" },
+        search: { edit: true },
+      });
+    });
+    await user.click(
+      await screen.findByRole("checkbox", { name: bookingEnglish.bookableItemDetails.fields.doubleBooking }),
+    );
+    await user.click(screen.getByRole("button", { name: bookingEnglish.bookableItems.actions.save }));
+    await waitFor(() => expect(patches).toHaveLength(1));
+    expect(patches[0]).toMatchObject({ allowDoubleBooking: true });
+    await waitFor(() => expect(router.state.location.search.edit).toBeUndefined());
+
+    await act(async () => {
+      await router.navigate({
+        to: "/booking/all-items",
+        search: { date: "2026-08-17", availability: "available-now" },
+      });
+    });
+
+    await waitFor(() => expect(candidateRequests).toHaveLength(2));
+    expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
+    expect(Date.now() - startedAt).toBeLessThan(30_000);
+  });
 });

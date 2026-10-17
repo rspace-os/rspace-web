@@ -373,7 +373,9 @@ describe("BookableItemPage", () => {
       }),
     );
     const user = userEvent.setup();
-    const { router } = renderPage();
+    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const { queryClient, router } = renderPage();
+    queryClient.setQueryData(catalogueQueryKey, []);
 
     await user.click(await screen.findByRole("button", { name: "booking:bookableItems.actions.menu" }));
     await user.click(await screen.findByRole("menuitem", { name: "booking:bookableItems.actions.archive" }));
@@ -385,6 +387,7 @@ describe("BookableItemPage", () => {
     expect(deleteRequest?.headers.get("Authorization")).toBe("Bearer token");
     expect(deleteRequest?.headers.get("If-Match")).toBe('"0"');
     expect(router.state.location.pathname).toBe("/booking/bookable-items/IN123");
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
   });
 
   it("restores an archived configuration with a state-only conditional PATCH", async () => {
@@ -401,7 +404,9 @@ describe("BookableItemPage", () => {
       }),
     );
     const user = userEvent.setup();
-    renderPage();
+    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const { queryClient } = renderPage();
+    queryClient.setQueryData(catalogueQueryKey, []);
 
     await user.click(await screen.findByRole("button", { name: "booking:bookableItems.actions.menu" }));
     await user.click(await screen.findByRole("menuitem", { name: "booking:bookableItems.actions.restore" }));
@@ -413,6 +418,35 @@ describe("BookableItemPage", () => {
     await expect(patchRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
     expect(await screen.findByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toHaveFocus();
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+  });
+
+  it("invalidates availability after leaving a configuration", async () => {
+    const user = userEvent.setup();
+    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const leaveConfiguration = {
+      ...configuration,
+      capabilities: { ...configuration.capabilities, canLeaveConfiguration: true },
+    };
+    let leaveRequests = 0;
+    server.use(
+      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([leaveConfiguration], 2))),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
+      http.delete("/api/v2/booking-configurations/7/access/me", () => {
+        leaveRequests += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { queryClient, router } = renderPage();
+    queryClient.setQueryData(catalogueQueryKey, []);
+
+    await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.actions.leave" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "booking:bookableItemDetails.leaveDialog.title" });
+    await user.click(within(dialog).getByRole("button", { name: "booking:bookableItemDetails.actions.leave" }));
+
+    await waitFor(() => expect(leaveRequests).toBe(1));
+    await waitFor(() => expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/booking"));
   });
 
   it("requires the exact item name before directly deleting an active configuration", async () => {
