@@ -16,7 +16,9 @@ import com.researchspace.model.collection.ResourceRegistry.RelationshipQueryPath
 import com.researchspace.model.collection.ResourceRegistry.TargetQueryField;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /** Compiles relationship paths, references, and correlated target-access subqueries. */
@@ -180,21 +182,28 @@ final class RsqlRelationshipCompiler {
     String targetAlias = state.nextTargetAlias();
     List<String> conjuncts =
         correlation(relationship, target, targetDescription, targetAlias, state);
+    Map<String, RsqlCollectionQuery.Subquery> accessSubqueries = new LinkedHashMap<>();
     if (additionalPredicate != null) {
       conjuncts.add(additionalPredicate.apply(targetAlias));
     }
     access
         .constraintOrEmpty()
         .ifPresent(
-            constraint ->
-                conjuncts.add(
-                    state.merge(
-                        new RsqlCollectionQuery(targetDescription, targetAlias, targetAlias + "a")
-                            .translateTrusted(constraint))));
+            constraint -> {
+              RsqlCollectionQuery.Predicate accessPredicate =
+                  new RsqlCollectionQuery(targetDescription, targetAlias, targetAlias + "a")
+                      .translateTrusted(constraint);
+              state.parameters.putAll(accessPredicate.parameters());
+              accessSubqueries.putAll(accessPredicate.subqueries());
+              conjuncts.add(accessPredicate.expression());
+            });
     return "EXISTS "
         + state.addSubquery(
             new RsqlCollectionQuery.Subquery(
-                targetDescription.entityType(), targetAlias, String.join(" AND ", conjuncts)));
+                targetDescription.entityType(),
+                targetAlias,
+                String.join(" AND ", conjuncts),
+                accessSubqueries));
   }
 
   private static String compileFixedTargetReference(
