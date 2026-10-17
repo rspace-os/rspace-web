@@ -47,6 +47,7 @@ export async function loadCalendarEvents(
   signal: AbortSignal,
   targetGlobalIds?: readonly string[],
 ): Promise<readonly BookingListDocument[]> {
+  if (targetGlobalIds?.length === 0) return [];
   const start = zonedDayBounds(firstDate, timezone).start;
   const end = zonedDayBounds(lastDate, timezone).end;
   const first = await fetchPage(start, end, 1, token, signal, targetGlobalIds);
