@@ -143,7 +143,12 @@ export function InlineBookingEditor({
   const conflicts = availabilityViolation
     ? bookingConflicts(availability.data?.get(event.target.globalId) ?? [], timezone, event.id)
     : [];
-  const conflictBlocksSubmission = availabilityViolation && configuration.data?.allowDoubleBooking === false;
+  const canOverlapBookings =
+    event.kind === "BOOKING" &&
+    configuration.data?.allowDoubleBooking === true &&
+    conflicts.length > 0 &&
+    conflicts.every(({ kind }) => kind === "BOOKING");
+  const conflictBlocksSubmission = availabilityViolation && !canOverlapBookings;
 
   if (configuration.isPending) {
     return (
@@ -220,7 +225,7 @@ export function InlineBookingEditor({
                 : undefined
           }
           conflicts={conflicts}
-          conflictSeverity={configuration.data.allowDoubleBooking ? "warning" : "error"}
+          conflictSeverity={canOverlapBookings && !isBookingOverlapError(mutation.error) ? "warning" : "error"}
           submissionBlocked={checkingAvailability || conflictBlocksSubmission || isBookingOverlapError(mutation.error)}
           windowAdjustment={windowAdjustment}
           onStateChange={clearMutationErrorOnChange}
