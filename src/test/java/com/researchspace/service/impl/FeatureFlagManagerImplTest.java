@@ -38,6 +38,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -152,6 +156,7 @@ class FeatureFlagManagerImplTest {
   @Test
   void baselineSnapshotChangesOnlyAfterTransactionCommit() {
     initialiseRuntime(Map.of(FeatureFlags.BOOKING_ENABLED, false), false);
+    stubPersistedBaselines(false);
     User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
     sysadmin.setId(16L);
     TransactionSynchronizationManager.initSynchronization();
@@ -288,14 +293,17 @@ class FeatureFlagManagerImplTest {
 
   private FeatureFlagManagerImpl createManager(
       String devModeEnabled, String reactDevMode, String activeProfiles) {
-    return new FeatureFlagManagerImpl(
-        featureFlagDao,
-        manifestLoader,
-        propertiesLoader,
-        events,
-        devModeEnabled,
-        reactDevMode,
-        activeProfiles);
+    FeatureFlagManagerImpl manager =
+        new FeatureFlagManagerImpl(
+            featureFlagDao,
+            manifestLoader,
+            propertiesLoader,
+            events,
+            devModeEnabled,
+            reactDevMode,
+            activeProfiles);
+    manager.setTransactionManager(new NoOpTransactionManager());
+    return manager;
   }
 
   private void initialiseRuntime(Map<String, Boolean> baselines, boolean forcedValue) {
@@ -350,5 +358,18 @@ class FeatureFlagManagerImplTest {
     User user = TestFactory.createAnyUser(username);
     user.setId(id);
     return user;
+  }
+
+  private static class NoOpTransactionManager implements PlatformTransactionManager {
+    @Override
+    public TransactionStatus getTransaction(TransactionDefinition definition) {
+      return new SimpleTransactionStatus();
+    }
+
+    @Override
+    public void commit(TransactionStatus status) {}
+
+    @Override
+    public void rollback(TransactionStatus status) {}
   }
 }
