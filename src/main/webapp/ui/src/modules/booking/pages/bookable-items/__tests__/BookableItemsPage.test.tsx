@@ -187,6 +187,37 @@ function realI18nWrapper() {
 }
 
 describe("BookableItemsPage", () => {
+  it("starts at the first page when applying the owner-attention filter", async () => {
+    const user = userEvent.setup();
+    const filteredPages: string[] = [];
+    server.use(
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        if (params.get("fields[booking-configurations]") === "id,ownerHealth") {
+          return HttpResponse.json(collectionPage([{ id: 7, ownerHealth: { hasEffectiveOwner: false } }]));
+        }
+        const page = Number(params.get("page"));
+        if ((params.get("where") ?? "").includes("id=in=(7)")) {
+          filteredPages.push(String(page));
+          return HttpResponse.json(pagedCollectionResponse(page === 1 ? [bookingConfiguration] : [], page, 1));
+        }
+        return HttpResponse.json(
+          pagedCollectionResponse(page === 2 ? [secondBookingConfiguration] : [bookingConfiguration], page),
+        );
+      }),
+    );
+    renderBookableItemsPage();
+    await screen.findByRole("link", { name: "booking:bookableItems.actions.viewDetails" });
+    await user.click(screen.getByRole("button", { name: "common:tableList.actions.nextPage" }));
+    await screen.findByText("Electron microscope");
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.ownerHealth.filter" }));
+
+    await waitFor(() => expect(filteredPages).toEqual(["1"]));
+    expect(await screen.findByText("Confocal microscope")).toBeVisible();
+  });
+
   it("lists safe booking targets, owner health, and the Add action", async () => {
     const user = userEvent.setup();
     const collectionRequests: Request[] = [];

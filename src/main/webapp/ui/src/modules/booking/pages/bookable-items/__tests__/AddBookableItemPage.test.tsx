@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -66,7 +66,7 @@ function ExistingConfigurationPage() {
   return <h1>{t("bookableItemDetails.title")}</h1>;
 }
 
-function renderPage() {
+function renderPage(initialEntry = "/booking/bookable-items/add") {
   server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(settings)));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const rootRoute = createRootRoute({ component: Outlet });
@@ -98,16 +98,17 @@ function renderPage() {
         }),
       ]),
     ]),
-    history: createMemoryHistory({ initialEntries: ["/booking/bookable-items/add"] }),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
 
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={null}>
         <RouterProvider router={router as never} />
       </Suspense>
     </QueryClientProvider>,
   );
+  return { ...view, queryClient };
 }
 
 async function completeForm(user: ReturnType<typeof userEvent.setup>) {
@@ -120,6 +121,96 @@ async function completeForm(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("AddBookableItemPage", () => {
+  it("keeps manual edits while retrying a failed initial target lookup", async () => {
+    const user = userEvent.setup();
+    const spare = { id: 456, name: "Spare microscope", globalId: "IN456", deleted: false };
+    let saved: unknown;
+    server.use(
+      http.get("/api/v2/booking-configuration-targets", ({ request }) =>
+        new URL(request.url).searchParams.get("query") === "IN123"
+          ? new HttpResponse(null, { status: 503 })
+          : HttpResponse.json([spare]),
+      ),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        saved = await request.json();
+        return HttpResponse.json({ id: 8 }, { status: 201 });
+      }),
+    );
+    const { queryClient } = renderPage("/booking/bookable-items/add?target=IN123");
+    await user.type(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
+    await user.click(
+      await screen.findByRole("option", { name: "Spare microscope common:relationshipPicker.openRecord" }),
+    );
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
+    const requested = Promise.withResolvers<void>();
+    const response = Promise.withResolvers<void>();
+    server.use(
+      http.get("/api/v2/booking-configuration-targets", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("query") !== "IN123") return HttpResponse.json([spare]);
+        requested.resolve();
+        await response.promise;
+        return new HttpResponse(null, { status: 503 });
+      }),
+    );
+    let refresh: Promise<void> | undefined;
+    try {
+      await act(async () => {
+        refresh = queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configuration-targets", "route-target", "IN123"],
+        });
+        await requested.promise;
+      });
+      expect(
+        within(screen.getByRole("group", { name: "Monday" })).getByLabelText("booking:settings.fields.openingStart"),
+      ).toHaveValue("09:00");
+      await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+      await waitFor(() =>
+        expect(saved).toMatchObject({
+          target: { relationTo: "booking-instruments", value: 456 },
+          openingHours: expect.arrayContaining([{ dayOfWeek: 1, start: "09:00", end: "17:00" }]),
+        }),
+      );
+      response.resolve();
+      await refresh;
+      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    } finally {
+      response.resolve();
+      await refresh;
+    }
+  });
+
+  it("uses the route target only as an initial selection", async () => {
+    const user = userEvent.setup();
+    const spare = { id: 456, name: "Spare microscope", globalId: "IN456", deleted: false };
+    let saved: unknown;
+    server.use(
+      targetsHandler(() => undefined, [confocal, spare]),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        saved = await request.json();
+        return HttpResponse.json({ id: 8 }, { status: 201 });
+      }),
+    );
+    renderPage("/booking/bookable-items/add?target=IN123");
+    await screen.findByRole("button", { name: "booking:bookableItems.actions.submit" });
+
+    await user.click(await screen.findByRole("button", { name: "common:relationshipPicker.clear" }));
+
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+    await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
+    await user.click(
+      await screen.findByRole("option", { name: "Spare microscope common:relationshipPicker.openRecord" }),
+    );
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(saved).toMatchObject({ target: { relationTo: "booking-instruments", value: 456 } });
+  });
+
   it("treats a blank relationship control as an empty selection", async () => {
     const user = userEvent.setup();
     server.use(targetsHandler(), availabilityHandler());

@@ -626,11 +626,15 @@ function BookableItemsContent() {
         count: ownerAttention.data?.size,
         onClick: () => {
           setSelectedRowIds(new Set());
+          table.setPage({ ...table.state.page, pageIndex: 0 });
           setOwnerAttentionOnly((current) => !current);
         },
       },
     ],
-    onReset: () => setOwnerAttentionOnly(false),
+    onReset: () => {
+      table.setPage({ ...table.state.page, pageIndex: 0 });
+      setOwnerAttentionOnly(false);
+    },
   };
   const displayedRows =
     ownerAttentionOnly && ownerAttention.data
