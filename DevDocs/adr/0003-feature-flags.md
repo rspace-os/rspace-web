@@ -42,8 +42,11 @@ Retired names may be reused later, but not in adjacent releases.
 
 Baseline values are held in memory after startup. Writes update the database
 inside a transaction and update the current node's snapshot only after commit.
-There is no database polling or multi-node propagation. A future multi-node
-deployment will need shared state.
+After a baseline write commits, the manager reloads the full baseline map in a
+fresh read-only transaction before publishing the snapshot. It serializes each
+read and publication under the manager lock so a delayed callback cannot restore
+an earlier committed value. There is no database polling or multi-node
+propagation. A future multi-node deployment will need shared state.
 
 ## API and access
 
