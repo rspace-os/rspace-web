@@ -41,6 +41,7 @@ export function CalendarContent() {
     location,
     myItemsOnly,
     setMyItemsOnly,
+    targetItemExpression,
   } = useCalendarContentData();
 
   return (
@@ -65,6 +66,7 @@ export function CalendarContent() {
       eventFilterExpression={eventExpression}
       itemFilterIssue={itemIssue}
       eventFilterIssue={eventIssue}
+      hasTargetFilter={targetItemExpression !== null}
       eventRuntimeFieldDefinitions={eventRuntimeFields.runtimeFields}
       eventRuntimeFieldAuthScope={eventRuntimeFields.scope}
       onSelectEventRuntimeField={eventRuntimeFields.selectRuntimeField}
