@@ -195,7 +195,7 @@ class InventoryBookableSearchMVCIT {
                   .header("apiKey", fixture.sysadminKey())
                   .principal(() -> sysadmin.getUsername())
                   .param("resultType", "INSTRUMENT")
-                  .param("query", fixture.marker())
+                  .param("query", "\"" + fixture.marker() + "\"")
                   .param("bookable", "true"))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.records[*].id", containsInAnyOrder((int) bookable)));
@@ -206,7 +206,7 @@ class InventoryBookableSearchMVCIT {
                   .header("apiKey", fixture.sysadminKey())
                   .principal(() -> sysadmin.getUsername())
                   .param("resultType", "INSTRUMENT")
-                  .param("query", fixture.marker())
+                  .param("query", "\"" + fixture.marker() + "\"")
                   .param("bookable", "false"))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.records[*].id", containsInAnyOrder((int) ordinary)));
