@@ -3,12 +3,9 @@ package com.researchspace.auth;
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.researchspace.core.util.CryptoUtils;
-import com.researchspace.model.User;
+import com.researchspace.auth.password.SentinelPasswordCheck;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
-import org.apache.shiro.crypto.SecureRandomNumberGenerator;
-import org.apache.shiro.lang.util.ByteSource;
 
 /**
  * Counts wrong password guesses per username on the OAuth password grant and refuses a username
@@ -22,15 +19,14 @@ public class PasswordGrantGuessLimiter {
 
   private final int maxFailures;
   private final Cache<String, Integer> failures;
-  private final UsernamePasswordCredentialsMatcher credentialsMatcher;
-  private final User sentinel;
+  private final SentinelPasswordCheck sentinelCheck;
 
   public PasswordGrantGuessLimiter(
       int maxFailures,
       Duration window,
       long maxTrackedAccounts,
-      UsernamePasswordCredentialsMatcher credentialsMatcher) {
-    this(maxFailures, window, maxTrackedAccounts, Ticker.systemTicker(), credentialsMatcher);
+      SentinelPasswordCheck sentinelCheck) {
+    this(maxFailures, window, maxTrackedAccounts, Ticker.systemTicker(), sentinelCheck);
   }
 
   public PasswordGrantGuessLimiter(
@@ -38,7 +34,7 @@ public class PasswordGrantGuessLimiter {
       Duration window,
       long maxTrackedAccounts,
       Ticker ticker,
-      UsernamePasswordCredentialsMatcher credentialsMatcher) {
+      SentinelPasswordCheck sentinelCheck) {
     if (maxFailures < 1) {
       throw new IllegalArgumentException("oauth.passwordGrant.maxFailures must be at least 1");
     }
@@ -47,8 +43,7 @@ public class PasswordGrantGuessLimiter {
           "oauth.passwordGrant.failureWindowSeconds must be at least 1");
     }
     this.maxFailures = maxFailures;
-    this.credentialsMatcher = credentialsMatcher;
-    this.sentinel = createSentinel();
+    this.sentinelCheck = sentinelCheck;
     this.failures =
         CacheBuilder.newBuilder()
             .concurrencyLevel(1)
@@ -83,25 +78,25 @@ public class PasswordGrantGuessLimiter {
     return admitted[0];
   }
 
+  /**
+   * Gives back the attempt counted for {@code username} when its password was never checked because
+   * the verifier was busy, so a busy moment does not use up a guess.
+   */
+  public void uncount(String username) {
+    failures.asMap().computeIfPresent(username, (key, count) -> count > 1 ? count - 1 : null);
+  }
+
   /** Clears the count for {@code username} after a correct password. */
   public void recordSuccess(String username) {
     failures.invalidate(username);
   }
 
   /**
-   * Runs one password check against a never-persisted sentinel user, so a request for an unknown
-   * username, or a refused one, costs the same as a wrong password for a real one.
+   * Runs one password check against the shared sentinel hash, queued on the submitted username like
+   * a real check, so a request for an unknown username, or a refused one, costs the same as a wrong
+   * password for a real one.
    */
-  public void padWithSentinelCheck(String suppliedPassword) {
-    credentialsMatcher.test(sentinel, suppliedPassword);
-  }
-
-  private static User createSentinel() {
-    SecureRandomNumberGenerator random = new SecureRandomNumberGenerator();
-    ByteSource salt = random.nextBytes(16);
-    User user = new User("oauth-sentinel");
-    user.setPassword(CryptoUtils.hashWithSha256inHex(random.nextBytes(32).toHex(), salt));
-    user.setSalt(salt.toBase64());
-    return user;
+  public void padWithSentinelCheck(String username, CharSequence suppliedPassword) {
+    sentinelCheck.pad(username, suppliedPassword);
   }
 }

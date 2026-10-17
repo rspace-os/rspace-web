@@ -195,6 +195,15 @@ public class SignupControllerMVCIT extends MVCTestBase {
         .perform(get(SIGNUP_PASSWORD_RESET_REPLY).param(TOKEN_PARAM, token.getToken()))
         .andExpect(view().name("passwordReset/resetPasswordFail"));
 
+    // and submitting the form again with the used token is refused before any password change
+    this.mockMvc
+        .perform(
+            post(SIGNUP_PASSWORD_RESET_REPLY)
+                .param(PASSWORD_PARAM, "replayedPassword1")
+                .param(CONFIRM_PASSWORD_PARAM, "replayedPassword1")
+                .param(TOKEN_PARAM, token.getToken()))
+        .andExpect(view().name("passwordReset/resetPasswordFail"));
+
     RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), "newpasswordOK");
     RSpaceTestUtils.logout();
   }

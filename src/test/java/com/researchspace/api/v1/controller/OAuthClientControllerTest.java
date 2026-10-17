@@ -5,17 +5,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
 import com.researchspace.auth.PasswordGrantGuessLimiter;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.model.User;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.OAuthAppManager;
 import com.researchspace.service.OAuthTokenManager;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserManager;
@@ -54,7 +59,7 @@ public class OAuthClientControllerTest {
     when(userManager.getUserByUsernameOrAlias("bob")).thenReturn(user);
     when(apiHandler.isApiAvailableForUser(user)).thenReturn(true);
     when(guessLimiter.tryAcquire("bob")).thenReturn(true);
-    when(reauthenticator.reauthenticate(user, "pw")).thenReturn(true);
+    when(reauthenticator.reauthenticate(user, "pw")).thenReturn(ReauthenticationResult.OK);
   }
 
   @Test
@@ -77,6 +82,16 @@ public class OAuthClientControllerTest {
     ApiAuthenticationException e =
         assertThrows(ApiAuthenticationException.class, () -> getToken(true));
     assertEquals("oauth.errors.tokenCreationFailed", e.getMessageKey());
+  }
+
+  @Test
+  public void busyPasswordCheckIsRefusedAsBusyAndNotCounted() {
+    when(reauthenticator.reauthenticate(user, "pw")).thenReturn(ReauthenticationResult.BUSY);
+
+    assertThrows(LoginVerificationBusyException.class, () -> getToken(false));
+    verify(guessLimiter).uncount("bob");
+    verify(guessLimiter, never()).recordSuccess(any());
+    verifyNoInteractions(tokenManager);
   }
 
   private NewOAuthTokenResponse getToken(boolean isJwt) {

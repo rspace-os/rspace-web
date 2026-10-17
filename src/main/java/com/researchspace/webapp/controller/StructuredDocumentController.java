@@ -56,6 +56,7 @@ import com.researchspace.service.EcatCommentManager;
 import com.researchspace.service.FieldManager;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.ReauthenticationResult;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.RecordSigningManager;
 import com.researchspace.service.SharingHandler;
@@ -1410,12 +1411,13 @@ public class StructuredDocumentController extends BaseController {
     User signerOrOperateAsSysadmin = userManager.getOriginalUserForOperateAs(signer);
     Record record = recordManager.get(recordId);
 
-    String errorMsg = null;
+    String errorMsg;
     if (!record.getOwner().equals(signerOrOperateAsSysadmin)) {
       errorMsg = "errors.authorization.signing";
-    } else if (!signingManager.isReauthenticated(signer, password)) {
-      errorMsg = "errors.password.invalid";
-    } else if (signingManager.isSigned(recordId)) {
+    } else {
+      errorMsg = passwordErrorCode(signingManager.isReauthenticated(signer, password));
+    }
+    if (errorMsg == null && signingManager.isSigned(recordId)) {
       errorMsg = "errors.authorization.document.signed";
     }
     if (errorMsg != null) {
@@ -1430,6 +1432,15 @@ public class StructuredDocumentController extends BaseController {
           null, ErrorList.of(getText("errors.signing.failed")));
     }
     return new AjaxReturnObject<SignatureInfo>(sig.get().toSignatureInfo(), null);
+  }
+
+  /** The message code for a refused password, or null when the password was right. */
+  private static String passwordErrorCode(ReauthenticationResult result) {
+    return switch (result) {
+      case OK -> null;
+      case WRONG -> "errors.password.invalid";
+      case BUSY -> "errors.reauthentication.busy";
+    };
   }
 
   @GetMapping(value = "/ajax/currentContentHash/{docId}")
@@ -1455,9 +1466,10 @@ public class StructuredDocumentController extends BaseController {
     User witnessUser = getUserByUsername(principal.getName());
 
     /* 2 Check Username and Password */
-    if (!signingManager.isReauthenticated(witnessUser, password)) {
-      return new AjaxReturnObject<SignatureInfo>(
-          null, getErrorListFromMessageCode("errors.password.invalid"));
+    String passwordError =
+        passwordErrorCode(signingManager.isReauthenticated(witnessUser, password));
+    if (passwordError != null) {
+      return new AjaxReturnObject<SignatureInfo>(null, getErrorListFromMessageCode(passwordError));
     }
 
     /* 3 Update witness */

@@ -622,8 +622,10 @@ public class SysAdminController extends BaseController {
   }
 
   private void rejectIfNotReauthenticated(String password, BindingResult errors, User sysadmin) {
-    if (!reauthenticator.reauthenticate(sysadmin, password)) {
-      errors.rejectValue("sysadminPassword", "errors.reauthentication.failed");
+    switch (reauthenticator.reauthenticate(sysadmin, password)) {
+      case OK -> {}
+      case WRONG -> errors.rejectValue("sysadminPassword", "errors.reauthentication.failed");
+      case BUSY -> errors.rejectValue("sysadminPassword", "errors.reauthentication.busy");
     }
   }
 

@@ -8,6 +8,7 @@ import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.apiutils.BindError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.apiutils.RestControllerAdvice;
+import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +46,9 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
   protected @Autowired MessageSourceUtils messages;
 
+  @Value("${login.passwordVerification.waitSeconds:5}")
+  int passwordWaitSeconds;
+
   // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
@@ -55,6 +60,23 @@ public class ApiControllerAdvice extends RestControllerAdvice {
     final ApiError apiError =
         new ApiError(HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), message, error);
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 503: the password was not checked, so clients should retry rather than discard credentials
+  @ExceptionHandler(LoginVerificationBusyException.class)
+  public ResponseEntity<Object> handlePasswordCheckBusy(
+      final LoginVerificationBusyException ex, final WebRequest request) {
+    log.warn("Password check refused: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.SERVICE_UNAVAILABLE,
+            ApiErrorCodes.TOOMANY_REQUESTS.getCode(),
+            messages.getMessage("oauth.errors.serverBusy"),
+            List.of());
+    HttpHeaders headers = new HttpHeaders();
+    // 0 would ask clients to retry at once, in a hot loop
+    headers.set(HttpHeaders.RETRY_AFTER, String.valueOf(Math.max(1, passwordWaitSeconds)));
+    return new ResponseEntity<Object>(apiError, headers, apiError.getStatus());
   }
 
   @ExceptionHandler({NotFoundException.class, UnsupportedOperationException.class})
