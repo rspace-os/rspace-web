@@ -31,6 +31,12 @@ DELETE /api/v2/users/me/booking-preferences
 PUT is a complete replacement, not a patch. DELETE removes the logical override. During run-as,
 the subject owns the preference and the actor remains available for audit context.
 
+The preference editor keeps unsaved input against the server values loaded when editing began.
+Background refreshes update a clean form, but preserve a dirty draft and its original baseline.
+Successful Save or Reset adopts the returned server values and clears the draft, including Reset
+when the server document is unchanged. Failed requests retain the draft. Reverting every field to
+the editing baseline makes the form clean and adopts the latest cached server values.
+
 ## Weekly scheduling defaults
 
 The `openingHours` schema and weekday rules are defined in [BookingScheduling.md](BookingScheduling.md).
