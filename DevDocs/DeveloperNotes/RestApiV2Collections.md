@@ -115,6 +115,11 @@ the collection read policy has selected the page. Scalar read documents do
 not bind relationships. Entity reads remain available to internal domain callers and relationship
 resolution.
 
+OpenAPI read schemas declare optional object maps for projected runtime namespaces, including
+eligible relationship prefixes such as `target.customFields`. The document root stays closed;
+the maps accept caller-specific field IDs without publishing those IDs in the cached schema.
+Runtime projection properties are excluded from create and update schemas.
+
 ## Declared array fields
 
 Declare each public object array with `CollectionFieldTypes.array(...)` and its children with
@@ -149,6 +154,8 @@ methods are not a promise that a collection implements writes: consult OpenAPI f
 Errors use localized RFC 9457 problem responses. Query validation rejects unsupported fields,
 operators, values and excessive complexity before querying the database. Spring's JSON reader
 also bounds document size, string size, token count and nesting depth.
+The public OpenAPI endpoint returns the same problem responses for invalid supplied credentials
+and exceeded request limits.
 
 `ResourceRequest.Page` enforces a size between 1 and 100 for every adapter, including direct Java
 callers. Relationship fallback lookups split larger ID sets into pages of at most 100 and
