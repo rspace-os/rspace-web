@@ -17,7 +17,9 @@ export function AddBookableItemContent() {
     queryFn: ({ signal }) => searchBookingTargets(search.target ?? "", token, signal),
     enabled: search.target !== undefined,
   });
-  if (search.target !== undefined && routeTargetResults.isPending) return <AddBookableItemSkeleton />;
+  if (search.target !== undefined && routeTargetResults.isPending && !routeTargetResults.isFetched) {
+    return <AddBookableItemSkeleton />;
+  }
   const initialTarget = routeTargetResults.data?.find((option) => option.globalId === search.target);
   return (
     <AddBookableItemForm

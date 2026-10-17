@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { isPermanentClientError } from "@/modules/common/queries/queryRetry";
 import { Button } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { BookableItemSkeleton } from "./BookableItemSkeleton";
@@ -21,7 +22,13 @@ export function BookableItemDetailsLoader({ globalId, tab }: { globalId: string;
   }
 
   const target = configuration.data?.target;
-  if (configuration.isError || target === null || target === undefined || target.globalId !== globalId) {
+  if (
+    configuration.data === undefined ||
+    isPermanentClientError(configuration.error) ||
+    target === null ||
+    target === undefined ||
+    target.globalId !== globalId
+  ) {
     return (
       <main className="p-4 sm:p-8">
         <Empty className="border">

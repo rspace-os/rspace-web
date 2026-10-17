@@ -36,7 +36,9 @@ export function BookableItemActionTriggers({
           <EyeIcon aria-hidden="true" />
         </Link>
       )}
-      {configuration.state === "ACTIVE" && !directSysadmin ? (
+      {configuration.state === "ACTIVE" &&
+      !directSysadmin &&
+      configuration.capabilities?.canEditConfiguration === true ? (
         <Button
           type="button"
           variant="ghost"
