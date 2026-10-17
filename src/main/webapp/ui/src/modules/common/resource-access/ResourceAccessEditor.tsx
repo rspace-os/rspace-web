@@ -77,10 +77,16 @@ function sameDraft(left: readonly ResourceAccessAssignment[], right: readonly Re
   );
 }
 
-export function ResourceAccessEditor({ resource, resourceId, token, adapter, onLeave, readOnly = false }: Props) {
+export function ResourceAccessEditor(props: Props) {
+  return (
+    <ResourceAccessEditorSession key={JSON.stringify([props.resource, props.resourceId, props.token])} {...props} />
+  );
+}
+
+function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onLeave, readOnly = false }: Props) {
   const { t, i18n } = useTranslation("common");
   const queryClient = useQueryClient();
-  const queryKey = ["api-v2", resource, resourceId, "access"] as const;
+  const queryKey = ["api-v2", resource, resourceId, "access", token] as const;
   const access = useQuery({
     queryKey,
     queryFn: ({ signal }) => fetchResourceAccess(resource, resourceId, token, signal),
@@ -161,8 +167,8 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
   const leave = useMutation({
     mutationFn: () => leaveResource(resource, resourceId, token),
     onSuccess: () => {
+      setLeaveOpen(false);
       void queryClient.invalidateQueries({ queryKey: ["api-v2", resource] });
-      onLeave?.();
     },
     onError: () => setAnnouncement(t("resourceAccess.leaveError")),
   });
@@ -208,7 +214,7 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
         </div>
       </div>
     );
-  if (access.isError || !access.data) return <p role="alert">{t("resourceAccess.loadError")}</p>;
+  if (!access.data) return <p role="alert">{t("resourceAccess.loadError")}</p>;
 
   const saved = { ...access.data, assignments: base?.assignments ?? access.data.assignments };
   const rows = buildAccessRows(saved.assignments, draft, callerKeyOf(saved), i18n.resolvedLanguage);
@@ -460,7 +466,12 @@ export function ResourceAccessEditor({ resource, resourceId, token, adapter, onL
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={leave.isPending}>{t("actions.cancel")}</AlertDialogCancel>
-              <AlertDialogAction variant="destructive" disabled={leave.isPending} onClick={() => leave.mutate()}>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={leave.isPending}
+                // Per-call callbacks stop when this resource session unmounts.
+                onClick={() => leave.mutate(undefined, { onSuccess: () => onLeave?.() })}
+              >
                 {adapter.leaveLabel}
               </AlertDialogAction>
             </AlertDialogFooter>
