@@ -7,6 +7,8 @@ export type ApiV2CollectionProjection<TDocument> = "visible" | { fixed: readonly
 export type ApiV2CollectionFetchOptions<TDocument> = {
   endpoint?: string;
   depth?: number;
+  /** Cache identity for authorization supplied through headers or a token getter. Change it when the user or tenant changes. */
+  authScope?: string | number;
   token?: string | (() => string | Promise<string>);
   headers?: HeadersInit | (() => HeadersInit | Promise<HeadersInit>);
   fetch?: typeof globalThis.fetch;
