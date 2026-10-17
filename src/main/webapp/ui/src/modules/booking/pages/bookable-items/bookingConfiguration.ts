@@ -139,6 +139,17 @@ const bookingConfigurationReadParameters = {
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
+export class BookingConfigurationRequestError extends Error {
+  constructor(readonly status: number) {
+    super(`Booking configuration request failed with status ${status}`);
+  }
+}
+
+/** No readable booking configuration exists for a target. */
+class BookingConfigurationNotFoundError extends Error {
+  readonly status = 404;
+}
+
 async function withLocation(
   configuration: BookingConfiguration,
   token: string,
@@ -177,8 +188,9 @@ export async function fetchBookingConfigurationByTarget(
   signal?: AbortSignal,
 ): Promise<BookingConfiguration> {
   const configurations = await readBookingConfigurationsByTarget(globalId, token, signal);
-  if (configurations.length !== 1 || configurations[0].target?.globalId !== globalId) {
-    throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  if (configurations.length > 1) throw new Error(`Expected exactly one booking configuration for ${globalId}`);
+  if (configurations.length === 0 || configurations[0].target?.globalId !== globalId) {
+    throw new BookingConfigurationNotFoundError(`Expected exactly one booking configuration for ${globalId}`);
   }
   return configurations[0];
 }
@@ -222,7 +234,7 @@ async function readBookingConfigurationsByTarget(
     headers: apiV2Headers(token),
     signal,
   });
-  if (!response.ok) throw new Error(`Booking configuration request failed with status ${response.status}`);
+  if (!response.ok) throw new BookingConfigurationRequestError(response.status);
   const configurations = parseOrThrow(
     v2ListEnvelope(BookingConfigurationSchema),
     (await response.json()) as unknown,
