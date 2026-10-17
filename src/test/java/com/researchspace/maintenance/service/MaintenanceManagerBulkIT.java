@@ -25,8 +25,15 @@ public class MaintenanceManagerBulkIT extends RealTransactionSpringTestBase {
 
   private static final String TEST_PREFIX = "apiV2BulkIT ";
 
-  private @Autowired MaintenanceManager maintenanceManager;
-  private @Autowired JdbcTemplate jdbcTemplate;
+  private final MaintenanceManager maintenanceManager;
+  private final JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  MaintenanceManagerBulkIT(MaintenanceManager maintenanceManager, JdbcTemplate jdbcTemplate) {
+    this.maintenanceManager = maintenanceManager;
+    this.jdbcTemplate = jdbcTemplate;
+  }
+
   private User sysUser;
 
   @BeforeEach
