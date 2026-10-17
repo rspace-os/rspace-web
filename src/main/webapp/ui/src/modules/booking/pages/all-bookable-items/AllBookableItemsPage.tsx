@@ -30,8 +30,8 @@ import { calendarAvailabilityRow, useCalendarAvailability } from "../calendar/ca
 import {
   type AllBookableItem,
   type AvailabilityQuickFilter,
+  fetchAvailabilityFilteredCatalogue,
   hasAvailabilityFilter,
-  resolveAvailabilityFilters,
   useAvailabilityQuickFilterIndex,
   withAvailability,
 } from "./availabilityQuickFilters";
@@ -224,11 +224,44 @@ function AllBookableItemsContent({
   );
   const quickFilterPending = usesAvailability && quickIndex.isPending;
   const quickFilterError = usesAvailability && quickIndex.isError;
-  const serverFilter = resolveAvailabilityFilters(filters.expression, quickIndex.data);
+  const serverFilter = usesAvailability ? null : filters.expression;
   const serverWhere = serverFilter ? serializeRsqlExpression(serverFilter) : undefined;
+  const availabilityIndexSignature = usesAvailability
+    ? quickIndex.data
+      ? [...quickIndex.data]
+          .map(([targetId, entry]) => [targetId, entry.category])
+          .toSorted(([left], [right]) => left.localeCompare(right))
+      : undefined
+    : undefined;
   const catalogue = useQuery({
-    queryKey: ["api-v2", "booking-catalogue", "all-items", token, q, serverWhere, page, pageSize],
-    queryFn: ({ signal }) => fetchBookingCatalogue({ q, where: serverWhere, page, pageSize }, token, signal),
+    queryKey: usesAvailability
+      ? [
+          "api-v2",
+          "booking-catalogue",
+          "all-items",
+          token,
+          filters.expression,
+          q,
+          availabilityIndexSignature,
+          page,
+          pageSize,
+        ]
+      : ["api-v2", "booking-catalogue", "all-items", token, q, serverWhere, page, pageSize],
+    queryFn: ({ signal }) => {
+      if (usesAvailability) {
+        if (!filters.expression || !quickIndex.data) {
+          throw new Error("Availability filter search requires the quick-filter index");
+        }
+        return fetchAvailabilityFilteredCatalogue(
+          filters.expression,
+          quickIndex.data,
+          { q, page, pageSize },
+          token,
+          signal,
+        );
+      }
+      return fetchBookingCatalogue({ q, where: serverWhere, page, pageSize }, token, signal);
+    },
     enabled: !invalidFilter && (!usesAvailability || quickIndex.data !== undefined),
     staleTime: 30_000,
   });
