@@ -16,7 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 /** Booking catalogue text search ({@code q}) over instrument and parent-container names. */
 class InstrumentBookingCatalogueSearchTest extends SpringTransactionalTest {
 
-  @Autowired private InstrumentDao instrumentDao;
+  private final InstrumentDao instrumentDao;
+
+  @Autowired
+  InstrumentBookingCatalogueSearchTest(InstrumentDao instrumentDao) {
+    this.instrumentDao = instrumentDao;
+  }
 
   @Autowired private BookingInstrumentQueryDao bookingInstruments;
 
