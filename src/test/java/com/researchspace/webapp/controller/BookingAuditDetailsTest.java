@@ -106,6 +106,20 @@ class BookingAuditDetailsTest {
   }
 
   @Test
+  void resolvesCleanupSnapshotLabelsFromTheRealCatalog() {
+    AuditData data =
+        AuditData.fromJson(
+            "{\"data\":{\"targetName\":\"Reader\",\"configurationVersion\":2,"
+                + "\"removedBookings\":3,\"removedSubscriptions\":4,\"removedAssignments\":5,"
+                + "\"deletedAt\":\"2026-10-17T00:00:00Z\"}}");
+
+    assertEquals(
+        "Bookable item name: Reader; Configuration version: 2; Removed bookings: 3; Removed"
+            + " subscriptions: 4; Removed assignments: 5; Deleted at (UTC): 2026-10-17T00:00:00Z",
+        BookingAuditDetails.format(data.getData(), messages, Locale.US));
+  }
+
+  @Test
   void addsDetailsOnlyToBookingEvents() {
     AuditTrailSearchResult booking = result(AuditDomain.BOOKING, "bookings:1");
     AuditTrailSearchResult legacyBooking = result(AuditDomain.UNKNOWN, "bookings:2");
