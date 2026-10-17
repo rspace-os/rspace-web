@@ -1782,6 +1782,7 @@ export default interface Resources {
           "value": "Enter a value"
         },
         "present": "is present",
+        "savedGroup": "Saved filter group",
         "suggestions": {
           "loading": "Searching…",
           "minimumLength": "Type {count} characters to search",
@@ -7395,6 +7396,7 @@ export default interface Resources {
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
+          "numberInvalid": "''{0}'' is not a valid number or exceeds the supported precision and range.",
           "validation": "{0}"
         },
         "file": {

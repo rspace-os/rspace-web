@@ -124,13 +124,36 @@ export type StaleFieldPolicy = {
   onDropped?: (selector: string) => void;
 };
 
+type LogicalKind = "and" | "or";
+
+const maximumRsqlLogicalDepth = 20;
+
+function rsqlLogicalKind(operator: string): LogicalKind {
+  return operator === ";" || operator === "and" ? "and" : "or";
+}
+
+// @rsql/parser stores same-kind chains as nested binary nodes and removes group nodes.
+function flattenSameKindChildren(node: ParsedNode, kind: LogicalKind): ParsedNode[] {
+  const pending: ParsedNode[] = [node];
+  const children: ParsedNode[] = [];
+  while (pending.length > 0) {
+    const child = pending.pop();
+    if (child === undefined) continue;
+    if (child.type !== "COMPARISON" && rsqlLogicalKind(child.operator) === kind) {
+      pending.push(child.right, child.left);
+    } else {
+      children.push(child);
+    }
+  }
+  return children;
+}
+
 function parseNode<TDocument>(
   node: ParsedNode,
   config: ResolvedCollectionConfig<TDocument>,
   stale: StaleFieldPolicy | undefined,
-  depth = 0,
+  depth = 1,
 ): FilterExpression<TDocument> | null | "dropped" {
-  if (depth > 20) return null;
   if (node.type === "COMPARISON") {
     const parsed = comparison(node, config);
     if (parsed !== null) return parsed;
@@ -141,14 +164,21 @@ function parseNode<TDocument>(
     }
     return null;
   }
-  const kind = node.operator === ";" || node.operator === "and" ? "and" : "or";
-  const left = parseNode(node.left, config, stale, depth + 1);
-  const right = parseNode(node.right, config, stale, depth + 1);
-  if (left === null || right === null) return null;
-  if (left === "dropped" && right === "dropped") return "dropped";
-  if (left === "dropped") return right;
-  if (right === "dropped") return left;
-  const children = [left, right].flatMap((child) => (child.kind === kind ? child.children : [child]));
+
+  if (depth > maximumRsqlLogicalDepth) return null;
+  const kind = rsqlLogicalKind(node.operator);
+  const parsedChildren = flattenSameKindChildren(node, kind).map((child) => parseNode(child, config, stale, depth + 1));
+  if (parsedChildren.some((child) => child === null)) return null;
+  const retained = parsedChildren.filter(
+    (child): child is FilterExpression<TDocument> => child !== null && child !== "dropped",
+  );
+  if (retained.length === 0) return "dropped";
+  if (retained.length === 1) {
+    const onlyChild = retained[0];
+    if (onlyChild !== undefined) return onlyChild;
+  }
+
+  const children = retained.flatMap((child) => (child.kind === kind ? child.children : [child]));
   return { kind, children };
 }
 
@@ -161,19 +191,32 @@ function safeParse(serialized: string): ParsedNode | null {
 }
 
 export function rsqlSelectors(serialized: string): readonly string[] {
-  const selectors: string[] = [];
-  const visit = (node: ParsedNode, depth: number): void => {
-    if (depth > 20) return;
-    if (node.type === "COMPARISON") {
-      selectors.push(node.left.selector);
-      return;
-    }
-    visit(node.left, depth + 1);
-    visit(node.right, depth + 1);
-  };
   const parsed = safeParse(serialized);
   if (parsed === null) return [];
-  visit(parsed, 0);
+
+  const selectors: string[] = [];
+  const pending: { node: ParsedNode; depth: number }[] = [{ node: parsed, depth: 1 }];
+
+  while (pending.length > 0) {
+    const visit = pending.pop();
+    if (visit === undefined) continue;
+    const { node, depth } = visit;
+    if (node.type === "COMPARISON") {
+      selectors.push(node.left.selector);
+      continue;
+    }
+
+    if (depth > maximumRsqlLogicalDepth) return [];
+    const kind = rsqlLogicalKind(node.operator);
+    const children = flattenSameKindChildren(node, kind);
+    for (let index = children.length - 1; index >= 0; index -= 1) {
+      const child = children[index];
+      if (child !== undefined) {
+        pending.push({ node: child, depth: depth + 1 });
+      }
+    }
+  }
+
   return selectors;
 }
 

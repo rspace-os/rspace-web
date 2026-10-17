@@ -238,6 +238,12 @@ export function ExperimentTable() {
 }
 ```
 
+The cache separates collection endpoints and literal bearer tokens. When authorization comes from
+headers or a token getter, pass `request.authScope` as a stable user or tenant identity and change it
+when that identity changes. `keepPreviousData` retains rows only within the same endpoint and
+authorization scope. Request validation runs inside the query so an invalid filter leaves the table's
+error state and reset controls available.
+
 The hook performs these actions:
 
 1. It loads `/api/v2/openapi.json` through the shared query cache.
@@ -445,6 +451,13 @@ The `sort` parameter lists sort priority. A leading minus sign selects descendin
 `TableList` parses the `where` parameter into `FilterExpression` state. REST API v2 adapters and
 custom fetch functions receive the same state.
 
+Flat AND or OR chains do not consume the codec's nesting allowance. The codec rejects expressions
+with more than 20 nested logical groups and returns no selectors for rejected expressions.
+The Filters panel retains stored OR groups when applying editable comparison rows. Remove a stored
+group or use Clear All to discard it. Date-time controls display local calendar time and apply an
+instant, preserving seconds and milliseconds. Client date-time comparisons use the same instant
+before and after a saved view restores Date operands.
+
 `TableList` can read the old `filters` parameter. It writes `q` and `where` after the next filter change.
 
 The table also stores filters, sorting, and visible fields in
@@ -514,7 +527,9 @@ namespaces with `columnSelectable: true`. Both panels search the published catal
 definition becomes a normal resolved field in the table configuration.
 
 The catalog picker starts a request after two characters. It scopes each request to one namespace.
-It sends the REST API v2 bearer token and cancels obsolete requests through React Query.
+It sends the REST API v2 bearer token and cancels obsolete requests through React Query. Catalog
+searches and saved-field hydration include catalog URLs and authorization identity in their cache
+keys, so collections that reuse a namespace do not reuse another catalog's definitions.
 
 Free-text fields do not suggest stored values. This rule also applies to `in` and `notIn`. Those
 operators accept values that the user enters as chips. A select field uses only its published
