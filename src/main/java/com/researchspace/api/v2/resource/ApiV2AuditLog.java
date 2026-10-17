@@ -116,7 +116,7 @@ public final class ApiV2AuditLog {
     List<ApiV2AuditEvent> ordered =
         events.stream()
             .sorted(
-                Comparator.comparing(ApiV2AuditEvent::timestamp)
+                Comparator.comparing((ApiV2AuditEvent event) -> Instant.parse(event.timestamp()))
                     .reversed()
                     .thenComparing(ApiV2AuditEvent::eventId, Comparator.reverseOrder()))
             .toList();
