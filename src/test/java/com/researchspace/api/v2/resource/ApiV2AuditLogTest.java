@@ -192,6 +192,38 @@ class ApiV2AuditLogTest {
   }
 
   @Test
+  void ordersVariablePrecisionTimestampsChronologicallyAcrossPages() {
+    when(strictSearch.search(any()))
+        .thenReturn(
+            List.of(
+                result("next-second", Instant.parse("2026-01-02T12:00:01Z")),
+                result("exact-second", Instant.parse("2026-01-02T12:00:00Z")),
+                result("hundred-millis", Instant.parse("2026-01-02T12:00:00.100Z")),
+                result("999", Instant.parse("2026-01-02T12:00:00.999Z"))));
+    ApiV2AuditQuery firstQuery = rangeQuery();
+    firstQuery.setPage(1);
+    firstQuery.setLimit(2);
+
+    var first = auditLog.search(resource, "7", firstQuery, actor);
+
+    assertEquals(
+        List.of("2026-01-02T12:00:01Z", "2026-01-02T12:00:00.999Z"),
+        first.docs().stream().map(ApiV2AuditEvent::timestamp).toList());
+    ApiV2AuditQuery laterQuery = rangeQuery();
+    laterQuery.setPage(2);
+    laterQuery.setLimit(2);
+    laterQuery.setSnapshotDate(first.snapshotDate());
+    laterQuery.setSnapshotFingerprint(first.snapshotFingerprint());
+
+    var later = auditLog.search(resource, "7", laterQuery, actor);
+
+    assertEquals(
+        List.of("2026-01-02T12:00:00.100Z", "2026-01-02T12:00:00Z"),
+        later.docs().stream().map(ApiV2AuditEvent::timestamp).toList());
+    assertEquals(first.snapshotFingerprint(), later.snapshotFingerprint());
+  }
+
+  @Test
   void selectsLatestCompletedUtcDayAndExcludesItsNextMidnight() {
     when(strictSearch.search(any())).thenReturn(List.of());
     ApiV2AuditQuery query = new ApiV2AuditQuery();
