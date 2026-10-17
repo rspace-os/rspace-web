@@ -21,7 +21,7 @@ async function resolveValue<T>(value: T | (() => T | Promise<T>) | undefined): P
   return typeof value === "function" ? (value as () => T | Promise<T>)() : value;
 }
 
-function projectedState<TDocument>(
+export function projectedState<TDocument>(
   adapter: ApiV2CollectionAdapter<TDocument>,
   state: CollectionQueryState<TDocument>,
   projection: ApiV2CollectionProjection<TDocument>,
