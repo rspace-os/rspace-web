@@ -64,8 +64,18 @@ class ApiV2CrudContractMVCIT {
   }
 
   @AfterEach
-  void tearDown() {
-    fixture.cleanUp();
+  void tearDown() throws Exception {
+    try {
+      mockMvc
+          .perform(
+              delete(MAINTENANCES)
+                  .header("apiKey", sysadminKey)
+                  .param("where", "message=contains=" + fixture.marker()))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.errors").doesNotExist());
+    } finally {
+      fixture.cleanUp();
+    }
   }
 
   /** Selects only the rows this test method created. */
@@ -339,8 +349,6 @@ class ApiV2CrudContractMVCIT {
           .andExpect(jsonPath("$.docs[0].message").value(fixture.marker() + "-a"))
           .andExpect(jsonPath("$.docs[1].message").value(fixture.marker() + "-b"))
           .andExpect(jsonPath("$.errors").doesNotExist());
-
-      cleanUpBulkRows();
     }
 
     /**
@@ -458,14 +466,6 @@ class ApiV2CrudContractMVCIT {
       mockMvc
           .perform(get(MAINTENANCES + "/" + kept).header("apiKey", sysadminKey))
           .andExpect(status().isOk());
-    }
-
-    /** Bulk-created rows are not tracked by the fixture, so remove them by marker. */
-    private void cleanUpBulkRows() throws Exception {
-      mockMvc.perform(
-          delete(MAINTENANCES)
-              .header("apiKey", sysadminKey)
-              .param("where", "message=contains=" + fixture.marker()));
     }
   }
 
