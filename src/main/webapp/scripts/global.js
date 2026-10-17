@@ -1912,6 +1912,131 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
   }
 };
 
+/* show DBRepo link info panel */
+var dbRepoInfoDialogInitialised = false;
+
+function dbrepoInstanceDetails(dbrepoUrl) {
+  try {
+    var url = new URL(dbrepoUrl);
+    return {
+      name: url.hostname,
+      url: url.origin
+    };
+  } catch (e) {
+    return {
+      name: dbrepoUrl,
+      url: dbrepoUrl
+    };
+  }
+}
+
+function copyTextToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  var copyResult = $.Deferred();
+  var textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    if (document.execCommand('copy')) {
+      copyResult.resolve();
+    } else {
+      copyResult.reject();
+    }
+  } catch (e) {
+    copyResult.reject(e);
+  } finally {
+    document.body.removeChild(textarea);
+  }
+  return copyResult.promise();
+}
+
+RS.initAndOpenDBRepoInfoDialog = function ($link) {
+  if (!dbRepoInfoDialogInitialised) {
+    $(document).ready(function () {
+      RS.switchToBootstrapButton();
+      $('#dbrepoInfoDialog').dialog({
+        title: $('#dbrepoInfoDialog').data('dialogTitle'),
+        autoOpen: false,
+        modal: true,
+        minWidth: 350,
+        open: function () {
+          $('.ui-dialog-buttonset button').focus();
+        },
+        buttons: {
+          "OK": function () {
+            $(this).dialog("close");
+          }
+        }
+      });
+      RS.switchToJQueryUIButton();
+    });
+
+    dbRepoInfoDialogInitialised = true;
+  }
+
+  var name = $link.text();
+  var dbrepoType = $link.data('dbrepoType');
+  var databaseId = $link.data('dbrepoDatabaseId');
+  var databaseName = $link.data('dbrepoDatabaseName');
+  var resourceId = $link.data('dbrepoResourceId');
+  var query = $link.data('dbrepoQuery');
+  var dbrepoUrl = $link.data('dbrepoUrl') || $link.attr('href');
+  var dbrepoInstance = dbrepoInstanceDetails(dbrepoUrl);
+  var $infoPanel = $('.dbrepoInfoPanel');
+
+  $infoPanel.find('.dbrepoInfoPanel-type').text(dbrepoType);
+
+  $infoPanel.find('.dbrepoInfoPanel-instance')
+    .text(dbrepoInstance.name)
+    .attr('href', dbrepoInstance.url);
+  $infoPanel.find('.dbrepoInfoPanel-name').text(name);
+  $infoPanel.find('.dbrepoInfoPanel-identifier').text(dbrepoUrl);
+  var $copyIdentifierButton = $infoPanel.find('.dbrepoCopyIdentifierBtn');
+  $copyIdentifierButton
+    .text($copyIdentifierButton.data('copyLabel'))
+    .off('click')
+    .on('click', function () {
+      var $button = $(this);
+      copyTextToClipboard(dbrepoUrl).then(function () {
+        $button.text($button.data('copiedLabel'));
+        setTimeout(function () {
+          $button.text($button.data('copyLabel'));
+        }, 1500);
+      });
+    });
+  $infoPanel.find('.dbrepoInfoPanel-database').text(databaseName || "");
+  $infoPanel.find('.dbrepoInfoPanel-query').text(query || (dbrepoType === 'subset' ? name : ""));
+  $infoPanel.find('.dbrepoInfoPanel-name').closest('tr').toggle(dbrepoType !== 'subset');
+  $infoPanel.find('.dbrepoInfoDatabaseRow').toggle(dbrepoType !== 'database' && !!databaseName);
+  $infoPanel.find('.dbrepoInfoQueryRow').toggle(dbrepoType === 'view' || dbrepoType === 'subset');
+
+  $infoPanel.find('.dbrepoOpenBtn').off('click').on("click", function () {
+    window.open(dbrepoUrl, '_blank', 'noopener');
+  }).button();
+
+  var supportsDownload = dbrepoType === 'table' || dbrepoType === 'view' || dbrepoType === 'subset';
+  $infoPanel.find('.dbrepoDownloadBtn').toggle(supportsDownload);
+  if (supportsDownload) {
+    $infoPanel.find('.dbrepoDownloadBtn').off('click').on("click", function () {
+      window.location = "/apps/dbrepo/download/"
+        + encodeURIComponent(dbrepoType)
+        + "/"
+        + encodeURIComponent(databaseId)
+        + "/"
+        + encodeURIComponent(resourceId);
+    }).button();
+  }
+
+  $('#dbrepoInfoDialog').dialog('open');
+};
+
 // Readable message from a failed ajax response: the JSON error model, else the
 // ajaxError.jsp fragment's message, else raw responseText. Escape before rendering.
 RS.extractAjaxErrorMessage = function (jqxhr) {

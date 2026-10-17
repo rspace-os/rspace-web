@@ -36,6 +36,7 @@
   "structuredDocumentToolbar": "src/Toolbar/StructuredDocument/Toolbar.tsx",
   "sysadminUsers": "src/eln/sysadmin/users/index.tsx",
   "tinymceClustermarket": "src/tinyMCE/clustermarket/index.tsx",
+  "tinymceDBRepo": "src/tinyMCE/dbrepo/index.tsx",
   "tinymceGalaxy": "src/tinyMCE/galaxy/index.tsx",
   "tinymceGallery": "src/tinyMCE/gallery/index.tsx",
   "tinymceGalleryUtils": "src/tinyMCE/gallery/GalleryUtilsEntrypoint.ts",
