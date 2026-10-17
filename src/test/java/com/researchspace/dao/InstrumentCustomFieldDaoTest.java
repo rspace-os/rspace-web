@@ -38,12 +38,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class InstrumentCustomFieldDaoTest extends SpringTransactionalTest {
 
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private InstrumentReadAccess instrumentReadAccess;
-  @Autowired private InstrumentCustomFieldManager customFields;
-  @Autowired private InstrumentCustomFieldDao customFieldDao;
+  private final InstrumentDao instrumentDao;
+  private final InstrumentReadAccess instrumentReadAccess;
+  private final InstrumentCustomFieldManager customFields;
+  private final InstrumentCustomFieldDao customFieldDao;
+  private final InstrumentEntityApiManager instrumentApiManager;
 
-  @Autowired private InstrumentEntityApiManager instrumentApiManager;
+  @Autowired
+  InstrumentCustomFieldDaoTest(
+      InstrumentDao instrumentDao,
+      InstrumentReadAccess instrumentReadAccess,
+      InstrumentCustomFieldManager customFields,
+      InstrumentCustomFieldDao customFieldDao,
+      InstrumentEntityApiManager instrumentApiManager) {
+    this.instrumentDao = instrumentDao;
+    this.instrumentReadAccess = instrumentReadAccess;
+    this.customFields = customFields;
+    this.customFieldDao = customFieldDao;
+    this.instrumentApiManager = instrumentApiManager;
+  }
 
   private List<RuntimeFieldDefinition> catalog(User actor) {
     List<RuntimeFieldDefinition> all = new ArrayList<>();

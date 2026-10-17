@@ -30,8 +30,15 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 public class InstrumentDaoCollectionTest extends SpringTransactionalTest {
 
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private InstrumentReadAccess instrumentReadAccess;
+  private final InstrumentDao instrumentDao;
+  private final InstrumentReadAccess instrumentReadAccess;
+
+  @Autowired
+  InstrumentDaoCollectionTest(
+      InstrumentDao instrumentDao, InstrumentReadAccess instrumentReadAccess) {
+    this.instrumentDao = instrumentDao;
+    this.instrumentReadAccess = instrumentReadAccess;
+  }
 
   private AccessResult readAccess(User user) {
     return instrumentReadAccess.check(new AccessContext(user, Operation.READ, "instruments"));

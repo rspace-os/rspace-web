@@ -21,7 +21,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class InstrumentParentLocationAccessIT extends SpringTransactionalTest {
 
-  @Autowired private InstrumentDao instrumentDao;
+  private final InstrumentDao instrumentDao;
+
+  @Autowired
+  InstrumentParentLocationAccessIT(InstrumentDao instrumentDao) {
+    this.instrumentDao = instrumentDao;
+  }
 
   @Test
   public void resolvesDirectContainerAccessForEveryInventoryPermissionBranch() throws Exception {
