@@ -20,6 +20,7 @@ import {
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
+import { isPermanentClientError } from "@/modules/common/queries/queryRetry";
 import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
 import {
@@ -842,7 +843,13 @@ function Details({ globalId, tab }: { globalId: string; tab: BookableItemTab }) 
   }
 
   const target = configuration.data?.target;
-  if (configuration.isError || target === null || target === undefined || target.globalId !== globalId) {
+  if (
+    configuration.data === undefined ||
+    isPermanentClientError(configuration.error) ||
+    target === null ||
+    target === undefined ||
+    target.globalId !== globalId
+  ) {
     return (
       <main className="p-4 sm:p-8">
         <Empty className="border">
