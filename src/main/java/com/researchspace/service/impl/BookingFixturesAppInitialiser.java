@@ -34,9 +34,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.IntStream;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 
 /** Adds idempotent bookable-item and booking fixtures to development deployments. */
@@ -59,25 +56,42 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
           null,
           null);
 
-  @Value("${default.user.password}")
-  private String devUserPassword;
+  private final String devUserPassword;
+  private final UserDao userDao;
+  private final ContainerDao containerDao;
+  private final InstrumentDao instrumentDao;
+  private final ContainerApiManager containerManager;
+  private final InstrumentEntityApiManager instrumentManager;
+  private final MessageSourceUtils messages;
+  private final BookingConfigurationManager configurationManager;
+  private final TimeSlotBookingManager bookingManager;
+  private final BookingConfigurationDao configurationDao;
+  private final TimeSlotBookingDao bookingDao;
 
-  @Autowired private UserDao userDao;
-  @Autowired private ContainerDao containerDao;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private ContainerApiManager containerManager;
-  @Autowired private InstrumentEntityApiManager instrumentManager;
-  @Autowired private MessageSourceUtils messages;
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private TimeSlotBookingManager bookingManager;
-
-  @Autowired
-  @Qualifier("bookingConfigurationDao")
-  private BookingConfigurationDao configurationDao;
-
-  @Autowired
-  @Qualifier("timeSlotBookingDao")
-  private TimeSlotBookingDao bookingDao;
+  public BookingFixturesAppInitialiser(
+      String devUserPassword,
+      UserDao userDao,
+      ContainerDao containerDao,
+      InstrumentDao instrumentDao,
+      ContainerApiManager containerManager,
+      InstrumentEntityApiManager instrumentManager,
+      MessageSourceUtils messages,
+      BookingConfigurationManager configurationManager,
+      TimeSlotBookingManager bookingManager,
+      BookingConfigurationDao configurationDao,
+      TimeSlotBookingDao bookingDao) {
+    this.devUserPassword = devUserPassword;
+    this.userDao = userDao;
+    this.containerDao = containerDao;
+    this.instrumentDao = instrumentDao;
+    this.containerManager = containerManager;
+    this.instrumentManager = instrumentManager;
+    this.messages = messages;
+    this.configurationManager = configurationManager;
+    this.bookingManager = bookingManager;
+    this.configurationDao = configurationDao;
+    this.bookingDao = bookingDao;
+  }
 
   @Override
   public void onAppStartup(ApplicationContext applicationContext) {
