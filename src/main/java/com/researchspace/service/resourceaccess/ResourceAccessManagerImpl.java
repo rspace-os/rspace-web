@@ -92,7 +92,9 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
 
   @Override
   public ResolvedResourceAccess resolveForMutation(ResourceAccess access, User subject) {
-    return resolver.resolve(access, gateway.lockAuthorizationFacts(access, subject));
+    ResourceAccessDao.AuthorizationFacts authorizationFacts =
+        currentAuthorizationRead(() -> gateway.lockAuthorizationFacts(access, subject));
+    return resolveLocked(access, authorizationFacts);
   }
 
   @Override
