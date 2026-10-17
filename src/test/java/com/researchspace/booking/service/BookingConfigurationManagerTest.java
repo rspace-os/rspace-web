@@ -17,6 +17,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
@@ -88,6 +89,8 @@ class BookingConfigurationManagerTest {
   private final InstrumentDao instrumentDao = mock(InstrumentDao.class);
   private final BookingCalendarSubscriptionDao calendarSubscriptions =
       mock(BookingCalendarSubscriptionDao.class);
+  private final BookingCalendarPermissionGateDao permissionGate =
+      mock(BookingCalendarPermissionGateDao.class);
   private final TimeSlotBookingDao timeSlotBookings = mock(TimeSlotBookingDao.class);
 
   private final User actor = mock(User.class);
@@ -107,7 +110,8 @@ class BookingConfigurationManagerTest {
           ApiV2BookingConfigurationResource.DESCRIPTION,
           itemPermissions,
           calendarSubscriptions,
-          timeSlotBookings);
+          timeSlotBookings,
+          permissionGate);
 
   @BeforeEach
   void setUp() {

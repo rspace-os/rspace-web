@@ -32,12 +32,14 @@ public class BookingConfigurationDaoHibernate
   private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
   private final BookingItemQuery itemQuery;
   private final InstrumentDao instruments;
+  private final BookingCalendarPermissionGateDao permissionGate;
 
   public BookingConfigurationDaoHibernate(
       SessionFactory sessionFactory,
       CriteriaBuilderFactory criteriaBuilderFactory,
       BookingItemQuery itemQuery,
       InstrumentDao instruments,
+      BookingCalendarPermissionGateDao permissionGate,
       @Qualifier(
               com.researchspace.booking.config.BookingResourceAccessConfiguration
                   .BOOKING_CONFIGURATION_DESCRIPTION)
@@ -46,6 +48,7 @@ public class BookingConfigurationDaoHibernate
     this.criteriaBuilderFactory = criteriaBuilderFactory;
     this.itemQuery = itemQuery;
     this.instruments = instruments;
+    this.permissionGate = permissionGate;
     collectionQuery =
         new CollectionQueryExecutor<>(
             BookingConfiguration.class, description, "bookingConfiguration");
@@ -85,12 +88,14 @@ public class BookingConfigurationDaoHibernate
 
   @Override
   public Optional<BookingConfiguration> lockActiveByTarget(BookableTargetReference target) {
+    permissionGate.lockShared();
     lockCurrentTarget(target);
     return byTarget(target, true, true).map(this::refreshSchedulingState);
   }
 
   @Override
   public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
+    permissionGate.lockShared();
     lockTarget(target);
     return byTarget(target, false, true);
   }
@@ -117,6 +122,7 @@ public class BookingConfigurationDaoHibernate
 
   @Override
   public Optional<BookingConfiguration> lockById(Long id) {
+    permissionGate.lockShared();
     getSafeNull(id).ifPresent(configuration -> lockTarget(configuration.getTarget()));
     return getSession()
         .createQuery("from BookingConfiguration where id = :id", BookingConfiguration.class)
@@ -127,6 +133,7 @@ public class BookingConfigurationDaoHibernate
 
   @Override
   public Optional<BookingConfiguration> lockActiveById(Long id) {
+    permissionGate.lockShared();
     getSafeNull(id).ifPresent(configuration -> lockCurrentTarget(configuration.getTarget()));
     return getSession()
         .createQuery(
@@ -179,6 +186,7 @@ public class BookingConfigurationDaoHibernate
   @Override
   public List<BookingConfiguration> lockResources(
       ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
+    permissionGate.lockShared();
     return collectionQuery.listByIdForUpdate(
         criteriaBuilderFactory, getSession(), request, limit, relationshipAccess);
   }

@@ -32,14 +32,15 @@ item subscriptions in batches per subscriber because they can also change
 access through an item's owner. This work grows with the number of item
 subscriptions; keep it outside ordinary feed reads.
 
-Creation and rotation load a fresh subscriber in a `READ_COMMITTED` transaction,
-then lock the target and configuration before acquiring the shared Booking
-permission fence. Inventory permission-change listeners use the same
-target/configuration-to-fence order before scanning subscriptions with locking
-reads. User, group and community changes take their authoritative mutation locks
-before the fence. Thus a link cannot be created from an old membership snapshot
-after a revocation scan has completed. See [Booking permissions](BookingPermissions.md)
-for the fence's connection, contention and transaction requirements.
+Ordinary item creation and rotation use a `READ_COMMITTED` transaction and take
+the shared Booking permission gate before target, configuration and subscription
+locks. If a permission-source transaction also creates or rotates an item link,
+the operation stays in that transaction under its exclusive gate and reads
+current scalar account, role, membership, sharing and token rows. User-wide
+link creation and rotation keep their separate transaction and are rejected
+beneath an active or suspended permission gate. See
+[Booking permissions](BookingPermissions.md) for the writer and lock-order
+requirements.
 
 A user's own bookings remain readable after losing item access. Personal feeds
 use "Unknown item" for these events and omit item details and links. Item feeds

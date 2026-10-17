@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.RoleDao;
 import com.researchspace.dao.UserAccountEventDao;
@@ -54,6 +55,7 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
   private @Mock AnalyticsManager analyticsManager;
   private @Mock IPropertyHolder properties;
   private @Mock IVerificationPasswordValidator verificationPasswordValidator;
+  private @Mock BookingCalendarRevocationCoordinator bookingCalendarRevocationCoordinator;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -69,6 +71,8 @@ public class UserManagerImplTest extends BaseManagerMockTestCase {
     ReflectionTestUtils.setField(userManager, "properties", properties);
     ReflectionTestUtils.setField(
         userManager, "verificationPasswordValidator", verificationPasswordValidator);
+    ReflectionTestUtils.setField(
+        userManager, "calendarRevocations", bookingCalendarRevocationCoordinator);
   }
 
   @Test
