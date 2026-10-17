@@ -218,7 +218,7 @@ public final class ResourceRenderer {
                   entity ->
                       new RenderNode(entity, description, fieldsForEntity.apply(entity), includes))
               .toList();
-      prefetch(roots, selections, requestResolver);
+      prefetch(roots, selections, requestResolver, context);
     }
     return entities.stream()
         .map(
@@ -305,12 +305,16 @@ public final class ResourceRenderer {
   }
 
   private void prefetch(
-      List<RenderNode> roots, ResourceFieldSelections selections, TargetResolver targetResolver) {
+      List<RenderNode> roots,
+      ResourceFieldSelections selections,
+      TargetResolver targetResolver,
+      AccessContext context) {
     List<RenderNode> level = roots;
     while (!level.isEmpty()) {
       Set<TargetKey> targets = new LinkedHashSet<>();
       List<PendingExpansion> expansions = new ArrayList<>();
-      level.forEach(node -> collectTargetsCaptured(node, node.description(), targets, expansions));
+      level.forEach(
+          node -> collectTargetsCaptured(node, node.description(), targets, expansions, context));
       Map<TargetKey, Optional<ResolvedTarget>> resolved = targetResolver.resolveAll(targets);
       List<RenderNode> next = new ArrayList<>();
       for (PendingExpansion expansion : expansions) {
@@ -343,10 +347,14 @@ public final class ResourceRenderer {
       RenderNode node,
       CollectionDescription<T> description,
       Set<TargetKey> targets,
-      List<PendingExpansion> expansions) {
+      List<PendingExpansion> expansions,
+      AccessContext context) {
     T entity = description.entityType().cast(node.entity());
+    AccessContext rowContext =
+        context.forRead(description.resourceName(), description.idValue(entity));
     for (Relationship<T> relationship : description.relationships()) {
-      if (!node.fields().includes(relationship.name(), description.idField())) {
+      if (!node.fields().includes(relationship.name(), description.idField())
+          || !relationship.readAccess().allowsField(rowContext)) {
         continue;
       }
       Object value = relationship.read(entity);
@@ -413,7 +421,8 @@ public final class ResourceRenderer {
       TargetResolver targetResolver,
       Map<String, Object> document,
       AccessContext context) {
-    if (!fields.includes(relationship.name(), description.idField())) {
+    if (!fields.includes(relationship.name(), description.idField())
+        || !relationship.readAccess().allowsField(context)) {
       return;
     }
     Optional<IncludeTree> child = includes.relationship(relationship.name());

@@ -102,12 +102,14 @@ class RuntimeFieldQueryTest {
     String expected =
         switch (type) {
           case NUMBER -> "NUMERIC_TEXT(rsqlTarget0.data) = :rsql2";
-          case CHOICE -> "(rsqlTarget0.data LIKE :rsql2 ESCAPE '!')";
+          case CHOICE ->
+              "(FUNCTION('JSON_CONTAINS', CASE WHEN FUNCTION('JSON_VALID', rsqlTarget0.data) = true"
+                  + " THEN rsqlTarget0.data ELSE '[]' END, :rsql2) = true)";
           default -> "rsqlTarget0.data = :rsql2";
         };
     assertTrue(onlySubquery(predicate).whereExpression().endsWith(expected));
     assertEquals(
-        type == RuntimeFieldValueType.CHOICE ? "%\"option\"%" : value,
+        type == RuntimeFieldValueType.CHOICE ? "\"option\"" : value,
         predicate.parameters().get("rsql2"));
   }
 
@@ -136,11 +138,11 @@ class RuntimeFieldQueryTest {
   }
 
   @Test
-  void serializesControlCharactersInChoiceNeedlesAsJson() {
+  void serializesControlCharactersInChoiceCandidatesAsJson() {
     Predicate predicate =
         translate("SF7", RuntimeFieldValueType.CHOICE, Operator.CONTAINS, List.of("line\nbreak"));
 
-    assertEquals("%\"line\\nbreak\"%", predicate.parameters().get("rsql2"));
+    assertEquals("\"line\\nbreak\"", predicate.parameters().get("rsql2"));
   }
 
   @Test

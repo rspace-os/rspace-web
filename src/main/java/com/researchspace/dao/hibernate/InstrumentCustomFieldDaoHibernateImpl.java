@@ -179,8 +179,8 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
             .with("field.id")
             .with("field." + optionPath)
             .end()
-            .whereExpression("field.id in :ids")
-            .setParameter("ids", ids);
+            .whereExpression("field.id in :optionDefinitionIds")
+            .setParameter("optionDefinitionIds", ids);
     for (OptionRow row : query.getResultList()) {
       String stored = row.storedOptions();
       Object parsed = stored == null ? null : RuntimeFieldValueType.CHOICE.serialize(stored);

@@ -1,6 +1,5 @@
 package com.researchspace.dao.query;
 
-import static com.researchspace.dao.query.LikeEscaper.escape;
 import static com.researchspace.dao.query.RsqlSqlFragments.jsonQuoted;
 
 import com.researchspace.model.collection.FilterExpression;
@@ -13,10 +12,16 @@ final class RsqlChoicePredicateCompiler implements RsqlFieldPredicateCompiler {
   public String compile(
       FilterExpression.Comparison comparison, String valuePath, RsqlCompilationState state) {
     List<String> disjuncts = new ArrayList<>();
+    String safeJson =
+        "CASE WHEN FUNCTION('JSON_VALID', "
+            + valuePath
+            + ") = true THEN "
+            + valuePath
+            + " ELSE '[]' END";
     for (Object value : comparison.values()) {
-      state.recordLikePredicate();
-      String needle = "%" + escape(jsonQuoted(String.valueOf(value))) + "%";
-      disjuncts.add(valuePath + " LIKE :" + state.add(needle) + " ESCAPE '!'");
+      String candidate = jsonQuoted(String.valueOf(value));
+      disjuncts.add(
+          "FUNCTION('JSON_CONTAINS', " + safeJson + ", :" + state.add(candidate) + ") = true");
     }
     return "(" + String.join(" OR ", disjuncts) + ")";
   }

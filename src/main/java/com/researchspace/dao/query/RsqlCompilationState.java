@@ -39,6 +39,14 @@ final class RsqlCompilationState {
     this.enforceComplexityLimit = enforceComplexityLimit;
   }
 
+  boolean enforcesComplexityLimit() {
+    return enforceComplexityLimit;
+  }
+
+  int likePredicateCount() {
+    return likePredicates;
+  }
+
   /** A distinct alias per subquery, so nested targets cannot shadow each other. */
   String nextTargetAlias() {
     return prefix + "Target" + targetAliases++;
@@ -46,6 +54,7 @@ final class RsqlCompilationState {
 
   /** Folds a separately compiled predicate in, keeping its already-distinct parameter names. */
   String merge(RsqlCollectionQuery.Predicate predicate) {
+    recordLikePredicates(predicate.callerLikePredicateCount());
     parameters.putAll(predicate.parameters());
     subqueries.putAll(predicate.subqueries());
     return predicate.expression();
@@ -65,7 +74,15 @@ final class RsqlCompilationState {
   }
 
   void recordLikePredicate() {
-    if (enforceComplexityLimit && ++likePredicates > RsqlCollectionQuery.MAX_LIKE_PREDICATES) {
+    recordLikePredicates(1);
+  }
+
+  private void recordLikePredicates(int count) {
+    if (!enforceComplexityLimit) {
+      return;
+    }
+    likePredicates += count;
+    if (likePredicates > RsqlCollectionQuery.MAX_LIKE_PREDICATES) {
       throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
     }
   }
