@@ -133,6 +133,7 @@ class BookingConfigurationLifecycleTest {
   @Test
   void restoresArchivedConfigurationOnlyThroughAStateOnlyPatch() {
     BookingConfiguration configuration = configuration(42L, 12L);
+    configuration.setTimeZone("Europe/Berlin");
     configuration.setEnabled(true);
     configuration.setState(BookingConfigurationState.ARCHIVED);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
@@ -152,6 +153,7 @@ class BookingConfigurationLifecycleTest {
             .orElseThrow();
 
     assertEquals(BookingConfigurationState.ACTIVE, restored.getState());
+    assertEquals("Europe/Berlin", restored.getTimeZone());
     assertTrue(restored.isEnabled());
     verify(calendarSubscriptions, never()).deleteByConfigurationId(any());
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
@@ -250,6 +252,53 @@ class BookingConfigurationLifecycleTest {
     assertTrue(active.isEnabled());
     verify(dao, never()).saveAndFlush(any());
     verify(events, never()).publishEvent(any());
+  }
+
+  @Test
+  void bulkSchedulingPatchPreservesTimeZonesWhenTimezoneIsOmitted() {
+    ResourceRequest request =
+        ResourceRequest.unpaged(
+            new FilterExpression.Comparison("id", Operator.IN, List.of(41L, 42L), false));
+    BookingConfiguration first = configuration(41L, 11L);
+    BookingConfiguration second = configuration(42L, 12L);
+    first.setTimeZone("Europe/Berlin");
+    second.setTimeZone("Asia/Tokyo");
+    int limit = OVERSIZED_MUTATION_LIMIT;
+    when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
+    BookingSchedulingSettings.Patch schedulingPatch =
+        new BookingSchedulingSettings.Patch(null, null, 15L, null, null, null);
+
+    List<BookingConfiguration> updated =
+        manager.updateConfigurations(request, new Patch(null, null, schedulingPatch), actor, actor);
+
+    assertEquals(List.of(first, second), updated);
+    assertEquals("Europe/Berlin", first.getTimeZone());
+    assertEquals("Asia/Tokyo", second.getTimeZone());
+    assertEquals(15, first.getBufferBeforeMinutes());
+    assertEquals(15, second.getBufferBeforeMinutes());
+    verify(dao, times(2)).saveAndFlush(any());
+  }
+
+  @Test
+  void bulkChangedUnsupportedTimeZoneRejectsBeforeSavingAnyConfiguration() {
+    ResourceRequest request =
+        ResourceRequest.unpaged(
+            new FilterExpression.Comparison("id", Operator.IN, List.of(41L, 42L), false));
+    BookingConfiguration first = configuration(41L, 11L);
+    BookingConfiguration second = configuration(42L, 12L);
+    int limit = OVERSIZED_MUTATION_LIMIT;
+    when(dao.lockResources(eq(request), eq(limit), any())).thenReturn(List.of(first, second));
+
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> manager.updateConfigurations(request, new Patch(null, "GMT+01"), actor, actor));
+
+    assertEquals("errors.api.v2.bookingConfiguration.timeZone.invalid", failure.getMessage());
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.TIME_ZONE, failure.reason());
+    assertEquals("UTC", first.getTimeZone());
+    assertEquals("UTC", second.getTimeZone());
+    verify(dao, never()).saveAndFlush(any());
   }
 
   @Test

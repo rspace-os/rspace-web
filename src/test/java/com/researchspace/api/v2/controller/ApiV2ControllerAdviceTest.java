@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.model.ApiV2PaginationCriteria;
 import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
+import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.DocumentValidationException;
@@ -51,6 +52,10 @@ class ApiV2ControllerAdviceTest {
     source.addMessage(
         "errors.api.v2.authenticationRequired", Locale.getDefault(), "Authentication detail");
     source.addMessage("errors.api.v2.invalidRequest", Locale.getDefault(), "Invalid detail");
+    source.addMessage(
+        "errors.api.v2.bookingConfiguration.timeZone.invalid",
+        Locale.getDefault(),
+        "Invalid booking time zone detail");
     source.addMessage("errors.api.v2.notFound", Locale.getDefault(), "Not found detail");
     source.addMessage("errors.api.v2.query.field", Locale.getDefault(), "Invalid field detail");
     source.addMessage("errors.api.v2.select.mode", Locale.getDefault(), "Invalid select detail");
@@ -169,6 +174,20 @@ class ApiV2ControllerAdviceTest {
         HttpStatus.FORBIDDEN,
         "errors.api.v2.resourceAccess.inheritedReadOnly",
         "Inherited access is read-only.");
+  }
+
+  @Test
+  void mapsInvalidBookingTimeZoneToALocalizedBadRequest() {
+    ResponseEntity<ApiV2Problem> response =
+        advice.handleInvalidBookingSettings(
+            new InvalidBookingSchedulingSettingsException(
+                InvalidBookingSchedulingSettingsException.Reason.TIME_ZONE));
+
+    assertProblem(
+        response,
+        HttpStatus.BAD_REQUEST,
+        "errors.api.v2.bookingConfiguration.timeZone.invalid",
+        "Invalid booking time zone detail");
   }
 
   @Test

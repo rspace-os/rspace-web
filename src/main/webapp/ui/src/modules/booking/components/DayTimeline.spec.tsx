@@ -3,6 +3,7 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import { currentWallClock } from "@/modules/booking/domain/bookingTime";
 import { DayTimeline, type DayTimelineEvent } from "./DayTimeline";
 import { LONG_ITEM_NAME } from "./DayTimeline.fixtures";
 import { DayTimelineStory } from "./DayTimeline.story";
@@ -80,7 +81,7 @@ describe("DayTimeline expanded cards", () => {
     await expect.element(timeline.trigger("Electron microscope · Grace Hopper")).toHaveFocus();
   });
 
-  test("shows instrument-local time on hover and keeps the booking card expandable", async () => {
+  test("accepts a named timezone alias in Temporal and instrument-time tooltip", async () => {
     const startInstant = "2026-08-17T07:30:00Z";
     const endInstant = "2026-08-17T08:30:00Z";
     const event: DayTimelineEvent = {
@@ -96,7 +97,7 @@ describe("DayTimeline expanded cards", () => {
       endMinute: 10 * 60 + 30,
       startInstant,
       endInstant,
-      instrumentTimeZone: "America/New_York",
+      instrumentTimeZone: "Asia/Calcutta",
     };
     render(
       <DayTimeline
@@ -121,7 +122,7 @@ describe("DayTimeline expanded cards", () => {
       hour: "numeric",
       minute: "2-digit",
       timeZoneName: "shortOffset",
-      timeZone: "America/New_York",
+      timeZone: "Asia/Calcutta",
     });
     const startDate = new Date(startInstant);
     const endDate = new Date(endInstant);
@@ -130,7 +131,9 @@ describe("DayTimeline expanded cards", () => {
       .toHaveTextContent(
         `Instrument time: ${expectedInstrumentRange.format(startDate)} – ${expectedInstrumentRange.format(endDate)} (Asia/Calcutta)`,
       );
-    await expect.element(tooltip).toHaveTextContent("America/New_York");
+    expect(currentWallClock(startInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 13 * 60 });
+    expect(currentWallClock(endInstant, "Asia/Calcutta")).toEqual({ date: "2026-08-17", minute: 14 * 60 });
+    await expect.element(tooltip).toHaveTextContent("Asia/Calcutta");
     await expect.element(tooltip).not.toHaveTextContent("Cross-zone run");
 
     await trigger.click();
