@@ -15,6 +15,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { format } from "date-fns";
 import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -28,6 +29,7 @@ import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/collec
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
+import { serializeRsqlExpression } from "../../rsql/rsqlCodec";
 import type { FilterExpression, FilterValue } from "../../tableListState";
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
@@ -40,6 +42,7 @@ type DraftRule<TDocument> = {
   field: SearchSelector<TDocument>;
   operator: FilterOperator;
   value: string | readonly string[];
+  original?: { field: SearchSelector<TDocument>; value: FilterValue };
 };
 
 const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${FilterOperator}`> = {
@@ -56,20 +59,43 @@ const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${Filter
   exists: "tableList.filters.operators.exists",
 };
 
-function comparisonNodes<TDocument>(expression: FilterExpression<TDocument> | null): readonly DraftRule<TDocument>[] {
+function comparisonNodes<TDocument>(
+  expression: FilterExpression<TDocument> | null,
+  config: ResolvedCollectionConfig<TDocument>,
+): readonly DraftRule<TDocument>[] {
   if (!expression) return [];
   const nodes = expression.kind === "and" ? expression.children : [expression];
   return nodes.flatMap((node, index) =>
     node.kind === "comparison"
-      ? [{ id: index + 1, field: node.field, operator: node.operator, value: draftValue(node.value) }]
+      ? [
+          {
+            id: index + 1,
+            field: node.field,
+            operator: node.operator,
+            value: draftValue(
+              node.value,
+              config.fields.find((field) => field.name === node.field),
+            ),
+            original: { field: node.field, value: node.value },
+          },
+        ]
       : [],
   );
 }
 
-function draftValue(value: FilterValue): string | readonly string[] {
-  if (Array.isArray(value)) return value.map((item) => (item instanceof Date ? item.toISOString() : String(item)));
-  if (value instanceof Date) return value.toISOString();
-  return String(value);
+const DATE_TIME_LOCAL_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+
+function draftValue<TDocument>(
+  value: FilterValue,
+  field: ResolvedFieldConfig<TDocument> | undefined,
+): string | readonly string[] {
+  const scalar = (item: string | number | boolean | Date) => {
+    if (field?.type === "dateTime" && (item instanceof Date || typeof item === "string")) {
+      return format(new Date(item), DATE_TIME_LOCAL_FORMAT);
+    }
+    return item instanceof Date ? item.toISOString() : String(item);
+  };
+  return Array.isArray(value) ? value.map(scalar) : scalar(value as string | number | boolean | Date);
 }
 
 function valueForOperator(
@@ -91,9 +117,16 @@ function valueForOperator(
 
 function parsedValue<TDocument>(rule: DraftRule<TDocument>, field: ResolvedFieldConfig<TDocument>) {
   if (rule.operator === "exists") return scalarValue(rule.value) !== "false";
-  const parse = (value: string): string | number | boolean => {
+  const parse = (value: string, index = 0): string | number | boolean | Date => {
     if (field.type === "number") return Number(value);
     if (field.type === "boolean") return value === "true";
+    if (field.type === "dateTime") {
+      const original = rule.original?.field === rule.field ? rule.original.value : undefined;
+      const previous = Array.isArray(original) ? original[index] : original;
+      const instant = previous instanceof Date ? previous : typeof previous === "string" ? new Date(previous) : null;
+      // A local clock value cannot distinguish the two instants in a DST overlap.
+      return instant && draftValue(instant, field) === value ? instant : new Date(value);
+    }
     return value;
   };
   if (rule.operator === "in" || rule.operator === "notIn") {
@@ -188,7 +221,13 @@ export function TableListFilters<TDocument>({
   const rowColumns = offersColumns
     ? "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_auto_2rem]"
     : "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_2rem]";
-  const [rules, setRules] = useState<readonly DraftRule<TDocument>[]>(() => comparisonNodes(expression));
+  const [rules, setRules] = useState<readonly DraftRule<TDocument>[]>(() => comparisonNodes(expression, config));
+  // The row editor edits direct AND comparisons. Keep nested Boolean groups intact.
+  const [savedGroups, setSavedGroups] = useState(() =>
+    (expression?.kind === "and" ? expression.children : expression ? [expression] : []).filter(
+      (node) => node.kind !== "comparison",
+    ),
+  );
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
@@ -259,6 +298,22 @@ export function TableListFilters<TDocument>({
         </Button>
       </div>
 
+      {savedGroups.map((group, index) => (
+        <div key={serializeRsqlExpression(group)} className="mt-3 flex items-start gap-2 rounded-sm border p-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm">{t("tableList.filters.savedGroup")}</p>
+            <code className="break-all text-xs">{serializeRsqlExpression(group)}</code>
+          </div>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label={t("tableList.actions.removeFilter", { number: rules.length + index + 1 })}
+            onClick={() => setSavedGroups((groups) => groups.filter((_, position) => position !== index))}
+          >
+            <Trash2Icon aria-hidden="true" />
+          </Button>
+        </div>
+      ))}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -419,11 +474,12 @@ export function TableListFilters<TDocument>({
         <Button
           size="sm"
           variant="ghost"
-          disabled={rules.length === 0}
+          disabled={rules.length === 0 && savedGroups.length === 0}
           // Clearing applies straight away: leaving the applied filters in place while the panel
           // shows none reads as a no-op.
           onClick={() => {
             setRules([]);
+            setSavedGroups([]);
             onApply(null);
           }}
         >
@@ -442,6 +498,7 @@ export function TableListFilters<TDocument>({
                 value: parsedValue(rule, field),
               };
             });
+            comparisons.push(...savedGroups);
             onApply(
               comparisons.length === 0
                 ? null

@@ -1,5 +1,5 @@
 import { Autocomplete } from "@base-ui/react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useDebounce from "@/hooks/ui/useDebounce";
@@ -77,9 +77,15 @@ export function CustomFieldPicker({
   const narrowed = term.trim().length >= MINIMUM_TERM;
 
   const query = useQuery({
-    queryKey: ["api-v2", "runtime-fields", "search", sources.map((source) => source.namespace).join(","), term.trim()],
+    queryKey: [
+      "api-v2",
+      "runtime-fields",
+      "search",
+      sources.map(({ namespace, catalog }) => [namespace, catalog]),
+      token,
+      term.trim(),
+    ],
     enabled: open && narrowed,
-    placeholderData: keepPreviousData,
     staleTime: 60_000,
     queryFn: async ({ signal }) => {
       const headers = new Headers();

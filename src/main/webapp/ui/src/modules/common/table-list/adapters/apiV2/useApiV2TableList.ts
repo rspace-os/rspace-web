@@ -16,11 +16,7 @@ import {
   type ApiV2DocumentSchema,
   createApiV2CollectionAdapter,
 } from "./createApiV2CollectionAdapter";
-import {
-  type ApiV2CollectionFetchOptions,
-  apiV2CollectionRequestParams,
-  createApiV2CollectionFetcher,
-} from "./createApiV2CollectionFetcher";
+import { type ApiV2CollectionFetchOptions, createApiV2CollectionFetcher } from "./createApiV2CollectionFetcher";
 import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./runtimeFieldCatalog";
 
 type TableOptions<TRow extends Record<string, unknown>> = Omit<UseTableListOptions<TRow>, "config" | "dataSource">;
@@ -97,7 +93,11 @@ export function useApiV2TableList<
     staleTime: Infinity,
     gcTime: Infinity,
   });
-  const namespaces = metadataQuery.data.runtimeFields ?? [];
+  const metadata = suppliedMetadata ?? metadataQuery.data;
+  const namespaces = metadata.runtimeFields ?? [];
+  const endpoint = request?.endpoint ?? `/api/v2/${metadata.resourceName}`;
+  const authScope = request?.authScope ?? (typeof request?.token === "string" ? request.token : undefined);
+  const dataScope = JSON.stringify([resourceName, endpoint, authScope]);
   const savedRuntimeIds = useMemo(() => {
     const selectors = new Set<string>();
     for (const name of table?.initialState?.visibleFields ?? []) selectors.add(String(name));
@@ -115,7 +115,15 @@ export function useApiV2TableList<
     table?.queryString,
   ]);
   const hydratedQuery = useSuspenseQuery({
-    queryKey: ["api-v2", "runtime-fields", "ids", resourceName, savedRuntimeIds.join(",")],
+    queryKey: [
+      "api-v2",
+      "runtime-fields",
+      "ids",
+      resourceName,
+      namespaces.map(({ namespace, catalog }) => [namespace, catalog]),
+      authScope,
+      savedRuntimeIds,
+    ],
     queryFn: async ({ signal }) => {
       const token = await resolveToken(request?.token);
       const headers = new Headers();
@@ -167,11 +175,11 @@ export function useApiV2TableList<
       createApiV2CollectionAdapter({
         config,
         documentSchema,
-        metadata: metadataQuery.data,
+        metadata,
         runtimeFields,
         translate: (key, values) => String(t(key as never, values as never)),
       }),
-    [config, documentSchema, metadataQuery.data, runtimeFields, t],
+    [config, documentSchema, metadata, runtimeFields, t],
   );
   const fetchCollection = useMemo(() => createApiV2CollectionFetcher(adapter, request), [adapter, request]);
   const result = useTableList<Row>({
@@ -186,14 +194,30 @@ export function useApiV2TableList<
       queryKey: (state) => [
         "api-v2",
         resourceName,
-        apiV2CollectionRequestParams(
-          adapter,
+        endpoint,
+        authScope,
+        {
           state,
-          request?.depth,
-          request?.projection,
-          request?.baseFilter,
-        ).toString(),
+          depth: request?.depth,
+          projection: request?.projection,
+          baseFilter: request?.baseFilter,
+          metadata,
+          runtimeFields,
+          config: {
+            idField: config.idField,
+            useAsTitle: config.useAsTitle,
+            listSearchableFields: config.listSearchableFields,
+            fields: config.fields.map((field) => ({
+              name: field.name,
+              type: field.type,
+              dependencies: field.list === false ? undefined : field.list?.dependencies,
+              relationTo: field.type === "relationship" ? field.relationTo : undefined,
+            })),
+          },
+          schemaFields: Object.keys(documentSchema.entries),
+        },
       ],
+      dataScope,
       fetch: fetchCollection as unknown as CollectionFetcher<Row>,
       ...query,
     },

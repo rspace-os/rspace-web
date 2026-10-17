@@ -68,6 +68,8 @@ export type RemoteTableListDataSource<TDocument> = {
   retry?: boolean | number;
   refetchInterval?: number | false;
   keepPreviousData?: boolean;
+  /** Previous rows may only be reused within the same endpoint and authorization scope. */
+  dataScope?: string | number;
 };
 
 export type TableListDataSource<TDocument> =
