@@ -183,6 +183,39 @@ describe("Calendar page", () => {
     expect(updatedPayload).toBeUndefined();
   });
 
+  test.each(["Resources", "Time grid"])("aligns the inline editor with its overlap lane in %s", async (layout) => {
+    const earlier = {
+      ...ownBooking,
+      id: 46,
+      start: "2026-08-17T07:00:00Z",
+      end: "2026-08-17T09:00:00Z",
+      purpose: "Earlier calibration",
+    };
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([earlier, ownBooking]))),
+    );
+    render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
+    await page.getByRole("button", { name: layout, exact: true }).click();
+    await calendar.day.click();
+    const event = calendar.event("Cell imaging");
+    await expect.element(event).toBeVisible();
+    const lane = event.element().closest<HTMLElement>("[data-event-id]");
+    if (!lane) throw new Error("Booking must have a timeline lane");
+    expect(Number(lane.dataset.lane)).toBeGreaterThan(0);
+    await event.getByRole("button", { name: "Show details", exact: false }).click();
+    await calendar.editBooking.click();
+    const overlay = page.getByTestId("timeline-window-editor");
+    await expect.element(page.getByRole("button", { name: "Move booking time" })).toBeVisible();
+    await expect
+      .poll(() => Math.abs(overlay.element().getBoundingClientRect().top - event.element().getBoundingClientRect().top))
+      .toBeLessThanOrEqual(1);
+    await expect
+      .poll(() =>
+        Math.abs(overlay.element().getBoundingClientRect().height - event.element().getBoundingClientRect().height),
+      )
+      .toBeLessThanOrEqual(1);
+  });
+
   test("moves and resizes a booking on the day timeline", async () => {
     render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
 
