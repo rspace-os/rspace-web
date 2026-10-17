@@ -45,6 +45,30 @@ afterEach(() => {
 });
 
 describe("Calendar page", () => {
+  test.each([640, 800, 1024])("keeps item information visible in a %s px booking container", async (width) => {
+    await withViewport(1440, async () => {
+      history.replace("/booking/calendar/bookings/add?target=IN123&date=2026-08-17");
+      render(
+        <div style={{ width: width + 64 }}>
+          <CalendarPageStory history={history} />
+        </div>,
+      );
+      await expect.element(page.getByRole("heading", { name: "Add Booking" })).toBeVisible();
+      const responsiveContainer = page.getByRole("main").element().lastElementChild;
+      if (!(responsiveContainer instanceof HTMLElement)) throw new Error("Booking content container is missing");
+      expect(getComputedStyle(responsiveContainer).containerType).toBe("inline-size");
+      expect(responsiveContainer.getBoundingClientRect().width).toBe(width);
+
+      const information = page.getByRole(width < 896 ? "region" : "complementary", { name: "Item information" });
+      await expect.element(information).toBeVisible();
+      await expect.element(information.getByText("Confocal microscope", { exact: true })).toBeVisible();
+      await expect.element(information.getByText("Opening hours", { exact: true })).toBeVisible();
+      expect(page.getByRole(width < 896 ? "complementary" : "region", { name: "Item information" }).all()).toHaveLength(
+        0,
+      );
+    });
+  });
+
   test("preserves item and event scopes across Calendar layouts", async () => {
     const params = new URLSearchParams({
       date: "2026-08-17",
