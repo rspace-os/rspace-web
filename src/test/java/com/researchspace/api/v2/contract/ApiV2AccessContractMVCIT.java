@@ -45,7 +45,12 @@ class ApiV2AccessContractMVCIT {
   private static final String MAINTENANCES = "/api/v2/maintenances";
   private static final String USERS = "/api/v2/users";
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  ApiV2AccessContractMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
