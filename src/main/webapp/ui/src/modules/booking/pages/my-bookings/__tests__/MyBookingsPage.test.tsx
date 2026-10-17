@@ -199,12 +199,13 @@ describe("My Bookings page", () => {
     expect(await table.findByText(expectedStart)).toBeVisible();
   });
 
-  it("keeps a role-lost requester's target label read-only without item navigation", async () => {
+  it("shows an unknown item for a role-lost requester without item navigation", async () => {
     renderPage(initialPath, 84, undefined, undefined, [roleLostBooking]);
 
     const table = within(await screen.findByRole("table"));
-    expect(await table.findByText("Confocal microscope")).toBeVisible();
-    expect(table.getByText("IN123", { exact: true })).toBeVisible();
+    expect(await table.findByText("common:values.unknownItem")).toBeVisible();
+    expect(table.queryByText("Confocal microscope")).not.toBeInTheDocument();
+    expect(table.queryByText("IN123", { exact: true })).not.toBeInTheDocument();
     expect(table.getByRole("link", { name: "booking:myBookings.actions.viewDetails" })).toHaveAttribute(
       "href",
       "/booking/calendar/bookings/43",

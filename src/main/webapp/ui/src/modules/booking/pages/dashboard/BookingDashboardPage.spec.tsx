@@ -7,7 +7,7 @@ import { worker } from "@/__tests__/browserMocks";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
 import { institutionBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
 import { BookingDashboardPageStory } from "./BookingDashboardPage.story";
-import { bookingDashboardHandlers, dashboardBookings } from "./mocks/bookingDashboardMocks";
+import { bookingDashboardHandlers, dashboardBookingFixture, dashboardBookings } from "./mocks/bookingDashboardMocks";
 import { BookingDashboardPageObject } from "./pageObjects/BookingDashboardPage";
 
 const dashboard = new BookingDashboardPageObject();
@@ -181,6 +181,31 @@ describe("Booking dashboard", () => {
     await expect.element(dashboard.calendarDay("Friday, August 21, 2026")).toBeVisible();
   });
 
+  test("keeps a retained booking visible without exposing its redacted target", async () => {
+    registerHandlers({
+      docs: [
+        ...dashboardBookings,
+        dashboardBookingFixture(702, 24, {
+          target: null,
+          timezone: null,
+          canViewConfiguration: false,
+          canEdit: false,
+          canCancel: false,
+          purpose: "Retained purpose",
+        }),
+      ],
+    });
+    render(<BookingDashboardPageStory history={history} />);
+
+    await dashboard.calendarDay("Monday, August 24, 2026").click();
+    await expect.element(dashboard.summaryDisclosure("Unknown item")).toBeVisible();
+    await dashboard.summaryDisclosure("Unknown item").click();
+    await expect.element(dashboard.popup.getByText("Retained purpose", { exact: true })).toBeVisible();
+    await expect
+      .element(dashboard.popup.getByRole("link", { name: "Details", exact: true }))
+      .toHaveAttribute("href", "/booking/calendar/bookings/702");
+  });
+
   test("keeps upcoming bookings available when the calendar fails", async () => {
     registerHandlers({ error: "monthly" });
     render(<BookingDashboardPageStory history={history} />);
@@ -229,7 +254,7 @@ describe("Booking dashboard", () => {
       async () => {
         registerHandlers({
           docs: dashboardBookings.map((booking) =>
-            booking.id >= 200 && booking.id < 205
+            booking.id >= 200 && booking.id < 205 && booking.target
               ? {
                   ...booking,
                   target: {

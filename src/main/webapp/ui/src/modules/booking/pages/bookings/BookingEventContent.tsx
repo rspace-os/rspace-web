@@ -16,6 +16,7 @@ import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
+import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { BookingEventContext } from "./BookingEventContext";
 import { BookingEventSkeleton } from "./BookingEventSkeleton";
 import { BookingMetadataAside } from "./BookingMetadataAside";
@@ -47,7 +48,13 @@ export function BookingEventContent() {
   });
   const editing = pathname.endsWith("/edit");
   const bookingItem = useBookableItemConfiguration(
-    editing && booking.data?.canEdit && booking.data.state === "CONFIRMED" ? booking.data.target.globalId : undefined,
+    editing &&
+      booking.data?.canEdit &&
+      booking.data.state === "CONFIRMED" &&
+      booking.data.target &&
+      booking.data.timezone
+      ? booking.data.target.globalId
+      : undefined,
     token,
   );
 
@@ -93,21 +100,23 @@ export function BookingEventContent() {
   }
 
   const document = booking.data;
+  const target = document.target;
+  const canViewItem = document.canViewConfiguration && target !== null;
   const refreshBooking = async () => {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
   };
-  const eventName = document.target.value.name;
-  const location = document.target.value.parentContainer;
+  const location = target?.value.parentContainer;
+  const eventName = target?.value.name ?? t("common:values.unknownItem");
   const period = formatAgendaPeriod(document.start, document.end, preferences.timeZone);
 
   return (
     <main className={detailPageClassName}>
       <DirtyNavigationGuard dirty={dirty} />
-      {document.canViewConfiguration ? (
+      {canViewItem ? (
         <Link
           className={buttonVariants({ variant: "ghost", size: "sm" })}
           to="/booking/bookable-items/$globalId/{-$tab}"
-          params={{ globalId: document.target.globalId, tab: undefined }}
+          params={{ globalId: target.globalId, tab: undefined }}
         >
           <ArrowLeftIcon aria-hidden="true" />
           {t("bookings.details.returnToItemCalendar")}
@@ -117,27 +126,31 @@ export function BookingEventContent() {
       )}
 
       <section className="flex flex-wrap items-center gap-4">
-        <InventoryItem
-          name={eventName}
-          nameAs="h1"
-          nameClassName="text-2xl font-semibold"
-          globalId={document.target.globalId}
-          idPlacement="title"
-          className="min-w-full flex-1 p-0 sm:min-w-0"
-          idLink={
-            document.canViewConfiguration ? (
-              <Link
-                to="/booking/bookable-items/$globalId/{-$tab}"
-                params={{ globalId: document.target.globalId, tab: undefined }}
-                aria-label={t("bookings.details.viewItem", { globalId: document.target.globalId })}
-              />
-            ) : undefined
-          }
-        >
-          {document.canViewConfiguration && location && typeof location.value === "object" ? (
-            <InventoryLocationLink name={location.value.name} globalId={location.globalId} compact />
-          ) : null}
-        </InventoryItem>
+        {target ? (
+          <InventoryItem
+            name={eventName}
+            nameAs="h1"
+            nameClassName="text-2xl font-semibold"
+            globalId={target.globalId}
+            idPlacement="title"
+            className="min-w-full flex-1 p-0 sm:min-w-0"
+            idLink={
+              canViewItem ? (
+                <Link
+                  to="/booking/bookable-items/$globalId/{-$tab}"
+                  params={{ globalId: target.globalId, tab: undefined }}
+                  aria-label={t("bookings.details.viewItem", { globalId: target.globalId })}
+                />
+              ) : undefined
+            }
+          >
+            {canViewItem && location && typeof location.value === "object" ? (
+              <InventoryLocationLink name={location.value.name} globalId={location.globalId} compact />
+            ) : null}
+          </InventoryItem>
+        ) : (
+          <UnknownItem size="sm" className="min-w-full flex-1 p-0 sm:min-w-0" />
+        )}
         <div
           data-slot="booking-event-header-actions"
           className="flex w-full min-w-0 flex-wrap items-center gap-3 sm:w-auto sm:shrink-0 [&_[data-slot=badge]]:h-[30px] [&_button]:h-[30px] [&_button]:min-h-[30px]"
@@ -145,7 +158,7 @@ export function BookingEventContent() {
           <Badge ref={stateBadgeRef} tabIndex={-1} variant={document.state === "CANCELLED" ? "destructive" : "default"}>
             {document.state === "CANCELLED" ? t("bookings.details.cancelled") : t("bookings.details.confirmed")}
           </Badge>
-          {document.canViewConfiguration && document.state === "CONFIRMED" ? (
+          {canViewItem && document.state === "CONFIRMED" ? (
             <BookingCalendarFileButton bookingId={document.id} itemName={eventName} period={period} token={token} />
           ) : null}
           {!editing && document.canCancel && document.state === "CONFIRMED" ? (
