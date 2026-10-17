@@ -68,7 +68,6 @@ export function CalendarContent() {
       eventFilterExpression={eventExpression}
       itemFilterIssue={itemIssue}
       eventFilterIssue={eventIssue}
-      hasTargetFilter={targetItemExpression !== null}
       targetFilter={
         target
           ? {

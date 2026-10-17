@@ -66,7 +66,6 @@ export function BookingEventsCalendar({
   onRetry,
   onDateChange,
   onControlsReset,
-  hasTargetFilter = false,
   onViewChange,
   onLayoutChange,
   creationAction,
@@ -107,7 +106,6 @@ export function BookingEventsCalendar({
   onRetry: () => void;
   onDateChange: (date: string) => void;
   onControlsReset: () => void;
-  hasTargetFilter?: boolean;
   onViewChange: (view: CalendarView) => void;
   onLayoutChange: (layout: CalendarLayout) => void;
   /** Production creation action rendered without replacing the calendar controls. */
@@ -247,7 +245,6 @@ export function BookingEventsCalendar({
           controlsOnSeparateRow: true,
           controls: filterControls,
           hasChanges:
-            hasTargetFilter ||
             date !== todayValue ||
             view !== "day" ||
             layout !== "resources" ||
