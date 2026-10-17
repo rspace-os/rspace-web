@@ -194,6 +194,11 @@ function InlineBookingEditor({
           schedulingTimezone={configuration.data.timezone}
           draft={timelineDraft}
           snapIncrementMinutes={configuration.data.slotGranularityMinutes}
+          movementPolicy={{
+            maxBookingDurationMinutes: event.kind === "MAINTENANCE" ? 0 : configuration.data.maxBookingDurationMinutes,
+            openingHours: configuration.data.openingHours,
+            enforceOpeningHours: event.kind !== "MAINTENANCE",
+          }}
           onChange={setWindowAdjustment}
           tone={event.kind === "MAINTENANCE" ? "maintenance" : "booking"}
         />

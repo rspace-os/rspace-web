@@ -10,7 +10,8 @@ import {
 } from "@/modules/booking/domain/bookingTime";
 import { cn } from "@/modules/common/utils/cn";
 import { closestSchedulingTimelineSlot } from "./schedulingTimelineGrid";
-import { resolveBookingWindow } from "./ZonedBookingWindowFields";
+import { moveTimelineRange, type TimelineMovePolicy } from "./timelineMove";
+import { type BookingWindowPolicy, resolveBookingWindow } from "./ZonedBookingWindowFields";
 
 type TimelineRange = { startMinute: number; endMinute: number };
 type AdjustmentMode = "move" | "start" | "end";
@@ -32,8 +33,8 @@ export function adjustTimelineRange(
   increment: number,
 ): TimelineRange {
   if (mode === "move") {
-    const duration = Math.min(dayMinutes, Math.max(increment, range.endMinute - range.startMinute));
-    const startMinute = Math.min(dayMinutes - duration, Math.max(0, range.startMinute + deltaOrMinute));
+    const duration = range.endMinute - range.startMinute;
+    const startMinute = range.startMinute + deltaOrMinute;
     return { startMinute, endMinute: startMinute + duration };
   }
   if (mode === "start") {
@@ -56,6 +57,7 @@ export function TimelineWindowEditor({
   schedulingTimezone = timezone,
   draft,
   snapIncrementMinutes,
+  movementPolicy,
   onChange,
   tone = "booking",
   testId = "timeline-window-editor",
@@ -67,6 +69,7 @@ export function TimelineWindowEditor({
   schedulingTimezone?: string;
   draft: BookingWindowDraft;
   snapIncrementMinutes: number;
+  movementPolicy?: TimelineMovePolicy;
   onChange?: (draft: BookingWindowDraft) => void;
   tone?: "booking" | "maintenance";
   testId?: string;
@@ -81,23 +84,33 @@ export function TimelineWindowEditor({
         endMinute: instantToDayMinute(resolved.end, date, timezone),
       }
     : undefined;
+  const movePolicy: BookingWindowPolicy = {
+    schedulingTimezone,
+    slotGranularityMinutes: snapIncrementMinutes,
+    maxBookingDurationMinutes: movementPolicy?.maxBookingDurationMinutes ?? 0,
+    openingHours: movementPolicy?.openingHours ?? [],
+    enforceOpeningHours: movementPolicy?.enforceOpeningHours ?? false,
+  };
+  const moveContext = { date, displayTimezone: timezone, policy: movePolicy };
   const [preview, setPreview] = React.useState<TimelineRange | null>(null);
   const interaction = React.useRef<{
     mode: AdjustmentMode;
     pointerId: number;
     originMinute: number;
     range: TimelineRange;
+    interval: { start: string; end: string };
+    startMinute: number;
   } | null>(null);
   const activeRange = preview ?? range;
 
-  if (!canvas || !activeRange || activeRange.endMinute <= activeRange.startMinute) return null;
+  if (!canvas || !resolved || !activeRange || activeRange.endMinute <= activeRange.startMinute) return null;
 
+  const pointerMinute = (clientX: number) => {
+    const bounds = canvas.getBoundingClientRect();
+    return Math.min(dayMinutes, Math.max(0, ((clientX - bounds.left) / bounds.width) * dayMinutes));
+  };
   const snapMinute = (minute: number) =>
     Math.min(dayMinutes, Math.max(0, Math.round(minute / snapIncrementMinutes) * snapIncrementMinutes));
-  const minuteAt = (clientX: number) => {
-    const bounds = canvas.getBoundingClientRect();
-    return snapMinute(((clientX - bounds.left) / bounds.width) * dayMinutes);
-  };
   const resizeMinuteAt = (clientX: number) => {
     const bounds = canvas.getBoundingClientRect();
     const minute = Math.min(dayMinutes, Math.max(0, Math.round(((clientX - bounds.left) / bounds.width) * dayMinutes)));
@@ -119,14 +132,24 @@ export function TimelineWindowEditor({
   const adjustedAt = (clientX: number) => {
     const active = interaction.current;
     if (!active) return activeRange;
-    const minute = active.mode === "move" ? minuteAt(clientX) : resizeMinuteAt(clientX);
-    return adjustTimelineRange(
-      active.range,
-      active.mode,
-      active.mode === "move" ? minute - active.originMinute : minute,
-      dayMinutes,
-      snapIncrementMinutes,
-    );
+    if (active.mode === "move") {
+      const target = dayMinuteToZonedTime(
+        date,
+        timezone,
+        active.startMinute + pointerMinute(clientX) - active.originMinute,
+      )
+        .toInstant()
+        .toString();
+      const moved = moveTimelineRange(active.interval, { kind: "nearest", target }, moveContext);
+      return moved
+        ? {
+            startMinute: instantToDayMinute(moved.start, date, timezone),
+            endMinute: instantToDayMinute(moved.end, date, timezone),
+          }
+        : undefined;
+    }
+    const minute = resizeMinuteAt(clientX);
+    return adjustTimelineRange(active.range, active.mode, minute, dayMinutes, snapIncrementMinutes);
   };
   const begin = (mode: AdjustmentMode, event: React.PointerEvent<HTMLButtonElement>) => {
     if (!onChange) return;
@@ -136,8 +159,10 @@ export function TimelineWindowEditor({
     interaction.current = {
       mode,
       pointerId: event.pointerId,
-      originMinute: minuteAt(event.clientX),
+      originMinute: pointerMinute(event.clientX),
       range: activeRange,
+      interval: resolved,
+      startMinute: instantToDayMinute(resolved.start, date, timezone),
     };
     setPreview(activeRange);
   };
@@ -145,26 +170,44 @@ export function TimelineWindowEditor({
     if (interaction.current?.pointerId !== event.pointerId) return;
     event.preventDefault();
     event.stopPropagation();
-    setPreview(adjustedAt(event.clientX));
+    const next = adjustedAt(event.clientX);
+    setPreview(next ?? interaction.current.range);
   };
   const finish = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (interaction.current?.pointerId !== event.pointerId) return;
     event.preventDefault();
     event.stopPropagation();
+    const active = interaction.current;
     const next = adjustedAt(event.clientX);
     interaction.current = null;
     setPreview(null);
+    if (!next) return;
+    if (active.mode === "move") {
+      const movedStart = dayMinuteToZonedTime(date, timezone, next.startMinute).toInstant().toString();
+      const movedEnd = dayMinuteToZonedTime(date, timezone, next.endMinute).toInstant().toString();
+      if (movedStart === active.interval.start && movedEnd === active.interval.end) return;
+    }
     onChange?.(changedDraft(next));
   };
   const changeByKeyboard = (mode: AdjustmentMode, event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (!onChange || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
     event.preventDefault();
     event.stopPropagation();
+    if (mode === "move") {
+      const next = moveTimelineRange(
+        resolved,
+        { kind: "step", direction: event.key === "ArrowLeft" ? "previous" : "next" },
+        moveContext,
+      );
+      if (!next || (next.start === resolved.start && next.end === resolved.end)) return;
+      onChange(wallClockDraftFromInstants(next.start, next.end, timezone));
+      return;
+    }
     const delta = event.key === "ArrowLeft" ? -snapIncrementMinutes : snapIncrementMinutes;
     const next = adjustTimelineRange(
       activeRange,
       mode,
-      mode === "move" ? delta : mode === "start" ? activeRange.startMinute + delta : activeRange.endMinute + delta,
+      mode === "start" ? activeRange.startMinute + delta : activeRange.endMinute + delta,
       dayMinutes,
       snapIncrementMinutes,
     );
