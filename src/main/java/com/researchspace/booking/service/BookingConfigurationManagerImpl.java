@@ -561,7 +561,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   private void requireCapability(
       BookingConfiguration configuration, User subject, String capability) {
     ResolvedResourceAccess access =
-        accessManager.resolve(configuration.getResourceAccess(), subject);
+        accessManager.resolveForMutation(configuration.getResourceAccess(), subject);
     if (!access.hasCapability(capability)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }

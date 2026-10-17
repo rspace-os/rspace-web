@@ -138,6 +138,8 @@ class BookingConfigurationManagerTest {
                 BookingResourceRoleScheme.EDIT_CONFIGURATION),
             List.of());
     when(accessManager.resolve(nullable(ResourceAccess.class), eq(actor))).thenReturn(ownerAccess);
+    when(accessManager.resolveForMutation(nullable(ResourceAccess.class), eq(actor)))
+        .thenReturn(ownerAccess);
     when(accessManager.resolveAll(any(), eq(actor)))
         .thenAnswer(
             invocation -> {
@@ -440,6 +442,7 @@ class BookingConfigurationManagerTest {
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), updated.getTarget());
     assertSame(actor, updated.getUpdatedBy());
     assertTrue(updated.getUpdatedAt() != null);
+    verify(accessManager).resolveForMutation(configuration.getResourceAccess(), actor);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
   }
 
