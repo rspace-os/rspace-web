@@ -1,5 +1,7 @@
 package com.researchspace.booking.service;
 
+import com.researchspace.booking.dao.BookingCalendarCurrentAccessDao;
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
@@ -18,7 +20,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,32 +31,41 @@ public class BookingItemPermissions {
   private final InstrumentDao instruments;
   private final BookingResourceRoleScheme roleScheme;
   private final BookingCalendarSubscriptionDao subscriptions;
-  private final ObjectProvider<BookingFreshPermissionReader> freshReader;
+  private final BookingCalendarCurrentAccessDao currentAccess;
+  private final BookingCalendarPermissionGateDao permissionGate;
 
   public BookingItemPermissions(
       InventoryPermissionUtils inventoryPermissions,
       InstrumentDao instruments,
       BookingResourceRoleScheme roleScheme,
       BookingCalendarSubscriptionDao subscriptions,
-      ObjectProvider<BookingFreshPermissionReader> freshReader) {
+      BookingCalendarCurrentAccessDao currentAccess,
+      BookingCalendarPermissionGateDao permissionGate) {
     this.inventoryPermissions = inventoryPermissions;
     this.instruments = instruments;
     this.roleScheme = roleScheme;
     this.subscriptions = subscriptions;
-    this.freshReader = freshReader;
+    this.currentAccess = currentAccess;
+    this.permissionGate = permissionGate;
   }
 
   /**
    * Resolves fresh membership facts while serializing the mutation with permission revocation.
    *
-   * <p>The caller must already hold the booking configuration lock. The shared permission fence is
-   * acquired second so all booking mutation paths use the same configuration-to-fence order.
+   * <p>The caller's locking configuration lookup acquires the shared permission gate before the
+   * target and configuration locks. This method then takes the legacy fence before reading current
+   * scalar authorization facts.
    */
   public ResolvedResourceAccess resolveForMutation(
       BookingConfiguration configuration, User subject) {
     if (subject == null || subject.getId() == null) return ResolvedResourceAccess.none();
+    permissionGate.requireHeld(BookingCalendarPermissionGateDao.Mode.SHARED);
     subscriptions.lockPermissionFence();
-    return freshReader.getObject().resolve(configuration.getTarget(), subject.getId());
+    BookableTargetReference target = configuration.getTarget();
+    if (target == null || target.type() != BookableTargetType.INSTRUMENT || target.id() == null) {
+      return ResolvedResourceAccess.none();
+    }
+    return resolved(currentAccess.resolve(subject.getId(), target.id()));
   }
 
   /** Resolves one configuration against the target item's current permission state. */
@@ -122,10 +132,7 @@ public class BookingItemPermissions {
                 && instrument.getOwner().getUsername() != null
                 && instrument.getOwner().getUsername().equals(subject.getUsername()));
     if (owner) {
-      return new ResolvedResourceAccess(
-          Optional.of(BookingResourceRoleScheme.OWNER),
-          withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)),
-          List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
+      return owner();
     }
     if (inventoryPermissions.canUserEditInventoryRecord(instrument, subject)) {
       return role(BookingResourceRoleScheme.BOOKER);
@@ -139,13 +146,7 @@ public class BookingItemPermissions {
             || (access.ownerUsername() != null
                 && access.ownerUsername().equals(subject.getUsername()));
     if (owner) {
-      Set<String> capabilities =
-          new java.util.HashSet<>(
-              withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)));
-      return new ResolvedResourceAccess(
-          Optional.of(BookingResourceRoleScheme.OWNER),
-          capabilities,
-          List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
+      return owner();
     }
     return access.directEdit()
         ? role(BookingResourceRoleScheme.BOOKER)
@@ -166,6 +167,22 @@ public class BookingItemPermissions {
         Optional.of(role),
         roleScheme.capabilities(role),
         List.of(ResourceRoleSource.implicit(role)));
+  }
+
+  private ResolvedResourceAccess owner() {
+    return new ResolvedResourceAccess(
+        Optional.of(BookingResourceRoleScheme.OWNER),
+        withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)),
+        List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
+  }
+
+  private ResolvedResourceAccess resolved(BookingCalendarCurrentAccessDao.Access access) {
+    return switch (access) {
+      case OWNER -> owner();
+      case BOOKER -> role(BookingResourceRoleScheme.BOOKER);
+      case VIEWER -> role(BookingResourceRoleScheme.VIEWER);
+      case DENIED -> ResolvedResourceAccess.none();
+    };
   }
 
   private static Set<String> withoutAclManagement(Set<String> capabilities) {

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.dao.InstrumentDao;
@@ -37,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -266,6 +268,178 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     org.junit.jupiter.api.Assertions.assertInstanceOf(
         BookingCalendarManager.NotFound.class,
         calendarManager.feed(token, java.util.Locale.UK, new Date()));
+  }
+
+  @Test
+  public void lossAndRestoreInOneSourceTransactionRetainsTheExactCalendarToken() throws Exception {
+    super.setUp();
+    User owner = createInitAndLoginAnyUser();
+    User booker = createInitAndLoginAnyUser();
+    Group group = accessGroup(owner, booker, null);
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Loss restore token scope");
+    setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_GROUPS, owner);
+    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
+    BookingCalendarManager.Created original =
+        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
+
+    logoutAndLoginAs(piUser);
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            ignored -> {
+              grpMgr.removeUserFromGroup(booker.getUsername(), group.getId(), piUser);
+              grpMgr.addUserToGroup(
+                  booker.getUsername(), group.getId(), com.researchspace.model.RoleInGroup.DEFAULT);
+            });
+
+    BookingCalendarManager.Status retained =
+        calendarManager.status(setup.configurationId(), booker, booker);
+    assertEquals(original.status().etag(), retained.etag());
+    assertEquals(original.subscriptionUrl(), retained.subscriptionUrl());
+  }
+
+  @Test
+  public void bookerToViewerAndRedundantPermissionWritesRetainTheExactCalendarToken()
+      throws Exception {
+    super.setUp();
+    User owner = createInitAndLoginAnyUser();
+    User labAdmin = createInitAndLoginAnyUser();
+    accessGroup(owner, labAdmin, labAdmin.getUsername());
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Booker viewer token scope");
+    setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_GROUPS, owner);
+    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
+    BookingCalendarManager.Created original =
+        calendarManager.createOrRotate(setup.configurationId(), labAdmin, labAdmin, "\"inactive\"");
+
+    setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_ONLY, owner);
+    BookingCalendarManager.Status viewer =
+        calendarManager.status(setup.configurationId(), labAdmin, labAdmin);
+    assertEquals(original.status().etag(), viewer.etag());
+    assertEquals(original.subscriptionUrl(), viewer.subscriptionUrl());
+
+    setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_ONLY, owner);
+    BookingCalendarManager.Status redundant =
+        calendarManager.status(setup.configurationId(), labAdmin, labAdmin);
+    assertEquals(original.status().etag(), redundant.etag());
+    assertEquals(original.subscriptionUrl(), redundant.subscriptionUrl());
+  }
+
+  @Test
+  public void blockedRevocationCommitsBeforeAConcurrentPermissionRestore() throws Exception {
+    super.setUp();
+    User owner = createInitAndLoginAnyUser();
+    User booker = createInitAndLoginAnyUser();
+    accessGroup(owner, booker, null);
+    ApiInstrument instrument = createBasicInstrumentForUser(owner, "Atomic token revocation scope");
+    setInstrumentSharing(instrument.getId(), ApiInventorySharingMode.OWNER_GROUPS, owner);
+    Setup setup = persistConfiguration(owner, instrument.getId(), false, 0, 0);
+    BookingCalendarManager.Created original =
+        calendarManager.createOrRotate(setup.configurationId(), booker, booker, "\"inactive\"");
+    String rawToken =
+        java.net.URI.create(original.subscriptionUrl()).getRawQuery().substring("token=".length());
+    ApiInstrument revoke = instrumentApiMgr.getApiInstrumentById(instrument.getId(), owner);
+    revoke.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+    ApiInstrument restore = instrumentApiMgr.getApiInstrumentById(instrument.getId(), owner);
+    restore.setSharingMode(ApiInventorySharingMode.OWNER_GROUPS);
+
+    CountDownLatch legacyFenceLocked = new CountDownLatch(1);
+    CountDownLatch releaseLegacyFence = new CountDownLatch(1);
+    CountDownLatch sourceWritten = new CountDownLatch(1);
+    CountDownLatch restoreStarted = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(3);
+    try {
+      Future<?> holder =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            jdbcTemplate.queryForObject(
+                                "SELECT id FROM BookingConfigurationDefaults WHERE id = 1 FOR"
+                                    + " UPDATE",
+                                Long.class);
+                            legacyFenceLocked.countDown();
+                            await(releaseLegacyFence);
+                          }));
+      assertTrue(legacyFenceLocked.await(10, TimeUnit.SECONDS));
+
+      Future<?> revocation =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          ignored -> {
+                            instrumentApiMgr.updateApiInstrument(revoke, owner);
+                            sourceWritten.countDown();
+                          }));
+      assertTrue(sourceWritten.await(10, TimeUnit.SECONDS));
+
+      Future<?> restoration =
+          pool.submit(
+              () -> {
+                restoreStarted.countDown();
+                new TransactionTemplate(getTxMger())
+                    .executeWithoutResult(
+                        ignored -> instrumentApiMgr.updateApiInstrument(restore, owner));
+              });
+      assertTrue(restoreStarted.await(10, TimeUnit.SECONDS));
+      assertThrows(TimeoutException.class, () -> restoration.get(250, TimeUnit.MILLISECONDS));
+
+      releaseLegacyFence.countDown();
+      holder.get(20, TimeUnit.SECONDS);
+      revocation.get(20, TimeUnit.SECONDS);
+      restoration.get(20, TimeUnit.SECONDS);
+
+      assertEquals(
+          ApiInventorySharingMode.OWNER_GROUPS,
+          instrumentApiMgr.getApiInstrumentById(instrument.getId(), owner).getSharingMode());
+      assertEquals(
+          Integer.valueOf(0),
+          jdbcTemplate.queryForObject(
+              "SELECT COUNT(*) FROM BookableItemCalendarSubscription"
+                  + " WHERE user_id = ? AND bookingConfiguration_id = ?",
+              Integer.class,
+              booker.getId(),
+              setup.configurationId()));
+      org.junit.jupiter.api.Assertions.assertInstanceOf(
+          BookingCalendarManager.NotFound.class,
+          calendarManager.feed(rawToken, java.util.Locale.UK, new Date()));
+    } finally {
+      releaseLegacyFence.countDown();
+      pool.shutdownNow();
+      assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
+    }
+  }
+
+  private Group accessGroup(User owner, User member, String labAdminUsername) {
+    return new TransactionTemplate(getTxMger())
+        .execute(
+            ignored -> {
+              Group created =
+                  new Group("booking" + UUID.randomUUID().toString().substring(0, 8), piUser);
+              created.setDisplayName(created.getUniqueName());
+              perFactory
+                  .createDefaultGlobalGroupPermissions(created)
+                  .forEach(created::addPermission);
+              created = grpMgr.saveGroup(created, piUser);
+              grpMgr.addMembersToGroup(
+                  created.getId(),
+                  List.of(piUser, owner, member),
+                  piUser.getUsername(),
+                  labAdminUsername,
+                  piUser);
+              if (labAdminUsername != null) {
+                grpMgr.authorizeLabAdminToViewAll(member.getId(), piUser, created.getId(), true);
+              }
+              permissionUtils.refreshCache();
+              return created;
+            });
+  }
+
+  private void setInstrumentSharing(
+      Long instrumentId, ApiInventorySharingMode sharingMode, User owner) {
+    ApiInstrument update = instrumentApiMgr.getApiInstrumentById(instrumentId, owner);
+    update.setSharingMode(sharingMode);
+    instrumentApiMgr.updateApiInstrument(update, owner);
   }
 
   @Test

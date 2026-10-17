@@ -37,21 +37,26 @@ all application nodes together; an old node would still use the stale grants.
 Do not roll back to independent ACL authorization without reconciling Inventory
 permission changes. Destructive cleanup of legacy rows is a later migration.
 
-Booking writes hold a database permission fence until commit. A separate
-`READ_COMMITTED` transaction loads the subject and target permission facts,
-so initialized Hibernate memberships from an older transaction cannot authorize
-a write after revocation. Instrument and configuration locks still protect
-scheduling and item state. Paths that need those locks acquire them before the
-permission fence. Callers must commit new users and Inventory items before
-creating their Booking configuration.
+Booking writes take a shared lock on the singleton calendar permission gate
+before target, configuration and subscription locks. Permission-source writers
+take its exclusive lock through `BookingCalendarRevocationCoordinator`. An outer
+writer entry point must register with the coordinator before its first query,
+lock, DML statement or possible Hibernate autoflush. A transaction must not try
+to upgrade a shared gate to exclusive. The phase guard rejects registration
+after revocation finalization starts, but it cannot detect every first permission
+mutation made inside a transaction callback. A first-ever permission mutation
+inside a transaction callback is therefore structurally prohibited.
 
-The fence currently locks the seeded `BookingConfigurationDefaults` row with
-ID 1. This serializes Booking writes with permission-change listeners and
-subscription creation. It uses an extra database connection for fresh reads.
-Keep the lock order as authoritative permission mutation locks, then the
-Inventory target and Booking configuration where applicable, then the fence,
-then subscription rows. If contention becomes material, replace the global
-fence with scoped locks only after auditing every permission-changing path.
+The coordinator coalesces affected users and instruments. Before commit it
+flushes the source changes, evaluates current scalar account, role, membership,
+community, sharing and target rows with locking reads, deletes item links whose
+owners have actually lost read access, and flushes the deletions. A failed read,
+lock or deletion rolls back the whole source transaction. Configuration state
+and feature availability are reversible and do not permanently revoke a token;
+an actual loss of inherited read access does. Mixed source-to-item create or
+rotate calls remain in the same transaction and use the same current facts.
+User-wide link creation and rotation are rejected under an active or suspended
+gate because they retain their independent `READ_COMMITTED` transaction.
 
 Inventory and Booking currently have separate application entrypoints.
 Inventory's Booking links perform a full page navigation, which creates a new

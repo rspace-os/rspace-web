@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.booking.dao.BookingCalendarCurrentAccessDao;
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
@@ -28,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.ObjectProvider;
 
 @ExtendWith(MockitoExtension.class)
 class BookingItemPermissionsTest {
@@ -38,7 +40,8 @@ class BookingItemPermissionsTest {
   @Mock private InventoryPermissionUtils inventoryPermissions;
   @Mock private InstrumentDao instruments;
   @Mock private BookingCalendarSubscriptionDao subscriptions;
-  @Mock private ObjectProvider<BookingFreshPermissionReader> freshReader;
+  @Mock private BookingCalendarCurrentAccessDao currentAccess;
+  @Mock private BookingCalendarPermissionGateDao permissionGate;
   @Mock private User subject;
   @Mock private User itemOwner;
   @Mock private Instrument instrument;
@@ -54,13 +57,14 @@ class BookingItemPermissionsTest {
             instruments,
             new BookingResourceRoleScheme(),
             subscriptions,
-            freshReader);
+            currentAccess,
+            permissionGate);
     configuration = new BookingConfiguration();
     configuration.setId(23L);
     configuration.replaceTarget(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, TARGET_ID));
 
-    when(subject.isEnabled()).thenReturn(true);
+    lenient().when(subject.isEnabled()).thenReturn(true);
     lenient().when(instruments.getSafeNull(TARGET_ID)).thenReturn(Optional.of(instrument));
     lenient().when(instrument.getOwner()).thenReturn(itemOwner);
     lenient()
@@ -136,5 +140,18 @@ class BookingItemPermissionsTest {
             24L,
             ResolvedResourceAccess.none()),
         permissions.resolveAll(List.of(configuration, second), subject));
+  }
+
+  @Test
+  void mutationUsesCurrentScalarAccessUnderTheSharedGate() {
+    when(subject.getId()).thenReturn(5L);
+    when(currentAccess.resolve(5L, TARGET_ID))
+        .thenReturn(BookingCalendarCurrentAccessDao.Access.VIEWER);
+
+    ResolvedResourceAccess resolved = permissions.resolveForMutation(configuration, subject);
+
+    assertEquals(Optional.of(BookingResourceRoleScheme.VIEWER), resolved.effectiveRole());
+    verify(permissionGate).requireHeld(BookingCalendarPermissionGateDao.Mode.SHARED);
+    verify(subscriptions).lockPermissionFence();
   }
 }

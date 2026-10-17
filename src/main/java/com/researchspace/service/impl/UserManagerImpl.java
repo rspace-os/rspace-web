@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -85,6 +86,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -98,6 +100,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   @Override
   public User saveUser(User toChange) {
+    calendarRevocations.affectUser(toChange.getId());
     encryptPasswordIfRequired(toChange);
     try {
       return doSave(toChange);
@@ -106,6 +109,12 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       log.error(msg);
       throw new IllegalStateException(msg);
     }
+  }
+
+  @Override
+  public User save(User user) {
+    calendarRevocations.affectUser(user.getId());
+    return super.save(user);
   }
 
   @Override
