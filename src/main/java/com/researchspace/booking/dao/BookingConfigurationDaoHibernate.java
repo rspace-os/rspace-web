@@ -154,6 +154,21 @@ public class BookingConfigurationDaoHibernate
     if (readableRoleKeys.isEmpty()) {
       return Set.of();
     }
+    if (caller.hasSysadminRole()) {
+      return Set.copyOf(
+          getSession()
+              .createQuery(
+                  "select configuration.target.id from BookingConfiguration configuration "
+                      + "where configuration.state = :state and configuration.enabled = true "
+                      + "and configuration.target.type = :targetType and exists ("
+                      + "select instrument.id from Instrument instrument "
+                      + "where instrument.id = configuration.target.id "
+                      + "and instrument.deleted = false)",
+                  Long.class)
+              .setParameter("targetType", BookableTargetType.INSTRUMENT)
+              .setParameter("state", BookingConfigurationState.ACTIVE)
+              .getResultList());
+    }
     Set<Long> groupIds =
         caller.getGroups().stream().map(group -> group.getId()).collect(Collectors.toSet());
     if (groupIds.isEmpty()) {
