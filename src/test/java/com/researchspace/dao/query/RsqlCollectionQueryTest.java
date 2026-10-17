@@ -339,6 +339,104 @@ class RsqlCollectionQueryTest {
     assertTrue(result.parameters().containsValue(List.of(44L)));
   }
 
+  @Test
+  void enforcesOneLikeBudgetAcrossDirectAndNestedRelationshipPredicates() {
+    LikeBudgetFixture fixture = likeBudgetFixture();
+    RsqlCollectionQuery query = new RsqlCollectionQuery(fixture.source(), "item");
+
+    Predicate fortyNine =
+        query.translate(
+            new FilterExpression.And(
+                List.of(likeComparison("name", 29), likeComparison("target.name", 20))),
+            fixture.targets());
+    Predicate fifty =
+        query.translate(
+            new FilterExpression.And(
+                List.of(likeComparison("name", 30), likeComparison("target.name", 20))),
+            fixture.targets());
+
+    assertEquals(49, likeParameterCount(fortyNine));
+    assertEquals(50, likeParameterCount(fifty));
+    CollectionQueryException overBudget =
+        assertThrows(
+            CollectionQueryException.class,
+            () ->
+                query.translate(
+                    new FilterExpression.And(
+                        List.of(likeComparison("name", 31), likeComparison("target.name", 20))),
+                    fixture.targets()));
+    assertEquals(CollectionQueryException.Reason.COMPLEXITY, overBudget.getReason());
+
+    CollectionQueryException nestedOverBudget =
+        assertThrows(
+            CollectionQueryException.class,
+            () ->
+                query.translate(
+                    new FilterExpression.And(
+                        List.of(
+                            likeComparison("target.name", 30), likeComparison("target.name", 30))),
+                    fixture.targets()));
+    assertEquals(CollectionQueryException.Reason.COMPLEXITY, nestedOverBudget.getReason());
+  }
+
+  @Test
+  void trustedRelationshipConstraintKeepsItsNestedLikesOutsideTheCallerBudget() {
+    LikeBudgetFixture fixture = likeBudgetFixture();
+    RsqlCollectionQuery query = new RsqlCollectionQuery(fixture.source(), "item");
+
+    Predicate trusted =
+        query.translateTrusted(likeComparison("target.name", 51), fixture.targets());
+
+    assertEquals(51, likeParameterCount(trusted));
+  }
+
+  private static FilterExpression.Comparison likeComparison(String field, int wordCount) {
+    String words =
+        IntStream.range(0, wordCount)
+            .mapToObj(index -> "term" + index)
+            .collect(Collectors.joining(" "));
+    return new FilterExpression.Comparison(field, Operator.LIKE, List.of(words), false);
+  }
+
+  private static long likeParameterCount(Predicate predicate) {
+    return predicate.parameters().values().stream()
+        .filter(String.class::isInstance)
+        .map(String.class::cast)
+        .filter(value -> value.startsWith("%") && value.endsWith("%"))
+        .count();
+  }
+
+  private static LikeBudgetFixture likeBudgetFixture() {
+    CollectionDescription<BudgetSource> source =
+        new CollectionDescription<>(
+            "budgetSources",
+            BudgetSource.class,
+            List.<ResourceMember<BudgetSource>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), BudgetSource::id),
+                Field.readOnly("name", "name", CollectionFieldTypes.text(), BudgetSource::name),
+                Relationship.referenceToOne(
+                    "target",
+                    "budgetTargets",
+                    CollectionFieldTypes.longNumber(),
+                    BudgetTarget.class,
+                    BudgetSource::target,
+                    BudgetTarget::id,
+                    "targetId")),
+            "id",
+            List.of(new Sort("id", true)));
+    CollectionDescription<BudgetTarget> target =
+        new CollectionDescription<>(
+            "budgetTargets",
+            BudgetTarget.class,
+            List.<ResourceMember<BudgetTarget>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), BudgetTarget::id),
+                Field.readOnly("name", "name", CollectionFieldTypes.text(), BudgetTarget::name)),
+            "id",
+            List.of(new Sort("id", true)));
+    ResourceRegistry registry = new ResourceRegistry(List.of(source, target));
+    return new LikeBudgetFixture(source, RelationshipReadAccess.unrestricted(registry));
+  }
+
   private static CollectionDescription<Related> relationshipDescription() {
     return new CollectionDescription<>(
         "related",
@@ -391,6 +489,17 @@ class RsqlCollectionQueryTest {
   private Predicate translate(String rsql) {
     return translator.translate(parser.parse(rsql));
   }
+
+  private record LikeBudgetFixture(
+      CollectionDescription<BudgetSource> source, RelationshipReadAccess targets) {}
+
+  private record BudgetSource(Long id, String name, Long targetId) {
+    BudgetTarget target() {
+      return new BudgetTarget(targetId, "target");
+    }
+  }
+
+  private record BudgetTarget(Long id, String name) {}
 
   private record Related(Long id, TargetKind targetType, Long targetId) {
     ResourceReference<TargetKind, Long> target() {

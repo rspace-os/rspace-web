@@ -2,7 +2,12 @@ package com.researchspace.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.Operator;
@@ -13,6 +18,7 @@ import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.service.inventory.ExtraFieldRuntimeManager;
 import com.researchspace.service.inventory.InstrumentCustomFieldManager;
 import com.researchspace.service.inventory.InstrumentReadAccess;
@@ -84,6 +90,44 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
   }
 
   @Test
+  public void matchesChoiceValuesAsExactJsonMembers() throws Exception {
+    List<String> options =
+        List.of("BSL-2", "bsl-2", "prefix\"BSL-2", "prefix\\\"BSL-2", "prefix\\BSL-2");
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("Choice JSON membership");
+    ApiInventoryEntityField choiceDefinition =
+        createBasicApiSampleOptionsField("choice", ApiFieldType.CHOICE, List.of());
+    choiceDefinition.setDefinition(new ApiInventoryFieldDef(options, true));
+    templatePost.getFields().add(choiceDefinition);
+    ApiInstrumentTemplate template = instrumentApiMgr.createInstrumentTemplate(templatePost, owner);
+
+    doInTransaction(
+        () -> {
+          instrumentWithChoiceSelection(template, "Choice exact", List.of("BSL-2"));
+          instrumentWithChoiceSelection(template, "Choice lowercase", List.of("bsl-2"));
+          instrumentWithChoiceSelection(template, "Choice quoted", List.of("prefix\"BSL-2"));
+          instrumentWithChoiceSelection(
+              template, "Choice escaped quote", List.of("prefix\\\"BSL-2"));
+          instrumentWithChoiceSelection(template, "Choice backslash", List.of("prefix\\BSL-2"));
+          instrumentWithChoiceSelection(template, "Choice empty", List.of());
+          instrumentWithChoiceSelection(template, "Choice malformed", List.of())
+              .setData("[\"unfinished");
+          instrumentWithChoiceSelection(template, "Choice blank", List.of()).setData("");
+        });
+    ResolvedRuntimeField choice =
+        doInTransaction(
+            () -> InstrumentCustomFieldTestUtils.definitionOf(customFields, owner, template));
+
+    assertEquals(List.of("Choice exact"), matches(choice, Operator.CONTAINS, "BSL-2"));
+    assertEquals(List.of("Choice exact"), matches(choice, Operator.IN, "BSL-2"));
+    assertEquals(List.of("Choice lowercase"), matches(choice, Operator.CONTAINS, "bsl-2"));
+    assertEquals(List.of("Choice lowercase"), matches(choice, Operator.IN, "bsl-2"));
+    assertEquals(List.of("Choice quoted"), matches(choice, Operator.CONTAINS, "prefix\"BSL-2"));
+    assertEquals(List.of("Choice escaped quote"), matches(choice, Operator.IN, "prefix\\\"BSL-2"));
+    assertEquals(List.of("Choice backslash"), matches(choice, Operator.CONTAINS, "prefix\\BSL-2"));
+  }
+
+  @Test
   public void matchesAnAdHocExtraFieldByWholeWordThroughTheIndex() throws Exception {
     assertEquals(List.of("Ad hoc"), matches(notes, Operator.LIKE, "cabinet"));
     assertEquals(List.of("Ad hoc"), matches(notes, Operator.LIKE, "cabinet BSL-2"));
@@ -94,6 +138,24 @@ public class InstrumentCustomFieldTextSearchIT extends RealTransactionSpringTest
   public void fallsBackToTheDatabaseForAPartialWordOfAnExtraField() throws Exception {
     assertEquals(List.of("Ad hoc"), matches(notes, Operator.LIKE, "cabin"));
     assertEquals(List.of("Ad hoc"), matches(notes, Operator.CONTAINS, "abinet"));
+  }
+
+  private InventoryChoiceField instrumentWithChoiceSelection(
+      ApiInstrumentTemplate template, String name, List<String> selectedOptions) {
+    ApiInstrument request = new ApiInstrument();
+    request.setName(name);
+    request.setTemplateId(template.getId());
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, owner);
+    Instrument instrument = instrumentDao.get(created.getId());
+    InventoryChoiceField choiceField =
+        instrument.getActiveFields().stream()
+            .filter(InventoryChoiceField.class::isInstance)
+            .map(InventoryChoiceField.class::cast)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("No choice field in template"));
+    choiceField.setSelectedOptions(selectedOptions);
+    instrumentDao.save(instrument);
+    return choiceField;
   }
 
   private ResolvedRuntimeField extraFieldDefinition() {
