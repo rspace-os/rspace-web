@@ -240,7 +240,7 @@ export function InlineBookingEditor({
       {timelineDate && timelineEventElement ? (
         <TimelineWindowEditor
           anchor={timelineEventElement}
-          verticalAnchor={timelineEventElement}
+          verticalAnchor={timelineEventElement.closest<HTMLElement>("[data-event-id]") ?? timelineEventElement}
           date={timelineDate}
           timezone={timezone}
           schedulingTimezone={configuration.data.timezone}
