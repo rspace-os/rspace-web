@@ -39,7 +39,12 @@ class ApiV2QueryContractMVCIT {
   private static final String MAINTENANCES = "/api/v2/maintenances";
   private static final String INSTRUMENTS = "/api/v2/instruments";
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  ApiV2QueryContractMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
