@@ -10,6 +10,6 @@
   </head>
   <body>
     <noscript><spring:message code="common:javascriptRequired"/></noscript>
-    <div id="app"></div>
+    <div id="app" data-context-path="${fn:escapeXml(pageContext.request.contextPath)}"></div>
   </body>
 </html>

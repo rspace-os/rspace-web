@@ -28,15 +28,32 @@ describe("Lighthouse SDK manager", () => {
     expect(() => callLighthouse("showButton")).not.toThrow();
   });
 
+  it.each([
+    ["missing", undefined],
+    ["incomplete", { show: vi.fn() }],
+  ] as const)("opens the documentation fallback when Lighthouse is %s", (_state, lighthouse) => {
+    const open = vi.fn();
+    window.open = open;
+    setTestLighthouse(lighthouse);
+
+    showLighthouse();
+
+    expect(open).toHaveBeenCalledWith("https://researchspace.helpdocs.io", "_blank", "noopener,noreferrer");
+    expect(open).toHaveBeenCalledTimes(1);
+  });
+
   it("calls the requested Lighthouse methods when they exist", () => {
     const show = vi.fn();
     const showButton = vi.fn();
+    const open = vi.fn();
+    window.open = open;
     setTestLighthouse({ show, showButton });
 
     showLighthouse();
 
     expect(showButton).toHaveBeenCalledTimes(1);
     expect(show).toHaveBeenCalledTimes(1);
+    expect(open).not.toHaveBeenCalled();
   });
 
   it("routes contact navigation to support email when livechat is disabled", () => {
