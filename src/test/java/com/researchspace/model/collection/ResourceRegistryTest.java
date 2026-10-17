@@ -86,6 +86,89 @@ class ResourceRegistryTest {
   }
 
   @Test
+  void omitsDeniedRelationshipsBeforeBatchResolutionAndExpandedRendering() {
+    CollectionDescription<PolicyNode> nodes =
+        new CollectionDescription<>(
+            "policyNodes",
+            PolicyNode.class,
+            List.<ResourceMember<PolicyNode>>of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), PolicyNode::id),
+                Relationship.referenceToOne(
+                        "blocked",
+                        "policyNodes",
+                        CollectionFieldTypes.longNumber(),
+                        PolicyNode.class,
+                        PolicyNode::blocked,
+                        PolicyNode::id,
+                        "blocked.id")
+                    .readableBy(AccessFunction.never()),
+                Relationship.referenceToOne(
+                        "next",
+                        "policyNodes",
+                        CollectionFieldTypes.longNumber(),
+                        PolicyNode.class,
+                        PolicyNode::next,
+                        PolicyNode::id,
+                        "next.id")
+                    .readableBy(
+                        AccessFunction.when(
+                            context -> {
+                              if (context.targets(1L)) {
+                                return true;
+                              }
+                              assertTrue(
+                                  context.targets(2L),
+                                  "relationship access must receive the captured row ID");
+                              return false;
+                            }))),
+            "id",
+            List.of(new Sort("id", true)));
+    ResourceRegistry registry = new ResourceRegistry(List.of(nodes));
+    PolicyNode third = new PolicyNode(3L, null, null);
+    PolicyNode second = new PolicyNode(2L, third, third);
+    PolicyNode first = new PolicyNode(1L, third, second);
+    ResourceRenderer.TargetKey expectedTarget = new ResourceRenderer.TargetKey("policyNodes", 2L);
+    List<Set<ResourceRenderer.TargetKey>> batches = new ArrayList<>();
+    ResourceRenderer.TargetResolver resolver =
+        new ResourceRenderer.TargetResolver() {
+          @Override
+          public Optional<ResourceRenderer.ResolvedTarget> resolve(String resourceName, Object id) {
+            throw new AssertionError("rendering must reuse the batched result");
+          }
+
+          @Override
+          public Map<ResourceRenderer.TargetKey, Optional<ResourceRenderer.ResolvedTarget>>
+              resolveAll(Collection<ResourceRenderer.TargetKey> targets) {
+            Set<ResourceRenderer.TargetKey> batch = Set.copyOf(targets);
+            batches.add(batch);
+            assertEquals(Set.of(expectedTarget), batch);
+            return Map.of(
+                expectedTarget,
+                Optional.of(new ResourceRenderer.ResolvedTarget(second, FieldSelection.all())));
+          }
+        };
+
+    Map<String, Object> document =
+        new ResourceRenderer(registry)
+            .renderAll(
+                List.of(first),
+                nodes,
+                ignored -> FieldSelection.all(),
+                ResourceFieldSelections.root(FieldSelection.all()),
+                IncludeTree.toDepth(nodes, registry, 2),
+                resolver)
+            .get(0);
+
+    assertFalse(document.containsKey("blocked"));
+    Map<?, ?> next = (Map<?, ?>) document.get("next");
+    Map<?, ?> expanded = (Map<?, ?>) next.get("value");
+    assertEquals(2L, expanded.get("id"));
+    assertFalse(expanded.containsKey("blocked"));
+    assertFalse(expanded.containsKey("next"));
+    assertEquals(List.of(Set.of(expectedTarget)), batches);
+  }
+
+  @Test
   void exposesFieldAndRelationshipSchemaMetadata() {
     ResourceSchema schema = PARENTS.schema();
 
@@ -466,6 +549,19 @@ class ResourceRegistryTest {
                 new SplitReferenceBinding<>(Node::target, "targetType", "targetId"))),
         "id",
         List.of(new Sort("id", true)));
+  }
+
+  private record PolicyNode(Long id, PolicyNode blocked, PolicyNode next) {
+    public PolicyNode blocked() {
+      throw new AssertionError("denied relationship reader must not run");
+    }
+
+    public PolicyNode next() {
+      if (!id.equals(1L)) {
+        throw new AssertionError("row-denied relationship reader must not run");
+      }
+      return next;
+    }
   }
 
   private record Child(Long id, String name) {}

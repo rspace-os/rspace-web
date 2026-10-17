@@ -53,11 +53,33 @@ public final class RsqlCollectionQuery {
 
   public Predicate translate(
       FilterExpression filter, RelationshipReadAccess targets, RuntimeFieldSelection runtime) {
+    return translate(filter, targets, runtime, true);
+  }
+
+  /** Translates a nested target field using its parent filter's complexity policy. */
+  Predicate translateNested(FilterExpression filter, boolean enforceComplexityLimit) {
+    return translate(
+        filter,
+        RelationshipReadAccess.none(),
+        RuntimeFieldSelection.empty(),
+        enforceComplexityLimit);
+  }
+
+  private Predicate translate(
+      FilterExpression filter,
+      RelationshipReadAccess targets,
+      RuntimeFieldSelection runtime,
+      boolean enforceComplexityLimit) {
     if (filter == null) {
       return null;
     }
-    RsqlCompilationState state = new RsqlCompilationState(parameterPrefix, targets, runtime, true);
-    return new Predicate(expressions.compile(filter, state), state.parameters, state.subqueries);
+    RsqlCompilationState state =
+        new RsqlCompilationState(parameterPrefix, targets, runtime, enforceComplexityLimit);
+    return new Predicate(
+        expressions.compile(filter, state),
+        state.parameters,
+        state.subqueries,
+        state.likePredicateCount());
   }
 
   /** Compiles a server-built constraint without charging it to the caller complexity budget. */
@@ -100,15 +122,27 @@ public final class RsqlCollectionQuery {
   public record Subquery(Class<?> entityType, String alias, String whereExpression) {}
 
   public record Predicate(
-      String expression, Map<String, Object> parameters, Map<String, Subquery> subqueries) {
+      String expression,
+      Map<String, Object> parameters,
+      Map<String, Subquery> subqueries,
+      int callerLikePredicateCount) {
 
     public Predicate {
+      if (callerLikePredicateCount < 0) {
+        throw new IllegalArgumentException("Caller LIKE predicate count must not be negative");
+      }
       parameters = Map.copyOf(parameters);
       subqueries = Map.copyOf(subqueries);
     }
 
+    /** Preserves the original constructor for predicates that contain no caller LIKE count. */
+    public Predicate(
+        String expression, Map<String, Object> parameters, Map<String, Subquery> subqueries) {
+      this(expression, parameters, subqueries, 0);
+    }
+
     public Predicate(String expression, Map<String, Object> parameters) {
-      this(expression, parameters, Map.of());
+      this(expression, parameters, Map.of(), 0);
     }
 
     public void apply(CommonQueryBuilder<?> query) {
