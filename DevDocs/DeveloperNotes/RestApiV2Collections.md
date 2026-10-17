@@ -108,6 +108,14 @@ Protected resources can contribute `/api/v2/{resource}/{id}/access`, `/access/gr
 the resource's role and ownership rules. The access document is private and must not be cached.
 The generated OpenAPI document includes protected-access routes only for opted-in resources.
 
+The React `ResourceAccessEditor` keeps its draft within one resource and bearer-token session.
+Changing either starts a fresh editor; access documents and grantee search results use the same
+session boundary in their query keys. A failed background or conflict refresh keeps the loaded
+document, unsaved draft and navigation guard mounted. After a stale replacement, Retry loading
+latest remains available and saving stays blocked until recovery succeeds. A successful Leave closes
+its confirmation even if the caller retains inherited access. Its optional navigation callback runs
+only while the editor session that initiated the request remains mounted.
+
 ## Register a read-only collection
 
 Use `AccessPolicy.readOnly(...)` and limit `exposedOperations` to `LIST`, `COUNT` and `READ`.
