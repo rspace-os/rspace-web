@@ -93,7 +93,7 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
             communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CREATED);
     assertEquals(1, notifications.size());
     assertEquals(booker.getId(), notifications.get(0).getOriginator().getId());
-    assertPersistedForOwner(notifications.get(0), owner);
+    assertPersistedForRecipient(notifications.get(0), owner);
   }
 
   @Test
@@ -117,7 +117,12 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
             communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertEquals(1, notifications.size());
     assertEquals(booker.getId(), notifications.get(0).getOriginator().getId());
-    assertPersistedForOwner(notifications.get(0), owner);
+    assertPersistedForRecipient(notifications.get(0), owner);
+    assertEquals(
+        0,
+        BookingNotificationTestFixtures.notificationsFor(
+                communicationMgr, booker, NotificationType.NOTIFICATION_BOOKING_CANCELLED)
+            .size());
   }
 
   @Test
@@ -178,7 +183,13 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
             communicationMgr, owner, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
     assertEquals(1, notifications.size());
     assertEquals(sysadmin.getId(), notifications.get(0).getOriginator().getId());
-    assertPersistedForOwner(notifications.get(0), owner);
+    assertPersistedForRecipient(notifications.get(0), owner);
+    List<Notification> requesterNotifications =
+        BookingNotificationTestFixtures.notificationsFor(
+            communicationMgr, booker, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+    assertEquals(1, requesterNotifications.size());
+    assertEquals(sysadmin.getId(), requesterNotifications.get(0).getOriginator().getId());
+    assertPersistedForRecipient(requesterNotifications.get(0), booker);
     assertEquals(BookingConfigurationState.ARCHIVED, archived.getState());
   }
 
@@ -252,14 +263,16 @@ public class BookingOwnerNotificationIT extends RealTransactionSpringTestBase {
     permissionUtils.refreshCache();
   }
 
-  private void assertPersistedForOwner(Notification notification, User owner) throws Exception {
+  private void assertPersistedForRecipient(Notification notification, User recipient)
+      throws Exception {
     doInTransaction(
         () -> {
           Notification persisted =
               (Notification) communicationDao.getWithTargets(notification.getId()).orElseThrow();
           assertEquals(1, persisted.getRecipients().size());
           assertEquals(
-              owner.getId(), persisted.getRecipients().iterator().next().getRecipient().getId());
+              recipient.getId(),
+              persisted.getRecipients().iterator().next().getRecipient().getId());
         });
   }
 
