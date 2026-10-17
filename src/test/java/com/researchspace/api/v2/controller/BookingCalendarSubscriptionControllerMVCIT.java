@@ -2,8 +2,11 @@ package com.researchspace.api.v2.controller;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -31,8 +34,11 @@ import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import com.researchspace.testutils.BaseManagerTestCaseBase;
 import com.researchspace.testutils.RSpaceTestUtils;
+import java.net.URI;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -447,7 +453,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
   }
 
   @Test
-  void revocationDeletesSubscriptionCommittedAfterItsReadSnapshot() throws Exception {
+  void revocationRollsBackStaleSnapshotThenSucceedsInFreshTransaction() throws Exception {
     long configurationId = readableConfiguration();
     User subscriber = fixture.user();
     CountDownLatch snapshotRead = new CountDownLatch(1);
@@ -471,23 +477,59 @@ class BookingCalendarSubscriptionControllerMVCIT {
                           }));
 
       await(snapshotRead);
+      String subscriptionUrl;
       try {
-        create(configurationId, fixture.userKey());
+        subscriptionUrl = create(configurationId, fixture.userKey());
       } finally {
         subscriptionCreated.countDown();
       }
 
-      revocation.get(20, TimeUnit.SECONDS);
+      ExecutionException failure =
+          assertThrows(ExecutionException.class, () -> revocation.get(20, TimeUnit.SECONDS));
+      assertMariaDbCurrentReadRestart(failure);
       assertTrue(
           Boolean.TRUE.equals(
               new TransactionTemplate(transactionManager)
-                  .execute(
-                      ignored ->
-                          subscriptionDao
-                              .findByUserIdAndConfigurationId(subscriber.getId(), configurationId)
-                              .isEmpty())));
+                  .execute(ignored -> userManager.get(subscriber.getId()).isEnabled())));
+      mockMvc
+          .perform(get(path(configurationId)).header("apiKey", fixture.userKey()))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.active").value(true))
+          .andExpect(jsonPath("$.subscriptionUrl").value(subscriptionUrl));
+
+      URI issuedFeed = URI.create(subscriptionUrl);
+      String token = issuedFeed.getRawQuery().substring("token=".length());
+      mockMvc
+          .perform(get(issuedFeed.getPath()).queryParam("token", token))
+          .andExpect(status().isOk());
+
       new TransactionTemplate(transactionManager)
-          .executeWithoutResult(ignored -> userManager.get(subscriber.getId()).setEnabled(true));
+          .executeWithoutResult(
+              ignored -> {
+                User disabledSubscriber = userManager.get(subscriber.getId());
+                disabledSubscriber.setEnabled(false);
+                userManager.saveUser(disabledSubscriber);
+              });
+      try {
+        assertFalse(
+            Boolean.TRUE.equals(
+                new TransactionTemplate(transactionManager)
+                    .execute(ignored -> userManager.get(subscriber.getId()).isEnabled())));
+        assertTrue(
+            Boolean.TRUE.equals(
+                new TransactionTemplate(transactionManager)
+                    .execute(
+                        ignored ->
+                            subscriptionDao
+                                .findByUserIdAndConfigurationId(subscriber.getId(), configurationId)
+                                .isEmpty())));
+        mockMvc
+            .perform(get(issuedFeed.getPath()).queryParam("token", token))
+            .andExpect(status().isNotFound());
+      } finally {
+        new TransactionTemplate(transactionManager)
+            .executeWithoutResult(ignored -> userManager.get(subscriber.getId()).setEnabled(true));
+      }
     } finally {
       pool.shutdownNow();
     }
@@ -622,6 +664,15 @@ class BookingCalendarSubscriptionControllerMVCIT {
             .andReturn();
     JsonNode document = objectMapper.readTree(result.getResponse().getContentAsByteArray());
     return document.path("subscriptionUrl").textValue();
+  }
+
+  private static void assertMariaDbCurrentReadRestart(ExecutionException failure) {
+    Throwable cause = failure.getCause();
+    while (cause != null && !(cause instanceof SQLException)) {
+      cause = cause.getCause();
+    }
+    SQLException sqlException = assertInstanceOf(SQLException.class, cause);
+    assertEquals(1020, sqlException.getErrorCode());
   }
 
   private static void await(CountDownLatch latch) {
