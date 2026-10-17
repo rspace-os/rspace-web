@@ -16,7 +16,11 @@ import {
   type ApiV2DocumentSchema,
   createApiV2CollectionAdapter,
 } from "./createApiV2CollectionAdapter";
-import { type ApiV2CollectionFetchOptions, createApiV2CollectionFetcher } from "./createApiV2CollectionFetcher";
+import {
+  type ApiV2CollectionFetchOptions,
+  createApiV2CollectionFetcher,
+  projectedState,
+} from "./createApiV2CollectionFetcher";
 import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./runtimeFieldCatalog";
 
 type TableOptions<TRow extends Record<string, unknown>> = Omit<UseTableListOptions<TRow>, "config" | "dataSource">;
@@ -197,7 +201,7 @@ export function useApiV2TableList<
         endpoint,
         authScope,
         {
-          state,
+          state: projectedState(adapter, state, request?.projection ?? "visible"),
           depth: request?.depth,
           projection: request?.projection,
           baseFilter: request?.baseFilter,
