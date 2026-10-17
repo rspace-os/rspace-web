@@ -262,11 +262,15 @@ export function BookableItemsContent() {
         count: ownerAttention.data?.size,
         onClick: () => {
           setSelectedRowIds(new Set());
+          table.setPage({ ...table.state.page, pageIndex: 0 });
           setOwnerAttentionOnly((current) => !current);
         },
       },
     ],
-    onReset: () => setOwnerAttentionOnly(false),
+    onReset: () => {
+      table.setPage({ ...table.state.page, pageIndex: 0 });
+      setOwnerAttentionOnly(false);
+    },
   };
   const displayedRows =
     ownerAttentionOnly && ownerAttention.data
@@ -313,22 +317,26 @@ export function BookableItemsContent() {
         rows={ownerAttentionOnly && (ownerAttention.isPending || ownerAttention.isError) ? [] : displayedRows}
         rowActions={rowActions}
         filterButtons={ownerAttentionButtons}
-        selection={{
-          value: selectedRowIds,
-          onChange: onSelectionChange,
-          disabled: bulkMutation.isPending,
-          maximumCount: maximumBookableItemsSelection,
-          getRowLabel: (row) => row.target?.value.name ?? t("common:values.unknownItem"),
-          renderActions: (selection) => (
-            <BookableItemsBulkActions
-              selection={selection}
-              disabled={bulkMutation.isPending}
-              activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
-              failedAction={failedBulkAction}
-              onAction={onBulkAction}
-            />
-          ),
-        }}
+        selection={
+          directSysadmin
+            ? {
+                value: selectedRowIds,
+                onChange: onSelectionChange,
+                disabled: bulkMutation.isPending,
+                maximumCount: maximumBookableItemsSelection,
+                getRowLabel: (row) => row.target?.value.name ?? t("common:values.unknownItem"),
+                renderActions: (selection) => (
+                  <BookableItemsBulkActions
+                    selection={selection}
+                    disabled={bulkMutation.isPending}
+                    activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
+                    failedAction={failedBulkAction}
+                    onAction={onBulkAction}
+                  />
+                ),
+              }
+            : undefined
+        }
         createAction={
           <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
             <PlusIcon aria-hidden="true" data-icon="inline-start" />
