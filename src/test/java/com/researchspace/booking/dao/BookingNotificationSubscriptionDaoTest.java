@@ -15,7 +15,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 class BookingNotificationSubscriptionDaoTest extends SpringTransactionalTest {
 
-  @Autowired private BookingNotificationSubscriptionDao subscriptions;
+  private final BookingNotificationSubscriptionDao subscriptions;
+
+  @Autowired
+  BookingNotificationSubscriptionDaoTest(BookingNotificationSubscriptionDao subscriptions) {
+    this.subscriptions = subscriptions;
+  }
 
   @Test
   void persistsExplicitOptOutWithUniqueIdentityAndOptimisticVersion() {

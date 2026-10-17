@@ -21,7 +21,13 @@ import org.springframework.http.MediaType;
 class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
   private static final String DEFAULTS = "/api/v2/users/me/booking-notification-preferences";
   private static final String SUBSCRIPTIONS = "/api/v2/users/me/booking-notification-subscriptions";
-  @Autowired private FeatureFlagManager featureFlags;
+  private final FeatureFlagManager featureFlags;
+
+  @Autowired
+  BookingNotificationSubscriptionControllerIT(FeatureFlagManager featureFlags) {
+    this.featureFlags = featureFlags;
+  }
+
   private ApiV2Fixture fixture;
   private boolean originallyEnabled;
   private static final String OPENAPI = "/api/v2/openapi.json";

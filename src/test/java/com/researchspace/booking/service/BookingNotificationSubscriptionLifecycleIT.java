@@ -28,11 +28,25 @@ import org.springframework.transaction.support.TransactionTemplate;
 /** Checks a transferred owner's subscription when a booking configuration commits concurrently. */
 class BookingNotificationSubscriptionLifecycleIT extends RealTransactionSpringTestBase {
 
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private BookingConfigurationDao configurations;
-  @Autowired private BookingNotificationSubscriptionDao subscriptions;
-  @Autowired private InstrumentDao instruments;
-  @Autowired private ApplicationEventPublisher events;
+  private final BookingConfigurationManager configurationManager;
+  private final BookingConfigurationDao configurations;
+  private final BookingNotificationSubscriptionDao subscriptions;
+  private final InstrumentDao instruments;
+  private final ApplicationEventPublisher events;
+
+  @Autowired
+  BookingNotificationSubscriptionLifecycleIT(
+      BookingConfigurationManager configurationManager,
+      BookingConfigurationDao configurations,
+      BookingNotificationSubscriptionDao subscriptions,
+      InstrumentDao instruments,
+      ApplicationEventPublisher events) {
+    this.configurationManager = configurationManager;
+    this.configurations = configurations;
+    this.subscriptions = subscriptions;
+    this.instruments = instruments;
+    this.events = events;
+  }
 
   @org.junit.jupiter.api.BeforeEach
   @Override
