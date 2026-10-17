@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-booking-increment-schema-compatibility" author="researchspace" context="run">
+    <preConditions onFail="HALT" onError="HALT">
+      <sqlCheck expectedResult="1">
+        SELECT CASE WHEN
+          (SELECT COUNT(*) FROM information_schema.TABLES
+           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
+             AND TABLE_NAME IN ('BookingConfiguration', 'BookingConfigurationDefaults',
+                                'BookingConfiguration_AUD', 'BookingConfigurationDefaults_AUD')) = 4
+          AND ((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME IN ('BookingConfiguration', 'BookingConfigurationDefaults',
+                             'BookingConfiguration_AUD', 'BookingConfigurationDefaults_AUD')
+          AND COLUMN_NAME IN ('incrementUnit', 'alignToIncrement')) = 0
+            OR ((SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME IN ('BookingConfiguration', 'BookingConfigurationDefaults',
+                             'BookingConfiguration_AUD', 'BookingConfigurationDefaults_AUD')
+          AND COLUMN_NAME IN ('incrementUnit', 'alignToIncrement')) = 8
+              AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME IN ('BookingConfiguration', 'BookingConfigurationDefaults',
+                             'BookingConfiguration_AUD', 'BookingConfigurationDefaults_AUD')
+          AND COLUMN_NAME IN ('incrementUnit', 'alignToIncrement')
+          AND ((COLUMN_NAME = 'incrementUnit' AND DATA_TYPE = 'varchar'
+                AND CHARACTER_MAXIMUM_LENGTH = 8)
+            OR (COLUMN_NAME = 'alignToIncrement' AND DATA_TYPE = 'bit'
+                AND LOWER(COLUMN_TYPE) = 'bit(1)'))
+          AND IS_NULLABLE = CASE
+            WHEN TABLE_NAME IN ('BookingConfiguration', 'BookingConfigurationDefaults') THEN 'NO'
+            ELSE 'YES'
+          END) = 8))
+          THEN 1 ELSE 0 END
+      </sqlCheck>
+    </preConditions>
+    <comment>Accept only the absent or complete compatible increment schema before adding fields</comment>
+    <sql>SELECT 1</sql>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-booking-increment-fields-additive" author="researchspace" context="run">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <sqlCheck expectedResult="0">
+        SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME IN ('BookingConfiguration', 'BookingConfigurationDefaults',
+                             'BookingConfiguration_AUD', 'BookingConfigurationDefaults_AUD')
+          AND COLUMN_NAME IN ('incrementUnit', 'alignToIncrement')
+      </sqlCheck>
+    </preConditions>
+    <comment>Add increment fields after the historical dev seed has executed</comment>
+    <addColumn tableName="BookingConfiguration">
+      <column name="incrementUnit" type="VARCHAR(8)" defaultValue="MINUTES"/>
+      <column name="alignToIncrement" type="BIT(1)" defaultValueBoolean="true"/>
+    </addColumn>
+    <update tableName="BookingConfiguration">
+      <column name="incrementUnit" value="MINUTES"/>
+      <column name="alignToIncrement" valueBoolean="true"/>
+    </update>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="incrementUnit" columnDataType="VARCHAR(8)"/>
+    <addNotNullConstraint tableName="BookingConfiguration" columnName="alignToIncrement" columnDataType="BIT(1)"/>
+    <addColumn tableName="BookingConfiguration_AUD">
+      <column name="incrementUnit" type="VARCHAR(8)"/>
+      <column name="alignToIncrement" type="BIT(1)"/>
+    </addColumn>
+    <addColumn tableName="BookingConfigurationDefaults">
+      <column name="incrementUnit" type="VARCHAR(8)" defaultValue="MINUTES"/>
+      <column name="alignToIncrement" type="BIT(1)" defaultValueBoolean="true"/>
+    </addColumn>
+    <update tableName="BookingConfigurationDefaults">
+      <column name="incrementUnit" value="MINUTES"/>
+      <column name="alignToIncrement" valueBoolean="true"/>
+    </update>
+    <addNotNullConstraint tableName="BookingConfigurationDefaults" columnName="incrementUnit" columnDataType="VARCHAR(8)"/>
+    <addNotNullConstraint tableName="BookingConfigurationDefaults" columnName="alignToIncrement" columnDataType="BIT(1)"/>
+    <addColumn tableName="BookingConfigurationDefaults_AUD">
+      <column name="incrementUnit" type="VARCHAR(8)"/>
+      <column name="alignToIncrement" type="BIT(1)"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="rsdev-booking-dev-seed-increment-fixtures" author="researchspace" context="dev-test">
+    <preConditions onFail="MARK_RAN" onError="MARK_RAN"
+                   onFailMessage="booking increment fixtures skipped: this is not an untouched fresh booking seed"
+                   onErrorMessage="booking increment fixtures skipped: the fresh booking seed could not be checked">
+      <sqlCheck expectedResult="1">
+        SELECT COUNT(*) FROM DATABASECHANGELOG
+        WHERE ID = 'rsdev-1187-booking-settings-fresh-origin'
+          AND AUTHOR = 'researchspace'
+          AND EXECTYPE = 'EXECUTED'
+      </sqlCheck>
+      <sqlCheck expectedResult="1">
+        SELECT COUNT(*) FROM DATABASECHANGELOG
+        WHERE ID = 'rsdev-booking-dev-seed'
+          AND AUTHOR = 'researchspace'
+          AND EXECTYPE = 'EXECUTED'
+      </sqlCheck>
+      <sqlCheck expectedResult="8">
+        SELECT COUNT(*) FROM BookingConfiguration
+        WHERE id IN (910100001, 910100002, 910100003, 910100004,
+                     910100005, 910100006, 910100007, 910100008)
+          AND enabled = b'1'
+          AND targetType = 'INSTRUMENT'
+          AND targetId = id
+          AND configurationVersion = 0
+          AND timeZone = CASE
+            WHEN id = 910100001 OR id = 910100002 THEN 'Europe/Berlin'
+            WHEN id IN (910100003, 910100004) THEN 'UTC'
+            WHEN id IN (910100005, 910100006) THEN 'America/New_York'
+            ELSE 'Asia/Singapore'
+          END
+          AND slotGranularityMinutes = 5
+          AND incrementUnit = 'MINUTES'
+          AND alignToIncrement = b'1'
+          AND openingStart = '00:00'
+          AND openingEnd = '24:00'
+          AND openDays = '[1,2,3,4,5,6,7]'
+          AND openingExceptions = '[]'
+          AND bufferBeforeMinutes = 0
+          AND bufferAfterMinutes = 0
+          AND allowDoubleBooking = (id = 910100001)
+          AND maxBookingDurationMinutes = 0
+          AND state = 'ACTIVE'
+      </sqlCheck>
+      <sqlCheck expectedResult="0">
+        SELECT COUNT(*) FROM InstrumentEntity WHERE id IN (910100010, 910100011)
+      </sqlCheck>
+      <sqlCheck expectedResult="0">
+        SELECT COUNT(*) FROM ResourceAccess WHERE id IN (910100010, 910100011)
+      </sqlCheck>
+      <sqlCheck expectedResult="0">
+        SELECT COUNT(*) FROM BookingConfiguration WHERE id IN (910100010, 910100011)
+      </sqlCheck>
+      <sqlCheck expectedResult="0">
+        SELECT COUNT(*) FROM ResourceRoleAssignment WHERE resourceAccess_id IN (910100010, 910100011)
+      </sqlCheck>
+    </preConditions>
+    <comment>Keep the fifteen-minute increment fixtures only on a pristine fresh dev seed</comment>
+    <sqlFile path="booking-dev-seed-increment-fixtures.sql" relativeToChangelogFile="true"
+             splitStatements="true" stripComments="true" endDelimiter=";"/>
+  </changeSet>
+</databaseChangeLog>

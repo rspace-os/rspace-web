@@ -6,6 +6,7 @@
         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
   <changeSet id="rsdev-booking-dev-seed" author="researchspace" context="dev-test">
+    <validCheckSum>9:d22e7d10320dfaa25d1a78fa144d6a5a</validCheckSum>
     <preConditions onFail="MARK_RAN" onError="MARK_RAN"
                    onFailMessage="booking dev seed skipped: booking data already exists"
                    onErrorMessage="booking dev seed skipped: booking data already exists">
