@@ -7,7 +7,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-/** One complete set of scheduling rules shared by booking configuration services. */
+/**
+ * One complete set of scheduling rules shared by booking configuration services.
+ *
+ * <p>For conflicting events on the same configuration, the two buffer values define one shared
+ * minimum idle gap: the larger value. The values are not added, and the gap is independent of
+ * insertion order.
+ */
 public record BookingSchedulingSettings(
     long slotGranularityMinutes,
     List<BookingOpeningHoursEntry> openingHours,

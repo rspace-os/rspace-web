@@ -45,9 +45,11 @@ public final class BookingSchedulingPolicy {
 
   private static ConflictInterval conflictInterval(
       BookingConfiguration configuration, Instant start, Instant end) {
+    long sharedGapMinutes =
+        Math.max(configuration.getBufferBeforeMinutes(), configuration.getBufferAfterMinutes());
     return new ConflictInterval(
-        Date.from(start.minus(configuration.getBufferAfterMinutes(), ChronoUnit.MINUTES)),
-        Date.from(end.plus(configuration.getBufferBeforeMinutes(), ChronoUnit.MINUTES)));
+        Date.from(start.minus(sharedGapMinutes, ChronoUnit.MINUTES)),
+        Date.from(end.plus(sharedGapMinutes, ChronoUnit.MINUTES)));
   }
 
   private static void requireAligned(ZonedDateTime endpoint, long granularityMinutes) {
