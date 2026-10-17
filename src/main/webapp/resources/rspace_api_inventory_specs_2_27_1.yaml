@@ -3134,6 +3134,7 @@ paths:
 
           * `columnNames`: array of column names in CSV file.
           * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
+          * `blankColumns`: array of column names with no value in any data row (a cell of only spaces counts as empty)
           * `rowsCount`: number of data rows found in CSV file
 
 
@@ -3149,12 +3150,13 @@ paths:
           * `quantityUnitForColumn`: lists the columns that could be converted to "Quantity" field, with the id of suggested quantity unit
           * `columnNames` list of column names in CSV file. This are the names that should be provided in `fieldMappings` object used by `/import/importFiles`.
           * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
+          * `blankColumns`: array of column names with no value in any data row (a cell of only spaces counts as empty)
           * `rowsCount`: number of data rows found in CSV file
 
 
         ### Parsing instruments CSV file
 
-        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response object contains `templateInfo` (an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`), `fieldNameForColumnName`, `radioOptionsForColumn`, `columnNames`, `columnsWithoutBlankValue`, and `rowsCount`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
+        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response object contains `templateInfo` (an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`), `fieldNameForColumnName`, `radioOptionsForColumn`, `columnNames`, `columnsWithoutBlankValue`, `blankColumns`, and `rowsCount`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
       tags:
         - Import
       parameters:

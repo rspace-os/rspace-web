@@ -63,6 +63,7 @@
         "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
         "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
         "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+        "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",
         "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
         "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
         "notFound": "No inventory entity field with id: {0}",

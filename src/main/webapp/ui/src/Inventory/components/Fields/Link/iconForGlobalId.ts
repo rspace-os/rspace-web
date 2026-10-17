@@ -123,10 +123,16 @@ export function openUrlForTarget(globalId: string, versionPin: number | null): s
   if (match && match[1] === "GL") {
     return galleryItemHref(match[2], versionPin ?? undefined);
   }
-  // rebuild from the parsed base id: rows written before the backend
-  // normalised stored ids can already carry a "vN" suffix, which must not be
-  // doubly encoded (e.g. /globalId/SS42v7v7)
+  return `/globalId/${pinnedGlobalId(globalId, versionPin)}`;
+}
+
+/**
+ * The target's Global ID with the pin, if any, as its suffix. Rebuilt from the
+ * parsed base id: rows written before the backend normalised stored ids can
+ * already carry a "vN" suffix, which the pin replaces (never SS42v7v7).
+ */
+export function pinnedGlobalId(globalId: string, versionPin: number | null | undefined): string {
+  const match = GLOBAL_ID_PATTERN.exec(globalId);
   const base = match ? `${match[1]}${match[2]}` : globalId;
-  const versionSuffix = versionPin != null ? `v${versionPin}` : "";
-  return `/globalId/${base}${versionSuffix}`;
+  return versionPin != null ? `${base}v${versionPin}` : base;
 }

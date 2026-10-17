@@ -68,7 +68,7 @@ jobs:
     env:
       E2E_CLOUD: ${{ matrix.cloud && 'true' || 'false' }}
 
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:

@@ -57,9 +57,10 @@ public interface AuditManager {
   /**
    * Like {@link #getRevisionNumberForDocumentVersion} but returns {@code null} when that version
    * has no audit row instead of throwing. Mirrors {@link
-   * #getRevisionNumberForInventoryRecordVersion}'s null-on-absent contract, so a best-effort caller
-   * (e.g. capturing a link's pinned revision) can degrade to "unresolved" without the throwing
-   * variant's {@link IllegalArgumentException} marking the surrounding transaction rollback-only.
+   * #getRevisionNumberForInventoryRecordVersion}'s null-on-absent contract, so a caller can treat a
+   * missing version as an answer (a link's pinned version is checked and captured this way) without
+   * the throwing variant's {@link IllegalArgumentException} marking the surrounding transaction
+   * rollback-only.
    */
   Number findRevisionNumberForDocumentVersion(Long docId, Number userVersion);
 

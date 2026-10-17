@@ -15,8 +15,11 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.LinkTargetResolver;
+import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import java.util.List;
 import java.util.Map;
@@ -29,19 +32,23 @@ import org.junit.jupiter.api.Test;
 public class CsvSampleImporterLinkFieldTest {
 
   private final CsvSampleImporter importer = new CsvSampleImporter();
+  private final CsvLinkValueParser parser = new CsvLinkValueParser();
   private final ApiInventoryImportSampleImportResult result =
       new ApiInventoryImportSampleImportResult();
 
   @BeforeEach
   void setUp() {
-    CsvLinkValueParser parser = new CsvLinkValueParser();
     IPropertyHolder properties = mock(IPropertyHolder.class);
     when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
     parser.properties = properties;
     MessageSourceUtils messages = mock(MessageSourceUtils.class);
     when(messages.getMessage(eq("errors.inventory.import.linkValueInvalid"), any()))
         .thenReturn("bad link cell");
+    when(messages.getMessage(eq("errors.inventory.field.linkTargetVersionNotFound"), any()))
+        .thenReturn("no such version");
     parser.messages = messages;
+    parser.linkTargetResolver = mock(LinkTargetResolver.class);
+    parser.snapshotResolver = mock(LinkTargetSnapshotResolver.class);
     importer.linkParser = parser;
     importer.messages = messages;
 
@@ -102,6 +109,28 @@ public class CsvSampleImporterLinkFieldTest {
     assertNull(field(0).getLink());
     assertNull(field(0).getContent());
     assertEquals("SD9", field(1).getLink().getTargetGlobalId());
+  }
+
+  @Test
+  void aPinnedVersionTheReadableTargetLacksFailsThatRowOnly() {
+    User importingUser = new User("u");
+    when(parser.linkTargetResolver.targetExistsAndIsReadable(any(), eq(importingUser)))
+        .thenReturn(true);
+    when(parser.snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 1L, 7L))
+        .thenReturn(null);
+    when(parser.snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 1L, 3L))
+        .thenReturn(44L);
+    List<String[]> lines =
+        List.of(
+            new String[] {"s1", "IsDerivedFrom https://rspace.example.com/globalId/SA1v7"},
+            new String[] {"s2", "IsDerivedFrom https://rspace.example.com/globalId/SA1v3"});
+
+    importer.convertLinesToSamples(result, lines, Map.of(0, "name"), 2, importingUser);
+
+    assertEquals(1, result.getErrorCount());
+    assertEquals(1, result.getSuccessCount());
+    assertEquals("no such version", result.getResults().get(0).getError().getErrors().get(0));
+    assertEquals(3L, field(1).getLink().getVersionPin());
   }
 
   private ApiInventoryEntityField field(int row) {

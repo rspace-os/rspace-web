@@ -194,9 +194,13 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
     StructuredDocument target = createBasicDocumentInRootFolderWithText(user, "pinned target doc");
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(user);
 
-    // pin the link to a specific version of the document (vN suffix)
+    // pin the link to a specific version of the document (vN suffix). The helper creates and
+    // edits the document in one commit, so its first audited version is its current one, not v1,
+    // and a pin to a version with no audit row is refused (RSDEV-1530)
     String updateJson =
-        buildLinkExtraFieldUpdate(target.getOid().getIdString() + "v1", "References");
+        buildLinkExtraFieldUpdate(
+            target.getOid().getIdString() + "v" + target.getUserVersion().getVersion(),
+            "References");
     mockMvc
         .perform(
             createBuilderForPutWithJSONBody(apiKey, "/samples/" + source.getId(), user, updateJson))
