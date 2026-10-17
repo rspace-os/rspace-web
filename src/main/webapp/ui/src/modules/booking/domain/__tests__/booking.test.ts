@@ -1,8 +1,40 @@
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import { BookingSummarySchema } from "@/modules/booking/domain/booking";
+import {
+  BookingDetailsSchema,
+  BookingListDocumentSchema,
+  BookingSummarySchema,
+} from "@/modules/booking/domain/booking";
 
 describe("booking response intervals", () => {
+  it("accepts a retained booking whose target details are redacted", () => {
+    const redacted = {
+      id: 18,
+      version: 2,
+      target: null,
+      timezone: null,
+      start: "2026-08-17T10:00:00Z",
+      end: "2026-08-17T11:00:00Z",
+      state: "CONFIRMED",
+      kind: "BOOKING",
+      canViewConfiguration: false,
+      privacy: "full",
+      purpose: "Retained requester details",
+      bookedBy: "Ada Lovelace (ada)",
+      createdBy: "Grace Hopper (grace)",
+      canEdit: false,
+      canCancel: false,
+      createdAt: "2026-08-01T09:00:00Z",
+      updatedAt: "2026-08-02T10:00:00Z",
+    } as const;
+
+    expect(v.parse(BookingDetailsSchema, redacted)).toEqual(redacted);
+    expect(v.parse(BookingListDocumentSchema, { ...redacted, requesterId: 84 })).toEqual({
+      ...redacted,
+      requesterId: 84,
+    });
+  });
+
   it("retains a valid response and reports a non-increasing interval at end", () => {
     const summary = {
       id: 17,

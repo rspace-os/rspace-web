@@ -206,6 +206,22 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     return new RuntimeFieldContext(providers(), caller, providersByResource);
   }
 
+  /**
+   * Adds projected runtime values to an already authorized, rendered page.
+   *
+   * <p>Specialized list endpoints use this after applying their own read policy and rendering the
+   * surviving resources. Runtime providers still receive the caller, preserving their row-level
+   * authorization.
+   */
+  public void decorateRuntimeValues(
+      ResourceRequest request,
+      User caller,
+      List<?> resources,
+      List<Map<String, Object>> documents) {
+    List<T> typedResources = resources.stream().map(description.entityType()::cast).toList();
+    runtimeValues(request, caller).decorate(typedResources, documents);
+  }
+
   public List<RuntimeCollectionFields<?>> providers() {
     return new ArrayList<>(spec.runtimeFields());
   }
