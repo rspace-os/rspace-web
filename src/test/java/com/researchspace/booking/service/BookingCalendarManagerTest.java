@@ -53,6 +53,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,7 @@ class BookingCalendarManagerTest {
   private FeatureFlagManager featureFlags;
   private ResourceAccessManager accessManager;
   private BookingCalendarFeedGenerator generator;
+  private BookingCalendarCreationTransaction creationTransaction;
   private BookingInstrumentQueryDao instrumentDao;
   private BookingCalendarManager manager;
   private User owner;
@@ -91,6 +93,7 @@ class BookingCalendarManagerTest {
     featureFlags = mock(FeatureFlagManager.class);
     accessManager = mock(ResourceAccessManager.class);
     generator = mock(BookingCalendarFeedGenerator.class);
+    creationTransaction = mock(BookingCalendarCreationTransaction.class);
     IPropertyHolder properties = mock(IPropertyHolder.class);
 
     owner = TestFactory.createAnyUser("owner");
@@ -113,6 +116,12 @@ class BookingCalendarManagerTest {
     when(userSubscriptionDao.saveAndFlush(any(UserBookingCalendarSubscription.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
     when(userSubscriptionDao.lockUser(owner.getId())).thenReturn(owner);
+    when(creationTransaction.create(eq(owner.getId()), any()))
+        .thenAnswer(
+            invocation -> {
+              Function<User, BookingCalendarManager.Created> create = invocation.getArgument(1);
+              return create.apply(owner);
+            });
 
     manager =
         new BookingCalendarManagerImpl(
@@ -124,6 +133,7 @@ class BookingCalendarManagerTest {
             featureFlags,
             accessManager,
             generator,
+            creationTransaction,
             new BookingCalendarProperties(100, 10_000, 1),
             properties,
             () -> RAW_TOKEN);

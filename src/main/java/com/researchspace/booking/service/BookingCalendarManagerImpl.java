@@ -65,6 +65,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   private static final String INACTIVE_USER_ETAG = "\"inactive\"";
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
+  private final BookingCalendarCreationTransaction creationTransaction;
   private final BookingCalendarSubscriptionDao subscriptionDao;
   private final UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private final BookingConfigurationDao configurationDao;
@@ -89,6 +90,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       FeatureFlagManager featureFlags,
       ResourceAccessManager accessManager,
       BookingCalendarFeedGenerator generator,
+      BookingCalendarCreationTransaction creationTransaction,
       BookingCalendarProperties limits,
       IPropertyHolder properties) {
     this(
@@ -100,6 +102,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         featureFlags,
         accessManager,
         generator,
+        creationTransaction,
         limits,
         properties,
         () -> SecureStringUtils.getURLSafeSecureRandomString(32));
@@ -114,9 +117,11 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       FeatureFlagManager featureFlags,
       ResourceAccessManager accessManager,
       BookingCalendarFeedGenerator generator,
+      BookingCalendarCreationTransaction creationTransaction,
       BookingCalendarProperties limits,
       IPropertyHolder properties,
       Supplier<String> tokenSupplier) {
+    this.creationTransaction = creationTransaction;
     this.subscriptionDao = subscriptionDao;
     this.userSubscriptionDao = userSubscriptionDao;
     this.configurationDao = configurationDao;
@@ -157,6 +162,12 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   public Created createOrRotate(
       Long configurationId, User subject, User actor, String expectedEtag) {
     requirePersonalCaller(subject, actor);
+    return creationTransaction.create(
+        subject.getId(),
+        freshSubject -> createOrRotateItem(configurationId, freshSubject, expectedEtag));
+  }
+
+  private Created createOrRotateItem(Long configurationId, User subject, String expectedEtag) {
     requireFeatureMutation(subject);
     BookingConfiguration configuration =
         configurationDao
@@ -195,7 +206,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         "Booking calendar subscription {} by actor [{}] for subject [{}], configuration [{}],"
             + " subscription [{}]",
         action,
-        actor.getUsername(),
+        subject.getUsername(),
         subject.getUsername(),
         configurationId,
         saved.getId());
