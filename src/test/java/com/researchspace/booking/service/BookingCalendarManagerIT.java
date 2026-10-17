@@ -43,13 +43,31 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
 
-  @Autowired private BookingCalendarManager calendarManager;
-  @Autowired private UserBookingCalendarSubscriptionDao subscriptionDao;
-  @Autowired private BookingConfigurationDao configurationDao;
-  @Autowired private BookingConfigurationManager configurationManager;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private FeatureFlagManager featureFlags;
-  @Autowired private JdbcTemplate jdbcTemplate;
+  private final BookingCalendarManager calendarManager;
+  private final UserBookingCalendarSubscriptionDao subscriptionDao;
+  private final BookingConfigurationDao configurationDao;
+  private final BookingConfigurationManager configurationManager;
+  private final InstrumentDao instrumentDao;
+  private final FeatureFlagManager featureFlags;
+  private final JdbcTemplate jdbcTemplate;
+
+  @Autowired
+  BookingCalendarManagerIT(
+      BookingCalendarManager calendarManager,
+      UserBookingCalendarSubscriptionDao subscriptionDao,
+      BookingConfigurationDao configurationDao,
+      BookingConfigurationManager configurationManager,
+      InstrumentDao instrumentDao,
+      FeatureFlagManager featureFlags,
+      JdbcTemplate jdbcTemplate) {
+    this.calendarManager = calendarManager;
+    this.subscriptionDao = subscriptionDao;
+    this.configurationDao = configurationDao;
+    this.configurationManager = configurationManager;
+    this.instrumentDao = instrumentDao;
+    this.featureFlags = featureFlags;
+    this.jdbcTemplate = jdbcTemplate;
+  }
 
   private boolean originalBookingBaseline;
   private boolean changedBookingBaseline;

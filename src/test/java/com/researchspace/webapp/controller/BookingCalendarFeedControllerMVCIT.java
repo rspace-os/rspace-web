@@ -27,8 +27,15 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class BookingCalendarFeedControllerMVCIT {
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private BookingCalendarManager calendarManager;
+  private final WebApplicationContext context;
+  private final BookingCalendarManager calendarManager;
+
+  @Autowired
+  BookingCalendarFeedControllerMVCIT(
+      WebApplicationContext context, BookingCalendarManager calendarManager) {
+    this.context = context;
+    this.calendarManager = calendarManager;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;

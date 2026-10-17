@@ -49,13 +49,31 @@ class BookingCalendarSubscriptionControllerMVCIT {
   private static final String USER_SUBSCRIPTION_PATH =
       "/api/v2/users/me/booking-calendar-subscription";
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private BookingCalendarSubscriptionDao subscriptionDao;
-  @Autowired private BookingConfigurationDao configurationDao;
-  @Autowired private FeatureFlagManager featureFlags;
-  @Autowired private UserManager userManager;
-  @Autowired private GroupManager groupManager;
-  @Autowired private PlatformTransactionManager transactionManager;
+  private final WebApplicationContext context;
+  private final BookingCalendarSubscriptionDao subscriptionDao;
+  private final BookingConfigurationDao configurationDao;
+  private final FeatureFlagManager featureFlags;
+  private final UserManager userManager;
+  private final GroupManager groupManager;
+  private final PlatformTransactionManager transactionManager;
+
+  @Autowired
+  BookingCalendarSubscriptionControllerMVCIT(
+      WebApplicationContext context,
+      BookingCalendarSubscriptionDao subscriptionDao,
+      BookingConfigurationDao configurationDao,
+      FeatureFlagManager featureFlags,
+      UserManager userManager,
+      GroupManager groupManager,
+      PlatformTransactionManager transactionManager) {
+    this.context = context;
+    this.subscriptionDao = subscriptionDao;
+    this.configurationDao = configurationDao;
+    this.featureFlags = featureFlags;
+    this.userManager = userManager;
+    this.groupManager = groupManager;
+    this.transactionManager = transactionManager;
+  }
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private ApiV2Fixture fixture;
