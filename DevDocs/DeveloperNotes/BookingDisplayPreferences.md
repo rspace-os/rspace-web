@@ -101,7 +101,8 @@ Opening-hour payloads keep `HH:mm` values and an end of `24:00`, regardless of t
 
 Numeric dates follow the browser's regional format, because native date and time inputs always
 use it; words such as month names and durations follow the app language. The 12- or 24-hour clock
-follows the browser region too unless the viewer chose an explicit time format.
+follows the browser region too unless the viewer chose an explicit time format. The booking form's
+opening-hours summary uses that choice for uniform hours and windows converted to the viewer's timezone.
 `bookingDateTimeLocale(format)` and `bookingHourCycle(format)` in `domain/bookingTime.ts` supply these, so pass
 the resolved `preferences.timeFormat` explicitly to new `Intl.DateTimeFormat` calls and formatter helpers that show a
 time. The helpers default to `AUTOMATIC` for standalone callers and are pure: display preferences are not stored in
@@ -113,7 +114,8 @@ choice that differs from the region, text beside an input, such as the snapped-t
 item's time increment on blur, and the form announces the adjusted value instead of changing it
 silently.
 
-The Time grid week view lays seven day columns on one wall-clock hour axis. An overlap group shows
+The Time grid week view lays seven day columns on one wall-clock hour axis, using the viewer's selected
+clock format. An overlap group shows
 at most two lanes (`WEEK_GRID_MAX_LANES`); the rest collapse into a “+N more” slot that opens that
 day in the Time grid day view. Duration-sized cards in the week grid and the booking form's day
 schedule drop the booker badge, then the second title line, so the item name and time stay visible.

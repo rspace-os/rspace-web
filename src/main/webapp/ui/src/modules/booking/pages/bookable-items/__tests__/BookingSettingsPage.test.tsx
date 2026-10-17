@@ -28,6 +28,52 @@ function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: {
 }
 
 describe("BookingSettingsPage", () => {
+  it.each([
+    ["H12", "twelveHour", "H24", "twentyFourHour"],
+    ["H24", "twentyFourHour", "H12", "twelveHour"],
+  ] as const)(
+    "keeps persisted %s, the saved choice, and Automatic distinct",
+    async (initial, initialLabel, next, nextLabel) => {
+      const user = userEvent.setup();
+      const bodies: unknown[] = [];
+      let current = { ...settings, timeFormat: initial };
+      server.use(
+        oauthTokenHandler(true),
+        http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
+        http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+          const body = (await request.json()) as Record<string, unknown>;
+          bodies.push(body);
+          current = { ...current, ...body, configurationVersion: current.configurationVersion + 1 };
+          return HttpResponse.json(current);
+        }),
+      );
+      renderPage();
+
+      expect(
+        await screen.findByRole("radio", { name: `booking:preferences.timeFormat.${initialLabel}` }),
+      ).toBeChecked();
+      expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeDisabled();
+      await user.click(screen.getByRole("radio", { name: `booking:preferences.timeFormat.${nextLabel}` }));
+      await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+      expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+      expect(screen.getAllByText("booking:preferences.actions.saved")).toHaveLength(1);
+      expect(bodies[0]).toMatchObject({ timeFormat: next, configurationVersion: 0 });
+      expect(screen.getByRole("radio", { name: `booking:preferences.timeFormat.${nextLabel}` })).toBeChecked();
+
+      await user.click(screen.getByRole("radio", { name: "booking:preferences.timeFormat.automatic" }));
+      expect(screen.getByRole("radio", { name: "booking:preferences.timeFormat.automatic" })).toBeChecked();
+      expect(screen.queryByText("booking:preferences.actions.saved")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeEnabled();
+      await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+      expect(await screen.findByRole("button", { name: "booking:preferences.actions.saved" })).toBeDisabled();
+      expect(screen.getAllByText("booking:preferences.actions.saved")).toHaveLength(1);
+      expect(bodies[1]).toMatchObject({ timeFormat: "AUTOMATIC", configurationVersion: 1 });
+      expect(screen.getByRole("radio", { name: "booking:preferences.timeFormat.automatic" })).toBeChecked();
+    },
+  );
+
   it("keeps the draft's version after a background settings refresh", async () => {
     const user = userEvent.setup();
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -170,6 +216,7 @@ describe("BookingSettingsPage", () => {
       availabilityWindowEnd: "18:00",
       timezoneMode: "BROWSER",
       customTimezone: null,
+      timeFormat: "AUTOMATIC",
       configurationVersion: 0,
     });
 
