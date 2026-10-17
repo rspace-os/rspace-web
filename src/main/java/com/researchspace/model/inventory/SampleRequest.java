@@ -144,7 +144,7 @@ public class SampleRequest implements Serializable {
 
   /**
    * Records a new current status and appends it to the history, including the sample this
-   * transition fulfilled the request with, if any: transferred or newly created.
+   * transition fulfilled the request with, if any.
    */
   public SampleRequestStatusChange recordStatus(
       User author, SampleRequestStatus newStatus, String reason, Sample transferredSample) {

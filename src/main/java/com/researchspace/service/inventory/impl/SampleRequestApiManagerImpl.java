@@ -275,7 +275,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
    */
   private Sample resolveTransferredSample(ApiSampleRequestStatusPut post, User user) {
     String globalId = post.getTransferredSampleGlobalId();
-    if (globalId == null) {
+    if (StringUtils.isBlank(globalId)) {
       return null;
     }
     if (post.getStatus() != SampleRequestStatus.FULFILLED) {

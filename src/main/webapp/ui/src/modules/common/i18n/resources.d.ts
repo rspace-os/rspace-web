@@ -7191,7 +7191,7 @@ export default interface Resources {
         },
         "sampleRequest": {
           "illegalTransition": "A sample request cannot move from {0} to {1}.",
-          "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+          "notEnabled": "Sample requests are not enabled on this RSpace instance (or in your community).",
           "notRequestable": "Sample {0} is not available to request.",
           "ownSample": "You cannot request material from a sample that you own.",
           "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",

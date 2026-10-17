@@ -997,6 +997,20 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void updateStatus_blankTransferredSampleIsTreatedAsAbsent() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest fulfilled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null, ""), owner);
+
+    ApiSampleRequestStatusChange latest =
+        fulfilled.getStatusChanges().get(fulfilled.getStatusChanges().size() - 1);
+    assertEquals(SampleRequestStatus.FULFILLED, latest.getStatus());
+    assertNull(latest.getTransferredSample());
+  }
+
+  @Test
   public void updateStatus_unknownTransferredSampleIsRefused() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
 

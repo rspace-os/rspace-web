@@ -36,9 +36,7 @@ public class ApiSampleRequestStatusChange {
   @JsonProperty("reason")
   private String reason;
 
-  /**
-   * The sample this transition fulfilled the request with, if any: transferred or newly created.
-   */
+  /** The sample this transition fulfilled the request with, if any. */
   @JsonProperty("transferredSample")
   private ApiSampleInfo transferredSample;
 

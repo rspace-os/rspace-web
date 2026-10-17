@@ -95,9 +95,7 @@ public class SampleRequestStatusChange implements Serializable {
     return reason;
   }
 
-  /**
-   * The sample this transition fulfilled the request with, if any: transferred or newly created.
-   */
+  /** The sample this transition fulfilled the request with, if any. */
   @ManyToOne
   @JoinColumn
   public Sample getTransferredSample() {

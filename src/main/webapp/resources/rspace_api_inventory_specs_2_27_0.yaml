@@ -1279,16 +1279,21 @@ paths:
       responses:
         "200":
           description: >-
-            A list of SampleRequest summaries, newest first unless `orderBy`
-            says otherwise. These do not carry the
-            `statusChanges` history; fetch a single request to get it. Each
-            summary carries `requester` and `originalOwner` as user objects.
+            A page of request summaries, newest first unless `orderBy` says
+            otherwise. Summaries do not carry the `statusChanges` history; fetch
+            a single request to get it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequestSearchResult"
         "400":
           description: >-
             A query parameter is not valid: `role`, `status` or `orderBy` has an
             unknown value, or `sampleId` is not a number.
         "404":
-          description: Sample requests are not enabled on this instance.
+          description: >-
+            Sample requests are not enabled on this instance (or in the caller's
+            community).
     post:
       summary: Raise a request for material from a Sample
       description: >
@@ -1325,6 +1330,10 @@ paths:
       responses:
         "201":
           description: The created request, in PENDING state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequest"
         "400":
           description: >-
             The body is malformed, or `note` is missing, blank or longer than
@@ -1332,7 +1341,7 @@ paths:
         "404":
           description: >-
             The sample does not exist, is in the trash, or sample requests are
-            not enabled on this instance.
+            not enabled on this instance (or in the caller's community).
         "409":
           $ref: "#/components/responses/ConcurrentChange"
         "422":
@@ -1372,11 +1381,11 @@ paths:
         and rejected otherwise, with a reason that names the new owner.
 
         `transferredSampleGlobalId` optionally gives the global id of the sample
-        the request was fulfilled with: the requested sample itself, or a new
-        sample created from it. It is only accepted when setting FULFILLED, the
-        caller must have full read access to that sample (limited read, e.g.
-        through a shared container, is not enough), and it must not be in the
-        trash. It is recorded on the new `statusChanges` entry, as
+        the request was fulfilled with, e.g. the requested sample itself or a
+        new sample created from it. Any sample is accepted that the caller can
+        fully read (limited read, e.g. through a shared container, is not
+        enough) and that is not in the trash. It is only accepted when setting
+        FULFILLED, and is recorded on the new `statusChanges` entry, as
         `transferredSample`.
 
         ## Examples of the request body
@@ -1406,6 +1415,10 @@ paths:
       responses:
         "200":
           description: The updated request, including its updated status history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequest"
         "400":
           description: >-
             The body is malformed, `status` is missing or not a known status, or
@@ -1416,7 +1429,7 @@ paths:
             current owner, nor its owner when the request was raised, a supplied
             `transferredSampleGlobalId` does not exist, is in the trash or cannot
             be fully read by the caller, or sample requests are not enabled on
-            this instance.
+            this instance (or in the caller's community).
         "409":
           $ref: "#/components/responses/ConcurrentChange"
         "422":
@@ -1440,22 +1453,15 @@ paths:
         - $ref: "#/components/parameters/sampleRequestIdParam"
       responses:
         "200":
-          description: >-
-            The sample request, including a `statusChanges` array giving its full
-            history oldest first. The first entry is always the PENDING entry for
-            the request's creation, so a client never has to reconstruct it from
-            `created` and `requester`. Each entry is
-            `{ id, status, created, createdBy, reason, transferredSample }`,
-            where `reason` is populated for a rejection and for a fulfilment made
-            by transferring the sample to its requester, and `transferredSample`
-            summarises the sample the request was fulfilled with, if one was
-            recorded, limited to what the current user may read. `requester`,
-            `originalOwner` and each `createdBy` are user objects; a user deleted
-            since keeps their username, with a null id.
+          description: The sample request, with its full status history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequest"
         "404":
           description: >-
             No such request, the caller is not a party to it, or sample requests
-            are not enabled on this instance.
+            are not enabled on this instance (or in the caller's community).
   /subSamples:
     get:
       summary: Get all SubSamples visible to the current User
@@ -4467,8 +4473,9 @@ components:
       name: query
       in: query
       description: >-
-        Limits results to samples whose name contains this text, ignoring case.
-        Matches the name only, unlike the full-text `query` of `/search`.
+        Only with `requestable=true`: limits results to samples whose name
+        contains this text, ignoring case. Ignored otherwise; use `/search` for
+        other name or full-text searches.
       schema:
         type: string
     samplesRequestableParam:
@@ -4478,9 +4485,10 @@ components:
         Limits results to samples with this `requestable` value. When true, the
         search covers every requestable sample on the instance, regardless of
         the current user's permissions, ownership or group membership; samples
-        the user cannot otherwise read are returned in their public view. While
-        sample requests are not enabled for the current user, `true` returns no
-        samples.
+        the user cannot otherwise read are returned in their public view.
+        Samples in the trash are never returned, and `deletedItems` is ignored.
+        While sample requests are not enabled for the current user, `true`
+        returns no samples.
       schema:
         type: boolean
     sampleRequestSampleIdParam:
@@ -4993,6 +5001,106 @@ components:
         ontologyVersion:
           type: string
           description: The version of the ontology this tag data is contained in.
+    SampleRequestInfo:
+      description: >-
+        Summary of a request for material from a Sample. A user deleted since
+        keeps their username in `requester`, `originalOwner` and each
+        `createdBy`, with a null id.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier of the request.
+          example: 35
+        status:
+          $ref: "#/components/schemas/SampleRequestStatus"
+        note:
+          type: string
+          description: What the requester needs and why.
+          maxLength: 2000
+          example: Need 2ml for the binding assay
+        created:
+          type: string
+          format: date-time
+          description: When the request was raised.
+        requester:
+          $ref: "#/components/schemas/User"
+        originalOwner:
+          allOf:
+            - $ref: "#/components/schemas/User"
+          description: >-
+            Who owned the sample when the request was raised. Fixed at
+            creation, so it stays the same after the sample is transferred.
+        sample:
+          allOf:
+            - $ref: "#/components/schemas/SampleInfo"
+          description: >-
+            The requested sample, limited to what the current user may read.
+        _links:
+          $ref: "#/components/schemas/LinkItemList"
+    SampleRequest:
+      description: A request for material from a Sample, with its status history.
+      allOf:
+        - $ref: "#/components/schemas/SampleRequestInfo"
+        - properties:
+            statusChanges:
+              description: >-
+                The full history, oldest first. The first entry is always the
+                PENDING entry written when the request was raised.
+              type: array
+              items:
+                $ref: "#/components/schemas/SampleRequestStatusChange"
+    SampleRequestStatusChange:
+      description: One entry in a sample request's status history.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier of the entry.
+        status:
+          $ref: "#/components/schemas/SampleRequestStatus"
+        created:
+          type: string
+          format: date-time
+          description: When the request entered this status.
+        createdBy:
+          allOf:
+            - $ref: "#/components/schemas/User"
+          description: Who made the change.
+        reason:
+          type: string
+          nullable: true
+          description: >-
+            Set for a rejection, and for a fulfilment made by transferring the
+            sample to its requester; null otherwise.
+        transferredSample:
+          allOf:
+            - $ref: "#/components/schemas/SampleInfo"
+          nullable: true
+          description: >-
+            The sample the request was fulfilled with, if one was recorded,
+            limited to what the current user may read.
+    SampleRequestStatus:
+      type: string
+      enum:
+        - PENDING
+        - APPROVED
+        - REJECTED
+        - CANCELLED
+        - FULFILLED
+    SampleRequestSearchResult:
+      description: A page of sample request summaries.
+      properties:
+        totalHits:
+          type: number
+        pageNumber:
+          type: number
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/SampleRequestInfo"
+        _links:
+          $ref: "#/components/schemas/LinkItemList"
     SubSampleInfo:
       description: Information about RSpace inventory SubSample
       allOf:

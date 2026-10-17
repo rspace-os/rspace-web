@@ -170,8 +170,9 @@ now gets 409 instead of 500.
 ### D11 The fulfilled-with sample, by global id, on FULFILLED only
 
 `transferredSampleGlobalId` on the status PUT optionally records which sample the request
-was fulfilled with: the requested sample itself, or a new one made from it. It is a global
-id, matching `sampleGlobalId` on create. It is only accepted with FULFILLED (422 otherwise),
+was fulfilled with: usually the requested sample itself or a new one made from it, but any
+sample the fulfiller can fully read is accepted. It is a global id, matching
+`sampleGlobalId` on create. It is only accepted with FULFILLED (422 otherwise),
 must name a sample (422), and must be fully readable by the fulfiller and not in the trash
 (404), so a request's history cannot be made to carry a stranger's sample. Limited read,
 as granted by a shared container or a List of Materials, is not enough. It is stored as a
@@ -196,7 +197,8 @@ column already shows the requester.
 ## Smaller decisions worth keeping
 
 - Listings are newest first by default. `orderBy` accepts `creationDate asc|desc` only;
-  requests have no name, type or modification date to sort by.
+  requests have no name, type or modification date to sort by. A value that is invalid
+  for every inventory listing also fails the inherited pattern, so its 400 lists both.
 - Requests against a trashed sample drop out of listings but stay readable and actionable
   by id, since the sample can be restored.
 - Validation errors: malformed body 400, wrong global-id type or illegal transition 422,
