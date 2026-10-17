@@ -5,6 +5,7 @@ import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 
 export const LIGHTHOUSE_SCRIPT_ID = "rspace-lighthouse";
 export const LIGHTHOUSE_SCRIPT_SRC = "https://lighthouse.helpdocs.io/load";
+const HELP_DOCS_FALLBACK_URL = "https://researchspace.helpdocs.io";
 
 type LighthouseConfig = {
   widget_key: string;
@@ -155,6 +156,11 @@ if (typeof window !== "undefined") {
 }
 
 export function showLighthouse() {
+  if (!isLighthouseReady()) {
+    window.open(HELP_DOCS_FALLBACK_URL, "_blank", "noopener,noreferrer");
+    return;
+  }
+
   callLighthouse("showButton");
   callLighthouse("show");
 }

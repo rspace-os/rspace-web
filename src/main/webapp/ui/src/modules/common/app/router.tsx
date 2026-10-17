@@ -43,6 +43,7 @@ export const routeTree = rootRoute.addChildren([aboutRoute, maintenanceInProgres
 
 export const router = createRouter({
   routeTree,
+  basepath: document.getElementById("app")?.dataset.contextPath || "/",
   defaultPreload: "intent",
   defaultStaleReloadMode: "blocking",
 });
