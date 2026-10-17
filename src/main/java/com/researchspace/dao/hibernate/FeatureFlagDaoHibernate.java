@@ -10,13 +10,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Repository
 public class FeatureFlagDaoHibernate implements FeatureFlagDao {
 
-  @Autowired private SessionFactory sessionFactory;
+  private final SessionFactory sessionFactory;
+
+  public FeatureFlagDaoHibernate(SessionFactory sessionFactory) {
+    this.sessionFactory = sessionFactory;
+  }
 
   @Override
   public Map<String, Boolean> getBaselineValues() {
