@@ -239,7 +239,9 @@ describe("AddBookableItemPage", () => {
         return HttpResponse.json({ id: 7 }, { status: 201 });
       }),
     );
-    const { container } = renderPage();
+    const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+    const { container, queryClient } = renderPage();
+    queryClient.setQueryData(catalogueQueryKey, []);
 
     expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
     expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
@@ -251,6 +253,7 @@ describe("AddBookableItemPage", () => {
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
 
     expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true);
     expect(authorization).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(requestBody).toEqual({
       target: { relationTo: "instruments", value: 123 },
