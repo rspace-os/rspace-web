@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -61,6 +62,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -403,7 +405,7 @@ class TimeSlotBookingManagerTest {
   }
 
   @Test
-  void expandsConflictQueriesAsymmetricallyAndSkipsThemForDoubleBooking() {
+  void checksRawOverlapThenTheSharedBufferAndLimitsDoubleBookingToMaintenance() {
     ResolvedBookableTarget target = target(12L);
     BookingConfiguration buffered = configuration(4L, 12L, true);
     buffered.setTimeZone("UTC");
@@ -417,11 +419,21 @@ class TimeSlotBookingManagerTest {
         actor,
         actor);
 
-    verify(bookingDao)
+    InOrder interactions = inOrder(bookingDao);
+    interactions
+        .verify(bookingDao)
+        .overlaps(
+            4L,
+            instant("2026-08-17T10:00:00Z"),
+            instant("2026-08-17T11:00:00Z"),
+            null,
+            CONFLICTING_EVENT_KINDS);
+    interactions
+        .verify(bookingDao)
         .overlaps(
             4L,
             instant("2026-08-17T09:40:00Z"),
-            instant("2026-08-17T11:10:00Z"),
+            instant("2026-08-17T11:20:00Z"),
             null,
             CONFLICTING_EVENT_KINDS);
 
@@ -435,8 +447,45 @@ class TimeSlotBookingManagerTest {
             target, instant("2026-08-17T12:00:00Z"), instant("2026-08-17T13:00:00Z"), null),
         actor,
         actor);
-    verify(bookingDao)
-        .overlaps(eq(5L), any(), any(), any(), eq(Set.of(BookingEventKind.MAINTENANCE)));
+    interactions
+        .verify(bookingDao)
+        .overlaps(
+            5L,
+            instant("2026-08-17T12:00:00Z"),
+            instant("2026-08-17T13:00:00Z"),
+            null,
+            Set.of(BookingEventKind.MAINTENANCE));
+  }
+
+  @Test
+  void timeChangingEditChecksRawThenBufferedAndExcludesItself() {
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    BookingConfiguration configuration = existing.getBookingConfiguration();
+    configuration.setTimeZone("UTC");
+    configuration.setBufferBeforeMinutes(10);
+    configuration.setBufferAfterMinutes(20);
+    stubReadableBookingAndConfigurationLock(existing);
+    Date movedStart = instant("2026-10-25T10:00:00Z");
+    Date movedEnd = instant("2026-10-25T11:30:00Z");
+
+    manager.updateBooking(
+        41L,
+        new TimeSlotBookingManager.Patch(movedStart, movedEnd, false, null, null),
+        actor,
+        actor);
+
+    InOrder interactions = inOrder(bookingDao);
+    interactions
+        .verify(bookingDao)
+        .overlaps(4L, movedStart, movedEnd, 41L, CONFLICTING_EVENT_KINDS);
+    interactions
+        .verify(bookingDao)
+        .overlaps(
+            4L,
+            instant("2026-10-25T09:40:00Z"),
+            instant("2026-10-25T11:50:00Z"),
+            41L,
+            CONFLICTING_EVENT_KINDS);
   }
 
   @Test
