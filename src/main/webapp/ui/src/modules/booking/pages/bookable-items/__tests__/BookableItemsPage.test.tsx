@@ -25,7 +25,13 @@ import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { mutateBookableItems } from "../BookableItemsPage";
-import { bookableItemFixtures, bookableItemsOpenApi, collectionPage } from "../mocks/bookableItemsMocks";
+import {
+  bookableItemFixtures,
+  bookableItemsOpenApi,
+  bookerBookingAccess,
+  collectionPage,
+  ownerBookingAccess,
+} from "../mocks/bookableItemsMocks";
 
 vi.mock("@/modules/common/queries/currentUser", () => ({ useCurrentUserQuery: vi.fn() }));
 
@@ -41,6 +47,26 @@ afterEach(() => {
 
 const bookingConfiguration = bookableItemFixtures[0];
 const secondBookingConfiguration = bookableItemFixtures[1];
+const viewerBookingAccess = {
+  ...bookerBookingAccess,
+  effectiveRole: "VIEWER",
+  capabilities: {
+    ...bookerBookingAccess.capabilities,
+    canCreateBooking: false,
+    canManageOwnBookings: false,
+  },
+} as const;
+
+const nonSysadminBookingAccess = [
+  ["owner", ownerBookingAccess],
+  ["booker", bookerBookingAccess],
+  ["viewer", viewerBookingAccess],
+] as const;
+
+const nonEditingBookingAccess = [
+  ["booker", bookerBookingAccess],
+  ["viewer", viewerBookingAccess],
+] as const;
 
 function pagedCollectionResponse(docs: readonly Record<string, unknown>[], page: number, totalDocs = 21) {
   return {
@@ -216,6 +242,45 @@ describe("BookableItemsPage", () => {
     await expectAccessible(container);
   });
 
+  it.each(nonSysadminBookingAccess)("does not offer bulk actions to a non-sysadmin %s", async (_role, access) => {
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
+    server.use(
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([{ ...bookingConfiguration, ...access }])),
+      ),
+    );
+
+    renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+
+    expect(await screen.findByRole("link", { name: "View details for Confocal microscope" })).toBeVisible();
+    expect(screen.queryByRole("checkbox", { name: "Select Confocal microscope" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Select all rows on this page" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Enable" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Disable" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Archive selected" })).not.toBeInTheDocument();
+  });
+
+  it.each(nonEditingBookingAccess)("does not offer Archive to a non-sysadmin %s", async (_role, access) => {
+    vi.mocked(useCurrentUserQuery).mockReturnValue({
+      data: { hasSysAdminRole: false, session: { operatedAs: false } },
+    } as ReturnType<typeof useCurrentUserQuery>);
+    server.use(
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
+      http.get("/api/v2/booking-configurations", () =>
+        HttpResponse.json(collectionPage([{ ...bookingConfiguration, ...access }])),
+      ),
+    );
+
+    renderBookableItemsPage("/booking/config/bookable-items", await realI18nWrapper());
+
+    expect(await screen.findByRole("link", { name: "View details for Confocal microscope" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Archive" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Actions for Confocal microscope" })).not.toBeInTheDocument();
+  });
+
   it("renders an unknown item when the related instrument is unreadable", async () => {
     vi.mocked(useCurrentUserQuery).mockReturnValue({
       data: { hasSysAdminRole: false, session: { operatedAs: false } },
@@ -235,7 +300,7 @@ describe("BookableItemsPage", () => {
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.archive" })).toBeVisible();
   });
 
-  it("archives a booking configuration after confirmation", async () => {
+  it("allows a non-sysadmin owner with edit capability to archive after confirmation", async () => {
     vi.mocked(useCurrentUserQuery).mockReturnValue({
       data: { hasSysAdminRole: false, session: { operatedAs: false } },
     } as ReturnType<typeof useCurrentUserQuery>);

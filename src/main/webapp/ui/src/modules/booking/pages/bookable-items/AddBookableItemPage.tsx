@@ -188,8 +188,7 @@ function AddBookableItemContent() {
       : null;
   const alreadyConfigured = conflict !== null;
   const canComplete = target.type === "instrument" && !alreadyConfigured;
-  const createFailed =
-    createMutation.error instanceof ApiV2ProblemError && failedForSelectedTarget && conflict === null;
+  const createFailed = createMutation.isError && failedForSelectedTarget && conflict === null;
 
   return (
     <main className="p-4 sm:p-8">
