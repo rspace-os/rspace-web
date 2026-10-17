@@ -71,6 +71,9 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
 
   @Override
   public Optional<Instrument> lockById(Long id) {
+    // Refresh cascades into instrument children, whose tables are outside this query's auto-flush
+    // space. Flush them explicitly so refresh cannot replace pending child changes.
+    getSession().flush();
     return getSession()
         .createQuery(
             "from Instrument instrument where instrument.id = :id and type(instrument) ="
@@ -78,7 +81,14 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             Instrument.class)
         .setParameter("id", id)
         .setLockMode(LockModeType.PESSIMISTIC_WRITE)
-        .uniqueResultOptional();
+        .uniqueResultOptional()
+        .map(
+            instrument -> {
+              // A readable precheck may already have put this entity in the session. Refresh the
+              // locked row so authorization sees its current owner and deletion state.
+              getSession().refresh(instrument, LockModeType.PESSIMISTIC_WRITE);
+              return instrument;
+            });
   }
 
   @Override
