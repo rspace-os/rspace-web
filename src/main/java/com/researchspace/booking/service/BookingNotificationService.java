@@ -58,9 +58,10 @@ public class BookingNotificationService {
     }
     Instrument targetInstrument = instrument.orElseThrow();
     BookingNotificationData data = notificationData(booking, targetInstrument);
+    Long requesterId = booking.getRequester() == null ? null : booking.getRequester().getId();
     for (BookingNotificationRecipient recipient :
         recipientReader.selectRecipients(
-            targetInstrument.getId(), notificationType, actor.getId())) {
+            targetInstrument.getId(), notificationType, actor.getId(), requesterId)) {
       NotificationConfig config = new NotificationConfig();
       config.setNotificationType(notificationType);
       config.setBroadcast(true);
@@ -68,6 +69,7 @@ public class BookingNotificationService {
       config.setRecordAuthorisationRequired(false);
       config.setNotificationTargetsOverride(new java.util.HashSet<>(Set.of(recipient.user())));
       config.setNotificationData(data);
+      config.setNotificationEventPreferenceOverride(recipient.requester());
 
       communicationManager.notify(
           actor,
