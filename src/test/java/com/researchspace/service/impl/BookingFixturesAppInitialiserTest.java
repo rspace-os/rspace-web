@@ -1,8 +1,11 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
@@ -11,7 +14,10 @@ import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.UserDao;
+import com.researchspace.model.User;
 import com.researchspace.model.booking.BookingSchedulingSettings;
+import com.researchspace.service.IContentInitializer;
+import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
@@ -22,11 +28,16 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 class BookingFixturesAppInitialiserTest {
+  private final UserDao users = mock(UserDao.class);
+  private final IContentInitializer contentInitializer = mock(IContentInitializer.class);
   private final ApplicationContext applicationContext = mock(ApplicationContext.class);
 
   @BeforeEach
@@ -61,6 +72,41 @@ class BookingFixturesAppInitialiserTest {
     initialiser.onInitialAppDeployment();
     initialiser.onAppStartup(applicationContext);
     assertEquals(0, TransactionSynchronizationManager.getSynchronizations().size());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"user1a", "user2b", "user3c", "sysadmin1"})
+  void missingRequiredUserDoesNotInitializeContentOrCreateGroups(String missingUsername) {
+    IGroupCreationStrategy groups = mock(IGroupCreationStrategy.class);
+    BookingFixturesAppInitialiser initialiser = createInitialiser(false);
+    for (String username : List.of("user1a", "user2b", "user3c", "sysadmin1")) {
+      if (!username.equals(missingUsername)) {
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(1L);
+        when(users.getOptionalUserByUsername(username)).thenReturn(Optional.of(user));
+      }
+    }
+    ReflectionTestUtils.setField(initialiser, "grpStrategy", groups);
+
+    assertNull(ReflectionTestUtils.invokeMethod(initialiser, "createInventoryFixtures"));
+
+    verifyNoInteractions(contentInitializer, groups);
+  }
+
+  @Test
+  void unsavedRequiredUserDoesNotInitializeContentOrCreateGroups() {
+    IGroupCreationStrategy groups = mock(IGroupCreationStrategy.class);
+    BookingFixturesAppInitialiser initialiser = createInitialiser(false);
+    for (String username : List.of("user1a", "user2b", "user3c", "sysadmin1")) {
+      User user = mock(User.class);
+      when(user.getId()).thenReturn(null);
+      when(users.getOptionalUserByUsername(username)).thenReturn(Optional.of(user));
+    }
+    ReflectionTestUtils.setField(initialiser, "grpStrategy", groups);
+
+    assertNull(ReflectionTestUtils.invokeMethod(initialiser, "createInventoryFixtures"));
+
+    verifyNoInteractions(contentInitializer, groups);
   }
 
   @Test
@@ -221,10 +267,10 @@ class BookingFixturesAppInitialiserTest {
     assertEquals(Optional.empty(), settings.effectiveHours(day.getValue()));
   }
 
-  private static BookingFixturesAppInitialiser createInitialiser(boolean featureBranchInstance) {
+  private BookingFixturesAppInitialiser createInitialiser(boolean featureBranchInstance) {
     return new BookingFixturesAppInitialiser(
         "fixture-password",
-        mock(UserDao.class),
+        users,
         mock(ContainerDao.class),
         mock(InstrumentDao.class),
         mock(ContainerApiManager.class),
@@ -235,6 +281,7 @@ class BookingFixturesAppInitialiserTest {
         mock(BookingConfigurationDao.class),
         mock(TimeSlotBookingDao.class),
         mock(PlatformTransactionManager.class),
-        featureBranchInstance);
+        featureBranchInstance,
+        contentInitializer);
   }
 }

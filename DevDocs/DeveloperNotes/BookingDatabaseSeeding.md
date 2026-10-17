@@ -33,9 +33,18 @@ identifies the first deployment. The property defaults to `false` and works with
 `run`, `prod`, and `prod-test`, including AWS feature-branch deployments using
 `prod`. Set it in the instance's external `deployment.properties` or as the JVM
 argument `-Ddeployment.test.fb.instance=true`. The fixture users must already
-exist with their initial fixture credentials. Existing databases are not reseeded
+exist with their initial fixture credentials. After checking all required users,
+the fixture initializes missing user content and creates only the lab-group
+relationship needed for `user1a` to be PI of `user2b`, if that relationship is
+absent. It does not run the broader developer group setup in production. Existing databases are not reseeded
 on restart, even with the flag enabled. It waits for the outer startup transaction
 to commit, then creates inventory and booking data in two new transactions.
+
+`BookingFixturesProductionPermissionsIT` exercises the real production-profile
+startup and its viewer permissions. Run it only against a fresh, isolated database
+with `liquibase.context=run,dev-test` and `-Drspace.booking.fixture.integration=true`.
+The test retains that database rather than running the shared cleanup that removes
+seed data.
 
 Sources: [`TestAppConfig.java`](../../src/main/java/com/axiope/service/cfg/TestAppConfig.java#L55-L63),
 [`TestAppConfig.java`](../../src/main/java/com/axiope/service/cfg/TestAppConfig.java#L125-L156),
