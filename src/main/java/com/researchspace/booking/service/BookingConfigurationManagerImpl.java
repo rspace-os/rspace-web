@@ -215,6 +215,7 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
       User subject,
       User actor,
       Date timestamp) {
+    BookingSettingsValidation.requireValidTimeZone(create.timeZone());
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setEnabled(create.enabled());
     configuration.setState(BookingConfigurationState.ACTIVE);
@@ -433,6 +434,9 @@ public class BookingConfigurationManagerImpl implements BookingConfigurationMana
   }
 
   private static void apply(Patch patch, BookingConfiguration configuration) {
+    if (patch.timeZone() != null && !patch.timeZone().equals(configuration.getTimeZone())) {
+      BookingSettingsValidation.requireValidTimeZone(patch.timeZone());
+    }
     if (patch.enabled() != null) {
       configuration.setEnabled(patch.enabled());
     }
