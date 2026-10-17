@@ -259,6 +259,14 @@ public final class ApiV2OpenApiGenerator {
         grantees
             ? "Search eligible default-access grantees"
             : "Search eligible Booking configuration targets");
+    if (!grantees) {
+      operation.put(
+          "description",
+          "Lists eligible targets ordered by name. Omitted, empty, or whitespace-only `query`"
+              + " browses the first `limit` eligible targets. A nonblank `query` filters names by"
+              + " case-insensitive containment and must have at least two characters after"
+              + " trimming.");
+    }
     operation.put("tags", List.of("booking-directories"));
     operation.put(
         "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
@@ -278,9 +286,14 @@ public final class ApiV2OpenApiGenerator {
             parameter(
                 "query",
                 "query",
-                true,
-                ordered("type", "string", "minLength", 2),
-                "Case-insensitive search text."),
+                grantees,
+                grantees ? ordered("type", "string", "minLength", 2) : ordered("type", "string"),
+                grantees
+                    ? "Case-insensitive search text."
+                    : "Optional case-insensitive search text. Omit it or provide an empty or"
+                        + " whitespace-only value to browse the first `limit` eligible targets"
+                        + " by name. A nonblank value must have at least two characters after"
+                        + " trimming."),
             parameter(
                 "limit",
                 "query",
