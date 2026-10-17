@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
@@ -119,6 +119,41 @@ describe("API V2 table request recovery and source isolation", () => {
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.resetToDefaults" }));
     expect(await screen.findByRole("cell", { name: "First" })).toBeVisible();
     expect(requests).toBe(2);
+  });
+
+  it("reuses fixed-projection rows when an ordinary column is hidden", async () => {
+    const user = userEvent.setup();
+    const queryClient = new QueryClient();
+    const projections: string[] = [];
+    const fixedColumns: CollectionConfig<RecordRow> = {
+      ...config,
+      defaultColumns: ["title", "extra"],
+      fields: config.fields.map((field) => (field.name === "extra" ? { ...field, list: {} } : field)),
+    };
+    server.use(
+      http.get("/api/v2/records", ({ request }) => {
+        projections.push(new URL(request.url).searchParams.get("fields[records]") ?? "");
+        return HttpResponse.json({ ...page("First"), docs: [{ id: "1", title: "First", extra: "details" }] });
+      }),
+    );
+    render(
+      <QueryClientProvider client={queryClient}>
+        <NuqsTestingAdapter hasMemory>
+          <Suspense fallback="Loading metadata">
+            <Harness collectionConfig={fixedColumns} request={{ projection: { fixed: ["title", "extra"] } }} />
+          </Suspense>
+        </NuqsTestingAdapter>
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("cell", { name: "details" });
+
+    await user.click(screen.getByRole("button", { name: "common:tableList.toolbar.columns" }));
+    await user.click(screen.getAllByRole("button", { name: "common:tableList.actions.hideColumn" })[1]);
+
+    expect(screen.queryByRole("cell", { name: "details" })).not.toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "First" })).toBeVisible();
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    expect(projections).toEqual(["id,title,extra"]);
   });
 
   it("fetches new projection dependencies when the configuration changes", async () => {
