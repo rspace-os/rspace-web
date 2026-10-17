@@ -87,8 +87,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
   private @Autowired MessageSourceUtils messages;
 
-  // Lazy: SampleRequestApiManagerImpl depends back on SampleApiManager, so eager injection here
-  // would form a cycle at context startup.
+  // Lazy: SampleRequestApiManagerImpl injects this manager back
   @Autowired @Lazy private SampleRequestApiManager sampleRequestApiManager;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
 

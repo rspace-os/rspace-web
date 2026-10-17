@@ -97,12 +97,12 @@ until reuse is seen in practice.
 
 ### D7 A fixed transition table, enforced in one place
 
-| To | From | Who | Reason |
+| From | To | Who | Reason |
 | --- | --- | --- | --- |
-| APPROVED | PENDING | current owner | not accepted |
-| REJECTED | PENDING, APPROVED | current owner | required |
-| CANCELLED | PENDING | requester | not accepted |
-| FULFILLED | PENDING, APPROVED | current owner | not accepted |
+| PENDING | APPROVED | current owner | not accepted |
+| PENDING, APPROVED | REJECTED | current owner | required |
+| PENDING | CANCELLED | requester | not accepted |
+| PENDING, APPROVED | FULFILLED | current owner | not accepted |
 
 REJECTED, CANCELLED and FULFILLED are terminal. PENDING is only written when the request
 is raised. The owner can withdraw an approval by rejecting it, which is also what a

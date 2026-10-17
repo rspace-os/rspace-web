@@ -7,7 +7,7 @@ info:
     This variant additionally documents the beta **Instruments** and **Instrument Templates** endpoints.
 
     **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the navigation menu.
-  version: "2.27"
+  version: "2.27.1"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
@@ -1358,21 +1358,21 @@ paths:
 
         Permitted transitions, actors and reasons:
 
-        | To | From | Who | Reason |
+        | From | To | Who | Reason |
 
         | --- | --- | --- | --- |
 
-        | APPROVED | PENDING | sample's current owner | not accepted |
+        | PENDING | APPROVED | sample's current owner | not accepted |
 
-        | REJECTED | PENDING | sample's current owner | required |
+        | PENDING | REJECTED | sample's current owner | required |
 
-        | REJECTED | APPROVED | sample's current owner | required |
+        | PENDING | CANCELLED | the requester | not accepted |
 
-        | CANCELLED | PENDING | the requester | not accepted |
+        | PENDING | FULFILLED | sample's current owner | not accepted |
 
-        | FULFILLED | PENDING | sample's current owner | not accepted |
+        | APPROVED | REJECTED | sample's current owner | required |
 
-        | FULFILLED | APPROVED | sample's current owner | not accepted |
+        | APPROVED | FULFILLED | sample's current owner | not accepted |
 
         REJECTED, CANCELLED and FULFILLED are terminal. PENDING is written only
         when the request is raised and cannot be set here. Transferring the

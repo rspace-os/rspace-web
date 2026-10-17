@@ -18,10 +18,7 @@ import java.util.Date;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 
-/**
- * One entry in a sample request's status history, including the PENDING entry written when the
- * request is raised (ADR D8).
- */
+/** One entry in a sample request's status history. */
 @Entity
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)

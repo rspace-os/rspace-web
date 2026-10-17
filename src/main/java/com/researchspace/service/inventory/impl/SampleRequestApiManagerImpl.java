@@ -57,41 +57,49 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private enum Actor {
-    OWNER,
+    CURRENT_OWNER,
     REQUESTER
   }
 
   private record Transition(
-      SampleRequestStatus to, SampleRequestStatus from, Actor actor, boolean reasonRequired) {}
+      SampleRequestStatus from, SampleRequestStatus to, Actor actor, boolean reasonRequired) {}
 
-  /**
-   * Every transition a user can make (ADR D7). PENDING is absent: it is written only when a request
-   * is raised.
-   */
+  /** Every transition a user can make; PENDING is only written when a request is raised. */
   private static final List<Transition> TRANSITIONS =
       List.of(
           new Transition(
-              SampleRequestStatus.APPROVED, SampleRequestStatus.PENDING, Actor.OWNER, false),
+              SampleRequestStatus.PENDING,
+              SampleRequestStatus.APPROVED,
+              Actor.CURRENT_OWNER,
+              false),
           new Transition(
-              SampleRequestStatus.REJECTED, SampleRequestStatus.PENDING, Actor.OWNER, true),
+              SampleRequestStatus.PENDING, SampleRequestStatus.REJECTED, Actor.CURRENT_OWNER, true),
           new Transition(
-              SampleRequestStatus.REJECTED, SampleRequestStatus.APPROVED, Actor.OWNER, true),
+              SampleRequestStatus.PENDING, SampleRequestStatus.CANCELLED, Actor.REQUESTER, false),
           new Transition(
-              SampleRequestStatus.CANCELLED, SampleRequestStatus.PENDING, Actor.REQUESTER, false),
+              SampleRequestStatus.PENDING,
+              SampleRequestStatus.FULFILLED,
+              Actor.CURRENT_OWNER,
+              false),
           new Transition(
-              SampleRequestStatus.FULFILLED, SampleRequestStatus.PENDING, Actor.OWNER, false),
+              SampleRequestStatus.APPROVED,
+              SampleRequestStatus.REJECTED,
+              Actor.CURRENT_OWNER,
+              true),
           new Transition(
-              SampleRequestStatus.FULFILLED, SampleRequestStatus.APPROVED, Actor.OWNER, false));
+              SampleRequestStatus.APPROVED,
+              SampleRequestStatus.FULFILLED,
+              Actor.CURRENT_OWNER,
+              false));
 
   @Override
   public ApiSampleRequest createRequest(ApiSampleRequestPost post, User user) {
     GlobalIdentifier oid = sampleOid(post.getSampleGlobalId());
-    // share-locked as the transaction's first read (ADR D10), so a transfer running at the same
-    // time waits for the new request and then closes it. No read permission is needed: requestable
-    // is the gate (ADR D3).
+    // share-locked as the first read, so a concurrent transfer waits for the new request and then
+    // closes it; no read permission is needed, requestable is the gate
     Sample locked = sampleDao.getWithSharedLock(oid.getDbId());
     assertSampleRequestsEnabled(user);
-    Sample sample = untrashed(locked, oid);
+    Sample sample = sampleNotInTrashOrThrow(locked, oid);
     assertNotOwnSample(sample, user);
     assertRequestable(sample);
     SampleRequest request = new SampleRequest(sample, user, post.getNote());
@@ -137,7 +145,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
-    // locked as the transaction's first read, so concurrent transitions serialise (ADR D10)
+    // locked as the transaction's first read, so concurrent transitions serialise
     SampleRequest request = sampleRequestDao.getForUpdate(id);
     assertSampleRequestsEnabled(user);
     if (request == null) {
@@ -145,10 +153,10 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     }
     assertUserIsPartyToRequest(request, user);
 
-    List<Transition> toTarget = transitionsTo(post.getStatus());
+    List<Transition> toTarget = transitionsToSettableStatusOrThrow(post.getStatus());
     // every transition to one target shares its actor, so who may act is checked first
     assertPermittedActor(request, user, toTarget.get(0).actor());
-    Transition transition = legalFrom(toTarget, request.getStatus());
+    Transition transition = legalTransitionFromOrThrow(toTarget, request.getStatus());
     String reason = validatedReason(post, transition);
     Sample transferredSample = resolveTransferredSample(post, user);
 
@@ -160,7 +168,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   private void assertPermittedActor(SampleRequest request, User user, Actor actor) {
     String permitted =
-        Actor.OWNER.equals(actor)
+        Actor.CURRENT_OWNER.equals(actor)
             ? request.getSample().getOwner().getUsername()
             : request.getRequesterUsername();
     if (!user.getUsername().equals(permitted)) {
@@ -169,7 +177,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /** Every transition to the target; a target with none is never settable. */
-  private List<Transition> transitionsTo(SampleRequestStatus target) {
+  private List<Transition> transitionsToSettableStatusOrThrow(SampleRequestStatus target) {
     List<Transition> toTarget = TRANSITIONS.stream().filter(t -> t.to().equals(target)).toList();
     if (toTarget.isEmpty()) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.statusNotSettable", target);
@@ -178,7 +186,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /** A target may be reachable from several statuses, e.g. FULFILLED from PENDING or APPROVED. */
-  private Transition legalFrom(List<Transition> toTarget, SampleRequestStatus current) {
+  private Transition legalTransitionFromOrThrow(
+      List<Transition> toTarget, SampleRequestStatus current) {
     return toTarget.stream()
         .filter(t -> t.from().equals(current))
         .findFirst()
@@ -252,7 +261,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /** A missing sample and one in the trash are both not found. */
-  private Sample untrashed(Sample sample, GlobalIdentifier oid) {
+  private Sample sampleNotInTrashOrThrow(Sample sample, GlobalIdentifier oid) {
     if (sample == null || sample.isDeleted()) {
       throw new NotFoundException(messages.getResourceNotFoundMessage("Sample", oid.getDbId()));
     }
@@ -270,8 +279,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /**
-   * Absent when none was supplied. Accepted only when fulfilling, and only for a sample the
-   * fulfiller can fully read (ADR D11).
+   * Absent when none was supplied; accepted only when fulfilling, for a sample the fulfiller can
+   * fully read.
    */
   private Sample resolveTransferredSample(ApiSampleRequestStatusPut post, User user) {
     String globalId = post.getTransferredSampleGlobalId();
@@ -283,7 +292,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
           "errors.inventory.sampleRequest.transferredSampleNotAllowed", post.getStatus());
     }
     GlobalIdentifier oid = sampleOid(globalId);
-    Sample sample = untrashed(sampleDao.getSafeNull(oid.getDbId()).orElse(null), oid);
+    Sample sample = sampleNotInTrashOrThrow(sampleDao.getSafeNull(oid.getDbId()).orElse(null), oid);
     if (!invPermissions.canUserReadInventoryRecord(sample, user)) {
       throw new NotFoundException(messages.getResourceNotFoundMessage("Sample", sample.getId()));
     }
@@ -301,7 +310,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       SampleRequestStatus target =
           toRequester ? SampleRequestStatus.FULFILLED : SampleRequestStatus.REJECTED;
       // a PI or admin of the owner's group may transfer too, so only legality is checked
-      legalFrom(transitionsTo(target), request.getStatus());
+      legalTransitionFromOrThrow(transitionsToSettableStatusOrThrow(target), request.getStatus());
       if (toRequester) {
         request.recordStatus(actor, target, fulfilledReason, request.getSample());
       } else {

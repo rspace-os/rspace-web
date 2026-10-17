@@ -85,10 +85,10 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             ? (unscopedOwnedBy ? "and owner.username=:ownedBy " : "")
             : getOwnedByAndPermittedItemsSqlQueryFragment(
                 ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
-    String requestableQueryFragment =
-        requestable == null ? "" : "and requestable=" + requestable + " ";
+    String requestableQueryFragment = requestable == null ? "" : "and requestable=:requestable ";
     // the name filter is for requestable searches only; other searches go through Lucene
     boolean limitByNameQuery = unscopedRequestableSearch && StringUtils.isNotBlank(query);
+    // '!' escapes % and _ in the user's text, see nameContainsPattern
     String nameQueryFragment =
         limitByNameQuery ? "and lower(editInfo.name) like :nameQuery escape '!' " : "";
 
@@ -125,6 +125,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
                 Long.class);
     if (limitByParentTemplate) {
       countQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (requestable != null) {
+      countQueryBase.setParameter("requestable", requestable);
     }
     if (unscopedOwnedBy) {
       countQueryBase.setParameter("ownedBy", ownedBy);
@@ -163,6 +166,9 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .setMaxResults(maxResult);
     if (limitByParentTemplate) {
       samplePageQueryBase.setParameter(PARENT_TEMPLATE_ID, parentTemplateId);
+    }
+    if (requestable != null) {
+      samplePageQueryBase.setParameter("requestable", requestable);
     }
     if (unscopedOwnedBy) {
       samplePageQueryBase.setParameter("ownedBy", ownedBy);
