@@ -346,7 +346,7 @@ export function BookingForm(props: BookingFormProps) {
           </div>
         )}
         {target && props.showMobileItemInformation && !compact && !inline ? (
-          <div className="@2xl:hidden">
+          <div className="@4xl:hidden">
             <BookingItemInformationCard as="section" item={target} displayTimezone={displayTimezone} />
           </div>
         ) : null}
