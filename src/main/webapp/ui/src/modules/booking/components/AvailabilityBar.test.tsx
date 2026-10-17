@@ -340,7 +340,7 @@ describe("AvailabilityBar", () => {
       ],
     });
 
-    await user.click(screen.getByRole("button"));
+    await user.click(await screen.findByRole("button"));
     const dialog = await screen.findByRole("dialog");
     const disclosure = within(dialog).getByLabelText("Show details for Maintenance blockout, 09:00–10:00");
     await user.click(disclosure);
