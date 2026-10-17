@@ -41,14 +41,17 @@ export function BookingPreferencesContent() {
     queryKey: bookingDisplayPreferencesQueryKey,
     queryFn: ({ signal }) => fetchBookingDisplayPreferences(token, signal),
   }).data;
-  const [draft, setDraft] = useState<BookingDisplayPreferencesInput>();
-  const input = draft ?? inputFrom(document);
+  const [draft, setDraft] = useState<{
+    baseline: BookingDisplayPreferencesInput;
+    input: BookingDisplayPreferencesInput;
+  }>();
+  const input = draft?.input ?? inputFrom(document);
   const replace = useReplaceBookingDisplayPreferences();
   const reset = useResetBookingDisplayPreferences();
   const browserZone = browserTimeZone() ?? document.institutionTimezone;
 
   const valid = v.safeParse(BookingDisplayPreferencesInputSchema, input).success;
-  const dirty = JSON.stringify(input) !== JSON.stringify(inputFrom(document));
+  const dirty = draft !== undefined;
   const pending = replace.isPending || reset.isPending;
 
   return (
@@ -65,12 +68,17 @@ export function BookingPreferencesContent() {
         className="max-w-2xl space-y-6"
         onSubmit={(event) => {
           event.preventDefault();
-          if (valid) replace.mutate(input, { onSuccess: () => setDraft(undefined) });
+          if (valid && !pending) replace.mutate(input, { onSuccess: () => setDraft(undefined) });
         }}
       >
         <BookingDisplaySettingsFields
           value={input}
-          onChange={setDraft}
+          onChange={(value) => {
+            setDraft((current) => {
+              const baseline = current?.baseline ?? inputFrom(document);
+              return JSON.stringify(value) === JSON.stringify(baseline) ? undefined : { baseline, input: value };
+            });
+          }}
           browserTimezone={browserZone}
           institutionTimezone={document.institutionTimezone}
           disabled={pending}
