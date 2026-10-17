@@ -29,8 +29,14 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
 
-  @Autowired private FeatureFlagManager featureFlags;
-  @Autowired private FeatureFlagDao featureFlagDao;
+  private final FeatureFlagManager featureFlags;
+  private final FeatureFlagDao featureFlagDao;
+
+  @Autowired
+  FeatureFlagManagerImplIT(FeatureFlagManager featureFlags, FeatureFlagDao featureFlagDao) {
+    this.featureFlags = featureFlags;
+    this.featureFlagDao = featureFlagDao;
+  }
 
   private User sysadmin;
   private boolean originalBaseline;
