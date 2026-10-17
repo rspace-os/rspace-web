@@ -57,9 +57,10 @@ public class BookingNotificationService {
       return;
     }
     Instrument targetInstrument = instrument.orElseThrow();
+    Long requesterId = booking.getRequester() == null ? null : booking.getRequester().getId();
     for (BookingNotificationRecipient recipient :
         recipientReader.selectRecipients(
-            targetInstrument.getId(), notificationType, actor.getId())) {
+            targetInstrument.getId(), notificationType, actor.getId(), requesterId)) {
       BookingNotificationData data = notificationData(booking, targetInstrument);
       data.setEmailDisplayTimezone(recipient.displayZone().getId());
       NotificationConfig config = new NotificationConfig();
@@ -69,6 +70,7 @@ public class BookingNotificationService {
       config.setRecordAuthorisationRequired(false);
       config.setNotificationTargetsOverride(new java.util.HashSet<>(Set.of(recipient.user())));
       config.setNotificationData(data);
+      config.setNotificationEventPreferenceOverride(recipient.requester());
 
       communicationManager.notify(
           actor,

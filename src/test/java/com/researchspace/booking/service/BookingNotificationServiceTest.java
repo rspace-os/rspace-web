@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,9 +77,11 @@ class BookingNotificationServiceTest {
     Instrument instrument = instrument("<Mic & scope>");
     TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, actor);
     when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
-    when(recipientReader.selectRecipients(INSTRUMENT_ID, notificationType, actor.getId()))
+    when(recipientReader.selectRecipients(
+            INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
         .thenReturn(
-            List.of(new BookingNotificationRecipient(recipient, ZoneId.of("Europe/Berlin"))));
+            List.of(
+                new BookingNotificationRecipient(recipient, ZoneId.of("Europe/Berlin"), false)));
 
     service.notify(booking, actor, notificationType);
 
@@ -90,6 +93,7 @@ class BookingNotificationServiceTest {
     assertEquals(true, config.getValue().isBroadcast());
     assertEquals(CommunicationNotifyPolicy.ALWAYS_NOTIFY, config.getValue().getPolicyOverride());
     assertEquals(false, config.getValue().isRecordAuthorisationRequired());
+    assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     assertEquals(Set.of(recipient), config.getValue().getNotificationTargetsOverride());
     // CommunicationManager mutates this set before persisting recipients.
     config.getValue().getNotificationTargetsOverride().remove(actor);
@@ -119,12 +123,16 @@ class BookingNotificationServiceTest {
     when(instrumentDao.getSafeNull(INSTRUMENT_ID))
         .thenReturn(Optional.of(instrument("Microscope")));
     when(recipientReader.selectRecipients(
-            INSTRUMENT_ID, NotificationType.NOTIFICATION_BOOKING_CREATED, actor.getId()))
+            INSTRUMENT_ID,
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            actor.getId(),
+            actor.getId()))
         .thenReturn(
             List.of(
-                new BookingNotificationRecipient(berlinRecipient, ZoneId.of("Europe/Berlin")),
                 new BookingNotificationRecipient(
-                    losAngelesRecipient, ZoneId.of("America/Los_Angeles"))));
+                    berlinRecipient, ZoneId.of("Europe/Berlin"), false),
+                new BookingNotificationRecipient(
+                    losAngelesRecipient, ZoneId.of("America/Los_Angeles"), false)));
 
     service.notify(
         booking(BOOKING_ID, BookingEventKind.BOOKING, actor),
@@ -147,12 +155,40 @@ class BookingNotificationServiceTest {
   }
 
   @Test
+  void marksCancellationRequesterForEventPreferenceOverride() {
+    User actor = user(1L, "owner");
+    User requester = user(2L, "requester");
+    when(instrumentDao.getSafeNull(INSTRUMENT_ID))
+        .thenReturn(Optional.of(instrument("Microscope")));
+    when(recipientReader.selectRecipients(
+            INSTRUMENT_ID,
+            NotificationType.NOTIFICATION_BOOKING_CANCELLED,
+            actor.getId(),
+            requester.getId()))
+        .thenReturn(
+            List.of(new BookingNotificationRecipient(requester, ZoneId.of("Europe/Berlin"), true)));
+
+    service.notify(
+        booking(BOOKING_ID, BookingEventKind.BOOKING, requester),
+        actor,
+        NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+
+    ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
+    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), any());
+    assertTrue(config.getValue().isNotificationEventPreferenceOverride());
+    assertEquals(Set.of(requester), config.getValue().getNotificationTargetsOverride());
+  }
+
+  @Test
   void doesNotCreateNotificationsWhenTheSnapshotHasNoEligibleRecipients() {
     User actor = user(1L, "actor");
     when(instrumentDao.getSafeNull(INSTRUMENT_ID))
         .thenReturn(Optional.of(instrument("Microscope")));
     when(recipientReader.selectRecipients(
-            INSTRUMENT_ID, NotificationType.NOTIFICATION_BOOKING_CREATED, actor.getId()))
+            INSTRUMENT_ID,
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            actor.getId(),
+            actor.getId()))
         .thenReturn(List.of());
 
     service.notify(
@@ -188,7 +224,7 @@ class BookingNotificationServiceTest {
         actor,
         NotificationType.NOTIFICATION_BOOKING_CREATED);
 
-    verify(recipientReader, never()).selectRecipients(any(), any(), any());
+    verify(recipientReader, never()).selectRecipients(any(), any(), any(), any());
     verify(communicationManager, never()).notify(any(), any(), any(), any());
   }
 

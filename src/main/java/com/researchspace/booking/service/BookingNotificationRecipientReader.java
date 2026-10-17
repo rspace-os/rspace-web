@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableItemNotificationSubscription;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -13,8 +14,10 @@ import com.researchspace.service.FeatureFlagManager;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.hibernate.CacheMode;
 import org.hibernate.Hibernate;
 import org.hibernate.Session;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookingNotificationRecipientReader {
 
   private final BookingNotificationSubscriptionDao subscriptions;
+  private final UserDao users;
   private final BookingItemPermissions permissions;
   private final BookingDisplayPreferencesManager displayPreferences;
   private final FeatureFlagManager featureFlags;
@@ -38,6 +42,7 @@ public class BookingNotificationRecipientReader {
 
   public BookingNotificationRecipientReader(
       BookingNotificationSubscriptionDao subscriptions,
+      UserDao users,
       BookingItemPermissions permissions,
       BookingDisplayPreferencesManager displayPreferences,
       FeatureFlagManager featureFlags,
@@ -45,6 +50,7 @@ public class BookingNotificationRecipientReader {
       @Qualifier(com.researchspace.booking.config.BookingTimeConfig.INSTITUTION_CLOCK)
           Clock institutionClock) {
     this.subscriptions = subscriptions;
+    this.users = users;
     this.permissions = permissions;
     this.displayPreferences = displayPreferences;
     this.featureFlags = featureFlags;
@@ -52,8 +58,22 @@ public class BookingNotificationRecipientReader {
     this.institutionClock = institutionClock;
   }
 
+  /** Selects subscribers using a fresh eligibility snapshot. */
+  @Transactional(
+      propagation = Propagation.REQUIRES_NEW,
+      isolation = Isolation.REPEATABLE_READ,
+      readOnly = true)
+  public List<BookingNotificationRecipient> selectRecipients(
+      Long instrumentId, NotificationType event, Long actorId) {
+    return selectRecipients(instrumentId, event, actorId, null);
+  }
+
   /**
    * Selects all enabled subscribers who can currently read the target and want this event.
+   *
+   * <p>For cancellations by somebody other than the requester, the requester is added when they are
+   * active, Booking-enabled, and can still read the target. The requester is selected without their
+   * event preference because the cancellation is about their booking.
    *
    * <p>The candidate query is the first consistent read and establishes the snapshot used by all
    * later feature-flag, permission, and display-default reads. Returned users are detached when
@@ -65,7 +85,7 @@ public class BookingNotificationRecipientReader {
       isolation = Isolation.REPEATABLE_READ,
       readOnly = true)
   public List<BookingNotificationRecipient> selectRecipients(
-      Long instrumentId, NotificationType event, Long actorId) {
+      Long instrumentId, NotificationType event, Long actorId, Long requesterId) {
     if (instrumentId == null || !BookingNotificationMessageFormatter.isBookingNotification(event)) {
       return List.of();
     }
@@ -79,34 +99,57 @@ public class BookingNotificationRecipientReader {
         subscriptions.findEnabledByInstrument(instrumentId);
     BookableTargetReference target =
         new BookableTargetReference(BookableTargetType.INSTRUMENT, instrumentId);
+    boolean includeRequester =
+        NotificationType.NOTIFICATION_BOOKING_CANCELLED.equals(event)
+            && requesterId != null
+            && !Objects.equals(actorId, requesterId);
+    User requester = includeRequester ? users.getSafeNull(requesterId).orElse(null) : null;
 
     List<BookingNotificationRecipient> selected = new ArrayList<>();
+    Set<Long> selectedIds = new HashSet<>();
     for (var subscription : candidates) {
       User recipient = subscription.getUser();
-      if (!active(recipient)
-          || Objects.equals(actorId, recipient.getId())
-          || !featureFlags.isFeatureFlagEnabledInSnapshot(BOOKING_ENABLED, recipient)
+      Long recipientId = recipient == null ? null : recipient.getId();
+      if ((includeRequester && Objects.equals(requesterId, recipientId))
+          || selectedIds.contains(recipientId)
+          || recipient == null
+          || Objects.equals(actorId, recipientId)
+          || !eligible(recipient, target)
           || !recipient.wantsNotificationFor(event)) {
         continue;
       }
 
-      if (!permissions
-          .resolve(target, recipient)
-          .hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
-        continue;
-      }
+      selectedIds.add(recipientId);
+      selected.add(snapshot(recipient, event, false));
+    }
 
-      Hibernate.initialize(recipient);
-      Hibernate.initialize(recipient.getUserPreferences());
-      // These preference reads are consumed after this transaction closes.
-      recipient.wantsNotificationFor(event);
-      recipient.getValueForPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL).getValue();
-      var display = displayPreferences.resolveForNotificationSnapshot(recipient);
-      ZoneId displayZone =
-          BookingNotificationMessageFormatter.zoneFor(display, null, institutionClock.getZone());
-      selected.add(new BookingNotificationRecipient(recipient, displayZone));
+    if (includeRequester && eligible(requester, target)) {
+      selected.add(snapshot(requester, event, true));
     }
     return List.copyOf(selected);
+  }
+
+  private boolean eligible(User recipient, BookableTargetReference target) {
+    return active(recipient)
+        && featureFlags.isFeatureFlagEnabledInSnapshot(BOOKING_ENABLED, recipient)
+        && permissions
+            .resolve(target, recipient)
+            .hasCapability(BookingResourceRoleScheme.READ_RESOURCE);
+  }
+
+  private BookingNotificationRecipient snapshot(
+      User recipient, NotificationType event, boolean requester) {
+    Hibernate.initialize(recipient);
+    Hibernate.initialize(recipient.getUserPreferences());
+    // These preference reads are consumed after this transaction closes.
+    if (!requester) {
+      recipient.wantsNotificationFor(event);
+    }
+    recipient.getValueForPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL).getValue();
+    var display = displayPreferences.resolveForNotificationSnapshot(recipient);
+    ZoneId displayZone =
+        BookingNotificationMessageFormatter.zoneFor(display, null, institutionClock.getZone());
+    return new BookingNotificationRecipient(recipient, displayZone, requester);
   }
 
   private static boolean active(User user) {
