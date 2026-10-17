@@ -20,6 +20,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ProtectedResourceAccess;
 import com.researchspace.service.resourceaccess.ReplaceResourceAccess;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
@@ -112,8 +113,7 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
     competing.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     User subject = bookingRequester;
 
-    assertThrows(
-        BookingConcurrentModificationException.class,
+    Runnable updateFromStaleSnapshot =
         () ->
             new TransactionTemplate(getTxMger())
                 .executeWithoutResult(
@@ -153,7 +153,14 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
                             owner,
                             owner);
                       }
-                    }));
+                    });
+    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
+      ResourceAccessException exception =
+          assertThrows(ResourceAccessException.class, updateFromStaleSnapshot::run);
+      assertEquals(ResourceAccessException.Reason.STALE, exception.reason());
+    } else {
+      assertThrows(BookingConcurrentModificationException.class, updateFromStaleSnapshot::run);
+    }
 
     if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
       assertTrue(
@@ -205,6 +212,8 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
               });
     } catch (BookingConcurrentModificationException exception) {
       // MariaDB can reject a stale-snapshot locking read instead of returning current rows.
+    } catch (ResourceAccessException exception) {
+      assertEquals(ResourceAccessException.Reason.STALE, exception.reason());
     }
     assertEquals(
         "CONFIRMED",
@@ -485,10 +494,10 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void asymmetricBuffersRejectCandidatesOnTheCorrectSidesAndKeepExactBoundariesOpen() {
+  public void sharedBufferGapIsSymmetricAcrossInsertionOrdersAndAllowsItsExactBoundary() {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument created = createBasicInstrumentForUser(owner, "Buffer boundary scope");
-    Setup setup = persistConfiguration(owner, created.getId(), false, 10, 20);
+    Setup setup = persistConfiguration(owner, created.getId(), false, 1L, 10, 20);
     ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
     Instant start =
         LocalDate.ofInstant(institutionClock.instant(), ZoneOffset.UTC)
@@ -498,28 +507,45 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
 
     create(target, owner, start, start.plus(1, ChronoUnit.HOURS));
 
+    Instant afterStart15 = start.plus(1, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES);
     assertThrows(
         BookingOverlapException.class,
-        () ->
-            create(
-                target,
-                owner,
-                start.plus(1, ChronoUnit.HOURS).plus(15, ChronoUnit.MINUTES),
-                start.plus(2, ChronoUnit.HOURS)));
+        () -> create(target, owner, afterStart15, afterStart15.plus(1, ChronoUnit.HOURS)));
+    Instant afterStart19 = start.plus(1, ChronoUnit.HOURS).plus(19, ChronoUnit.MINUTES);
     assertThrows(
         BookingOverlapException.class,
-        () ->
-            create(
-                target,
-                owner,
-                start.minus(1, ChronoUnit.HOURS),
-                start.minus(5, ChronoUnit.MINUTES)));
-    create(
-        target,
-        owner,
-        start.plus(1, ChronoUnit.HOURS).plus(20, ChronoUnit.MINUTES),
-        start.plus(2, ChronoUnit.HOURS));
-    create(target, owner, start.minus(1, ChronoUnit.HOURS), start.minus(10, ChronoUnit.MINUTES));
+        () -> create(target, owner, afterStart19, afterStart19.plus(1, ChronoUnit.HOURS)));
+    Instant afterStart20 = start.plus(1, ChronoUnit.HOURS).plus(20, ChronoUnit.MINUTES);
+    create(target, owner, afterStart20, afterStart20.plus(1, ChronoUnit.HOURS));
+
+    Instant laterStart = start.plus(1, ChronoUnit.DAYS);
+    create(target, owner, laterStart, laterStart.plus(1, ChronoUnit.HOURS));
+    Instant beforeStart15 = laterStart.minus(1, ChronoUnit.HOURS).minus(15, ChronoUnit.MINUTES);
+    assertThrows(
+        BookingOverlapException.class,
+        () -> create(target, owner, beforeStart15, beforeStart15.plus(1, ChronoUnit.HOURS)));
+    Instant beforeStart19 = laterStart.minus(1, ChronoUnit.HOURS).minus(19, ChronoUnit.MINUTES);
+    assertThrows(
+        BookingOverlapException.class,
+        () -> create(target, owner, beforeStart19, beforeStart19.plus(1, ChronoUnit.HOURS)));
+    Instant beforeStart20 = laterStart.minus(1, ChronoUnit.HOURS).minus(20, ChronoUnit.MINUTES);
+    create(target, owner, beforeStart20, beforeStart20.plus(1, ChronoUnit.HOURS));
+  }
+
+  @Test
+  public void zeroBuffersAllowTouchingRawBookingIntervals() {
+    User owner = createInitAndLoginAnyUser();
+    ApiInstrument created = createBasicInstrumentForUser(owner, "Zero buffer boundary scope");
+    Setup setup = persistConfiguration(owner, created.getId(), false, 0, 0);
+    ResolvedBookableTarget target = new ResolvedBookableTarget(setup.target(), setup.instrument());
+    Instant start =
+        LocalDate.ofInstant(institutionClock.instant(), ZoneOffset.UTC)
+            .plusDays(7)
+            .atTime(10, 0)
+            .toInstant(ZoneOffset.UTC);
+
+    create(target, owner, start, start.plus(1, ChronoUnit.HOURS));
+    create(target, owner, start.plus(1, ChronoUnit.HOURS), start.plus(2, ChronoUnit.HOURS));
   }
 
   private void assertConcurrentOverlappingCreates(
@@ -623,6 +649,17 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
       boolean allowDoubleBooking,
       long bufferBeforeMinutes,
       long bufferAfterMinutes) {
+    return persistConfiguration(
+        owner, instrumentId, allowDoubleBooking, null, bufferBeforeMinutes, bufferAfterMinutes);
+  }
+
+  private Setup persistConfiguration(
+      User owner,
+      Long instrumentId,
+      boolean allowDoubleBooking,
+      Long slotGranularityMinutes,
+      long bufferBeforeMinutes,
+      long bufferAfterMinutes) {
     openTransaction();
     Instrument instrument = instrumentDao.get(instrumentId);
     Hibernate.initialize(instrument.getOwner());
@@ -636,7 +673,12 @@ public class TimeSlotBookingManagerIT extends RealTransactionSpringTestBase {
                 "UTC",
                 new ResolvedBookableTarget(target, instrument),
                 new BookingSchedulingSettings.Patch(
-                    null, null, bufferBeforeMinutes, bufferAfterMinutes, null, allowDoubleBooking)),
+                    slotGranularityMinutes,
+                    null,
+                    bufferBeforeMinutes,
+                    bufferAfterMinutes,
+                    null,
+                    allowDoubleBooking)),
             owner,
             owner);
     return new Setup(configuration.getId(), target, instrument);
