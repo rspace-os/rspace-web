@@ -73,17 +73,20 @@ export function nextFreeRange(
   startWindow = wallClockToDayMinute(date, timezone, startWindow);
   endWindow = wallClockToDayMinute(date, timezone, endWindow);
   if (endWindow <= startWindow) return undefined;
-  const duration = Math.min(60, endWindow - startWindow);
+  if (!Number.isFinite(increment) || increment <= 0) return undefined;
+  const preferredDuration = Math.ceil(Math.min(60, endWindow - startWindow) / increment) * increment;
   const firstStart = Math.ceil(startWindow / increment) * increment;
   const occupied = [
     ...events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone)),
     ...unavailable,
-  ];
-  for (let startMinute = firstStart; startMinute + duration <= endWindow; startMinute += increment) {
-    const endMinute = startMinute + duration;
-    if (!occupied.some((event) => event.startMinute < endMinute && event.endMinute > startMinute)) {
-      return { startMinute, endMinute };
-    }
+  ].toSorted((left, right) => left.startMinute - right.startMinute);
+  for (let startMinute = firstStart; startMinute < endWindow; startMinute += increment) {
+    if (occupied.some((event) => event.startMinute <= startMinute && event.endMinute > startMinute)) continue;
+    const nextOccupiedStart = occupied.find((event) => event.startMinute > startMinute)?.startMinute ?? endWindow;
+    const duration =
+      Math.floor(Math.min(preferredDuration, nextOccupiedStart - startMinute, endWindow - startMinute) / increment) *
+      increment;
+    if (duration > 0) return { startMinute, endMinute: startMinute + duration };
   }
   return undefined;
 }

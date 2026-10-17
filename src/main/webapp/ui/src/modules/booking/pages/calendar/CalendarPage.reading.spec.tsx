@@ -809,6 +809,48 @@ describe("Calendar page", () => {
     await expect.element(dialog.getByLabelText("End time")).toHaveValue("09:00");
   });
 
+  test("opens a booking draft for a sub-hour resource opening", async () => {
+    const massSpectrometer = bookableItemFixtures.find((item) => item.target.globalId === "IN125");
+    if (!massSpectrometer) throw new Error("Mass spectrometer must be available in the catalogue fixture");
+    const openingHours = [{ dayOfWeek: 1, start: "10:00", end: "10:30" }];
+    worker.use(
+      http.get("/api/v2/booking-catalogue/calendar", () =>
+        HttpResponse.json({
+          items: [
+            {
+              ...bookableItemOption({
+                ...massSpectrometer,
+                timezone: "UTC",
+                slotGranularityMinutes: 15,
+                openingHours,
+              }),
+              configurationVersion: massSpectrometer.configurationVersion,
+              targetType: "INSTRUMENT",
+              effectiveRole: massSpectrometer.effectiveRole,
+              capabilities: massSpectrometer.capabilities,
+              location: null,
+            },
+          ],
+          page: 1,
+          pageSize: 20,
+          total: 1,
+          facets: { types: ["INSTRUMENT"] },
+        }),
+      ),
+    );
+    render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
+    await calendar.resources.click();
+    await calendar.day.click();
+    await expect.poll(() => calendar.resourceCanvases.length).toBe(1);
+
+    const add = page.getByRole("button", { name: "Add booking for Mass spectrometer", exact: true });
+    await expect.element(add).toBeEnabled();
+    await add.click();
+
+    await expect.element(calendar.bookingDialog.getByLabelText("Start time")).toHaveValue("10:00");
+    await expect.element(calendar.bookingDialog.getByLabelText("End time")).toHaveValue("10:30");
+  });
+
   test("disables resource-row creation when no free window exists", async () => {
     worker.use(
       http.get("/api/v2/booking-calendar/events", ({ request }) => {
