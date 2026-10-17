@@ -166,7 +166,12 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
   const conflicts = availabilityViolation
     ? bookingConflicts(availability.data?.get(availabilityTarget?.globalId ?? "") ?? [], preferences.timeZone)
     : [];
-  const conflictBlocksSubmission = availabilityViolation && !availabilityTarget?.allowDoubleBooking;
+  const canOverlapBookings =
+    creation.eventKind === "BOOKING" &&
+    availabilityTarget?.allowDoubleBooking === true &&
+    conflicts.length > 0 &&
+    conflicts.every(({ kind }) => kind === "BOOKING");
+  const conflictBlocksSubmission = availabilityViolation && !canOverlapBookings;
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
@@ -253,7 +258,7 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
                   : undefined
             }
             conflicts={conflicts}
-            conflictSeverity={availabilityTarget?.allowDoubleBooking ? "warning" : "error"}
+            conflictSeverity={canOverlapBookings && !isBookingOverlapError(mutation.error) ? "warning" : "error"}
             outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||

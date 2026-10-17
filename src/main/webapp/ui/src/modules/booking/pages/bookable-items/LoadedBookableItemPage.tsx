@@ -143,7 +143,10 @@ export function LoadedBookableItemPage({
       updateBookingConfiguration(configuration.id, version, input, token),
     onMutate: () => setSaveAnnouncement(null),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+      ]);
       setSaveAnnouncement("saved");
       setStaleEdit(false);
       setEdit(false);
@@ -163,6 +166,7 @@ export function LoadedBookableItemPage({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
         queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
       ]);
       setArchiveOpen(false);
@@ -182,6 +186,7 @@ export function LoadedBookableItemPage({
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
         queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
       ]);
       setSaveAnnouncement("restored");
@@ -213,7 +218,10 @@ export function LoadedBookableItemPage({
   const leaveMutation = useMutation({
     mutationFn: () => leaveResource("booking-configurations", configuration.id, token),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+      ]);
       void navigate({ to: "/booking", ignoreBlocker: true });
     },
   });
