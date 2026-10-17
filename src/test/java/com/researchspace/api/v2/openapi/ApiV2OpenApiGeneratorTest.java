@@ -324,12 +324,50 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "revokeBookingCalendarSubscription",
         objectMap(management.get("delete")).get("operationId"));
+    Map<String, Object> get = objectMap(management.get("get"));
+    Map<String, Object> post = objectMap(management.get("post"));
+    Map<String, Object> delete = objectMap(management.get("delete"));
     assertEquals(
         Set.of("200", "401", "403", "404", "406", "429", "500"),
-        objectMap(objectMap(management.get("get")).get("responses")).keySet());
+        objectMap(get.get("responses")).keySet());
+    assertEquals(
+        Set.of("200", "400", "401", "403", "404", "406", "409", "428", "429", "500"),
+        objectMap(post.get("responses")).keySet());
     assertEquals(
         Set.of("204", "401", "403", "404", "406", "429", "500"),
-        objectMap(objectMap(management.get("delete")).get("responses")).keySet());
+        objectMap(delete.get("responses")).keySet());
+
+    Map<String, Object> ifMatch =
+        objectMapList(post.get("parameters")).stream()
+            .filter(parameter -> parameter.get("name").equals("If-Match"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("header", ifMatch.get("in"));
+    assertEquals(true, ifMatch.get("required"));
+    assertEquals("string", objectMap(ifMatch.get("schema")).get("type"));
+
+    for (Map<String, Object> operation : List.of(get, post)) {
+      Map<String, Object> headers =
+          objectMap(objectMap(objectMap(operation.get("responses")).get("200")).get("headers"));
+      assertEquals(Set.of("Cache-Control", "ETag"), headers.keySet());
+      Map<String, Object> cacheControlSchema =
+          objectMap(objectMap(headers.get("Cache-Control")).get("schema"));
+      assertEquals("private, no-store", cacheControlSchema.get("const"));
+      assertEquals("#/components/headers/ETag", objectMap(headers.get("ETag")).get("$ref"));
+    }
+    assertEquals(
+        Set.of("Cache-Control"),
+        objectMap(objectMap(objectMap(delete.get("responses")).get("204")).get("headers"))
+            .keySet());
+
+    Map<String, Object> etagHeader =
+        objectMap(objectMap(objectMap(document.get("components")).get("headers")).get("ETag"));
+    String etagPattern = String.valueOf(objectMap(etagHeader.get("schema")).get("pattern"));
+    Pattern strongEtag = Pattern.compile(etagPattern);
+    assertTrue(strongEtag.matcher("\"inactive\"").matches());
+    assertTrue(strongEtag.matcher("\"" + "a".repeat(64) + "\"").matches());
+    assertFalse(strongEtag.matcher("W/\"inactive\"").matches());
+    assertFalse(strongEtag.matcher("inactive").matches());
 
     Map<String, Object> schemas = schemas(document);
     Map<String, Object> statusProperties =
