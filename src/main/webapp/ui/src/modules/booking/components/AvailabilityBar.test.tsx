@@ -319,7 +319,7 @@ describe("AvailabilityBar", () => {
 
   it("expands full-privacy maintenance details from a blockout source", async () => {
     const user = userEvent.setup();
-    await renderAvailabilityBar({
+    await renderRoutedAvailabilityBar({
       intervals: [
         sourced(
           "maintenance:42",
