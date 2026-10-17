@@ -18,6 +18,7 @@ import { BookingForm, type BookingFormSubmission } from "../BookingForm";
 import { cataloguePage, editableBooking, confocalTarget as target } from "./creationTestFixtures";
 
 it("shows every independently configured weekday and the scheduling timezone", async () => {
+  server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
   renderForm(
     <BookingForm
       mode="add"
