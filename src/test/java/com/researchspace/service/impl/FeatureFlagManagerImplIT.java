@@ -32,8 +32,14 @@ class FeatureFlagManagerImplIT extends RealTransactionSpringTestBase {
   // depend on a real flag that will later be removed.
   private static final String FLAG = "testFlag";
 
-  @Autowired private FeatureFlagManager featureFlags;
-  @Autowired private FeatureFlagDao featureFlagDao;
+  private final FeatureFlagManager featureFlags;
+  private final FeatureFlagDao featureFlagDao;
+
+  @Autowired
+  FeatureFlagManagerImplIT(FeatureFlagManager featureFlags, FeatureFlagDao featureFlagDao) {
+    this.featureFlags = featureFlags;
+    this.featureFlagDao = featureFlagDao;
+  }
 
   private User sysadmin;
   private boolean originalBaseline;
