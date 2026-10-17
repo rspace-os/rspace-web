@@ -154,6 +154,19 @@ SQL writes no Envers audit rows.
 Sources: [`changeLog-rsdev-booking-dev-seed-edge-cases.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed-edge-cases.xml),
 [`booking-dev-seed-edge-cases.sql`](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql).
 
+## Upgrading an existing increment schema
+
+Three historical booking changesets list their exact legacy checksums as accepted alternatives.
+A new `run` guard requires all four booking tables and either no increment columns
+or all eight compatible columns (`VARCHAR(8)` and `BIT(1)`, non-null on live tables
+and nullable in audit tables). A partial or incompatible schema stops before the
+additive migration. A complete existing schema marks that migration ran without
+executing its DDL or backfill, preserving day units, unaligned starts, existing
+settings versions, and historical audit nulls. Fresh databases still run the
+unchanged additive body; fresh-only seed guards remain in place. This upgrade
+uses normal forward Liquibase processing, without clearing checksums or resetting
+the database.
+
 ## Verification path
 
 For a Liquibase change, use a fresh database and an upgrade database. The

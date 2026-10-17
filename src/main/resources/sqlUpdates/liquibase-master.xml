@@ -73,6 +73,17 @@
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-time-slot-booking.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-time-slot-booking-kind.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-cancellation-reason.xml"/>
+    <changeSet id="rsdev-1187-booking-settings-fresh-origin" author="researchspace" context="run">
+        <preConditions onFail="MARK_RAN" onError="HALT">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM DATABASECHANGELOG
+                WHERE ID = 'rsdev-1187-booking-configuration-defaults'
+                  AND AUTHOR = 'researchspace'
+            </sqlCheck>
+        </preConditions>
+        <comment>Record whether booking defaults are being created on a fresh schema</comment>
+        <sql>SELECT 1</sql>
+    </changeSet>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-settings.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-calendar-subscriptions.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-1173-booking-calendar-permission-gate.xml"/>
@@ -90,6 +101,7 @@
     <include relativeToChangelogFile="true" file="changeLog-booking-opening-weekdays.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-booking-time-format.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed.xml"/>
+    <include relativeToChangelogFile="true" file="changeLog-rsdev-1187-booking-increment-fields.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-rsdev-booking-dev-seed-edge-cases.xml"/>
     <include relativeToChangelogFile="true" file="changeLog-booking-independent-hours.xml"/>
 
