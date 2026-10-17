@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.resourceaccess.ResourceAccessDao;
 import com.researchspace.model.Group;
+import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.resourceaccess.ResourceAccess;
 import com.researchspace.model.resourceaccess.ResourceAudience;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 
 class ResourceAccessManagerTest {
 
@@ -84,13 +87,13 @@ class ResourceAccessManagerTest {
     when(resource.manageAssignmentsCapability())
         .thenReturn(ResourceAccessTestScheme.MANAGE_ASSIGNMENTS);
     when(resource.manageOwnersCapability()).thenReturn(ResourceAccessTestScheme.MANAGE_OWNERS);
-    when(gateway.lockAuthorizationFacts(access, owner)).thenReturn(owner);
+    doReturn(authorizationFacts(owner)).when(gateway).lockAuthorizationFacts(access, owner);
     ResourceRoleAssignment otherEditor =
         ResourceRoleAssignment.forUser(ResourceAccessTestScheme.EDITOR, other);
     when(gateway.resolveAvailable("user:13", ResourceAccessTestScheme.EDITOR, null))
         .thenReturn(otherEditor);
     ResourceGranteeDirectoryEntry assignableOther = directoryEntry(other);
-    when(directory.resolveAssignable(Set.of("user:13"), owner))
+    when(directory.resolveAssignable(Set.of("user:13"), authorizationFacts(owner)))
         .thenReturn(Map.of("user:13", assignableOther));
   }
 
@@ -187,13 +190,15 @@ class ResourceAccessManagerTest {
     User managerUser = user(14L, "Manager");
     access.addAssignment(
         ResourceRoleAssignment.forUser(ResourceAccessTestScheme.MANAGER, managerUser));
-    when(gateway.lockAuthorizationFacts(access, managerUser)).thenReturn(managerUser);
+    doReturn(authorizationFacts(managerUser))
+        .when(gateway)
+        .lockAuthorizationFacts(access, managerUser);
     ResourceRoleAssignment otherOwner =
         ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, other);
     when(gateway.resolveAvailable("user:13", ResourceAccessTestScheme.OWNER, null))
         .thenReturn(otherOwner);
     ResourceGranteeDirectoryEntry assignableOther = directoryEntry(other);
-    when(directory.resolveAssignable(Set.of("user:13"), managerUser))
+    when(directory.resolveAssignable(Set.of("user:13"), authorizationFacts(managerUser)))
         .thenReturn(Map.of("user:13", assignableOther));
     ReplaceResourceAccess<Long> command =
         new ReplaceResourceAccess<>(
@@ -216,7 +221,7 @@ class ResourceAccessManagerTest {
   void replacementChecksMutationCapabilityBeforeDomainLifecycle() {
     User viewer = user(14L, "Viewer");
     access.addAssignment(ResourceRoleAssignment.forUser(ResourceAccessTestScheme.VIEWER, viewer));
-    when(gateway.lockAuthorizationFacts(access, viewer)).thenReturn(viewer);
+    doReturn(authorizationFacts(viewer)).when(gateway).lockAuthorizationFacts(access, viewer);
     doThrow(new IllegalStateException("archived"))
         .when(resource)
         .beforeAccessMutation(protectedEntity);
@@ -243,7 +248,7 @@ class ResourceAccessManagerTest {
     when(gateway.resolveAvailable("user:12", ResourceAccessTestScheme.EDITOR, null))
         .thenReturn(ownerEditor);
     ResourceGranteeDirectoryEntry assignableOwner = directoryEntry(owner);
-    when(directory.resolveAssignable(Set.of("user:12"), owner))
+    when(directory.resolveAssignable(Set.of("user:12"), authorizationFacts(owner)))
         .thenReturn(Map.of("user:12", assignableOwner));
 
     ResourceAccessException error =
@@ -255,7 +260,8 @@ class ResourceAccessManagerTest {
 
   @Test
   void replacementRejectsAnOutOfDirectoryKeyBeforeResolvingOrWriting() {
-    when(directory.resolveAssignable(Set.of("user:13"), owner)).thenReturn(Map.of());
+    when(directory.resolveAssignable(Set.of("user:13"), authorizationFacts(owner)))
+        .thenReturn(Map.of());
     ReplaceResourceAccess<Long> command =
         new ReplaceResourceAccess<>(
             9L,
@@ -283,6 +289,42 @@ class ResourceAccessManagerTest {
             ResourceAccessException.class, () -> manager.replace(resource, command, owner, owner));
 
     assertEquals(ResourceAccessException.Reason.SELF_REMOVAL_REQUIRES_LEAVE, error.reason());
+  }
+
+  @Test
+  void writeAuthorizationUsesLockedMembershipIdsInsteadOfTheLoadedCollection() {
+    User formerMember = user(15L, "Former member");
+    Group managerGroup = group(44L, "Managers");
+    when(formerMember.getGroups()).thenReturn(Set.of(managerGroup));
+    ResourceAccess groupAccess = new ResourceAccess(scheme.key(), owner, new Date(1_000));
+    groupAccess.setId(6L);
+    groupAccess.setVersion(7L);
+    groupAccess.addAssignment(
+        ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, owner));
+    groupAccess.addAssignment(
+        ResourceRoleAssignment.forGroup(ResourceAccessTestScheme.MANAGER, managerGroup));
+    groupAccess.addAssignment(
+        ResourceRoleAssignment.forAudience(
+            ResourceAccessTestScheme.EDITOR, ResourceAudience.ALL_USERS, "All users"));
+    when(resource.access(protectedEntity)).thenReturn(groupAccess);
+    when(gateway.lockAuthorizationFacts(groupAccess, formerMember))
+        .thenReturn(
+            new ResourceAccessDao.AuthorizationFacts(formerMember, true, Set.of(), Set.of()));
+    ReplaceResourceAccess<Long> command =
+        new ReplaceResourceAccess<>(
+            9L,
+            7L,
+            grants(
+                new ResourceAccessGrant("user:12", ResourceAccessTestScheme.OWNER),
+                new ResourceAccessGrant("group:44", ResourceAccessTestScheme.MANAGER)));
+
+    ResourceAccessException error =
+        assertThrows(
+            ResourceAccessException.class,
+            () -> manager.replace(resource, command, formerMember, formerMember));
+
+    assertEquals(ResourceAccessException.Reason.FORBIDDEN, error.reason());
+    verify(gateway, never()).flush();
   }
 
   @Test
@@ -330,8 +372,9 @@ class ResourceAccessManagerTest {
         ResourceRoleAssignment.forAudience(
             ResourceAccessTestScheme.EDITOR, ResourceAudience.ALL_USERS, "All users"));
     when(resource.access(protectedEntity)).thenReturn(accessWithLowerOutgoing);
-    when(gateway.lockAuthorizationFacts(accessWithLowerOutgoing, existingOwner))
-        .thenReturn(existingOwner);
+    doReturn(authorizationFacts(existingOwner))
+        .when(gateway)
+        .lockAuthorizationFacts(accessWithLowerOutgoing, existingOwner);
     ResourceRoleAssignment incomingOwner =
         ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, other);
     when(gateway.resolveAvailable("user:13", ResourceAccessTestScheme.OWNER, null))
@@ -346,6 +389,46 @@ class ResourceAccessManagerTest {
             "user:14", ResourceAccessTestScheme.OWNER,
             "audience:all-users", ResourceAccessTestScheme.EDITOR),
         roles(accessWithLowerOutgoing));
+  }
+
+  @Test
+  void ownershipTransferRejectsAResultAboveTheNamedAssignmentLimit() {
+    User existingOwner = user(14L, "Existing owner");
+    ResourceAccess accessAtLimit = new ResourceAccess(scheme.key(), owner, new Date(1_000));
+    accessAtLimit.setId(6L);
+    accessAtLimit.addAssignment(
+        ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, existingOwner));
+    accessAtLimit.addAssignment(
+        ResourceRoleAssignment.forUser(ResourceAccessTestScheme.EDITOR, owner));
+    for (long id = 100; id < 198; id++) {
+      accessAtLimit.addAssignment(
+          ResourceRoleAssignment.forGroup(
+              ResourceAccessTestScheme.EDITOR, group(id, "Group " + id)));
+    }
+    accessAtLimit.addAssignment(
+        ResourceRoleAssignment.forAudience(
+            ResourceAccessTestScheme.EDITOR, ResourceAudience.ALL_USERS, "All users"));
+    Map<String, String> before = roles(accessAtLimit);
+    assertEquals(101, before.size());
+    when(resource.access(protectedEntity)).thenReturn(accessAtLimit);
+    doReturn(authorizationFacts(existingOwner))
+        .when(gateway)
+        .lockAuthorizationFacts(accessAtLimit, existingOwner);
+    ResourceRoleAssignment incomingOwner =
+        ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, other);
+    when(gateway.resolveAvailable("user:13", ResourceAccessTestScheme.OWNER, null))
+        .thenReturn(incomingOwner);
+
+    ResourceAccessException error =
+        assertThrows(
+            ResourceAccessException.class,
+            () ->
+                manager.transferDirectOwnership(
+                    resource, 9L, owner, other, existingOwner, existingOwner));
+
+    assertEquals(ResourceAccessException.Reason.ASSIGNMENT_LIMIT, error.reason());
+    assertEquals(before, roles(accessAtLimit));
+    verify(gateway, never()).flush();
   }
 
   @Test
@@ -368,7 +451,7 @@ class ResourceAccessManagerTest {
     access.addAssignment(
         ResourceRoleAssignment.forGroup(ResourceAccessTestScheme.MANAGER, assignedGroup));
     access.addAssignment(ResourceRoleAssignment.forUser(ResourceAccessTestScheme.VIEWER, other));
-    when(other.hasSysadminRole()).thenReturn(true);
+    when(other.getRoles()).thenReturn(Set.of(Role.SYSTEM_ROLE));
     when(gateway.assignedUserGroupIds(access)).thenReturn(Map.of(13L, Set.of(41L)));
 
     ResourceAccessDocument document = manager.get(resource, 9L, owner);
@@ -396,8 +479,39 @@ class ResourceAccessManagerTest {
   }
 
   @Test
+  void disabledSubjectCannotRemoveAnExistingDirectAssignment() {
+    access.addAssignment(ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, other));
+    when(owner.isEnabled()).thenReturn(false);
+    when(gateway.lockAuthorizationFacts(access, owner))
+        .thenReturn(new ResourceAccessDao.AuthorizationFacts(owner, false, Set.of(), Set.of()));
+    ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
+    ResourceAccessManager managerWithEvents =
+        new ResourceAccessManagerImpl(
+            gateway,
+            schemes,
+            resolver,
+            directory,
+            Clock.fixed(Instant.parse("2026-08-31T08:00:00Z"), ZoneOffset.UTC),
+            messages,
+            events);
+    Map<String, String> before = roles(access);
+
+    ResourceAccessException error =
+        assertThrows(
+            ResourceAccessException.class,
+            () ->
+                managerWithEvents.removeSelf(
+                    resource, new RemoveSelfResourceAccess<>(9L), owner, owner));
+
+    assertEquals(ResourceAccessException.Reason.FORBIDDEN, error.reason());
+    assertEquals(before, roles(access));
+    verify(gateway, never()).flush();
+    verify(events, never()).publishEvent(any(Object.class));
+  }
+
+  @Test
   void removeSelfIsIdempotentForAReadableCallerWithoutADirectAssignment() {
-    when(gateway.lockAuthorizationFacts(access, other)).thenReturn(other);
+    doReturn(authorizationFacts(other)).when(gateway).lockAuthorizationFacts(access, other);
 
     manager.removeSelf(resource, new RemoveSelfResourceAccess<>(9L), other, other);
 
@@ -422,7 +536,20 @@ class ResourceAccessManagerTest {
     when(user.getDisplayName()).thenReturn(name);
     when(user.getUsername()).thenReturn(name.toLowerCase());
     when(user.getGroups()).thenReturn(Set.of());
+    when(user.getRoles()).thenReturn(Set.of());
     return user;
+  }
+
+  private static ResourceAccessDao.AuthorizationFacts authorizationFacts(User subject) {
+    Set<Long> groupIds =
+        subject.getGroups().stream()
+            .filter(group -> group.getId() != null)
+            .map(Group::getId)
+            .collect(Collectors.toUnmodifiableSet());
+    Set<String> roleNames =
+        subject.getRoles().stream().map(Role::getName).collect(Collectors.toUnmodifiableSet());
+    return new ResourceAccessDao.AuthorizationFacts(
+        subject, subject.isEnabled(), groupIds, roleNames);
   }
 
   private static List<ResourceAccessGrant> grants(ResourceAccessGrant... named) {
