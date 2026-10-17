@@ -29,11 +29,17 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class BookingIncrementUnitMVCIT {
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private JdbcTemplate jdbcTemplate;
+  private final WebApplicationContext context;
+  private final JdbcTemplate jdbcTemplate;
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
+
+  @Autowired
+  BookingIncrementUnitMVCIT(WebApplicationContext context, JdbcTemplate jdbcTemplate) {
+    this.context = context;
+    this.jdbcTemplate = jdbcTemplate;
+  }
 
   @BeforeEach
   void setUp() {
