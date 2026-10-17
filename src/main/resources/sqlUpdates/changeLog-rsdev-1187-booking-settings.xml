@@ -6,11 +6,10 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
   <changeSet id="rsdev-1187-booking-settings-columns" author="researchspace" context="run">
+    <validCheckSum>9:e1355dfa709819ea49a56f83d748f909</validCheckSum>
     <comment>Add scheduling settings to each existing booking configuration</comment>
     <addColumn tableName="BookingConfiguration">
-      <column name="slotGranularityMinutes" type="BIGINT" defaultValueNumeric="15"/>
-      <column name="incrementUnit" type="VARCHAR(8)" defaultValue="MINUTES"/>
-      <column name="alignToIncrement" type="BIT(1)" defaultValueBoolean="true"/>
+      <column name="slotGranularityMinutes" type="BIGINT" defaultValueNumeric="5"/>
       <column name="openingStart" type="VARCHAR(5)" defaultValue="00:00"/>
       <column name="openingEnd" type="VARCHAR(5)" defaultValue="24:00"/>
       <column name="bufferBeforeMinutes" type="BIGINT" defaultValueNumeric="0"/>
@@ -18,9 +17,7 @@
       <column name="allowDoubleBooking" type="BIT(1)" defaultValueBoolean="false"/>
     </addColumn>
     <update tableName="BookingConfiguration">
-      <column name="slotGranularityMinutes" valueNumeric="15"/>
-      <column name="incrementUnit" value="MINUTES"/>
-      <column name="alignToIncrement" valueBoolean="true"/>
+      <column name="slotGranularityMinutes" valueNumeric="5"/>
       <column name="openingStart" value="00:00"/>
       <column name="openingEnd" value="24:00"/>
       <column name="bufferBeforeMinutes" valueNumeric="0"/>
@@ -28,8 +25,6 @@
       <column name="allowDoubleBooking" valueBoolean="false"/>
     </update>
     <addNotNullConstraint tableName="BookingConfiguration" columnName="slotGranularityMinutes" columnDataType="BIGINT"/>
-    <addNotNullConstraint tableName="BookingConfiguration" columnName="incrementUnit" columnDataType="VARCHAR(8)"/>
-    <addNotNullConstraint tableName="BookingConfiguration" columnName="alignToIncrement" columnDataType="BIT(1)"/>
     <addNotNullConstraint tableName="BookingConfiguration" columnName="openingStart" columnDataType="VARCHAR(5)"/>
     <addNotNullConstraint tableName="BookingConfiguration" columnName="openingEnd" columnDataType="VARCHAR(5)"/>
     <addNotNullConstraint tableName="BookingConfiguration" columnName="bufferBeforeMinutes" columnDataType="BIGINT"/>
@@ -37,8 +32,6 @@
     <addNotNullConstraint tableName="BookingConfiguration" columnName="allowDoubleBooking" columnDataType="BIT(1)"/>
     <addColumn tableName="BookingConfiguration_AUD">
       <column name="slotGranularityMinutes" type="BIGINT"/>
-      <column name="incrementUnit" type="VARCHAR(8)"/>
-      <column name="alignToIncrement" type="BIT(1)"/>
       <column name="openingStart" type="VARCHAR(5)"/>
       <column name="openingEnd" type="VARCHAR(5)"/>
       <column name="bufferBeforeMinutes" type="BIGINT"/>
@@ -48,12 +41,11 @@
   </changeSet>
 
   <changeSet id="rsdev-1187-booking-configuration-defaults" author="researchspace" context="run">
+    <validCheckSum>9:d1f8e5ef486ee2c48d99e0a1ed7da677</validCheckSum>
     <comment>Create the singleton creation-time booking defaults and Envers history</comment>
     <createTable tableName="BookingConfigurationDefaults">
       <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
       <column name="slotGranularityMinutes" type="BIGINT"><constraints nullable="false"/></column>
-      <column name="incrementUnit" type="VARCHAR(8)" defaultValue="MINUTES"><constraints nullable="false"/></column>
-      <column name="alignToIncrement" type="BIT(1)" defaultValueBoolean="true"><constraints nullable="false"/></column>
       <column name="openingStart" type="VARCHAR(5)"><constraints nullable="false"/></column>
       <column name="openingEnd" type="VARCHAR(5)"><constraints nullable="false"/></column>
       <column name="bufferBeforeMinutes" type="BIGINT"><constraints nullable="false"/></column>
@@ -63,9 +55,7 @@
     </createTable>
     <insert tableName="BookingConfigurationDefaults">
       <column name="id" valueNumeric="1"/>
-      <column name="slotGranularityMinutes" valueNumeric="15"/>
-      <column name="incrementUnit" value="MINUTES"/>
-      <column name="alignToIncrement" valueBoolean="true"/>
+      <column name="slotGranularityMinutes" valueNumeric="5"/>
       <column name="openingStart" value="00:00"/>
       <column name="openingEnd" value="24:00"/>
       <column name="bufferBeforeMinutes" valueNumeric="0"/>
@@ -78,8 +68,6 @@
       <column name="REV" type="INT"><constraints nullable="false"/></column>
       <column name="REVTYPE" type="TINYINT"/>
       <column name="slotGranularityMinutes" type="BIGINT"/>
-      <column name="incrementUnit" type="VARCHAR(8)"/>
-      <column name="alignToIncrement" type="BIT(1)"/>
       <column name="openingStart" type="VARCHAR(5)"/>
       <column name="openingEnd" type="VARCHAR(5)"/>
       <column name="bufferBeforeMinutes" type="BIGINT"/>
@@ -122,4 +110,21 @@
       <column name="maxBookingDurationMinutes" type="BIGINT"/>
     </addColumn>
   </changeSet>
+
+  <changeSet id="rsdev-1187-booking-fresh-seed-default" author="researchspace" context="run">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <sqlCheck expectedResult="1">
+        SELECT COUNT(*) FROM DATABASECHANGELOG
+        WHERE ID = 'rsdev-1187-booking-settings-fresh-origin'
+          AND AUTHOR = 'researchspace'
+          AND EXECTYPE = 'EXECUTED'
+      </sqlCheck>
+    </preConditions>
+    <comment>Apply the fifteen-minute default only to the singleton created by a fresh master migration</comment>
+    <update tableName="BookingConfigurationDefaults">
+      <column name="slotGranularityMinutes" valueNumeric="15"/>
+      <where>id = 1</where>
+    </update>
+  </changeSet>
+
 </databaseChangeLog>
