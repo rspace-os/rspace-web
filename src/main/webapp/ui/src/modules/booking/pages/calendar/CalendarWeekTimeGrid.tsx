@@ -2,7 +2,8 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { DayTimelineEventCard } from "@/modules/booking/components/DayTimeline";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
-import { formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingDateTimeLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
@@ -48,6 +49,7 @@ export function CalendarWeekTimeGrid({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
   const scrollerRef = React.useRef<HTMLElement>(null);
   const [expandedEventKey, setExpandedEventKey] = React.useState<string | null>(null);
   const editorPositions = React.useContext(BookingEditorsContext)?.positions;
@@ -115,7 +117,7 @@ export function CalendarWeekTimeGrid({
                 className="absolute right-1.5 -translate-y-1/2 text-[11px] leading-none whitespace-nowrap text-muted-foreground tabular-nums"
                 style={{ top: hour * WEEK_GRID_PIXELS_PER_HOUR }}
               >
-                {formatWallClockTime(`${String(hour).padStart(2, "0")}:00`)}
+                {formatWallClockTime(`${String(hour).padStart(2, "0")}:00`, bookingDateTimeLocale(timeFormat))}
               </span>
             ))}
           </div>

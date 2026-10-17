@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { BookingTimeFormatProvider } from "@/modules/booking/domain/bookingDisplayPreferences";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { ownBooking } from "../../mocks/bookingCalendarFixtures";
@@ -55,6 +56,29 @@ function dayColumn(day: string) {
 }
 
 describe("CalendarTimeGrid week", () => {
+  it.each([
+    ["H12", "01:00 PM"],
+    ["H24", "13:00"],
+  ] as const)("uses the viewer's %s clock on the week axis", async (timeFormat, expected) => {
+    await renderWithRealI18n(
+      <BookingTimeFormatProvider timeFormat={timeFormat}>
+        <CalendarTimeGrid
+          date="2026-08-19"
+          view="week"
+          events={[]}
+          timezone="UTC"
+          today="2026-08-19"
+          availabilityStartMinute={8 * 60}
+          availabilityEndMinute={18 * 60}
+          onShowDay={vi.fn()}
+        />
+      </BookingTimeFormatProvider>,
+      i18nConfig,
+    );
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
+  });
+
   it("renders seven day columns on one hour axis, opened at the availability window", async () => {
     await renderWeek([]);
 
