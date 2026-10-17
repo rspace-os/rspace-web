@@ -635,6 +635,13 @@ A relationship field uses `relationshipSources` when its target has a registered
 Otherwise, pass static choices through `relationshipOptions`. Pass
 `relationshipOptionAvailability` when another record can make an option unavailable.
 
+With `hasMany`, both static and remote relationship fields keep an array of IDs in the form.
+The remote picker converts that array to and from its global-ID selection string.
+
+Custom controls must forward the Formisch field
+[focus and blur props](https://formisch.dev/react/api/useField/) as well as change events,
+so touched state and the configured validation mode work.
+
 ## Complete client-side collections
 
 Use an explicit client data source when the browser has every row.

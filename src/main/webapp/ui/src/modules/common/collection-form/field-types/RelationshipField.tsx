@@ -96,13 +96,34 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
 
   const source = relationshipSources[fieldConfig.relationTo];
   if (source) {
+    const globalIdPrefix = source.globalIdPrefix;
+    const value = globalIdPrefix
+      ? fieldConfig.hasMany
+        ? (Array.isArray(fieldApi.input) ? fieldApi.input : [])
+            .map((item: unknown) => relationshipGlobalId(item, globalIdPrefix))
+            .filter((globalId) => globalId !== "")
+            .join(",")
+        : relationshipGlobalId(fieldApi.input, globalIdPrefix)
+      : "";
+
     return (
       <Suspense fallback={<Skeleton className="h-9 w-full rounded-sm" />}>
         <RelationshipPicker
           source={source}
           availabilitySource={relationshipOptionAvailability[fieldConfig.relationTo]}
-          value={source.globalIdPrefix ? relationshipGlobalId(fieldApi.input, source.globalIdPrefix) : ""}
+          value={value}
+          multiple={fieldConfig.hasMany}
           onChange={(globalId) => {
+            if (fieldConfig.hasMany) {
+              fieldApi.onChange(
+                globalId
+                  .split(",")
+                  .map((selectedGlobalId) => databaseId(source, selectedGlobalId))
+                  .filter((id) => id !== null),
+              );
+              return;
+            }
+
             const id = databaseId(source, globalId);
             fieldApi.onChange(
               id === null
