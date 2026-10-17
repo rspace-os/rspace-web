@@ -224,13 +224,15 @@ describe("CalendarPage", () => {
   });
 
   it("keeps event matches from resources outside the current catalogue page", async () => {
+    const ownTarget = ownBooking.target;
+    if (!ownTarget) throw new Error("The calendar fixture must include a target");
     const offPageEvent: BookingListDocument = {
       ...ownBooking,
       id: 99,
       target: {
-        ...ownBooking.target,
+        ...ownTarget,
         globalId: "IN999",
-        value: { ...ownBooking.target.value, id: 999, name: "Off-page microscope" },
+        value: { ...ownTarget.value, id: 999, name: "Off-page microscope" },
       },
       purpose: "QuasarPurposeMarker",
     };
