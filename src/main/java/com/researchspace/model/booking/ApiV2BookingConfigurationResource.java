@@ -60,8 +60,11 @@ public record ApiV2BookingConfigurationResource(
             updateAccess = NEVER,
             maxLength = 255,
             description =
-                "IANA scheduling timezone used for opening hours and booking policy. Set only on"
-                    + " create; defaults to the institution timezone.",
+                "Named IANA scheduling timezone used for browser-based opening hours and booking"
+                    + " policy. Java-only IDs, numeric offsets, SystemV IDs, and"
+                    + " browser-incompatible legacy aliases CST6CDT, EST5EDT, MST7MDT, and PST8PDT"
+                    + " are not accepted. Set only on create; defaults to the institution"
+                    + " timezone.",
             example = "Europe/Berlin")
         String timezone,
     @ApiV2ResourceField(
