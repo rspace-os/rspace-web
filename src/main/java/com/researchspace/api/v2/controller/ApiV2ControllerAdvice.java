@@ -3,6 +3,7 @@ package com.researchspace.api.v2.controller;
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.core.util.throttling.ThrottlingException;
 import com.researchspace.model.collection.CollectionQueryException;
@@ -50,7 +51,9 @@ import org.springframework.web.server.ResponseStatusException;
  * NoHandlerFoundException} (404), {@code AsyncRequestTimeoutException} (503) -- and any type a
  * future Spring version adds, which would otherwise silently become a 500.
  */
-@ControllerAdvice(basePackageClasses = ApiV2ControllerAdvice.class)
+@ControllerAdvice(
+    basePackageClasses = ApiV2ControllerAdvice.class,
+    assignableTypes = ApiV2OpenApiController.class)
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @Slf4j
 public class ApiV2ControllerAdvice {

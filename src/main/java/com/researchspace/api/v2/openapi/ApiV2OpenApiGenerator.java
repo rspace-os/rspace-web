@@ -131,6 +131,12 @@ public final class ApiV2OpenApiGenerator {
                     declaredComponents));
     catalog
         .routableResources()
+        .forEach(
+            resource ->
+                applyRuntimeProjectionSchemas(
+                    schemas, resource, componentNames.get(resource.resourceName())));
+    catalog
+        .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
 
     Map<String, Object> components = new LinkedHashMap<>();
@@ -586,6 +592,18 @@ public final class ApiV2OpenApiGenerator {
   private static Map<String, Object> operationAccessExtension(
       String description, Collection<String> denialReasonCodes) {
     return ordered("description", description, "denialReasonCodes", denialReasonCodes);
+  }
+
+  private void applyRuntimeProjectionSchemas(
+      Map<String, Object> schemas, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    Map<String, Object> read = mutableObjectMap(schemas.get(component + "Read"));
+    Map<String, Object> properties = mutableObjectMap(read.get("properties"));
+    for (Map<String, Object> runtimeField : runtimeFieldsExtension(resource)) {
+      String responseField = String.class.cast(runtimeField.get("responseField"));
+      if (!responseField.isEmpty()) {
+        properties.put(responseField, ordered("type", "object", "additionalProperties", true));
+      }
+    }
   }
 
   private List<Map<String, Object>> runtimeFieldsExtension(
