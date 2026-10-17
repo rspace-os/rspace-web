@@ -28,7 +28,12 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class BookingConfigurationLifecycleMVCIT {
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  BookingConfigurationLifecycleMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
 
   private final ObjectMapper objectMapper = new ObjectMapper();
   private ApiV2Fixture fixture;

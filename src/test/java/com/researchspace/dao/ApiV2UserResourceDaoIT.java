@@ -27,7 +27,12 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 class ApiV2UserResourceDaoIT extends SpringTransactionalTest {
 
-  @Autowired private UserDao userDao;
+  private final UserDao userDao;
+
+  @Autowired
+  ApiV2UserResourceDaoIT(UserDao userDao) {
+    this.userDao = userDao;
+  }
 
   private static ResourceRequest request(FilterExpression filter, List<Sort> sort) {
     return new ResourceRequest(

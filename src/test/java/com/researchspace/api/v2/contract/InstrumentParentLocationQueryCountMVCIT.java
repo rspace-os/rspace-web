@@ -56,12 +56,28 @@ class InstrumentParentLocationQueryCountMVCIT {
   private static final String INVENTORY_PACKAGE = "com.researchspace.model.inventory.";
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private SessionFactory sessionFactory;
-  @Autowired private ContainerDao containerDao;
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private InstrumentEntityApiManager instrumentManager;
-  @Autowired private PlatformTransactionManager transactionManager;
+  private final WebApplicationContext context;
+  private final SessionFactory sessionFactory;
+  private final ContainerDao containerDao;
+  private final InstrumentDao instrumentDao;
+  private final InstrumentEntityApiManager instrumentManager;
+  private final PlatformTransactionManager transactionManager;
+
+  @Autowired
+  InstrumentParentLocationQueryCountMVCIT(
+      WebApplicationContext context,
+      SessionFactory sessionFactory,
+      ContainerDao containerDao,
+      InstrumentDao instrumentDao,
+      InstrumentEntityApiManager instrumentManager,
+      PlatformTransactionManager transactionManager) {
+    this.context = context;
+    this.sessionFactory = sessionFactory;
+    this.containerDao = containerDao;
+    this.instrumentDao = instrumentDao;
+    this.instrumentManager = instrumentManager;
+    this.transactionManager = transactionManager;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;

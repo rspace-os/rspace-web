@@ -28,7 +28,12 @@ import org.springframework.web.context.WebApplicationContext;
 @DisplayName("REST API v2 public access")
 class PublicApiV2AuthenticationMVCIT {
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  PublicApiV2AuthenticationMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
 
   private MockMvc mockMvc;
 

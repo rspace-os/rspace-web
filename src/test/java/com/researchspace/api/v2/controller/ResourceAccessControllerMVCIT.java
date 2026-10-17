@@ -26,7 +26,13 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class ResourceAccessControllerMVCIT {
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  ResourceAccessControllerMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
+
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
 

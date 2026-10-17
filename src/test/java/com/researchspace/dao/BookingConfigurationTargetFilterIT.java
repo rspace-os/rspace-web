@@ -57,11 +57,25 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
   private static final FilterExpression NO_INSTRUMENT_IS_READABLE =
       new FilterExpression.Comparison("name", Operator.EQUAL, List.of("nothing"), false);
 
-  @Autowired private InstrumentDao instrumentDao;
-  @Autowired private BookingConfigurationDao bookingConfigurationDao;
-  @Autowired private CriteriaBuilderFactory criteriaBuilderFactory;
-  @Autowired private InstrumentCustomFieldManager customFields;
-  @Autowired private InstrumentEntityApiManager instrumentApiManager;
+  private final InstrumentDao instrumentDao;
+  private final BookingConfigurationDao bookingConfigurationDao;
+  private final CriteriaBuilderFactory criteriaBuilderFactory;
+  private final InstrumentCustomFieldManager customFields;
+  private final InstrumentEntityApiManager instrumentApiManager;
+
+  @Autowired
+  BookingConfigurationTargetFilterIT(
+      InstrumentDao instrumentDao,
+      BookingConfigurationDao bookingConfigurationDao,
+      CriteriaBuilderFactory criteriaBuilderFactory,
+      InstrumentCustomFieldManager customFields,
+      InstrumentEntityApiManager instrumentApiManager) {
+    this.instrumentDao = instrumentDao;
+    this.bookingConfigurationDao = bookingConfigurationDao;
+    this.criteriaBuilderFactory = criteriaBuilderFactory;
+    this.customFields = customFields;
+    this.instrumentApiManager = instrumentApiManager;
+  }
 
   private static final CollectionQueryExecutor<BookingConfiguration> CONFIGURATIONS =
       new CollectionQueryExecutor<>(

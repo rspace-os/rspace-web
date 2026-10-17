@@ -32,7 +32,12 @@ import org.springframework.web.context.WebApplicationContext;
 @DisplayName("REST API v2 error contract")
 class ApiV2ErrorContractMVCIT {
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  @Autowired
+  ApiV2ErrorContractMVCIT(WebApplicationContext context) {
+    this.context = context;
+  }
 
   private MockMvc mockMvc;
 
