@@ -150,8 +150,7 @@ export function AddBookableItemForm({
       ? createMutation.error
       : null;
   const canComplete = target.type === "instrument" && conflict === null;
-  const createFailed =
-    createMutation.error instanceof ApiV2ProblemError && failedForSelectedTarget && conflict === null;
+  const createFailed = createMutation.isError && failedForSelectedTarget && conflict === null;
 
   return (
     <main className="p-4 sm:p-8">
