@@ -6,6 +6,7 @@ import { BookingForm, type BookingFormState } from "@/modules/booking/creation/B
 import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCreationDraft";
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
+import type { TimelineMovePolicy } from "@/modules/booking/creation/timelineMove";
 import {
   bookingCreationProblemKey,
   isBookingOutcomeUncertain,
@@ -38,6 +39,7 @@ export function DraftMarker({
   timeZone,
   schedulingTimezone = timeZone,
   snapIncrementMinutes = 5,
+  movementPolicy,
   onChange,
 }: {
   creation: BookingCreationContext;
@@ -45,6 +47,7 @@ export function DraftMarker({
   timeZone: string;
   schedulingTimezone?: string;
   snapIncrementMinutes?: number;
+  movementPolicy?: TimelineMovePolicy;
   onChange?: (draft: BookingFormState["draft"]) => void;
 }) {
   const trigger = document.getElementById(creation.triggerId);
@@ -58,6 +61,7 @@ export function DraftMarker({
       schedulingTimezone={schedulingTimezone}
       draft={draft}
       snapIncrementMinutes={snapIncrementMinutes}
+      movementPolicy={movementPolicy}
       onChange={onChange}
       tone={creation.eventKind === "MAINTENANCE" ? "maintenance" : "booking"}
       testId="compact-booking-draft-marker"
@@ -211,6 +215,11 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
+  const movementPolicy: TimelineMovePolicy = {
+    maxBookingDurationMinutes: maintenance ? 0 : (availabilityTarget?.maxBookingDurationMinutes ?? 0),
+    openingHours: availabilityTarget?.openingHours ?? [],
+    enforceOpeningHours: Boolean(availabilityTarget) && !maintenance,
+  };
 
   return (
     <>
@@ -221,6 +230,7 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
           timeZone={preferences.timeZone}
           schedulingTimezone={availabilityTarget?.timezone ?? preferences.timeZone}
           snapIncrementMinutes={availabilityTarget?.slotGranularityMinutes}
+          movementPolicy={movementPolicy}
           onChange={creation.timelineAdjustable ? setWindowAdjustment : undefined}
         />
       ) : null}
