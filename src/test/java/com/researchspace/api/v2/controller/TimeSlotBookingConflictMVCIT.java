@@ -29,13 +29,21 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class TimeSlotBookingConflictMVCIT {
 
-  @Autowired private WebApplicationContext context;
+  private final WebApplicationContext context;
+
+  private final BookingConfigurationDao configurationDao;
+
+  private final PlatformTransactionManager transactionManager;
 
   @Autowired
-  @Qualifier("bookingConfigurationDao")
-  private BookingConfigurationDao configurationDao;
-
-  @Autowired private PlatformTransactionManager transactionManager;
+  TimeSlotBookingConflictMVCIT(
+      WebApplicationContext context,
+      @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
+      PlatformTransactionManager transactionManager) {
+    this.context = context;
+    this.configurationDao = configurationDao;
+    this.transactionManager = transactionManager;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;
