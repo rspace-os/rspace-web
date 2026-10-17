@@ -22,9 +22,17 @@ import org.springframework.web.context.WebApplicationContext;
 @ApiV2WebIntegrationTest
 class BookingCatalogueControllerMVCIT {
 
-  @Autowired private WebApplicationContext context;
-  @Autowired private FeatureFlagManager featureFlags;
-  @Autowired private UserManager userManager;
+  private final WebApplicationContext context;
+  private final FeatureFlagManager featureFlags;
+  private final UserManager userManager;
+
+  @Autowired
+  BookingCatalogueControllerMVCIT(
+      WebApplicationContext context, FeatureFlagManager featureFlags, UserManager userManager) {
+    this.context = context;
+    this.featureFlags = featureFlags;
+    this.userManager = userManager;
+  }
 
   private ApiV2Fixture fixture;
   private MockMvc mockMvc;

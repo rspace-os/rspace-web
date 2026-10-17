@@ -15,7 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 class TimeSlotBookingDaoTest extends SpringTransactionalTest {
 
-  @Autowired private TimeSlotBookingDao bookingDao;
+  private final TimeSlotBookingDao bookingDao;
+
+  @Autowired
+  TimeSlotBookingDaoTest(TimeSlotBookingDao bookingDao) {
+    this.bookingDao = bookingDao;
+  }
 
   @Test
   void usesHalfOpenOverlapBoundariesAndCanExcludeTheEditedBooking() {
