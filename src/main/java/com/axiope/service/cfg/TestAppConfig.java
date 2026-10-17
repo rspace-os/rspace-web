@@ -28,6 +28,7 @@ import com.researchspace.service.Broadcaster;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.GlobalInitManager;
 import com.researchspace.service.IApplicationInitialisor;
+import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RemoteLicenseService;
@@ -178,7 +179,9 @@ public class TestAppConfig extends BaseConfig {
       TimeSlotBookingManager bookingManager,
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       @Qualifier("timeSlotBookingDao") TimeSlotBookingDao bookingDao,
-      PlatformTransactionManager transactionManager) {
+      PlatformTransactionManager transactionManager,
+      @Value("${deployment.test.fb.instance:false}") boolean featureBranchInstance,
+      IContentInitializer contentInitializer) {
     return new BookingFixturesAppInitialiser(
         devUserPassword,
         userDao,
@@ -191,7 +194,9 @@ public class TestAppConfig extends BaseConfig {
         bookingManager,
         configurationDao,
         bookingDao,
-        transactionManager);
+        transactionManager,
+        featureBranchInstance,
+        contentInitializer);
   }
 
   @Bean

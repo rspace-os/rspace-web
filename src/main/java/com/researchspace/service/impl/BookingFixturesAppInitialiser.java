@@ -12,6 +12,8 @@ import com.researchspace.booking.service.TimeSlotBookingManager;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.UserDao;
+import com.researchspace.model.GroupType;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -24,6 +26,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.service.AfterCommit;
+import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
@@ -169,6 +172,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private final TimeSlotBookingDao bookingDao;
   private final TransactionTemplate fixtureTransaction;
   private final boolean featureBranchInstance;
+  private final IContentInitializer contentInitializer;
   private boolean initialDeployment;
 
   public BookingFixturesAppInitialiser(
@@ -184,9 +188,11 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       BookingConfigurationDao configurationDao,
       TimeSlotBookingDao bookingDao,
       PlatformTransactionManager transactionManager,
-      boolean featureBranchInstance) {
+      boolean featureBranchInstance,
+      IContentInitializer contentInitializer) {
     this.devUserPassword = devUserPassword;
     this.featureBranchInstance = featureBranchInstance;
+    this.contentInitializer = contentInitializer;
     this.userDao = userDao;
     this.containerDao = containerDao;
     this.instrumentDao = instrumentDao;
@@ -226,16 +232,40 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   }
 
   private FixtureIds createInventoryFixtures() {
-    User owner = userDao.getUserByUsername(FIXTURE_USER);
-    User restrictedInstrumentOwner = userDao.getUserByUsername(RESTRICTED_INSTRUMENT_OWNER);
-    User restrictedContainerOwner = userDao.getUserByUsername(RESTRICTED_CONTAINER_OWNER);
-    User sysadmin = userDao.getUserByUsername(SYSADMIN_UNAME);
+    User owner = userDao.getOptionalUserByUsername(FIXTURE_USER).orElse(null);
+    User restrictedInstrumentOwner =
+        userDao.getOptionalUserByUsername(RESTRICTED_INSTRUMENT_OWNER).orElse(null);
+    User restrictedContainerOwner =
+        userDao.getOptionalUserByUsername(RESTRICTED_CONTAINER_OWNER).orElse(null);
+    User sysadmin = userDao.getOptionalUserByUsername(SYSADMIN_UNAME).orElse(null);
     if (owner == null
         || restrictedInstrumentOwner == null
         || restrictedContainerOwner == null
-        || sysadmin == null) {
+        || sysadmin == null
+        || owner.getId() == null
+        || restrictedInstrumentOwner.getId() == null
+        || restrictedContainerOwner.getId() == null
+        || sysadmin.getId() == null) {
       log.info("Skipping booking fixtures because the Docker development users are unavailable");
       return null;
+    }
+
+    for (User user : List.of(owner, restrictedInstrumentOwner, restrictedContainerOwner)) {
+      if (!user.isContentInitialized()) {
+        asUser(user.getUsername(), devUserPassword, () -> contentInitializer.init(user.getId()));
+      }
+    }
+    boolean viewOnlyRelationshipExists =
+        restrictedInstrumentOwner.getGroups().stream()
+            .filter(group -> group.isLabGroup())
+            .anyMatch(group -> owner.hasRoleInGroup(group, RoleInGroup.PI));
+    if (!viewOnlyRelationshipExists) {
+      asUser(
+          SYSADMIN_UNAME,
+          SYSADMIN_PWD,
+          () ->
+              grpStrategy.createAndSaveGroup(
+                  owner, sysadmin, GroupType.LAB_GROUP, owner, restrictedInstrumentOwner));
     }
 
     List<Instrument> instruments = new ArrayList<>();
