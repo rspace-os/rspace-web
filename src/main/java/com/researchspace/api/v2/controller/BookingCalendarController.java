@@ -6,6 +6,7 @@ import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.api.v2.BookingControllerSupport;
 import com.researchspace.booking.service.BookingCalendarSearchManager;
@@ -17,12 +18,14 @@ import com.researchspace.model.collection.IncludeTree;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRenderer;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.service.FeatureFlagManager;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -100,7 +103,8 @@ public class BookingCalendarController {
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
     BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     validateInterval(start, end);
-    ResourceRequest parsed = filteredCalendarEvents(where, fieldsets, caller);
+    var registration = resources.find("bookings").orElseThrow();
+    ResourceRequest parsed = filteredCalendarEvents(where, fieldsets, caller, registration);
     ResourceRequest request =
         new ResourceRequest(
             parsed.filter(),
@@ -134,6 +138,7 @@ public class BookingCalendarController {
                     name.equals(ApiV2InstrumentResource.RESOURCE_NAME)
                         ? Optional.ofNullable(targets.get(id))
                         : Optional.empty());
+    registration.decorateRuntimeValues(request, caller.subject(), result.resources(), documents);
     return ApiV2ListResult.of(documents, result.total(), limit, page);
   }
 
@@ -151,6 +156,14 @@ public class BookingCalendarController {
   private ResourceRequest filteredCalendarEvents(
       String where, ApiV2FieldsetQuery fieldsets, ApiV2Caller caller) {
     var registration = resources.find("bookings").orElseThrow();
+    return filteredCalendarEvents(where, fieldsets, caller, registration);
+  }
+
+  private ResourceRequest filteredCalendarEvents(
+      String where,
+      ApiV2FieldsetQuery fieldsets,
+      ApiV2Caller caller,
+      ApiV2ResourceRegistration<?, ?> registration) {
     var runtime = registration.runtimeFieldContext(caller.subject());
     ResourceRequest filter =
         ApiV2ResourceRequestParser.filtered(
@@ -164,7 +177,16 @@ public class BookingCalendarController {
         new ResourceRequest.Page(1, 1),
         projection.fieldSelections(),
         IncludeTree.empty(),
-        filter.runtime());
+        mergeRuntime(filter.runtime(), projection.runtime()));
+  }
+
+  private static RuntimeFieldSelection mergeRuntime(
+      RuntimeFieldSelection filter, RuntimeFieldSelection projection) {
+    var selectors = new LinkedHashMap<>(filter.selectors());
+    selectors.putAll(projection.selectors());
+    var throughRelationship = new LinkedHashMap<>(filter.throughRelationship());
+    throughRelationship.putAll(projection.throughRelationship());
+    return new RuntimeFieldSelection(selectors, projection.projected(), throughRelationship);
   }
 
   private static void validateInterval(Instant start, Instant end) {

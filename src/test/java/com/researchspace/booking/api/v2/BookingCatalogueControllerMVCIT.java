@@ -1,12 +1,20 @@
 package com.researchspace.booking.api.v2;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.User;
 import com.researchspace.service.FeatureFlagManager;
@@ -27,6 +35,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 @ApiV2WebIntegrationTest
 class BookingCatalogueControllerMVCIT {
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final WebApplicationContext context;
   private final FeatureFlagManager featureFlags;
@@ -300,6 +309,75 @@ class BookingCatalogueControllerMVCIT {
   }
 
   @Test
+  void calendarEventsRenderOnlyProjectedRuntimeValuesAndRedactThemWithTheTarget() throws Exception {
+    User owner = fixture.user();
+    String filterValue = "filter " + fixture.marker();
+    String projectedValue = "projected " + fixture.marker();
+    ApiInventoryEntityField filterField = textField("filter field", filterValue);
+    ApiInventoryEntityField projectedField = textField("projected field", projectedValue);
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("Calendar runtime " + fixture.marker());
+    templatePost.setFields(List.of(filterField, projectedField));
+    var template = instrumentManager.createInstrumentTemplate(templatePost, owner);
+    ApiInstrument requested = new ApiInstrument();
+    requested.setName("Calendar runtime instrument " + fixture.marker());
+    requested.setTemplateId(template.getId());
+    long instrument = instrumentManager.createNewApiInstrument(requested, owner).getId();
+    ApiInstrument readableTemplatePeer = new ApiInstrument();
+    readableTemplatePeer.setName("Calendar runtime peer " + fixture.marker());
+    readableTemplatePeer.setTemplateId(template.getId());
+    instrumentManager.createNewApiInstrument(readableTemplatePeer, owner);
+    fixture.bookingConfiguration(instrument, "UTC", fixture.userKey());
+    Instant start = Instant.parse("2099-01-01T10:00:00Z");
+    long bookingId = fixture.booking(instrument, start, start.plusSeconds(3600));
+    String filterId = "SF" + template.getFields().get(0).getId();
+    String projectedId = "SF" + template.getFields().get(1).getId();
+    String filterSelector = "target.customFields." + filterId;
+    String projectedSelector = "target.customFields." + projectedId;
+
+    JsonNode projectionOnly = calendarEvents(null, "id," + projectedSelector);
+    assertEquals(1, projectionOnly.path("totalDocs").asInt());
+    assertEquals(1, projectionOnly.path("docs").size());
+    assertEquals(bookingId, projectionOnly.path("docs").get(0).path("id").asLong());
+    assertEquals(
+        projectedValue,
+        projectionOnly.path("docs").get(0).path("target.customFields").path(projectedId).asText());
+    assertFalse(projectionOnly.path("docs").get(0).path("target.customFields").has(filterId));
+
+    JsonNode independentlyFiltered =
+        calendarEvents(filterSelector + "==\"" + filterValue + "\"", "id," + projectedSelector);
+    assertEquals(1, independentlyFiltered.path("totalDocs").asInt());
+    assertEquals(
+        projectedValue,
+        independentlyFiltered
+            .path("docs")
+            .get(0)
+            .path("target.customFields")
+            .path(projectedId)
+            .asText());
+    assertFalse(
+        independentlyFiltered.path("docs").get(0).path("target.customFields").has(filterId));
+
+    JsonNode filterOnly = calendarEvents(filterSelector + "==\"" + filterValue + "\"", "id");
+    assertFalse(filterOnly.path("docs").get(0).has("target.customFields"));
+
+    ApiInstrument transferred = instrumentManager.getApiInstrumentById(instrument, owner);
+    transferred.setOwner(new ApiUser(fixture.otherUser()));
+    instrumentManager.changeApiInstrumentOwner(transferred, owner);
+
+    JsonNode redactedTarget = calendarEvents(null, "id,target");
+    assertEquals(1, redactedTarget.path("totalDocs").asInt());
+    assertEquals(bookingId, redactedTarget.path("docs").get(0).path("id").asLong());
+    assertTrue(redactedTarget.path("docs").get(0).path("target").isNull());
+
+    JsonNode redactedProjection = calendarEvents(null, "id," + projectedSelector);
+    assertEquals(1, redactedProjection.path("totalDocs").asInt());
+    assertEquals(bookingId, redactedProjection.path("docs").get(0).path("id").asLong());
+    assertFalse(
+        redactedProjection.path("docs").get(0).path("target.customFields").has(projectedId));
+  }
+
+  @Test
   void calendarEventsSupportOnlyTheCalendarLocalDerivedFacets() throws Exception {
     long instrument = fixture.instrument(fixture.user(), "Calendar filters " + fixture.marker());
     String timezone = ZoneId.systemDefault().getId();
@@ -387,6 +465,34 @@ class BookingCatalogueControllerMVCIT {
 
   private User sysadmin() {
     return userManager.getUserByUsername(AbstractAppInitializor.SYSADMIN_UNAME);
+  }
+
+  private JsonNode calendarEvents(String where, String fields) throws Exception {
+    var request =
+        get("/api/v2/booking-calendar/events")
+            .queryParam("start", "2099-01-01T00:00:00Z")
+            .queryParam("end", "2099-01-02T00:00:00Z")
+            .queryParam("page", "1")
+            .queryParam("limit", "1")
+            .queryParam("fields[bookings]", fields)
+            .header("apiKey", fixture.userKey());
+    if (where != null) request.queryParam("where", where);
+    String body =
+        mockMvc
+            .perform(request)
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    return OBJECT_MAPPER.readTree(body);
+  }
+
+  private static ApiInventoryEntityField textField(String name, String content) {
+    ApiInventoryEntityField field = new ApiInventoryEntityField();
+    field.setName(name);
+    field.setType(ApiFieldType.TEXT);
+    field.setContent(content);
+    return field;
   }
 
   private void assertCatalogueSearch(String query, String expectedGlobalId) throws Exception {
