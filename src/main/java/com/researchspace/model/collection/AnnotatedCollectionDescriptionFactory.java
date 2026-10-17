@@ -1,0 +1,399 @@
+package com.researchspace.model.collection;
+
+import com.researchspace.model.User;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+import org.hibernate.proxy.HibernateProxy;
+import org.springframework.beans.BeanUtils;
+import org.springframework.util.ClassUtils;
+
+/** Maps an annotated API record and its entity bean properties to a collection description. */
+final class AnnotatedCollectionDescriptionFactory {
+
+  private AnnotatedCollectionDescriptionFactory() {}
+
+  static <T> CollectionDescription<T> create(
+      Class<?> resourceType,
+      Class<T> entityType,
+      List<Relationship<T>> relationships,
+      List<Sort> defaultSort,
+      AccessPolicy accessPolicy,
+      List<InternalFilter> internalFilters) {
+    ApiV2ResourceDefinition definition = resourceType.getAnnotation(ApiV2ResourceDefinition.class);
+    if (definition == null || !resourceType.isRecord()) {
+      throw new IllegalArgumentException(
+          "Resource definition must be an annotated record: " + resourceType.getName());
+    }
+    if (definition.entity() != entityType) {
+      throw new IllegalArgumentException(
+          "Resource definition entity must be " + entityType.getName());
+    }
+    Map<String, PropertyDescriptor> properties = properties(entityType);
+    Stream<ResourceMember<T>> members =
+        Stream.<ResourceMember<T>>concat(
+            AnnotatedCollectionDescriptionFactory.<T>fieldsFrom(
+                resourceType, definition, properties)
+                .stream(),
+            relationships.stream());
+    if (definition.auditFields()) {
+      members =
+          Stream.concat(
+              members,
+              AnnotatedCollectionDescriptionFactory.<T>auditRelationships(properties).stream());
+    }
+    return new CollectionDescription<>(
+        definition.name(),
+        entityType,
+        members.toList(),
+        definition.id(),
+        defaultSort,
+        accessPolicy,
+        internalFilters);
+  }
+
+  private static <T> List<Field<T, ?>> fieldsFrom(
+      Class<?> resourceType,
+      ApiV2ResourceDefinition definition,
+      Map<String, PropertyDescriptor> properties) {
+    List<Field<T, ?>> fields =
+        Arrays.stream(resourceType.getRecordComponents())
+            .<Field<T, ?>>map(
+                component -> fieldFrom(resourceType, component, properties, definition.id()))
+            .toList();
+    return definition.auditFields()
+        ? Stream.concat(
+                fields.stream(),
+                AnnotatedCollectionDescriptionFactory.<T>auditFields(properties).stream())
+            .toList()
+        : fields;
+  }
+
+  private static <T> List<Field<T, ?>> auditFields(Map<String, PropertyDescriptor> properties) {
+    List<Field<T, ?>> fields = new ArrayList<>();
+    AnnotatedCollectionDescriptionFactory.<T, Date>auditProperty(
+            properties, Date.class, "createdAt", "creationDate")
+        .map(
+            source ->
+                auditDateField("createdAt", "Time at which the resource was created.", source))
+        .ifPresent(fields::add);
+    AnnotatedCollectionDescriptionFactory.<T, Date>auditProperty(
+            properties, Date.class, "updatedAt", "modificationDate")
+        .map(
+            source ->
+                auditDateField("updatedAt", "Time at which the resource was last updated.", source))
+        .ifPresent(fields::add);
+    return List.copyOf(fields);
+  }
+
+  private static <T> List<Relationship<T>> auditRelationships(
+      Map<String, PropertyDescriptor> properties) {
+    List<Relationship<T>> relationships = new ArrayList<>();
+    AnnotatedCollectionDescriptionFactory.<T>auditUserRelationship(
+            properties, "createdBy", "createdBy")
+        .ifPresent(relationships::add);
+    AnnotatedCollectionDescriptionFactory.<T>auditUserRelationship(
+            properties, "updatedBy", "updatedBy", "lastUpdatedBy", "modifiedBy")
+        .ifPresent(relationships::add);
+    return List.copyOf(relationships);
+  }
+
+  private static <T> Field<T, Date> auditDateField(
+      String name, String description, AuditProperty<T, Date> source) {
+    return Field.readOnly(name, source.property(), CollectionFieldTypes.instant(), source.reader())
+        .allowNull()
+        .documented(auditDocumentation(description));
+  }
+
+  private static <T> Optional<Relationship<T>> auditUserRelationship(
+      Map<String, PropertyDescriptor> properties, String name, String... candidates) {
+    Method reader = auditReadMethod(properties, candidates);
+    if (reader == null) {
+      return Optional.empty();
+    }
+    if (!User.class.isAssignableFrom(reader.getReturnType())) {
+      throw new IllegalArgumentException(
+          "Audit property " + reader.getName() + " must return " + User.class.getName());
+    }
+    String property = readerProperty(properties, reader);
+    Function<T, User> userReader = entity -> (User) invoke(reader, entity);
+    return Optional.of(
+        Relationship.referenceToOne(
+                name,
+                "users",
+                CollectionFieldTypes.longNumber(),
+                User.class,
+                userReader,
+                AnnotatedCollectionDescriptionFactory::auditUserId,
+                property + ".id")
+            .allowNull()
+            .documented(
+                auditDocumentation(
+                    name.equals("createdBy")
+                        ? "User who created the resource."
+                        : "User who last updated the resource.")));
+  }
+
+  /**
+   * Reads the audit user's identifier without initialising a lazy association.
+   *
+   * <p>{@code User::getId} looks harmless but is not: {@code ResourceRenderer} runs at the HTTP
+   * boundary, after the manager's transaction has closed, so calling a getter on an uninitialised
+   * proxy throws {@code LazyInitializationException} and the whole response becomes a 500. Every
+   * resource with {@code auditFields = true} over a lazily mapped {@code User} would hit that on
+   * read, list, update and delete.
+   *
+   * <p>A proxy already carries its identifier, so taking it from the initialiser is both correct
+   * outside a session and one fewer SELECT per rendered row. At depth 0 the identifier is all the
+   * reference needs; a deeper expansion resolves the target through its own registration.
+   */
+  private static Long auditUserId(User user) {
+    if (user instanceof HibernateProxy proxy) {
+      return (Long) proxy.getHibernateLazyInitializer().getIdentifier();
+    }
+    return user.getId();
+  }
+
+  private static String readerProperty(Map<String, PropertyDescriptor> properties, Method reader) {
+    return properties.entrySet().stream()
+        .filter(entry -> reader.equals(entry.getValue().getReadMethod()))
+        .map(Map.Entry::getKey)
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("Audit reader is not a bean property"));
+  }
+
+  private static OpenApiSchemaDocumentation auditDocumentation(String description) {
+    return OpenApiSchemaDocumentation.of(null, description, null);
+  }
+
+  private static <T, V> Optional<AuditProperty<T, V>> auditProperty(
+      Map<String, PropertyDescriptor> properties, Class<V> type, String... candidates) {
+    Method reader = auditReadMethod(properties, candidates);
+    if (reader == null) {
+      return Optional.empty();
+    }
+    if (!type.isAssignableFrom(reader.getReturnType())) {
+      throw new IllegalArgumentException(
+          "Audit property " + reader.getName() + " must return " + type.getName());
+    }
+    return Optional.of(
+        new AuditProperty<>(
+            readerProperty(properties, reader), entity -> type.cast(invoke(reader, entity))));
+  }
+
+  private record AuditProperty<T, V>(String property, Function<T, V> reader) {}
+
+  private static Method auditReadMethod(
+      Map<String, PropertyDescriptor> properties, String... candidates) {
+    for (String candidate : candidates) {
+      PropertyDescriptor descriptor = properties.get(candidate);
+      if (descriptor != null && descriptor.getReadMethod() != null) {
+        return descriptor.getReadMethod();
+      }
+    }
+    return null;
+  }
+
+  private static Map<String, PropertyDescriptor> properties(Class<?> entityType) {
+    Map<String, PropertyDescriptor> properties = new LinkedHashMap<>();
+    for (PropertyDescriptor property : BeanUtils.getPropertyDescriptors(entityType)) {
+      properties.put(property.getName(), property);
+    }
+    return properties;
+  }
+
+  private static <T> Field<T, ?> fieldFrom(
+      Class<?> resourceType,
+      RecordComponent component,
+      Map<String, PropertyDescriptor> properties,
+      String idField) {
+    ApiV2ResourceField definition = component.getAnnotation(ApiV2ResourceField.class);
+    if (definition == null) {
+      throw new IllegalArgumentException(
+          "Missing @ApiV2ResourceField on " + resourceType.getName() + "." + component.getName());
+    }
+    String property = definition.property().isBlank() ? component.getName() : definition.property();
+    PropertyDescriptor descriptor = properties.get(property);
+    Method reader = descriptor == null ? null : descriptor.getReadMethod();
+    if (reader == null) {
+      throw new IllegalArgumentException("Resource field requires a readable property " + property);
+    }
+    requireCompatibleType(component, reader.getReturnType(), "reader");
+
+    CollectionFieldType<?> type =
+        constrained(fieldType(component.getType(), definition.maxLength()), definition);
+    return fieldFromTyped(component, definition, property, reader, descriptor, type, idField);
+  }
+
+  private static <T, V> Field<T, V> fieldFromTyped(
+      RecordComponent component,
+      ApiV2ResourceField definition,
+      String property,
+      Method reader,
+      PropertyDescriptor descriptor,
+      CollectionFieldType<V> type,
+      String idField) {
+    Function<T, V> read = entity -> type.javaType().cast(invoke(reader, entity));
+    Method writer = descriptor.getWriteMethod();
+    boolean createWritable =
+        !component.getName().equals(idField)
+            && writer != null
+            && definition.createAccess() != ApiV2ResourceField.AccessPreset.NEVER;
+    boolean updateWritable =
+        !component.getName().equals(idField)
+            && writer != null
+            && definition.updateAccess() != ApiV2ResourceField.AccessPreset.NEVER;
+    Field<T, V> field;
+    if (!createWritable && !updateWritable) {
+      field = Field.readOnly(component.getName(), property, type, read);
+    } else {
+      requireCompatibleType(component, writer.getParameterTypes()[0], "writer");
+      BiConsumer<T, V> write = (entity, value) -> invoke(writer, entity, value);
+      field = Field.writable(component.getName(), property, type, read, write);
+      if (createWritable && !updateWritable) {
+        field = field.writeOnlyOn(WriteOperation.CREATE);
+      } else if (!createWritable) {
+        field = field.writeOnlyOn(WriteOperation.UPDATE);
+      }
+    }
+    if (definition.requiredOnCreate()) {
+      field = field.required();
+    }
+    if (definition.nullable()) {
+      field = field.allowNull();
+    }
+    Stream.concat(Stream.of(definition.example()), Stream.of(definition.additionalExamples()))
+        .filter(example -> !example.isBlank())
+        .forEach(example -> wireValue(component, type, example, "example"));
+    if (!definition.defaultValue().isBlank()) {
+      field =
+          field.defaultValue(
+              wireValue(component, type, definition.defaultValue(), "default value"));
+    }
+    field =
+        field.documented(
+            new OpenApiSchemaDocumentation(
+                definition.title(),
+                definition.description(),
+                definition.example(),
+                definition.deprecated(),
+                definition.format(),
+                List.of(definition.additionalExamples()),
+                Map.of()));
+    return field
+        .readableBy(definition.readAccess().resolve())
+        .creatableBy(definition.createAccess().resolve())
+        .updatableBy(definition.updateAccess().resolve())
+        .withQueryCapabilities(definition.filterable(), definition.sortable());
+  }
+
+  /** Parses and validates a wire value from the annotation, so a bad one fails at startup. */
+  private static <V> V wireValue(
+      RecordComponent component, CollectionFieldType<V> type, String value, String label) {
+    try {
+      V parsed = type.parse(value);
+      type.validate(parsed);
+      return parsed;
+    } catch (RuntimeException ex) {
+      throw new IllegalArgumentException(
+          "Resource field " + component.getName() + " has an invalid " + label + ": " + value, ex);
+    }
+  }
+
+  private static <V> CollectionFieldType<V> constrained(
+      CollectionFieldType<V> type, ApiV2ResourceField definition) {
+    CollectionFieldTypes.Constraints constraints =
+        new CollectionFieldTypes.Constraints(
+            definition.minimum().isBlank() ? null : new BigDecimal(definition.minimum()),
+            definition.maximum().isBlank() ? null : new BigDecimal(definition.maximum()),
+            definition.minLength() < 0 ? null : definition.minLength(),
+            definition.pattern().isBlank() ? null : Pattern.compile(definition.pattern()),
+            definition.enumValues().length == 0 ? null : List.of(definition.enumValues()));
+    return constraints.isEmpty() ? type : CollectionFieldTypes.constrained(type, constraints);
+  }
+
+  private static CollectionFieldType<?> fieldType(Class<?> type, int maxLength) {
+    if (type.isArray() || Iterable.class.isAssignableFrom(type)) {
+      throw new IllegalArgumentException(
+          "Array resource fields require declared children. Use CollectionFieldTypes.array with"
+              + " Field.embedded children in a programmatic CollectionDescription.");
+    }
+    if (type == String.class) {
+      if (maxLength < -1) {
+        throw new IllegalArgumentException("Text maximum length must not be less than -1");
+      }
+      return maxLength == -1 ? CollectionFieldTypes.text() : CollectionFieldTypes.text(maxLength);
+    }
+    if (maxLength != -1) {
+      throw new IllegalArgumentException("Maximum length is only supported for text fields");
+    }
+    if (type == Long.class || type == long.class) {
+      return CollectionFieldTypes.longNumber();
+    }
+    if (type == Integer.class || type == int.class) {
+      return CollectionFieldTypes.integer();
+    }
+    if (type == Date.class) {
+      return CollectionFieldTypes.instant();
+    }
+    if (type == Boolean.class || type == boolean.class) {
+      return CollectionFieldTypes.bool();
+    }
+    if (type.isEnum()) {
+      return enumFieldType(type);
+    }
+    throw new IllegalArgumentException("Unsupported resource field type " + type.getName());
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  private static CollectionFieldType<?> enumFieldType(Class<?> type) {
+    return CollectionFieldTypes.enumeration((Class<? extends Enum>) type);
+  }
+
+  private static void requireCompatibleType(
+      RecordComponent component, Class<?> accessorType, String accessor) {
+    if (!boxed(component.getType()).equals(boxed(accessorType))) {
+      throw new IllegalArgumentException(
+          "Resource field "
+              + component.getName()
+              + " does not match entity "
+              + accessor
+              + " type "
+              + accessorType.getName());
+    }
+  }
+
+  private static Class<?> boxed(Class<?> type) {
+    return ClassUtils.resolvePrimitiveIfNecessary(type);
+  }
+
+  private static Object invoke(Method method, Object target, Object... arguments) {
+    try {
+      return method.invoke(target, arguments);
+    } catch (InvocationTargetException ex) {
+      Throwable cause = ex.getCause();
+      if (cause instanceof RuntimeException runtime) {
+        throw runtime;
+      }
+      if (cause instanceof Error error) {
+        throw error;
+      }
+      throw new IllegalStateException("Resource accessor failed", cause);
+    } catch (IllegalAccessException ex) {
+      throw new IllegalStateException("Cannot invoke resource accessor", ex);
+    }
+  }
+}

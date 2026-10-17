@@ -1,13 +1,15 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
+import com.researchspace.service.JsonMessageSource;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Transient;
-import java.math.BigDecimal;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.envers.Audited;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 @Entity
 @Audited
@@ -17,6 +19,8 @@ public class ExtraNumberField extends ExtraField {
 
   private static final long serialVersionUID = 616794358851234028L;
   private static final String DEFAULT_NAME = "Numeric data";
+  public static final String INVALID_NUMBER_MESSAGE = "errors.inventory.field.numberInvalid";
+  private static final JsonMessageSource VALIDATION_MESSAGES = new JsonMessageSource();
 
   public ExtraNumberField() {
     setName(DEFAULT_NAME);
@@ -46,12 +50,17 @@ public class ExtraNumberField extends ExtraField {
   public String validateNewData(String data) {
     if (StringUtils.isNotEmpty(data)) {
       try {
-        new BigDecimal(data);
-      } catch (NumberFormatException nfe) {
-        return "'" + data + "' cannot be parsed into number";
+        RuntimeFieldValueType.parseNumber(data);
+      } catch (IllegalArgumentException nfe) {
+        return formatValidationMessage(INVALID_NUMBER_MESSAGE, data);
       }
     }
     return null;
+  }
+
+  private static String formatValidationMessage(String key, String value) {
+    return VALIDATION_MESSAGES.getMessage(
+        key, new Object[] {value}, LocaleContextHolder.getLocale());
   }
 
   @Override
