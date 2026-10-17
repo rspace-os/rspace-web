@@ -12,6 +12,12 @@ Item writes compare the credential fingerprint while holding the configuration
 lock; user writes compare the version while holding the user lock. Token storage
 and explicit revocation behavior are unchanged.
 
+Item creation and rotation run in a fresh `READ_COMMITTED` transaction. The
+transaction loads the current subscriber, locks the configuration, checks the
+persisted Booking access list, and then reads and compares the subscription.
+This prevents a caller's older repeatable-read snapshot from replacing a token
+after another request has already rotated it.
+
 Calendar feed responses use `Cache-Control: private, no-store`,
 `Referrer-Policy: no-referrer`, and `X-Content-Type-Options: nosniff`, including
 empty error responses.
