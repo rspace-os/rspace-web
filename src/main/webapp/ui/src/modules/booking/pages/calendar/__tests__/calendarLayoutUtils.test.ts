@@ -37,6 +37,34 @@ describe("calendar date layout", () => {
 });
 
 describe("nextFreeRange", () => {
+  it("fits whole increments to a 30-minute opening", () => {
+    const closed = [
+      { startMinute: 0, endMinute: 10 * 60 },
+      { startMinute: 10 * 60 + 30, endMinute: 24 * 60 },
+    ];
+    expect(nextFreeRange([], "2026-10-05", "UTC", 8 * 60, 18 * 60, 15, closed)).toEqual({
+      startMinute: 10 * 60,
+      endMinute: 10 * 60 + 30,
+    });
+  });
+
+  it("rounds the preferred duration up to whole increments", () => {
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, 45)).toEqual({
+      startMinute: 630,
+      endMinute: 720,
+    });
+    expect(nextFreeRange([], "2026-10-05", "UTC", 600, 1080, 120)).toEqual({
+      startMinute: 600,
+      endMinute: 720,
+    });
+  });
+
+  it("does not propose a slot on a wholly closed day", () => {
+    expect(
+      nextFreeRange([], "2026-10-05", "UTC", 0, 24 * 60, 15, [{ startMinute: 0, endMinute: 24 * 60 }]),
+    ).toBeUndefined();
+  });
+
   it("skips unavailable ranges such as closed hours", () => {
     const closed = [
       { startMinute: 0, endMinute: 10 * 60 },
