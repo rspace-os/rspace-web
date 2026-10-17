@@ -209,13 +209,6 @@ describe("HelpMenu", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("menuitem", { name: "Local help" })).not.toBeInTheDocument();
   });
-
-  it("renders the disabled help fallback when there are no configured links", () => {
-    render(<HelpMenu helpLinks={[]} livechatProperties={{ livechatEnabled: false, currentUser: "ada" }} />);
-
-    expect(screen.getByRole("button", { name: "common:helpDocs.openHelp" })).toBeDisabled();
-    expect(screen.queryByRole("menuitem")).not.toBeInTheDocument();
-  });
 });
 
 describe("AccountMenu", () => {

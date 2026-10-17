@@ -14,7 +14,7 @@ export default function HelpMenu({
   livechatProperties: LivechatProperties;
 }) {
   const { t } = useTranslation("common");
-  const { lighthouseReady, showLighthouse } = useLighthouseSdk(livechatProperties);
+  const { showLighthouse } = useLighthouseSdk(livechatProperties);
   const hasExtraHelpLinks = helpLinks.length > 0;
 
   const helpTrigger = (
@@ -27,13 +27,7 @@ export default function HelpMenu({
               aria-label={t("helpDocs.openHelp")}
             />
           ) : (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label={t("helpDocs.openHelp")}
-              disabled={!lighthouseReady}
-              onClick={showLighthouse}
-            />
+            <Button variant="ghost" size="icon-sm" aria-label={t("helpDocs.openHelp")} onClick={showLighthouse} />
           )
         }
       >
