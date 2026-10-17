@@ -381,5 +381,6 @@ export function useCalendarContentData() {
     location,
     myItemsOnly,
     setMyItemsOnly,
+    targetItemExpression,
   };
 }
