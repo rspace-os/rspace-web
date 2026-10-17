@@ -36,11 +36,15 @@ function compatiblePickerSource<TDocument>(
   return source;
 }
 
+class InvalidPickerValueError extends Error {}
+
 function normalizePickerValue(value: unknown, source: RelationshipSource, field: string): string {
-  if (typeof value !== "string") throw new Error(`Relationship filter value must be a string: ${field}`);
+  if (typeof value !== "string") {
+    throw new InvalidPickerValueError(`Relationship filter value must be a string: ${field}`);
+  }
   const normalized = source.normalizeValue ? source.normalizeValue(value) : source.ownsValue(value) ? value : null;
   if (normalized === null || normalized === "" || !source.ownsValue(normalized)) {
-    throw new Error(`Invalid relationship filter value: ${field}`);
+    throw new InvalidPickerValueError(`Invalid relationship filter value: ${field}`);
   }
   return normalized;
 }
@@ -48,7 +52,7 @@ function normalizePickerValue(value: unknown, source: RelationshipSource, field:
 function normalizePickerExpression<TDocument>(
   expression: FilterExpression<TDocument>,
   config: ResolvedCollectionConfig<TDocument>,
-  metadata: ApiV2CollectionMetadata<TDocument>,
+  metadata: Pick<ApiV2CollectionMetadata<TDocument>, "filtering">,
   depth = 1,
 ): FilterExpression<TDocument> {
   if (depth > metadata.filtering.limits.maximumNesting) throw new Error("Filter nesting limit exceeded");
@@ -77,6 +81,20 @@ function normalizePickerExpression<TDocument>(
     ...expression,
     value: normalizePickerValue(expression.value, source, String(expression.field)),
   };
+}
+
+export function isPickerExpressionValid<TDocument>(
+  expression: FilterExpression<TDocument>,
+  config: ResolvedCollectionConfig<TDocument>,
+  metadata: Pick<ApiV2CollectionMetadata<TDocument>, "filtering">,
+): boolean {
+  try {
+    normalizePickerExpression(expression, config, metadata);
+    return true;
+  } catch (error) {
+    if (error instanceof InvalidPickerValueError) return false;
+    throw error;
+  }
 }
 
 function searchExpression<TDocument>(

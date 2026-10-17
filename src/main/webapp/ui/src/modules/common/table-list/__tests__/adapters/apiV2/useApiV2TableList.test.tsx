@@ -18,10 +18,11 @@ import { TableList } from "../../../TableList";
 type Instrument = {
   id: number;
   name: string;
+  target?: string;
   customFields?: Record<string, string | number | readonly string[] | null>;
 };
 
-const documentSchema = v.object({ id: v.number(), name: v.string() });
+const documentSchema = v.object({ id: v.number(), name: v.string(), target: v.optional(v.string()) });
 
 const config = {
   slug: "instruments",
@@ -32,15 +33,24 @@ const config = {
   fields: [
     { name: "id" as const, labelKey: "id", type: "number" as const, list: false as const },
     { name: "name" as const, labelKey: "name", type: "text" as const },
+    { name: "target" as const, labelKey: "target", type: "text" as const },
   ],
 };
 
 const metadata: ApiV2CollectionMetadata<Instrument> = {
   resourceName: "instruments",
-  fields: ["id", "name"],
+  fields: ["id", "name", "target"],
   sorting: { fields: ["name"], default: [{ field: "name", direction: "asc" }], maximumFields: 5 },
   filtering: {
-    selectors: { name: { operators: ["==", "=contains="], wildcards: true, fieldType: "text" } },
+    selectors: {
+      name: { operators: ["==", "=contains="], wildcards: true, fieldType: "text" },
+      target: {
+        operators: ["==", "=in="],
+        wildcards: false,
+        fieldType: "text",
+        picker: { resource: "instruments", identity: "globalId", globalIdPrefix: "IN" },
+      },
+    },
     limits: {
       maximumComparisons: 50,
       maximumLikeComparisons: 10,
@@ -131,6 +141,7 @@ function collectionHandler(requests: string[]) {
 }
 const catalog = (fields = [definition()]) => HttpResponse.json({ fields, hasMore: false, page: 1, limit: 50 });
 const where = "customFields.SF104==hazardous";
+const invalidTarget = "target==XX43";
 const params = (rule: string) => new URLSearchParams({ "instruments.where": rule }).toString();
 afterEach(() => window.localStorage.clear());
 
@@ -416,6 +427,43 @@ describe("API v2 saved views", () => {
     expect(requests).toEqual([]);
     await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
     await screen.findByRole("cell", { name: "Centrifuge" });
+    expect(requests).toEqual([""]);
+  });
+
+  it("preserves an invalid URL picker identity and only fetches after explicit reset", async () => {
+    const user = userEvent.setup();
+    const requests: string[] = [];
+    server.use(collectionHandler(requests));
+    render(
+      <Providers searchParams={params(invalidTarget)}>
+        <Harness />
+      </Providers>,
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(invalidTarget);
+    expect(requests).toEqual([]);
+    await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
+    await screen.findByRole("cell", { name: "Centrifuge" });
+    expect(requests).toEqual([""]);
+  });
+
+  it("preserves an invalid local-storage picker list and only fetches after explicit reset", async () => {
+    const user = userEvent.setup();
+    const requests: string[] = [];
+    const invalidList = "target=in=(IN42,XX43)";
+    const stored = JSON.stringify({ v: 1, search: null, where: invalidList, columns: null, sort: null });
+    window.localStorage.setItem("rspace.tableList.instruments.view", stored);
+    server.use(collectionHandler(requests));
+    render(
+      <Providers>
+        <Harness />
+      </Providers>,
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(invalidList);
+    expect(requests).toEqual([]);
+    expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBe(stored);
+    await user.click(screen.getByRole("button", { name: "common:tableList.savedView.reset" }));
+    await screen.findByRole("cell", { name: "Centrifuge" });
+    expect(window.localStorage.getItem("rspace.tableList.instruments.view")).toBeNull();
     expect(requests).toEqual([""]);
   });
 

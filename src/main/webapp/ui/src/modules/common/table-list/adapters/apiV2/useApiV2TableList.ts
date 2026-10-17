@@ -19,6 +19,7 @@ import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "
 import { emptySavedTableView, type SavedTableView, SavedTableViewReader } from "../../useSavedTableView";
 import { type UseTableListOptions, type UseTableListResult, useTableList } from "../../useTableList";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
+import { isPickerExpressionValid } from "./collectionQueryParams";
 import {
   type ApiV2CollectionAdapter,
   type ApiV2DocumentSchema,
@@ -129,8 +130,12 @@ export function useApiV2TableList<
     saved.raw.columns === null ? rowConfig.defaultColumns : parseColumns(saved.raw.columns, rowConfig);
   const restoredSorting =
     saved.raw.sort === null ? (rowConfig.defaultSort ?? []) : parseSorting(saved.raw.sort, rowConfig);
+  const restoredPickerValuesValid =
+    restoredFilters.expression === null ||
+    isPickerExpressionValid(restoredFilters.expression, rowConfig, fields.metadata);
   const invalid =
     saved.malformed ||
+    !restoredPickerValuesValid ||
     fields.missing.length > 0 ||
     (saved.raw.where !== null && restoredExpression === null) ||
     (saved.raw.legacyFilters !== null && legacy === null) ||
