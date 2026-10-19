@@ -1,6 +1,7 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+  type AnyRoute,
   createMemoryHistory,
   createRootRouteWithContext,
   createRoute,
@@ -64,21 +65,23 @@ const renderTestSidebar = () => <SidebarState />;
 const plainRouteText = "Plain route";
 const sidebarRouteText = "Sidebar route";
 
-function renderShell(initialPath: string) {
-  const rootRoute = createRootRouteWithContext<AppBarRouteContext>()({
+const paragraph = (text: string) => () => <p>{text}</p>;
+
+function shellRoot() {
+  return createRootRouteWithContext<AppBarRouteContext>()({
     component: AppShell,
-    notFoundComponent: () => <p>{"Page not found"}</p>,
+    notFoundComponent: paragraph("Page not found"),
   });
-  const plainRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/plain",
-    component: () => <p>{plainRouteText}</p>,
-  });
+}
+
+/** A plain page plus a parent whose children inherit, override, hide or fail to load its chrome. */
+function chromeRoutes() {
+  const rootRoute = shellRoot();
   const sidebarRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/with-sidebar",
     beforeLoad: () => ({ appBar: { currentPage: "workspace" }, sidebar: renderTestSidebar }),
-    notFoundComponent: () => <p>{"Page not found"}</p>,
+    notFoundComponent: paragraph("Page not found"),
   });
   const failedGuardRoute = createRoute({
     getParentRoute: () => sidebarRoute,
@@ -86,55 +89,48 @@ function renderShell(initialPath: string) {
     beforeLoad: () => {
       throw new Error("Route guard failed");
     },
-    errorComponent: () => <p>{"Route failed"}</p>,
+    errorComponent: paragraph("Route failed"),
   });
-  const router = createRouter({
-    context: {},
-    routeTree: rootRoute.addChildren([
-      plainRoute,
-      sidebarRoute.addChildren([
+  return rootRoute.addChildren([
+    createRoute({ getParentRoute: () => rootRoute, path: "/plain", component: paragraph(plainRouteText) }),
+    sidebarRoute.addChildren([
+      createRoute({ getParentRoute: () => sidebarRoute, path: "/", component: paragraph(sidebarRouteText) }),
+      createRoute({ getParentRoute: () => sidebarRoute, path: "/details", component: paragraph("Nested destination") }),
+      createRoute({
+        getParentRoute: () => sidebarRoute,
+        path: "/override",
+        beforeLoad: () => ({ appBar: { currentPage: "gallery" }, sidebar: paragraph("Child sidebar") }),
+        component: paragraph("Override destination"),
+      }),
+      createRoute({
+        getParentRoute: () => sidebarRoute,
+        path: "/without-app-bar",
+        beforeLoad: () => ({ appBar: false as const }),
+        component: paragraph("App bar hidden"),
+      }),
+      createRoute({
+        getParentRoute: () => sidebarRoute,
+        path: "/failed-loader",
+        loader: () => {
+          throw new Error("Route loader failed");
+        },
+        errorComponent: paragraph("Route failed"),
+      }),
+      failedGuardRoute.addChildren([
         createRoute({
-          getParentRoute: () => sidebarRoute,
-          path: "/",
-          component: () => <p>{sidebarRouteText}</p>,
-        }),
-        createRoute({
-          getParentRoute: () => sidebarRoute,
+          getParentRoute: () => failedGuardRoute,
           path: "/details",
-          component: () => <p>{"Nested destination"}</p>,
+          component: paragraph("Unreachable destination"),
         }),
-        createRoute({
-          getParentRoute: () => sidebarRoute,
-          path: "/override",
-          beforeLoad: () => ({
-            appBar: { currentPage: "gallery" },
-            sidebar: () => <p>{"Child sidebar"}</p>,
-          }),
-          component: () => <p>{"Override destination"}</p>,
-        }),
-        createRoute({
-          getParentRoute: () => sidebarRoute,
-          path: "/without-app-bar",
-          beforeLoad: () => ({ appBar: false as const }),
-          component: () => <p>{"App bar hidden"}</p>,
-        }),
-        createRoute({
-          getParentRoute: () => sidebarRoute,
-          path: "/failed-loader",
-          loader: () => {
-            throw new Error("Route loader failed");
-          },
-          errorComponent: () => <p>{"Route failed"}</p>,
-        }),
-        failedGuardRoute.addChildren([
-          createRoute({
-            getParentRoute: () => failedGuardRoute,
-            path: "/details",
-            component: () => <p>{"Unreachable destination"}</p>,
-          }),
-        ]),
       ]),
     ]),
+  ]);
+}
+
+function renderShell(initialPath: string, routeTree: AnyRoute = chromeRoutes()) {
+  const router = createRouter({
+    context: {},
+    routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
