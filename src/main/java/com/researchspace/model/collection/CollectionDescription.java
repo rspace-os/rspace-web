@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -11,7 +12,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * Immutable description of a collection's public members and default ordering shared by its
+ * Immutable description of a collection's public fields and default ordering shared by its
  * adapters.
  *
  * <p>This is the single server-owned allowlist for a collection. Its ordered member list contains
@@ -29,10 +30,8 @@ public final class CollectionDescription<T> {
 
   private final String resourceName;
   private final Class<T> entityType;
-  private final Map<String, ResourceMember<T>> members;
-  private final Map<String, Field<T, ?>> fields;
-  private final Map<String, Relationship<T>> relationships;
-  private final Map<String, FilterSelector<T>> filterSelectors;
+  private final Map<String, ResourceMember<T>> fields;
+  private final Map<String, FilterSelector<T>> publicFilterSelectors;
   private final Map<String, FilterSelector<T>> compilableSelectors;
   private final String idField;
   private final List<Sort> defaultSort;
@@ -50,20 +49,20 @@ public final class CollectionDescription<T> {
   public CollectionDescription(
       String resourceName,
       Class<T> entityType,
-      List<? extends ResourceMember<T>> members,
+      List<? extends ResourceMember<T>> fields,
       String idField,
       List<Sort> defaultSort) {
-    this(resourceName, entityType, members, idField, defaultSort, AccessPolicy.authenticated());
+    this(resourceName, entityType, fields, idField, defaultSort, AccessPolicy.authenticated());
   }
 
   public CollectionDescription(
       String resourceName,
       Class<T> entityType,
-      List<? extends ResourceMember<T>> members,
+      List<? extends ResourceMember<T>> fields,
       String idField,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
-    this(resourceName, entityType, members, idField, defaultSort, accessPolicy, List.of());
+    this(resourceName, entityType, fields, idField, defaultSort, accessPolicy, List.of());
   }
 
   /**
@@ -77,7 +76,7 @@ public final class CollectionDescription<T> {
   public CollectionDescription(
       String resourceName,
       Class<T> entityType,
-      List<? extends ResourceMember<T>> members,
+      List<? extends ResourceMember<T>> fields,
       String idField,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy,
@@ -85,17 +84,15 @@ public final class CollectionDescription<T> {
     this.accessPolicy = Objects.requireNonNull(accessPolicy, "Access policy");
     this.resourceName = requireText(resourceName, "Resource name");
     this.entityType = Objects.requireNonNull(entityType, "Entity type");
-    Objects.requireNonNull(members, "Members");
+    Objects.requireNonNull(fields, "Fields");
     this.idField = requireText(idField, "ID field");
     this.defaultSort = List.copyOf(Objects.requireNonNull(defaultSort, "Default sort"));
 
-    Map<String, ResourceMember<T>> membersByName = new LinkedHashMap<>();
-    Map<String, Field<T, ?>> fieldsByName = new LinkedHashMap<>();
-    Map<String, Relationship<T>> relationshipsByName = new LinkedHashMap<>();
-    members.forEach(
+    Map<String, ResourceMember<T>> fieldsByName = new LinkedHashMap<>();
+    fields.forEach(
         member -> {
           Objects.requireNonNull(member, "Member");
-          if (membersByName.putIfAbsent(member.name(), member) != null) {
+          if (fieldsByName.putIfAbsent(member.name(), member) != null) {
             throw new IllegalArgumentException("Duplicate resource member " + member.name());
           }
           if (member instanceof Field<T, ?> field) {
@@ -104,21 +101,16 @@ public final class CollectionDescription<T> {
                   "Embedded fields must belong to an object or array");
             }
             field.validateConfiguration();
-            fieldsByName.put(field.name(), field);
-          } else if (member instanceof Relationship<T> relationship) {
-            relationshipsByName.put(relationship.name(), relationship);
           }
         });
-    this.members = Collections.unmodifiableMap(membersByName);
     this.fields = Collections.unmodifiableMap(fieldsByName);
-    this.relationships = Collections.unmodifiableMap(relationshipsByName);
 
     Map<String, FilterSelector<T>> selectors = new LinkedHashMap<>();
-    this.fields.values().stream()
+    fields().stream()
         .filter(field -> !field.operators().isEmpty())
         .map(Field::filterSelector)
         .forEach(selector -> selectors.put(selector.name(), selector));
-    this.relationships.values().stream()
+    relationships().stream()
         .flatMap(relationship -> relationship.filterSelectors().stream())
         .forEach(
             selector -> {
@@ -126,14 +118,14 @@ public final class CollectionDescription<T> {
                 throw new IllegalArgumentException("Duplicate filter selector " + selector.name());
               }
             });
-    filterSelectors = Collections.unmodifiableMap(selectors);
+    publicFilterSelectors = Collections.unmodifiableMap(selectors);
 
     Map<String, FilterSelector<T>> internal = new LinkedHashMap<>();
     Objects.requireNonNull(internalFilters, "Internal filters")
         .forEach(
             filter -> {
               Objects.requireNonNull(filter, "Internal filter");
-              if (selectors.containsKey(filter.name())
+              if (publicFilterSelectors.containsKey(filter.name())
                   || internal.put(
                           filter.name(),
                           new FilterSelector.Property<>(
@@ -142,11 +134,11 @@ public final class CollectionDescription<T> {
                 throw new IllegalArgumentException("Duplicate filter selector " + filter.name());
               }
             });
-    Map<String, FilterSelector<T>> compilable = new LinkedHashMap<>(filterSelectors);
+    Map<String, FilterSelector<T>> compilable = new LinkedHashMap<>(publicFilterSelectors);
     compilable.putAll(internal);
     compilableSelectors = Collections.unmodifiableMap(compilable);
 
-    Field<T, ?> id = this.fields.get(this.idField);
+    Field<T, ?> id = findField(this.idField).orElse(null);
     if (id == null) {
       throw new IllegalArgumentException("ID field must be described");
     }
@@ -157,7 +149,7 @@ public final class CollectionDescription<T> {
     Set<String> sorted = new LinkedHashSet<>();
     for (Sort sort : this.defaultSort) {
       Objects.requireNonNull(sort, "Default sort");
-      Field<T, ?> field = this.fields.get(sort.field());
+      Field<T, ?> field = findField(sort.field()).orElse(null);
       if (field == null || !field.sortable()) {
         throw new IllegalArgumentException("Default sort field must be described and sortable");
       }
@@ -171,8 +163,7 @@ public final class CollectionDescription<T> {
 
     this.entityMapper = new CollectionEntityMapper<>(this.fields, this.idField);
     this.accessEvaluator =
-        new CollectionAccessEvaluator<>(
-            this.fields, this.relationships, filterSelectors, this.idField);
+        new CollectionAccessEvaluator<>(this.fields, publicFilterSelectors, this.idField);
     this.valueReader = new CollectionValueReader<>(this.fields, compilableSelectors);
   }
 
@@ -269,11 +260,12 @@ public final class CollectionDescription<T> {
   }
 
   public Optional<Field<T, ?>> findField(String name) {
-    return Optional.ofNullable(fields.get(name));
+    ResourceMember<T> member = fields.get(name);
+    return member instanceof Field<T, ?> field ? Optional.of(field) : Optional.empty();
   }
 
   public void requireSelectableField(String name) {
-    if (!members.containsKey(name)) {
+    if (!fields.containsKey(name)) {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
   }
@@ -287,7 +279,13 @@ public final class CollectionDescription<T> {
   }
 
   public List<Relationship<T>> relationships() {
-    return List.copyOf(relationships.values());
+    List<Relationship<T>> relationships = new ArrayList<>();
+    for (ResourceMember<T> member : fields.values()) {
+      if (member instanceof Relationship<T> relationship) {
+        relationships.add(relationship);
+      }
+    }
+    return List.copyOf(relationships);
   }
 
   public Relationship<T> requireRelationship(String name) {
@@ -296,7 +294,10 @@ public final class CollectionDescription<T> {
   }
 
   public Optional<Relationship<T>> findRelationship(String name) {
-    return Optional.ofNullable(relationships.get(name));
+    ResourceMember<T> member = fields.get(name);
+    return member instanceof Relationship<T> relationship
+        ? Optional.of(relationship)
+        : Optional.empty();
   }
 
   /**
@@ -313,12 +314,12 @@ public final class CollectionDescription<T> {
 
   /** Resolves a selector a caller may name, or empty when there is none. */
   public Optional<FilterSelector<T>> findPublicFilterSelector(String name) {
-    return Optional.ofNullable(filterSelectors.get(name));
+    return Optional.ofNullable(publicFilterSelectors.get(name));
   }
 
   /** Public selectors in declaration order, for registry-level relationship path discovery. */
   public List<FilterSelector<T>> publicFilterSelectors() {
-    return List.copyOf(filterSelectors.values());
+    return List.copyOf(publicFilterSelectors.values());
   }
 
   /** Resolves a selector a caller may name. Refuses an internal filter as an unknown field. */
@@ -330,10 +331,10 @@ public final class CollectionDescription<T> {
   /** Names of the fields that accept the requested write operation, in declaration order. */
   public Set<String> writableFields(WriteOperation operation) {
     Set<String> writable = new LinkedHashSet<>();
-    fields.values().stream()
+    fields().stream()
         .filter(field -> field.writableOn(operation))
         .forEach(field -> writable.add(field.name()));
-    relationships.values().stream()
+    relationships().stream()
         .filter(relationship -> relationship.writableOn(operation))
         .forEach(relationship -> writable.add(relationship.name()));
     return Collections.unmodifiableSet(writable);
@@ -381,7 +382,13 @@ public final class CollectionDescription<T> {
   }
 
   public List<Field<T, ?>> fields() {
-    return List.copyOf(fields.values());
+    List<Field<T, ?>> scalarFields = new ArrayList<>();
+    for (ResourceMember<T> member : fields.values()) {
+      if (member instanceof Field<T, ?> field) {
+        scalarFields.add(field);
+      }
+    }
+    return List.copyOf(scalarFields);
   }
 
   public AccessPolicy accessPolicy() {
@@ -409,8 +416,7 @@ public final class CollectionDescription<T> {
         resourceName,
         entityType,
         fields,
-        relationships,
-        filterSelectors,
+        publicFilterSelectors,
         idField,
         defaultSort,
         accessPolicy);

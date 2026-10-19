@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -369,19 +370,45 @@ class CollectionDescriptionTest {
 
   @Test
   void preservesEachMemberKindOrderWhenDeclarationsAreInterleaved() {
+    List<String> setterOrder = new ArrayList<>();
+    Field<TestEntity, String> value =
+        Field.writable(
+            "value",
+            "value",
+            CollectionFieldTypes.text(),
+            TestEntity::value,
+            (entity, fieldValue) -> {
+              setterOrder.add("value");
+              entity.setValue(fieldValue);
+            });
+    Field<TestEntity, String> secondValue =
+        Field.writable(
+            "secondValue",
+            "value",
+            CollectionFieldTypes.text(),
+            TestEntity::value,
+            (entity, fieldValue) -> setterOrder.add("secondValue"));
     CollectionDescription<TestEntity> description =
         description(
             List.<ResourceMember<TestEntity>>of(
-                idField(),
-                relationship("first"),
-                Field.readOnly("value", "value", CollectionFieldTypes.text(), TestEntity::value),
-                relationship("second")),
+                idField(), relationship("first"), value, relationship("second"), secondValue),
             List.of(new Sort("id", true)));
 
-    assertEquals(List.of("id", "value"), description.fields().stream().map(Field::name).toList());
+    assertEquals(
+        List.of("id", "value", "secondValue"),
+        description.fields().stream().map(Field::name).toList());
     assertEquals(
         List.of("first", "second"),
         description.relationships().stream().map(Relationship::name).toList());
+    assertEquals(
+        List.of("value", "secondValue", "first", "second"),
+        new ArrayList<>(description.writableFields(WriteOperation.CREATE)));
+
+    Map<String, Object> values = new LinkedHashMap<>();
+    values.put("secondValue", "second");
+    values.put("value", "first");
+    description.apply(new TestEntity(), values, WriteOperation.UPDATE);
+    assertEquals(List.of("value", "secondValue"), setterOrder);
   }
 
   @Test

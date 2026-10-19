@@ -1,5 +1,6 @@
 package com.researchspace.model.collection;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,21 +12,27 @@ final class CollectionSchemaBuilder {
   static <T> ResourceSchema build(
       String resourceName,
       Class<T> entityType,
-      Map<String, Field<T, ?>> fields,
-      Map<String, Relationship<T>> relationships,
-      Map<String, FilterSelector<T>> filterSelectors,
+      Map<String, ResourceMember<T>> fields,
+      Map<String, FilterSelector<T>> publicFilterSelectors,
       String idField,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
+    List<FieldSchema> fieldSchemas = new ArrayList<>();
+    List<RelationshipSchema> relationshipSchemas = new ArrayList<>();
+    for (ResourceMember<T> member : fields.values()) {
+      if (member instanceof Field<T, ?> field) {
+        fieldSchemas.add(field.schema(accessPolicy));
+      } else if (member instanceof Relationship<T> relationship) {
+        relationshipSchemas.add(relationshipSchema(relationship, accessPolicy));
+      }
+    }
     return new ResourceSchema(
         resourceName,
         entityType,
         idField,
-        fields.values().stream().map(field -> field.schema(accessPolicy)).toList(),
-        relationships.values().stream()
-            .map(relationship -> relationshipSchema(relationship, accessPolicy))
-            .toList(),
-        filterSelectors.values().stream()
+        List.copyOf(fieldSchemas),
+        List.copyOf(relationshipSchemas),
+        publicFilterSelectors.values().stream()
             .map(
                 selector ->
                     new FilterSchema(

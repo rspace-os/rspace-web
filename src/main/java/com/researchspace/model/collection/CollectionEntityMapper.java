@@ -8,10 +8,10 @@ import java.util.function.Predicate;
 
 /** Reads and writes entities according to a collection description. */
 final class CollectionEntityMapper<T> {
-  private final Map<String, Field<T, ?>> fields;
+  private final Map<String, ResourceMember<T>> fields;
   private final String idField;
 
-  CollectionEntityMapper(Map<String, Field<T, ?>> fields, String idField) {
+  CollectionEntityMapper(Map<String, ResourceMember<T>> fields, String idField) {
     this.fields = fields;
     this.idField = idField;
   }
@@ -42,23 +42,27 @@ final class CollectionEntityMapper<T> {
     Objects.requireNonNull(selection, "Selection");
     Objects.requireNonNull(readOverrides, "Read overrides");
     Map<String, Object> document = new LinkedHashMap<>();
-    fields.values().stream()
-        .filter(field -> selection.test(field.name()))
-        .filter(field -> idField.equals(field.name()) || field.readAccess().allowsField(context))
-        .forEach(
-            field ->
-                document.put(
-                    field.name(),
-                    readOverrides.containsKey(field.name())
-                        ? field.projectReadValue(readOverrides.get(field.name()), context)
-                        : field.documentValue(entity, context)));
+    for (ResourceMember<T> member : fields.values()) {
+      if (member instanceof Field<T, ?> field
+          && selection.test(field.name())
+          && (idField.equals(field.name()) || field.readAccess().allowsField(context))) {
+        document.put(
+            field.name(),
+            readOverrides.containsKey(field.name())
+                ? field.projectReadValue(readOverrides.get(field.name()), context)
+                : field.documentValue(entity, context));
+      }
+    }
     return document;
   }
 
   Object idValue(T entity) {
     Objects.requireNonNull(entity, "Entity");
-    Field<T, ?> field = fields.get(idField);
-    return field.documentValue(entity);
+    ResourceMember<T> member = fields.get(idField);
+    if (member instanceof Field<T, ?> field) {
+      return field.documentValue(entity);
+    }
+    throw new IllegalStateException("ID field must be described");
   }
 
   void apply(T entity, Map<String, Object> values, WriteOperation operation) {
@@ -66,15 +70,19 @@ final class CollectionEntityMapper<T> {
     Objects.requireNonNull(values, "Values");
     values.forEach(
         (name, value) -> {
-          Field<T, ?> field = fields.get(name);
-          if (field == null || !field.writableOn(operation)) {
+          ResourceMember<T> member = fields.get(name);
+          if (!(member instanceof Field<T, ?> field) || !field.writableOn(operation)) {
             throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
           }
           field.validateValue(value);
         });
-    fields.values().stream()
-        .filter(field -> field.writableOn(operation) && values.containsKey(field.name()))
-        .forEach(field -> field.write(entity, values.get(field.name())));
+    for (ResourceMember<T> member : fields.values()) {
+      if (member instanceof Field<T, ?> field
+          && field.writableOn(operation)
+          && values.containsKey(field.name())) {
+        field.write(entity, values.get(field.name()));
+      }
+    }
   }
 
   Optional<Object> relationshipTargetId(T entity, Relationship<T> relationship) {

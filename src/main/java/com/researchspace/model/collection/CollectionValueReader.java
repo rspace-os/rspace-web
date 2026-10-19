@@ -4,10 +4,11 @@ import java.util.Map;
 
 /** Reads values needed by in-memory filtering and sorting. */
 final class CollectionValueReader<T> {
-  private final Map<String, Field<T, ?>> fields;
+  private final Map<String, ResourceMember<T>> fields;
   private final Map<String, FilterSelector<T>> selectors;
 
-  CollectionValueReader(Map<String, Field<T, ?>> fields, Map<String, FilterSelector<T>> selectors) {
+  CollectionValueReader(
+      Map<String, ResourceMember<T>> fields, Map<String, FilterSelector<T>> selectors) {
     this.fields = fields;
     this.selectors = selectors;
   }
@@ -18,8 +19,8 @@ final class CollectionValueReader<T> {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
     if (selector instanceof FilterSelector.Property<T> property) {
-      Field<T, ?> field = fields.get(property.name());
-      if (field == null) {
+      ResourceMember<T> member = fields.get(property.name());
+      if (!(member instanceof Field<T, ?> field)) {
         throw new IllegalStateException(
             "Internal filter " + property.name() + " cannot be evaluated in memory");
       }
@@ -51,8 +52,8 @@ final class CollectionValueReader<T> {
   }
 
   Object readSortValue(T entity, String fieldName) {
-    Field<T, ?> field = fields.get(fieldName);
-    if (field == null) {
+    ResourceMember<T> member = fields.get(fieldName);
+    if (!(member instanceof Field<T, ?> field)) {
       throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
     }
     return field.reader.apply(entity);
