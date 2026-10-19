@@ -1,4 +1,4 @@
-import { type FormStore, getInput, useField } from "@formisch/react";
+import { type FormStore, useField } from "@formisch/react";
 import type { ReactNode } from "react";
 import { FieldGroup } from "@/modules/common/ui/field";
 import { cn } from "@/modules/common/utils/cn";
@@ -11,6 +11,7 @@ import { RowField } from "./field-types/RowField";
 import { SectionField } from "./field-types/SectionField";
 import { SelectField } from "./field-types/SelectField";
 import { TextField } from "./field-types/TextField";
+import { formData } from "./formData";
 import type {
   FieldLayout,
   FormFieldConfig,
@@ -33,12 +34,10 @@ function ConditionalGroup<TDocument>({
   condition: GroupCondition<TDocument>;
   form: FormStore;
 }) {
-  // ponytail: formisch 1.0.0-rc.0 only tracks reads inside a component that called one of its hooks,
-  // and its types require a non-empty path. The empty path resolves to the root store, which is a
-  // valid field store at runtime, so this subscribes to the whole form. Switch to a public
-  // form-level subscription if formisch exports one.
+  // ponytail: root useField installs formisch's listener despite its non-empty path type;
+  // formData narrows the subscription to the keys the condition reads.
   useField(form, { path: [] as unknown as [string] });
-  return condition({ data: getInput(form) as Partial<TDocument> }) ? children : null;
+  return condition({ data: formData<TDocument>(form) }) ? children : null;
 }
 
 // Section and row carry no `name`, so they key by position.
