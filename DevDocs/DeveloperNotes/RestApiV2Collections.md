@@ -20,6 +20,57 @@ operation; its allocator keeps generated names distinct across nested scopes. In
 compilations still need distinct prefixes when they will be combined. Keep sessions local to an
 operation rather than storing them on a reusable DAO.
 
+## Add a field type
+
+Collection field implementations live in `model.collection.types`. Each implements
+`CollectionFieldType` and owns its literal parser, JSON decoder, validation,
+serialization, schema and supported operators. `CollectionFieldTypes` keeps the
+convenience factories used by resource declarations.
+
+For an annotated Java type, copy the registrations from
+`CollectionFieldTypeRegistry.builtIns().registrations()`, add an exact-class
+`Registration`, and construct a new immutable registry. Pass it to the
+registry-taking `CollectionDescription.fromApiV2Resource` overload. Primitive
+classes and boxed classes share a registration. Enum declarations use the enum
+factory unless an exact registration overrides it. Programmatic `Field`
+declarations can use a type instance directly, including types configured with
+per-field limits.
+
+`parse` validates filter literals. `parseDocument` decodes a JSON body value and
+receives the write operation. The document parser checks the accepted JSON kind
+before decoding and runs field validation afterwards. Keep rules that apply only
+to writes in `validate` and `writeConstraints`; do not publish those rules in
+filter schemas. Declared object and array types retain child validation before
+assembly. A constraint decorator forwards the underlying decoder and comparison
+strategy.
+
+Runtime fields use `RuntimeFieldType` implementations in
+`model.collection.types.runtime`. These decode persisted strings and parse filter
+arguments, which can have different shapes: a choice filter takes one option,
+while a stored choice serializes to an array. Add the stable identifier to
+`RuntimeFieldValueType`, register its implementation in `RuntimeFieldTypeRegistry`,
+and map the source domain's field kind in its runtime manager. The enum delegates
+to the registered implementation. Share value helpers with predefined types only
+when their rules match. Runtime numeric syntax and precision rules also govern
+the DAO's numeric-text SQL conversion.
+
+Each type declares a `FieldComparisonStrategy`. Reuse an existing strategy when
+the storage semantics match. For a new strategy, implement
+`RsqlFieldPredicateCompiler` in the DAO layer and add its `Registration` to a new
+`RsqlFieldPredicateCompilerRegistry`, retaining the built-in registrations. Pass
+that registry to `RsqlCollectionQuery` or `CollectionQueryExecutor`; nested
+relationship queries use the same registry. Compiler contexts bind values and
+count LIKE predicates through the operation's shared state. Model types never
+contain SQL or import DAO classes. Runtime correlation, access checks and presence
+semantics remain outside the value compiler.
+
+Registry construction rejects duplicate mappings. Query construction validates
+known field mappings, and compilation checks dynamically resolved fields. A
+non-queryable type uses `FieldComparisonStrategy.NONE` and no filter operators.
+Add tests for literal and document parsing, invalid values, schema output,
+serialization and compiled parameter bindings when introducing a type. Storage
+conversions also need a database comparison test.
+
 ## Routes
 
 | Route | Access |
