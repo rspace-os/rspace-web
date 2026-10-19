@@ -7,7 +7,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFieldsPage } from "./pageObjects/RenderFieldsPage";
 import { RenderFields } from "./RenderFields";
 import { RenderFieldsStory } from "./RenderFields.story";
