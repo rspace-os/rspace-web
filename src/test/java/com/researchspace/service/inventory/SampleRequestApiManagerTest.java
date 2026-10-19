@@ -655,6 +655,19 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void requestAgainstADeletedSample_staysReadableAndActionableById() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleApiMgr.markSampleAsDeleted(sample.getId(), true, owner);
+
+    assertEquals(
+        raised.getId(), sampleRequestApiMgr.getRequestById(raised.getId(), requester).getId());
+    ApiSampleRequest rejected =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.REJECTED, "sample discarded"), owner);
+    assertEquals(SampleRequestStatus.REJECTED, rejected.getStatus());
+  }
+
+  @Test
   public void createRequest_isRefusedForADeletedSample() {
     sampleApiMgr.markSampleAsDeleted(sample.getId(), true, owner);
 

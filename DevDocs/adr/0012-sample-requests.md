@@ -157,12 +157,15 @@ so two concurrent transitions serialise and the second sees the first's result. 
 locking read must be the transaction's first read: MariaDB 11.6+ enables
 `innodb_snapshot_isolation` by default, and locking a row changed since an earlier read in
 the same transaction then fails with error 1020 instead of waiting. A unique constraint on
-(request, status) backs up the lock, since no status is reachable twice.
+(request, status) backs up the lock, since no status is reachable twice; it is not expected
+to fire, and if it did the client would get a 500 with nothing saved.
 
-Raising a request takes a shared lock on the requested sample, as its first read, so a
-transfer that runs at the same time waits for the new request to commit and then closes it
-(D9), instead of leaving it PENDING and addressed to the previous owner. Only raising a
-request takes it: the fulfilled-with sample is read without a lock.
+Raising a request takes a shared lock on the requested sample, as its first read. A
+transfer saves the owner change before it locks the sample's open requests, so if one is
+being raised at the same time the transfer waits for it to commit and then closes it (D9),
+instead of leaving it PENDING and addressed to the previous owner. With snapshot isolation
+the waiting transfer is refused with 1020 instead, as it has read the sample before. Only
+raising a request takes the shared lock: the fulfilled-with sample is read without one.
 
 Where 1020 still occurs, for example a transfer racing a fulfilment, the API returns
 409 `EDIT_CONFLICT` ("changed by someone else at the same time"), not 500. Deadlocks

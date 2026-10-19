@@ -1344,6 +1344,37 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void createSample_ignoresRequestable() {
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples();
+    newSample.setName("requestable on create");
+    newSample.setRequestable(true);
+
+    // only an update may make a sample requestable, where the permission check runs
+    assertFalse(sampleApiMgr.createNewApiSample(newSample, testUser).getRequestable());
+  }
+
+  @Test
+  public void requestableSearch_showsTheOwnerWithPublicDetailsOnly() {
+    User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
+    initialiseContentWithEmptyContent(outsider);
+    String name = getRandomAlphabeticString("publicOwner");
+    markRequestable(createBasicSampleForUser(testUser, name), testUser);
+
+    ApiSampleInfo found =
+        sampleApiMgr.getSamplesForUser(null, null, null, true, name, outsider).getSamples().get(0);
+
+    assertTrue(found.isClearedForPublicView());
+    ApiUser owner = found.getOwner();
+    assertEquals(testUser.getUsername(), owner.getUsername());
+    assertEquals(testUser.getLastName(), owner.getLastName());
+    assertNull(owner.getEmail());
+    assertNull(owner.getHomeFolderId());
+    assertNull(owner.getWorkbenchId());
+    assertNull(owner.getHasPiRole());
+    assertNull(owner.getHasSysAdminRole());
+  }
+
+  @Test
   public void requestableSearch_stillHonoursOwnedBy() {
     User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
     User bob = createAndSaveUserIfNotExists(getRandomAlphabeticString("bob"));

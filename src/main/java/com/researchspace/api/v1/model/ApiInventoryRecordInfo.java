@@ -666,6 +666,8 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     ApiInventoryRecordInfo publicViewCopy = getEmptyCopy();
     populatePublicViewCopy(publicViewCopy);
     nullifyListsForPublicView(publicViewCopy);
+    // here rather than in populatePublicViewCopy, which the limited view reuses
+    publicViewCopy.setOwner(getOwner() == null ? null : getOwner().publicDataCopy());
     return publicViewCopy;
   }
 

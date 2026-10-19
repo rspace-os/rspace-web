@@ -107,6 +107,9 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
   @Override
   public List<SampleRequest> getActiveRequestsForSample(Long sampleId) {
+    // the transfer's owner change locks the sample first, so a request being raised (which
+    // share-locks it) finishes before these rows are locked, rather than deadlocking
+    sessionFactory.getCurrentSession().flush();
     return sessionFactory
         .getCurrentSession()
         .createQuery(
