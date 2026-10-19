@@ -84,15 +84,15 @@ jobs:
             project: api
             shard: 1
             cloud: false
-          - java-version: 17
+          - java-version: 21
             project: chromium
             shard: 1
             cloud: true
-          - java-version: 17
+          - java-version: 21
             project: firefox
             shard: 1
             cloud: true
-          - java-version: 17
+          - java-version: 21
             project: webkit
             shard: 1
             cloud: true
