@@ -964,8 +964,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  ExternalMessageSender slackExternalMessageSender() {
-    return new SlackMessageSender();
+  ExternalMessageSender slackExternalMessageSender(UserConnectionManager userConnectionManager) {
+    return new SlackMessageSender(userConnectionManager);
   }
 
   @Bean

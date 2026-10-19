@@ -42,7 +42,6 @@ export const MOCK_PROTOCOLS_IO_PROTOCOL_RESPONSE = {
 export const protocolsioHandlers = [
   mockOAuthAuthorize("/protocolsio/oauth/authorize", "mock-protocolsio-auth-code", {
     redirectParam: "redirect_url",
-    echoState: true,
   }),
 
   http.post("/protocolsio/oauth/token", () =>

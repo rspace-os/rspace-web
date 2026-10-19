@@ -32,13 +32,17 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class OwnCloudControllerMVCIT extends MVCTestBase {
 
   private @Autowired OwnCloudController ownCloudController;
+  private @Autowired UserConnectionManager originalConnectionManager;
+  private @Autowired UserManager originalUserManager;
 
   private MockMvc mockMvc;
   private MockHttpSession mockSession;
+  private OwnCloudController.OwnCloudControllerConnector originalConnector;
 
   private UserConnectionManager mockConnectionManager;
   private UserConnection mockConnection;
@@ -54,6 +58,7 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
 
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
     mockSession = new MockHttpSession();
+    originalConnector = ownCloudController.connector;
 
     mockConnectionManager = mock(UserConnectionManager.class);
     mockConnectionId = new UserConnectionId();
@@ -62,6 +67,7 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
     mockConnection = new UserConnection();
     mockConnection.setId(mockConnectionId);
     mockConnection.setAccessToken("my_token");
+    mockConnection.setRefreshToken("my_refresh_token");
     mockConnection.setExpireTime(100l);
 
     mockUserManager = mock(UserManager.class);
@@ -104,6 +110,9 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
+    ownCloudController.setUserManager(originalUserManager);
+    ownCloudController.setUserConnectionManager(originalConnectionManager);
+    ownCloudController.connector = originalConnector;
     super.tearDown();
   }
 
@@ -201,10 +210,7 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
     // Test authorization url redirect
     // Testing the url creation would just replicate the String.format code,
     // so here we will just make sure that the redirect happens.
-    this.mockMvc
-        .perform(post("/apps/owncloud/connect").session(mockSession))
-        .andExpect(status().is3xxRedirection())
-        .andReturn();
+    startOAuthFlow();
 
     // Test that disconnect is calling correct methods on connection manager
     connectionMap.clear();
@@ -226,11 +232,13 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
   public void testAuthorizationFlow() throws Exception {
 
     /* OAuth authorization error flow */
+    String authorizationErrorState = startOAuthFlow();
     MvcResult authErrorResult =
         this.mockMvc
             .perform(
                 get("/apps/owncloud/redirect_uri")
                     .param("error", "Error connecting to ownCloud")
+                    .param("state", authorizationErrorState)
                     .session(mockSession))
             .andExpect(status().isOk())
             .andExpect(view().name("connect/connected"))
@@ -238,16 +246,21 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
 
     assertThat(getConnectionError(authErrorResult)).contains("Error connecting to ownCloud");
 
-    /* OAuth authorization without security token in session */
+    /* A forged OAuth state is rejected before processing the authorization code. */
+    String expectedState = startOAuthFlow();
     MvcResult noTokenInSessionResult =
         this.mockMvc
             .perform(
-                get("/apps/owncloud/redirect_uri").param("code", "code1234").session(mockSession))
+                get("/apps/owncloud/redirect_uri")
+                    .param("code", "code1234")
+                    .param("state", "forged-" + expectedState)
+                    .session(mockSession))
             .andExpect(status().isOk())
             .andExpect(view().name("connect/connected"))
             .andReturn();
 
-    assertThat(getConnectionError(noTokenInSessionResult)).contains("Error connecting to ownCloud");
+    assertThat(getConnectionError(noTokenInSessionResult))
+        .contains("OAuth2 'state' parameter is missing or doesn't match");
 
     //		/* requesting security token for session without user */
     MvcResult unauthorizedTokenResult =
@@ -280,11 +293,13 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
 
     // OAuth success flow */
     mockUser = myUser;
+    String successState = startOAuthFlow();
 
     this.mockMvc
         .perform(
             get("/apps/owncloud/redirect_uri")
                 .param("code", "code1234")
+                .param("state", successState)
                 .session(mockSession)
                 .principal(new MockPrincipal("my_user")))
         .andExpect(status().isOk())
@@ -296,5 +311,18 @@ public class OwnCloudControllerMVCIT extends MVCTestBase {
 
   private String getConnectionError(MvcResult otherErrorResult) {
     return (String) otherErrorResult.getModelAndView().getModel().get("connectionError");
+  }
+
+  private String startOAuthFlow() throws Exception {
+    MvcResult connectResult =
+        mockMvc
+            .perform(post("/apps/owncloud/connect").session(mockSession))
+            .andExpect(status().is3xxRedirection())
+            .andReturn();
+
+    return UriComponentsBuilder.fromUriString(connectResult.getResponse().getRedirectedUrl())
+        .build()
+        .getQueryParams()
+        .getFirst("state");
   }
 }

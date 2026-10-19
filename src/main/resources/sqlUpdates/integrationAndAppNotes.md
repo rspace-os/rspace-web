@@ -14,7 +14,7 @@ and App names.
 #### Conventions for `Communication` apps posting to webhooks
 
 * Property name for a webhook option is `<CAPITALIZED_APP_NAME>_WEBHOOK_URL`, e.g. `MSTEAMS_WEBHOOK_URL` for Microsoft Teams.
-  Teams webhook URLs are credentials kept in the encrypted `UserConnection`, not deployment properties.
+  Teams and Slack webhook URLs are credentials kept in the encrypted `UserConnection`, not deployment properties.
 * Property name for a channel name is `<CAPITALIZED_APP_NAME>_CHANNEL_LABEL` e.g. for Slack, is `SLACK_CHANNEL_LABEL`
 
 User-specific credentials must be stored in the encrypted `UserConnection` table rather than as plaintext
