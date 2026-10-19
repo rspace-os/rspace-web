@@ -2,7 +2,7 @@ package com.researchspace.dao.query;
 
 import com.blazebit.persistence.spi.FunctionRenderContext;
 import com.blazebit.persistence.spi.JpqlFunction;
-import com.researchspace.model.collection.RuntimeFieldValueType;
+import com.researchspace.model.collection.types.runtime.RuntimeNumberType;
 import java.math.BigDecimal;
 
 /**
@@ -13,7 +13,7 @@ import java.math.BigDecimal;
  * type for {@code Double}, so it falls back to the ANSI name and emits {@code cast(x as double
  * precision)}, which MariaDB rejects outright. This renders the spelling MariaDB accepts.
  *
- * <p>The conversion checks the normalized bounds enforced by {@code RuntimeFieldValueType} before
+ * <p>The conversion checks the normalized bounds enforced by {@code RuntimeNumberType} before
  * casting. MariaDB rounds values with more than 30 fractional digits, so casting without that check
  * would make an unprojectable value such as {@code 1e-31} compare equal to zero.
  */
@@ -36,7 +36,7 @@ public final class NumericTextFunction implements JpqlFunction {
     return BigDecimal.class;
   }
 
-  private static final String NUMERIC_PATTERN = "'^" + RuntimeFieldValueType.NUMBER_PATTERN + "$'";
+  private static final String NUMERIC_PATTERN = "'^" + RuntimeNumberType.NUMBER_PATTERN + "$'";
 
   private static final String MIN_BIG_DECIMAL_SCALE = "-2147483648";
   private static final String MAX_BIG_DECIMAL_SCALE = "2147483647";
@@ -111,11 +111,11 @@ public final class NumericTextFunction implements JpqlFunction {
         + " = '' or ("
         + normalizedScale
         + " <= "
-        + RuntimeFieldValueType.MAX_NUMBER_SCALE
+        + RuntimeNumberType.MAX_NUMBER_SCALE
         + " and "
         + integerDigits
         + " <= "
-        + RuntimeFieldValueType.MAX_NUMBER_INTEGER_DIGITS
+        + RuntimeNumberType.MAX_NUMBER_INTEGER_DIGITS
         + "))";
   }
 
@@ -130,6 +130,10 @@ public final class NumericTextFunction implements JpqlFunction {
             + validNumber(value)
             + " then cast("
             + value
-            + " as decimal(65,30)) else null end)");
+            + " as decimal("
+            + RuntimeNumberType.MAX_NUMBER_PRECISION
+            + ","
+            + RuntimeNumberType.MAX_NUMBER_SCALE
+            + ")) else null end)");
   }
 }

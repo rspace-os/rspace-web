@@ -23,16 +23,26 @@ public final class CollectionQueryExecutor<T> {
   private final CollectionDescription<T> description;
   private final String alias;
   private final RsqlCollectionQuery filterQuery;
+  private final RsqlFieldPredicateCompilerRegistry compilers;
 
   public CollectionQueryExecutor(
       Class<T> entityType, CollectionDescription<T> description, String alias) {
+    this(entityType, description, alias, RsqlFieldPredicateCompilerRegistry.builtIns());
+  }
+
+  public CollectionQueryExecutor(
+      Class<T> entityType,
+      CollectionDescription<T> description,
+      String alias,
+      RsqlFieldPredicateCompilerRegistry compilers) {
+    this.compilers = Objects.requireNonNull(compilers, "Comparison compilers");
     this.entityType = Objects.requireNonNull(entityType, "Entity type");
     this.description = Objects.requireNonNull(description, "Collection description");
     if (alias == null || alias.isBlank()) {
       throw new IllegalArgumentException("Query alias must not be blank");
     }
     this.alias = alias;
-    filterQuery = new RsqlCollectionQuery(description, alias);
+    filterQuery = new RsqlCollectionQuery(description, alias, compilers);
   }
 
   public String alias() {
@@ -48,13 +58,14 @@ public final class CollectionQueryExecutor<T> {
    * what lets the same rule be recompiled at another alias, such as inside a subquery.
    */
   public Predicate compileConstraint(QueryConstraint constraint) {
-    return new RsqlCollectionQuery(description, alias, "rsqlAccess").translateTrusted(constraint);
+    return new RsqlCollectionQuery(description, alias, "rsqlAccess", compilers)
+        .translateTrusted(constraint);
   }
 
   /** Compiles the target read rule for one relationship against this collection's alias. */
   public Predicate compileReadableRelationship(
       String relationshipName, RelationshipReadAccess targets) {
-    return new RsqlCollectionQuery(description, alias, "rsqlRelationshipAccess")
+    return new RsqlCollectionQuery(description, alias, "rsqlRelationshipAccess", compilers)
         .compileReadableRelationship(relationshipName, targets);
   }
 

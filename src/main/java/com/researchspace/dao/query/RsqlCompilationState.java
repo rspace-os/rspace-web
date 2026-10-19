@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Parameters and subqueries belong to a scope; generated names span its whole compilation. */
-final class RsqlCompilationState {
+final class RsqlCompilationState implements RsqlFieldPredicateCompiler.Context {
 
   /** Owned by one compilation, including its nested scopes. Never shared by independent calls. */
   static final class Names {
@@ -87,13 +87,15 @@ final class RsqlCompilationState {
         new RsqlCollectionQuery.Subquery(entityType, alias, expression, scope.subqueries));
   }
 
-  String add(Object value) {
+  @Override
+  public String add(Object value) {
     String name = names.parameter();
     RsqlCollectionQuery.mergeMappings(parameters, Map.of(name, value), "parameter");
     return name;
   }
 
-  void recordLikePredicate() {
+  @Override
+  public void recordLikePredicate() {
     recordLikePredicates(1);
   }
 

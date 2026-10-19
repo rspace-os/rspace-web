@@ -17,13 +17,18 @@ final class RsqlExpressionCompiler {
   private final String alias;
   private final RsqlRelationshipCompiler relationships;
   private final RsqlRuntimeFieldCompiler runtimeFields;
+  private final RsqlFieldPredicateCompilerRegistry compilers;
 
   RsqlExpressionCompiler(
-      CollectionDescription<?> description, String alias, RsqlRelationshipCompiler relationships) {
+      CollectionDescription<?> description,
+      String alias,
+      RsqlRelationshipCompiler relationships,
+      RsqlFieldPredicateCompilerRegistry compilers) {
     this.description = description;
+    this.compilers = compilers;
     this.alias = alias;
     this.relationships = relationships;
-    this.runtimeFields = new RsqlRuntimeFieldCompiler(description, alias, relationships);
+    this.runtimeFields = new RsqlRuntimeFieldCompiler(description, alias, relationships, compilers);
   }
 
   String compile(FilterExpression filter, RsqlCompilationState state) {
@@ -107,11 +112,12 @@ final class RsqlExpressionCompiler {
       FilterExpression.Comparison comparison,
       FilterSelector.Property<?> property,
       RsqlCompilationState state) {
+    compilers.validate(property.type());
     Operator operator = comparison.operator();
     String path = alias + "." + property.property();
     if (operator == Operator.EXISTS) {
       return path + (Boolean.TRUE.equals(comparison.values().get(0)) ? " IS NOT NULL" : " IS NULL");
     }
-    return RsqlFieldPredicateCompilerRegistry.scalar().compile(comparison, path, state);
+    return compilers.require(property.type().comparisonStrategy()).compile(comparison, path, state);
   }
 }

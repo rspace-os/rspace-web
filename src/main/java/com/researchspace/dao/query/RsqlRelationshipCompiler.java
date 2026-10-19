@@ -24,9 +24,14 @@ final class RsqlRelationshipCompiler {
 
   private final CollectionDescription<?> description;
   private final String alias;
+  private final RsqlFieldPredicateCompilerRegistry compilers;
 
-  RsqlRelationshipCompiler(CollectionDescription<?> description, String alias) {
+  RsqlRelationshipCompiler(
+      CollectionDescription<?> description,
+      String alias,
+      RsqlFieldPredicateCompilerRegistry compilers) {
     this.description = description;
+    this.compilers = compilers;
     this.alias = alias;
   }
 
@@ -74,7 +79,8 @@ final class RsqlRelationshipCompiler {
         access,
         state,
         (targetAlias, targetState) -> {
-          RsqlCollectionQuery fieldQuery = new RsqlCollectionQuery(targetDescription, targetAlias);
+          RsqlCollectionQuery fieldQuery =
+              new RsqlCollectionQuery(targetDescription, targetAlias, compilers);
           return fieldQuery
               .compile(
                   new FilterExpression.Comparison(
@@ -179,7 +185,7 @@ final class RsqlRelationshipCompiler {
         .ifPresent(
             constraint -> {
               RsqlCollectionQuery.Predicate accessPredicate =
-                  new RsqlCollectionQuery(targetDescription, targetAlias)
+                  new RsqlCollectionQuery(targetDescription, targetAlias, compilers)
                       .compileTrusted(constraint, targetState.nested(false));
               conjuncts.add(targetState.merge(accessPredicate));
             });

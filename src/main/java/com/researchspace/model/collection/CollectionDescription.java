@@ -193,7 +193,13 @@ public final class CollectionDescription<T> {
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
     return AnnotatedCollectionDescriptionFactory.create(
-        resourceType, entityType, relationships, defaultSort, accessPolicy, List.of());
+        resourceType,
+        entityType,
+        relationships,
+        defaultSort,
+        accessPolicy,
+        List.of(),
+        CollectionFieldTypeRegistry.builtIns());
   }
 
   /** Describes an annotated resource with filters reserved for server-side constraints. */
@@ -205,7 +211,48 @@ public final class CollectionDescription<T> {
       AccessPolicy accessPolicy,
       List<InternalFilter> internalFilters) {
     return AnnotatedCollectionDescriptionFactory.create(
-        resourceType, entityType, relationships, defaultSort, accessPolicy, internalFilters);
+        resourceType,
+        entityType,
+        relationships,
+        defaultSort,
+        accessPolicy,
+        internalFilters,
+        CollectionFieldTypeRegistry.builtIns());
+  }
+
+  /** Describes an annotated resource using an explicitly assembled immutable type registry. */
+  public static <T> CollectionDescription<T> fromApiV2Resource(
+      Class<?> resourceType,
+      Class<T> entityType,
+      List<Relationship<T>> relationships,
+      List<Sort> defaultSort,
+      CollectionFieldTypeRegistry fieldTypes) {
+    return fromApiV2Resource(
+        resourceType,
+        entityType,
+        relationships,
+        defaultSort,
+        AccessPolicy.authenticated(),
+        List.of(),
+        fieldTypes);
+  }
+
+  public static <T> CollectionDescription<T> fromApiV2Resource(
+      Class<?> resourceType,
+      Class<T> entityType,
+      List<Relationship<T>> relationships,
+      List<Sort> defaultSort,
+      AccessPolicy accessPolicy,
+      List<InternalFilter> internalFilters,
+      CollectionFieldTypeRegistry fieldTypes) {
+    return AnnotatedCollectionDescriptionFactory.create(
+        resourceType,
+        entityType,
+        relationships,
+        defaultSort,
+        accessPolicy,
+        internalFilters,
+        Objects.requireNonNull(fieldTypes, "Field type registry"));
   }
 
   public String resourceName() {

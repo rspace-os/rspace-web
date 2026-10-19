@@ -13,8 +13,7 @@ final class RsqlNumericTextPredicateCompiler implements RsqlFieldPredicateCompil
   private static final String NUMERIC = NumericTextFunction.NAME.toUpperCase(Locale.ROOT);
 
   @Override
-  public String compile(
-      FilterExpression.Comparison comparison, String valuePath, RsqlCompilationState state) {
+  public String compile(FilterExpression.Comparison comparison, String valuePath, Context state) {
     String numeric = NUMERIC + "(" + valuePath + ")";
     Operator operator = comparison.operator();
     if (operator == Operator.IN || operator == Operator.NOT_IN) {

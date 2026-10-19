@@ -20,6 +20,11 @@ public interface DeclaredFieldType<V> extends StructuredFieldType<V> {
     return javaType().cast(EmbeddedObjects.parse(this, value, operation));
   }
 
+  @Override
+  default V parseDocument(JsonNode value, WriteOperation operation) {
+    return parse(value, operation);
+  }
+
   /** Serializes complete declared children; the field renderer applies caller access afterward. */
   default Object serialize(V value, AccessContext context) {
     return EmbeddedObjects.defaultDocument(this, value);

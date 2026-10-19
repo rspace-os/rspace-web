@@ -15,4 +15,9 @@ public interface StructuredFieldType<V> extends CollectionFieldType<V> {
 
   /** Decodes one complete value, throwing {@link IllegalArgumentException} if it is invalid. */
   V parse(JsonNode value);
+
+  @Override
+  default V parseDocument(JsonNode value, WriteOperation operation) {
+    return parse(value);
+  }
 }

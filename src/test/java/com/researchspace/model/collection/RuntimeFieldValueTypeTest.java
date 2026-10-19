@@ -10,9 +10,30 @@ import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class RuntimeFieldValueTypeTest {
+  @ParameterizedTest
+  @EnumSource(RuntimeFieldValueType.class)
+  void preservesSharedFilterLimitsAndAbsentStoredValues(RuntimeFieldValueType type) {
+    assertThrows(IllegalArgumentException.class, () -> type.parse(null));
+    assertThrows(IllegalArgumentException.class, () -> type.parse("x".repeat(1001)));
+    assertNull(type.serialize(null));
+    assertNull(type.serialize(""));
+  }
+
+  @Test
+  void validatesIsoFilterValuesButPreservesStoredText() {
+    assertEquals("2024-02-29", RuntimeFieldValueType.DATE.parse("2024-02-29"));
+    assertEquals("23:59", RuntimeFieldValueType.TIME.parse("23:59"));
+    assertThrows(
+        IllegalArgumentException.class, () -> RuntimeFieldValueType.DATE.parse("2023-02-29"));
+    assertThrows(IllegalArgumentException.class, () -> RuntimeFieldValueType.TIME.parse("24:00"));
+    assertEquals("legacy date", RuntimeFieldValueType.DATE.serialize("legacy date"));
+    assertEquals("legacy time", RuntimeFieldValueType.TIME.serialize("legacy time"));
+  }
+
   @Test
   void parsesNumbersWithThePrecisionSupportedByTheSqlPredicate() {
     assertEquals(new BigDecimal("1e-30"), RuntimeFieldValueType.NUMBER.parse("1e-30"));
