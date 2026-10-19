@@ -91,7 +91,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
             .where(PARENT_ALIAS + "." + parentIdProperty)
             .eqExpression(FIELD_ALIAS + "." + scope.parentProperty() + ".id");
     if (access != null) {
-      parent.whereExpression(access.expression());
+      access.applyTo(parent, query);
     }
     parent.end();
     if (hydrating) {
@@ -101,9 +101,6 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
     }
     query.orderByAsc(NAME_IDENTITY);
     query.orderByAsc("TYPE(" + FIELD_ALIAS + ")");
-    if (access != null) {
-      access.parameters().forEach(query::setParameter);
-    }
     if (hydrating) {
       query.setParameter(
           "nameIdentities",
@@ -176,14 +173,8 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
   }
 
   private RsqlCollectionQuery.Predicate access(ExtraFieldScope scope, QueryConstraint constraint) {
-    RsqlCollectionQuery.Predicate predicate =
-        new RsqlCollectionQuery(scope.parentDescription(), PARENT_ALIAS, "extraFieldAccess")
-            .translateTrusted(constraint);
-    if (predicate != null && !predicate.subqueries().isEmpty()) {
-      throw new IllegalStateException(
-          "Read rule requires a subquery, which extra-field discovery cannot nest");
-    }
-    return predicate;
+    return new RsqlCollectionQuery(scope.parentDescription(), PARENT_ALIAS, "extraFieldAccess")
+        .translateTrusted(constraint);
   }
 
   private static Class<?> subtype(FieldType type) {

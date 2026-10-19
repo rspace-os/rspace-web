@@ -60,8 +60,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
     if (types.isEmpty()) {
       return new LookAheadPagination.Result<>(List.of(), 0L, false);
     }
-    RsqlCollectionQuery.Predicate predicate =
-        readablePredicate(constraint, "customFieldAccess", "custom-field discovery");
+    RsqlCollectionQuery.Predicate predicate = readablePredicate(constraint, "customFieldAccess");
     CriteriaBuilder<DefinitionRow> query =
         criteriaBuilderFactory
             .create(sessionFactory.getCurrentSession(), DefinitionRow.class)
@@ -86,15 +85,9 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
   }
 
   private RsqlCollectionQuery.Predicate readablePredicate(
-      QueryConstraint constraint, String queryName, String operation) {
-    RsqlCollectionQuery.Predicate predicate =
-        new RsqlCollectionQuery(ApiV2InstrumentResource.DESCRIPTION, INSTRUMENT_ALIAS, queryName)
-            .translateTrusted(constraint);
-    if (predicate != null && !predicate.subqueries().isEmpty()) {
-      throw new IllegalStateException(
-          "Instrument read rule requires a subquery, which " + operation + " cannot nest");
-    }
-    return predicate;
+      QueryConstraint constraint, String queryName) {
+    return new RsqlCollectionQuery(ApiV2InstrumentResource.DESCRIPTION, INSTRUMENT_ALIAS, queryName)
+        .translateTrusted(constraint);
   }
 
   private void restrict(
@@ -106,36 +99,33 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
     query.whereExpression(DEFINITION_ALIAS + ".type IN :publishedTypes");
     query.setParameter("publishedTypes", types);
     query.whereExpression(DEFINITION_ALIAS + ".templateField IS NULL");
-    StringBuilder correlation =
-        new StringBuilder(COPY_ALIAS)
-            .append(".templateField.id = ")
-            .append(DEFINITION_ALIAS)
-            .append(".id AND ")
-            .append(COPY_ALIAS)
-            .append(".deleted = false AND ")
-            .append(COPY_ALIAS)
-            .append(".instrumentEntity.id = ")
-            .append(INSTRUMENT_ALIAS)
-            .append(".id");
+    var readableCopy =
+        query
+            .whereExists()
+            .from(InventoryEntityField.class, COPY_ALIAS)
+            .from(Instrument.class, INSTRUMENT_ALIAS)
+            .select("1")
+            .whereExpression(
+                COPY_ALIAS
+                    + ".templateField.id = "
+                    + DEFINITION_ALIAS
+                    + ".id AND "
+                    + COPY_ALIAS
+                    + ".deleted = false AND "
+                    + COPY_ALIAS
+                    + ".instrumentEntity.id = "
+                    + INSTRUMENT_ALIAS
+                    + ".id");
     if (predicate != null) {
-      correlation.append(" AND ").append(predicate.expression());
+      predicate.applyTo(readableCopy, query);
     }
-    query
-        .whereExists()
-        .from(InventoryEntityField.class, COPY_ALIAS)
-        .from(Instrument.class, INSTRUMENT_ALIAS)
-        .select("1")
-        .whereExpression(correlation.toString())
-        .end();
+    readableCopy.end();
     if (!ids.isEmpty()) {
       query.whereExpression(DEFINITION_ALIAS + ".id IN :requestedIds");
       query.setParameter("requestedIds", ids);
     } else if (search != null) {
       query.whereExpression("LOWER(" + DEFINITION_ALIAS + ".name) LIKE :nameSearch ESCAPE '!'");
       query.setParameter("nameSearch", "%" + LikeEscaper.escape(search) + "%");
-    }
-    if (predicate != null) {
-      predicate.parameters().forEach(query::setParameter);
     }
   }
 
@@ -144,8 +134,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
     if (instrumentIds.isEmpty()) {
       return Set.of();
     }
-    RsqlCollectionQuery.Predicate predicate =
-        readablePredicate(constraint, "customFieldRowAccess", "custom-field projection");
+    RsqlCollectionQuery.Predicate predicate = readablePredicate(constraint, "customFieldRowAccess");
     CriteriaBuilder<Long> query =
         criteriaBuilderFactory
             .create(sessionFactory.getCurrentSession(), Long.class)
@@ -154,8 +143,7 @@ public class InstrumentCustomFieldDaoHibernateImpl implements InstrumentCustomFi
     query.whereExpression(INSTRUMENT_ALIAS + ".id IN :instrumentIds");
     query.setParameter("instrumentIds", instrumentIds);
     if (predicate != null) {
-      query.whereExpression(predicate.expression());
-      predicate.parameters().forEach(query::setParameter);
+      predicate.applyTo(query);
     }
     return new LinkedHashSet<>(query.getResultList());
   }
