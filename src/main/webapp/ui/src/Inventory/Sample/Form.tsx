@@ -65,14 +65,13 @@ export const RequestableSwitch = observer(({ activeResult }: { activeResult: Sam
     .map((value) => value === "ALLOWED")
     .orElse(false);
 
-  // canEdit (UPDATE in the API's permittedActions) is what the backend itself actually checks
-  // before allowing requestable to change (see SampleApiManagerImpl.
-  // assertRequestableChangeAllowed, which calls canUserEditInventoryRecord) - owner, or a PI/Lab
-  // Admin/any other group member sharing edit access to the owner's sample. A plain
-  // currentUserIsOwner check would hide this switch from a PI who the backend would otherwise let
-  // toggle it; canTransfer (CHANGE_OWNER) would be the wrong getter here instead - it also covers
-  // a sysadmin's admin-override transfer ability, which must not extend to toggling requestable.
-  if (!sampleRequestsAvailable || !activeResult.canEdit) return null;
+  // canSetRequestable is computed server-side from the exact same check the backend itself
+  // enforces before allowing requestable to change (SampleApiManagerImpl.
+  // assertRequestableChangeAllowed -> canUserTransferInventoryRecord: the owner, or a PI/Lab Admin
+  // of the owner's group). Neither of the generic getters further up the hierarchy is right here:
+  // canEdit also covers any other group member with mere edit access, and canTransfer (CHANGE_OWNER)
+  // also covers a sysadmin's admin-override ability - both broader than who may actually toggle this.
+  if (!sampleRequestsAvailable || !activeResult.canSetRequestable) return null;
 
   return (
     <Box
@@ -247,10 +246,11 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
   };
 
   // Mirrors RequestableSwitch's own guard above, so the two stay mutually exclusive: anyone who
-  // can toggle requestable (the owner, or anyone else sharing edit access, e.g. a PI/Lab Admin of
-  // the owner's group) sees that switch instead of a request form for a sample they can already
-  // manage directly.
-  if (!sampleRequestsAvailable || activeResult.canEdit) return null;
+  // can toggle requestable (the owner, or a PI/Lab Admin of the owner's group) sees that switch
+  // instead of a request form for a sample they can already manage directly. Deliberately not
+  // canEdit: a plain group member who can edit but not transfer the sample is still a candidate
+  // to request it from, not someone who can already manage it directly.
+  if (!sampleRequestsAvailable || activeResult.canSetRequestable) return null;
 
   const showActionError = (action: string, error: unknown) => {
     console.error(action, error);

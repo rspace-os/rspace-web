@@ -1366,7 +1366,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void requestable_canBeChangedByWhoeverMayEditTheSample() {
+  public void requestable_canOnlyBeChangedByWhoeverMayTransferTheSample() {
     User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
     User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
@@ -1374,18 +1374,40 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     Group group = createGroup("group", pi);
     addUsersToGroup(pi, group, owner, member);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "group-shared sample");
-    // the premise: the member may edit the owner's group-shared sample, but not transfer it -
-    // edit permission, not transfer permission, is the gate for changing requestable, so this
-    // member is exactly the case that distinguishes the two.
+    // the premise: the member may edit the owner's group-shared sample, but not transfer it;
+    // changing requestable needs transfer permission specifically, so this member - despite being
+    // a genuine editor - is exactly the case that must still be rejected. canSetRequestable on the
+    // outgoing DTO is what tells the frontend this up front, without it needing to attempt (and
+    // have rejected) a change to discover the same thing.
+    ApiSample memberView = sampleApiMgr.getApiSampleById(sample.getId(), member);
     assertEquals(
         List.of(ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.UPDATE),
-        sampleApiMgr.getApiSampleById(sample.getId(), member).getPermittedActions());
+        memberView.getPermittedActions());
+    assertFalse(memberView.getCanSetRequestable());
 
     ApiSample memberChange = new ApiSample();
     memberChange.setId(sample.getId());
     memberChange.setRequestable(true);
-    sampleApiMgr.updateApiSample(memberChange, member);
+    assertThrows(
+        ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(memberChange, member));
+    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // the pi, despite not being the owner either, may transfer the sample and so may also change
+    // whether it is requestable - canSetRequestable reflects that on their own view.
+    ApiSample piView = sampleApiMgr.getApiSampleById(sample.getId(), pi);
+    assertTrue(piView.getCanSetRequestable());
+    ApiSample piChange = new ApiSample();
+    piChange.setId(sample.getId());
+    piChange.setRequestable(true);
+    sampleApiMgr.updateApiSample(piChange, pi);
     assertTrue(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // other edits that resend the current value are not a change
+    ApiSample memberRename = new ApiSample();
+    memberRename.setId(sample.getId());
+    memberRename.setName("renamed by member");
+    memberRename.setRequestable(true);
+    assertEquals("renamed by member", sampleApiMgr.updateApiSample(memberRename, member).getName());
   }
 
   @Test
@@ -1395,13 +1417,15 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "my sample");
     User sysadmin = createAndSaveSysadminUser();
     // the premise: a sysadmin may transfer (CHANGE_OWNER) any sample as an admin override, but
-    // that is not the same as being able to edit it - requestable must stay gated on edit
-    // permission specifically, which a sysadmin does not have here (they're not the owner, nor
-    // shared the sample via group/sharing permission).
+    // that is not the same as being able to transfer it in the sense that matters for requestable
+    // - canUserTransferInventoryRecord (unlike CHANGE_OWNER in permittedActions) has no sysadmin
+    // special-case, so canSetRequestable stays false for them despite CHANGE_OWNER being present.
+    ApiSample sysadminView = sampleApiMgr.getApiSampleById(sample.getId(), sysadmin);
     assertEquals(
         List.of(
             ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.CHANGE_OWNER),
-        sampleApiMgr.getApiSampleById(sample.getId(), sysadmin).getPermittedActions());
+        sysadminView.getPermittedActions());
+    assertFalse(sysadminView.getCanSetRequestable());
 
     ApiSample sysadminChange = new ApiSample();
     sysadminChange.setId(sample.getId());

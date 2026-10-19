@@ -50,16 +50,16 @@ function makeOwnedSample(attrs: Partial<Parameters<typeof makeMockSample>[0]> = 
   return makeMockSample({
     owner: personAttrs({ username: OWNER_USERNAME }),
     requestable: false,
-    // RequestableSwitch/RequestMaterialSection key off canEdit (UPDATE in permittedActions),
-    // matching the backend's own check for toggling requestable (SampleApiManagerImpl.
-    // assertRequestableChangeAllowed -> canUserEditInventoryRecord) - the owner, or a PI/Lab
-    // Admin/any other group member sharing edit access to the owner's sample, not merely username
-    // equality with the owner, and deliberately NOT a sysadmin: canUserEditInventoryRecord has no
-    // sysadmin special-case, unlike its sibling canUserTransferInventoryRecord (CHANGE_OWNER),
-    // which does - see the sysadmin-specific tests below. Defaults to the plain non-owner,
-    // non-editor set; owner/PI-simulating tests below add UPDATE back in, the same way the real
-    // API would for those viewers specifically.
-    permittedActions: ["READ"],
+    // RequestableSwitch/RequestMaterialSection key off canSetRequestable, a field computed
+    // server-side from the exact same check the backend enforces before actually allowing
+    // requestable to change (SampleApiManagerImpl.assertRequestableChangeAllowed ->
+    // canUserTransferInventoryRecord): the owner, or a PI/Lab Admin of the owner's group - not
+    // merely username equality with the owner, not any other group member with mere edit access,
+    // and not a sysadmin's admin-override CHANGE_OWNER ability either (see the sysadmin-specific
+    // tests below, which simulate that by setting permittedActions' CHANGE_OWNER directly while
+    // leaving canSetRequestable false, the same combination the real API would send for one).
+    // Defaults to false (a plain non-owner, non-manager); owner/PI-simulating tests below flip it.
+    canSetRequestable: false,
     ...attrs,
   });
 }
@@ -93,7 +93,7 @@ describe("RequestableSwitch", () => {
   test("the owner can toggle requestable on and off, and the switch has no axe violations.", async () => {
     const user = userEvent.setup();
     setCurrentUser(OWNER_USERNAME);
-    const sample = makeOwnedSample({ requestable: false, permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
+    const sample = makeOwnedSample({ requestable: false, canSetRequestable: true });
     sample.setEditable(new Set(["requestable"]), true);
     const { container } = renderWithProviders(<RequestableSwitch activeResult={sample} />);
     await expectAccessible(container);
@@ -117,13 +117,10 @@ describe("RequestableSwitch", () => {
     const user = userEvent.setup();
     const GROUP_PI_USERNAME = "group-pi";
     setCurrentUser(GROUP_PI_USERNAME);
-    // Not the owner by username - the API determines UPDATE (edit) access for a PI or Lab Admin
-    // of the owner's group the same way it does for any other group member under the default
-    // sharing mode, so that's what this simulates (see
-    // InventoryPermissionUtils.canUserEditInventoryRecord/canAccessDirectlyWithSharingPermission).
-    // A real PI's permittedActions would also include CHANGE_OWNER (they can transfer ownership
-    // too), included here to match that, though UPDATE alone is what this switch actually keys off.
-    const sample = makeOwnedSample({ requestable: false, permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
+    // Not the owner by username - canUserTransferInventoryRecord (and so canSetRequestable) is
+    // true for a PI or Lab Admin of the owner's group the same way it is for the owner, so that's
+    // what this simulates (see InventoryPermissionUtils.isPiOrAdminOfRecordOwnerGroup).
+    const sample = makeOwnedSample({ requestable: false, canSetRequestable: true });
     sample.setEditable(new Set(["requestable"]), true);
     renderWithProviders(<RequestableSwitch activeResult={sample} />);
 
@@ -134,15 +131,34 @@ describe("RequestableSwitch", () => {
     expect(sample.requestable).toBe(true);
   });
 
+  test("does not show the switch for a plain group member who can edit the sample but not transfer it.", () => {
+    setCurrentUser("group-member");
+    // canSetRequestable stays false here even though this viewer can edit (UPDATE) the sample -
+    // exactly the gap between canEdit and canUserTransferInventoryRecord that a group member
+    // (sharing access under the default sharing mode, but neither owner nor PI/Lab Admin)
+    // occupies. This is the bug report this test guards against: the frontend previously reused
+    // canEdit for this switch, wrongly letting such a member manage requestable.
+    const sample = makeOwnedSample({
+      requestable: false,
+      canSetRequestable: false,
+      permittedActions: ["READ", "UPDATE"],
+    });
+    const { container } = renderWithProviders(<RequestableSwitch activeResult={sample} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   test("does not show the switch for a sysadmin who can transfer ownership but cannot otherwise edit the sample.", () => {
     setCurrentUser("sysadmin-user");
-    // The bug this guards against: CHANGE_OWNER alone (no UPDATE) is exactly what a sysadmin's
-    // admin-override transfer ability looks like in permittedActions (see
-    // InventoryPermissionUtils.setPermissionsInApiInventoryRecord's `|| user.hasSysadminRole()`
-    // branch, which only ever adds CHANGE_OWNER, never UPDATE, for a sysadmin who isn't otherwise
-    // an editor) - gating this switch on canTransfer instead of canEdit let that admin-only
-    // ability also toggle requestable, which only an actual editor should be able to do.
-    const sample = makeOwnedSample({ requestable: false, permittedActions: ["READ", "CHANGE_OWNER"] });
+    // CHANGE_OWNER alone (no UPDATE) is exactly what a sysadmin's admin-override transfer ability
+    // looks like in permittedActions (see InventoryPermissionUtils.
+    // setPermissionsInApiInventoryRecord's `|| user.hasSysadminRole()` branch) - canSetRequestable
+    // stays false for this viewer regardless, since it is computed from
+    // canUserTransferInventoryRecord alone, which has no such sysadmin branch.
+    const sample = makeOwnedSample({
+      requestable: false,
+      canSetRequestable: false,
+      permittedActions: ["READ", "CHANGE_OWNER"],
+    });
     const { container } = renderWithProviders(<RequestableSwitch activeResult={sample} />);
     expect(container).toBeEmptyDOMElement();
   });
@@ -158,24 +174,47 @@ describe("RequestMaterialSection", () => {
 
   test("renders nothing for the sample's own owner.", () => {
     setCurrentUser(OWNER_USERNAME);
-    const sample = makeOwnedSample({ permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
+    const sample = makeOwnedSample({ canSetRequestable: true });
     const { container } = renderWithProviders(<RequestMaterialSection activeResult={sample} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   test("renders nothing for a PI of the owner's group either, since they see RequestableSwitch instead.", () => {
     setCurrentUser("group-pi");
-    const sample = makeOwnedSample({ permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"] });
+    const sample = makeOwnedSample({ canSetRequestable: true });
     const { container } = renderWithProviders(<RequestMaterialSection activeResult={sample} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  test("shows the request form, not nothing, for a plain group member who can edit the sample but not transfer it.", async () => {
+    setCurrentUser("group-member");
+    // Mirrors the equivalent RequestableSwitch test above: being able to edit (UPDATE) the sample
+    // isn't the same as being able to manage it directly (canSetRequestable) - this viewer is a
+    // genuine candidate to request it from, same as any other non-manager.
+    const sample = makeOwnedSample({
+      requestable: true,
+      canSetRequestable: false,
+      permittedActions: ["READ", "UPDATE"],
+    });
+    const { container } = renderWithProviders(<RequestMaterialSection activeResult={sample} />);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "inventory:sample.requestMaterialSection.requestSampleButton" }),
+      ).toBeInTheDocument(),
+    );
+    expect(container).not.toBeEmptyDOMElement();
   });
 
   test("shows the request form, not nothing, for a sysadmin who can transfer ownership but cannot otherwise edit the sample.", async () => {
     setCurrentUser("sysadmin-user");
     // Mirrors the equivalent RequestableSwitch test above: CHANGE_OWNER alone (no UPDATE) must
     // not be treated as "can manage this sample directly" - that admin-only ability leaves this
-    // viewer no differently placed than any other non-editor, so they see the request form.
-    const sample = makeOwnedSample({ requestable: true, permittedActions: ["READ", "CHANGE_OWNER"] });
+    // viewer no differently placed than any other non-manager, so they see the request form.
+    const sample = makeOwnedSample({
+      requestable: true,
+      canSetRequestable: false,
+      permittedActions: ["READ", "CHANGE_OWNER"],
+    });
     const { container } = renderWithProviders(<RequestMaterialSection activeResult={sample} />);
     await waitFor(() =>
       expect(
