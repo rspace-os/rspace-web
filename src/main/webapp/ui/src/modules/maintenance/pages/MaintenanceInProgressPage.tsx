@@ -1,8 +1,6 @@
-import { type AnyRoute, createRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import RSpaceLogo from "@/assets/branding/rspace/logo.svg";
-import i18n from "@/modules/common/i18n";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { Card, CardContent } from "@/modules/common/ui/card";
 import { Heading, Text } from "@/modules/common/ui/typography";
@@ -34,24 +32,4 @@ export default function MaintenanceInProgressPage() {
       </Card>
     </main>
   );
-}
-
-export function createMaintenanceInProgressRoute<TParentRoute extends AnyRoute>(rootRoute: TParentRoute) {
-  return createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/public/maintenanceInProgress",
-    beforeLoad: () => ({ appBar: false as const }),
-    head: () => ({
-      // `common` loads eagerly at i18next init, so this synchronous lookup is safe
-      // outside the component tree; other namespaces load lazily and would return the raw key here.
-      meta: [
-        {
-          title: i18n.t("common:pageTitles.withProduct", {
-            pageTitle: i18n.t("common:maintenanceMode.heading"),
-          }),
-        },
-      ],
-    }),
-    component: MaintenanceInProgressPage,
-  });
 }

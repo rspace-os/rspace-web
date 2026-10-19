@@ -1,7 +1,4 @@
-import { type AnyRoute, createRoute } from "@tanstack/react-router";
 import AboutPanel from "@/modules/about/AboutPanel";
-import type { AppBarRouteContext } from "@/modules/common/app/AppShell";
-import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { baseUiRichTextComponents } from "@/modules/common/i18n/TransRichText";
 
@@ -15,18 +12,4 @@ export default function AboutPage() {
       </div>
     </main>
   );
-}
-
-export function createAboutRoute<TParentRoute extends AnyRoute>(rootRoute: TParentRoute) {
-  return createRoute({
-    getParentRoute: () => rootRoute,
-    path: "/about",
-    beforeLoad: () => ({ appBar: { currentPage: "aboutRSpace", authenticated: false } }) satisfies AppBarRouteContext,
-    head: () => ({
-      // `common` loads eagerly at i18next init, so this synchronous lookup is safe
-      // outside the component tree; the lazy `about` namespace would return the raw key here.
-      meta: [{ title: i18n.t("common:appBar.aboutRSpace") }],
-    }),
-    component: AboutPage,
-  });
 }

@@ -67,6 +67,56 @@ Both app-shell and legacy help actions use `showLighthouse()`. It opens the
 widget when its methods are ready, or opens the documentation website when the
 external widget is unavailable. Keep help actions available while it loads.
 
+### Application routes
+
+Production routes live under `src/main/webapp/ui/src/routes/`. Each URL segment
+has its own directory. Keep page components, search validators, reusable helpers,
+tests, and stories in their existing feature modules; route files only declare
+routes and private route-specific helpers.
+
+| File relative to `src/routes/` | Purpose |
+| --- | --- |
+| `__root.tsx` | Required TanStack root exception. Owns AppShell, root metadata, scripts, and the root not-found page. |
+| `booking/route.tsx` | Parent route for the Booking layout and inherited context. |
+| `booking/index.tsx` | Index page inside the Booking layout. |
+| `booking/calendar/index.tsx` | Calendar page. Its sibling `bookings/` directory shares the URL prefix without inheriting Calendar's component or search validator. |
+| `booking/calendar/bookings/$id/route.tsx` | Event layout. Its `index.tsx` and `edit/index.tsx` render inside the event's Outlet. |
+| `booking/bookable-items/$globalId/{-$tab}/index.tsx` | Dynamic item ID and optional tab, using TanStack's parameter syntax. |
+
+Use TanStack's default `index.tsx` and `route.tsx` filenames. `__root.tsx` is
+allowed only at the route-directory root. `pnpm lint:routes` checks this convention
+with `@ls-lint/ls-lint`; `pnpm lint` and `pnpm lint:ci` include it. Flat filenames
+such as `booking.calendar.tsx`, dotted directories, `page.tsx`, `layout.tsx`, and
+helper files in this directory fail the check.
+Biome's scoped filename rule also checks full JavaScript/TypeScript filenames,
+because ls-lint's extension wildcards match a fixed number of dot-separated
+parts. The ls-lint configuration covers filenames with up to three extension
+parts; the Biome rule rejects dotted source filenames of any depth.
+
+Index-route IDs include a trailing slash. For example, use
+`getRouteApi("/booking/all-items/")` or `useSearch({ from: "/booking/all-items/" })`
+for that page. Use the generated types for route IDs and navigation destinations;
+do not cast paths to suppress errors. An index page does not make its component
+or validator the parent of deeper URL paths.
+
+After adding, moving, or renaming a route, start `pnpm serve` or run `pnpm build`
+from the repository root. The Vite router plugin generates
+`src/main/webapp/ui/src/routeTree.gen.ts` and updates route declarations. Review
+and commit both alongside the route changes. Do not edit the generated tree by
+hand; Biome excludes it. CI rebuilds the frontend and fails if regeneration
+changes the committed tree or declarations. The committed tree lets standalone
+`pnpm tsc`, unit tests, Browser Mode, and Storybook run without starting a
+generator watcher.
+
+The router plugin runs before React in the application's Vite configuration and
+enables automatic component splitting for development and production builds.
+Root routes, search validation, and route context stay eager. Avoid exporting
+components or reusable values from route files, and use `getRouteApi` in feature
+components instead of importing their route declaration. Shared eager imports
+can pull a page into the initial bundle; inspect `pnpm build:stats` when changing
+these dependencies. Unit tests use the committed declarations without the
+splitting plugin, as do the separate Browser Mode and Storybook configurations.
+
 ### Lazy loading components
 
 React has a mechanism for lazily loading sections of the UI, so that only users

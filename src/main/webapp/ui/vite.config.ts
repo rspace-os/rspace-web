@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
@@ -285,7 +286,22 @@ const resolvedBundleEntries = Object.fromEntries(
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [react(), legacyI18n(), legacyMessages(), tailwindcss()];
+  const plugins: PluginOption[] = [
+    ...(!isVitest
+      ? [
+          tanstackRouter({
+            target: "react",
+            routesDirectory: resolveFromRoot("src/routes"),
+            generatedRouteTree: resolveFromRoot("src/routeTree.gen.ts"),
+            autoCodeSplitting: true,
+          }),
+        ]
+      : []),
+    react(),
+    legacyI18n(),
+    legacyMessages(),
+    tailwindcss(),
+  ];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));
