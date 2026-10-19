@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetReference;
@@ -41,6 +42,7 @@ class BookingCatalogueManagerImplTest {
   @Mock private BookingConfigurationManager configurations;
   @Mock private BookingConfigurationDao configurationDao;
   @Mock private InstrumentDao instruments;
+  @Mock private BookingInstrumentQueryDao bookingInstruments;
   @Mock private FeatureFlagManager featureFlags;
   @Mock private User caller;
 
@@ -53,6 +55,7 @@ class BookingCatalogueManagerImplTest {
             configurations,
             configurationDao,
             instruments,
+            bookingInstruments,
             featureFlags,
             new BookingResourceRoleScheme());
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, caller)).thenReturn(true);
@@ -83,7 +86,7 @@ class BookingCatalogueManagerImplTest {
         .thenReturn(capableTargetIds);
     when(configurations.getConfigurations(any(ResourceRequest.class), same(caller)))
         .thenReturn(new ResourcePage<>(List.of(configuration), 2));
-    when(instruments.getBookingRelationshipTargets(Set.of(101L)))
+    when(bookingInstruments.getBookingRelationshipTargets(Set.of(101L)))
         .thenReturn(Map.of(101L, instrument));
     when(instruments.getReadableParentLocationSummaries(Set.of(101L), caller)).thenReturn(Map.of());
 
