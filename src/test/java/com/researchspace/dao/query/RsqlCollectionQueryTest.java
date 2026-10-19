@@ -22,12 +22,14 @@ import com.researchspace.model.collection.CollectionQueryLimits;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipReadAccess;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceMember;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry;
+import com.researchspace.model.collection.ResourceRoleMembershipConstraint;
 import com.researchspace.model.collection.RsqlFilterParser;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
@@ -440,6 +442,54 @@ class RsqlCollectionQueryTest {
     assertEquals(1, combined.callerLikePredicateCount());
     assertEquals(
         query.translate(filter, fixture.targets()), query.translate(filter, fixture.targets()));
+  }
+
+  @Test
+  void keepsNestedAccessSubqueriesInsideEachCorrelatedTargetAndOutsideTheCallerBudget() {
+    LikeBudgetFixture fixture = likeBudgetFixture();
+    CollectionDescription<BudgetTarget> restrictedTarget =
+        new CollectionDescription<>(
+            "budgetTargets",
+            BudgetTarget.class,
+            List.of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), BudgetTarget::id),
+                Field.readOnly("name", "name", CollectionFieldTypes.text(), BudgetTarget::name)),
+            "id",
+            List.of(new Sort("id", true)),
+            AccessPolicy.readOnly(
+                AccessFunction.documented(
+                    "Nested target read rule.",
+                    Set.of(),
+                    ignored ->
+                        AccessResult.allowedWhere(
+                            new QueryConstraint.And(
+                                List.of(
+                                    new ResourceRoleMembershipConstraint(
+                                        "id", 12L, Set.of(), Set.of("VIEWER"), false),
+                                    likeComparison("name", 51)))))));
+    RelationshipReadAccess targets =
+        RelationshipReadAccess.forActor(
+            new ResourceRegistry(List.of(fixture.source(), restrictedTarget)), null);
+
+    Predicate result =
+        new RsqlCollectionQuery(fixture.source(), "item")
+            .translate(
+                new FilterExpression.And(
+                    List.of(likeComparison("name", 30), likeComparison("target.name", 20))),
+                targets);
+
+    assertEquals(50, result.callerLikePredicateCount());
+    assertEquals(101, likeParameterCount(result));
+    assertEquals(1, result.subqueries().size());
+    Subquery target = result.subqueries().values().iterator().next();
+    assertEquals(1, target.subqueries().size());
+    Subquery membership = target.subqueries().values().iterator().next();
+    assertFalse(target.alias().equals(membership.alias()));
+    assertTrue(membership.whereExpression().contains(" = " + target.alias() + ".id"));
+    assertTrue(
+        target
+            .whereExpression()
+            .contains("EXISTS " + target.subqueries().keySet().iterator().next()));
   }
 
   private static FilterExpression.Comparison likeComparison(String field, int wordCount) {
