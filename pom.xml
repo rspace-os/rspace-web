@@ -47,6 +47,13 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.jupiter.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>javax.cache</groupId>
         <artifactId>cache-api</artifactId>
         <version>${javax.cache.version}</version>
@@ -219,6 +226,27 @@
               <skip>${skipUnitTests}</skip>
             </configuration>
           </execution>
+          <execution>
+            <id>fuzz-tests</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${skipUnitTests}</skip>
+              <includes>
+                <include>**/*FuzzTest.java</include>
+              </includes>
+              <excludes combine.self="override"/>
+              <forkCount>1</forkCount>
+              <reuseForks>false</reuseForks>
+              <reportsDirectory>${project.build.directory}/surefire-reports/fuzz</reportsDirectory>
+              <reportNameSuffix>fuzz</reportNameSuffix>
+              <systemPropertyVariables>
+                <jazzer.max_len>4096</jazzer.max_len>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
           <execution> <!-- for 'dev' profile IT tests -->
             <id>integration-tests</id>
             <phase>integration-test</phase>
@@ -269,6 +297,9 @@
           </execution>
         </executions>
         <configuration>
+          <excludes>
+            <exclude>**/*FuzzTest.java</exclude>
+          </excludes>
           <groups>${includedTestGroups}</groups>
           <excludedGroups>${excludedTestGroups}</excludedGroups>
           <!-- ${argLine} parameter comes from JaCoCo plugin. -->
@@ -460,6 +491,12 @@
   </build>
 
   <dependencies>
+    <dependency>
+      <groupId>com.code-intelligence</groupId>
+      <artifactId>jazzer-junit</artifactId>
+      <version>0.30.0</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.mnode.ical4j</groupId>
       <artifactId>ical4j</artifactId>
@@ -1937,6 +1974,35 @@
   </dependencies>
 
   <profiles>
+    <!-- -Dtest overrides Surefire includes/excludes, so intersect explicit selections here. -->
+    <profile>
+      <id>focused-test-selection</id>
+      <activation>
+        <property>
+          <name>test</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <test>${test},!**/*FuzzTest</test>
+              <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+            </configuration>
+            <executions>
+              <execution>
+                <id>fuzz-tests</id>
+                <configuration>
+                  <test>${test},!%regex[.*(?&lt;!FuzzTest)\.class]</test>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
     <!-- Opt-in WAR content. Keep the bundle under WEB-INF so the deployment
       property controls access, including when the servlet container serves static files. -->
     <profile>
