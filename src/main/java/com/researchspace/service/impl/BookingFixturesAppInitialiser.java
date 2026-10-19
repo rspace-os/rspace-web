@@ -1,10 +1,5 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.model.booking.BookableTargetType.INSTRUMENT;
-import static com.researchspace.model.inventory.Container.ContainerType.LIST;
-
-import com.researchspace.api.v1.model.ApiContainer;
-import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
 import com.researchspace.booking.service.BookingConfigurationManager;
@@ -13,7 +8,6 @@ import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
-import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookingConfiguration;
 import com.researchspace.model.booking.BookingConfigurationState;
 import com.researchspace.model.booking.BookingOpeningHoursEntry;
@@ -26,12 +20,9 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.IntStream;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.springframework.context.ApplicationContext;
@@ -42,9 +33,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private static final String FIXTURE_USER = "user1a";
   private static final String RESTRICTED_INSTRUMENT_OWNER = "user2b";
   private static final String RESTRICTED_CONTAINER_OWNER = "user3c";
-  private static final String FIXTURE_DESCRIPTION_KEY = "bookingFixtures.description";
   private static final ZoneId FIXTURE_DATE_ZONE = ZoneId.of("Europe/Berlin");
-  private static final Locale FIXTURE_LOCALE = Locale.forLanguageTag("en-US");
   private static final BookingSchedulingSettings.Patch BLOCKOUT_FIXTURE_SETTINGS =
       new BookingSchedulingSettings.Patch(
           null,
@@ -67,6 +56,8 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   private final TimeSlotBookingManager bookingManager;
   private final BookingConfigurationDao configurationDao;
   private final TimeSlotBookingDao bookingDao;
+  private final BookingInventoryFixtureFactory inventoryFixtures;
+  private final BookingSchedulingFixtureFactory schedulingFixtures;
 
   public BookingFixturesAppInitialiser(
       String devUserPassword,
@@ -91,6 +82,12 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
     this.bookingManager = bookingManager;
     this.configurationDao = configurationDao;
     this.bookingDao = bookingDao;
+    this.inventoryFixtures =
+        new BookingInventoryFixtureFactory(
+            containerDao, instrumentDao, containerManager, instrumentManager, messages);
+    this.schedulingFixtures =
+        new BookingSchedulingFixtureFactory(
+            configurationManager, bookingManager, configurationDao, bookingDao);
   }
 
   @Override
@@ -292,65 +289,32 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
   }
 
   private Instrument ensureInstrument(String name, User owner) {
-    String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);
-    return instrumentDao.findInstrumentsByName(name, owner).stream()
-        .filter(instrument -> !instrument.isDeleted())
-        .filter(instrument -> fixtureDescription.equals(instrument.getDescription()))
-        .findFirst()
-        .orElseGet(
-            () -> {
-              ApiInstrument request = new ApiInstrument();
-              request.setName(name);
-              request.setDescription(fixtureDescription);
-              ApiInstrument created = instrumentManager.createNewApiInstrument(request, owner);
-              return instrumentDao.get(created.getId());
-            });
+    return inventoryFixtures.ensureInstrument(name, owner);
   }
 
   private Container ensureContainer(String name, User owner, boolean includeDeleted) {
-    String fixtureDescription = message(FIXTURE_DESCRIPTION_KEY);
-    return containerDao.getAll().stream()
-        .filter(container -> name.equals(container.getName()))
-        .filter(container -> owner.getId().equals(container.getOwner().getId()))
-        .filter(container -> fixtureDescription.equals(container.getDescription()))
-        .filter(container -> includeDeleted || !container.isDeleted())
-        .findFirst()
-        .orElseGet(
-            () -> {
-              ApiContainer request = new ApiContainer(name, LIST);
-              request.setDescription(fixtureDescription);
-              ApiContainer created = containerManager.createNewApiContainer(request, owner);
-              return containerDao.get(created.getId());
-            });
+    return inventoryFixtures.ensureContainer(name, owner, includeDeleted);
   }
 
   private String message(String key) {
-    return messages.getMessageForLocale(key, FIXTURE_LOCALE);
+    return inventoryFixtures.message(key);
   }
 
   private void moveToParent(Instrument instrument, Container parent) {
-    if (!hasParent(instrument, parent)) {
-      instrument.moveToNewParent(parent);
-      instrumentDao.save(instrument);
-    }
+    inventoryFixtures.moveToParent(instrument, parent);
   }
 
   private boolean hasParent(Instrument instrument, Container parent) {
-    return instrument.getParentContainer() != null
-        && parent.getId().equals(instrument.getParentContainer().getId());
+    return inventoryFixtures.hasParent(instrument, parent);
   }
 
   private void removeFromParent(Instrument instrument) {
-    if (instrument.getParentContainer() != null) {
-      instrument.removeFromCurrentParent();
-      instrumentDao.save(instrument);
-    }
+    inventoryFixtures.removeFromParent(instrument);
   }
 
   private BookingConfiguration ensureConfiguration(
       Instrument instrument, String timeZone, User sysadmin) {
-    return ensureConfiguration(
-        instrument, timeZone, BookingSchedulingSettings.Patch.empty(), sysadmin);
+    return schedulingFixtures.ensureConfiguration(instrument, timeZone, sysadmin);
   }
 
   private BookingConfiguration ensureConfiguration(
@@ -358,68 +322,13 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       String timeZone,
       BookingSchedulingSettings.Patch schedulingSettings,
       User sysadmin) {
-    ResolvedBookableTarget target = target(instrument);
-    BookingConfiguration configuration =
-        configurationDao.findByTarget(target.reference()).orElse(null);
-    if (configuration == null) {
-      return configurationManager.createConfiguration(
-          new BookingConfigurationManager.Create(true, timeZone, target, schedulingSettings),
-          sysadmin,
-          sysadmin);
-    }
-    BookingSchedulingSettings current = BookingSchedulingSettings.from(configuration);
-    if (schedulingSettings.merge(current).equals(current)) {
-      return configuration;
-    }
-    return configurationManager
-        .updateConfiguration(
-            configuration.getId(),
-            new BookingConfigurationManager.Patch(null, null, schedulingSettings),
-            sysadmin,
-            sysadmin)
-        .orElseThrow();
+    return schedulingFixtures.ensureConfiguration(
+        instrument, timeZone, schedulingSettings, sysadmin);
   }
 
   private BookingConfiguration ensureConfigurationState(
       Instrument instrument, boolean enabled, BookingConfigurationState state, User sysadmin) {
-    BookingConfiguration configuration = ensureConfiguration(instrument, "Europe/Berlin", sysadmin);
-    if (state == BookingConfigurationState.ACTIVE
-        && configuration.getState() == BookingConfigurationState.ARCHIVED) {
-      configuration =
-          configurationManager
-              .updateConfiguration(
-                  configuration.getId(),
-                  new BookingConfigurationManager.Patch(
-                      null,
-                      null,
-                      BookingSchedulingSettings.Patch.empty(),
-                      BookingConfigurationState.ACTIVE),
-                  sysadmin,
-                  sysadmin)
-              .orElseThrow();
-    }
-    if (configuration.isEnabled() != enabled) {
-      configuration =
-          configurationManager
-              .updateConfiguration(
-                  configuration.getId(),
-                  new BookingConfigurationManager.Patch(enabled, null),
-                  sysadmin,
-                  sysadmin)
-              .orElseThrow();
-    }
-    if (state == BookingConfigurationState.ARCHIVED
-        && configuration.getState() == BookingConfigurationState.ACTIVE) {
-      configuration =
-          configurationManager
-              .archiveConfiguration(
-                  configuration.getId(),
-                  configuration.getConfigurationVersion(),
-                  sysadmin,
-                  sysadmin)
-              .orElseThrow();
-    }
-    return configuration;
+    return schedulingFixtures.ensureConfigurationState(instrument, enabled, state, sysadmin);
   }
 
   private void ensureBooking(
@@ -432,23 +341,19 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       int endMinute,
       String purpose,
       User owner) {
-    if (!configuration.isEnabled()) {
-      return;
-    }
-    ZoneId zone = ZoneId.of(configuration.getTimeZone());
-    LocalTime startTime = LocalTime.of(startHour, startMinute);
-    LocalTime endTime = LocalTime.of(endHour, endMinute);
-    Date start = Date.from(date.atTime(startTime).atZone(zone).toInstant());
-    LocalDate endDate = endTime.isAfter(startTime) ? date : date.plusDays(1);
-    Date end = Date.from(endDate.atTime(endTime).atZone(zone).toInstant());
-    if (!bookingDao.overlaps(configuration.getId(), start, end, null)) {
-      bookingManager.createBooking(
-          new TimeSlotBookingManager.Create(target(instrument), start, end, purpose), owner, owner);
-    }
+    schedulingFixtures.ensureBooking(
+        instrument,
+        configuration,
+        date,
+        startHour,
+        startMinute,
+        endHour,
+        endMinute,
+        purpose,
+        owner);
   }
 
   private static ResolvedBookableTarget target(Instrument instrument) {
-    return new ResolvedBookableTarget(
-        new BookableTargetReference(INSTRUMENT, instrument.getId()), instrument);
+    return BookingSchedulingFixtureFactory.target(instrument);
   }
 }
