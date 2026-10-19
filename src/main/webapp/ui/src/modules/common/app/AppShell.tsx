@@ -24,30 +24,6 @@ export type AppBarRouteContext = {
   sidebar?: () => React.ReactNode;
 };
 
-function innermostContext<Key extends keyof AppBarRouteContext>(
-  matches: Array<{ context: unknown }>,
-  key: Key,
-): AppBarRouteContext[Key] | undefined {
-  for (let index = matches.length - 1; index >= 0; index -= 1) {
-    const context = matches[index]?.context;
-    if (typeof context !== "object" || context === null || !(key in context)) continue;
-
-    const value = (context as AppBarRouteContext)[key];
-    if (value !== undefined) return value;
-  }
-
-  return undefined;
-}
-
-export function getSidebarRenderer(matches: Array<{ context: unknown }>): (() => React.ReactNode) | undefined {
-  return innermostContext(matches, "sidebar");
-}
-
-export function getAppBarConfig(matches: Array<{ context: unknown }>): AppBarConfig | false {
-  const appBarConfig = innermostContext(matches, "appBar");
-  return appBarConfig === undefined ? { currentPage: "rspace" } : appBarConfig;
-}
-
 export function RouteTransitionIndicator() {
   const isRouteTransitioning = useRouterState({
     select: (state) => state.isLoading,
@@ -77,12 +53,19 @@ function CloseMobileSidebarOnNavigation() {
 
 export default function AppShell() {
   const { t } = useTranslation("common");
-  const appBarConfig = useMatches({
-    select: (matches) => getAppBarConfig(matches),
+  const context = useMatches({
+    // A failed beforeLoad leaves descendant contexts empty, so retain the loaded ancestors.
+    select: (matches) =>
+      matches.reduce<AppBarRouteContext>(
+        (context, match) => ({
+          appBar: match.context.appBar ?? context.appBar,
+          sidebar: match.context.sidebar ?? context.sidebar,
+        }),
+        {},
+      ),
   });
-  const renderSidebar = useMatches({
-    select: (matches) => getSidebarRenderer(matches),
-  });
+  const appBarConfig: AppBarConfig | false = context.appBar ?? { currentPage: "rspace" };
+  const renderSidebar = context.sidebar;
 
   const appBarProps = appBarConfig !== false && {
     ...appBarConfig,

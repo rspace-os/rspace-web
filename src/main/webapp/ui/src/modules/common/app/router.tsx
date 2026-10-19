@@ -1,12 +1,12 @@
-import { createRootRoute, createRoute, createRouter, lazyRouteComponent } from "@tanstack/react-router";
+import { createRootRouteWithContext, createRoute, createRouter, lazyRouteComponent } from "@tanstack/react-router";
 import { createAboutRoute } from "@/modules/about/pages/AboutPage";
 import i18n from "@/modules/common/i18n";
 import NotFoundPage from "@/modules/common/pages/notFound/NotFoundPage";
 import { createMaintenanceInProgressRoute } from "@/modules/maintenance/pages/MaintenanceInProgressPage";
-import AppShell from "./AppShell";
+import AppShell, { type AppBarRouteContext } from "./AppShell";
 import { LIGHTHOUSE_SCRIPT_ID, LIGHTHOUSE_SCRIPT_SRC } from "./lighthouse";
 
-const rootRoute = createRootRoute({
+const rootRoute = createRootRouteWithContext<AppBarRouteContext>()({
   component: AppShell,
   notFoundComponent: NotFoundPage,
   head: () => ({
