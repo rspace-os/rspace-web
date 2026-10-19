@@ -146,7 +146,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     }
     if (ownedByCaller) {
       restriction =
-          com.researchspace.booking.dao.BookingItemQuery.and(
+          com.researchspace.dao.query.RsqlCollectionQuery.Predicate.and(
               restriction, itemQuery.ownedBy(caller, "bookingConfiguration.target"));
     }
     if (query != null && !query.isBlank()) {
