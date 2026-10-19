@@ -4,7 +4,7 @@ import * as v from "valibot";
 import { afterEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFieldsPage } from "./pageObjects/RenderFieldsPage";
 import { RenderFields } from "./RenderFields";
 import { CardSelectStory, RadioSelectStory, RenderFieldsStory } from "./RenderFields.story";

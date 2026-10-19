@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
-import type { FieldConfig } from "@/modules/common/collection/collectionConfig";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import type { FieldConfig } from "@/modules/common/collection/config";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFields } from "../RenderFields";
 
 type RenderedData = {
