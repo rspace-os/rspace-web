@@ -2,16 +2,17 @@ import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   createMemoryHistory,
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   RouterProvider,
 } from "@tanstack/react-router";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import AppShell, { getAppBarConfig, getSidebarRenderer, RouteTransitionIndicator } from "@/modules/common/app/AppShell";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import type { AppBarConfig } from "@/modules/common/app/AppBar.types";
+import AppShell, { type AppBarRouteContext, RouteTransitionIndicator } from "@/modules/common/app/AppShell";
 import { viewTransitionQueryFilters, viewTransitionQueryMeta } from "@/modules/common/queries/viewTransition";
 import { useSidebar } from "@/modules/common/ui/sidebar";
 
@@ -23,7 +24,12 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
 });
 
 vi.mock("@/modules/common/app/AppBar", () => {
-  const AppBar = ({ renderHamburger }: { renderHamburger?: () => ReactNode }) => <header>{renderHamburger?.()}</header>;
+  const AppBar = ({ currentPage, renderHamburger }: AppBarConfig) => (
+    <header>
+      <span>{currentPage}</span>
+      {renderHamburger?.()}
+    </header>
+  );
   return { default: AppBar, PublicAppBar: AppBar };
 });
 
@@ -55,22 +61,77 @@ const renderTestSidebar = () => <SidebarState />;
 const plainRouteText = "Plain route";
 const sidebarRouteText = "Sidebar route";
 
-function renderShell(initialPath: "/plain" | "/with-sidebar") {
-  const rootRoute = createRootRoute({ component: AppShell });
+function renderShell(initialPath: string) {
+  const rootRoute = createRootRouteWithContext<AppBarRouteContext>()({
+    component: AppShell,
+    notFoundComponent: () => <p>{"Page not found"}</p>,
+  });
   const plainRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/plain",
-    beforeLoad: () => ({ appBar: { currentPage: "rspace" } }),
     component: () => <p>{plainRouteText}</p>,
   });
   const sidebarRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/with-sidebar",
-    beforeLoad: () => ({ appBar: { currentPage: "rspace" }, sidebar: renderTestSidebar }),
-    component: () => <p>{sidebarRouteText}</p>,
+    beforeLoad: () => ({ appBar: { currentPage: "workspace" }, sidebar: renderTestSidebar }),
+    notFoundComponent: () => <p>{"Page not found"}</p>,
+  });
+  const failedGuardRoute = createRoute({
+    getParentRoute: () => sidebarRoute,
+    path: "/failed-guard",
+    beforeLoad: () => {
+      throw new Error("Route guard failed");
+    },
+    errorComponent: () => <p>{"Route failed"}</p>,
   });
   const router = createRouter({
-    routeTree: rootRoute.addChildren([plainRoute, sidebarRoute]),
+    context: {},
+    routeTree: rootRoute.addChildren([
+      plainRoute,
+      sidebarRoute.addChildren([
+        createRoute({
+          getParentRoute: () => sidebarRoute,
+          path: "/",
+          component: () => <p>{sidebarRouteText}</p>,
+        }),
+        createRoute({
+          getParentRoute: () => sidebarRoute,
+          path: "/details",
+          component: () => <p>{"Nested destination"}</p>,
+        }),
+        createRoute({
+          getParentRoute: () => sidebarRoute,
+          path: "/override",
+          beforeLoad: () => ({
+            appBar: { currentPage: "gallery" },
+            sidebar: () => <p>{"Child sidebar"}</p>,
+          }),
+          component: () => <p>{"Override destination"}</p>,
+        }),
+        createRoute({
+          getParentRoute: () => sidebarRoute,
+          path: "/without-app-bar",
+          beforeLoad: () => ({ appBar: false as const }),
+          component: () => <p>{"App bar hidden"}</p>,
+        }),
+        createRoute({
+          getParentRoute: () => sidebarRoute,
+          path: "/failed-loader",
+          loader: () => {
+            throw new Error("Route loader failed");
+          },
+          errorComponent: () => <p>{"Route failed"}</p>,
+        }),
+        failedGuardRoute.addChildren([
+          createRoute({
+            getParentRoute: () => failedGuardRoute,
+            path: "/details",
+            component: () => <p>{"Unreachable destination"}</p>,
+          }),
+        ]),
+      ]),
+    ]),
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   });
 
@@ -86,40 +147,74 @@ beforeEach(() => {
   routerState.isLoading = false;
 });
 
-describe("getAppBarConfig", () => {
-  it("uses the deepest matched route app bar config", () => {
-    expect(
-      getAppBarConfig([
-        { context: { appBar: { currentPage: "Root" } } },
-        { context: { appBar: { currentPage: "booking" } } },
-      ]),
-    ).toEqual({ currentPage: "booking" });
+describe("route chrome", () => {
+  it("inherits the parent app bar and sidebar on a nested route", async () => {
+    renderShell("/with-sidebar/details");
+
+    expect(await screen.findByText("Nested destination")).toBeVisible();
+    expect(screen.getByRole("banner")).toHaveTextContent("workspace");
+    expect(screen.getByRole("status", { name: "Route sidebar state" })).toHaveTextContent("expanded");
   });
 
-  it("allows a route to opt out of the app bar", () => {
-    expect(getAppBarConfig([{ context: { appBar: { currentPage: "Root" } } }, { context: { appBar: false } }])).toBe(
-      false,
-    );
+  it("uses child app bar and sidebar overrides", async () => {
+    renderShell("/with-sidebar/override");
+
+    expect(await screen.findByText("Override destination")).toBeVisible();
+    expect(screen.getByRole("banner")).toHaveTextContent("gallery");
+    expect(screen.getByText("Child sidebar")).toBeVisible();
+    expect(screen.queryByRole("status", { name: "Route sidebar state" })).not.toBeInTheDocument();
   });
 
-  it("defaults to a generic RSpace app bar", () => {
-    expect(getAppBarConfig([{ context: {} }])).toEqual({ currentPage: "rspace" });
-  });
-});
+  it("allows a child route to hide its inherited app bar", async () => {
+    renderShell("/with-sidebar/without-app-bar");
 
-describe("getSidebarRenderer", () => {
-  it("uses the deepest matched route sidebar", () => {
-    const rootSidebar = () => null;
-    const childSidebar = () => null;
-
-    expect(getSidebarRenderer([{ context: { sidebar: rootSidebar } }, { context: { sidebar: childSidebar } }])).toBe(
-      childSidebar,
-    );
+    expect(await screen.findByText("App bar hidden")).toBeVisible();
+    expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "Route sidebar state" })).toBeVisible();
   });
 
-  it("returns undefined when no route declares a sidebar", () => {
-    expect(getSidebarRenderer([{ context: { appBar: { currentPage: "rspace" } } }])).toBeUndefined();
+  it("defaults to an RSpace app bar without a route sidebar", async () => {
+    renderShell("/plain");
+
+    expect(await screen.findByText(plainRouteText)).toBeVisible();
+    expect(screen.getByRole("banner")).toHaveTextContent("rspace");
+    expect(screen.queryByRole("status", { name: "Route sidebar state" })).not.toBeInTheDocument();
   });
+
+  it("keeps inherited chrome on a nested not-found route", async () => {
+    renderShell("/with-sidebar/missing");
+
+    expect(await screen.findByText("Page not found")).toBeVisible();
+    expect(screen.getByRole("banner")).toHaveTextContent("workspace");
+    expect(screen.getByRole("status", { name: "Route sidebar state" })).toBeVisible();
+  });
+
+  it("uses the default chrome on a root not-found route", async () => {
+    renderShell("/missing");
+
+    expect(await screen.findByText("Page not found")).toBeVisible();
+    expect(screen.getByRole("banner")).toHaveTextContent("rspace");
+    expect(screen.queryByRole("status", { name: "Route sidebar state" })).not.toBeInTheDocument();
+  });
+
+  it.each(["/with-sidebar/failed-loader", "/with-sidebar/failed-guard/details"])(
+    "keeps inherited chrome when loading %s fails",
+    async (path) => {
+      const restoreConsole = silenceConsole(
+        ["warn", "error"],
+        ["Route loader failed", "Route guard failed", "Warning: Error in route match:"],
+      );
+      try {
+        renderShell(path);
+
+        expect(await screen.findByText("Route failed")).toBeVisible();
+        expect(screen.getByRole("banner")).toHaveTextContent("workspace");
+        expect(screen.getByRole("status", { name: "Route sidebar state" })).toBeVisible();
+      } finally {
+        restoreConsole();
+      }
+    },
+  );
 });
 
 describe("route sidebar state", () => {
