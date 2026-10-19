@@ -7,7 +7,6 @@ import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
@@ -16,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/pyrat";
 import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
+import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
@@ -33,7 +33,13 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
-  const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
+  const authenticatedServers = useLocalObservable(() =>
+    integrationState.credentials.authenticatedServers.map((server) => ({
+      ...server,
+      storedSecretExists: server.apiKey !== "",
+      saving: false,
+    })),
+  );
   const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   const unauthenticatedServers = integrationState.credentials.configuredServers.filter(
@@ -72,12 +78,21 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                       key={server.alias}
                       onSubmit={(event) => {
                         event.preventDefault();
+                        if (server.saving) return;
+                        const submittedApiKey = server.apiKey;
+                        runInAction(() => {
+                          server.saving = true;
+                        });
                         void saveAppOptions("PYRAT", Optional.present(server.optionsId), {
                           PYRAT_ALIAS: server.alias,
                           PYRAT_URL: server.url,
-                          PYRAT_APIKEY: server.apiKey,
+                          PYRAT_APIKEY: submittedApiKey,
                         })
                           .then(() => {
+                            runInAction(() => {
+                              server.storedSecretExists = submittedApiKey !== "";
+                              server.apiKey = secretAfterSave(submittedApiKey);
+                            });
                             addAlert(
                               mkAlert({
                                 variant: "success",
@@ -94,25 +109,35 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                   message: e.message,
                                 }),
                               );
+                          })
+                          .finally(() => {
+                            runInAction(() => {
+                              server.saving = false;
+                            });
                           });
                       }}
                     >
                       <Stack direction="row" spacing={1}>
-                        <TextField
+                        <SecretField
                           fullWidth
                           variant="outlined"
                           label={t("integrations.pyrat.apiKeyLabel", { alias: server.alias })}
-                          type="password"
                           size="small"
+                          autoComplete="new-password"
                           value={server.apiKey}
-                          onChange={({ target: { value } }) => {
+                          storedSecretExists={server.storedSecretExists}
+                          disabled={server.saving}
+                          onChange={(value) => {
                             runInAction(() => {
                               server.apiKey = value;
                             });
                           }}
                         />
-                        <Button type="submit">{t("common:actions.save")}</Button>
+                        <Button type="submit" disabled={server.saving}>
+                          {t("common:actions.save")}
+                        </Button>
                         <Button
+                          disabled={server.saving}
                           onClick={() => {
                             void deleteAppOptions("PYRAT", server.optionsId)
                               .then(() => {
@@ -185,6 +210,8 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                 alias,
                                 url,
                                 apiKey: "",
+                                storedSecretExists: false,
+                                saving: false,
                                 optionsId: newServer.optionsId,
                               });
                               addAlert(

@@ -8,6 +8,7 @@ import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.controller.ResponseHeaders;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
@@ -193,6 +194,7 @@ public class BoxController {
   }
 
   @RequestMapping(value = "/redirect_uri", method = RequestMethod.GET)
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, HttpSession session) {
 

@@ -3,6 +3,8 @@ import { cleanup, render, screen } from "@testing-library/react";
 import type { AxiosResponse } from "axios";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import InvApiService from "../../../../../common/InvApiService";
 import materialTheme from "../../../../../theme";
 
@@ -272,5 +274,69 @@ describe("InventoryInfoDialog", () => {
     await Promise.resolve();
 
     expect(screen.getByTestId("sidebar-body")).toHaveAttribute("data-globalid", "SS7");
+  });
+
+  function rejectGetWith(status: number) {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockRejectedValue(
+      Object.assign(new Error(`Request failed with status code ${status}`), {
+        isAxiosError: true,
+        response: { status },
+      }),
+    );
+  }
+
+  it("explains a 404 on the pinned snapshot in words rather than axios' message", async () => {
+    rejectGetWith(404);
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA6" versionPin={7} onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/fields\.link\.infoDialog\.versionNotFound/);
+    expect(alert).not.toHaveTextContent("Request failed");
+  });
+
+  it("names the pinned version and the target without its version suffix", async () => {
+    rejectGetWith(404);
+
+    await renderWithRealI18n(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA6v7" versionPin={7} onClose={vi.fn()} />
+      </ThemeProvider>,
+      { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Version 7 of SA6 cannot be found. It may never have existed, or its history may have been removed.",
+    );
+  });
+
+  it("keeps the raw message for a 404 on an unpinned target", async () => {
+    rejectGetWith(404);
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA6" onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Request failed with status code 404");
+  });
+
+  it("keeps the raw message for any other failure on a pinned snapshot", async () => {
+    rejectGetWith(500);
+
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <InventoryInfoDialog open globalId="SA6" versionPin={7} onClose={vi.fn()} />
+      </ThemeProvider>,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Request failed with status code 500");
   });
 });

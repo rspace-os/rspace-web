@@ -47,7 +47,9 @@ public class SampleRequest implements Serializable {
   private Long id;
   private Sample sample;
   private String requesterUsername;
+  private Long requesterId;
   private String originalOwner;
+  private Long originalOwnerId;
   private SampleRequestStatus status = SampleRequestStatus.PENDING;
   private String note;
   private Date created = new Date();
@@ -59,7 +61,9 @@ public class SampleRequest implements Serializable {
   public SampleRequest(Sample sample, User requester, String note) {
     this.sample = sample;
     this.requesterUsername = requester.getUsername();
+    this.requesterId = requester.getId();
     this.originalOwner = sample.getOwner().getUsername();
+    this.originalOwnerId = sample.getOwner().getId();
     this.note = note;
   }
 
@@ -85,8 +89,8 @@ public class SampleRequest implements Serializable {
   }
 
   /**
-   * Username rather than a User reference, so the record survives the requester's deletion and
-   * cannot block it. Matches how InventoryRecord records createdBy and modifiedBy.
+   * The requester's username, for display, including after their deletion; {@link
+   * #getRequesterId()} identifies them.
    */
   @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
   @AuditTrailProperty(name = "requester")
@@ -95,13 +99,34 @@ public class SampleRequest implements Serializable {
   }
 
   /**
-   * The username of the requested sample's owner at the moment this request was raised, captured so
-   * the request's history is accurate even if the sample is later transferred elsewhere. Set only
-   * at creation; never changed by the API afterwards.
+   * The requester's user id, with no foreign key so it cannot block their deletion. Unlike the
+   * username, an id is never reused, so a later account with the same username is not them.
    */
+  @Column(nullable = false)
+  public Long getRequesterId() {
+    return requesterId;
+  }
+
+  /** Username of who owned the sample when the request was raised. Set at creation only. */
   @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
   public String getOriginalOwner() {
     return originalOwner;
+  }
+
+  /** The original owner's user id, kept like {@link #getRequesterId()}. */
+  @Column(nullable = false)
+  public Long getOriginalOwnerId() {
+    return originalOwnerId;
+  }
+
+  /** Whether the user raised this request: same account, not merely the same username. */
+  public boolean isRequester(User user) {
+    return requesterId.equals(user.getId());
+  }
+
+  /** Whether the user owned the sample when this request was raised. */
+  public boolean isOriginalOwner(User user) {
+    return originalOwnerId.equals(user.getId());
   }
 
   @Enumerated(EnumType.STRING)
@@ -121,7 +146,7 @@ public class SampleRequest implements Serializable {
     return sample != null ? sample.getGlobalIdentifier() : null;
   }
 
-  /** Free text: what the requester needs and why. Converted into an operation by the fulfiller. */
+  /** Free text: what the requester needs and why. */
   @Column(nullable = false, length = NOTE_COLUMN_LENGTH)
   public String getNote() {
     return note;
@@ -140,7 +165,7 @@ public class SampleRequest implements Serializable {
     return statusChanges;
   }
 
-  /** Records a new current status and appends it to the history. */
+  /** As below, with no transferred sample. */
   public SampleRequestStatusChange recordStatus(
       User author, SampleRequestStatus newStatus, String reason) {
     return recordStatus(author, newStatus, reason, null);
@@ -148,7 +173,7 @@ public class SampleRequest implements Serializable {
 
   /**
    * Records a new current status and appends it to the history, including the sample this
-   * transition fulfilled the request with, if any: transferred or newly created.
+   * transition fulfilled the request with, if any.
    */
   public SampleRequestStatusChange recordStatus(
       User author, SampleRequestStatus newStatus, String reason, Sample transferredSample) {

@@ -997,6 +997,20 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void updateStatus_blankTransferredSampleIsTreatedAsAbsent() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    ApiSampleRequest fulfilled =
+        sampleRequestApiMgr.updateStatus(
+            raised.getId(), statusPost(SampleRequestStatus.FULFILLED, null, ""), owner);
+
+    ApiSampleRequestStatusChange latest =
+        fulfilled.getStatusChanges().get(fulfilled.getStatusChanges().size() - 1);
+    assertEquals(SampleRequestStatus.FULFILLED, latest.getStatus());
+    assertNull(latest.getTransferredSample());
+  }
+
+  @Test
   public void updateStatus_unknownTransferredSampleIsRefused() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
 
@@ -1057,6 +1071,70 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     update.setId(target.getId());
     update.setRequestable(true);
     sampleApiMgr.updateApiSample(update, owner);
+  }
+
+  @Test
+  public void accountReusingTheRequestersUsername_cannotSeeListOrCancelTheRequest() {
+    User original = requester;
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User reused = takeOverUsername(original);
+
+    assertThrows(
+        NotFoundException.class, () -> sampleRequestApiMgr.getRequestById(raised.getId(), reused));
+    assertEquals(0L, listFor(SampleRequestRole.REQUESTER, reused).getTotalHits().longValue());
+    assertThrows(
+        NotFoundException.class,
+        () ->
+            sampleRequestApiMgr.updateStatus(
+                raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), reused));
+
+    // the owner still sees the original requester, not the account now holding the username
+    ApiSampleRequest seenByOwner = sampleRequestApiMgr.getRequestById(raised.getId(), owner);
+    assertEquals(original.getId(), seenByOwner.getRequester().getId());
+    assertEquals(original.getId(), seenByOwner.getStatusChanges().get(0).getCreatedBy().getId());
+  }
+
+  @Test
+  public void accountReusingTheOriginalOwnersUsername_cannotSeeTheRequestAfterTransfer() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User newOwner = createAndSaveUserIfNotExists(getRandomAlphabeticString("newOwner"));
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(newOwner));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+    User reused = takeOverUsername(owner);
+
+    assertThrows(
+        NotFoundException.class, () -> sampleRequestApiMgr.getRequestById(raised.getId(), reused));
+    assertEquals(0L, listFor(SampleRequestRole.OWNER, reused).getTotalHits().longValue());
+  }
+
+  @Test
+  public void transferToAnAccountReusingTheRequestersUsername_rejectsTheirRequest() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User reused = takeOverUsername(requester);
+
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(reused));
+    sampleApiMgr.changeApiSampleOwner(transfer, owner);
+
+    assertEquals(
+        SampleRequestStatus.REJECTED,
+        sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
+  }
+
+  /**
+   * Moves the user to a new username and gives their old one to a new account, as when a deleted
+   * user's username is registered again.
+   */
+  private User takeOverUsername(User previousHolder) {
+    String username = previousHolder.getUsername();
+    previousHolder.setUsername(getRandomAlphabeticString("moved"));
+    userMgr.save(previousHolder);
+    User reused = createAndSaveUserIfNotExists(username);
+    initialiseContentWithEmptyContent(reused);
+    return reused;
   }
 
   private ApiSampleRequest raiseRequestAs(User user) {

@@ -814,10 +814,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     requestableUpdate.setRequestable(true);
     sampleApiMgr.updateApiSample(requestableUpdate, testUser);
 
-    // otherUser, who is outside testUser's group and normally only sees their own sample, can
-    // now see testUser's sample too when filtering by requestable=true. The result set isn't
-    // asserted to be exactly this one sample, as other requestable samples may pre-exist in the
-    // database; the bypass of ownership/group scoping is what's under test here.
+    // otherUser, outside testUser's group, now finds it; other requestable samples may exist too
     ApiSampleSearchResult otherUserRequestableResult =
         sampleApiMgr.getSamplesForUser(null, null, null, true, null, otherUser);
     List<Long> otherUserRequestableResultIds =
@@ -826,9 +823,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
             .collect(Collectors.toList());
     assertTrue(otherUserRequestableResultIds.contains(testUserSample.getId()));
 
-    // otherUser has no read/edit access to testUser's sample at all, so viewing it still returns
-    // only the public-view fields, but "requestable" must survive even that reduced view so the
-    // Request Material UI knows the sample can be requested
+    // otherUser cannot read the sample, so gets its public view, which still shows requestable
     ApiSample sampleViewedByOtherUser =
         sampleApiMgr.getApiSampleById(testUserSample.getId(), otherUser);
     assertTrue(sampleViewedByOtherUser.isClearedForPublicView());
@@ -1418,6 +1413,31 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertThrows(
         IllegalArgumentException.class,
         () -> sampleApiMgr.updateApiSample(sysadminChange, sysadmin));
+    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+  }
+
+  @Test
+  public void requestable_onAnOwnerOnlySample_staysWithItsOwner() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    initialiseContentWithEmptyContent(pi, owner);
+    Group group = createGroup("group", pi);
+    addUsersToGroup(pi, group, owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "private sample");
+    ApiSample makePrivate = new ApiSample();
+    makePrivate.setId(sample.getId());
+    makePrivate.setSharingMode(ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_ONLY);
+    sampleApiMgr.updateApiSample(makePrivate, owner);
+    // the premise: the PI may still transfer the sample, but not edit it
+    assertEquals(
+        List.of(
+            ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.CHANGE_OWNER),
+        sampleApiMgr.getApiSampleById(sample.getId(), pi).getPermittedActions());
+
+    ApiSample piChange = new ApiSample();
+    piChange.setId(sample.getId());
+    piChange.setRequestable(true);
+    assertThrows(IllegalArgumentException.class, () -> sampleApiMgr.updateApiSample(piChange, pi));
     assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
   }
 

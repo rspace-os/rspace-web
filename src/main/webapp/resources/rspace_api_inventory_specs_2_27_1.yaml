@@ -7,7 +7,7 @@ info:
     This variant additionally documents the beta **Instruments** and **Instrument Templates** endpoints.
 
     **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the navigation menu.
-  version: "2.27"
+  version: "2.27.1"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
@@ -1279,27 +1279,33 @@ paths:
       responses:
         "200":
           description: >-
-            A list of SampleRequest summaries, newest first unless `orderBy`
-            says otherwise. These do not carry the
-            `statusChanges` history; fetch a single request to get it. Each
-            summary carries `requester` and `originalOwner` as user objects.
+            A page of request summaries, newest first unless `orderBy` says
+            otherwise. Summaries do not carry the `statusChanges` history; fetch
+            a single request to get it.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequestSearchResult"
         "400":
           description: >-
             A query parameter is not valid: `role`, `status` or `orderBy` has an
             unknown value, or `sampleId` is not a number.
         "404":
-          description: Sample requests are not enabled on this instance.
+          description: >-
+            Sample requests are not enabled on this instance (or in the caller's
+            community).
     post:
       summary: Raise a request for material from a Sample
       description: >
         Raises a request against a requestable Sample. The new request is always
         created in PENDING state; changing that state is a separate operation.
 
-        Requires the `inventory.sampleRequests.available` system property to be enabled, and
-        the sample to be marked `requestable` by its owner. Read access to the
-        sample is not required: marking a sample requestable is the owner's opt-in 
-        to being asked by anyone, and requestable samples are discoverable 
-        instance-wide. A user cannot request material from a sample they own.
+        Requires the `inventory.sampleRequests.available` system property to be
+        enabled, and the sample to be marked `requestable` by its owner. Read
+        access to the sample is not required: marking a sample requestable is the
+        owner's opt-in to being asked by anyone, and requestable samples are
+        discoverable instance-wide. A user cannot request material from a sample
+        they own.
 
         ## Examples of the request body
 
@@ -1324,6 +1330,10 @@ paths:
       responses:
         "201":
           description: The created request, in PENDING state.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequest"
         "400":
           description: >-
             The body is malformed, or `note` is missing, blank or longer than
@@ -1331,7 +1341,7 @@ paths:
         "404":
           description: >-
             The sample does not exist, is in the trash, or sample requests are
-            not enabled on this instance.
+            not enabled on this instance (or in the caller's community).
         "409":
           $ref: "#/components/responses/ConcurrentChange"
         "422":
@@ -1348,21 +1358,21 @@ paths:
 
         Permitted transitions, actors and reasons:
 
-        | To | From | Who | Reason |
+        | From | To | Who | Reason |
 
         | --- | --- | --- | --- |
 
-        | APPROVED | PENDING | sample's current owner | not accepted |
+        | PENDING | APPROVED | sample's current owner | not accepted |
 
-        | REJECTED | PENDING | sample's current owner | required |
+        | PENDING | REJECTED | sample's current owner | required |
 
-        | REJECTED | APPROVED | sample's current owner | required |
+        | PENDING | CANCELLED | the requester | not accepted |
 
-        | CANCELLED | PENDING | the requester | not accepted |
+        | PENDING | FULFILLED | sample's current owner | not accepted |
 
-        | FULFILLED | PENDING | sample's current owner | not accepted |
+        | APPROVED | REJECTED | sample's current owner | required |
 
-        | FULFILLED | APPROVED | sample's current owner | not accepted |
+        | APPROVED | FULFILLED | sample's current owner | not accepted |
 
         REJECTED, CANCELLED and FULFILLED are terminal. PENDING is written only
         when the request is raised and cannot be set here. Transferring the
@@ -1371,11 +1381,11 @@ paths:
         and rejected otherwise, with a reason that names the new owner.
 
         `transferredSampleGlobalId` optionally gives the global id of the sample
-        the request was fulfilled with: the requested sample itself, or a new
-        sample created from it. It is only accepted when setting FULFILLED, the
-        caller must have full read access to that sample (limited read, e.g.
-        through a shared container, is not enough), and it must not be in the
-        trash. It is recorded on the new `statusChanges` entry, as
+        the request was fulfilled with, e.g. the requested sample itself or a
+        new sample created from it. Any sample is accepted that the caller can
+        fully read (limited read, e.g. through a shared container, is not
+        enough) and that is not in the trash. It is only accepted when setting
+        FULFILLED, and is recorded on the new `statusChanges` entry, as
         `transferredSample`.
 
         ## Examples of the request body
@@ -1404,7 +1414,11 @@ paths:
         required: true
       responses:
         "200":
-          description: The updated request, including its extended status history.
+          description: The updated request, including its updated status history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequest"
         "400":
           description: >-
             The body is malformed, `status` is missing or not a known status, or
@@ -1415,7 +1429,7 @@ paths:
             current owner, nor its owner when the request was raised, a supplied
             `transferredSampleGlobalId` does not exist, is in the trash or cannot
             be fully read by the caller, or sample requests are not enabled on
-            this instance.
+            this instance (or in the caller's community).
         "409":
           $ref: "#/components/responses/ConcurrentChange"
         "422":
@@ -1439,23 +1453,15 @@ paths:
         - $ref: "#/components/parameters/sampleRequestIdParam"
       responses:
         "200":
-          description: >-
-            The sample request, including a `statusChanges` array giving its full
-            history oldest first. The first entry is always the PENDING entry for
-            the request's creation, so a client never has to reconstruct it from
-            `created` and `requester`. Each entry is
-            `{ id, status, created, createdBy, reason, transferredSample }`,
-            where `reason` is populated for a rejection and for a fulfilment made
-            by transferring the sample to its requester, and `transferredSample`
-            summarises the sample the request was fulfilled with, if one was
-            recorded, limited to what the current user may read. `requester`,
-            `originalOwner` and each `createdBy` are user objects with public
-            details only (no email, home folder or roles); a user deleted since
-            keeps their username, with a null id.
+          description: The sample request, with its full status history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SampleRequest"
         "404":
           description: >-
             No such request, the caller is not a party to it, or sample requests
-            are not enabled on this instance.
+            are not enabled on this instance (or in the caller's community).
   /subSamples:
     get:
       summary: Get all SubSamples visible to the current User
@@ -3119,16 +3125,12 @@ paths:
     post:
       summary: Parse the incoming CSV file for import UI
       description: >
-        
+        Reads a CSV file and reports its structure, so that a client can prepare the settings for `/import/importFiles`. The shape of the response depends on `recordType`; the three shapes are the schemas listed under the `200` response.
 
 
         ### Parsing containers/subsamples CSV file
 
-        When provided `recordType` parameter has value: `CONTAINERS` or `SUBSAMPLES`, the endpoint verifies basic structure of the data and returns the object containing:
-
-          * `columnNames`: array of column names in CSV file.
-          * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
-          * `rowsCount`: number of data rows found in CSV file
+        When provided `recordType` parameter has value: `CONTAINERS` or `SUBSAMPLES`, the endpoint verifies basic structure of the data and returns an `InventoryImportParseResult`: the column names, which columns are complete or blank, the number of data rows, and any field mappings it can suggest.
 
 
         ### Parsing samples CSV file
@@ -3136,19 +3138,12 @@ paths:
         When provided `recordType` parameter has value: `SAMPLES`, the endpoint verifies basic structure of the data and suggests the template definition that could be used for running an actual import with `/import/importFiles` endpoint.
 
 
-        Upon successful parsing the response object contains:
-          * `templateInfo`: a definition of a suggested template. The template definition can be modified by the client, or can be used immediately to populate `importSettings.sampleSettings.templateInfo` parameter required by `/import/importFiles` endpoint
-          * `fieldNameForColumnName`: map that allows finding suggested field name for given CSV colum name. It could be that column name used in CSV file is not a valid RSpace template field name, in which case the field suggested for `templateInfo` will have a name adjusted to match the rules.
-          * `radioOptionsForColumn`: it could be that particular column in CSV file should be converted to Radio/Choice field, but the parsing algorithm suggested another field type. In such case the client can adjust `templateInfo` field definition and populate radio definition using this map
-          * `quantityUnitForColumn`: lists the columns that could be converted to "Quantity" field, with the id of suggested quantity unit
-          * `columnNames` list of column names in CSV file. This are the names that should be provided in `fieldMappings` object used by `/import/importFiles`.
-          * `columnsWithoutBlankValue`: array of column names which CSV lines have no blank value
-          * `rowsCount`: number of data rows found in CSV file
+        The response is an `InventoryImportSampleParseResult`. Its `templateInfo` is the suggested template: it can be modified by the client, or used immediately to populate the `importSettings.sampleSettings.templateInfo` parameter required by `/import/importFiles`. The other properties help the client adjust that template: the field name suggested for each column (a column name used in the CSV file may not be a valid RSpace template field name, in which case the suggested field has a name adjusted to match the rules), the values that could populate a Radio/Choice field, and the quantity unit a column could be converted to.
 
 
         ### Parsing instruments CSV file
 
-        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response object contains `templateInfo` (an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`), `fieldNameForColumnName`, `radioOptionsForColumn`, `columnNames`, `columnsWithoutBlankValue`, and `rowsCount`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
+        When provided `recordType` parameter has value: `INSTRUMENTS`, the endpoint behaves like for `SAMPLES`: it verifies basic structure of the data and suggests an Instrument Template definition. The response is an `InventoryImportInstrumentParseResult`, whose `templateInfo` is an `InstrumentTemplatePost` ready to feed into `importSettings.instrumentSettings.templateInfo`. Sample-specific suggestions like `quantityUnitForColumn` are omitted for instruments.
       tags:
         - Import
       parameters:
@@ -3163,10 +3158,34 @@ paths:
               - INSTRUMENTS
             default: SAMPLES
       requestBody:
-        $ref: "#/components/requestBodies/postSampletemplates_sampletemplateid_icon"
+        description: The CSV file to parse.
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: >
+                    The CSV file. Its first line, after any leading `#` comment lines, holds the
+                    column names.
+              required:
+                - file
       responses:
         "200":
-          description: Parse results.
+          description: >
+            Parse results. The shape depends on `recordType`: `InventoryImportParseResult` for
+            `CONTAINERS` and `SUBSAMPLES`, `InventoryImportSampleParseResult` for `SAMPLES`,
+            `InventoryImportInstrumentParseResult` for `INSTRUMENTS`.
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  - $ref: "#/components/schemas/InventoryImportParseResult"
+                  - $ref: "#/components/schemas/InventoryImportSampleParseResult"
+                  - $ref: "#/components/schemas/InventoryImportInstrumentParseResult"
   /import/importFiles:
     post:
       summary: Import Containers, Samples, SubSamples and Instruments from CSV files
@@ -3253,9 +3272,7 @@ paths:
 
         ## Import results
 
-        Import result object contains:
-          * `containerResults`, `sampleResults`, `subSampleResults` and `instrumentResults` objects with details of container/sample/subsample/instrument imports
-          * `status` property, which for successful import will be set to "COMPLETED".
+        The response is an `InventoryImportResult` (see the response schema below): a `status` property, which for successful import will be set to "COMPLETED", and `containerResults`, `sampleResults`, `subSampleResults` and `instrumentResults` objects with details of container/sample/subsample/instrument imports. On any status other than "COMPLETED", nothing was kept and the response holds only the results gathered before the import stopped.
 
         If any error occurs before/during import process, then all changes are reverted, i.e. nothing is created unless the import completes with status "COMPLETED".
 
@@ -3310,6 +3327,10 @@ paths:
       responses:
         "200":
           description: Import results.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryImportResult"
   /fieldmark/notebooks:
     get:
       summary: List Fieldmark notebooks that could be imported by the current user
@@ -4180,7 +4201,9 @@ paths:
             Identifier settings grouped by type. Each type holds an array of providers; PIDINST
             carries both PIDINST_DATACITE and PIDINST_B2INST, of which at most one is enabled at a
             time. For PIDINST_B2INST the generic username/password fields carry the community id and
-            the API token respectively, and repositoryPrefix is unused.
+            the API token respectively, and repositoryPrefix is unused. Stored passwords and tokens
+            are never returned: `password` is `null` when a secret is stored and an empty string
+            when there is none.
           content:
             application/json:
               schema:
@@ -4190,7 +4213,7 @@ paths:
                       - provider: IGSN_DATACITE
                         serverUrl: https://api.datacite.org
                         username: AJFO.JIJEMD
-                        password: <password>
+                        password: null
                         repositoryPrefix: "10.82316"
                         enabled: "true"
                     PIDINST:
@@ -4203,7 +4226,7 @@ paths:
                       - provider: PIDINST_B2INST
                         serverUrl: https://b2inst-test.gwdg.de
                         username: <community id>
-                        password: <api token>
+                        password: null
                         enabled: "false"
     put:
       summary: Update settings
@@ -4227,7 +4250,8 @@ paths:
           `PIDINST_DATACITE` or `PIDINST_B2INST` updates the PIDINST configuration. Enabling one
           PIDINST provider automatically disables the other. For `PIDINST_B2INST` the `username`
           field carries the community id and the `password` field carries the API token;
-          `repositoryPrefix` is unused.
+          `repositoryPrefix` is unused. Send `password` as `null` (or omit it) to keep the stored
+          secret, an empty string to clear it, or a new value to replace it.
         required: true
       responses:
         "200":
@@ -4467,8 +4491,9 @@ components:
       name: query
       in: query
       description: >-
-        Limits results to samples whose name contains this text, ignoring case.
-        Matches the name only, unlike the full-text `query` of `/search`.
+        Only with `requestable=true`: limits results to samples whose name
+        contains this text, ignoring case. Ignored otherwise; use `/search` for
+        other name or full-text searches.
       schema:
         type: string
     samplesRequestableParam:
@@ -4478,9 +4503,10 @@ components:
         Limits results to samples with this `requestable` value. When true, the
         search covers every requestable sample on the instance, regardless of
         the current user's permissions, ownership or group membership; samples
-        the user cannot otherwise read are returned in their public view. While
-        sample requests are not enabled for the current user, `true` returns no
-        samples.
+        the user cannot otherwise read are returned in their public view.
+        Samples in the trash are never returned, and `deletedItems` is ignored.
+        While sample requests are not enabled for the current user, `true`
+        returns no samples.
       schema:
         type: boolean
     sampleRequestSampleIdParam:
@@ -4600,9 +4626,8 @@ components:
             $ref: "#/components/schemas/Error"
     ConcurrentChange:
       description: >
-        The same data was changed by someone else at the same time (MariaDB "record has changed
-        since last read", or a deadlock between two concurrent changes). Nothing was saved;
-        reload and try again.
+        The same data was changed by someone else at the same time. Nothing was
+        saved; reload and try again.
       content:
         application/json:
           schema:
@@ -4862,6 +4887,8 @@ components:
             - SUBSAMPLE
             - CONTAINER
             - SAMPLE_TEMPLATE
+            - INSTRUMENT
+            - INSTRUMENT_TEMPLATE
         attachments:
           $ref: "#/components/schemas/FileList"
         barcodes:
@@ -4921,12 +4948,14 @@ components:
               description: >-
                 Whether other users may request material from this sample. Always
                 false on a new sample: it can only be set by updating an existing
-                sample, by whoever may transfer it (its owner, or a PI or Lab Admin
-                of the owner's group); a change sent by anyone else is refused
-                with 422. Turning it on is also refused with 422 while sample
-                requests are not enabled for the caller; turning it off is always
-                allowed. Requests always go to the sample's owner. Visible in every
-                view of the sample, including the public view; null for templates.
+                sample, by whoever may both edit and transfer it (its owner, or a
+                PI or Lab Admin of the owner's group who may also edit it, so not a
+                PI on a member's sample shared with no one); a change sent by
+                anyone else is refused with 422. Turning it on is also refused
+                with 422 while sample requests are not enabled for the caller;
+                turning it off is always allowed. Requests always go to the
+                sample's owner. Visible in every view of the sample, including the
+                public view; null for templates.
               example: false
             revisionId:
               type: number
@@ -4994,6 +5023,106 @@ components:
         ontologyVersion:
           type: string
           description: The version of the ontology this tag data is contained in.
+    SampleRequestInfo:
+      description: >-
+        Summary of a request for material from a Sample. A user deleted since
+        keeps their username in `requester`, `originalOwner` and each
+        `createdBy`, with a null id.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier of the request.
+          example: 35
+        status:
+          $ref: "#/components/schemas/SampleRequestStatus"
+        note:
+          type: string
+          description: What the requester needs and why.
+          maxLength: 2000
+          example: Need 2ml for the binding assay
+        created:
+          type: string
+          format: date-time
+          description: When the request was raised.
+        requester:
+          $ref: "#/components/schemas/User"
+        originalOwner:
+          allOf:
+            - $ref: "#/components/schemas/User"
+          description: >-
+            Who owned the sample when the request was raised. Fixed at
+            creation, so it stays the same after the sample is transferred.
+        sample:
+          allOf:
+            - $ref: "#/components/schemas/SampleInfo"
+          description: >-
+            The requested sample, limited to what the current user may read.
+        _links:
+          $ref: "#/components/schemas/LinkItemList"
+    SampleRequest:
+      description: A request for material from a Sample, with its status history.
+      allOf:
+        - $ref: "#/components/schemas/SampleRequestInfo"
+        - properties:
+            statusChanges:
+              description: >-
+                The full history, oldest first. The first entry is always the
+                PENDING entry written when the request was raised.
+              type: array
+              items:
+                $ref: "#/components/schemas/SampleRequestStatusChange"
+    SampleRequestStatusChange:
+      description: One entry in a sample request's status history.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier of the entry.
+        status:
+          $ref: "#/components/schemas/SampleRequestStatus"
+        created:
+          type: string
+          format: date-time
+          description: When the request entered this status.
+        createdBy:
+          allOf:
+            - $ref: "#/components/schemas/User"
+          description: Who made the change.
+        reason:
+          type: string
+          nullable: true
+          description: >-
+            Set for a rejection, and for a fulfilment made by transferring the
+            sample to its requester; null otherwise.
+        transferredSample:
+          allOf:
+            - $ref: "#/components/schemas/SampleInfo"
+          nullable: true
+          description: >-
+            The sample the request was fulfilled with, if one was recorded,
+            limited to what the current user may read.
+    SampleRequestStatus:
+      type: string
+      enum:
+        - PENDING
+        - APPROVED
+        - REJECTED
+        - CANCELLED
+        - FULFILLED
+    SampleRequestSearchResult:
+      description: A page of sample request summaries.
+      properties:
+        totalHits:
+          type: number
+        pageNumber:
+          type: number
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/SampleRequestInfo"
+        _links:
+          $ref: "#/components/schemas/LinkItemList"
     SubSampleInfo:
       description: Information about RSpace inventory SubSample
       allOf:
@@ -5540,6 +5669,8 @@ components:
             - attachment
             - reference
             - uri
+            - identifier
+            - link
         content:
           type: string
           description: >
@@ -6334,3 +6465,313 @@ components:
         httpCode: 422
         internalCode: 42201
         message: Query could not be processed.
+    InventoryImportParseResult:
+      description: >
+        The structure of the CSV file, which `POST /import/parseFile` returns for every
+        `recordType`. `CONTAINERS` and `SUBSAMPLES` get exactly this; `SAMPLES` and `INSTRUMENTS`
+        get one of the two schemas that extend it with a suggested template.
+      type: object
+      properties:
+        columnNames:
+          type: array
+          description: >
+            The column names from the first line of the CSV file after any leading `#` comment
+            lines, in file order. These are the keys to use in `fieldMappings` when calling
+            `/import/importFiles`.
+          items:
+            type: string
+        columnsWithoutBlankValue:
+          type: array
+          description: The columns that have a value in every data row.
+          items:
+            type: string
+        blankColumns:
+          type: array
+          description: >
+            The columns with no value in any data row (a cell of only spaces counts as empty).
+          items:
+            type: string
+        rowsCount:
+          type: integer
+          description: The number of data rows in the file, not counting the column-names line.
+        fieldNameForColumnName:
+          type: object
+          description: >
+            For `SAMPLES` and `INSTRUMENTS`, the template field name suggested for each column:
+            the column name trimmed, with a `_` prefix when it clashes with a reserved field name
+            such as `Name`. Empty for `CONTAINERS` and `SUBSAMPLES`.
+          additionalProperties:
+            type: string
+        fieldMappings:
+          type: object
+          description: >
+            Suggested entries for the `fieldMappings` of `/import/importFiles`, keyed by column
+            name. The only suggestion today is `identifier`, for a column whose every non-blank
+            value is an IGSN identifier; the map is empty when no column qualifies or when the
+            deployment has no IGSN integration.
+          additionalProperties:
+            type: string
+      example:
+        columnNames: ["Name", "Description", "Igsn"]
+        columnsWithoutBlankValue: ["Name", "Igsn"]
+        blankColumns: ["Description"]
+        rowsCount: 2
+        fieldNameForColumnName: {}
+        fieldMappings: { "Igsn": "identifier" }
+    InventoryImportSampleParseResult:
+      description: >
+        What `POST /import/parseFile` returns for `recordType=SAMPLES`: the file structure plus a
+        suggested Sample Template and the per-column hints for adjusting it.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportParseResult"
+        - properties:
+            templateInfo:
+              description: >
+                A suggested Sample Template, named after the file, with one field per column.
+                Edit it, or pass it as it is in `importSettings.sampleSettings.templateInfo` to
+                `/import/importFiles`.
+              allOf:
+                - $ref: "#/components/schemas/SampleTemplatePost"
+            radioOptionsForColumn:
+              type: object
+              description: >
+                For every column except those suggested as Text: the distinct non-blank values,
+                sorted, ready to become the options of a Radio or Choice field if the client
+                changes the suggested field type.
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+            quantityUnitForColumn:
+              type: object
+              description: >
+                The columns that could become a Quantity field, with the id of the suggested unit
+                (see `/units`): the dimensionless unit for a column suggested as Number, otherwise
+                the unit of the first value, when every value is a quantity in a comparable unit.
+              additionalProperties:
+                type: integer
+      example:
+        columnNames: ["Name", "Vendor", "Amount"]
+        columnsWithoutBlankValue: ["Name", "Vendor", "Amount"]
+        blankColumns: []
+        rowsCount: 2
+        fieldNameForColumnName: { "Name": "_Name", "Vendor": "Vendor", "Amount": "Amount" }
+        fieldMappings: {}
+        templateInfo:
+          name: enzymes
+          fields:
+            - name: _Name
+              type: string
+            - name: Vendor
+              type: string
+            - name: Amount
+              type: string
+        radioOptionsForColumn:
+          Name: ["EcoRI", "HindIII"]
+          Vendor: ["NEB", "Sigma"]
+          Amount: ["2 ml", "5 ml"]
+        quantityUnitForColumn: { "Amount": 3 }
+    InventoryImportInstrumentParseResult:
+      description: >
+        What `POST /import/parseFile` returns for `recordType=INSTRUMENTS`: the file structure
+        plus a suggested Instrument Template. There is no `quantityUnitForColumn`: instruments
+        have no quantity.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportParseResult"
+        - properties:
+            templateInfo:
+              description: >
+                A suggested Instrument Template, named after the file, with one field per column.
+                Edit it, or pass it as it is in `importSettings.instrumentSettings.templateInfo`
+                to `/import/importFiles`.
+              allOf:
+                - $ref: "#/components/schemas/InstrumentTemplatePost"
+            radioOptionsForColumn:
+              type: object
+              description: >
+                For every column except those suggested as Text: the distinct non-blank values,
+                sorted, ready to become the options of a Radio or Choice field if the client
+                changes the suggested field type.
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+      example:
+        columnNames: ["Name", "Manufacturer", "Decommissioned"]
+        columnsWithoutBlankValue: ["Name", "Manufacturer"]
+        blankColumns: ["Decommissioned"]
+        rowsCount: 2
+        fieldNameForColumnName:
+          { "Name": "_Name", "Manufacturer": "Manufacturer", "Decommissioned": "Decommissioned" }
+        fieldMappings: {}
+        templateInfo:
+          name: microscopes
+          fields:
+            - name: _Name
+              type: string
+            - name: Manufacturer
+              type: string
+            - name: Decommissioned
+              type: string
+        radioOptionsForColumn:
+          Name: ["Confocal 1", "Confocal 2"]
+          Manufacturer: ["Example Optics Ltd"]
+          Decommissioned: []
+    InventoryBulkOperationRecordResult:
+      description: >
+        The outcome for one row (or for the template): the record it created, or the error that
+        stopped it. In an import result, exactly one of the two is set.
+      type: object
+      properties:
+        record:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/InventoryRecordInfo"
+        error:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Error"
+    InventoryImportPartialResult:
+      description: The outcome of one CSV file within an import.
+      properties:
+        type:
+          type: string
+          description: The kind of item the file holds.
+          enum:
+            - SAMPLE
+            - SUBSAMPLE
+            - CONTAINER
+            - SAMPLE_TEMPLATE
+            - INSTRUMENT
+            - INSTRUMENT_TEMPLATE
+        status:
+          type: string
+          description: >
+            How far this file got. `COMPLETED` when the whole import succeeded,
+            `REVERTED_ON_ERROR` when an error stopped it. When the import failed its checks
+            (top-level `PREVALIDATION_ERROR`), each file keeps its own check result:
+            `PREVALIDATED` if it passed, `PREVALIDATION_ERROR` if it has the errors. Nothing was
+            kept unless the status is `COMPLETED`.
+          enum:
+            - NOT_STARTED
+            - PREVALIDATED
+            - PREVALIDATION_ERROR
+            - REVERTED_ON_ERROR
+            - COMPLETED
+        results:
+          type: array
+          description: >
+            One entry per row, in file order. When creating an item fails, its entry carries the
+            `error` and the import stops there: rows after it were never created, though subsample
+            rows can still be listed.
+          items:
+            $ref: "#/components/schemas/InventoryBulkOperationRecordResult"
+        successCount:
+          type: integer
+          description: >
+            How many rows were imported, when `status` is `COMPLETED`. On any other status
+            nothing was kept, whatever this count says.
+        successCountBeforeFirstError:
+          type: integer
+          description: >
+            How many rows succeeded before the first row that failed; the same as `successCount`
+            when no row failed.
+        errorCount:
+          type: integer
+          description: How many rows failed.
+    InventoryImportSampleImportResult:
+      description: >
+        The outcome of the samples CSV file, with the Sample Template the samples were created
+        from.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportPartialResult"
+        - properties:
+            templateResult:
+              description: >
+                The Sample Template that was used, or the error that stopped the import before
+                any sample was created.
+              allOf:
+                - $ref: "#/components/schemas/InventoryBulkOperationRecordResult"
+            templateCreated:
+              type: boolean
+              description: >
+                `true` when this import created the template from `templateInfo`, `false` when an
+                existing template was used or the template step failed. A created template is
+                rolled back if the import fails.
+    InventoryImportInstrumentImportResult:
+      description: >
+        The outcome of the instruments CSV file, with the Instrument Template the instruments
+        were created from.
+      allOf:
+        - $ref: "#/components/schemas/InventoryImportPartialResult"
+        - properties:
+            templateResult:
+              description: >
+                The Instrument Template that was used, or the error that stopped the import
+                before any instrument was created.
+              allOf:
+                - $ref: "#/components/schemas/InventoryBulkOperationRecordResult"
+            templateCreated:
+              type: boolean
+              description: >
+                `true` when this import created the template from `templateInfo`, `false` when an
+                existing template was used or the template step failed. A created template is
+                rolled back if the import fails.
+    InventoryImportResult:
+      description: >
+        What `POST /import/importFiles` returns. The top-level `status` decides the outcome: on
+        `COMPLETED` everything was created; on any other status nothing was kept, and the
+        response holds only the results gathered before the import stopped.
+      type: object
+      properties:
+        status:
+          type: string
+          description: >
+            The outcome of the whole import: `COMPLETED` when everything was created,
+            `PREVALIDATION_ERROR` when a file failed the checks made before anything is created,
+            `REVERTED_ON_ERROR` when an error stopped the import and everything created so far
+            was rolled back.
+          enum:
+            - NOT_STARTED
+            - PREVALIDATED
+            - PREVALIDATION_ERROR
+            - REVERTED_ON_ERROR
+            - COMPLETED
+        defaultContainer:
+          nullable: true
+          description: >
+            The "imported items" container created on the user's Bench for the items whose row
+            names no parent container. Null when every imported item had a parent or the import
+            failed its checks; after `REVERTED_ON_ERROR` it can name a container that was rolled
+            back. Only the basic record fields are listed here: the object is a full Container, as
+            returned by `GET /containers/{containerId}`.
+          allOf:
+            - $ref: "#/components/schemas/InventoryRecordInfo"
+        containerResults:
+          nullable: true
+          description: >
+            The outcome of the containers CSV file. Null unless both `containerSettings` and a
+            containers file were sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportPartialResult"
+        sampleResults:
+          nullable: true
+          description: >
+            The outcome of the samples import, from the Sample Template step on. Null unless
+            `sampleSettings` was sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportSampleImportResult"
+        subSampleResults:
+          nullable: true
+          description: >
+            The outcome of the subsamples CSV file. Null unless both `subSampleSettings` and a
+            subsamples file were sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportPartialResult"
+        instrumentResults:
+          nullable: true
+          description: >
+            The outcome of the instruments import, from the Instrument Template step on. Null
+            unless `instrumentSettings` was sent; can also be null after an error.
+          allOf:
+            - $ref: "#/components/schemas/InventoryImportInstrumentImportResult"

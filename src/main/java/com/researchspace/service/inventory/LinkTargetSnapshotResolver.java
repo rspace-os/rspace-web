@@ -12,9 +12,11 @@ import com.researchspace.model.core.GlobalIdPrefix;
 public interface LinkTargetSnapshotResolver {
 
   /**
-   * Resolves the Envers revision (REV) that a user-facing target version maps to. Used at pin time
-   * to capture the exact audit row alongside the display version. Returns {@code null} when the
-   * version is null or the target family has no user-facing versioning (e.g. notebooks).
+   * Resolves the Envers revision (REV) that a user-facing target version maps to. Used to check
+   * that a pinned version exists (the link write path and the CSV import refuse a pin this answers
+   * null for) and to capture the exact audit row alongside the display version. Returns {@code
+   * null} when the version is null, has no audit row, or the target family has no user-facing
+   * versioning (e.g. notebooks); never throws.
    *
    * @param prefix the target's GlobalID prefix (SD, NB, GL, SA, SS, IC, IN)
    * @param dbId the target's database id

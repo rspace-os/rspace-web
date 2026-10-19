@@ -59,8 +59,15 @@
                 <constraints nullable="false" foreignKeyName="fk_samplerequest_sample"
                              references="Sample(id)"/>
             </column>
-            <!-- usernames, not FKs, so a request survives either user's deletion -->
+            <!-- user ids without FKs, so a request survives either user's deletion and never
+                 blocks it; matched instead of usernames, which a later account can reuse -->
+            <column name="requesterId" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
             <column name="requesterUsername" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="originalOwnerId" type="BIGINT">
                 <constraints nullable="false"/>
             </column>
             <column name="originalOwner" type="VARCHAR(50)">
@@ -77,11 +84,11 @@
             </column>
         </createTable>
         <!-- the REQUESTER and OWNER listings filter on these -->
-        <createIndex tableName="SampleRequest" indexName="idx_samplerequest_requesterUsername">
-            <column name="requesterUsername"/>
+        <createIndex tableName="SampleRequest" indexName="idx_samplerequest_requesterId">
+            <column name="requesterId"/>
         </createIndex>
-        <createIndex tableName="SampleRequest" indexName="idx_samplerequest_originalOwner">
-            <column name="originalOwner"/>
+        <createIndex tableName="SampleRequest" indexName="idx_samplerequest_originalOwnerId">
+            <column name="originalOwnerId"/>
         </createIndex>
     </changeSet>
 
@@ -95,6 +102,10 @@
             <column name="sampleRequest_id" type="BIGINT">
                 <constraints nullable="false" foreignKeyName="fk_srsc_samplerequest"
                              references="SampleRequest(id)"/>
+            </column>
+            <!-- like the request's users: an id without FK, and the username for display -->
+            <column name="createdById" type="BIGINT">
+                <constraints nullable="false"/>
             </column>
             <column name="createdByUsername" type="VARCHAR(50)">
                 <constraints nullable="false"/>

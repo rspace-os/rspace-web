@@ -79,6 +79,7 @@ public class DigitalCommonsDataControllerTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());
 
+    logoutAndLoginAs(testUser);
     principal = new MockPrincipal(testUser.getUsername());
 
     userConnectionId =

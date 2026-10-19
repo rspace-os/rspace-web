@@ -18,11 +18,7 @@ import java.util.Date;
 import lombok.EqualsAndHashCode;
 import lombok.Setter;
 
-/**
- * One entry in a sample request's status history, including the PENDING entry written when the
- * request is raised. A table rather than the audit log, which is log-based, so cannot feed a
- * details view. Modelled on GroupMembershipEvent.
- */
+/** One entry in a sample request's status history. */
 @Entity
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -35,6 +31,7 @@ public class SampleRequestStatusChange implements Serializable {
   private Long id;
   private SampleRequest sampleRequest;
   private String createdByUsername;
+  private Long createdById;
   private SampleRequestStatus status;
   private String reason;
   private Sample transferredSample;
@@ -51,6 +48,7 @@ public class SampleRequestStatusChange implements Serializable {
       Sample transferredSample) {
     this.sampleRequest = sampleRequest;
     this.createdByUsername = createdBy.getUsername();
+    this.createdById = createdBy.getId();
     this.status = status;
     this.reason = reason;
     this.transferredSample = transferredSample;
@@ -76,12 +74,18 @@ public class SampleRequestStatusChange implements Serializable {
   }
 
   /**
-   * The requester for the PENDING entry and for a cancellation, otherwise the sample owner. Stored
-   * as a username so the history survives that user's deletion and cannot block it.
+   * The requester for the PENDING entry and for a cancellation, otherwise the sample owner. Kept
+   * for display, including after that user's deletion; {@link #getCreatedById()} identifies them.
    */
   @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
   public String getCreatedByUsername() {
     return createdByUsername;
+  }
+
+  /** The actor's user id, with no foreign key; a later account with their username is not them. */
+  @Column(nullable = false)
+  public Long getCreatedById() {
+    return createdById;
   }
 
   @Enumerated(EnumType.STRING)
@@ -90,15 +94,13 @@ public class SampleRequestStatusChange implements Serializable {
     return status;
   }
 
-  /** Required for a rejection, absent otherwise. */
+  /** Set for a rejection, and for a fulfilment made by a transfer. */
   @Column(length = REASON_COLUMN_LENGTH)
   public String getReason() {
     return reason;
   }
 
-  /**
-   * The sample this transition fulfilled the request with, if any: transferred or newly created.
-   */
+  /** The sample this transition fulfilled the request with, if any. */
   @ManyToOne
   @JoinColumn
   public Sample getTransferredSample() {

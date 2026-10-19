@@ -443,11 +443,12 @@ export default class CoreFetcher {
       this.resetSearch();
       const notFound = Parsers.objectPath(["response", "status"], error).flatMap(Parsers.isNumber).orElse(null) === 404;
       if (params.permalink && notFound) {
-        // let the right panel render a specific not-found state; transient
-        // failures (500s, network errors) keep the generic error alert only
+        // the right panel (PermalinkNotFound) already explains the missing record or version;
+        // transient failures (500s, network errors) keep the generic error alert below
         runInAction(() => {
           this.permalinkNotFound = params.permalink ?? null;
         });
+        return;
       }
       getRootStore().uiStore.addAlert(
         mkAlert({

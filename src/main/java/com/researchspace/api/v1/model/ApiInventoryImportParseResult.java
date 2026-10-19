@@ -26,6 +26,9 @@ public class ApiInventoryImportParseResult {
   @JsonProperty("columnsWithoutBlankValue")
   private List<String> columnsWithoutBlankValue = new ArrayList<>();
 
+  @JsonProperty("blankColumns")
+  private List<String> blankColumns = new ArrayList<>();
+
   @JsonProperty("fieldMappings")
   private Map<String, String> fieldMappings = new HashMap<>();
 
@@ -56,12 +59,16 @@ public class ApiInventoryImportParseResult {
     columnNameToValuesMap = fieldNameToValuesMap;
   }
 
-  public void populateResultWithNonBlankColumns() {
+  public void populateBlankValueColumns() {
     getColumnsWithoutBlankValue().clear();
+    getBlankColumns().clear();
     for (String columnName : getColumnNames()) {
       List<String> fieldValues = getColumnNameToValuesMap().get(columnName);
       if (fieldValues.stream().noneMatch(String::isBlank)) {
         getColumnsWithoutBlankValue().add(columnName);
+      }
+      if (fieldValues.stream().allMatch(String::isBlank)) {
+        getBlankColumns().add(columnName);
       }
     }
   }

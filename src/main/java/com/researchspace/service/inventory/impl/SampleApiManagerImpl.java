@@ -87,8 +87,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
   private @Autowired MessageSourceUtils messages;
 
-  // Lazy: SampleRequestApiManagerImpl depends back on SampleApiManager, so eager injection here
-  // would form a cycle at context startup.
+  // Lazy: SampleRequestApiManagerImpl injects this manager back
   @Autowired @Lazy private SampleRequestApiManager sampleRequestApiManager;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
 
@@ -754,17 +753,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   /**
-   * Whoever may edit the sample may change whether it is requestable - the owner, a PI or Lab Admin
-   * of the owner's group (who gets edit access via the default OWNER_GROUPS sharing mode, the same
-   * way any other group member would), or a user explicitly shared the sample via a whitelisted
-   * group. Deliberately narrower than canUserTransferInventoryRecord's sibling check (used for
-   * actually transferring ownership): that one is reused by setPermissionsInApiInventoryRecord to
-   * also grant a sysadmin CHANGE_OWNER for genuine admin-override transfers, which must not let a
-   * sysadmin toggle requestable merely by virtue of that admin role - only someone who could edit
-   * the sample on their own account should be able to.
-   *
-   * <p>Resending the current value is not a change, and only turning it on needs sample requests to
-   * be enabled, so existing requestable samples stay editable.
+   * Whoever may edit and transfer the sample may change whether it is requestable; the caller has
+   * already passed the edit check. Resending the current value is not a change, and only turning it
+   * on needs sample requests to be enabled, so existing requestable samples stay editable.
    */
   private void assertRequestableChangeAllowed(
       ApiSampleWithoutSubSamples update, ApiSample current, SampleEntity dbSample, User user) {
@@ -772,7 +763,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     if (wanted == null || wanted.equals(current.getRequestable())) {
       return;
     }
-    if (!invPermissions.canUserEditInventoryRecord(dbSample, user)) {
+    if (!invPermissions.canUserTransferInventoryRecord(dbSample, user)) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.requestableNotPermitted");
     }
     if (wanted && !sampleRequestsAvailable(user)) {

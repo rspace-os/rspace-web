@@ -447,12 +447,14 @@ export default interface Resources {
           "removeSuccess": "Successfully removed repository."
         },
         "description": "Store and manage your code through a software development and Git version control platform.",
+        "errors": {
+          "authWindowFailed": "Failed to open GitHub authentication window"
+        },
         "helpLink": "GitHub integration docs",
         "name": "GitHub",
         "orElse": "Error getting configured repositories",
         "repositories": {
           "additionalHeading": "Link Additional Repositories",
-          "invalidState": "Repository is in an invalid state. Please remove and re-add.",
           "linkedHeading": "Linked Repositories",
           "loading": "Loading available repositories",
           "nameHeader": "Repository Name",
@@ -652,6 +654,10 @@ export default interface Resources {
           "labelSuccess": "Successfully changed label."
         },
         "description": "Message and collaborate with your team with a cloud-based communication tool.",
+        "errors": {
+          "authWindowFailed": "Failed to open Slack authentication window",
+          "resultsUnavailable": "Save completed but cannot show results."
+        },
         "fields": {
           "channelName": "Channel name",
           "rspaceLabel": "RSpace Label",
@@ -1080,6 +1086,14 @@ export default interface Resources {
       },
       "referenceField": {
         "notYetSupported": "Not yet supported."
+      },
+      "secretField": {
+        "clear": "Clear {label}",
+        "defaultName": "secret",
+        "hide": "Hide {label}",
+        "show": "Show {label}",
+        "unchanged": "(unchanged)",
+        "undoClear": "Undo clear {label}"
       },
       "selectedFileInfo": {
         "invalidFile": "Invalid file.",
@@ -3250,6 +3264,7 @@ export default interface Resources {
         },
         "infoDialog": {
           "label": "Info for {globalId}",
+          "versionNotFound": "Version {versionPin} of {globalId} cannot be found. It may never have existed, or its history may have been removed.",
           "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
         },
         "linkField": {
@@ -3260,7 +3275,9 @@ export default interface Resources {
           "openLabel": "Open {globalId}",
           "pinVersionLabel": "Pin version for {globalId}",
           "showInfoLabel": "Show info for {globalId}",
-          "targetDeleted": "Target deleted"
+          "targetDeleted": "Target deleted",
+          "versionNotFound": "Version not found",
+          "versionNotFoundDetail": "Version {version} of this item cannot be found: it may never have existed, or its history may have been removed"
         },
         "relatedInventoryItems": {
           "attachment": "Attachment",
@@ -5633,8 +5650,10 @@ export default interface Resources {
       },
       "slack": {
         "errors": {
+          "missingResponseField": "The Slack response is missing required field {0}",
           "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
           "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
+          "noWebhook": "Please add this Slack channel again on RSpace (no webhook URL found).",
           "tooManyConnectedUsers": "There is more than 1 RSpace user associated with this Slack account! [{0}, {1}...]",
           "verificationCodeMismatch": "Verification token does not match!"
         },
@@ -7187,6 +7206,7 @@ export default interface Resources {
           "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
           "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
           "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+          "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
@@ -7359,7 +7379,7 @@ export default interface Resources {
         },
         "sampleRequest": {
           "illegalTransition": "A sample request cannot move from {0} to {1}.",
-          "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+          "notEnabled": "Sample requests are not enabled on this RSpace instance (or in your community).",
           "notRequestable": "Sample {0} is not available to request.",
           "ownSample": "You cannot request material from a sample that you own.",
           "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",

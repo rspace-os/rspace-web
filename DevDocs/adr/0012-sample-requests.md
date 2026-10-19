@@ -43,10 +43,13 @@ sample. An explicit `ownedBy` still narrows that search, and trashed samples nev
 it, whatever `deletedItems` says, since they cannot be requested. Its name filter (`query`)
 applies to requestable searches only; other sample searches go through Lucene as before.
 
-The flag may be changed by whoever may transfer the sample: its owner, or a PI or Lab Admin
-of the owner's group (`InventoryPermissionUtils.canUserTransferInventoryRecord`). Anyone
-else, including a group member who may edit the sample, is refused with 422. Requests still
-go to the owner, so a PI can put a member's sample up for requests: a lesser power than
+The flag may be changed by whoever may both edit and transfer the sample: its owner, or a
+PI or Lab Admin of the owner's group
+(`InventoryPermissionUtils.canUserTransferInventoryRecord`) who may also edit it. A group
+member who may only edit the sample is refused with 422. A PI cannot change it on a
+member's sample shared with no one (`OWNER_ONLY`): they may transfer that sample but not
+edit it, so the owner's choice to keep it private is not overridden. Requests still go to
+the owner, so a PI can put a member's shared sample up for requests: a lesser power than
 giving the whole sample away, which they can already do. The flag cannot be set on create,
 only by updating an existing sample, and it survives a transfer: the new owner, including a
 requester who has just received it, keeps it requestable until they switch it off.
@@ -84,32 +87,34 @@ Acting on a request is a different question: approve, reject and fulfil belong t
 sample's current owner. A request is visible to its requester, the current owner and the
 original owner; anyone else gets 404, so its existence is not disclosed.
 
-### D6 Users are stored by username
+### D6 Users are stored by id and username, without foreign keys
 
-`requesterUsername`, `originalOwner` and each history entry's `createdByUsername` are
-usernames, not foreign keys, so a request and its history survive the deletion of either
-party. The API returns them as user objects with public details only (no email, home
-folder or roles), since the parties are often in different groups; a deleted user keeps
-their username with a null id. Deleting a user deletes the requests against their own samples, with their
-history. Where usernames are reused (SSO deployments, see `User.getSid`), a
-new account with a deleted requester's username sees that user's old requests as its own,
-and could cancel a pending one; matching on that security identifier would close this, and
-is left until reuse is seen in practice.
+The requester, the original owner and each history entry's actor are stored as a user id
+(`requesterId`, `originalOwnerId`, `createdById`) and a username, with no foreign key to
+`User`, so a request and its history survive the deletion of either party and never block
+it. Access, listings, the requester's actions and the automatic fulfilment on transfer all
+match on the id. A username can pass to a different person once its holder is deleted (a
+new local signup, or an SSO identity provider reassigning it), but an id is never reused,
+so the new account does not inherit the deleted user's requests. The username stays for
+display: the API returns each party as a user object, and a deleted user keeps their
+username with a null id. Deleting a user deletes the requests against their own samples,
+with their history.
 
 ### D7 A fixed transition table, enforced in one place
 
-| To | From | Who | Reason |
+| From | To | Who | Reason |
 | --- | --- | --- | --- |
-| APPROVED | PENDING | current owner | not accepted |
-| REJECTED | PENDING, APPROVED | current owner | required |
-| CANCELLED | PENDING | requester | not accepted |
-| FULFILLED | PENDING, APPROVED | current owner | not accepted |
+| PENDING | APPROVED | current owner | not accepted |
+| PENDING, APPROVED | REJECTED | current owner | required |
+| PENDING | CANCELLED | requester | not accepted |
+| PENDING, APPROVED | FULFILLED | current owner | not accepted |
 
 REJECTED, CANCELLED and FULFILLED are terminal. PENDING is only written when the request
-is raised. The owner can withdraw an approval by rejecting it, which is also what a transfer
-to someone else does to it (D9), but the requester cannot cancel an approved request: the owner may
-already be preparing the material. CANCELLED is kept separate from REJECTED because
-"withdrawn by the requester" and "refused by the owner" are different facts in the record.
+is raised. The owner can withdraw an approval by rejecting it, which is also what a
+transfer to someone else does to it (D9), but the requester cannot cancel an approved
+request: the owner may already be preparing the material. CANCELLED is kept separate
+from REJECTED because "withdrawn by the requester" and "refused by the owner" are
+different facts in the record.
 
 All transitions go through `updateStatus`, which checks the actor before legality, so a
 caller who may not act at all learns nothing about the request's state. The transfer's
@@ -129,10 +134,10 @@ that change in many ways and may be restored, not a linear state history.
 Changing a sample's owner closes every PENDING or APPROVED request against it, through the
 table's transitions (D7), in the same transaction as the transfer:
 
-- a request raised by the new owner is FULFILLED, recording the sample itself as the
+- every request raised by the new owner is FULFILLED, recording the sample itself as the
   transferred sample and a reason saying it was fulfilled by the transfer. They now hold
   what they asked for, so rejecting it would put the opposite of what happened in the
-  record. All of their open requests against the sample are fulfilled.
+  record.
 - every other request is REJECTED, with a reason naming the new owner. The new owner did
   not agree to anything the previous owner was asked, so carrying the requests across
   would be wrong.
@@ -163,20 +168,21 @@ Where 1020 still occurs, for example a transfer racing a fulfilment, the API ret
 (1213) are mapped the same way: a fulfilment naming the request's own sample can deadlock
 with a transfer of it, because saving the history row checks its foreign key to the sample.
 MariaDB rolls the loser back, so nothing is saved and the client can retry. Lock wait
-timeouts stay 500 for now. The mapping is in
-`ApiControllerAdvice`, so it applies to every API endpoint, not only sample requests: for
-example, one user creating samples in parallel now gets 409 instead of 500.
+timeouts stay 500 for now. The mapping is in `ApiControllerAdvice`, so it applies to every
+API endpoint, not only sample requests: for example, one user creating samples in parallel
+now gets 409 instead of 500.
 
 ### D11 The fulfilled-with sample, by global id, on FULFILLED only
 
 `transferredSampleGlobalId` on the status PUT optionally records which sample the request
-was fulfilled with: the requested sample itself, or a new one made from it. It is a global
-id, matching `sampleGlobalId` on create. It is only accepted with FULFILLED (422 otherwise),
+was fulfilled with: usually the requested sample itself or a new one made from it, but any
+sample the fulfiller can fully read is accepted. It is a global id, matching
+`sampleGlobalId` on create. It is only accepted with FULFILLED (422 otherwise),
 must name a sample (422), and must be fully readable by the fulfiller and not in the trash
-(404), so a request's history cannot be made to carry a stranger's sample. Limited read, as
-granted by a shared container or a List of Materials, is not enough. It is stored as a foreign key, not a global id
-string, and nulled when that sample's owner is deleted. Responses show it limited to what
-the viewer may read.
+(404), so a request's history cannot be made to carry a stranger's sample. Limited read,
+as granted by a shared container or a List of Materials, is not enough. It is stored as a
+foreign key, not a global id string, and nulled when that sample's owner is deleted.
+Responses show it limited to what the viewer may read.
 
 ### D12 The request has no global id of its own
 
@@ -196,7 +202,8 @@ column already shows the requester.
 ## Smaller decisions worth keeping
 
 - Listings are newest first by default. `orderBy` accepts `creationDate asc|desc` only;
-  requests have no name, type or modification date to sort by.
+  requests have no name, type or modification date to sort by. A value that is invalid
+  for every inventory listing also fails the inherited pattern, so its 400 lists both.
 - Requests against a trashed sample drop out of listings but stay readable and actionable
   by id, since the sample can be restored.
 - Validation errors: malformed body 400, wrong global-id type or illegal transition 422,
@@ -209,6 +216,6 @@ column already shows the requester.
 - An approver column fixed at creation as the actor for approve/reject: it would let a
   previous owner act on a sample they no longer hold (D5).
 - Moving open requests to the new owner on transfer (D9).
-- Storing users and the transferred sample as global-id strings: the codebase stores ids
-  and clears them on deletion (D6, D11).
+- Storing the transferred sample as a global-id string: the codebase stores ids and clears
+  them on deletion (D11).
 - Envers or the audit log as the status history (D8).

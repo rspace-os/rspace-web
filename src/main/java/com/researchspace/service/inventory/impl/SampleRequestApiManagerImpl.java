@@ -57,44 +57,49 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private enum Actor {
-    OWNER,
+    CURRENT_OWNER,
     REQUESTER
   }
 
   private record Transition(
-      SampleRequestStatus to, SampleRequestStatus from, Actor actor, boolean reasonRequired) {}
+      SampleRequestStatus from, SampleRequestStatus to, Actor actor, boolean reasonRequired) {}
 
-  /**
-   * Every transition a user can make. PENDING is absent: it is written only when a request is
-   * raised. FULFILLED has two legal origins: an owner can fulfil directly from PENDING (skipping a
-   * separate approval step), or after already approving the request. REJECTED likewise: an owner
-   * can withdraw an approval. A sample transfer closes PENDING and APPROVED requests through the
-   * same entries, see closeActiveRequestsForTransferredSample.
-   */
+  /** Every transition a user can make; PENDING is only written when a request is raised. */
   private static final List<Transition> TRANSITIONS =
       List.of(
           new Transition(
-              SampleRequestStatus.APPROVED, SampleRequestStatus.PENDING, Actor.OWNER, false),
+              SampleRequestStatus.PENDING,
+              SampleRequestStatus.APPROVED,
+              Actor.CURRENT_OWNER,
+              false),
           new Transition(
-              SampleRequestStatus.REJECTED, SampleRequestStatus.PENDING, Actor.OWNER, true),
+              SampleRequestStatus.PENDING, SampleRequestStatus.REJECTED, Actor.CURRENT_OWNER, true),
           new Transition(
-              SampleRequestStatus.REJECTED, SampleRequestStatus.APPROVED, Actor.OWNER, true),
+              SampleRequestStatus.PENDING, SampleRequestStatus.CANCELLED, Actor.REQUESTER, false),
           new Transition(
-              SampleRequestStatus.CANCELLED, SampleRequestStatus.PENDING, Actor.REQUESTER, false),
+              SampleRequestStatus.PENDING,
+              SampleRequestStatus.FULFILLED,
+              Actor.CURRENT_OWNER,
+              false),
           new Transition(
-              SampleRequestStatus.FULFILLED, SampleRequestStatus.PENDING, Actor.OWNER, false),
+              SampleRequestStatus.APPROVED,
+              SampleRequestStatus.REJECTED,
+              Actor.CURRENT_OWNER,
+              true),
           new Transition(
-              SampleRequestStatus.FULFILLED, SampleRequestStatus.APPROVED, Actor.OWNER, false));
+              SampleRequestStatus.APPROVED,
+              SampleRequestStatus.FULFILLED,
+              Actor.CURRENT_OWNER,
+              false));
 
   @Override
   public ApiSampleRequest createRequest(ApiSampleRequestPost post, User user) {
     GlobalIdentifier oid = sampleOid(post.getSampleGlobalId());
-    // share-locked as the transaction's first read (ADR D10), so a transfer running at the same
-    // time waits for the new request and then closes it. No read permission is needed: requestable
-    // is the gate (ADR D3).
+    // share-locked as the first read, so a concurrent transfer waits for the new request and then
+    // closes it; no read permission is needed, requestable is the gate
     Sample locked = sampleDao.getWithSharedLock(oid.getDbId());
     assertSampleRequestsEnabled(user);
-    Sample sample = untrashed(locked, oid);
+    Sample sample = sampleNotInTrashOrThrow(locked, oid);
     assertNotOwnSample(sample, user);
     assertRequestable(sample);
     SampleRequest request = new SampleRequest(sample, user, post.getNote());
@@ -117,10 +122,10 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
         sampleRequestDao.getRequestsForUser(pgCrit, role, statuses, sampleId, user);
 
     // the same few users appear on most rows, so each is looked up once per page
-    Map<String, ApiUser> usersByName = new HashMap<>();
+    Map<Long, ApiUser> usersById = new HashMap<>();
     List<ApiSampleRequestInfo> requests =
         dbRequests.getResults().stream()
-            .map(request -> toInfo(request, user, usersByName))
+            .map(request -> toInfo(request, user, usersById))
             .collect(Collectors.toList());
 
     ApiSampleRequestSearchResult apiSearchResult = new ApiSampleRequestSearchResult();
@@ -140,9 +145,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
-    // locked, so two concurrent transitions serialise and the second sees the committed status.
-    // It must be the transaction's first read: with innodb_snapshot_isolation (on by default from
-    // MariaDB 11.6), locking a row changed since an earlier read fails instead of waiting for it.
+    // locked as the transaction's first read, so concurrent transitions serialise
     SampleRequest request = sampleRequestDao.getForUpdate(id);
     assertSampleRequestsEnabled(user);
     if (request == null) {
@@ -150,10 +153,10 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     }
     assertUserIsPartyToRequest(request, user);
 
-    List<Transition> toTarget = transitionsTo(post.getStatus());
+    List<Transition> toTarget = transitionsToSettableStatusOrThrow(post.getStatus());
     // every transition to one target shares its actor, so who may act is checked first
     assertPermittedActor(request, user, toTarget.get(0).actor());
-    Transition transition = legalFrom(toTarget, request.getStatus());
+    Transition transition = legalTransitionFromOrThrow(toTarget, request.getStatus());
     String reason = validatedReason(post, transition);
     Sample transferredSample = resolveTransferredSample(post, user);
 
@@ -164,17 +167,17 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private void assertPermittedActor(SampleRequest request, User user, Actor actor) {
-    String permitted =
-        Actor.OWNER.equals(actor)
-            ? request.getSample().getOwner().getUsername()
-            : request.getRequesterUsername();
-    if (!user.getUsername().equals(permitted)) {
+    boolean permitted =
+        Actor.CURRENT_OWNER.equals(actor)
+            ? user.getUsername().equals(request.getSample().getOwner().getUsername())
+            : request.isRequester(user);
+    if (!permitted) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.wrongActor");
     }
   }
 
   /** Every transition to the target; a target with none is never settable. */
-  private List<Transition> transitionsTo(SampleRequestStatus target) {
+  private List<Transition> transitionsToSettableStatusOrThrow(SampleRequestStatus target) {
     List<Transition> toTarget = TRANSITIONS.stream().filter(t -> t.to().equals(target)).toList();
     if (toTarget.isEmpty()) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.statusNotSettable", target);
@@ -183,7 +186,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /** A target may be reachable from several statuses, e.g. FULFILLED from PENDING or APPROVED. */
-  private Transition legalFrom(List<Transition> toTarget, SampleRequestStatus current) {
+  private Transition legalTransitionFromOrThrow(
+      List<Transition> toTarget, SampleRequestStatus current) {
     return toTarget.stream()
         .filter(t -> t.from().equals(current))
         .findFirst()
@@ -208,21 +212,25 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private ApiSampleRequestInfo toInfo(
-      SampleRequest request, User user, Map<String, ApiUser> usersByName) {
+      SampleRequest request, User user, Map<Long, ApiUser> usersById) {
     ApiSampleRequestInfo info = new ApiSampleRequestInfo(request);
-    info.setRequester(usersByName.computeIfAbsent(request.getRequesterUsername(), this::toApiUser));
-    info.setOriginalOwner(usersByName.computeIfAbsent(request.getOriginalOwner(), this::toApiUser));
+    info.setRequester(
+        usersById.computeIfAbsent(
+            request.getRequesterId(), id -> toApiUser(request.getRequesterUsername(), id)));
+    info.setOriginalOwner(
+        usersById.computeIfAbsent(
+            request.getOriginalOwnerId(), id -> toApiUser(request.getOriginalOwner(), id)));
     return applyOutgoingSampleRules(info, request, user);
   }
 
   private ApiSampleRequest toDetail(SampleRequest request, User user) {
     ApiSampleRequest detail = new ApiSampleRequest(request);
-    detail.setRequester(toApiUser(request.getRequesterUsername()));
-    detail.setOriginalOwner(toApiUser(request.getOriginalOwner()));
+    detail.setRequester(toApiUser(request.getRequesterUsername(), request.getRequesterId()));
+    detail.setOriginalOwner(toApiUser(request.getOriginalOwner(), request.getOriginalOwnerId()));
     for (int i = 0; i < detail.getStatusChanges().size(); i++) {
       ApiSampleRequestStatusChange apiChange = detail.getStatusChanges().get(i);
       SampleRequestStatusChange change = request.getStatusChanges().get(i);
-      apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername()));
+      apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername(), change.getCreatedById()));
       if (change.getTransferredSample() != null) {
         sampleApiManager.setOtherFieldsForOutgoingApiInventoryRecord(
             apiChange.getTransferredSample(), change.getTransferredSample(), user);
@@ -231,13 +239,10 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return applyOutgoingSampleRules(detail, request, user);
   }
 
-  /**
-   * Public details only: the parties are often in different groups. A deleted user keeps their
-   * username in the record, with no id or name to resolve.
-   */
-  private ApiUser toApiUser(String username) {
+  /** A deleted user keeps their username in the record, with no id or name to resolve. */
+  private ApiUser toApiUser(String username, Long userId) {
     return userDao
-        .getOptionalUserByUsername(username)
+        .getSafeNull(userId)
         .map(found -> new ApiUser(found, true))
         .orElseGet(
             () -> {
@@ -260,7 +265,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /** A missing sample and one in the trash are both not found. */
-  private Sample untrashed(Sample sample, GlobalIdentifier oid) {
+  private Sample sampleNotInTrashOrThrow(Sample sample, GlobalIdentifier oid) {
     if (sample == null || sample.isDeleted()) {
       throw new NotFoundException(messages.getResourceNotFoundMessage("Sample", oid.getDbId()));
     }
@@ -278,13 +283,12 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /**
-   * Absent when none was supplied. A supplied one is only accepted when fulfilling, and must be a
-   * sample the fulfiller can fully read, so a request's history cannot be made to carry a
-   * stranger's: limited read, e.g. through a shared container, is not enough.
+   * Absent when none was supplied; accepted only when fulfilling, for a sample the fulfiller can
+   * fully read.
    */
   private Sample resolveTransferredSample(ApiSampleRequestStatusPut post, User user) {
     String globalId = post.getTransferredSampleGlobalId();
-    if (globalId == null) {
+    if (StringUtils.isBlank(globalId)) {
       return null;
     }
     if (post.getStatus() != SampleRequestStatus.FULFILLED) {
@@ -292,7 +296,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
           "errors.inventory.sampleRequest.transferredSampleNotAllowed", post.getStatus());
     }
     GlobalIdentifier oid = sampleOid(globalId);
-    Sample sample = untrashed(sampleDao.getSafeNull(oid.getDbId()).orElse(null), oid);
+    Sample sample = sampleNotInTrashOrThrow(sampleDao.getSafeNull(oid.getDbId()).orElse(null), oid);
     if (!invPermissions.canUserReadInventoryRecord(sample, user)) {
       throw new NotFoundException(messages.getResourceNotFoundMessage("Sample", sample.getId()));
     }
@@ -306,11 +310,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
             "inventory.sampleRequest.autoRejectedReason", new Object[] {newOwner.getFullName()});
     String fulfilledReason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
     for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
-      boolean toRequester = request.getRequesterUsername().equals(newOwner.getUsername());
+      boolean toRequester = request.isRequester(newOwner);
       SampleRequestStatus target =
           toRequester ? SampleRequestStatus.FULFILLED : SampleRequestStatus.REJECTED;
       // a PI or admin of the owner's group may transfer too, so only legality is checked
-      legalFrom(transitionsTo(target), request.getStatus());
+      legalTransitionFromOrThrow(transitionsToSettableStatusOrThrow(target), request.getStatus());
       if (toRequester) {
         request.recordStatus(actor, target, fulfilledReason, request.getSample());
       } else {
@@ -326,8 +330,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
    * see a request.
    */
   private void assertUserIsPartyToRequest(SampleRequest request, User user) {
-    if (!user.getUsername().equals(request.getRequesterUsername())
-        && !user.getUsername().equals(request.getOriginalOwner())
+    if (!request.isRequester(user)
+        && !request.isOriginalOwner(user)
         && !user.equals(request.getSample().getOwner())) {
       throw requestNotFound(request.getId());
     }

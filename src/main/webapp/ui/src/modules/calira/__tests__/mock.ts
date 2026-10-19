@@ -7,7 +7,7 @@ export const MOCK_EQUIPMENT_NAME = "Mock PCR Machine";
 export const MOCK_REQUESTER_NAME = "Mock Requester";
 
 export const caliraHandlers = [
-  mockOAuthAuthorize("/calira-web/oauth/authorize", "mock-calira-auth-code", { echoState: true }),
+  mockOAuthAuthorize("/calira-web/oauth/authorize", "mock-calira-auth-code"),
 
   http.post("/calira-web/oauth/token", () =>
     HttpResponse.json({

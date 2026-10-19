@@ -86,7 +86,7 @@ describe("Omero", () => {
       <Omero
         integrationState={{
           mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.present("MASKED") },
+          credentials: { ACCESS_TOKEN: Optional.present(null) },
         }}
         update={() => {}}
       />,
@@ -110,7 +110,7 @@ describe("Omero", () => {
       <Omero
         integrationState={{
           mode: "DISABLED",
-          credentials: { ACCESS_TOKEN: Optional.present("MASKED") },
+          credentials: { ACCESS_TOKEN: Optional.present(null) },
         }}
         update={() => {}}
       />,
@@ -156,7 +156,7 @@ describe("Omero", () => {
         <Omero
           integrationState={{
             mode: "DISABLED",
-            credentials: { ACCESS_TOKEN: Optional.present("MASKED") },
+            credentials: { ACCESS_TOKEN: Optional.present(null) },
           }}
           update={() => {}}
         />
