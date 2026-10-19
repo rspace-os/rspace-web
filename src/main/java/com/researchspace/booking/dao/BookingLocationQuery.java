@@ -25,7 +25,6 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecord.InventorySharingMode;
 import com.researchspace.model.inventory.SubSample;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -81,82 +80,83 @@ public class BookingLocationQuery {
       FilterExpression readConstraint,
       FilterExpression editConstraint) {
     if (caller == null || !caller.isEnabled() || caller.isAccountLocked()) {
-      return new Predicate("1 = 0", Map.of());
+      return new Predicate(RsqlCollectionQuery.FALSE_EXPRESSION, Map.of());
     }
     String target = name + "Target";
     String parent = name + "Parent";
-    Map<String, Object> parameters = new LinkedHashMap<>();
-    parameters.put(name + "TargetType", BookableTargetType.INSTRUMENT);
     String correlation =
         ".id = " + targetPath + ".id AND " + targetPath + ".type = :" + name + "TargetType";
 
     Predicate targetRead =
-        new RsqlCollectionQuery(INSTRUMENTS, target, name + "TargetRead")
-            .translateTrusted(readConstraint);
-    parameters.putAll(targetRead.parameters());
-    Subquery readableTarget =
-        new Subquery(
-            Instrument.class,
-            target,
-            target + correlation + " AND (" + targetRead.expression() + ")",
-            targetRead.subqueries());
+        Predicate.and(
+            new Predicate(
+                target + correlation, Map.of(name + "TargetType", BookableTargetType.INSTRUMENT)),
+            new RsqlCollectionQuery(INSTRUMENTS, target, name + "TargetRead")
+                .translateTrusted(readConstraint));
+    Predicate readableTarget =
+        new Predicate(
+            "EXISTS " + target,
+            targetRead.parameters(),
+            Map.of(
+                target,
+                new Subquery(
+                    Instrument.class, target, targetRead.expression(), targetRead.subqueries())));
 
-    Map<String, Subquery> children = new LinkedHashMap<>();
-    Predicate direct =
+    List<Predicate> readable = new ArrayList<>();
+    readable.add(
         new RsqlCollectionQuery(CONTAINERS, parent + ".container", name + "Direct")
-            .translateTrusted(readConstraint);
-    parameters.putAll(direct.parameters());
-    List<String> readable = new ArrayList<>(List.of("(" + direct.expression() + ")"));
+            .translateTrusted(readConstraint));
     for (ChildKind kind : ChildKind.values()) {
       String child = name + kind.suffix;
       Predicate childRead =
           new RsqlCollectionQuery(kind.description, child + "." + kind.property, child + "Read")
               .translateTrusted(editConstraint);
-      parameters.putAll(childRead.parameters());
-      children.put(
-          child,
-          new Subquery(
-              ContainerLocation.class,
-              child,
-              child
-                  + ".container.id = "
-                  + parent
-                  + ".container.id AND ("
-                  + childRead.expression()
-                  + ")",
-              childRead.subqueries()));
-      readable.add("EXISTS " + child);
+      readable.add(
+          new Predicate(
+              "EXISTS " + child,
+              childRead.parameters(),
+              Map.of(
+                  child,
+                  new Subquery(
+                      ContainerLocation.class,
+                      child,
+                      child
+                          + ".container.id = "
+                          + parent
+                          + ".container.id AND ("
+                          + childRead.expression()
+                          + ")",
+                      childRead.subqueries()))));
     }
-    String named = "";
+    Predicate named = null;
     if (containerIds != null) {
-      if (containerIds.isEmpty()) {
-        // No parent is named, so nothing is stored in one.
-        named = " AND 1 = 0";
-      } else {
-        parameters.put(name + "Containers", List.copyOf(containerIds));
-        named = " AND " + parent + ".container.id IN :" + name + "Containers";
-      }
+      named =
+          containerIds.isEmpty()
+              ? new Predicate(RsqlCollectionQuery.FALSE_EXPRESSION, Map.of())
+              : new Predicate(
+                  parent + ".container.id IN :" + name + "Containers",
+                  Map.of(name + "Containers", List.copyOf(containerIds)));
     }
-    String where =
-        parent
-            + ".storedInstrument"
-            + correlation
-            + named
-            + " AND "
-            + parent
-            + ".container.deleted = false AND ("
-            + String.join(" OR ", readable)
-            + ")";
-    return new Predicate(
-        "EXISTS "
-            + target
-            + (stored ? " AND EXISTS " + parent : " AND NOT (EXISTS " + parent + ")"),
-        parameters,
-        Map.of(
-            target,
-            readableTarget,
-            parent,
-            new Subquery(ContainerLocation.class, parent, where, children)));
+    Predicate parentRead =
+        Predicate.and(
+            new Predicate(
+                parent + ".storedInstrument" + correlation,
+                Map.of(name + "TargetType", BookableTargetType.INSTRUMENT)),
+            named,
+            new Predicate(parent + ".container.deleted = false", Map.of()),
+            Predicate.or(readable.toArray(Predicate[]::new)));
+    return Predicate.and(
+        readableTarget,
+        new Predicate(
+            stored ? "EXISTS " + parent : "NOT (EXISTS " + parent + ")",
+            parentRead.parameters(),
+            Map.of(
+                parent,
+                new Subquery(
+                    ContainerLocation.class,
+                    parent,
+                    parentRead.expression(),
+                    parentRead.subqueries()))));
   }
 
   private enum ChildKind {
