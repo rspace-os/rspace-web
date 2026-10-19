@@ -22,6 +22,7 @@ import {
 } from "@/modules/booking/domain/bookingDisplayPreferences";
 import BookingPreferencesPage from "../BookingPreferencesPage";
 import { customNewYorkBookingPreferences, inheritedBrowserBookingPreferences } from "../bookingPreferencesFixtures";
+import { renderPage } from "./bookingPreferencesPageTestUtils";
 
 function BookingPreferencesQueryProbe() {
   const queryClient = useQueryClient();
@@ -36,18 +37,6 @@ function BookingPreferencesQueryProbe() {
       {end}
     </p>
   );
-}
-
-function renderPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const rendered = render(
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={null}>
-        <BookingPreferencesPage />
-      </Suspense>
-    </QueryClientProvider>,
-  );
-  return { ...rendered, queryClient };
 }
 
 describe("BookingPreferencesPage", () => {
