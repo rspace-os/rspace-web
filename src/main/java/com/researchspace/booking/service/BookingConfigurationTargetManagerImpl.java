@@ -2,7 +2,7 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
-import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.FeatureFlagManager;
@@ -19,11 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookingConfigurationTargetManagerImpl implements BookingConfigurationTargetManager {
 
-  private final InstrumentDao instrumentDao;
+  private final BookingInstrumentQueryDao instrumentDao;
   private final FeatureFlagManager featureFlags;
 
   public BookingConfigurationTargetManagerImpl(
-      InstrumentDao instrumentDao, FeatureFlagManager featureFlags) {
+      BookingInstrumentQueryDao instrumentDao, FeatureFlagManager featureFlags) {
     this.instrumentDao = instrumentDao;
     this.featureFlags = featureFlags;
   }
