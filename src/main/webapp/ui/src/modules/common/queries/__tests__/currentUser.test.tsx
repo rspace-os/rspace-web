@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
-import { createElement, Suspense } from "react";
+import { Suspense } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { currentUserResponse } from "@/__tests__/helpers/currentUserResponse";
 import { server } from "@/__tests__/mswServer";
@@ -73,20 +73,21 @@ describe("current-user query", () => {
 
     function Consumer() {
       const { data } = useCurrentUserQuery();
-      return createElement("output", null, data.email);
+      return <output>{data.email}</output>;
     }
 
     function SyncedConsumer() {
       useCurrentUserEventSync();
-      return createElement(Consumer);
+      return <Consumer />;
     }
 
     render(
-      createElement(
-        QueryClientProvider,
-        { client: queryClient },
-        createElement(Suspense, { fallback: null }, createElement(SyncedConsumer), createElement(Consumer)),
-      ),
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={null}>
+          <SyncedConsumer />
+          <Consumer />
+        </Suspense>
+      </QueryClientProvider>,
     );
 
     expect(await screen.findAllByText("before@example.com")).toHaveLength(2);
