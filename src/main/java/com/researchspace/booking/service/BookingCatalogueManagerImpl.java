@@ -135,7 +135,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     filters.add(comparison("target.deleted", Operator.EQUAL, false));
     if (capability != null) {
       restriction =
-          BookingItemQuery.and(
+          Predicate.and(
               restriction,
               itemQuery.restriction(
                   caller,

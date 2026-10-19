@@ -1,8 +1,10 @@
 package com.researchspace.booking.dao;
 
+import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.dao.query.RsqlCollectionQuery;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
+import com.researchspace.dao.query.RsqlSqlFragments;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.booking.BookableTargetType;
@@ -21,7 +23,6 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.inventory.Instrument;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,25 +78,26 @@ public final class BookingCalendarQuery {
     Predicate itemText = itemText("bookingConfiguration.target", text, caller, targets);
     Predicate eventTextPredicate = eventText(alias, text, caller, targets);
     Predicate body =
-        and(
+        Predicate.and(
             new Predicate(alias + ".bookingConfiguration.id = bookingConfiguration.id", Map.of()),
             mandatory,
             filter,
-            filtered ? or(itemText, eventTextPredicate) : eventTextPredicate);
+            filtered ? Predicate.or(itemText, eventTextPredicate) : eventTextPredicate);
     Predicate exists =
         new Predicate(
             "EXISTS calendarEvents",
             body.parameters(),
             Map.of(
                 "calendarEvents",
-                new Subquery(TimeSlotBooking.class, alias, body.expression(), body.subqueries())));
-    return filtered ? exists : or(itemText, exists);
+                new Subquery(TimeSlotBooking.class, alias, body.expression(), body.subqueries())),
+            body.callerLikePredicateCount());
+    return filtered ? exists : Predicate.or(itemText, exists);
   }
 
   /** Search does not alter the event's mandatory visibility, interval or explicit filters. */
   public Predicate eventSearch(String text, User caller) {
     RelationshipReadAccess targets = RelationshipReadAccess.forActor(registry.getObject(), caller);
-    return or(
+    return Predicate.or(
         itemText("booking.bookingConfiguration.target", text, caller, targets),
         eventText("booking", text, caller, targets));
   }
@@ -106,7 +108,7 @@ public final class BookingCalendarQuery {
     Predicate filter =
         new RsqlCollectionQuery(calendarEvents, "booking", "calendarFilter")
             .translate(calendarFilter(request.filter(), caller), targets, request.runtime());
-    return and(filter, eventSearch(text, caller));
+    return Predicate.and(filter, eventSearch(text, caller));
   }
 
   /**
@@ -185,7 +187,7 @@ public final class BookingCalendarQuery {
     if (text == null || text.isBlank()) return null;
     CollectionDescription<?> instruments = targets.description("instruments");
     AccessResult access = targets.result("instruments");
-    Predicate descriptionAccess = new Predicate("1 = 0", Map.of());
+    Predicate descriptionAccess = new Predicate(RsqlCollectionQuery.FALSE_EXPRESSION, Map.of());
     if (instruments != null && !access.isDenied()) {
       descriptionAccess =
           access
@@ -197,9 +199,8 @@ public final class BookingCalendarQuery {
                           .translateTrusted(constraint, targets))
               .orElse(new Predicate("1 = 1", Map.of()));
     }
-    Map<String, Object> parameters = new LinkedHashMap<>(descriptionAccess.parameters());
-    parameters.put("calendarText", pattern(text));
-    parameters.put("calendarTargetType", BookableTargetType.INSTRUMENT);
+    Map<String, Object> parameters = new LinkedHashMap<>();
+    parameters.put("calendarItemTextPattern", pattern(text));
     String exactId = "";
     if (text.trim().toUpperCase(Locale.ROOT).matches("IN[1-9][0-9]*")) {
       BigInteger id = new BigInteger(text.trim().substring(2));
@@ -208,31 +209,41 @@ public final class BookingCalendarQuery {
         exactId = " OR calendarInstrument.id = :calendarTargetId";
       }
     }
-    String where =
-        "calendarInstrument.id = "
-            + targetPath
-            + ".id AND "
-            + targetPath
-            + ".type = :calendarTargetType AND calendarInstrument.deleted = false AND ("
-            + descriptionAccess.expression()
-            + ") AND (LOWER(calendarInstrument.editInfo.name) LIKE :calendarText ESCAPE '\\'"
-            + exactId
-            + " OR LOWER(calendarInstrument.editInfo.description) LIKE :calendarText ESCAPE '\\')";
+    Predicate body =
+        Predicate.and(
+            new Predicate(
+                "calendarInstrument.id = "
+                    + targetPath
+                    + ".id AND "
+                    + targetPath
+                    + ".type = :calendarTargetType AND calendarInstrument.deleted = false",
+                Map.of("calendarTargetType", BookableTargetType.INSTRUMENT)),
+            descriptionAccess,
+            new Predicate(
+                RsqlSqlFragments.like(
+                        "calendarInstrument.editInfo.name", "calendarItemTextPattern", false)
+                    + exactId
+                    + " OR "
+                    + RsqlSqlFragments.like(
+                        "calendarInstrument.editInfo.description",
+                        "calendarItemTextPattern",
+                        false),
+                parameters));
     return new Predicate(
         "EXISTS calendarItemText",
-        parameters,
+        body.parameters(),
         Map.of(
             "calendarItemText",
             new Subquery(
-                Instrument.class, "calendarInstrument", where, descriptionAccess.subqueries())));
+                Instrument.class, "calendarInstrument", body.expression(), body.subqueries())));
   }
 
   private static Predicate purpose(String alias, String text) {
     return text == null || text.isBlank()
         ? null
         : new Predicate(
-            "LOWER(" + alias + ".purpose) LIKE :calendarText ESCAPE '\\'",
-            Map.of("calendarText", pattern(text)));
+            RsqlSqlFragments.like(alias + ".purpose", "calendarEventTextPattern", false),
+            Map.of("calendarEventTextPattern", pattern(text)));
   }
 
   /**
@@ -247,65 +258,37 @@ public final class BookingCalendarQuery {
             .translateTrusted(
                 BookingRequesterFilters.requesterVisible(caller == null ? null : caller.getId()),
                 targets);
-    return and(shown, eventTextMatch(alias, text));
+    return Predicate.and(shown, eventTextMatch(alias, text));
   }
 
   private static Predicate eventTextMatch(String alias, String text) {
-    return or(
+    return Predicate.or(
         purpose(alias, text),
         new Predicate(
-            "LOWER("
-                + alias
-                + ".requester.username) LIKE :calendarText ESCAPE '\\'"
-                + " OR LOWER("
-                + alias
-                + ".requester.firstName) LIKE :calendarText ESCAPE '\\'"
-                + " OR LOWER("
-                + alias
-                + ".requester.lastName) LIKE :calendarText ESCAPE '\\'"
-                + " OR LOWER(CONCAT("
-                + alias
-                + ".requester.firstName, ' ', "
-                + alias
-                + ".requester.lastName)) LIKE :calendarText ESCAPE '\\'",
-            Map.of("calendarText", pattern(text))));
+            RsqlSqlFragments.like(alias + ".requester.username", "calendarEventTextPattern", false)
+                + " OR "
+                + RsqlSqlFragments.like(
+                    alias + ".requester.firstName", "calendarEventTextPattern", false)
+                + " OR "
+                + RsqlSqlFragments.like(
+                    alias + ".requester.lastName", "calendarEventTextPattern", false)
+                + " OR "
+                + RsqlSqlFragments.like(
+                    "CONCAT("
+                        + alias
+                        + ".requester.firstName, ' ', "
+                        + alias
+                        + ".requester.lastName)",
+                    "calendarEventTextPattern",
+                    false),
+            Map.of("calendarEventTextPattern", pattern(text))));
   }
 
   private static String pattern(String value) {
-    return "%"
-        + value
-            .trim()
-            .toLowerCase(Locale.ROOT)
-            .replace("\\", "\\\\")
-            .replace("%", "\\%")
-            .replace("_", "\\_")
-        + "%";
+    return "%" + LikeEscaper.escape(value.trim()) + "%";
   }
 
   private static FilterExpression comparison(String field, Operator operator, Object value) {
     return new FilterExpression.Comparison(field, operator, List.of(value), false);
-  }
-
-  private static Predicate and(Predicate... predicates) {
-    return combine(" AND ", predicates);
-  }
-
-  private static Predicate or(Predicate... predicates) {
-    return combine(" OR ", predicates);
-  }
-
-  private static Predicate combine(String operator, Predicate... predicates) {
-    List<String> expressions = new ArrayList<>();
-    Map<String, Object> parameters = new LinkedHashMap<>();
-    Map<String, Subquery> subqueries = new LinkedHashMap<>();
-    for (Predicate predicate : predicates) {
-      if (predicate == null) continue;
-      expressions.add("(" + predicate.expression() + ")");
-      parameters.putAll(predicate.parameters());
-      subqueries.putAll(predicate.subqueries());
-    }
-    return expressions.isEmpty()
-        ? null
-        : new Predicate(String.join(operator, expressions), parameters, subqueries);
   }
 }
