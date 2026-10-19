@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
@@ -40,6 +41,7 @@ class TimeSlotBookingManagerTest {
   final TimeSlotBookingDao bookingDao = mock(TimeSlotBookingDao.class);
   final BookingConfigurationDao configurationDao = mock(BookingConfigurationDao.class);
   final InstrumentDao instrumentDao = mock(InstrumentDao.class);
+  final BookingInstrumentQueryDao bookingInstruments = mock(BookingInstrumentQueryDao.class);
   private final ObjectProvider<ResourceRegistry> registry = mock(ObjectProvider.class);
   final ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   final BookingSchedulingPolicy schedulingPolicy = new BookingSchedulingPolicy();
@@ -51,6 +53,7 @@ class TimeSlotBookingManagerTest {
           configurationDao,
           schedulingPolicy,
           instrumentDao,
+          bookingInstruments,
           registry,
           events,
           accessManager,

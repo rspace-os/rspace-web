@@ -6,6 +6,7 @@ import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.config.BookingTimeConfig;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.TimeSlotBookingDao;
+import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -64,6 +65,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
   private final BookingConfigurationDao configurationDao;
   private final BookingSchedulingPolicy schedulingPolicy;
   private final InstrumentDao instrumentDao;
+  private final BookingInstrumentQueryDao bookingInstruments;
   private final ObjectProvider<ResourceRegistry> resourceRegistry;
   private final ApplicationEventPublisher events;
   private final ResourceAccessManager accessManager;
@@ -77,6 +79,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       @Qualifier("bookingConfigurationDao") BookingConfigurationDao configurationDao,
       BookingSchedulingPolicy schedulingPolicy,
       InstrumentDao instrumentDao,
+      BookingInstrumentQueryDao bookingInstruments,
       ObjectProvider<ResourceRegistry> resourceRegistry,
       ApplicationEventPublisher events,
       ResourceAccessManager accessManager,
@@ -89,6 +92,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
     this.configurationDao = configurationDao;
     this.schedulingPolicy = schedulingPolicy;
     this.instrumentDao = instrumentDao;
+    this.bookingInstruments = bookingInstruments;
     this.resourceRegistry = resourceRegistry;
     this.events = events;
     this.accessManager = accessManager;
@@ -150,7 +154,7 @@ public class TimeSlotBookingManagerImpl implements TimeSlotBookingManager {
       return Optional.empty();
     }
     InstrumentReadSummary instrument =
-        instrumentDao.getBookingSummaries(Set.of(target.id())).get(target.id());
+        bookingInstruments.getBookingSummaries(Set.of(target.id())).get(target.id());
     if (instrument == null || instrument.deleted()) {
       return Optional.empty();
     }
