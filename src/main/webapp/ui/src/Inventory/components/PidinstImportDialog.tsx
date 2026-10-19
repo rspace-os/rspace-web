@@ -536,7 +536,7 @@ export default function PidinstImportDialog({ open, onClose, onImported }: Pidin
             supportsHighContrastMode: true,
           }}
           helpPage={{
-            docLink: helpDocsArticleUrl("pidinstIdentifiers"),
+            docLink: helpDocsArticleUrl("pidinstImport"),
             title: t("pidinstImport.helpTitle"),
           }}
         />

@@ -5,10 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerContentSummary;
+import com.researchspace.api.v1.model.ApiContainerInfo.ApiContainerGridLayoutConfig;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordType;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
+import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.Container.GridLayoutAxisLabelEnum;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Pins the CSV import schemas of the published Inventory OpenAPI spec to the properties the
@@ -59,7 +64,16 @@ class InventoryImportApiSpecTest {
             "InventoryImportInstrumentImportResult",
             new ApiInventoryImportInstrumentImportResult()),
         Arguments.of(
-            "InventoryBulkOperationRecordResult", new ApiInventoryBulkOperationRecordResult()));
+            "InventoryBulkOperationRecordResult", new ApiInventoryBulkOperationRecordResult()),
+        Arguments.of("ParentContainerInfo", new ApiContainerInfo()),
+        Arguments.of(
+            "ParentContainerInfo/properties/contentSummary", new ApiContainerContentSummary()),
+        Arguments.of(
+            "ParentContainerInfo/properties/gridLayout", new ApiContainerGridLayoutConfig()),
+        Arguments.of(
+            "ContainerInfo/allOf/1/properties/contentSummary", new ApiContainerContentSummary()),
+        Arguments.of(
+            "ContainerInfo/allOf/1/properties/gridLayout", new ApiContainerGridLayoutConfig()));
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
@@ -130,23 +144,21 @@ class InventoryImportApiSpecTest {
     assertEquals(List.of(), rejectingNull);
   }
 
-  /**
-   * Scalar overflows its stack rendering a schema that refers back to itself, as Container does.
-   */
-  @ParameterizedTest
-  @ValueSource(
-      strings = {
-        "InventoryImportParseResult",
-        "InventoryImportSampleParseResult",
-        "InventoryImportInstrumentParseResult",
-        "InventoryImportResult",
-        "InventoryImportPartialResult",
-        "InventoryImportSampleImportResult",
-        "InventoryImportInstrumentImportResult",
-        "InventoryBulkOperationRecordResult"
-      })
-  void importSchemaReachesNoCycle(String schemaName) {
-    assertEquals(List.of(), cycleFrom(SCHEMAS + schemaName, new ArrayList<>(), new HashSet<>()));
+  /** Scalar overflows its stack on a $ref cycle that runs through a schema built with allOf. */
+  @Test
+  void noAllOfSchemaIsOnARefCycle() {
+    List<String> onCycle = new ArrayList<>();
+    spec.at("/components/schemas")
+        .fieldNames()
+        .forEachRemaining(
+            name -> {
+              String ref = SCHEMAS + name;
+              if (spec.at(ref.substring(1)).has("allOf") && reaches(ref, ref, new HashSet<>())) {
+                onCycle.add(name);
+              }
+            });
+
+    assertEquals(List.of(), onCycle);
   }
 
   static Stream<Arguments> enumAndJavaEnum() {
@@ -156,7 +168,24 @@ class InventoryImportApiSpecTest {
         Arguments.of(
             "InventoryImportPartialResult/properties/status", InventoryBulkOperationStatus.class),
         Arguments.of("InventoryImportResult/properties/status", InventoryBulkOperationStatus.class),
-        Arguments.of("InventoryEntityField/properties/type", ApiFieldType.class));
+        Arguments.of("InventoryEntityField/properties/type", ApiFieldType.class),
+        Arguments.of(
+            "InventoryRecordInfo/properties/permittedActions/items",
+            ApiInventoryRecordPermittedAction.class),
+        Arguments.of("InventoryRecordInfo/properties/sharingMode", ApiInventorySharingMode.class),
+        Arguments.of("ParentContainerInfo/properties/type", ApiInventoryRecordType.class),
+        Arguments.of(
+            "ParentContainerInfo/properties/permittedActions/items",
+            ApiInventoryRecordPermittedAction.class),
+        Arguments.of("ParentContainerInfo/properties/sharingMode", ApiInventorySharingMode.class),
+        Arguments.of("ParentContainerInfo/properties/cType", ContainerType.class),
+        Arguments.of("ContainerInfo/allOf/1/properties/cType", ContainerType.class),
+        Arguments.of(
+            "ParentContainerInfo/properties/gridLayout/properties/columnsLabelType",
+            GridLayoutAxisLabelEnum.class),
+        Arguments.of(
+            "ParentContainerInfo/properties/gridLayout/properties/rowsLabelType",
+            GridLayoutAxisLabelEnum.class));
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
@@ -194,25 +223,14 @@ class InventoryImportApiSpecTest {
     }
   }
 
-  private static List<String> cycleFrom(String ref, List<String> path, Set<String> acyclic) {
-    if (path.contains(ref)) {
-      List<String> cycle = new ArrayList<>(path.subList(path.indexOf(ref), path.size()));
-      cycle.add(ref);
-      return cycle;
-    }
-    if (acyclic.contains(ref)) {
-      return List.of();
-    }
-    path.add(ref);
-    for (JsonNode next : spec.at(ref.substring(1)).findValues("$ref")) {
-      List<String> cycle = cycleFrom(next.asText(), path, acyclic);
-      if (!cycle.isEmpty()) {
-        return cycle;
+  private static boolean reaches(String from, String target, Set<String> visited) {
+    for (JsonNode next : spec.at(from.substring(1)).findValues("$ref")) {
+      String ref = next.asText();
+      if (ref.equals(target) || (visited.add(ref) && reaches(ref, target, visited))) {
+        return true;
       }
     }
-    path.remove(path.size() - 1);
-    acyclic.add(ref);
-    return List.of();
+    return false;
   }
 
   private static boolean declaresTypeWithoutNullable(JsonNode schema) {
