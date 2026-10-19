@@ -43,13 +43,14 @@ sample. An explicit `ownedBy` still narrows that search, and trashed samples nev
 it, whatever `deletedItems` says, since they cannot be requested. Its name filter (`query`)
 applies to requestable searches only; other sample searches go through Lucene as before.
 
-The flag may be changed by whoever may both edit and transfer the sample: its owner, or a
-PI or Lab Admin of the owner's group
-(`InventoryPermissionUtils.canUserTransferInventoryRecord`) who may also edit it. A group
-member who may only edit the sample is refused with 422. A PI cannot change it on a
-member's sample shared with no one (`OWNER_ONLY`): they may transfer that sample but not
-edit it, so the owner's choice to keep it private is not overridden. Requests still go to
-the owner, so a PI can put a member's shared sample up for requests: a lesser power than
+The flag may be changed by whoever may both edit and transfer the sample
+(`InventoryPermissionUtils.canUserChangeRequestable`): its owner, or a PI or Lab Admin of
+the owner's group who may also edit it. A group member who may only edit the sample is
+refused with 422. A PI cannot change it on a member's sample shared with no one
+(`OWNER_ONLY`): they may transfer that sample but not edit it, so the owner's choice to
+keep it private is not overridden. Responses mark who may change it with the
+`CHANGE_REQUESTABLE` permitted action, from the same rule. Requests still go to the owner,
+so a PI can put a member's shared sample up for requests: a lesser power than
 giving the whole sample away, which they can already do. The flag cannot be set on create,
 only by updating an existing sample, and it survives a transfer: the new owner, including a
 requester who has just received it, keeps it requestable until they switch it off.

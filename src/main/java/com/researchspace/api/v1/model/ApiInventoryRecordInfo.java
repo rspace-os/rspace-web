@@ -121,7 +121,8 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     READ,
     LIMITED_READ,
     UPDATE,
-    CHANGE_OWNER
+    CHANGE_OWNER,
+    CHANGE_REQUESTABLE
   }
 
   @JsonProperty(value = "sharingMode")
