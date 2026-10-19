@@ -2,7 +2,6 @@ package com.researchspace.api.v2.contract;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,10 +28,8 @@ import com.researchspace.testutils.ApiV2WebIntegrationTest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
@@ -53,10 +50,6 @@ class ApiV2FilterExpansionMVCIT {
 
   private static final String CONFIGURATIONS = "/api/v2/booking-configurations";
   private static final String RUNTIME_FIELDS = "/api/v2/instruments/fields/extraFields";
-  private static final int MAX_COMPARISONS = 50;
-  private static final int WARMUPS = 3;
-  private static final int SAMPLES = 20;
-  private static final long P95_BUDGET_MILLIS = 2_000;
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final WebApplicationContext context;
@@ -229,101 +222,14 @@ class ApiV2FilterExpansionMVCIT {
     assertListAndCount(scoped, runtime + "!=BSL-2", Set.of(otherConfig));
   }
 
-  @Test
-  @DisplayName("maximum filter complexity has bounded SQL count and p95 as matching rows grow")
-  void maximumPredicateWorkloadScalesFromOneToTwentyFiveRows() throws Exception {
-    String fieldName = "Filter expansion performance " + UUID.randomUUID();
-    List<PerformanceRow> rows = new ArrayList<>();
-    for (int index = 0; index < 100; index++) {
-      long targetId = instrument(owner, "performance " + index + " " + fixture.marker());
-      addExtraField(targetId, owner, fieldName, "SCOPE-2");
-      long configId = configuration(targetId, owner);
-      rows.add(new PerformanceRow(configId, targetId));
-    }
-
-    String selector = runtimeSelector(fieldName, ownerKey);
-    List<MeasuredRequest> oneRowList = new ArrayList<>();
-    List<MeasuredRequest> oneRowCount = new ArrayList<>();
-    List<MeasuredRequest> twentyFiveRowList = new ArrayList<>();
-    List<MeasuredRequest> twentyFiveRowCount = new ArrayList<>();
-
-    String oneRowWhere = maximumWhere(rows.subList(0, 1), selector);
-    String twentyFiveRowWhere = maximumWhere(rows.subList(0, 25), selector);
-    assertEquals(MAX_COMPARISONS, comparisonCount(oneRowWhere));
-    assertEquals(MAX_COMPARISONS, comparisonCount(twentyFiveRowWhere));
-    assertListAndCountForWhere(oneRowWhere, Set.of(rows.get(0).configurationId()));
-    assertListAndCountForWhere(
-        twentyFiveRowWhere,
-        rows.subList(0, 25).stream()
-            .map(PerformanceRow::configurationId)
-            .collect(java.util.stream.Collectors.toSet()));
-    assertBadRequest(twentyFiveRowWhere + ";enabled==true");
-
-    for (int warmup = 0; warmup < WARMUPS; warmup++) {
-      measured(oneRowWhere, false, ownerKey);
-      measured(oneRowWhere, true, ownerKey);
-      measured(twentyFiveRowWhere, false, ownerKey);
-      measured(twentyFiveRowWhere, true, ownerKey);
-    }
-    for (int sample = 0; sample < SAMPLES; sample++) {
-      oneRowList.add(measured(oneRowWhere, false, ownerKey));
-      oneRowCount.add(measured(oneRowWhere, true, ownerKey));
-      twentyFiveRowList.add(measured(twentyFiveRowWhere, false, ownerKey));
-      twentyFiveRowCount.add(measured(twentyFiveRowWhere, true, ownerKey));
-    }
-
-    System.out.printf(
-        Locale.ROOT,
-        "API_V2_FILTER_EXPANSION|oneRowListP95Ms=%d|oneRowCountP95Ms=%d|"
-            + "twentyFiveRowListP95Ms=%d|twentyFiveRowCountP95Ms=%d|"
-            + "oneRowListStatements=%d|twentyFiveRowListStatements=%d|"
-            + "oneRowCountStatements=%d|twentyFiveRowCountStatements=%d%n",
-        p95Millis(oneRowList),
-        p95Millis(oneRowCount),
-        p95Millis(twentyFiveRowList),
-        p95Millis(twentyFiveRowCount),
-        medianStatements(oneRowList),
-        medianStatements(twentyFiveRowList),
-        medianStatements(oneRowCount),
-        medianStatements(twentyFiveRowCount));
-
-    assertTrue(
-        p95Millis(oneRowList) <= P95_BUDGET_MILLIS,
-        () -> "one-row list p95 was " + p95Millis(oneRowList) + "ms");
-    assertTrue(
-        p95Millis(oneRowCount) <= P95_BUDGET_MILLIS,
-        () -> "one-row count p95 was " + p95Millis(oneRowCount) + "ms");
-    assertTrue(
-        p95Millis(twentyFiveRowList) <= P95_BUDGET_MILLIS,
-        () -> "25-row list p95 was " + p95Millis(twentyFiveRowList) + "ms");
-    assertTrue(
-        p95Millis(twentyFiveRowCount) <= P95_BUDGET_MILLIS,
-        () -> "25-row count p95 was " + p95Millis(twentyFiveRowCount) + "ms");
-    assertTrue(
-        medianStatements(twentyFiveRowList) <= medianStatements(oneRowList) + 1,
-        () ->
-            "25-row list used "
-                + medianStatements(twentyFiveRowList)
-                + " SQL statements versus "
-                + medianStatements(oneRowList)
-                + " for one row");
-    assertTrue(
-        medianStatements(twentyFiveRowCount) <= medianStatements(oneRowCount) + 1,
-        () ->
-            "25-row count used "
-                + medianStatements(twentyFiveRowCount)
-                + " SQL statements versus "
-                + medianStatements(oneRowCount)
-                + " for one row");
-  }
-
   private void assertListAndCount(List<Long> scopedIds, String filter, Set<Long> expected)
       throws Exception {
     String where = "id=in=(" + join(scopedIds) + ");" + filter;
     assertListAndCountForWhere(where, expected);
   }
 
-  private void assertListAndCountForWhere(String where, Set<Long> expected) throws Exception {
+  static void assertListAndCountForWhere(
+      MockMvc mockMvc, String ownerKey, String where, Set<Long> expected) throws Exception {
     MvcResult listed =
         mockMvc
             .perform(
@@ -421,7 +327,7 @@ class ApiV2FilterExpansionMVCIT {
     assertEquals(expected.size(), count, "direct count for " + filter);
   }
 
-  private void assertBadRequest(String where) throws Exception {
+  static void assertBadRequest(MockMvc mockMvc, String ownerKey, String where) throws Exception {
     MvcResult result =
         mockMvc
             .perform(get(CONFIGURATIONS).header("apiKey", ownerKey).param("where", where))
@@ -429,7 +335,7 @@ class ApiV2FilterExpansionMVCIT {
     assertEquals(400, result.getResponse().getStatus(), result.getResponse().getContentAsString());
   }
 
-  private String runtimeSelector(String fieldName, String apiKey) throws Exception {
+  static String runtimeSelector(MockMvc mockMvc, String fieldName, String apiKey) throws Exception {
     MvcResult result =
         mockMvc
             .perform(
@@ -449,13 +355,25 @@ class ApiV2FilterExpansionMVCIT {
     throw new AssertionError("Runtime field catalog omitted fixture field " + fieldName);
   }
 
-  private long instrument(User instrumentOwner, String name) {
+  static long instrument(
+      ApiV2Fixture fixture,
+      List<CreatedInstrument> instruments,
+      User instrumentOwner,
+      String name) {
     long id = fixture.instrument(instrumentOwner, name);
     instruments.add(new CreatedInstrument(id, instrumentOwner));
     return id;
   }
 
-  private void addExtraField(long instrumentId, User fieldOwner, String name, String value) {
+  static void addExtraField(
+      TransactionTemplate transactions,
+      InstrumentDao instrumentDao,
+      IRecordFactory recordFactory,
+      SessionFactory sessionFactory,
+      long instrumentId,
+      User fieldOwner,
+      String name,
+      String value) {
     transactions.executeWithoutResult(
         ignored -> {
           Instrument instrument = instrumentDao.get(instrumentId);
@@ -477,11 +395,28 @@ class ApiV2FilterExpansionMVCIT {
         });
   }
 
-  private long configuration(long targetId, User configurationOwner) {
-    return configuration(targetId, configurationOwner, configurationOwner);
+  static long configuration(
+      TransactionTemplate transactions,
+      SessionFactory sessionFactory,
+      List<Long> configurationIds,
+      long targetId,
+      User configurationOwner) {
+    return configuration(
+        transactions,
+        sessionFactory,
+        configurationIds,
+        targetId,
+        configurationOwner,
+        configurationOwner);
   }
 
-  private long configuration(long targetId, User configurationOwner, User creator) {
+  static long configuration(
+      TransactionTemplate transactions,
+      SessionFactory sessionFactory,
+      List<Long> configurationIds,
+      long targetId,
+      User configurationOwner,
+      User creator) {
     return transactions.execute(
         ignored -> {
           BookingConfiguration configuration = new BookingConfiguration();
@@ -499,7 +434,10 @@ class ApiV2FilterExpansionMVCIT {
         });
   }
 
-  private void deleteConfigurations() {
+  static void deleteConfigurations(
+      TransactionTemplate transactions,
+      BookingConfigurationDao bookingConfigurationDao,
+      List<Long> configurationIds) {
     transactions.executeWithoutResult(
         ignored ->
             configurationIds.forEach(
@@ -512,73 +450,64 @@ class ApiV2FilterExpansionMVCIT {
     configurationIds.clear();
   }
 
-  private void deleteInstruments() {
+  static void deleteInstruments(
+      InstrumentEntityApiManager instrumentApiManager, List<CreatedInstrument> instruments) {
     for (CreatedInstrument instrument : instruments) {
       instrumentApiManager.markInstrumentAsDeleted(instrument.id(), instrument.owner());
     }
     instruments.clear();
   }
 
-  private String maximumWhere(List<PerformanceRow> rows, String runtimeSelector) {
-    String ids =
-        rows.stream()
-            .map(row -> Long.toString(row.configurationId()))
-            .collect(java.util.stream.Collectors.joining(","));
-    String targets =
-        rows.stream()
-            .map(row -> "IN" + row.targetId())
-            .collect(java.util.stream.Collectors.joining(","));
-    String where =
-        "id=in=(" + ids + ");target=in=(" + targets + ");target." + runtimeSelector + "==SCOPE-2";
-    return where + (";target." + runtimeSelector + "==SCOPE-2").repeat(MAX_COMPARISONS - 3);
-  }
-
-  private int comparisonCount(String where) {
-    return where.split(";").length;
-  }
-
-  private MeasuredRequest measured(String where, boolean count, String apiKey) throws Exception {
-    clearSession();
-    statistics.clear();
-    long started = System.nanoTime();
-    String path = count ? CONFIGURATIONS + "/count" : CONFIGURATIONS;
-    var request = get(path).header("apiKey", apiKey).param("where", where);
-    if (!count) {
-      request.param("limit", "25").param("fields[booking-configurations]", "id");
-    }
-    MvcResult result = mockMvc.perform(request).andReturn();
-    assertEquals(200, result.getResponse().getStatus(), result.getResponse().getContentAsString());
-    return new MeasuredRequest(
-        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started),
-        statistics.getPrepareStatementCount());
-  }
-
-  private void clearSession() {
-    transactions.executeWithoutResult(
-        ignored -> {
-          sessionFactory.getCurrentSession().flush();
-          sessionFactory.getCurrentSession().clear();
-        });
-  }
-
-  private static long p95Millis(List<MeasuredRequest> samples) {
-    List<Long> sorted = samples.stream().map(MeasuredRequest::millis).sorted().toList();
-    int index = (int) Math.ceil(0.95 * sorted.size()) - 1;
-    return sorted.get(index);
-  }
-
-  private static long medianStatements(List<MeasuredRequest> samples) {
-    List<Long> sorted = samples.stream().map(MeasuredRequest::statements).sorted().toList();
-    return sorted.get(sorted.size() / 2);
-  }
-
   private static String join(List<Long> ids) {
     return ids.stream().map(String::valueOf).collect(java.util.stream.Collectors.joining(","));
   }
 
-  private record CreatedInstrument(long id, User owner) {}
+  record CreatedInstrument(long id, User owner) {}
 
-  private record PerformanceRow(long configurationId, long targetId) {}
+  private void assertListAndCountForWhere(String where, Set<Long> expected) throws Exception {
+    ApiV2FilterExpansionMVCIT.assertListAndCountForWhere(mockMvc, ownerKey, where, expected);
+  }
 
-  private record MeasuredRequest(long millis, long statements) {}
+  private void assertBadRequest(String where) throws Exception {
+    ApiV2FilterExpansionMVCIT.assertBadRequest(mockMvc, ownerKey, where);
+  }
+
+  private String runtimeSelector(String fieldName, String apiKey) throws Exception {
+    return ApiV2FilterExpansionMVCIT.runtimeSelector(mockMvc, fieldName, apiKey);
+  }
+
+  private long instrument(User instrumentOwner, String name) {
+    return ApiV2FilterExpansionMVCIT.instrument(fixture, instruments, instrumentOwner, name);
+  }
+
+  private void addExtraField(long instrumentId, User fieldOwner, String name, String value) {
+    ApiV2FilterExpansionMVCIT.addExtraField(
+        transactions,
+        instrumentDao,
+        recordFactory,
+        sessionFactory,
+        instrumentId,
+        fieldOwner,
+        name,
+        value);
+  }
+
+  private long configuration(long targetId, User configurationOwner) {
+    return ApiV2FilterExpansionMVCIT.configuration(
+        transactions, sessionFactory, configurationIds, targetId, configurationOwner);
+  }
+
+  private long configuration(long targetId, User configurationOwner, User creator) {
+    return ApiV2FilterExpansionMVCIT.configuration(
+        transactions, sessionFactory, configurationIds, targetId, configurationOwner, creator);
+  }
+
+  private void deleteConfigurations() {
+    ApiV2FilterExpansionMVCIT.deleteConfigurations(
+        transactions, bookingConfigurationDao, configurationIds);
+  }
+
+  private void deleteInstruments() {
+    ApiV2FilterExpansionMVCIT.deleteInstruments(instrumentApiManager, instruments);
+  }
 }
