@@ -12,7 +12,7 @@ import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { OAuthApp } from "@/my-rspace/profile/types";
 
-const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clientId: string) => Promise<void> }) => {
+const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: () => Promise<void> }) => {
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
 

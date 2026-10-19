@@ -4,8 +4,25 @@ import axios from "@/common/axios";
 import Alerts from "@/components/Alerts/Alerts";
 import AutoshareStatus from "../../../profile/Autoshare/AutoshareStatus";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-function MemberAutoshareStatusWrapper(props: any) {
+export type AutoshareMemberStatus = {
+  userId: number;
+  username: string;
+  isPI: boolean;
+  autoshareEnabled: boolean;
+  isAutoshareInProgress: boolean;
+};
+
+type MemberAutoshareStatusWrapperProps = AutoshareMemberStatus & {
+  isCloud: boolean;
+  isGroupAutoshareAllowed: boolean;
+  groupId: string | undefined;
+  groupDisplayName: string | undefined;
+  subjectId: number;
+  canManageAutoshare: boolean;
+  isLabGroup: boolean;
+};
+
+function MemberAutoshareStatusWrapper(props: MemberAutoshareStatusWrapperProps) {
   const { t } = useTranslation("common");
   const [isCurrentlySharing, setIsCurrentlySharing] = React.useState(props.isAutoshareInProgress);
   const [autoshareEnabled, setAutoshareEnabled] = React.useState(props.autoshareEnabled);
@@ -13,7 +30,7 @@ function MemberAutoshareStatusWrapper(props: any) {
   const fetchShareStatus = () => {
     const url = `/groups/ajax/autoshareMemberStatus/${props.groupId}/${props.userId}`;
 
-    axios.get(url).then((response) => {
+    axios.get<{ data: AutoshareMemberStatus }>(url).then((response) => {
       const isAutoshareInProgress = response.data.data.isAutoshareInProgress;
       const isAutoshareEnabled = response.data.data.autoshareEnabled;
 

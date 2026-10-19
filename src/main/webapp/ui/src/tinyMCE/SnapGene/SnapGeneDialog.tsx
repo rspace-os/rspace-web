@@ -13,8 +13,7 @@ import EnzymeTable from "./EnzymeTable";
 import FastaView from "./FastaView";
 import OrfTable from "./OrfTable";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const $: any;
+declare const $: JQueryStatic;
 
 function a11yProps(index: number) {
   return {
@@ -23,8 +22,7 @@ function a11yProps(index: number) {
   };
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export default function SnapGeneDialog(props: any) {
+export default function SnapGeneDialog({ id }: { id: string | number }) {
   const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = React.useState(true);
   const [tab, setTab] = React.useState(0);
@@ -65,12 +63,10 @@ export default function SnapGeneDialog(props: any) {
               <Tab label={t("tinymce.snapGene.orfTable")} {...a11yProps(3)} />
             </Tabs>
           </Grid>
-          {tab === 0 && <DnaPreview id={props.id} clicked={clicked["0"]} setDisabled={(d) => setDisabled(d)} />}
-          {tab === 1 && (
-            <EnzymeTable id={props.id} clicked={clicked["1"]} setDisabled={(d: boolean) => setDisabled(d)} />
-          )}
-          {tab === 2 && <FastaView id={props.id} clicked={clicked["2"]} setDisabled={(d) => setDisabled(d)} />}
-          {tab === 3 && <OrfTable id={props.id} clicked={clicked["3"]} setDisabled={(d: boolean) => setDisabled(d)} />}
+          {tab === 0 && <DnaPreview id={id} clicked={clicked["0"]} setDisabled={(d) => setDisabled(d)} />}
+          {tab === 1 && <EnzymeTable id={id} clicked={clicked["1"]} setDisabled={(d: boolean) => setDisabled(d)} />}
+          {tab === 2 && <FastaView id={id} clicked={clicked["2"]} setDisabled={(d) => setDisabled(d)} />}
+          {tab === 3 && <OrfTable id={id} clicked={clicked["3"]} setDisabled={(d: boolean) => setDisabled(d)} />}
         </Grid>
       </DialogContent>
       <DialogActions>

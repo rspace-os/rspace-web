@@ -114,13 +114,13 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
     }
   }
 
-  if (!document.getElementById("tinymce-gallery")) {
-    const div = document.createElement("div");
-    div.id = "tinymce-gallery";
-    document.body.appendChild(div);
+  let domContainer = document.getElementById("tinymce-gallery");
+  if (!domContainer) {
+    domContainer = document.createElement("div");
+    domContainer.id = "tinymce-gallery";
+    document.body.appendChild(domContainer);
   }
-  // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-  const galleryRenderer = renderGallery(document.getElementById("tinymce-gallery")!);
+  const galleryRenderer = renderGallery(domContainer);
   galleryRenderer.next({ open: false });
 
   const openGalleryAction = () => {

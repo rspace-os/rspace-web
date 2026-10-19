@@ -9,7 +9,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React, { type FormEventHandler, type JSX, useId } from "react";
+import React, { type JSX, useId } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
@@ -31,9 +31,7 @@ export interface ConfirmActionPayload {
   confirmTextLabel?: string;
   confirmText?: string;
   variant: string;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
-  callback: Function;
+  callback: () => void;
 }
 
 export function ConfirmationDialog({
@@ -59,7 +57,7 @@ export function ConfirmationDialog({
     }
   };
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     if (e) {
       e.preventDefault();
     }
@@ -70,7 +68,6 @@ export function ConfirmationDialog({
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     callback();
     handleCloseDialog();
   };
@@ -115,7 +112,6 @@ export function ConfirmationDialog({
             <Button onClick={handleCloseDialog} color="secondary">
               {t("actions.cancel")}
             </Button>
-            {/* @ts-expect-error Fix types later */}
             <Button color="primary" onClick={handleSubmit}>
               {t("actions.confirm")}
             </Button>

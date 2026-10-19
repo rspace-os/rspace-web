@@ -16,7 +16,7 @@ const ConnectedAppsTableRow = ({
   onConfirmDisconnectApp,
 }: {
   app: ConnectedOAuthApp;
-  onConfirmDisconnectApp: (clientId: string) => Promise<void>;
+  onConfirmDisconnectApp: () => Promise<void>;
 }) => {
   const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
