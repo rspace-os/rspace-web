@@ -5,38 +5,16 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.researchspace.api.v2.controller.ApiV2Problem;
-import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
-import com.researchspace.api.v2.resource.ResourceAccessSpec;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.collection.AccessDocumentation;
-import com.researchspace.model.collection.AccessDocumentation.AuthenticationRequirement;
-import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionDescription;
-import com.researchspace.model.collection.CollectionFieldType;
-import com.researchspace.model.collection.CollectionQueryLimits;
-import com.researchspace.model.collection.FieldSchema;
-import com.researchspace.model.collection.FilterSchema;
-import com.researchspace.model.collection.FilterSelector;
-import com.researchspace.model.collection.OpenApiSchemaDocumentation;
 import com.researchspace.model.collection.Operator;
-import com.researchspace.model.collection.Relationship;
-import com.researchspace.model.collection.RelationshipInputForm;
-import com.researchspace.model.collection.RelationshipSchema;
-import com.researchspace.model.collection.ResourceFieldSchema;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceSchema;
-import com.researchspace.model.collection.RuntimeCollectionFields;
-import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
-import com.researchspace.model.collection.WriteOperation;
-import com.researchspace.service.resourceaccess.ResourceAccessDocument;
-import com.researchspace.service.resourceaccess.ResourceAccessGrant;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import io.swagger.v3.core.util.Json31;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -44,17 +22,14 @@ import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -80,6 +55,7 @@ public final class ApiV2OpenApiGenerator {
   private final String title;
   private final String version;
   private final String serverUrl;
+  private final ApiV2OpenApiQueryParameters queryParameters;
 
   public ApiV2OpenApiGenerator(ApiV2ResourceCatalog catalog, String title, String version) {
     this(catalog, title, version, "/");
@@ -91,6 +67,7 @@ public final class ApiV2OpenApiGenerator {
     this.title = requireText(title, "OpenAPI title");
     this.version = requireText(version, "OpenAPI version");
     this.serverUrl = requireText(serverUrl, "OpenAPI server URL");
+    this.queryParameters = new ApiV2OpenApiQueryParameters(catalog);
   }
 
   public OpenAPI generate() {
@@ -213,20 +190,7 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static void addResourceAccessSchemas(Map<String, Object> schemas) {
-    ApiV2OpenApiSchemas.schemaFor(ResourceAccessDocument.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
-    schemas.put(
-        "ResourceAccessReplacement",
-        ordered(
-            "type",
-            "object",
-            "additionalProperties",
-            false,
-            "required",
-            List.of("assignments"),
-            "properties",
-            ordered("assignments", ordered("type", "array", "items", ref("ResourceAccessGrant")))));
+    ApiV2OpenApiResourceAccessDocs.addResourceAccessSchemas(schemas);
   }
 
   private static void applyRegisteredAccessFieldSchemas(
@@ -234,229 +198,13 @@ public final class ApiV2OpenApiGenerator {
       ApiV2ResourceRegistration<?, ?> resource,
       String component,
       Set<String> declaredComponents) {
-    ResourceAccessSpec<?, ?> access = resource.resourceAccess().orElse(null);
-    if (access == null || component == null) {
-      return;
-    }
-    Map<String, Object> read = mutableObjectMap(schemas.get(component + "Read"));
-    Map<String, Object> properties = mutableObjectMap(read.get("properties"));
-    Object roleSources = properties.get("roleSources");
-    if (roleSources instanceof Map<?, ?> array && array.get("items") instanceof Map<?, ?> items) {
-      if (!declaredComponents.add("ResourceRoleSource")
-          && !Objects.equals(schemas.get("ResourceRoleSource"), items)) {
-        throw new IllegalArgumentException("Inconsistent declared ResourceRoleSource children");
-      }
-      schemas.put("ResourceRoleSource", items);
-      mutableObjectMap(roleSources).put("items", ref("ResourceRoleSource"));
-    }
-    access
-        .capabilitiesType()
-        .ifPresent(
-            type ->
-                replaceFieldShape(
-                    properties, "capabilities", ApiV2OpenApiSchemas.schemaFor(type, schemas)));
-    access
-        .ownerHealthType()
-        .ifPresent(
-            type ->
-                replaceFieldShape(
-                    properties, "ownerHealth", ApiV2OpenApiSchemas.schemaFor(type, schemas)));
-  }
-
-  private static void replaceFieldShape(
-      Map<String, Object> properties, String field, Map<String, Object> shape) {
-    Object current = properties.get(field);
-    if (!(current instanceof Map<?, ?> currentMap)) {
-      return;
-    }
-    Map<String, Object> replacement = new LinkedHashMap<>(shape);
-    currentMap.forEach(
-        (key, value) -> {
-          if (key instanceof String name
-              && !Set.of("type", "format", "items", "properties", "additionalProperties")
-                  .contains(name)) {
-            replacement.put(name, value);
-          }
-        });
-    properties.put(field, replacement);
+    ApiV2OpenApiResourceAccessDocs.applyRegisteredAccessFieldSchemas(
+        schemas, resource, component, declaredComponents);
   }
 
   private void addResourceAccessPaths(
       Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
-    if (resource.resourceAccess().isEmpty()) {
-      return;
-    }
-    String root = "/api/v2/" + resource.resourceName() + "/{id}/access";
-    paths.put(
-        root,
-        ordered(
-            "get",
-            resourceAccessOperation(resource, component, ResourceAccessOperation.READ),
-            "put",
-            resourceAccessOperation(resource, component, ResourceAccessOperation.REPLACE)));
-    paths.put(
-        root + "/me",
-        ordered(
-            "delete", resourceAccessOperation(resource, component, ResourceAccessOperation.LEAVE)));
-    paths.put(
-        root + "/grantees",
-        ordered(
-            "get", resourceAccessOperation(resource, component, ResourceAccessOperation.SEARCH)));
-  }
-
-  private Map<String, Object> resourceAccessOperation(
-      ApiV2ResourceRegistration<?, ?> resource,
-      String component,
-      ResourceAccessOperation operationKind) {
-    Map<String, Object> operation = new LinkedHashMap<>();
-    operation.put("operationId", operationKind.operationId(component));
-    operation.put("summary", operationKind.summary());
-    operation.put("tags", List.of(resource.resourceName()));
-    operation.put("security", AUTHENTICATED_SECURITY);
-    operation.put(
-        "x-rspace-access",
-        operationAccessExtension(
-            operationKind.managesAssignments()
-                ? "Authenticated callers with the registered assignment-management capability."
-                : "Authenticated callers authorized by the registered protected resource.",
-            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
-    List<Map<String, Object>> parameters = new ArrayList<>();
-    FieldSchema id =
-        field(resource.description().schema(), resource.description().schema().idField());
-    parameters.add(
-        parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
-    if (operationKind == ResourceAccessOperation.REPLACE) {
-      parameters.add(
-          parameter(
-              "If-Match",
-              "header",
-              true,
-              ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
-              "Strong ETag from the latest access document."));
-      operation.put(
-          "requestBody",
-          ordered(
-              "required",
-              true,
-              "content",
-              Map.of(JSON, ordered("schema", ref("ResourceAccessReplacement")))));
-    }
-    if (operationKind == ResourceAccessOperation.SEARCH) {
-      parameters.add(
-          parameter(
-              "query",
-              "query",
-              true,
-              ordered("type", "string", "minLength", 2),
-              "Case-insensitive user or group search text."));
-      parameters.add(
-          parameter(
-              "limit",
-              "query",
-              false,
-              ordered("type", "integer", "minimum", 1, "maximum", 50, "default", 20),
-              "Maximum grantees to return."));
-    }
-    operation.put("parameters", parameters);
-    operation.put("responses", resourceAccessResponses(operationKind));
-    operation.put("x-rspace-operation", operationKind.extensionValue());
-    return operation;
-  }
-
-  private static Map<String, Object> resourceAccessResponses(
-      ResourceAccessOperation operationKind) {
-    Map<String, Object> responses = new LinkedHashMap<>();
-    if (operationKind == ResourceAccessOperation.LEAVE) {
-      responses.put("204", ordered("description", "The direct assignment is absent."));
-    } else {
-      Map<String, Object> schema =
-          operationKind == ResourceAccessOperation.SEARCH
-              ? ordered("type", "array", "items", ref("ResourceGranteeDirectoryEntry"))
-              : ref("ResourceAccessDocument");
-      Map<String, Object> success =
-          ordered(
-              "description",
-              operationKind == ResourceAccessOperation.SEARCH
-                  ? "Eligible users and groups."
-                  : "Current direct assignments and caller capabilities.",
-              "content",
-              Map.of(JSON, ordered("schema", schema)));
-      if (operationKind != ResourceAccessOperation.SEARCH) {
-        success.put("headers", ordered("ETag", headerRef("ETag")));
-      }
-      responses.put("200", success);
-    }
-    responses.put("400", responseRef("BadRequest"));
-    responses.put("401", responseRef("Unauthenticated"));
-    responses.put("403", responseRef("Forbidden"));
-    responses.put("404", responseRef("NotFound"));
-    responses.put("406", responseRef("NotAcceptable"));
-    if (operationKind.changesAssignments()) {
-      responses.put(
-          "409",
-          problemResponse(
-              "The assignment change would violate a resource invariant.",
-              409,
-              "errors.api.v2.resourceAccess.ownerRequired"));
-    }
-    if (operationKind == ResourceAccessOperation.REPLACE) {
-      responses.put(
-          "412",
-          problemResponse(
-              "The access document changed since it was read.",
-              412,
-              "errors.api.v2.resourceAccess.stale"));
-      responses.put("415", responseRef("UnsupportedMediaType"));
-      responses.put(
-          "428",
-          problemResponse(
-              "A strong If-Match header is required.",
-              428,
-              "errors.api.v2.resourceAccess.ifMatchRequired"));
-    }
-    responses.put("429", responseRef("TooManyRequests"));
-    responses.put("500", responseRef("UnexpectedError"));
-    return responses;
-  }
-
-  private enum ResourceAccessOperation {
-    READ("get", "Access", "Get direct access assignments", "ACCESS_READ"),
-    REPLACE("replace", "Access", "Replace direct access assignments", "ACCESS_REPLACE"),
-    LEAVE("leave", "", "Remove the caller's direct assignment", "ACCESS_LEAVE"),
-    SEARCH("search", "AccessGrantees", "Search eligible access grantees", "ACCESS_GRANTEE_SEARCH");
-
-    private final String operationPrefix;
-    private final String operationSuffix;
-    private final String summary;
-    private final String extensionValue;
-
-    ResourceAccessOperation(
-        String operationPrefix, String operationSuffix, String summary, String extensionValue) {
-      this.operationPrefix = operationPrefix;
-      this.operationSuffix = operationSuffix;
-      this.summary = summary;
-      this.extensionValue = extensionValue;
-    }
-
-    String operationId(String component) {
-      return operationPrefix + component + operationSuffix;
-    }
-
-    String summary() {
-      return summary;
-    }
-
-    String extensionValue() {
-      return extensionValue;
-    }
-
-    boolean managesAssignments() {
-      return this == REPLACE || this == SEARCH;
-    }
-
-    boolean changesAssignments() {
-      return this == REPLACE || this == LEAVE;
-    }
+    new ApiV2OpenApiResourceAccessDocs().addResourceAccessPaths(paths, resource, component);
   }
 
   private Map<String, Object> operation(
@@ -551,137 +299,21 @@ public final class ApiV2OpenApiGenerator {
 
   private static AccessDocumentation access(
       AccessPolicySchema access, ResourceOperation operation) {
-    return switch (operation) {
-      case LIST, COUNT, READ -> access.readAccess();
-      case CREATE, BULK_CREATE -> access.createAccess();
-      case UPDATE, BULK_UPDATE -> access.updateAccess();
-      case DELETE, BULK_DELETE -> access.deleteAccess();
-    };
-  }
-
-  private static AccessDocumentation access(AccessPolicySchema access, WriteOperation operation) {
-    return access(access.readAccess(), access.createAccess(), access.updateAccess(), operation);
-  }
-
-  private static AccessDocumentation access(ResourceFieldSchema field, WriteOperation operation) {
-    return access(field.readAccess(), field.createAccess(), field.updateAccess(), operation);
-  }
-
-  private static AccessDocumentation access(
-      AccessDocumentation read,
-      AccessDocumentation create,
-      AccessDocumentation update,
-      WriteOperation operation) {
-    return operation == null ? read : operation == WriteOperation.CREATE ? create : update;
+    return ApiV2OpenApiResourceAccessDocs.access(access, operation);
   }
 
   private static void applyAccess(Map<String, Object> operation, AccessDocumentation access) {
-    operation.put("security", security(access.authenticationRequirement()));
-    operation.put(
-        "x-rspace-access",
-        operationAccessExtension(access.description(), access.denialReasonCodes()));
-  }
-
-  private static List<Map<String, List<String>>> security(
-      AuthenticationRequirement authenticationRequirement) {
-    return authenticationRequirement == AuthenticationRequirement.PUBLIC
-        ? List.of()
-        : AUTHENTICATED_SECURITY;
-  }
-
-  private static Map<String, Object> operationAccessExtension(
-      String description, Collection<String> denialReasonCodes) {
-    return ordered("description", description, "denialReasonCodes", denialReasonCodes);
+    ApiV2OpenApiResourceAccessDocs.applyAccess(operation, access);
   }
 
   private void applyRuntimeProjectionSchemas(
       Map<String, Object> schemas, ApiV2ResourceRegistration<?, ?> resource, String component) {
-    Map<String, Object> read = mutableObjectMap(schemas.get(component + "Read"));
-    Map<String, Object> properties = mutableObjectMap(read.get("properties"));
-    for (Map<String, Object> runtimeField : runtimeFieldsExtension(resource)) {
-      String responseField = String.class.cast(runtimeField.get("responseField"));
-      if (!responseField.isEmpty()) {
-        properties.put(responseField, ordered("type", "object", "additionalProperties", true));
-      }
-    }
+    queryParameters.applyRuntimeProjectionSchemas(schemas, resource, component);
   }
 
   private List<Map<String, Object>> runtimeFieldsExtension(
       ApiV2ResourceRegistration<?, ?> resource) {
-    List<Map<String, Object>> namespaces = new ArrayList<>(own(resource));
-    for (Relationship<?> relationship : resource.description().relationships()) {
-      if (relationship.targets().size() != 1) {
-        continue;
-      }
-      String targetName = relationship.targets().get(0).resourceName();
-      ApiV2ResourceRegistration<?, ?> target = catalog.find(targetName).orElse(null);
-      if (target == null) {
-        continue;
-      }
-      for (String targetNamespace : target.runtimeNamespaces()) {
-        String namespace = relationship.name() + "." + targetNamespace;
-        boolean projectable =
-            target
-                .runtimeFields(targetNamespace)
-                .map(RuntimeCollectionFields::projectsThroughRelationship)
-                .orElse(false);
-        namespaces.add(
-            runtimeNamespace(
-                namespace,
-                catalogUrl(targetName, targetNamespace),
-                relationship.name(),
-                targetName,
-                projectable));
-      }
-    }
-    return List.copyOf(namespaces);
-  }
-
-  private static String catalogUrl(String resourceName, String namespace) {
-    return "/api/v2/" + resourceName + "/fields/" + namespace;
-  }
-
-  private static Map<String, Object> runtimeNamespace(
-      String namespace, String catalog, String via, String viaResource, boolean projectable) {
-    return ordered(
-        "namespace",
-        namespace,
-        "catalog",
-        catalog,
-        "responseField",
-        projectable ? namespace : "",
-        "via",
-        via,
-        "viaResource",
-        viaResource,
-        "filterable",
-        true,
-        "columnSelectable",
-        projectable,
-        "sortable",
-        false,
-        "maximumProjections",
-        projectable ? CollectionQueryLimits.MAX_RUNTIME_PROJECTIONS : 0,
-        "catalogDefaultLimit",
-        RuntimeFieldCatalogQuery.DEFAULT_LIMIT,
-        "catalogMaximumLimit",
-        RuntimeFieldCatalogQuery.MAX_LIMIT,
-        "catalogMaximumIds",
-        RuntimeFieldCatalogQuery.MAX_IDS,
-        "catalogSearchParameter",
-        "search",
-        "catalogIdsParameter",
-        "ids");
-  }
-
-  private static List<Map<String, Object>> own(ApiV2ResourceRegistration<?, ?> resource) {
-    List<Map<String, Object>> published = new ArrayList<>();
-    for (String namespace : resource.runtimeNamespaces()) {
-      published.add(
-          runtimeNamespace(
-              namespace, catalogUrl(resource.resourceName(), namespace), "", "", true));
-    }
-    return List.copyOf(published);
+    return queryParameters.runtimeFieldsExtension(resource);
   }
 
   private static List<Map<String, Object>> parameters(
@@ -690,337 +322,8 @@ public final class ApiV2OpenApiGenerator {
       Map<String, ResourceSchema> resourceSchemas,
       ResourceRegistry registry,
       List<Map<String, Object>> runtimeFields) {
-    List<Map<String, Object>> parameters = new ArrayList<>();
-    if (operation == ResourceOperation.READ
-        || operation == ResourceOperation.UPDATE
-        || operation == ResourceOperation.DELETE) {
-      FieldSchema id = field(schema, schema.idField());
-      parameters.add(
-          parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
-    }
-    if (operation == ResourceOperation.LIST) {
-      parameters.add(where(schema, false, resourceSchemas, registry, runtimeFields));
-      Map<String, Object> sort =
-          parameter(
-              "sort",
-              "query",
-              false,
-              ordered("type", "string"),
-              "Comma-separated sortable fields; prefix descending fields with '-'. At most "
-                  + CollectionQueryLimits.MAX_SORT_FIELDS
-                  + " fields.");
-      sort.put(
-          "x-rspace-sort",
-          ordered(
-              "fields",
-              schema.fields().stream()
-                  .filter(FieldSchema::sortable)
-                  .map(FieldSchema::name)
-                  .toList(),
-              "default",
-              schema.defaultSort().stream()
-                  .map(value -> (value.ascending() ? "" : "-") + value.field())
-                  .toList(),
-              "maximumFields",
-              CollectionQueryLimits.MAX_SORT_FIELDS));
-      parameters.add(sort);
-      parameters.add(pageParameter());
-      parameters.add(limitParameter());
-    }
-    if (operation == ResourceOperation.COUNT
-        || operation == ResourceOperation.BULK_UPDATE
-        || operation == ResourceOperation.BULK_DELETE) {
-      parameters.add(
-          where(
-              schema,
-              operation != ResourceOperation.COUNT,
-              resourceSchemas,
-              registry,
-              runtimeFields));
-    }
-    if (operation == ResourceOperation.LIST || operation == ResourceOperation.READ) {
-      parameters.add(
-          parameter(
-              "depth",
-              "query",
-              false,
-              ordered(
-                  "type",
-                  "integer",
-                  "minimum",
-                  0,
-                  "maximum",
-                  CollectionQueryLimits.MAX_RELATIONSHIP_DEPTH,
-                  "default",
-                  0),
-              "Relationship expansion depth. At depth 0, the response is the canonical update"
-                  + " reference object and value is the readable target ID. At greater depth,"
-                  + " value is the expanded read document; relationTo and globalId remain stable."
-                  + " A missing or unreadable target is null at every depth."));
-      parameters.add(
-          fieldset("fields", schema, resourceSchemas, "Fields to include by resource type."));
-      parameters.add(
-          fieldset("exclude", schema, resourceSchemas, "Fields to exclude by resource type."));
-    }
-    return parameters;
-  }
-
-  private static Map<String, Object> where(
-      ResourceSchema schema,
-      boolean required,
-      Map<String, ResourceSchema> resourceSchemas,
-      ResourceRegistry registry,
-      List<Map<String, Object>> runtimeFields) {
-    Map<String, Object> parameter =
-        parameter(
-            "where",
-            "query",
-            required,
-            ordered("type", "string", "maxLength", CollectionQueryLimits.MAX_WHERE_LENGTH),
-            "Bounded RSQL filter expression. Available selectors and operators are provided in"
-                + " x-rspace-filter."
-                + " For ID selectors on relationships whose targets are all users, exact me"
-                + " resolves to the authenticated effective subject's numeric ID; for example,"
-                + " createdBy.value==me."
-                + (runtimeFields.isEmpty()
-                    ? ""
-                    : " Further per-caller selectors are listed by the catalog named in"
-                        + " x-rspace-runtime-fields."));
-    parameter.put("x-rspace-filter", filterExtension(schema, resourceSchemas, registry));
-    Map<String, Object> relationshipFields = relationshipFieldsExtension(schema, resourceSchemas);
-    if (!relationshipFields.isEmpty()) {
-      parameter.put("x-rspace-relationship-fields", relationshipFields);
-    }
-    if (!runtimeFields.isEmpty()) {
-      parameter.put("x-rspace-runtime-fields", runtimeFields);
-    }
-    return parameter;
-  }
-
-  private static Map<String, Object> relationshipFieldsExtension(
-      ResourceSchema resource, Map<String, ResourceSchema> resourceSchemas) {
-    Map<String, Object> published = new LinkedHashMap<>();
-    for (RelationshipSchema relationship : resource.relationships()) {
-      List<ResourceSchema> targets =
-          relationship.targetResources().stream()
-              .map(resourceSchemas::get)
-              .filter(Objects::nonNull)
-              .toList();
-      if (targets.size() != relationship.targetResources().size() || targets.isEmpty()) {
-        continue;
-      }
-      for (FieldSchema candidate : targets.get(0).fields()) {
-        List<FieldSchema> onEveryTarget =
-            targets.stream()
-                .map(
-                    target ->
-                        target.fields().stream()
-                            .filter(field -> field.name().equals(candidate.name()))
-                            .findFirst()
-                            .orElse(null))
-                .toList();
-        if (onEveryTarget.contains(null)) {
-          continue;
-        }
-        Map<String, Object> fieldSchema = scalarSchema(candidate.type(), candidate.nullable());
-        boolean sameShape =
-            onEveryTarget.stream()
-                .allMatch(
-                    field -> scalarSchema(field.type(), field.nullable()).equals(fieldSchema));
-        if (!sameShape) {
-          continue;
-        }
-        Set<Operator> operators =
-            new LinkedHashSet<>(FilterSelector.relationshipTargetFieldOperators());
-        onEveryTarget.forEach(field -> operators.retainAll(field.filterOperators()));
-        Map<String, Object> definition =
-            ordered(
-                "schema",
-                fieldSchema,
-                "operators",
-                operators.stream().map(ApiV2OpenApiGenerator::operatorToken).toList(),
-                "wildcards",
-                !operators.isEmpty()
-                    && onEveryTarget.stream().allMatch(FieldSchema::supportsWildcards));
-        String title = candidate.openApi().title();
-        if (title != null && !title.isBlank()) {
-          definition.put("title", title);
-        }
-        published.put(relationship.name() + "." + candidate.name(), definition);
-      }
-    }
-    return published;
-  }
-
-  private record PublishedFilter(
-      String selector,
-      String sourceSelector,
-      ResourceSchema source,
-      List<String> operators,
-      boolean supportsWildcards) {}
-
-  /**
-   * Discovers every public filter visible from a collection through its declared relationships.
-   *
-   * <p>The same traversal handles any number of relationships and target collections. Only scalar
-   * fields of an immediate target are reachable because the query language permits one relationship
-   * hop.
-   */
-  private static List<PublishedFilter> publishedFilters(
-      ResourceSchema resource,
-      Map<String, ResourceSchema> resourceSchemas,
-      ResourceRegistry registry) {
-    Map<String, PublishedFilter> published = new LinkedHashMap<>();
-    resource
-        .filters()
-        .forEach(
-            filter ->
-                published.put(
-                    filter.selector(), publishedFilter(filter.selector(), filter, resource)));
-    registry
-        .relationshipQueryPaths(resource.name())
-        .forEach(
-            path -> {
-              ResourceSchema target =
-                  resourceSchemas.get(path.targets().get(0).description().resourceName());
-              if (target == null) {
-                return;
-              }
-              target.filters().stream()
-                  .filter(filter -> filter.selector().equals(path.targetField()))
-                  .findFirst()
-                  .map(
-                      filter ->
-                          new PublishedFilter(
-                              path.selector(),
-                              path.targetField(),
-                              target,
-                              path.filterSelector().operators().stream()
-                                  .map(ApiV2OpenApiGenerator::operatorToken)
-                                  .toList(),
-                              path.filterSelector().supportsWildcards()))
-                  .filter(filter -> !filter.operators().isEmpty())
-                  .ifPresent(filter -> published.put(filter.selector(), filter));
-            });
-    return List.copyOf(published.values());
-  }
-
-  private static PublishedFilter publishedFilter(
-      String selector, FilterSchema filter, ResourceSchema source) {
-    return new PublishedFilter(
-        selector,
-        filter.selector(),
-        source,
-        filter.operators().stream().map(ApiV2OpenApiGenerator::operatorToken).toList(),
-        filter.supportsWildcards());
-  }
-
-  private static Map<String, Object> filterExtension(
-      ResourceSchema resource,
-      Map<String, ResourceSchema> resourceSchemas,
-      ResourceRegistry registry) {
-    Map<String, Object> selectors = new LinkedHashMap<>();
-    publishedFilters(resource, resourceSchemas, registry)
-        .forEach(
-            filter -> {
-              Map<String, Object> definition =
-                  ordered(
-                      "schema",
-                      filterSchema(filter.sourceSelector(), filter.source(), resourceSchemas),
-                      "operators",
-                      filter.operators(),
-                      "wildcards",
-                      filter.supportsWildcards());
-              filter.source().fields().stream()
-                  .filter(field -> field.name().equals(filter.sourceSelector()))
-                  .map(field -> field.openApi().title())
-                  .filter(title -> title != null && !title.isBlank())
-                  .findFirst()
-                  .ifPresent(title -> definition.put("title", title));
-              selectors.put(filter.selector(), definition);
-            });
-    return ordered(
-        "maximumComparisons",
-        CollectionQueryLimits.MAX_COMPARISONS,
-        "maximumLikeComparisons",
-        CollectionQueryLimits.MAX_LIKE_COMPARISONS,
-        "maximumNesting",
-        CollectionQueryLimits.MAX_FILTER_NESTING,
-        "maximumArguments",
-        CollectionQueryLimits.MAX_ARGUMENTS,
-        "selectors",
-        selectors);
-  }
-
-  private static Map<String, Object> filterSchema(
-      String selector, ResourceSchema resource, Map<String, ResourceSchema> resourceSchemas) {
-    Optional<FieldSchema> field =
-        resource.fields().stream().filter(value -> value.name().equals(selector)).findFirst();
-    if (field.isPresent()) {
-      return scalarSchema(field.get().type(), field.get().nullable());
-    }
-    for (RelationshipSchema relationship : resource.relationships()) {
-      if (selector.equals(relationship.name())) {
-        return ordered("type", "string", "description", "RSpace global identifier.");
-      }
-      if (selector.equals(relationship.name() + ".relationTo")) {
-        return ordered("type", "string", "enum", relationship.targetResources());
-      }
-      if (selector.equals(relationship.name() + ".value")) {
-        List<Map<String, Object>> targetIds =
-            relationship.targetResources().stream()
-                .map(resourceSchemas::get)
-                .filter(Objects::nonNull)
-                .map(target -> scalarSchema(field(target, target.idField()).type(), false))
-                .distinct()
-                .toList();
-        return targetIds.size() == 1 ? targetIds.get(0) : ordered("oneOf", targetIds);
-      }
-    }
-    return ordered("type", "string");
-  }
-
-  private static Map<String, Object> fieldset(
-      String name,
-      ResourceSchema resource,
-      Map<String, ResourceSchema> resourceSchemas,
-      String description) {
-    Set<String> reachable = new LinkedHashSet<>();
-    reachable.add(resource.name());
-    resource
-        .relationships()
-        .forEach(relationship -> reachable.addAll(relationship.targetResources()));
-    Map<String, Object> properties = new LinkedHashMap<>();
-    Map<String, Object> allowedFields = new LinkedHashMap<>();
-    reachable.forEach(
-        resourceName -> {
-          ResourceSchema target = resourceSchemas.get(resourceName);
-          if (target == null) {
-            return;
-          }
-          List<String> fieldNames =
-              target.documentFields().stream().map(ResourceFieldSchema::name).toList();
-          allowedFields.put(resourceName, fieldNames);
-          properties.put(resourceName, ordered("type", "string"));
-        });
-    Map<String, Object> parameter =
-        parameter(
-            name,
-            "query",
-            false,
-            ordered("type", "object", "additionalProperties", false, "properties", properties),
-            description
-                + " Uses square-bracket keys and comma-separated nested field paths, for example "
-                + name
-                + "["
-                + resource.name()
-                + "]=id,name.");
-    parameter.put("style", "deepObject");
-    parameter.put("explode", true);
-    parameter.put("x-rspace-comma-separated-values", true);
-    parameter.put("x-rspace-allowed-fields", allowedFields);
-    parameter.put("x-rspace-mutually-exclusive-with", name.equals("fields") ? "exclude" : "fields");
-    return parameter;
+    return ApiV2OpenApiQueryParameters.parameters(
+        operation, schema, resourceSchemas, registry, runtimeFields);
   }
 
   private static Map<String, Object> parameter(
@@ -1029,43 +332,7 @@ public final class ApiV2OpenApiGenerator {
       boolean required,
       Map<String, Object> schema,
       String description) {
-    return ordered(
-        "name",
-        name,
-        "in",
-        location,
-        "required",
-        required,
-        "description",
-        description,
-        "schema",
-        schema);
-  }
-
-  private static Map<String, Object> pageParameter() {
-    return parameter(
-        "page",
-        "query",
-        false,
-        ordered("type", "integer", "minimum", 1, "default", 1),
-        "One-based page number.");
-  }
-
-  private static Map<String, Object> limitParameter() {
-    return parameter(
-        "limit",
-        "query",
-        false,
-        ordered(
-            "type",
-            "integer",
-            "minimum",
-            1,
-            "maximum",
-            CollectionQueryLimits.MAX_PAGE_SIZE,
-            "default",
-            20),
-        "Maximum documents per page.");
+    return ApiV2OpenApiQueryParameters.parameter(name, location, required, schema, description);
   }
 
   private static Map<String, Object> responses(
@@ -1161,342 +428,18 @@ public final class ApiV2OpenApiGenerator {
       ResourceSchema resource,
       Map<String, String> names,
       boolean routable) {
-    String component = names.get(resource.name());
-    components.put(component + "Reference", referenceSchema(resource));
-    components.put(component + "Read", documentSchema(resource, names, null));
-    if (routable) {
-      components.put(component + "Create", documentSchema(resource, names, WriteOperation.CREATE));
-      components.put(component + "Update", documentSchema(resource, names, WriteOperation.UPDATE));
-    }
+    ApiV2OpenApiResourceDocumentBuilder.addSchemas(components, resource, names, routable);
   }
 
   private static void addStandardSchemas(Map<String, Object> schemas) {
-    ApiV2OpenApiSchemas.schemaFor(ApiV2Problem.class, schemas);
-    ApiV2OpenApiSchemas.schemaFor(ApiV2CountResult.class, schemas);
-  }
-
-  private static Map<String, Object> referenceSchema(ResourceSchema resource) {
-    FieldSchema id = field(resource, resource.idField());
-    return ordered(
-        "type",
-        "object",
-        "required",
-        List.of("relationTo", "value"),
-        "properties",
-        ordered(
-            "relationTo",
-            ordered("type", "string", "const", resource.name()),
-            "value",
-            scalarSchema(id.type(), false)));
-  }
-
-  private static Map<String, Object> documentSchema(
-      ResourceSchema resource, Map<String, String> names, WriteOperation writeOperation) {
-    Map<String, Object> properties = new LinkedHashMap<>();
-    List<String> required = new ArrayList<>();
-    for (ResourceFieldSchema field : resource.documentFields()) {
-      if (writeOperation != null && !field.writeOperations().contains(writeOperation)) {
-        continue;
-      }
-      Map<String, Object> property =
-          documentFieldProperty(field, names, writeOperation, false, false);
-      properties.put(field.name(), property);
-      if ((writeOperation == WriteOperation.CREATE && field.requiredOnCreate())
-          || (writeOperation == null && field.name().equals(resource.idField()))) {
-        required.add(field.name());
-      }
-    }
-    Map<String, Object> schema =
-        ordered("type", "object", "additionalProperties", false, "properties", properties);
-    if (!required.isEmpty()) {
-      schema.put("required", required);
-    }
-    schema.put("x-rspace-access", accessExtension(access(resource.access(), writeOperation)));
-    return schema;
-  }
-
-  private static Map<String, Object> documentFieldSchema(
-      ResourceFieldSchema field, Map<String, String> names, WriteOperation writeOperation) {
-    Map<String, Object> schema;
-    if (field instanceof FieldSchema scalar) {
-      schema = scalarSchema(scalar.type(), false);
-      // Only body properties carry write constraints: where literals are never checked against
-      // them, so the shared scalar schema must not publish them.
-      schema.putAll(scalar.writeConstraints());
-      if (!scalar.fields().isEmpty()) {
-        Map<String, Object> object = embeddedObjectSchema(scalar.fields(), names, writeOperation);
-        if ("array".equals(scalar.type().jsonType())) {
-          schema.put("items", object);
-        } else {
-          schema.putAll(object);
-        }
-        schema.put("x-rspace-fields", scalar.fields());
-      }
-    } else if (field instanceof RelationshipSchema relationship) {
-      schema =
-          new LinkedHashMap<>(
-              writeOperation == null
-                  ? relationshipOutput(relationship, names)
-                  : relationshipInput(relationship, writeOperation, names));
-    } else {
-      throw new IllegalStateException("Unsupported resource field schema " + field.getClass());
-    }
-    return nullable(schema, writeOperation == null ? field.nullableOnRead() : field.nullable());
-  }
-
-  private static Map<String, Object> documentFieldProperty(
-      ResourceFieldSchema field,
-      Map<String, String> names,
-      WriteOperation writeOperation,
-      boolean updateDefaults,
-      boolean readOnlyBeforeAccess) {
-    Map<String, Object> property = documentFieldSchema(field, names, writeOperation);
-    applyDocumentation(property, field.openApi());
-    if ((writeOperation == WriteOperation.CREATE
-            || (updateDefaults && writeOperation == WriteOperation.UPDATE))
-        && field.defaultValue() != null) {
-      property.put("default", field.defaultValue());
-    }
-    if (readOnlyBeforeAccess && writeOperation == null && field.readOnly()) {
-      property.put("readOnly", true);
-    }
-    property.put("x-rspace-access", accessExtension(access(field, writeOperation)));
-    if (!readOnlyBeforeAccess && writeOperation == null && field.readOnly()) {
-      property.put("readOnly", true);
-    }
-    return property;
-  }
-
-  private static Map<String, Object> embeddedObjectSchema(
-      List<FieldSchema> fields, Map<String, String> names, WriteOperation operation) {
-    Map<String, Object> properties = new LinkedHashMap<>();
-    List<String> required = new ArrayList<>();
-    for (FieldSchema child : fields) {
-      if (operation != null && !child.writeOperations().contains(operation)) {
-        continue;
-      }
-      Map<String, Object> property = documentFieldProperty(child, names, operation, true, true);
-      properties.put(child.name(), property);
-      if (operation != null && child.requiredOnCreate()) {
-        required.add(child.name());
-      }
-    }
-    Map<String, Object> schema =
-        ordered("type", "object", "additionalProperties", false, "properties", properties);
-    if (!required.isEmpty()) {
-      schema.put("required", required);
-    }
-    return schema;
-  }
-
-  private static Map<String, Object> relationshipOutput(
-      RelationshipSchema relationship, Map<String, String> names) {
-    List<Map<String, Object>> variants = new ArrayList<>();
-    relationship
-        .targetResources()
-        .forEach(
-            target -> {
-              String prefix = relationship.globalIdPrefixesByTarget().get(target);
-              variants.add(
-                  prefix == null
-                      ? ref(names.get(target) + "Reference")
-                      : globalReferenceSchema(names.get(target) + "Reference", prefix));
-              variants.add(
-                  expandedReferenceSchema(target, ref(names.get(target) + "Read"), prefix));
-            });
-    return ordered("oneOf", variants);
-  }
-
-  private static Map<String, Object> relationshipInput(
-      RelationshipSchema relationship, WriteOperation operation, Map<String, String> names) {
-    List<Map<String, Object>> variants = new ArrayList<>();
-    Set<RelationshipInputForm> forms = relationship.inputForms().getOrDefault(operation, Set.of());
-    if (forms.contains(RelationshipInputForm.GLOBAL_ID)) {
-      String alternatives =
-          relationship.globalIdPrefixesByTarget().values().stream()
-              .map(ApiV2OpenApiGenerator::escapeEcmaRegex)
-              .collect(Collectors.joining("|"));
-      variants.add(
-          ordered(
-              "type",
-              "string",
-              "pattern",
-              "^(?:" + alternatives + ")\\d+$",
-              "example",
-              relationship.globalIdPrefixesByTarget().values().iterator().next() + "1",
-              "description",
-              "RSpace global identifier. Permitted prefixes: "
-                  + String.join(", ", relationship.globalIdPrefixesByTarget().values())
-                  + "."));
-    }
-    if (forms.contains(RelationshipInputForm.OBJECT)) {
-      relationship
-          .targetResources()
-          .forEach(
-              target -> {
-                String referenceComponent = names.get(target) + "Reference";
-                String prefix = relationship.globalIdPrefixesByTarget().get(target);
-                variants.add(
-                    prefix == null
-                        ? ref(referenceComponent)
-                        : globalInputReferenceSchema(referenceComponent, prefix));
-              });
-    }
-    return variants.size() == 1 ? variants.get(0) : ordered("oneOf", variants);
-  }
-
-  private static Map<String, Object> globalReferenceSchema(
-      String referenceComponent, String prefix) {
-    return ordered(
-        "allOf",
-        List.of(
-            ref(referenceComponent),
-            ordered(
-                "type",
-                "object",
-                "required",
-                List.of("globalId"),
-                "properties",
-                ordered("globalId", globalIdSchema(prefix)))));
-  }
-
-  private static Map<String, Object> globalInputReferenceSchema(
-      String referenceComponent, String prefix) {
-    return ordered(
-        "allOf",
-        List.of(
-            ref(referenceComponent),
-            ordered("type", "object", "properties", ordered("globalId", globalIdSchema(prefix)))));
-  }
-
-  private static Map<String, Object> expandedReferenceSchema(
-      String target, Map<String, Object> value, String prefix) {
-    List<String> required = new ArrayList<>(List.of("relationTo", "value"));
-    Map<String, Object> properties =
-        ordered("relationTo", ordered("type", "string", "const", target), "value", value);
-    if (prefix != null) {
-      required.add("globalId");
-      properties.put("globalId", globalIdSchema(prefix));
-    }
-    return ordered("type", "object", "required", required, "properties", properties);
-  }
-
-  private static Map<String, Object> globalIdSchema(String prefix) {
-    return ordered(
-        "type",
-        "string",
-        "pattern",
-        "^" + escapeEcmaRegex(prefix) + "\\d+$",
-        "example",
-        prefix + "1");
-  }
-
-  private static Map<String, Object> nullable(Map<String, Object> schema, boolean nullable) {
-    if (!nullable) {
-      return schema;
-    }
-    if (schema.get("type") instanceof String type) {
-      Map<String, Object> result = new LinkedHashMap<>(schema);
-      result.put("type", List.of(type, "null"));
-      if (result.get("enum") instanceof List<?> values) {
-        // The enum lists every accepted value, so a nullable one must accept null as well.
-        List<Object> withNull = new ArrayList<>(values);
-        withNull.add(null);
-        result.put("enum", Collections.unmodifiableList(withNull));
-      }
-      return result;
-    }
-    return ordered("anyOf", List.of(schema, ordered("type", "null")));
-  }
-
-  private static Map<String, Object> scalarSchema(
-      CollectionFieldType.Schema type, boolean nullable) {
-    return nullable(nonNullScalarSchema(type), nullable);
-  }
-
-  private static Map<String, Object> nonNullScalarSchema(CollectionFieldType.Schema type) {
-    Map<String, Object> schema = new LinkedHashMap<>();
-    schema.put("type", type.jsonType());
-    if (type.format() != null) {
-      schema.put("format", type.format());
-    }
-    if (type.maxLength() != null) {
-      schema.put("maxLength", type.maxLength());
-    }
-    schema.putAll(type.structure());
-    return schema;
-  }
-
-  private static void applyDocumentation(
-      Map<String, Object> schema, OpenApiSchemaDocumentation documentation) {
-    putIfNotNull(schema, "title", documentation.title());
-    putIfNotNull(schema, "description", documentation.description());
-    if (documentation.example() != null) {
-      schema.put("example", schemaLiteral(schema, documentation.example()));
-    }
-    if (!documentation.additionalExamples().isEmpty()) {
-      schema.put(
-          "examples",
-          documentation.additionalExamples().stream()
-              .map(value -> schemaLiteral(schema, value))
-              .toList());
-    }
-    putIfNotNull(schema, "format", documentation.format());
-    if (documentation.deprecated()) {
-      schema.put("deprecated", true);
-    }
-    schema.putAll(documentation.extensions());
-  }
-
-  private static Object schemaLiteral(Map<String, Object> schema, String value) {
-    Object declaredType = schema.get("type");
-    String type =
-        declaredType instanceof String scalar
-            ? scalar
-            : declaredType instanceof List<?> alternatives
-                ? alternatives.stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .filter(candidate -> !candidate.equals("null"))
-                    .findFirst()
-                    .orElse("string")
-                : "string";
-    try {
-      return switch (type) {
-        case "object", "array" -> Json31.mapper().readValue(value, Object.class);
-        case "integer" -> Long.valueOf(value);
-        case "number" -> new BigDecimal(value);
-        case "boolean" -> {
-          if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) {
-            throw new IllegalArgumentException("Boolean schema value must be true or false");
-          }
-          yield Boolean.valueOf(value);
-        }
-        default -> value;
-      };
-    } catch (JsonProcessingException | NumberFormatException ex) {
-      throw new IllegalArgumentException(
-          "OpenAPI value '" + value + "' is not a valid " + type, ex);
-    }
+    ApiV2OpenApiResourceDocumentBuilder.addStandardSchemas(schemas);
   }
 
   private static void putIfNotNull(Map<String, Object> target, String name, Object value) {
-    if (value != null) {
-      target.put(name, value);
-    }
+    ApiV2OpenApiResourceDocumentBuilder.putIfNotNull(target, name, value);
   }
 
-  private static Map<String, Object> accessExtension(AccessDocumentation access) {
-    return ordered(
-        "description",
-        access.description(),
-        "authentication",
-        access.authenticationRequirement().name(),
-        "denialReasonCodes",
-        access.denialReasonCodes());
-  }
-
-  private static Map<String, Object> listResult(Map<String, Object> item) {
+  static Map<String, Object> listResult(Map<String, Object> item) {
     return ordered(
         "type",
         "object",
@@ -1527,18 +470,7 @@ public final class ApiV2OpenApiGenerator {
   }
 
   private static Map<String, Object> auditPage(Map<String, Object> item) {
-    Map<String, Object> page = listResult(item);
-    List<String> required =
-        ((List<?>) page.get("required")).stream().map(String::valueOf).collect(Collectors.toList());
-    required.add("snapshotDate");
-    required.add("snapshotFingerprint");
-    page.put("required", required);
-    Map<String, Object> properties = mutableObjectMap(page.get("properties"));
-    properties.put("snapshotDate", ordered("type", "string", "format", "date"));
-    properties.put(
-        "snapshotFingerprint",
-        ordered("type", "string", "pattern", "^[0-9a-f]{64}$", "minLength", 64, "maxLength", 64));
-    return page;
+    return ApiV2OpenApiAuditDocs.auditPage(item);
   }
 
   private static Map<String, Object> bulkResult(Map<String, Object> item) {
@@ -1589,12 +521,12 @@ public final class ApiV2OpenApiGenerator {
     return name == null ? null : Map.of("$ref", "#/components/responses/" + name);
   }
 
-  private static Map<String, Object> problemResponse(String description, int status, String code) {
+  static Map<String, Object> problemResponse(String description, int status, String code) {
     return ordered(
         "description", description, "content", problemContent(description, status, code));
   }
 
-  private static Map<String, Object> problemResponse(
+  static Map<String, Object> problemResponse(
       String description, int status, Map<String, String> errors) {
     if (errors.size() == 1) {
       Map.Entry<String, String> error = errors.entrySet().iterator().next();
@@ -1695,19 +627,12 @@ public final class ApiV2OpenApiGenerator {
             "Authenticated browser session. A deployment can rename this cookie."));
   }
 
-  private static Map<String, Object> responseRef(String name) {
+  static Map<String, Object> responseRef(String name) {
     return Map.of("$ref", "#/components/responses/" + name);
   }
 
-  private static Map<String, Object> headerRef(String name) {
+  static Map<String, Object> headerRef(String name) {
     return Map.of("$ref", "#/components/headers/" + name);
-  }
-
-  private static FieldSchema field(ResourceSchema resource, String name) {
-    return resource.fields().stream()
-        .filter(field -> field.name().equals(name))
-        .findFirst()
-        .orElseThrow();
   }
 
   private static Map<String, String> componentNames(
@@ -1815,30 +740,11 @@ public final class ApiV2OpenApiGenerator {
   }
 
   public static String operatorToken(Operator operator) {
-    return switch (operator) {
-      case EQUAL -> "==";
-      case NOT_EQUAL -> "!=";
-      case GREATER_THAN -> "=gt=";
-      case GREATER_THAN_OR_EQUAL -> "=ge=";
-      case LESS_THAN -> "=lt=";
-      case LESS_THAN_OR_EQUAL -> "=le=";
-      case IN -> "=in=";
-      case NOT_IN -> "=out=";
-      case CONTAINS -> "=contains=";
-      case LIKE -> "=like=";
-      case EXISTS -> "=exists=";
-    };
+    return ApiV2OpenApiQueryParameters.operatorToken(operator);
   }
 
-  private static String escapeEcmaRegex(String value) {
-    StringBuilder escaped = new StringBuilder();
-    for (char character : value.toCharArray()) {
-      if ("\\^$.*+?()[]{}|/".indexOf(character) >= 0) {
-        escaped.append('\\');
-      }
-      escaped.append(character);
-    }
-    return escaped.toString();
+  static String escapeEcmaRegex(String value) {
+    return ApiV2OpenApiResourceDocumentBuilder.escapeEcmaRegex(value);
   }
 
   private static String requireText(String value, String label) {
