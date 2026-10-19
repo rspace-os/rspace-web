@@ -1509,5 +1509,7 @@ ID, inventory-readable description, or visible booking purpose/requester name an
 Description text is used only under the instrument read policy and is not added to the booking
 target payload.
 
-`RsqlCollectionQuery.Subquery` carries nested subqueries so the executor can bind registered
-membership/access constraints through Blaze's subquery builders at every depth.
+Calendar text search uses the compiler's `LikeEscaper` and `RsqlSqlFragments.like` helpers.
+Instrument and location lookups also declare `!` as their SQL escape character to match
+`LikeEscaper`. This makes `%`, `_`, and `!` literal search text. Calendar SQL lowercases both
+operands for case-insensitive matching.
