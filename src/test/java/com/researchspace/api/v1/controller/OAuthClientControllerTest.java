@@ -5,6 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
@@ -26,6 +31,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.orm.ObjectRetrievalFailureException;
 
 @ExtendWith(MockitoExtension.class)
 public class OAuthClientControllerTest {
@@ -42,14 +48,17 @@ public class OAuthClientControllerTest {
   private final User user = new User("bob");
   private final MockHttpServletRequest request = new MockHttpServletRequest();
 
-  /** The client passed the early check, then its app was deleted before the token was created. */
   @BeforeEach
-  public void clientValidThenGoneAtTokenCreation() {
+  public void enableApiAndOAuth() {
     user.setEnabled(true);
     when(apiHandler.isApiAvailableForUser(isNull())).thenReturn(true);
     when(systemPropertyMgr.isPropertyAllowed(
             isNull(User.class), eq(SystemPropertyName.API_OAUTH_AUTHENTICATION)))
         .thenReturn(true);
+  }
+
+  /** The client passed the early check, then its app was deleted before the token was created. */
+  private void clientValidThenGoneAtTokenCreation() {
     when(appManager.isClientSecretCorrect("client", "secret")).thenReturn(true);
     when(userManager.getUserByUsernameOrAlias("bob")).thenReturn(user);
     when(apiHandler.isApiAvailableForUser(user)).thenReturn(true);
@@ -59,6 +68,7 @@ public class OAuthClientControllerTest {
 
   @Test
   public void failedTokenCreationIsAnErrorNotAnEmptySuccess() {
+    clientValidThenGoneAtTokenCreation();
     when(tokenManager.createNewToken(eq("client"), eq("secret"), eq(user), any()))
         .thenReturn(
             new ServiceOperationResult<>(null, false, "ClientId or ClientSecret incorrect"));
@@ -70,6 +80,7 @@ public class OAuthClientControllerTest {
 
   @Test
   public void failedJwtTokenCreationIsAnErrorNotAnEmptySuccess() {
+    clientValidThenGoneAtTokenCreation();
     when(tokenManager.createNewJwtToken(eq("client"), eq("secret"), eq(user), any()))
         .thenReturn(
             new ServiceOperationResult<>(null, false, "ClientId or ClientSecret incorrect"));
@@ -77,6 +88,60 @@ public class OAuthClientControllerTest {
     ApiAuthenticationException e =
         assertThrows(ApiAuthenticationException.class, () -> getToken(true));
     assertEquals("oauth.errors.tokenCreationFailed", e.getMessageKey());
+  }
+
+  @Test
+  public void invalidClientIsRefusedBeforeAnyPasswordCheck() {
+    when(appManager.isClientSecretCorrect("client", "secret")).thenReturn(false);
+
+    ApiAuthenticationException e =
+        assertThrows(ApiAuthenticationException.class, () -> getToken(false));
+    assertEquals("oauth.errors.tokenCreationFailed", e.getMessageKey());
+    verifyNoInteractions(userManager, reauthenticator, guessLimiter);
+  }
+
+  @Test
+  public void usernameOverTheGuessLimitCostsOneSentinelCheckInsteadOfAPasswordCheck() {
+    when(appManager.isClientSecretCorrect("client", "secret")).thenReturn(true);
+    when(userManager.getUserByUsernameOrAlias("bob")).thenReturn(user);
+    when(apiHandler.isApiAvailableForUser(user)).thenReturn(true);
+    when(guessLimiter.tryAcquire("bob")).thenReturn(false);
+
+    ApiAuthenticationException e =
+        assertThrows(ApiAuthenticationException.class, () -> getToken(false));
+    assertEquals("oauth.errors.invalidCredentials", e.getMessageKey());
+    verify(guessLimiter, times(1)).padWithSentinelCheck("pw");
+    verifyNoInteractions(reauthenticator);
+  }
+
+  @Test
+  public void wrongPasswordIsCheckedOnceAndNotPadded() {
+    when(appManager.isClientSecretCorrect("client", "secret")).thenReturn(true);
+    when(userManager.getUserByUsernameOrAlias("bob")).thenReturn(user);
+    when(apiHandler.isApiAvailableForUser(user)).thenReturn(true);
+    when(guessLimiter.tryAcquire("bob")).thenReturn(true);
+    when(reauthenticator.reauthenticate(user, "pw")).thenReturn(false);
+
+    ApiAuthenticationException e =
+        assertThrows(ApiAuthenticationException.class, () -> getToken(false));
+    assertEquals("oauth.errors.invalidCredentials", e.getMessageKey());
+    verify(reauthenticator, times(1)).reauthenticate(user, "pw");
+    verify(guessLimiter, never()).padWithSentinelCheck(any());
+    verify(guessLimiter, never()).recordSuccess(any());
+  }
+
+  @Test
+  public void unknownUsernameCostsOneSentinelCheckInsteadOfAPasswordCheck() {
+    when(appManager.isClientSecretCorrect("client", "secret")).thenReturn(true);
+    when(userManager.getUserByUsernameOrAlias("bob"))
+        .thenThrow(new ObjectRetrievalFailureException(User.class, "bob"));
+
+    ApiAuthenticationException e =
+        assertThrows(ApiAuthenticationException.class, () -> getToken(false));
+    assertEquals("oauth.errors.invalidCredentials", e.getMessageKey());
+    verify(guessLimiter, times(1)).padWithSentinelCheck("pw");
+    verifyNoMoreInteractions(guessLimiter);
+    verifyNoInteractions(reauthenticator);
   }
 
   private NewOAuthTokenResponse getToken(boolean isJwt) {
