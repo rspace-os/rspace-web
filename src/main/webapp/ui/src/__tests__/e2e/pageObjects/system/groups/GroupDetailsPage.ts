@@ -1,19 +1,26 @@
 import type { Locator } from "@playwright/test";
+import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
+import { SendMessageDialogComponent } from "@/__tests__/e2e/components/shared/SendMessageDialogComponent";
 import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { ChangePiDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangePiDialogComponent";
 import { ChangeRoleDialogComponent } from "@/__tests__/e2e/components/system/groups/ChangeRoleDialogComponent";
 import { GroupHeaderComponent } from "@/__tests__/e2e/components/system/groups/GroupHeaderComponent";
 import { InviteMembersDialogComponent } from "@/__tests__/e2e/components/system/groups/InviteMembersDialogComponent";
 import { RenameGroupDialogComponent } from "@/__tests__/e2e/components/system/groups/RenameGroupDialogComponent";
-import { SendMessageDialogComponent } from "@/__tests__/e2e/components/system/groups/SendMessageDialogComponent";
 import { BasePage } from "@/__tests__/e2e/pageObjects/BasePage";
 
 /** Group details/membership view. */
 export class GroupDetailsPage extends BasePage {
   readonly path = "/groups/view";
 
+  /** Late React mounts shift the members table; the Account Menu mounts last. */
   async openGroup(groupId: number): Promise<void> {
     await this.page.goto(`${this.path}/${groupId}`);
+    await this.waitForLayoutToSettle();
+  }
+
+  private async waitForLayoutToSettle(): Promise<void> {
+    await new AppHeader(this.page).accountMenuButton.waitFor({ state: "visible" });
   }
 
   get heading(): Locator {
@@ -30,6 +37,10 @@ export class GroupDetailsPage extends BasePage {
 
   memberRow(username: string): Locator {
     return this.page.locator("#grpDetails").getByRole("row").filter({ hasText: username });
+  }
+
+  memberRole(username: string): Locator {
+    return this.page.locator("#grpDetails").locator(`[data-test-id="roleInGroup_${username}"]`);
   }
 
   activityRow(fullName: string): Locator {
@@ -77,14 +88,14 @@ export class GroupDetailsPage extends BasePage {
     await this.page.getByRole("button", { name: "Create Collaboration Group", exact: true }).click();
     const dialog = new SendMessageDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.sendTo(withUsername);
+    await dialog.send({ to: withUsername });
   }
 
   async inviteAnotherPiToCollaboration(withUsername: string): Promise<void> {
     await this.page.getByRole("button", { name: "Invite a New PI", exact: true }).click();
     const dialog = new SendMessageDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.sendTo(withUsername);
+    await dialog.send({ to: withUsername });
   }
 
   async inviteMember(username: string): Promise<void> {
@@ -117,23 +128,56 @@ export class GroupDetailsPage extends BasePage {
     return this.memberRow(username).getByRole("link", { name: "Go to User's Home Folder", exact: true });
   }
 
+  async homeFolderId(username: string): Promise<number> {
+    return this.folderId(this.homeFolderLink(username));
+  }
+
+  async sharedFolderId(): Promise<number> {
+    return this.folderId(this.sharedFolderLink);
+  }
+
+  private async folderId(link: Locator): Promise<number> {
+    const href = await link.getAttribute("href");
+    if (!href) throw new Error("Group details has no folder destination.");
+    const id = Number(new URL(href, this.page.url()).pathname.split("/").pop());
+    if (!Number.isSafeInteger(id) || id <= 0) throw new Error(`Invalid folder destination: ${href}`);
+    return id;
+  }
+
   async removeMember(username: string): Promise<void> {
     await this.memberRemoveButton(username).click();
     await this.memberRow(username).waitFor({ state: "hidden" });
   }
 
   async makeMemberLabAdmin(username: string, canViewAllDocuments: boolean): Promise<void> {
-    await this.memberChangeRoleButton(username).click();
-    const dialog = new ChangeRoleDialogComponent(this.page);
-    await dialog.waitUntilVisible();
-    await dialog.makeLabAdmin(canViewAllDocuments);
+    await this.changeMemberRole(username, (dialog) => dialog.makeLabAdmin(canViewAllDocuments));
   }
 
   async makeMemberUser(username: string): Promise<void> {
+    await this.changeMemberRole(username, (dialog) => dialog.makeUser());
+  }
+
+  // viewGroupEditing.js reloads the page once the role change is saved.
+  private async changeMemberRole(
+    username: string,
+    submit: (dialog: ChangeRoleDialogComponent) => Promise<void>,
+  ): Promise<void> {
     await this.memberChangeRoleButton(username).click();
     const dialog = new ChangeRoleDialogComponent(this.page);
     await dialog.waitUntilVisible();
-    await dialog.makeUser();
+    const saved = this.page.waitForResponse((res) => res.url().includes("/groups/ajax/admin/changeRole/"));
+    const reloaded = this.page.waitForEvent("load");
+    await submit(dialog);
+    // The body can't be read: the success handler navigates away immediately. A validation error
+    // shows an alert instead of reloading, so it surfaces as the reload wait timing out.
+    const res = await saved;
+    if (!res.ok()) {
+      // No reload follows a failed save; settle the abandoned wait so it can't reject unhandled at teardown.
+      reloaded.catch(() => undefined);
+      throw new Error(`Changing ${username}'s role failed: ${res.status()}`);
+    }
+    await reloaded;
+    await this.waitForLayoutToSettle();
   }
 
   get editProfileButton(): Locator {

@@ -2,7 +2,7 @@ import { runInAction } from "mobx";
 import { describe, expect, test, vi } from "vitest";
 import type { FieldType as FieldModelType } from "../../../definitions/Field";
 import type { ImportRecordType } from "../../../stores/ImportStore";
-import { type FieldType, FieldTypes } from "../../FieldTypes";
+import { apiStringToFieldType, type FieldType, FieldTypes } from "../../FieldTypes";
 import ImportModel, { ColumnFieldMap, Fields } from "../../ImportModel";
 import { makeMockInstrumentTemplate } from "../InstrumentTemplateModel/mocking";
 
@@ -31,6 +31,7 @@ const makeMapping = (
     selected = true,
     fieldType = FieldTypes.plain_text as FieldType,
     columnsWithoutBlankValue,
+    blankColumns = [] as string[],
   }: {
     field?: symbol;
     fieldName?: string;
@@ -38,6 +39,7 @@ const makeMapping = (
     selected?: boolean;
     fieldType?: FieldType;
     columnsWithoutBlankValue?: string[];
+    blankColumns?: string[];
   } = {},
 ): ColumnFieldMap =>
   new ColumnFieldMap({
@@ -52,6 +54,7 @@ const makeMapping = (
     fieldChangeCallback: () => {},
     isNameUnique: (c) => model.isNameUnique(c),
     columnsWithoutBlankValue: columnsWithoutBlankValue ?? [columnName],
+    blankColumns,
   });
 
 const makeInstrumentsNameMapping = (model: ImportModel): ColumnFieldMap =>
@@ -222,6 +225,49 @@ describe("instrumentsSubmittable", () => {
     });
     expect(model.instrumentsSubmittable).toBe(true);
   });
+
+  test("is true for a PIDINST CSV whose date, link and web address columns are blank in every row", () => {
+    // [template field name, template field type, mandatory, blank in every row]
+    const pidinstFields: Array<[string, FieldModelType, boolean, boolean]> = [
+      ["Owner", "string", true, false],
+      ["Manufacturer", "string", true, false],
+      ["Model", "string", false, false],
+      ["Instrument type", "string", false, false],
+      ["Commissioned", "date", false, false],
+      ["Decommissioned", "date", false, true],
+      ["Measurement technique", "link", false, true],
+      ["Measured quantity", "string", false, false],
+      ["Calibration", "link", false, true],
+      ["Last calibrated", "date", false, true],
+      ["Landing page", "uri", false, true],
+      ["Alternate Identifier", "string", false, false],
+    ];
+    const blankColumns = pidinstFields.filter(([, , , blank]) => blank).map(([name]) => name);
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentsFile = new File([""], "instruments.csv");
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplateName = "Instrument (PIDINST 1.0)";
+      model.instrumentTemplate = makeMockInstrumentTemplate({
+        fields: pidinstFields.map(([name, type, mandatory]) => instrumentFieldAttrs(name, { type, mandatory })),
+      });
+      model.instrumentsMappings = [
+        makeInstrumentsNameMapping(model),
+        ...pidinstFields.map(([name, type, , blank]) =>
+          makeMapping(model, "INSTRUMENTS", {
+            field: Fields.custom,
+            fieldName: name,
+            columnName: name,
+            fieldType: blank ? FieldTypes.plain_text : apiStringToFieldType(type),
+            columnsWithoutBlankValue: blank ? [] : [name],
+            blankColumns,
+          }),
+        ),
+      ];
+    });
+    expect(model.importInstrumentMatchesExistingTemplate).toEqual({ matches: true });
+    expect(model.instrumentsSubmittable).toBe(true);
+  });
 });
 
 describe("importInstrumentMatchesExistingTemplate", () => {
@@ -339,6 +385,102 @@ describe("importInstrumentMatchesExistingTemplate", () => {
     });
     expect(model.importInstrumentMatchesExistingTemplate).toEqual({ matches: true });
   });
+
+  test.each(["date", "uri", "number", "time", "reference"] as const)(
+    "returns matches:true when a column with no value in any row fills a %s field",
+    (type) => {
+      const model = new ImportModel("INSTRUMENTS");
+      runInAction(() => {
+        model.instrumentCreateNewTemplate = false;
+        model.instrumentTemplate = makeMockInstrumentTemplate({
+          fields: [instrumentFieldAttrs("Decommissioned", { type })],
+        });
+        model.instrumentsMappings = [
+          makeMapping(model, "INSTRUMENTS", {
+            field: Fields.custom,
+            fieldName: "Decommissioned",
+            columnName: "Decommissioned",
+            fieldType: FieldTypes.plain_text,
+            columnsWithoutBlankValue: [],
+            blankColumns: ["Decommissioned"],
+          }),
+        ];
+      });
+      expect(model.importInstrumentMatchesExistingTemplate).toEqual({ matches: true });
+    },
+  );
+
+  test("returns matches:false when a column blank in only some rows holds text for a date field", () => {
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplate = makeMockInstrumentTemplate({
+        fields: [instrumentFieldAttrs("Decommissioned", { type: "date" })],
+      });
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Decommissioned",
+          columnName: "Decommissioned",
+          fieldType: FieldTypes.plain_text,
+          columnsWithoutBlankValue: [],
+          blankColumns: [],
+        }),
+      ];
+    });
+    expect(model.importInstrumentMatchesExistingTemplate).toEqual({
+      matches: false,
+      reason: "inventory:import.columnMapping.templateColumnTypeMismatch",
+    });
+  });
+
+  test("still refuses a column with no value in any row for an attachment field", () => {
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplate = makeMockInstrumentTemplate({
+        fields: [instrumentFieldAttrs("Manual", { type: "attachment" })],
+      });
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Manual",
+          columnName: "Manual",
+          fieldType: FieldTypes.plain_text,
+          columnsWithoutBlankValue: [],
+          blankColumns: ["Manual"],
+        }),
+      ];
+    });
+    expect(model.importInstrumentMatchesExistingTemplate).toEqual({
+      matches: false,
+      reason: "inventory:import.columnMapping.templateColumnTypeMismatch",
+    });
+  });
+
+  test("still refuses a column with no value in any row for a mandatory field", () => {
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplate = makeMockInstrumentTemplate({
+        fields: [instrumentFieldAttrs("Commissioned", { type: "date", mandatory: true })],
+      });
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Commissioned",
+          columnName: "Commissioned",
+          fieldType: FieldTypes.plain_text,
+          columnsWithoutBlankValue: [],
+          blankColumns: ["Commissioned"],
+        }),
+      ];
+    });
+    expect(model.importInstrumentMatchesExistingTemplate).toEqual({
+      matches: false,
+      reason: "inventory:import.columnMapping.templateRequiredValueMissing",
+    });
+  });
 });
 
 describe("setFile", () => {
@@ -348,5 +490,53 @@ describe("setFile", () => {
     const initialName = model.instrumentTemplateName;
     model.setFile(new File([""], "my-instruments.csv", { type: "text/csv" }));
     expect(model.instrumentTemplateName).not.toBe(initialName);
+  });
+});
+
+describe("link-typed columns", () => {
+  test("a link column submits as type link when creating a new template", () => {
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentTemplateInfo = {
+        name: "template",
+        fields: [{ name: "Calibrated by", type: "link" }],
+      };
+      model.instrumentTemplateName = "Links";
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Calibrated by",
+          columnName: "Calibrated by",
+          fieldType: FieldTypes.link,
+        }),
+      ];
+    });
+
+    const result = model.transformInstrumentTemplateInfoForSubmission();
+
+    expect((result.fields[0] as { type: string }).type).toBe("link");
+  });
+
+  test("a link column maps onto an existing template's link field", () => {
+    // the compatibility gate is acceptsTemplateFieldType vs the template's own field type:
+    // a link column has to be accepted by a template field declared "link"
+    const model = new ImportModel("INSTRUMENTS");
+    runInAction(() => {
+      model.instrumentCreateNewTemplate = false;
+      model.instrumentTemplate = makeMockInstrumentTemplate({
+        fields: [instrumentFieldAttrs("Calibrated by", { type: "link" as FieldModelType })],
+      });
+      model.instrumentsMappings = [
+        makeMapping(model, "INSTRUMENTS", {
+          field: Fields.custom,
+          fieldName: "Calibrated by",
+          columnName: "Calibrated by",
+          fieldType: FieldTypes.link,
+          columnsWithoutBlankValue: ["Calibrated by"],
+        }),
+      ];
+    });
+
+    expect(model.importInstrumentMatchesExistingTemplate).toEqual({ matches: true });
   });
 });

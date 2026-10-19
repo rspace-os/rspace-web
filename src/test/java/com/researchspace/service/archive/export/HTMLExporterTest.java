@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.service.LocaleBoundMessages;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.export.HTMLArchiveExporter.IndexItem;
@@ -27,8 +26,6 @@ public class HTMLExporterTest extends SpringTransactionalTest {
   ArchiveExportServiceManager mgr;
 
   @Autowired private VelocityEngine velocity;
-
-  @Autowired private MessageSourceUtils messages;
 
   @Autowired private UserLocaleService userLocaleService;
 

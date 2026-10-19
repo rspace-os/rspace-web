@@ -9,12 +9,6 @@ import java.util.List;
 /** Services specific for sysadmin user */
 public interface SysAdminManager {
 
-  /** possible value of orderBy parameter in pagination criteria */
-  String ORDER_BY_FILE_USAGE = "fileUsage()";
-
-  /** possible value of orderBy parameter in pagination criteria */
-  String ORDER_BY_RECORD_COUNT = "recordCount()";
-
   /**
    * Gets user info/fileUsage/ record count for users
    *

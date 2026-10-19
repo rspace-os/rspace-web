@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,8 +105,8 @@ class ShareApiServiceTest {
 
     ApiSharingResult result = service.shareItems(post, user);
 
-    assertEquals(1, result.getShareInfos().size());
-    assertEquals(1, result.getFailedShares().size());
+    assertThat(result.getShareInfos()).hasSize(1);
+    assertThat(result.getFailedShares()).hasSize(1);
     assertEquals(111L, result.getShareInfos().get(0).getSharedItemId());
     assertEquals(222L, result.getFailedShares().get(0));
   }

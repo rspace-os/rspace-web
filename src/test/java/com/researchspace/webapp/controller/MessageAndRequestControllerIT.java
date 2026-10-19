@@ -1,10 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -26,7 +25,6 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.time.Year;
 import java.util.List;
-import org.apache.commons.lang3.ArrayUtils;
 import org.hibernate.Session;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,7 +79,7 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
             .andExpect(model().hasNoErrors())
             .andReturn();
     MsgOrReqstCreationCfg rq = getReqCommandFromModel(res);
-    assertTrue(ArrayUtils.contains(rq.getAllMessageTypes(), MessageType.REQUEST_EXTERNAL_SHARE));
+    assertThat(rq.getAllMessageTypes()).contains(MessageType.REQUEST_EXTERNAL_SHARE);
 
     logoutAndLoginAs(other); // as non pi - can't request outside group.
     MvcResult res2 =
@@ -91,7 +89,7 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
             .andExpect(model().hasNoErrors())
             .andReturn();
     MsgOrReqstCreationCfg rq2 = getReqCommandFromModel(res2);
-    assertFalse(ArrayUtils.contains(rq2.getAllMessageTypes(), MessageType.REQUEST_EXTERNAL_SHARE));
+    assertThat(rq2.getAllMessageTypes()).doesNotContain(MessageType.REQUEST_EXTERNAL_SHARE);
 
     // now lets run with specification of requestParam to control the msg type.
     logoutAndLoginAs(piUser); // as grp pi
@@ -106,8 +104,8 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
             .andExpect(model().hasNoErrors())
             .andReturn();
     MsgOrReqstCreationCfg rq3 = getReqCommandFromModel(res3);
-    assertFalse(ArrayUtils.contains(rq2.getAllMessageTypes(), MessageType.REQUEST_EXTERNAL_SHARE));
-    assertEquals(2, rq3.getAllMessageTypes().length);
+    assertThat(rq2.getAllMessageTypes()).doesNotContain(MessageType.REQUEST_EXTERNAL_SHARE);
+    assertThat(rq3.getAllMessageTypes()).hasSize(2);
   }
 
   private MsgOrReqstCreationCfg getReqCommandFromModel(MvcResult res3) {
@@ -135,7 +133,7 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
           AjaxReturnObject<List<UserBasicInfo>> rc2 =
               ctrller.getRecipients(
                   mockPrincipal, sd.getId(), MessageType.REQUEST_RECORD_WITNESS, "STRICT", null);
-          assertEquals(1, rc2.getData().size()); // now is shared with other.
+          assertThat(rc2.getData()).hasSize(1); // now is shared with other.
         });
   }
 
@@ -299,8 +297,8 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
             .param("messageOrRequestId", requestId + ""));
 
     Group updatedCollabGrp = grpMgr.getGroup(collabGroup.getId());
-    assertEquals(3, updatedCollabGrp.getMembers().size());
-    assertTrue(updatedCollabGrp.getMembers().contains(pi3));
+    assertThat(updatedCollabGrp.getMembers()).hasSize(3);
+    assertThat(updatedCollabGrp.getMembers()).contains(pi3);
     assertEquals(RoleInGroup.PI, updatedCollabGrp.getRoleForUser(pi3));
   }
 

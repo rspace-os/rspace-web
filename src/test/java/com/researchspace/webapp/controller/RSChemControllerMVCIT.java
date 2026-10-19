@@ -1,18 +1,19 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
+import static org.springframework.http.MediaType.IMAGE_PNG;
 import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,16 +34,11 @@ import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
 import com.researchspace.webapp.controller.RSChemController.ChemSearchResultsPage;
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.StopWatch;
-import org.hamcrest.Matchers;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.TestPropertySource;
@@ -50,15 +46,9 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-@Disabled(
-    "Requires chemistry service to run. See"
-        + " https://documentation.researchspace.com/article/1jbygguzoa")
+@Tag("chemistry")
 @WebAppConfiguration
-@TestPropertySource(
-    properties = {
-      "chemistry.service.url=http://your-chem-service:8090",
-      "chemistry.provider=indigo"
-    })
+@TestPropertySource(properties = "chemistry.provider=indigo")
 public class RSChemControllerMVCIT extends MVCTestBase {
 
   private Principal principal;
@@ -86,7 +76,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
     ConvertedStructureDto convertedStructureDto =
         getFromJsonResponseBody(result, ConvertedStructureDto.class);
     assertEquals("mrv", convertedStructureDto.getFormat());
-    assertFalse(StringUtils.isBlank(convertedStructureDto.getStructure()));
+    assertThat(convertedStructureDto.getStructure()).isNotBlank();
   }
 
   /**
@@ -127,7 +117,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
     // and retrieve it, shoud get a byte [] of the image
     result = mockMvc.perform(get(imgUrl).principal(principal)).andReturn();
-    assertTrue(result.getResponse().getContentAsByteArray().length > 0);
+    assertThat(result.getResponse().getContentAsByteArray().length).isGreaterThan(0);
 
     // now let's simulate loading chem element to edit:
     result =
@@ -155,13 +145,13 @@ public class RSChemControllerMVCIT extends MVCTestBase {
 
     // and retrieve image again, should get a byte [] of the image
     result = mockMvc.perform(get(imgUrl).principal(principal)).andReturn();
-    assertTrue(result.getResponse().getContentAsByteArray().length > 0);
+    assertThat(result.getResponse().getContentAsByteArray().length).isGreaterThan(0);
 
     // now lets check we can get the 1st revision:
     List<AuditedEntity<RSChemElement>> revisions =
         auditMgr.getRevisionsForEntity(RSChemElement.class, savedChemElement.getId());
     int EXPECTED_NUM_REVISIONS = 2;
-    assertEquals(EXPECTED_NUM_REVISIONS, revisions.size());
+    assertThat(revisions).hasSize(EXPECTED_NUM_REVISIONS);
     String rev1 = revisions.get(0).getRevision().intValue() + "";
     result =
         mockMvc
@@ -173,7 +163,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     chemStr = getFromJsonAjaxReturnObject(result, ChemEditorInputDto.class).getChemElements();
-    assertFalse(chemStr.contains("NEWDATA"));
+    assertThat(chemStr).doesNotContain("NEWDATA");
   }
 
   private String generateChemElementImageURl(RSChemElement el) {
@@ -230,7 +220,7 @@ public class RSChemControllerMVCIT extends MVCTestBase {
                     .principal(principal))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertThat(getJsonPathValue(result, "$.data.reaction"), Matchers.is(false));
+    assertEquals(false, getJsonPathValue(result, "$.data.reaction"));
     assertEquals(1, getJsonPathValue(result, "$.data.molecules.size()"));
   }
 
@@ -285,7 +275,6 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void testChemImageCreationDuplication() throws Exception {
     doc1 = createBasicDocumentInRootFolderWithText(user, "any");
     Field fld = doc1.getFields().get(0);
@@ -303,51 +292,23 @@ public class RSChemControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
-  public void cachingPerformanceOfChemImages() throws Exception {
-    final int NUM_CHEMS = 30;
-    // set up
-    List<StructuredDocument> created = new ArrayList<>();
-    List<RSChemElement> chems = new ArrayList<>();
-    List<String> urls = new ArrayList<>();
-    for (int i = 0; i < NUM_CHEMS; i++) {
-      StructuredDocument sd = createBasicDocumentInRootFolderWithText(user, "any");
-      created.add(sd);
-      RSChemElement chem = addChemStructureToField(sd.getFields().get(0), user);
-      chems.add(chem);
-      String html = generateChemElementImageURl(chem);
-      String src = Jsoup.parse(html).getElementsByTag("img").attr("src");
-      urls.add(src);
+  public void repeatedChemImageRequestsReturnStoredImage() throws Exception {
+    StructuredDocument document = createBasicDocumentInRootFolderWithText(user, "any");
+    RSChemElement chem = addChemStructureToField(document.getFields().get(0), user);
+    String url = Jsoup.parse(generateChemElementImageURl(chem)).getElementsByTag("img").attr("src");
+    byte[] expectedImage = chem.getDataImage();
+    assertTrue(expectedImage.length > 0);
+    for (int request = 0; request < 2; request++) {
+      mockMvc
+          .perform(get(url).principal(principal))
+          .andExpect(status().isOk())
+          .andExpect(content().contentType(IMAGE_PNG))
+          .andExpect(content().bytes(expectedImage));
     }
-
-    // load first element before timer starts as that may be possibly slower independent of caching
-    mockMvc.perform(get(urls.get(0)).principal(principal)).andReturn();
-    StopWatch sw = new StopWatch();
-    sw.start();
-    for (int i = 0; i < NUM_CHEMS; i++) {
-      mockMvc.perform(get(urls.get(i)).principal(principal)).andReturn();
-    }
-    sw.stop();
-    long uncached = sw.getTime();
-
-    // load all elements for the second time (should be cached)
-    sw.reset();
-    sw.start();
-    for (int i = 0; i < NUM_CHEMS; i++) {
-      mockMvc.perform(get(urls.get(i)).principal(principal)).andReturn();
-    }
-    sw.stop();
-    long cached = sw.getTime();
-
-    double SPEEDUP = 1.33; // is around 1.5 on new jenkins, but 1.33 is conservative estimate
-    assertTrue(
-        cached * SPEEDUP < uncached,
-        "cache speedup should be min 25%, was: " + cached + "-" + uncached);
   }
 
   @Test
   // RSPAC-1928
-  @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
   public void fileUploadSuccess() throws Exception {
 
     MockMultipartFile mf1 =

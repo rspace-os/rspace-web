@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.core.util.progress.ProgressMonitor.NULL_MONITOR;
 import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -211,7 +212,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     // share 1 notebook and 1 doc before enabling autosharing
     shareNotebookWithGroup(u1, sharedNb, grp, "read");
     shareRecordWithGroup(u1, grp, presharedDocument);
-    assertEquals(2, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(2);
 
     // enable autoshare
     grp = grpMgr.enableAutoshareForUser(u1, grp.getId());
@@ -225,12 +226,12 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
     assertEquals(0, result.getFailureCount());
     assertEquals(unshared.getId(), result.getResults().get(0).getShared().getId());
     // the 2 notebooks & 2 docs are shared now
-    assertEquals(4, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(4);
 
     // now, create a new entry in the notebook.
     // It shouldn't be shared as its parent notebook is already shared.
     createBasicDocumentInFolder(u1, sharedNb, "text");
-    assertEquals(4, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(4);
   }
 
   @Test
@@ -257,7 +258,7 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
 
     // share 1 doc before enabling autosharing, otherwise some group configuration problem happens
     shareRecordWithGroup(u1, grp, presharedDocument);
-    assertEquals(1, sharingMgr.getSharedRecordsForUser(u1).size());
+    assertThat(sharingMgr.getSharedRecordsForUser(u1)).hasSize(1);
 
     // enable autoshare
     grp = grpMgr.enableAutoshareForUser(u1, grp.getId());
@@ -333,12 +334,11 @@ public class AutoshareManagerIT extends RealTransactionSpringTestBase {
   }
 
   void assertDistinctSharedRecordCountForU1(int expected, TestGroup testGroup) {
-    assertEquals(
-        expected,
-        getSharedDocsForU1(testGroup).getResults().stream()
-            .map(RecordGroupSharing::getShared)
-            .collect(toSet())
-            .size());
+    assertThat(
+            getSharedDocsForU1(testGroup).getResults().stream()
+                .map(RecordGroupSharing::getShared)
+                .collect(toSet()))
+        .hasSize(expected);
   }
 
   ISearchResults<RecordGroupSharing> getSharedDocsForU1(TestGroup testGroup) {

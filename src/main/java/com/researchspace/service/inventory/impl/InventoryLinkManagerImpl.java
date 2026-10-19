@@ -32,17 +32,25 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
 
   @Override
   public InventoryLink createLink(ApiInventoryLink apiLink, User actor) {
-    validateForWrite(apiLink);
-    assertTargetExistsAndReadable(apiLink, actor);
+    assertWritable(apiLink, actor);
     InventoryLink entity = new InventoryLink();
     applyApiToEntity(apiLink, entity);
     return linkDao.save(entity);
   }
 
   @Override
+  public boolean canCreateLink(ApiInventoryLink apiLink, User actor) {
+    try {
+      assertWritable(apiLink, actor);
+      return true;
+    } catch (ApiRuntimeException rejected) {
+      return false;
+    }
+  }
+
+  @Override
   public InventoryLink updateLink(InventoryLink existing, ApiInventoryLink apiLink, User actor) {
-    validateForWrite(apiLink);
-    assertTargetExistsAndReadable(apiLink, actor);
+    assertWritable(apiLink, actor);
     applyApiToEntity(apiLink, existing);
     return linkDao.save(existing);
   }
@@ -110,14 +118,27 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     GlobalIdentifier gid = parseAllowedTargetOrThrow(targetGlobalId);
     // current state of the base record: pin/revision deliberately null so the
     // "Target deleted" pill reflects the record as it is now, not as pinned
-    return snapshotResolver.resolveSummary(gid.getPrefix(), gid.getDbId(), null, null, actor);
+    ApiInventoryLinkTargetSummary summary =
+        snapshotResolver.resolveSummary(gid.getPrefix(), gid.getDbId(), null, null, actor);
+    // a reader may also learn whether the pinned version still resolves; a redacted summary
+    // stays exactly as it is, so nothing about an unreadable item's versions leaks (ADR-0002)
+    if (gid.hasVersionId() && summary.isReadable()) {
+      summary.setPinnedVersionFound(
+          snapshotResolver.resolveRevisionForVersion(
+                  gid.getPrefix(), gid.getDbId(), gid.getVersionId())
+              != null);
+    }
+    return summary;
   }
 
   /**
-   * Rejects links whose target does not resolve to a real record the actor can READ. Applies to all
-   * targets, Inventory and ELN alike. The version suffix (if any) is ignored: only the base record
-   * needs to exist and be readable.
+   * The checks every link write runs, and so canCreateLink too: one place, so they cannot drift.
    */
+  private void assertWritable(ApiInventoryLink apiLink, User actor) {
+    validateForWrite(apiLink);
+    assertTargetAcceptable(apiLink, actor);
+  }
+
   /**
    * Structural validation of an incoming link payload, mirroring {@link InventoryLinkValidator}.
    * The controller-layer validator can be bypassed (an extra-field update payload that omits {@code
@@ -152,12 +173,37 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     return gid;
   }
 
-  private void assertTargetExistsAndReadable(ApiInventoryLink apiLink, User actor) {
+  /**
+   * Rejects a target the actor cannot READ, then a pin to a version that target has no audit row
+   * for (RSDEV-1530). Readability first, so a missing item and an unreadable one keep looking the
+   * same (ADR-0002). CSV import (RSDEV-1354) skips both, storing the link whatever state its target
+   * is in; its parser checks the pin itself for targets the importer can read.
+   */
+  private void assertTargetAcceptable(ApiInventoryLink apiLink, User actor) {
+    if (apiLink.isSkipTargetCheck()) {
+      return;
+    }
     GlobalIdentifier gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
     if (!linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {
       throw new ApiRuntimeException(
           "errors.inventory.field.linkTargetNotFound", apiLink.getTargetGlobalId());
     }
+    Long versionPin = pinOf(apiLink, gid);
+    if (versionPin != null
+        && snapshotResolver.resolveRevisionForVersion(gid.getPrefix(), gid.getDbId(), versionPin)
+            == null) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.linkTargetVersionNotFound", baseId(gid), versionPin);
+    }
+  }
+
+  /** The version the payload pins: a {@code vN} suffix on the id wins over {@code versionPin}. */
+  private static Long pinOf(ApiInventoryLink api, GlobalIdentifier gid) {
+    return gid.hasVersionId() ? gid.getVersionId() : api.getVersionPin();
+  }
+
+  private static String baseId(GlobalIdentifier gid) {
+    return new GlobalIdentifier(gid.getPrefix(), gid.getDbId()).getIdString();
   }
 
   private void applyApiToEntity(ApiInventoryLink api, InventoryLink entity) {
@@ -165,13 +211,15 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     GlobalIdentifier gid = new GlobalIdentifier(api.getTargetGlobalId());
     // persist the unsuffixed base id: the version lives in versionPin, so a
     // "vN" suffix on the incoming id must not be doubly encoded in the row
-    entity.setTargetGlobalId(new GlobalIdentifier(gid.getPrefix(), gid.getDbId()).getIdString());
+    entity.setTargetGlobalId(baseId(gid));
     entity.setTargetPrefix(gid.getPrefix());
     entity.setTargetDbId(gid.getDbId());
-    Long versionPin = gid.hasVersionId() ? gid.getVersionId() : api.getVersionPin();
+    Long versionPin = pinOf(api, gid);
     entity.setVersionPin(versionPin);
     // Capture the exact audit revision the pinned version maps to. Null version means "latest",
     // which the snapshot resolver resolves dynamically at read time, so no revision is stored.
+    // A CSV import (skipTargetCheck) can store a pin to a version that does not exist; its revision
+    // is then null. The card's "Version not found" comes from a live lookup, not from this field.
     Long revisionId =
         versionPin == null
             ? null

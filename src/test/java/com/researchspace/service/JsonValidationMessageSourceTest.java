@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import jakarta.validation.ConstraintViolation;
@@ -37,7 +38,7 @@ class JsonValidationMessageSourceTest {
 
     Set<ConstraintViolation<Request>> violations = validator.validate(new Request());
 
-    assertEquals(5, violations.size());
+    assertThat(violations).hasSize(5);
     assertEquals(
         Set.of(
             "Description \"abcdef\" must be less than 3 characters.",

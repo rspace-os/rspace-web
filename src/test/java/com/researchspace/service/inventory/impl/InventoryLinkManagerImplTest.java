@@ -1,6 +1,8 @@
 package com.researchspace.service.inventory.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -17,6 +19,7 @@ import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.inventory.InventoryLinkManager;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,19 +63,33 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     assertEquals(doc.getId(), saved.getTargetDbId());
   }
 
+  /**
+   * RSDEV-1528: the pre-check the PIDINST import runs must answer exactly as createLink would, and
+   * answer false for every failure alike, so a caller learns nothing about why.
+   */
   @Test
-  public void createLinkExtractsVersionPinFromTargetSuffix() {
-    User user = createInitAndLoginAnyUser();
-    ApiSampleWithFullSubSamples target = createBasicSampleForUser(user);
-
+  public void canCreateLinkIsTrueOnlyWhereCreateLinkWouldSucceed() {
+    User owner = createInitAndLoginAnyUser();
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
     ApiInventoryLink api = new ApiInventoryLink();
-    api.setRelationType("References");
-    api.setTargetGlobalId(target.getGlobalId() + "v5");
+    api.setRelationType("IsCalibratedBy");
+    api.setTargetGlobalId(target.getGlobalId());
 
-    InventoryLink saved = linkManager.createLink(api, user);
+    // unpinned on purpose: Envers writes audit rows only on commit, which this rolled-back test
+    // never does; the pinned cases live in InventoryLinkManagerImplIT
+    assertTrue(linkManager.canCreateLink(api, owner), "a readable target");
 
-    assertEquals(Long.valueOf(5), saved.getVersionPin());
-    assertEquals(target.getId(), saved.getTargetDbId());
+    User stranger = createInitAndLoginAnyUser();
+    assertFalse(linkManager.canCreateLink(api, stranger), "a target the actor cannot read");
+    api.setTargetGlobalId("SA999999999");
+    assertFalse(linkManager.canCreateLink(api, owner), "a target that does not exist");
+    api.setTargetGlobalId("FL" + target.getId());
+    assertFalse(linkManager.canCreateLink(api, owner), "a kind links cannot target");
+    api.setTargetGlobalId("not-a-global-id");
+    assertFalse(linkManager.canCreateLink(api, owner), "a malformed id");
+    api.setTargetGlobalId(target.getGlobalId());
+    api.setRelationType("IsFriendsWith");
+    assertFalse(linkManager.canCreateLink(api, owner), "an unknown relation type");
   }
 
   @Test
@@ -85,7 +102,7 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     api.setRelationType("References");
     api.setTargetGlobalId(target1.getGlobalId());
     InventoryLink saved = linkManager.createLink(api, user);
-    java.util.Date originalCreated = saved.getCreatedAt();
+    Date originalCreated = saved.getCreatedAt();
 
     Thread.sleep(5);
     ApiInventoryLink update = new ApiInventoryLink();
@@ -123,7 +140,7 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     List<ApiInventoryReferencingItem> rows =
         linkManager.findReferencingItems(target.getGlobalId(), user);
 
-    assertEquals(0, rows.size());
+    assertThat(rows).isEmpty();
   }
 
   @Test
@@ -131,11 +148,12 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     User owner = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
     User stranger = createInitAndLoginAnyUser();
+    String targetGlobalId = target.getGlobalId();
 
     // same error as a missing record, so the response does not confirm the target exists
     assertThrows(
         ApiRuntimeException.class,
-        () -> linkManager.findReferencingItems(target.getGlobalId(), stranger));
+        () -> linkManager.findReferencingItems(targetGlobalId, stranger));
   }
 
   @Test

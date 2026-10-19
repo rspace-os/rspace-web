@@ -179,7 +179,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
    * response. A transfer leaves the departing owner with LIMITED_READ, and {@code
    * clearPropertiesForLimitedView} blanks that response's lists, identifiers included. Taking
    * candidates from the response therefore skipped the push silently, and the registered record
-   * kept the previous owner's contact address - one of the three drifts RSDEV-1251 exists to stop.
+   * kept naming the previous owner - one of the three drifts RSDEV-1251 exists to stop.
    */
   @Test
   void pushesFromTheRecordWhenTheCallersOwnViewCarriesNoIdentifiers() {
@@ -742,5 +742,20 @@ class InventoryIdentifierExternalUpdateServiceTest {
         broken.getExternalMetadataUpdate().getReason());
     assertEquals(Outcome.UPDATED, good.getExternalMetadataUpdate().getOutcome());
     verify(auditer, times(1)).notify(any());
+  }
+
+  @Test
+  void aLinkedIdentifierIsNeverPushedNorExplained() {
+    // a draft would otherwise be pushed, so this pins the guard rather than the frozen-state rule
+    ApiInventoryDOI doi = identifier(IdentifierType.PIDINST_B2INST, "draft", RID);
+    doi.setLinked(true);
+
+    service.pushMetadataUpdates(savedInstrumentWith(doi), user);
+
+    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
+    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    assertNull(
+        doi.getExternalMetadataUpdate(),
+        "skipped silently, like an identifier of a disabled provider");
   }
 }

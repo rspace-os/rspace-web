@@ -1,5 +1,6 @@
 package com.researchspace.auth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Collection;
@@ -97,8 +98,8 @@ class JCacheShiroCacheTest {
     shiroCache.put("a", "1");
     shiroCache.put("b", "2");
     Collection<String> values = shiroCache.values();
-    assertTrue(values.contains("1"));
-    assertTrue(values.contains("2"));
-    assertEquals(2, values.size());
+    assertThat(values).contains("1");
+    assertThat(values).contains("2");
+    assertThat(values).hasSize(2);
   }
 }

@@ -28,6 +28,7 @@ function makeInstrumentNameMapping(model: ImportModel): ColumnFieldMap {
     fieldChangeCallback: () => {},
     isNameUnique: (c) => model.isNameUnique(c),
     columnsWithoutBlankValue: ["Name"],
+    blankColumns: [],
   });
 }
 
@@ -69,6 +70,40 @@ describe("importFiles — instrumentSettings serialization", () => {
       fieldMappings: { Name: "name" },
     });
   });
+});
+
+describe("parseCsvFile — blank columns", () => {
+  test.each(["SAMPLES", "INSTRUMENTS"] as const)(
+    "%s: a column the server reports blank in every row fits a date field of an existing template",
+    async (recordType) => {
+      const model = new ImportModel(recordType);
+      runInAction(() => {
+        if (recordType === "SAMPLES") model.samplesFile = new File([""], "items.csv");
+        else model.instrumentsFile = new File([""], "items.csv");
+      });
+      vi.spyOn(InvApiService, "post").mockResolvedValueOnce({
+        data: {
+          columnNames: ["Decommissioned"],
+          columnsWithoutBlankValue: [],
+          blankColumns: ["Decommissioned"],
+          fieldNameForColumnName: { Decommissioned: "Decommissioned" },
+          templateInfo: { name: "items", fields: [{ name: "Decommissioned", type: "string" }] },
+          radioOptionsForColumn: { Decommissioned: [] },
+          quantityUnitForColumn: {},
+        },
+        status: 200,
+        statusText: "OK",
+        headers: {},
+        config: { headers: {} as AxiosRequestHeaders } as InternalAxiosRequestConfig,
+      });
+
+      await model.parseCsvFile();
+
+      const [mapping] = model.mappingsByRecordType;
+      expect(mapping.columnName).toBe("Decommissioned");
+      expect(mapping.acceptsTemplateFieldType(FieldTypes.date)).toBe(true);
+    },
+  );
 });
 
 const mockErrorMsg = "Unexpected number of values in CSV line, expected: 2, was: 3";

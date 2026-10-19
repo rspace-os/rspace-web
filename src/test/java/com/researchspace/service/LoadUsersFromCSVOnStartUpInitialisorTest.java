@@ -1,15 +1,20 @@
 package com.researchspace.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.service.impl.LoadUsersFromCSVOnStartUpInitialisor;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class LoadUsersFromCSVOnStartUpInitialisorTest extends SpringTransactionalTest {
 
@@ -35,17 +40,37 @@ public class LoadUsersFromCSVOnStartUpInitialisorTest extends SpringTransactiona
     tss.setLoadUsersOnStartUpFile(original);
   }
 
-  // this code is currently not used in application - it has been superceded by liquibase
-  // for loading in data.
-  @Disabled
   @Test
-  public void testOnInitialAppDeploymentHappyCase() {
+  public void testOnInitialAppDeploymentHappyCase() throws Exception {
+    LoadUsersFromCSVOnStartUpInitialisor target =
+        getTargetObject(init, LoadUsersFromCSVOnStartUpInitialisor.class);
+    ResourceLoader originalResourceLoader =
+        (ResourceLoader) ReflectionTestUtils.getField(target, "resourceLoader");
+    String originalFile = target.getLoadUsersOnStartUpFile();
+    String username = CoreTestUtils.getRandomName(10);
+    String csv =
+        "Test, User, "
+            + username
+            + "@example.com,ROLE_PI,"
+            + username
+            + ",testpass\n#Groups\nTest Group,"
+            + username;
+    ResourceLoader resourceLoader = mock(ResourceLoader.class);
+    when(resourceLoader.getResource("classpath:test-users.csv"))
+        .thenReturn(new ByteArrayResource(csv.getBytes(StandardCharsets.UTF_8)));
+
     int initialNumUsers = getTotalNumUsers();
-    int initialNumGRoups = getTotalNumGroups();
-    contentInitializer.setCustomInitActive(false); // don't create content, not needed
-    init.onInitialAppDeployment();
-    // fals here on jenkins??
-    assertTrue(getTotalNumGroups() > initialNumGRoups);
-    assertTrue(getTotalNumUsers() > initialNumUsers);
+    int initialNumGroups = getTotalNumGroups();
+    try {
+      ReflectionTestUtils.setField(target, "resourceLoader", resourceLoader);
+      target.setLoadUsersOnStartUpFile("test-users.csv");
+      contentInitializer.setCustomInitActive(false);
+      init.onInitialAppDeployment();
+      assertEquals(initialNumUsers + 1, getTotalNumUsers());
+      assertEquals(initialNumGroups + 1, getTotalNumGroups());
+    } finally {
+      ReflectionTestUtils.setField(target, "resourceLoader", originalResourceLoader);
+      target.setLoadUsersOnStartUpFile(originalFile);
+    }
   }
 }

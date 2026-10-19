@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,13 +48,13 @@ public class InstrumentTemplateTest {
   @Test
   @DisplayName("Use OID to distinguish instrument templates from instruments")
   public void globalId() {
-    assertTrue(template.getGlobalIdentifier().startsWith("NT"));
+    assertThat(template.getGlobalIdentifier()).startsWith("NT");
     assertEquals(GlobalIdPrefix.NT, template.getOid().getPrefix());
 
     Instrument instrumentFromTemplate = (Instrument) template.copyFromTemplate(anyUser);
     instrumentFromTemplate.setId(7L);
 
-    assertTrue(instrumentFromTemplate.getGlobalIdentifier().startsWith("IN"));
+    assertThat(instrumentFromTemplate.getGlobalIdentifier()).startsWith("IN");
     assertEquals(GlobalIdPrefix.IN, instrumentFromTemplate.getOid().getPrefix());
   }
 
@@ -65,7 +66,7 @@ public class InstrumentTemplateTest {
     assertTrue(copied.isTemplate());
     assertNull(copied.getGlobalIdentifier());
     assertEquals(template.getName() + "_COPY", copied.getName());
-    assertEquals(1, copied.getActiveFields().size());
+    assertThat(copied.getActiveFields()).hasSize(1);
     assertEquals("manufacturer", copied.getActiveFields().get(0).getName());
     assertEquals("Acme", copied.getActiveFields().get(0).getFieldData());
     assertNull(copied.getParentLocation());

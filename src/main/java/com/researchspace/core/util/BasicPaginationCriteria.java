@@ -1,14 +1,10 @@
 package com.researchspace.core.util;
 
 import java.io.Serializable;
-import java.util.Set;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * POJO to hold pagination criteria. If not configured otherwise, will return 10 results from page1
@@ -22,30 +18,19 @@ import org.slf4j.LoggerFactory;
 public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> {
 
   private static final long serialVersionUID = 1L;
-  private static Logger logger = LoggerFactory.getLogger(BasicPaginationCriteria.class);
 
   private FilterCriteria searchCriteria;
   private Class<T> clazz;
-  private T instance;
   private String orderBy;
   private SortOrder sortOrder = SortOrder.DESC;
   private Long pageNumber = 0L;
   private Integer resultsPerPage = DEFAULT_RESULTS_PERPAGE;
 
   /**
-   * @param clazz A Class<T> object that can be used to create an instance of the generic type for
-   *     checking orderBy properties.
+   * @param clazz the class of the listed objects
    */
   public BasicPaginationCriteria(Class<T> clazz) {
     this.clazz = clazz;
-    try {
-      this.instance = clazz.newInstance();
-    } catch (InstantiationException e) {
-      logger.trace("Could not instantiate example of class [" + clazz + "] - perhaps is abstract?");
-      this.instance = null;
-    } catch (IllegalAccessException e) {
-      throw new IllegalArgumentException();
-    }
   }
 
   public BasicPaginationCriteria() {}
@@ -227,31 +212,12 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
     if (StringUtils.isBlank(orderByField)) {
       return;
     }
-    setOrderByWithoutChecks(orderByField);
+    this.orderBy = orderByField;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * com.axiope.util.IPagination#setOrderByWithoutChecks(java.lang.String)
-   */
   @Override
-  public void setOrderByWithoutChecks(String orderByField) {
-    if (isOrderBySafe(orderByField)) {
-      this.orderBy = orderByField;
-    }
-    if (instance != null) {
-      try {
-        BeanUtils.getProperty(instance, orderByField);
-        // nested properties are allowed so we just warn here
-      } catch (Exception e) {
-        logger.warn(
-            "Property [{}] is not a direct property of the generic class [{}]",
-            orderByField,
-            instance.getClass());
-      }
-    }
+  public void clearOrderBy() {
+    this.orderBy = null;
   }
 
   /*
@@ -297,30 +263,5 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
   @Override
   public int getFirstResultIndex() {
     return (int) (getPageNumber() * getResultsPerPage());
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.axiope.util.IPagination#isOrderBySafe(java.lang.String)
-   */
-  /**
-   * Dispatch keys for the sysadmin usage listing (see {@code SysAdminManager}), which matches them
-   * with {@code equals} to select an aggregate query branch rather than using them as sort fields.
-   *
-   * <p>This predicate is shared by every listing, so these literals are accepted everywhere but
-   * only interpreted on that one path. A listing that concatenates its sort field instead (form and
-   * workspace listings do) would emit them verbatim and fail to parse, which is a rejected query
-   * rather than an injection: matching is exact, so no payload built around these names, such as
-   * {@code fileUsage(),rand()}, satisfies either the set or the identifier pattern.
-   */
-  private static final Set<String> VIRTUAL_SORT_TOKENS = Set.of("fileUsage()", "recordCount()");
-
-  @Override
-  public boolean isOrderBySafe(String orderBy) {
-    if (StringUtils.isEmpty(orderBy)) {
-      return true;
-    }
-    return VIRTUAL_SORT_TOKENS.contains(orderBy) || SAFE_ORDER_BY_TOKEN.matcher(orderBy).matches();
   }
 }

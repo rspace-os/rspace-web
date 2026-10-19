@@ -6,6 +6,7 @@ import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -13,8 +14,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 @EnabledIfSystemProperty(named = "nightly", matches = "(|true)")
@@ -43,19 +42,12 @@ public class PostToMSTeamsRealConnectionTest extends SpringTransactionalTest {
     }
 
     @Override
-    protected String getPostUrlSetting() {
+    protected String doGetPostUrl(AppConfigElementSet messageConfig) {
       return null;
     }
 
     protected ResponseEntity<String> doSendMessage(String jsonMessage, URI uri) {
       return super.doSendMessage(jsonMessage, uri);
-    }
-
-    @Override
-    protected HttpHeaders createPostHeaders() {
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-      return headers;
     }
 
     @Override

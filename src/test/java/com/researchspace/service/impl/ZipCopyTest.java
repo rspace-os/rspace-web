@@ -1,6 +1,6 @@
 package com.researchspace.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,9 +19,8 @@ public class ZipCopyTest {
   public void classPathAndFileReadsAreTheSameBytes() throws IOException {
     // Fixed buffers can compare only a prefix or include equal zero padding.
     try (InputStream fromClasspath = fromClasspath()) {
-      assertArrayEquals(
-          fromClasspath.readAllBytes(),
-          Files.readAllBytes(SRC_MAIN_RESOURCES_START_UP_DATA_C4_ZIP));
+      assertThat(Files.readAllBytes(SRC_MAIN_RESOURCES_START_UP_DATA_C4_ZIP))
+          .containsExactly(fromClasspath.readAllBytes());
     }
   }
 

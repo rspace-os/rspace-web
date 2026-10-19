@@ -1,7 +1,7 @@
 package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.MvcTestUtils.parseOAuthTokenResponse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -50,10 +50,42 @@ public class OAuthAPIAccessMVCIT extends API_MVC_TestBase {
             .andReturn();
     ApiRecordTreeItemListing folders =
         getFromJsonResponseBody(result, ApiRecordTreeItemListing.class);
-    assertTrue(folders.getTotalHits() > 0);
+    assertThat(folders.getTotalHits()).isGreaterThan(0);
 
     // confirm that access token request doesn't succeed if oauth authentication is disabled
     disableApiOAuthAuthentication();
     mockMvc.perform(accessTokenRequest).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void createJwtAccessTokenAndAccessApi() throws Exception {
+    enableGlobalApiAccess();
+    enableApiOAuthAuthentication();
+
+    User user = createInitAndLoginAnyUser();
+    RSpaceTestUtils.logout();
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/oauth/token")
+                    .param("client_id", testOAuthAppClientId)
+                    .param("client_secret", testOAuthAppClientSecret)
+                    .param("grant_type", "password")
+                    .param("username", user.getUsername())
+                    .param("password", TESTPASSWD)
+                    .param("is_jwt", "true"))
+            .andExpect(status().isOk())
+            .andReturn();
+    NewOAuthTokenResponse response =
+        parseOAuthTokenResponse(result.getResponse().getContentAsString());
+    assertThat(response.getAccessToken().split("\\.")).hasSize(3);
+    assertThat(response.getRefreshToken()).isNotBlank();
+
+    mockMvc
+        .perform(
+            MockMvcRequestBuilders.get(createUrl(API_VERSION.ONE, "/folders/tree"))
+                .header("Authorization", "Bearer " + response.getAccessToken()))
+        .andExpect(status().isOk());
   }
 }

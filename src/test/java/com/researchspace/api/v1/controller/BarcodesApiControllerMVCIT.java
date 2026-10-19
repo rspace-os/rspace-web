@@ -1,6 +1,6 @@
 package com.researchspace.api.v1.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -34,7 +34,7 @@ public class BarcodesApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     .param("content", "SA123"))
             .andExpect(status().isOk())
             .andReturn();
-    assertEquals(98, result.getResponse().getContentAsByteArray().length); // expected barcode size
+    assertThat(result.getResponse().getContentAsByteArray()).hasSize(98); // expected barcode size
 
     // QR barcode
     result =
@@ -59,8 +59,8 @@ public class BarcodesApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .perform(createBuilderForGet(API_VERSION.ONE, apiKey, "/barcodes", anyUser))
             .andExpect(status().is4xxClientError())
             .andReturn();
-    assertTrue(
-        result.getResolvedException().getMessage().contains("Content parameter is required"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Content parameter is required");
 
     // unknown type requested
     result =
@@ -71,11 +71,8 @@ public class BarcodesApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     .param("barcodeType", "QRXD"))
             .andExpect(status().is4xxClientError())
             .andReturn();
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Supported barcodeType values are: 'BARCODE' or 'QR'"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Supported barcodeType values are: 'BARCODE' or 'QR'");
 
     // incorrect width value
     result =
@@ -87,11 +84,8 @@ public class BarcodesApiControllerMVCIT extends API_MVC_InventoryTestBase {
                     .param("imageWidth", "-1"))
             .andExpect(status().is4xxClientError())
             .andReturn();
-    assertTrue(
-        result
-            .getResolvedException()
-            .getMessage()
-            .contains("Requested width cannot be less than zero"));
+    assertThat(result.getResolvedException().getMessage())
+        .contains("Requested width cannot be less than zero");
 
     // confirm correct request
     result =

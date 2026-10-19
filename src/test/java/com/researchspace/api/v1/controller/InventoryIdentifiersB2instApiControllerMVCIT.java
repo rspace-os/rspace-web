@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -19,9 +20,9 @@ import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSetti
 import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.webapp.integrations.b2inst.B2instConnectorDummy;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,6 +71,28 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     originalPidinstDataCiteSettings =
         captureIdentifierSettings(settingsController, IdentifierType.PIDINST_DATACITE);
     setB2instEnabled("true");
+  }
+
+  @Test
+  public void storedSecretIsReturnedAsNullAndNeverInClear() throws Exception {
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    String apiKey = createNewApiKeyForUser(sysadmin);
+    // restored by teardown, which puts the captured real token back
+    sysPropMgr.save(SystemPropertyName.PIDINST_B2INST_TOKEN, "b2inst-stored-token", sysadmin);
+
+    String body =
+        mockMvc
+            .perform(
+                createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/system/settings", sysadmin))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+
+    // the key must be present with a null value: an absent key would read as "no secret"
+    assertThat(body)
+        .containsPattern("\"password\"\\s*:\\s*null")
+        .doesNotContain("b2inst-stored-token");
   }
 
   @AfterEach
@@ -222,15 +245,17 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
     assertEquals("1.0", sent.getSchemaVersion());
     assertEquals("An automatic weather station.", sent.getDescription());
     assertEquals("Arctic Research Institute", sent.getOwner().get(0).getOwnerName());
-    assertEquals(anyUser.getEmail(), sent.getOwner().get(0).getOwnerContact());
+    assertNull(
+        sent.getOwner().get(0).getOwnerContact(),
+        "the registering user's email must not reach B2INST");
     assertEquals("Acme Instruments", sent.getManufacturer().get(0).getManufacturerName());
     assertEquals("AWS-42", sent.getModel().getModelName());
     assertEquals("Weather station", sent.getInstrumentType().get(0).getInstrumentTypeName());
-    assertEquals(1, sent.getDate().size());
+    assertThat(sent.getDate()).hasSize(1);
     assertEquals("2024-02-21", sent.getDate().get(0).getDate());
     assertEquals("Commissioned", sent.getDate().get(0).getDateType());
     // "Last calibrated" is not mapped; MeasuredVariable carries the measured quantity verbatim
-    assertEquals(List.of("Air temperature"), sent.getMeasuredVariable());
+    assertThat(sent.getMeasuredVariable()).containsExactly("Air temperature");
     /*
      * The one template field that deliberately does NOT copy across: a landing page names exactly
      * one physical instrument, so a landing page inherited from the template must never be
@@ -249,12 +274,13 @@ public class InventoryIdentifiersB2instApiControllerMVCIT extends API_MVC_Invent
      * pass while the registered address 404s forever.
      */
     assertNotNull(registeredDoi.getRsPublicId(), "the identifier must expose its public link");
-    assertTrue(
-        sent.getLandingPage().endsWith("/public/inventory/" + registeredDoi.getRsPublicId()),
-        "the address registered with B2INST must name the page RSpace will serve; registered: "
-            + sent.getLandingPage()
-            + ", identifier publicLink: "
-            + registeredDoi.getRsPublicId());
+    assertThat(sent.getLandingPage())
+        .as(
+            "the address registered with B2INST must name the page RSpace will serve; registered: "
+                + sent.getLandingPage()
+                + ", identifier publicLink: "
+                + registeredDoi.getRsPublicId())
+        .endsWith("/public/inventory/" + registeredDoi.getRsPublicId());
     assertEquals("Other", sent.getAlternateIdentifier().get(0).getAlternateIdentifierType());
     assertEquals(
         "INV-2025-0042", sent.getAlternateIdentifier().get(0).getAlternateIdentifierValue());

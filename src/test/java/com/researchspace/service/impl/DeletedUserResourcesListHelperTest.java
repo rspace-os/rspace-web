@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,7 +50,7 @@ public class DeletedUserResourcesListHelperTest {
     boolean saveTempListResult =
         resourcesListHelper.saveUserResourcesListToTemporaryFile(userId, testFileList);
     assertTrue(saveTempListResult);
-    assertTrue(tempResourcesFile.exists());
+    assertThat(tempResourcesFile).exists();
     assertTrue(tempResourcesFile.length() > 1);
     assertFalse(finalResourcesFile.exists());
 
@@ -57,14 +58,14 @@ public class DeletedUserResourcesListHelperTest {
     boolean makeListFinalResult = resourcesListHelper.markTempUserResourcesListAsFinal(userId);
     assertTrue(makeListFinalResult);
     assertFalse(tempResourcesFile.exists());
-    assertTrue(finalResourcesFile.exists());
+    assertThat(finalResourcesFile).exists();
     assertTrue(finalResourcesFile.length() > 1);
 
     // retrieve
     Optional<List<File>> retrievedListOpt = resourcesListHelper.retrieveUserResourcesList(userId);
-    assertTrue(retrievedListOpt.isPresent());
-    assertEquals(testFileList, retrievedListOpt.get());
-    assertTrue(finalResourcesFile.exists());
+    assertThat(retrievedListOpt).isPresent();
+    assertThat(retrievedListOpt).contains(testFileList);
+    assertThat(finalResourcesFile).exists();
 
     // delete list file
     boolean listFileRemovalResult = resourcesListHelper.removeResourcesListFile(userId, false);

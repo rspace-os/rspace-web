@@ -49,6 +49,14 @@ public interface InventoryIdentifierApiManager {
    */
   ApiInventoryRecordInfo refreshIdentifier(GlobalIdentifier invRecOid, User user);
 
+  /**
+   * Attaches a linked identifier (a PID minted outside RSpace, {@code linked == true}) to the
+   * record without any provider call, as the last step of an instrument import (RSDEV-1326, ADR
+   * 0009). Refuses a record that already carries an identifier, exactly like registration does.
+   */
+  ApiInventoryRecordInfo linkExternalIdentifier(
+      GlobalIdentifier invRecOid, ApiInventoryDOI linkedIdentifier, User user);
+
   /* for testing */
   void setDataCiteConnector(DataCiteConnector dataCiteConnector);
 }

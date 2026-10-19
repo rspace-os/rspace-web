@@ -1,6 +1,7 @@
 package com.researchspace.linkedelements;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -87,6 +88,6 @@ public class FieldParserTest {
   public void testGetClasslessImages() {
     String html =
         "<img class='x' src = 'y'/> <img class='imageDropped'/> <img src='z'/> <a href='link'/>";
-    assertEquals(2, fieldParser.getNonRSpaceImages(html).size());
+    assertThat(fieldParser.getNonRSpaceImages(html)).hasSize(2);
   }
 }

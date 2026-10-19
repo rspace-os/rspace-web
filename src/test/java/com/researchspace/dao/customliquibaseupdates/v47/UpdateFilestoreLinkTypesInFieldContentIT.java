@@ -1,8 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates.v47;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.dao.customliquibaseupdates.AbstractDBHelpers;
 import com.researchspace.model.User;
@@ -66,7 +64,7 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
     List<TextField> textFieldsWithLinks =
         getAllTextFieldsWithLinks(UpdateFilestoreLinkTypesInFieldContent.OLD_LINK_MATCHER);
     commitTransaction();
-    assertEquals(initTextFields.size() + 2, textFieldsWithLinks.size());
+    assertThat(textFieldsWithLinks).hasSize(initTextFields.size() + 2);
 
     // call the updater
 
@@ -91,16 +89,18 @@ public class UpdateFilestoreLinkTypesInFieldContentIT extends AbstractDBHelpers 
   }
 
   private void assertOldStyleLink(String fieldContent) {
-    assertTrue(fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"), fieldContent);
-    assertFalse(
-        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"),
-        fieldContent);
+    assertThat(fieldContent).as(fieldContent).contains("<a class=\"nfs_file mceNonEditable\" href");
+    assertThat(fieldContent)
+        .as(fieldContent)
+        .doesNotContain("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href");
   }
 
   private void assertNewStyleLink(String fieldContent) {
-    assertFalse(fieldContent.contains("<a class=\"nfs_file mceNonEditable\" href"), fieldContent);
-    assertTrue(
-        fieldContent.contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href"),
-        fieldContent);
+    assertThat(fieldContent)
+        .as(fieldContent)
+        .doesNotContain("<a class=\"nfs_file mceNonEditable\" href");
+    assertThat(fieldContent)
+        .as(fieldContent)
+        .contains("<a class=\"nfs_file mceNonEditable\" data-linktype=\"file\" href");
   }
 }

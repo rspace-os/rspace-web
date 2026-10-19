@@ -179,6 +179,7 @@ export default class IdentifierModel implements Identifier {
   _links: Array<_LINK> = [];
   editing: boolean = false;
   customFieldsOnPublicPage: boolean;
+  linked: boolean;
   /*
    * Deliberately absent from the makeObservable map below, unlike every sibling field: it is read
    * once, imperatively, right after a save (see InventoryBaseRecord.update) and never rendered, so
@@ -216,6 +217,7 @@ export default class IdentifierModel implements Identifier {
       _links: observable,
       editing: observable,
       customFieldsOnPublicPage: observable,
+      linked: observable,
       requiredFields: computed,
       isValid: computed,
       recommendedFields: computed,
@@ -254,7 +256,10 @@ export default class IdentifierModel implements Identifier {
     this.publicUrl = attrs.publicUrl;
     this.providerUrl = attrs.providerUrl;
     this.publisher = attrs.publisher;
-    this.publicationYear = `${attrs.publicationYear}`;
+    // a stringified null/undefined would be truthy, so an absent year would pass the
+    // required-field check and render as "undefined" in the form
+    this.publicationYear =
+      attrs.publicationYear === null || attrs.publicationYear === undefined ? "" : `${attrs.publicationYear}`;
     this.resourceType = attrs.resourceType;
     this.resourceTypeGeneral = attrs.resourceTypeGeneral;
     this.url = attrs.url;
@@ -271,6 +276,8 @@ export default class IdentifierModel implements Identifier {
     this._links = attrs._links;
     this.customFieldsOnPublicPage = attrs.customFieldsOnPublicPage;
     this.externalMetadataUpdate = attrs.externalMetadataUpdate ?? null;
+    // server-owned; absent in an older payload means an identifier RSpace minted itself
+    this.linked = attrs.linked ?? false;
 
     if (ApiServiceBase) {
       this.ApiServiceBase = ApiServiceBase;
@@ -296,17 +303,27 @@ export default class IdentifierModel implements Identifier {
         value: this.title,
         handler: (v) => this.setTitle(v as string),
       },
-      {
-        key: "Publisher",
-        value: this.publisher,
-        handler: (v) => this.setPublisher(v as string),
-      },
-      {
-        key: "Publication Year",
-        value: this.publicationYear,
-        handler: (v) => this.setPublicationYear(v as string),
-        isValid: (v) => typeof v === "string" && /^\d\d\d\d$/.test(v),
-      },
+      /*
+       * Publisher and Publication Year are DataCite minting metadata that the panel does not show
+       * for a B2INST identifier, nor for a linked one of any registry since RSpace cannot supply
+       * them. Requiring what is never shown only produced an unactionable "details are missing"
+       * warning (RSDEV-1326).
+       */
+      ...(this.linked || this.doiType === "PIDINST_B2INST"
+        ? []
+        : [
+            {
+              key: "Publisher",
+              value: this.publisher,
+              handler: (v: unknown) => this.setPublisher(v as string),
+            },
+            {
+              key: "Publication Year",
+              value: this.publicationYear,
+              handler: (v: unknown) => this.setPublicationYear(v as string),
+              isValid: (v: unknown) => typeof v === "string" && /^\d\d\d\d$/.test(v),
+            },
+          ]),
       {
         key: "Resource Type",
         value: this.resourceType,

@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -194,8 +193,10 @@ public class RSCommunityController extends BaseController {
    * @return
    */
   boolean isEmailValid(String email) {
-    Matcher matcher = EMAIL_PATTERN.matcher(email);
-    return matcher.matches() && (email.length() < User.DEFAULT_MAXFIELD_LEN);
+    if (email.length() >= User.DEFAULT_MAXFIELD_LEN) {
+      return false;
+    }
+    return EMAIL_PATTERN.matcher(email).matches();
   }
 
   /**

@@ -1,12 +1,17 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.service.IntegrationsHandler.ACCESS_TOKEN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APIKEY;
+import static com.researchspace.service.IntegrationsHandler.DATAVERSE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA_USER_TOKEN;
 import static com.researchspace.service.IntegrationsHandler.DMPASSISTANT_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_DOMAIN_SETTING;
+import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.MSTEAMS_WEBHOOK_URL;
 import static com.researchspace.service.IntegrationsHandler.OMERO_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ONBOARDING_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.PYRAT_APP_NAME;
@@ -18,7 +23,6 @@ import static com.researchspace.service.SystemPropertyName.DROPBOX_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.OMERO_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.PYRAT_AVAILABLE;
 import static com.researchspace.service.SystemPropertyName.SLACK_AVAILABLE;
-import static com.researchspace.service.impl.IntegrationsHandlerImpl.MASKED_TOKEN;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createPermissionEnumSystemProperty;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_ALIAS;
 import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
@@ -27,6 +31,7 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIA
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,10 +39,14 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.PropertyDescriptor;
@@ -65,6 +74,7 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.session.GitHubPendingToken;
 import com.researchspace.testutils.SystemPropertyTestFactory;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.integrations.ServerConfigurationDTO;
@@ -76,9 +86,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -129,9 +141,72 @@ public class IntegrationsHandlerTest {
     when(sysPropMgr.listSystemPropertyDefinitions()).thenReturn(parentAndChild);
     handler.init();
     parent2child = handler.getParent2ChildMap();
-    assertEquals(1, parent2child.get(parent).size());
+    assertThat(parent2child.get(parent)).hasSize(1);
     assertEquals(child, parent2child.get(parent).get(0));
     assertNull(parent2child.get(child));
+  }
+
+  @Test
+  public void deletingASlackChannelDeletesItsConnection() {
+    stubSetForApp(7L, App.APP_SLACK);
+    handler.deleteAppOptions(7L, "slack", subject);
+    verify(appCfgMgr).deleteAppConfigSet(7L, subject, App.APP_SLACK);
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), SLACK_APP_NAME, "7");
+  }
+
+  @Test
+  public void deletingDataverseConfigDeletesItsCredential() {
+    stubSetForApp(7L, App.APP_DATAVERSE);
+
+    handler.deleteAppOptions(7L, DATAVERSE_APP_NAME, subject);
+
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), DATAVERSE_APP_NAME, "7");
+  }
+
+  @Test
+  public void deletingTeamsConfigDeletesItsWebhook() {
+    stubSetForApp(7L, App.APP_MSTEAMS);
+
+    handler.deleteAppOptions(7L, MSTEAMS_APP_NAME, subject);
+
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), MSTEAMS_APP_NAME, "7");
+  }
+
+  @Test
+  public void deletingOneOfSeveralGitHubRepositoriesKeepsTheToken() {
+    stubSetForApp(7L, App.APP_GITHUB);
+    when(appCfgMgr.getByAppName(App.APP_GITHUB, subject))
+        .thenReturn(
+            SystemPropertyTestFactory.createAnyAppWithConfigElements(subject, App.APP_GITHUB));
+    handler.deleteAppOptions(7L, GITHUB_APP_NAME, subject);
+    verify(userConnectionManager)
+        .deleteByUserAndProvider(subject.getUsername(), GITHUB_APP_NAME, "7");
+    verify(userConnectionManager, never()).deleteByUserAndProvider(any(), any());
+  }
+
+  @Test
+  public void addingAGitHubRepositoryWithoutOAuthTokenDoesNotSaveTheConfig() {
+    Map<String, String> settings = Map.of("GITHUB_REPOSITORY_FULL_NAME", "owner/repo");
+    try (var pending = Mockito.mockStatic(GitHubPendingToken.class)) {
+      assertThrows(
+          IllegalStateException.class,
+          () -> handler.saveAppOptions(null, settings, GITHUB_APP_NAME, false, subject));
+
+      verify(userConnectionManager, never())
+          .saveWithNewAppConfigElementSet(any(), any(), any(), any(), anyBoolean(), any());
+      verify(appCfgMgr, never())
+          .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
+    }
+  }
+
+  private UserAppConfig stubSetForApp(Long setId, String appName) {
+    UserAppConfig cfg = SystemPropertyTestFactory.createAnyAppWithConfigElements(subject, appName);
+    when(appCfgMgr.deleteAppConfigSet(setId, subject, appName))
+        .thenReturn(cfg.getAppConfigElementSets().iterator().next());
+    return cfg;
   }
 
   @Test
@@ -174,7 +249,7 @@ public class IntegrationsHandlerTest {
     assertTrue(info.isEnabled());
     assertEquals(propName, info.getName());
     assertNotNull(info.getOptions());
-    assertEquals(0, info.getOptions().size());
+    assertThat(info.getOptions()).isEmpty();
 
     UserPreference dropboxDisabled = new UserPreference(Preference.DROPBOX, subject, "false");
     when(userMgr.getPreferenceForUser(subject, Preference.DROPBOX)).thenReturn(dropboxDisabled);
@@ -236,6 +311,212 @@ public class IntegrationsHandlerTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
+  public void appSettingsAreWithheldUnlessListedAsClientReadable() {
+    AppConfigElementSet set = new AppConfigElementSet();
+    set.setConfigElements(
+        Set.of(
+            new AppConfigElement(
+                new AppConfigElementDescriptor(
+                    new PropertyDescriptor("DATAVERSE_URL", SettingsType.STRING, "")),
+                "https://dataverse.example"),
+            new AppConfigElement(
+                new AppConfigElementDescriptor(
+                    new PropertyDescriptor("DATAVERSE_APIKEY", SettingsType.STRING, "")),
+                "dataverse-secret"),
+            new AppConfigElement(
+                new AppConfigElementDescriptor(
+                    new PropertyDescriptor("DATAVERSE_UNLISTED", SettingsType.STRING, "")),
+                "unlisted-value")));
+    UserAppConfig cfg =
+        new UserAppConfig(subject, new App("app.dataverse", "Dataverse", true), true);
+    cfg.addConfigSet(set);
+    when(appCfgMgr.getByAppName("app.dataverse", subject)).thenReturn(cfg);
+
+    IntegrationInfo info = handler.getIntegration(subject, DATAVERSE_APP_NAME);
+
+    Map<String, String> options =
+        (Map<String, String>) info.getOptions().values().iterator().next();
+    assertThat(options).containsEntry("DATAVERSE_APIKEY", null);
+    assertThat(options).containsEntry("DATAVERSE_UNLISTED", null); // fail-closed for new settings
+    assertEquals("https://dataverse.example", options.get("DATAVERSE_URL"));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void dataverseApiKeyStatusComesFromItsEncryptedConnection() {
+    App app = new App(App.APP_DATAVERSE, "Dataverse", true);
+    UserAppConfig cfg = new UserAppConfig(subject, app, true);
+    AppConfigElementSet set = new AppConfigElementSet();
+    ReflectionTestUtils.setField(set, "id", 42L);
+    set.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor("DATAVERSE_ALIAS", SettingsType.STRING, "")),
+            "tenant"));
+    set.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor("DATAVERSE_URL", SettingsType.STRING, "")),
+            "https://dataverse.example"));
+    cfg.addConfigSet(set);
+    when(appCfgMgr.getByAppName(App.APP_DATAVERSE, subject)).thenReturn(cfg);
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), DATAVERSE_APP_NAME, "42"))
+        .thenReturn(
+            Optional.of(
+                new UserConnection(
+                    new UserConnectionId(subject.getUsername(), DATAVERSE_APP_NAME, "42"),
+                    "stored-key")));
+
+    IntegrationInfo info = handler.getIntegration(subject, DATAVERSE_APP_NAME);
+
+    Map<String, String> options = (Map<String, String>) info.getOptions().get("42");
+    assertThat(options).containsEntry(DATAVERSE_APIKEY, null);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void teamsWebhookStatusComesFromItsEncryptedConnection() {
+    App app = new App(App.APP_MSTEAMS, "Microsoft Teams", true);
+    UserAppConfig cfg = new UserAppConfig(subject, app, true);
+    AppConfigElementSet set = new AppConfigElementSet();
+    ReflectionTestUtils.setField(set, "id", 43L);
+    set.addConfigElement(
+        new AppConfigElement(
+            new AppConfigElementDescriptor(
+                new PropertyDescriptor("MSTEAMS_CHANNEL_LABEL", SettingsType.STRING, "")),
+            "general"));
+    cfg.addConfigSet(set);
+    when(appCfgMgr.getByAppName(App.APP_MSTEAMS, subject)).thenReturn(cfg);
+    UserConnection connection =
+        new UserConnection(new UserConnectionId(subject.getUsername(), MSTEAMS_APP_NAME, "43"), "");
+    connection.setSecret("https://teams.example/webhook");
+    when(userConnectionManager.findByUserNameProviderName(
+            subject.getUsername(), MSTEAMS_APP_NAME, "43"))
+        .thenReturn(Optional.of(connection));
+
+    IntegrationInfo info = handler.getIntegration(subject, MSTEAMS_APP_NAME);
+
+    Map<String, String> options = (Map<String, String>) info.getOptions().get("43");
+    assertThat(options).containsEntry(MSTEAMS_WEBHOOK_URL, null);
+  }
+
+  @Test
+  public void dataverseApiKeyIsSavedOnlyInUserConnection() {
+    Map<String, String> settings =
+        Map.of(
+            "DATAVERSE_ALIAS",
+            "tenant",
+            "DATAVERSE_URL",
+            "https://dataverse.example",
+            DATAVERSE_APIKEY,
+            "dataverse-secret");
+    Map<String, String> publicSettings =
+        Map.of("DATAVERSE_ALIAS", "tenant", "DATAVERSE_URL", "https://dataverse.example");
+
+    handler.saveAppOptions(42L, settings, DATAVERSE_APP_NAME, false, subject);
+
+    verify(appCfgMgr)
+        .saveAppConfigElementSet(publicSettings, 42L, false, subject, App.APP_DATAVERSE);
+    ArgumentCaptor<UserConnection> savedConnection = ArgumentCaptor.forClass(UserConnection.class);
+    verify(userConnectionManager).save(savedConnection.capture());
+    assertEquals(
+        new UserConnectionId(subject.getUsername(), DATAVERSE_APP_NAME, "42"),
+        savedConnection.getValue().getId());
+    assertEquals("dataverse-secret", savedConnection.getValue().getAccessToken());
+  }
+
+  @Test
+  public void teamsWebhookIsSavedAsEncryptedConnectionSecret() {
+    Map<String, String> settings =
+        Map.of(
+            "MSTEAMS_CHANNEL_LABEL", "general", MSTEAMS_WEBHOOK_URL, "https://teams.example/hook");
+    Map<String, String> publicSettings = Map.of("MSTEAMS_CHANNEL_LABEL", "general");
+
+    handler.saveAppOptions(42L, settings, MSTEAMS_APP_NAME, false, subject);
+
+    verify(appCfgMgr).saveAppConfigElementSet(publicSettings, 42L, false, subject, App.APP_MSTEAMS);
+    ArgumentCaptor<UserConnection> savedConnection = ArgumentCaptor.forClass(UserConnection.class);
+    verify(userConnectionManager).save(savedConnection.capture());
+    assertEquals(
+        new UserConnectionId(subject.getUsername(), MSTEAMS_APP_NAME, "42"),
+        savedConnection.getValue().getId());
+    assertEquals("", savedConnection.getValue().getAccessToken());
+    assertEquals("https://teams.example/hook", savedConnection.getValue().getSecret());
+  }
+
+  @Test
+  public void newConfigurationsRequireNonBlankCredentials() {
+    Map<String, String> credentials =
+        Map.of(
+            DATAVERSE_APP_NAME, DATAVERSE_APIKEY,
+            DSW_APP_NAME, DSW_APIKEY,
+            MSTEAMS_APP_NAME, MSTEAMS_WEBHOOK_URL);
+
+    for (Map.Entry<String, String> credential : credentials.entrySet()) {
+      Map<String, String> nullCredential = new HashMap<>();
+      nullCredential.put(credential.getValue(), null);
+      List<Map<String, String>> invalidOptions =
+          List.of(
+              Map.of(),
+              nullCredential,
+              Map.of(credential.getValue(), ""),
+              Map.of(credential.getValue(), " \t\n"));
+
+      for (Map<String, String> options : invalidOptions) {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> handler.saveAppOptions(null, options, credential.getKey(), false, subject));
+      }
+    }
+
+    verifyNoInteractions(appCfgMgr, userConnectionManager);
+  }
+
+  @Test
+  public void nonBlankCredentialsAllowNewConfigurations() {
+    AppConfigElementSet configSet = new AppConfigElementSet();
+    ReflectionTestUtils.setField(configSet, "id", 42L);
+    UserAppConfig savedConfig = Mockito.mock(UserAppConfig.class);
+    when(savedConfig.getAppConfigElementSets()).thenReturn(Set.of(configSet));
+    when(appCfgMgr.saveAppConfigElementSet(any(), isNull(), eq(false), eq(subject), anyString()))
+        .thenReturn(savedConfig);
+
+    Map<String, String> credentials =
+        Map.of(
+            DATAVERSE_APP_NAME, DATAVERSE_APIKEY,
+            DSW_APP_NAME, DSW_APIKEY,
+            MSTEAMS_APP_NAME, MSTEAMS_WEBHOOK_URL);
+    for (Map.Entry<String, String> credential : credentials.entrySet()) {
+      Map<String, String> options = new HashMap<>();
+      options.put(credential.getValue(), "new-credential");
+      if (DSW_APP_NAME.equals(credential.getKey())) {
+        options.put(DSW_ALIAS, "dswAlias");
+      }
+      handler.saveAppOptions(null, options, credential.getKey(), false, subject);
+    }
+
+    verify(appCfgMgr, times(3))
+        .saveAppConfigElementSet(any(), isNull(), eq(false), eq(subject), anyString());
+    verify(userConnectionManager, times(3)).save(any());
+  }
+
+  @Test
+  public void nullCredentialOnUpdateKeepsStoredDataverseApiKey() {
+    Map<String, String> settings = new HashMap<>();
+    settings.put("DATAVERSE_ALIAS", "tenant");
+    settings.put("DATAVERSE_URL", "https://dataverse.example");
+    settings.put(DATAVERSE_APIKEY, null);
+
+    handler.saveAppOptions(42L, settings, DATAVERSE_APP_NAME, false, subject);
+
+    verify(userConnectionManager, never()).save(any());
+    verify(userConnectionManager, never())
+        .deleteByUserAndProvider(subject.getUsername(), DATAVERSE_APP_NAME, "42");
+  }
+
+  @Test
   public void testUpdateSlackApp() {
 
     // set slack as available
@@ -280,7 +561,24 @@ public class IntegrationsHandlerTest {
     Map<String, String> expectedOptions = new HashMap<>();
     expectedOptions.put(EGNYTE_DOMAIN_SETTING, testEgnyteDomain);
     Mockito.verify(appCfgMgr, times(1))
-        .saveAppConfigElementSet(expectedOptions, null, false, subject);
+        .saveAppConfigElementSet(expectedOptions, null, false, subject, "app.egnyte");
+  }
+
+  @Test
+  public void enablingEgnyteWithoutADomainLeavesItsOptionsAlone() {
+    IntegrationInfo info = new IntegrationInfo();
+    info.setAvailable(true);
+    info.setEnabled(true);
+    info.setName(EGNYTE_APP_NAME);
+    UserAppConfig egnyteConfig =
+        new UserAppConfig(subject, new App(EGNYTE_APP_NAME, "Egnyte", false), false);
+    when(appCfgMgr.getByAppName("app.egnyte", subject)).thenReturn(egnyteConfig);
+
+    handler.updateIntegrationInfo(subject, info);
+
+    assertTrue(egnyteConfig.isEnabled());
+    Mockito.verify(appCfgMgr, never())
+        .saveAppConfigElementSet(any(), any(), anyBoolean(), any(), anyString());
   }
 
   @Test
@@ -305,18 +603,15 @@ public class IntegrationsHandlerTest {
 
   @Test
   public void testUpdateUnknownIntegrationName() {
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> {
-          IntegrationInfo infor = new IntegrationInfo();
-          infor.setAvailable(true);
-          infor.setEnabled(false);
-          infor.setName("UNKNOWN");
+    IntegrationInfo infor = new IntegrationInfo();
+    infor.setAvailable(true);
+    infor.setEnabled(false);
+    infor.setName("UNKNOWN");
 
-          handler.updateIntegrationInfo(subject, infor);
-          Mockito.verify(userMgr, never())
-              .setPreference(Preference.DROPBOX, infor.isEnabled() + "", subject.getUsername());
-        });
+    assertThrows(
+        IllegalArgumentException.class, () -> handler.updateIntegrationInfo(subject, infor));
+    Mockito.verify(userMgr, never())
+        .setPreference(Preference.DROPBOX, infor.isEnabled() + "", subject.getUsername());
   }
 
   @Test
@@ -331,7 +626,7 @@ public class IntegrationsHandlerTest {
     when(userMgr.getPreferenceForUser(subject, Preference.BOX_LINK_TYPE))
         .thenReturn(boxLinkTypePref);
     IntegrationInfo info = handler.getIntegration(subject, Preference.BOX.name());
-    assertEquals("LIVE", info.getOptions().get(Preference.BOX_LINK_TYPE.name()));
+    assertThat(info.getOptions()).containsEntry(Preference.BOX_LINK_TYPE.name(), "LIVE");
   }
 
   @Test
@@ -342,7 +637,7 @@ public class IntegrationsHandlerTest {
     IntegrationInfo info = handler.getIntegration(subject, SLACK_APP_NAME);
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(0, options.size());
+    assertThat(options).isEmpty();
   }
 
   @Test
@@ -363,8 +658,8 @@ public class IntegrationsHandlerTest {
     assertEquals(DIGITAL_COMMONS_DATA_APP_NAME, info.getName());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(1, options.size());
-    assertEquals(MASKED_TOKEN, options.get(DIGITAL_COMMONS_DATA_USER_TOKEN));
+    assertThat(options).hasSize(1);
+    assertThat(options).containsEntry(DIGITAL_COMMONS_DATA_USER_TOKEN, null);
   }
 
   @Test
@@ -384,15 +679,16 @@ public class IntegrationsHandlerTest {
     assertTrue(info.isOauthConnected());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(1, options.size());
-    // the real token must never be surfaced to the Apps page; only the masked sentinel
-    assertEquals(MASKED_TOKEN, options.get(ACCESS_TOKEN_SETTING));
+    assertThat(options).hasSize(1);
+    // the real token must never be surfaced to the Apps page: a stored token is sent as null
+    assertThat(options).containsEntry(ACCESS_TOKEN_SETTING, null);
   }
 
   /**
    * OMERO is a single-option-set appConfig integration, so getIntegration replaces the whole
-   * options map from the app config before postProcessInfo adds the masked token. Stubbing the app
-   * config is what makes this test exercise that real ordering rather than a null-config shortcut.
+   * options map from the app config before postProcessInfo adds the withheld token. Stubbing the
+   * app config is what makes this test exercise that real ordering rather than a null-config
+   * shortcut.
    */
   private void stubOmeroAppConfig() {
     UserAppConfig omeroConfig =
@@ -416,10 +712,10 @@ public class IntegrationsHandlerTest {
     assertEquals(OMERO_APP_NAME, info.getName());
     assertTrue(info.isOauthConnected());
     // the stored OMERO username/password must never reach the Apps page
-    assertEquals(MASKED_TOKEN, info.getOptions().get(ACCESS_TOKEN_SETTING));
-    assertFalse(
-        info.getOptions().toString().contains("omeropassword"),
-        "the real OMERO credentials must not appear anywhere in the options");
+    assertThat(info.getOptions()).containsEntry(ACCESS_TOKEN_SETTING, null);
+    assertThat(info.getOptions().toString())
+        .as("the real OMERO credentials must not appear anywhere in the options")
+        .doesNotContain("omeropassword");
   }
 
   @Test
@@ -433,7 +729,22 @@ public class IntegrationsHandlerTest {
 
     IntegrationInfo info = handler.getIntegration(subject, OMERO_APP_NAME);
     assertFalse(info.isOauthConnected());
-    assertNull(info.getOptions().get(ACCESS_TOKEN_SETTING));
+    assertThat(info.getOptions()).doesNotContainKey(ACCESS_TOKEN_SETTING);
+  }
+
+  @Test
+  public void clearedUserTokenReadsAsUnset() {
+    when(sysPropMgr.findByName(DIGITAL_COMMON_DATA_AVAILABLE))
+        .thenReturn(getSystemPropertyValueAllowed(DIGITAL_COMMON_DATA_AVAILABLE));
+    UserConnection cleared = new UserConnection();
+    cleared.setAccessToken("");
+    when(userConnectionManager.findByUserNameProviderName(
+            anyString(), eq(DIGITAL_COMMONS_DATA_APP_NAME)))
+        .thenReturn(Optional.of(cleared));
+
+    IntegrationInfo info = handler.getIntegration(subject, DIGITAL_COMMONS_DATA_APP_NAME);
+
+    assertThat(info.getOptions()).doesNotContainKey(DIGITAL_COMMONS_DATA_USER_TOKEN);
   }
 
   @Test
@@ -490,7 +801,7 @@ public class IntegrationsHandlerTest {
     assertEquals(PYRAT_APP_NAME, info.getName());
     Map<String, Object> options = info.getOptions();
     assertNotNull(options);
-    assertEquals(2, options.size());
+    assertThat(options).hasSize(2);
     Collections.sort((List<ServerConfigurationDTO>) options.get(PYRAT_CONFIGURED_SERVERS));
     assertEquals(
         new ServerConfigurationDTO("alias1", "http://pyrat1.server.com/"),
@@ -501,14 +812,14 @@ public class IntegrationsHandlerTest {
 
     // here we do get("null") becasue since the AppCnfigSet is not saved into DB (as per mocks)
     // then it has not got a proper numerical ID
-    assertEquals("alias1", ((Map<String, String>) options.get("null")).get(PYRAT_ALIAS));
-    assertEquals(MASKED_TOKEN, ((Map<String, String>) options.get("null")).get(PYRAT_APIKEY));
-    assertEquals(
-        "http://pyrat1.server.com/", ((Map<String, String>) options.get("null")).get(PYRAT_URL));
+    assertThat(((Map<String, String>) options.get("null"))).containsEntry(PYRAT_ALIAS, "alias1");
+    assertThat(((Map<String, String>) options.get("null"))).containsEntry(PYRAT_APIKEY, null);
+    assertThat(((Map<String, String>) options.get("null")))
+        .containsEntry(PYRAT_URL, "http://pyrat1.server.com/");
   }
 
   @Test
-  public void testSaveDSWAppConfigOption() {
+  public void nullCredentialOnUpdateKeepsStoredDSWApiKey() {
     String origDswAlias = "dswAlias";
     String origDswUrl = "dsw.url.org";
     String origDswToken = "abc123";
@@ -530,26 +841,18 @@ public class IntegrationsHandlerTest {
                 new PropertyDescriptor(DSW_APIKEY, SettingsType.STRING, null)),
             origDswToken));
 
-    UserConnection existingConnection = new UserConnection();
-    existingConnection.setDisplayName("DSW Display Name");
-    existingConnection.setRank(1);
-    existingConnection.setId(
-        new UserConnectionId(subject.getUsername(), DSW_APP_NAME, origDswAlias));
-    existingConnection.setExpireTime(0l);
-    existingConnection.setAccessToken(origDswToken);
+    when(appCfgMgr.findByAppConfigElementSetId(1L)).thenReturn(Optional.of(aces));
 
-    // The potentially updated options that are being passed in
-    // from the UI.  Note that the API Key is set as the default
-    // masked value that is returned to the UI.
+    // The UI posts null for the stored key, which means "keep it".
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
     dswOptions.put(DSW_URL, origDswUrl);
-    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+    dswOptions.put(DSW_APIKEY, null);
 
-    handler.saveAppOptions(null, dswOptions, DSW_APP_NAME, false, subject);
-    Mockito.verify(userConnectionManager, times(0))
+    handler.saveAppOptions(1L, dswOptions, DSW_APP_NAME, false, subject);
+    verify(userConnectionManager, never())
         .deleteByUserAndProvider(subject.getUsername(), DSW_APP_NAME, origDswAlias);
-    Mockito.verify(userConnectionManager, times(0)).save(any());
+    verify(userConnectionManager, never()).save(any());
   }
 
   @Test
@@ -592,7 +895,7 @@ public class IntegrationsHandlerTest {
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, updatedDswAlias);
     dswOptions.put(DSW_URL, origDswUrl);
-    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+    dswOptions.put(DSW_APIKEY, null);
 
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     Mockito.verify(userConnectionManager, times(1))
@@ -629,7 +932,7 @@ public class IntegrationsHandlerTest {
     Map<String, String> dswOptions = new HashMap<>();
     dswOptions.put(DSW_ALIAS, origDswAlias);
     dswOptions.put(DSW_URL, updatedDswUrl);
-    dswOptions.put(DSW_APIKEY, MASKED_TOKEN);
+    dswOptions.put(DSW_APIKEY, null);
 
     handler.saveAppOptions(1l, dswOptions, DSW_APP_NAME, false, subject);
     // There will be no interactions with the userConnectionManager methods since

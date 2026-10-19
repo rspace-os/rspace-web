@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiBarcode;
@@ -51,8 +51,8 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
         getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(6, foundRecords.getTotalHits().intValue());
-    assertEquals(6, foundRecords.getRecords().size());
-    assertEquals(1, foundRecords.getLinks().size());
+    assertThat(foundRecords.getRecords()).hasSize(6);
+    assertThat(foundRecords.getLinks()).hasSize(1);
 
     // wildcard search finding all created samples/subsamples
     result =
@@ -80,7 +80,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundRecords = getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(2, foundRecords.getTotalHits().intValue());
-    assertTrue(foundRecords.getRecords().get(0).getGlobalId().startsWith("SA"));
+    assertThat(foundRecords.getRecords().get(0).getGlobalId()).startsWith("SA");
 
     // limit result type to subsamples
     result =
@@ -95,7 +95,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundRecords = getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(2, foundRecords.getTotalHits().intValue());
-    assertTrue(foundRecords.getRecords().get(0).getGlobalId().startsWith("SS"));
+    assertThat(foundRecords.getRecords().get(0).getGlobalId()).startsWith("SS");
 
     // limit result type to templates
     result =
@@ -110,7 +110,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundRecords = getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(2, foundRecords.getTotalHits().intValue());
-    assertTrue(foundRecords.getRecords().get(0).getGlobalId().startsWith("IT"));
+    assertThat(foundRecords.getRecords().get(0).getGlobalId()).startsWith("IT");
 
     // wildcard search that'll match basic sample & subsample and a few subcontainers
     result =
@@ -124,11 +124,11 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundRecords = getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(6, foundRecords.getTotalHits().intValue());
-    assertTrue(foundRecords.getRecords().get(0).getGlobalId().startsWith("SA"));
+    assertThat(foundRecords.getRecords().get(0).getGlobalId()).startsWith("SA");
     ApiInventoryRecordInfo foundSubSample = foundRecords.getRecords().get(1);
     ApiContainerInfo foundContainer = (ApiContainerInfo) foundRecords.getRecords().get(2);
-    assertTrue(foundSubSample.getGlobalId().startsWith("SS"));
-    assertTrue(foundContainer.getGlobalId().startsWith("IC"));
+    assertThat(foundSubSample.getGlobalId()).startsWith("SS");
+    assertThat(foundContainer.getGlobalId()).startsWith("IC");
     // search result includes parent container details when listing subsample or subcontainer
     assertEquals("box #1 (list container)", foundSubSample.getParentContainer().getName());
     assertEquals(
@@ -154,8 +154,8 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundRecords = getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(4, foundRecords.getTotalHits().intValue());
-    assertTrue(foundRecords.getRecords().get(0).getGlobalId().startsWith("IC"));
-    assertTrue(foundRecords.getRecords().get(3).getGlobalId().startsWith("IC"));
+    assertThat(foundRecords.getRecords().get(0).getGlobalId()).startsWith("IC");
+    assertThat(foundRecords.getRecords().get(3).getGlobalId()).startsWith("IC");
 
     // pagination with search - first of three pages listing 'complex' Sample/SubSample/Template
     // matches
@@ -172,9 +172,9 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiInventorySearchResult paginatedSearchedSamples =
         getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertEquals(3, paginatedSearchedSamples.getTotalHits().intValue());
-    assertEquals(1, paginatedSearchedSamples.getRecords().size());
+    assertThat(paginatedSearchedSamples.getRecords()).hasSize(1);
     assertEquals("Complex Sample #1", paginatedSearchedSamples.getRecords().get(0).getName());
-    assertEquals(3, paginatedSearchedSamples.getLinks().size());
+    assertThat(paginatedSearchedSamples.getLinks()).hasSize(3);
 
     // subsample match
     result =
@@ -188,8 +188,8 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     ApiInventorySearchResult foundSubSamples =
         getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertEquals(1, foundSubSamples.getTotalHits().intValue());
-    assertEquals(1, foundSubSamples.getRecords().size());
-    assertTrue(foundSubSamples.getRecords().get(0).getGlobalId().startsWith("SS"));
+    assertThat(foundSubSamples.getRecords()).hasSize(1);
+    assertThat(foundSubSamples.getRecords().get(0).getGlobalId()).startsWith("SS");
   }
 
   @Test
@@ -247,11 +247,11 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     assertNotNull(result.getResolvedException());
     String exceptionMessage = result.getResolvedException().getMessage();
-    assertTrue(
-        exceptionMessage.contains(
+    assertThat(exceptionMessage)
+        .as(exceptionMessage)
+        .contains(
             "Requested result type must be one of: SAMPLE, SUBSAMPLE, CONTAINER, SAMPLE_TEMPLATE,"
-                + " INSTRUMENT or INSTRUMENT_TEMPLATE"),
-        exceptionMessage);
+                + " INSTRUMENT or INSTRUMENT_TEMPLATE");
 
     // invalid parent global id
     result =
@@ -264,11 +264,11 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     assertNotNull(result.getResolvedException());
     exceptionMessage = result.getResolvedException().getMessage();
-    assertTrue(
-        exceptionMessage.contains(
+    assertThat(exceptionMessage)
+        .as(exceptionMessage)
+        .contains(
             "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench,"
-                + " Sample, Sample Template, Instrument Template or Basket"),
-        exceptionMessage);
+                + " Sample, Sample Template, Instrument Template or Basket");
 
     // correct search for sanity check
     result =
@@ -314,9 +314,9 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
         getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(1, foundRecords.getTotalHits().intValue());
-    assertEquals(1, foundRecords.getRecords().size());
+    assertThat(foundRecords.getRecords()).hasSize(1);
     assertEquals(complexSampleInfo.getGlobalId(), foundRecords.getRecords().get(0).getGlobalId());
-    assertEquals(1, foundRecords.getLinks().size());
+    assertThat(foundRecords.getLinks()).hasSize(1);
 
     // find all, including deleted, and with template version in global id
     result =
@@ -334,10 +334,10 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     assertNull(result.getResolvedException());
     foundRecords = getFromJsonResponseBody(result, ApiInventorySearchResult.class);
-    assertEquals(2, foundRecords.getRecords().size());
+    assertThat(foundRecords.getRecords()).hasSize(2);
     assertEquals(complexSampleInfo.getGlobalId(), foundRecords.getRecords().get(0).getGlobalId());
     assertEquals(duplicateSample.getGlobalId(), foundRecords.getRecords().get(1).getGlobalId());
-    assertEquals(1, foundRecords.getLinks().size());
+    assertThat(foundRecords.getLinks()).hasSize(1);
 
     // find just deleted
     result =
@@ -353,7 +353,7 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNotNull(foundRecords);
     assertEquals(1, foundRecords.getTotalHits().intValue());
     assertEquals(duplicateSample.getGlobalId(), foundRecords.getRecords().get(0).getGlobalId());
-    assertEquals(1, foundRecords.getLinks().size());
+    assertThat(foundRecords.getLinks()).hasSize(1);
   }
 
   @Test
@@ -384,12 +384,12 @@ public class InventorySearchApiControllerMVCIT extends API_MVC_InventoryTestBase
         getFromJsonResponseBody(result, ApiInventorySearchResult.class);
     assertNotNull(foundRecords);
     assertEquals(2, foundRecords.getTotalHits().intValue());
-    assertEquals(2, foundRecords.getRecords().size());
+    assertThat(foundRecords.getRecords()).hasSize(2);
     assertEquals(complexSample.getGlobalId(), foundRecords.getRecords().get(0).getGlobalId());
     assertEquals(
         complexSample.getSubSamples().get(0).getGlobalId(),
         foundRecords.getRecords().get(1).getGlobalId());
-    assertEquals(1, foundRecords.getLinks().size());
+    assertThat(foundRecords.getLinks()).hasSize(1);
 
     // find deleted items only
     result =

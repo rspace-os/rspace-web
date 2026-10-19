@@ -1,7 +1,7 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import org.apache.commons.exec.ExecuteException;
@@ -17,10 +17,10 @@ public class CommandRunnerTest {
     Assumptions.assumeFalse(isWin());
 
     String listing = new CommandLineRunner().runCommandReturningOutput("ls -l");
-    assertTrue(listing.length() > 0);
+    assertThat(listing).hasSizeGreaterThan(0);
 
     listing = new CommandLineRunner().runCommandReturningOutput("ls", "-l");
-    assertTrue(listing.length() > 0);
+    assertThat(listing).hasSizeGreaterThan(0);
   }
 
   @Test

@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,7 +14,6 @@ import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryRadioField;
 import com.researchspace.model.inventory.field.InventoryRadioFieldDef;
-import com.researchspace.model.record.IRecordFactory;
 import java.io.IOException;
 import java.util.List;
 import liquibase.exception.CustomChangeException;
@@ -24,8 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpers {
-
-  private @Autowired IRecordFactory recordFactory;
 
   private @Autowired ContainerDao containerDao;
 
@@ -49,55 +47,50 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     commitTransaction();
 
     // confirm sample saved
-    assertEquals(5, persistedFields.size());
+    assertThat(persistedFields).hasSize(5);
+    var firstField = persistedFields.get(0);
+    var secondField = persistedFields.get(1);
+    var thirdField = persistedFields.get(2);
+    var fourthField = persistedFields.get(3);
+    var fifthField = persistedFields.get(4);
     // confirm old content unparseable by current model methods
     // old radio format
     IllegalArgumentException iae =
-        assertThrows(IllegalArgumentException.class, () -> persistedFields.get(0).getAllOptions());
+        assertThrows(IllegalArgumentException.class, () -> firstField.getAllOptions());
     assertEquals(
         "couldn't convert [no-default-radio=option1&no-default-radio=option2] to options list",
         iae.getMessage());
     assertEquals(
         List.of("option1"),
-        persistedFields.get(0).getSelectedOptions()); // old radio field content format is fine
-    iae =
-        assertThrows(IllegalArgumentException.class, () -> persistedFields.get(1).getAllOptions());
+        firstField.getSelectedOptions()); // old radio field content format is fine
+    iae = assertThrows(IllegalArgumentException.class, () -> secondField.getAllOptions());
     assertEquals(
         "couldn't convert [v=Invitrogen&v=NEB&v=Amersham&v=Sigma] to options list",
         iae.getMessage());
     assertEquals(
         List.of("Sigma"),
-        persistedFields.get(1).getSelectedOptions()); // old radio field content format is fine
+        secondField.getSelectedOptions()); // old radio field content format is fine
     // old choice format
-    iae =
-        assertThrows(IllegalArgumentException.class, () -> persistedFields.get(2).getAllOptions());
+    iae = assertThrows(IllegalArgumentException.class, () -> thirdField.getAllOptions());
     assertEquals(
         "couldn't convert [choiceField=optionA&choiceField=optionB] to options list",
         iae.getMessage());
-    iae =
-        assertThrows(
-            IllegalArgumentException.class, () -> persistedFields.get(2).getSelectedOptions());
+    iae = assertThrows(IllegalArgumentException.class, () -> thirdField.getSelectedOptions());
     assertEquals(
         "couldn't convert [fieldSelectedChoices=optionA] to options list", iae.getMessage());
-    iae =
-        assertThrows(IllegalArgumentException.class, () -> persistedFields.get(3).getAllOptions());
+    iae = assertThrows(IllegalArgumentException.class, () -> fourthField.getAllOptions());
     assertEquals(
         "couldn't convert [choice & Field =optionA&choice & Field =optionB&choice & Field =and C]"
             + " to options list",
         iae.getMessage());
-    iae =
-        assertThrows(
-            IllegalArgumentException.class, () -> persistedFields.get(3).getSelectedOptions());
+    iae = assertThrows(IllegalArgumentException.class, () -> fourthField.getSelectedOptions());
     assertEquals(
         "couldn't convert [fieldSelectedChoices=optionB&fieldSelectedChoices=and C] to options"
             + " list",
         iae.getMessage());
-    iae =
-        assertThrows(IllegalArgumentException.class, () -> persistedFields.get(4).getAllOptions());
+    iae = assertThrows(IllegalArgumentException.class, () -> fifthField.getAllOptions());
     assertEquals("couldn't convert [v=4&v=6&v=8&v=other] to options list", iae.getMessage());
-    iae =
-        assertThrows(
-            IllegalArgumentException.class, () -> persistedFields.get(4).getSelectedOptions());
+    iae = assertThrows(IllegalArgumentException.class, () -> fifthField.getSelectedOptions());
     assertEquals("couldn't convert [v=4&v=6] to options list", iae.getMessage());
 
     // run liquibase update
@@ -114,7 +107,7 @@ public class SampleRadioChoiceFieldOptionsFormatChangeIT extends AbstractDBHelpe
     commitTransaction();
 
     // confirm sample updated fine and content now parseable
-    assertEquals(5, updatedFields.size());
+    assertThat(updatedFields).hasSize(5);
     // old radio fields
     assertEquals(List.of("option1", "option2"), updatedFields.get(0).getAllOptions());
     assertEquals(List.of("option1"), updatedFields.get(0).getSelectedOptions());

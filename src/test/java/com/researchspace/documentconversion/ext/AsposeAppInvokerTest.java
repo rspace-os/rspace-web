@@ -67,21 +67,30 @@ public class AsposeAppInvokerTest {
   public void convertRequiresAsposeAppSet() {
     AppInvokerTSS invoker = setupAppInvoker();
     invoker.setAsposeApp("");
-    assertThrows(IllegalArgumentException.class, () -> runConversion(invoker));
+    ConvertibleFile input = new ConvertibleFile(testIn);
+    File output = new File("out.pdf");
+
+    assertThrows(IllegalArgumentException.class, () -> invoker.convert(input, "pdf", output));
   }
 
   @Test
   public void convertRequiresAsposeLicenseSet() {
     AppInvokerTSS invoker = setupAppInvoker();
     invoker.setAsposeLicensePath("");
-    assertThrows(IllegalArgumentException.class, () -> runConversion(invoker));
+    ConvertibleFile input = new ConvertibleFile(testIn);
+    File output = new File("out.pdf");
+
+    assertThrows(IllegalArgumentException.class, () -> invoker.convert(input, "pdf", output));
   }
 
   @Test
   public void convertRequiresAsposeLogFileSet() {
     AppInvokerTSS invoker = setupAppInvoker();
     invoker.setAsposeLogfile("");
-    assertThrows(IllegalArgumentException.class, () -> runConversion(invoker));
+    ConvertibleFile input = new ConvertibleFile(testIn);
+    File output = new File("out.pdf");
+
+    assertThrows(IllegalArgumentException.class, () -> invoker.convert(input, "pdf", output));
   }
 
   @Test

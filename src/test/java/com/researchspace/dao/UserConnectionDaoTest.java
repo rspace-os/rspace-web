@@ -1,8 +1,8 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
@@ -19,24 +19,81 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
   private @Autowired UserConnectionDao userConnectionDao;
 
   @Test
+  void savesUpdatedReadOnlyCredentialsAndNeverFlushesADecryptedRead() {
+    UserConnectionId id = new UserConnectionId(RSPACEUSERNAME, PROVIDER_NAME, "readonly");
+    userConnectionDao.save(new UserConnection(id, "first-token"));
+    UserConnection loaded =
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "readonly")
+            .orElseThrow();
+    loaded.setAccessToken("replacement-token");
+    loaded.setSecret("replacement-webhook");
+    userConnectionDao.save(loaded);
+    assertEquals(
+        "replacement-token",
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "readonly")
+            .orElseThrow()
+            .getAccessToken());
+    sessionFactory.getCurrentSession().flush();
+    assertNotEquals(
+        "replacement-token",
+        sessionFactory
+            .getCurrentSession()
+            .createNativeQuery(
+                "select accessToken from UserConnection where userId=:user and providerId=:provider"
+                    + " and providerUserId='readonly'",
+                String.class)
+            .setParameter("user", RSPACEUSERNAME)
+            .setParameter("provider", PROVIDER_NAME)
+            .getSingleResult());
+    sessionFactory.getCurrentSession().clear();
+    UserConnection persisted =
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "readonly")
+            .orElseThrow();
+    assertEquals("replacement-token", persisted.getAccessToken());
+    assertEquals("replacement-webhook", persisted.getSecret());
+  }
+
+  @Test
+  void replacementAfterBulkDeleteDoesNotReuseTheDeletedManagedIdentity() {
+    UserConnectionId id = new UserConnectionId(RSPACEUSERNAME, PROVIDER_NAME, "replaced");
+    userConnectionDao.save(new UserConnection(id, "old-token"));
+    userConnectionDao
+        .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "replaced")
+        .orElseThrow();
+    userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME, "replaced");
+    userConnectionDao.save(new UserConnection(id, "new-token"));
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    assertEquals(
+        "new-token",
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "replaced")
+            .orElseThrow()
+            .getAccessToken());
+  }
+
+  @Test
   public void createSaveAndFindAndDelete() {
     int initialCount = userConnectionDao.getAllDistinct().size();
     UserConnectionId id = new UserConnectionId(RSPACEUSERNAME, PROVIDER_NAME, "userEgnyteId");
     UserConnection conn = new UserConnection(id, "accessToken");
     conn.setRefreshToken("refreshToken");
     userConnectionDao.save(conn);
-    assertEquals(initialCount + 1, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount + 1);
 
     UserConnection retrieved = userConnectionDao.get(id);
     assertEquals(conn, retrieved);
 
-    assertFalse(
-        userConnectionDao.findByUserNameProviderName("unknownUser", "unknownProvider").isPresent());
-    assertTrue(
-        userConnectionDao.findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME).isPresent());
+    assertThat(userConnectionDao.findByUserNameProviderName("unknownUser", "unknownProvider"))
+        .isNotPresent();
+    assertThat(userConnectionDao.findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME))
+        .isPresent();
 
     assertEquals(1, userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME));
-    assertEquals(initialCount, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount);
   }
 
   @Test
@@ -47,21 +104,21 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
     UserConnection conn = new UserConnection(id, "accessToken");
     conn.setRefreshToken("refreshToken");
     userConnectionDao.save(conn);
-    assertEquals(initialCount + 1, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount + 1);
 
     UserConnection retrieved = userConnectionDao.get(id);
     assertEquals(conn, retrieved);
 
-    assertFalse(
-        userConnectionDao.findByUserNameProviderName("unknownUser", DISCRIMINANT).isPresent());
-    assertTrue(
-        userConnectionDao
-            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, DISCRIMINANT)
-            .isPresent());
+    assertThat(userConnectionDao.findByUserNameProviderName("unknownUser", DISCRIMINANT))
+        .isNotPresent();
+    assertThat(
+            userConnectionDao.findByUserNameProviderName(
+                RSPACEUSERNAME, PROVIDER_NAME, DISCRIMINANT))
+        .isPresent();
 
     assertEquals(
         1, userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME, DISCRIMINANT));
-    assertEquals(initialCount, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount);
   }
 
   @Test
@@ -88,10 +145,10 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
             + 1);
     userConnectionDao.save(conn3);
 
-    assertEquals(initialCount + 3, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount + 3);
 
-    assertEquals(
-        3, userConnectionDao.findListByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME).size());
+    assertThat(userConnectionDao.findListByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME))
+        .hasSize(3);
     assertEquals(
         Optional.of(3),
         userConnectionDao.findMaxRankByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME));
@@ -99,10 +156,10 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
     List<UserConnection> listConnections =
         userConnectionDao.findListByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME);
     for (UserConnection currentUserConnection : listConnections) {
-      assertTrue(currentUserConnection.getAccessToken().startsWith("accessToken")); // decrypt works
+      assertThat(currentUserConnection.getAccessToken()).startsWith("accessToken"); // decrypt works
     }
 
     assertEquals(3, userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME));
-    assertEquals(initialCount, userConnectionDao.getAllDistinct().size());
+    assertThat(userConnectionDao.getAllDistinct()).hasSize(initialCount);
   }
 }

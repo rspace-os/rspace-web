@@ -1,5 +1,6 @@
 package com.researchspace.model.test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
@@ -83,14 +84,14 @@ class HibernateAuditTest extends HibernateTest {
 
       List<AuditedEntity<SubSample>> subSampleHistory =
           getRevisionsForObject(SubSample.class, subSample.getId());
-      assertEquals(2, subSampleHistory.size());
+      assertThat(subSampleHistory).hasSize(2);
       assertEquals("test sample", subSampleHistory.get(0).getEntity().getName());
       assertEquals("1 ml", subSampleHistory.get(0).getEntity().getQuantityInfo().toPlainString());
       assertEquals("test sample", subSampleHistory.get(1).getEntity().getName());
 
       List<AuditedEntity<Sample>> sampleHistory =
           getRevisionsForObject(Sample.class, sample.getId());
-      assertEquals(2, sampleHistory.size());
+      assertThat(sampleHistory).hasSize(2);
       assertEquals("uniquename one", sampleHistory.get(0).getEntity().getName());
       assertEquals("updated name", sampleHistory.get(1).getEntity().getName());
 
@@ -135,7 +136,7 @@ class HibernateAuditTest extends HibernateTest {
 
       List<AuditedEntity<SampleTemplate>> templateHistory =
           getRevisionsForObject(SampleTemplate.class, templateId);
-      assertEquals(2, templateHistory.size());
+      assertThat(templateHistory).hasSize(2);
       assertInstanceOf(SampleTemplate.class, templateHistory.get(0).getEntity());
       assertInstanceOf(SampleTemplate.class, templateHistory.get(1).getEntity());
       assertEquals("template uniquename", templateHistory.get(0).getEntity().getName());
@@ -143,7 +144,7 @@ class HibernateAuditTest extends HibernateTest {
 
       // Envers filters revisions by discriminator: no Sample revisions exist for the template id
       List<AuditedEntity<Sample>> sampleHistory = getRevisionsForObject(Sample.class, templateId);
-      assertEquals(0, sampleHistory.size());
+      assertThat(sampleHistory).isEmpty();
 
       transaction.commit();
 
@@ -201,13 +202,13 @@ class HibernateAuditTest extends HibernateTest {
 
       List<AuditedEntity<Container>> containerHistory =
           getRevisionsForObject(Container.class, topContainer.getId());
-      assertEquals(3, containerHistory.size());
+      assertThat(containerHistory).hasSize(3);
 
       // 1st revision
       assertEquals("test container", containerHistory.get(0).getEntity().getName());
       assertEquals(1, containerHistory.get(0).getEntity().getContentCount());
-      assertEquals(
-          0, containerHistory.get(0).getEntity().getLocations().size()); // locations not stored
+      assertThat(containerHistory.get(0).getEntity().getLocations())
+          .isEmpty(); // locations not stored
       // 2nd revision
       assertEquals("test container", containerHistory.get(1).getEntity().getName());
       assertEquals(2, containerHistory.get(1).getEntity().getContentCount());
@@ -265,7 +266,7 @@ class HibernateAuditTest extends HibernateTest {
 
       List<AuditedEntity<DigitalObjectIdentifier>> identifierHistory =
           getRevisionsForObject(DigitalObjectIdentifier.class, igsnIdentifier.getId());
-      assertEquals(4, identifierHistory.size());
+      assertThat(identifierHistory).hasSize(4);
       assertEquals("igsn 01", identifierHistory.get(0).getEntity().getTitle());
       assertEquals(
           "test subsample", identifierHistory.get(0).getEntity().getInventoryRecord().getName());

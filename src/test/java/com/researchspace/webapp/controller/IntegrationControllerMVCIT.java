@@ -14,7 +14,10 @@ import static com.researchspace.service.IntegrationsHandler.DSW_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.EGNYTE_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIELDMARK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.FIGSHARE_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.GALAXY_ALIAS;
+import static com.researchspace.service.IntegrationsHandler.GALAXY_APIKEY;
 import static com.researchspace.service.IntegrationsHandler.GALAXY_APP_NAME;
+import static com.researchspace.service.IntegrationsHandler.GALAXY_CONFIGURED_SERVERS;
 import static com.researchspace.service.IntegrationsHandler.GITHUB_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.MSTEAMS_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.NEXTCLOUD_APP_NAME;
@@ -31,8 +34,10 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIA
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_URL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -41,25 +46,34 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.model.User;
+import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.dto.IntegrationInfo;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.preference.BoxLinkType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.session.GitHubPendingToken;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 @TestPropertySource(
     properties = {
@@ -78,6 +92,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
   Principal mockPrincipal = null;
 
   @Autowired private UserConnectionManager userConnectionManager;
+  private @Autowired UserAppConfigManager userAppConfigManager;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -102,7 +117,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     Map<String, Map<String, Object>> infos = getFromJsonAjaxReturnObject(resultAll, Map.class);
-    assertEquals(TOTAL_INTEGRATIONS, infos.size());
+    assertThat(infos).hasSize(TOTAL_INTEGRATIONS);
 
     // check options
     Map<String, String[]> expectedOptions = new TreeMap<>();
@@ -139,12 +154,13 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     for (var info : infos.values()) {
       String integrationName = (String) info.get("name");
       Map options = (Map) info.get("options");
-      assertEquals(
-          expectedOptions.get(integrationName).length, options.size(), "For " + integrationName);
+      assertThat(options)
+          .as("For " + integrationName)
+          .hasSameSizeAs(expectedOptions.get(integrationName));
       for (String expectedOption : expectedOptions.get(integrationName)) {
-        assertTrue(
-            options.containsKey(expectedOption),
-            integrationName + " should contain " + expectedOption);
+        assertThat(options)
+            .as(integrationName + " should contain " + expectedOption)
+            .containsKey(expectedOption);
       }
     }
   }
@@ -190,8 +206,8 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     IntegrationInfo info = getIntegrationInfoFromServer(mock, integrationName);
     assertEquals(integrationName, info.getName());
     assertFalse(info.isEnabled());
-    assertEquals(
-        BoxLinkType.LIVE.toString(), info.getOptions().get(Preference.BOX_LINK_TYPE.toString()));
+    assertThat(info.getOptions())
+        .containsEntry(Preference.BOX_LINK_TYPE.toString(), BoxLinkType.LIVE.toString());
 
     // set enabled
     info.setEnabled(true);
@@ -229,9 +245,8 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     info = getFromJsonAjaxReturnObject(updateResult, IntegrationInfo.class);
     assertEquals(integrationName, info.getName());
     assertTrue(info.isEnabled());
-    assertEquals(
-        BoxLinkType.VERSIONED.toString(),
-        info.getOptions().get(Preference.BOX_LINK_TYPE.toString()));
+    assertThat(info.getOptions())
+        .containsEntry(Preference.BOX_LINK_TYPE.toString(), BoxLinkType.VERSIONED.toString());
   }
 
   @Test
@@ -249,8 +264,9 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertFalse(info.isEnabled());
   }
 
-  @Test
-  public void updateSlackIntegration() throws Exception {
+  @ParameterizedTest
+  @ValueSource(strings = {"SLACK", "slack"})
+  public void updateSlackIntegration(String postedName) throws Exception {
 
     logoutAndLoginAs(piUser);
 
@@ -262,6 +278,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
 
     // now disable slack
     info.setEnabled(false);
+    info.setName(postedName);
     String integrationInfoJson = mvcUtils.getAsJsonString(info);
 
     MvcResult result =
@@ -281,6 +298,76 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void removingTheLastGitHubRepositoryDeletesTheToken() throws Exception {
+    logoutAndLoginAs(piUser);
+    GitHubPendingToken.store(piUser.getUsername(), "gho-token");
+    Long setId =
+        userAppConfigManager
+            .saveAppConfigElementSet(
+                Map.of("GITHUB_REPOSITORY_FULL_NAME", "org/repo"),
+                null,
+                true,
+                piUser,
+                App.APP_GITHUB)
+            .getAppConfigElementSets()
+            .iterator()
+            .next()
+            .getId();
+    UserConnection repositoryConnection =
+        new UserConnection(
+            new UserConnectionId(piUser.getUsername(), GITHUB_APP_NAME, setId.toString()),
+            "gho-repository-token");
+    repositoryConnection.setRank(Math.toIntExact(setId));
+    userConnectionManager.save(repositoryConnection);
+    getIntegrationInfoFromServer(mockPrincipal, GITHUB_APP_NAME);
+
+    MvcResult deleted =
+        mockMvc
+            .perform(
+                post("/integration/deleteAppOptions")
+                    .param("optionsId", setId.toString())
+                    .param("appName", "github")
+                    .principal(mockPrincipal))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+
+    assertThat(
+            userConnectionManager.findListByUserNameProviderName(
+                piUser.getUsername(), GITHUB_APP_NAME))
+        .isEmpty();
+    assertNull(GitHubPendingToken.get(piUser.getUsername()));
+    assertThat(getFromJsonAjaxReturnObject(deleted, IntegrationInfo.class).getOptions()).isEmpty();
+    assertThat(getIntegrationInfoFromServer(mockPrincipal, GITHUB_APP_NAME).getOptions()).isEmpty();
+  }
+
+  @Test
+  public void savingOptionsRejectsADifferentAppBeforeSavingConfigOrCredentials() throws Exception {
+    logoutAndLoginAs(piUser);
+    GitHubPendingToken.store(piUser.getUsername(), "gho-current-token");
+    int originalCount =
+        userAppConfigManager.getByAppName("app.egnyte", piUser).getAppConfigElementSets().size();
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/integration/saveAppOptions")
+                    .param("appName", "github")
+                    .content(mvcUtils.getAsJsonString(Map.of("EGNYTE_DOMAIN", "org/repo")))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .principal(mockPrincipal))
+            .andReturn();
+
+    assertInstanceOf(IllegalArgumentException.class, result.getResolvedException());
+    assertEquals(
+        originalCount,
+        userAppConfigManager.getByAppName("app.egnyte", piUser).getAppConfigElementSets().size());
+    assertThat(
+            userConnectionManager.findListByUserNameProviderName(
+                piUser.getUsername(), GITHUB_APP_NAME))
+        .isEmpty();
+    assertEquals("gho-current-token", GitHubPendingToken.get(piUser.getUsername()));
+  }
+
+  @Test
   public void addEditDeleteSlackChannel() throws Exception {
 
     String integrationName = SLACK_APP_NAME;
@@ -294,12 +381,11 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     channelOptions.put("SLACK_TEAM_NAME", "testTeamName");
     channelOptions.put("SLACK_CHANNEL_NAME", "testChannelName");
     channelOptions.put("SLACK_CHANNEL_LABEL", INITIAL_LABEL);
-    channelOptions.put("SLACK_WEBHOOK_URL", "testWebhookUrl");
     channelOptions.put("SLACK_USER_ID", "U123");
     channelOptions.put("SLACK_TEAM_ID", "T456");
     channelOptions.put("SLACK_CHANNEL_ID", "C789");
-    channelOptions.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
 
+    // only Slack's OAuth callback adds a channel, so the API refuses to create one
     String optionsJson = mvcUtils.getAsJsonString(channelOptions);
     MvcResult result =
         mockMvc
@@ -309,21 +395,28 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
                     .content(optionsJson)
                     .contentType(MediaType.APPLICATION_JSON)
                     .principal(mockPrincipal))
-            .andExpect(status().is2xxSuccessful())
             .andReturn();
-    assertNull(result.getResolvedException());
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
+    UserAppConfig cfg =
+        userAppConfigManager.saveAppConfigElementSet(
+            channelOptions, null, true, piUser, App.APP_SLACK);
+    String setId = cfg.getAppConfigElementSets().iterator().next().getId().toString();
 
-    // verify that slack channel is created
-    IntegrationInfo info = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
-    Map<String, Object> savedOptions = info.getOptions();
-    assertEquals(1, savedOptions.size()); // the channel was added
-    String setId = savedOptions.keySet().iterator().next();
-    assertTrue(StringUtils.isNotEmpty(setId));
-    assertEquals(
-        INITIAL_LABEL,
-        ((Map<String, String>) savedOptions.values().iterator().next()).get("SLACK_CHANNEL_LABEL"));
+    // nor may it change the ids that route slash commands to this user
+    Map<String, String> hijack = new HashMap<>(channelOptions);
+    hijack.put("SLACK_USER_ID", "U999");
+    result =
+        mockMvc
+            .perform(
+                post("/integration/saveAppOptions")
+                    .param("optionsId", setId)
+                    .param("appName", integrationName)
+                    .content(mvcUtils.getAsJsonString(hijack))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .principal(mockPrincipal))
+            .andReturn();
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
 
-    // now try saving the same slack channel with different label
     channelOptions.put("SLACK_CHANNEL_LABEL", EDITED_LABEL);
     optionsJson = mvcUtils.getAsJsonString(channelOptions);
     result =
@@ -342,11 +435,9 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify that label was updated
     IntegrationInfo updatedInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> updatedOptions = updatedInfo.getOptions();
-    assertEquals(1, updatedOptions.size()); // still just one channel
-    assertEquals(
-        EDITED_LABEL,
-        ((Map<String, String>) updatedOptions.values().iterator().next())
-            .get("SLACK_CHANNEL_LABEL"));
+    assertThat(updatedOptions).hasSize(1); // still just one channel
+    assertThat(((Map<String, String>) updatedOptions.values().iterator().next()))
+        .containsEntry("SLACK_CHANNEL_LABEL", EDITED_LABEL);
 
     // now delete
     result =
@@ -363,7 +454,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify the channel is no longer there
     IntegrationInfo deletedChannelInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> deletedOptions = deletedChannelInfo.getOptions();
-    assertEquals(0, deletedOptions.size());
+    assertThat(deletedOptions).isEmpty();
   }
 
   @Test
@@ -393,15 +484,17 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify options are returned correctly
     IntegrationInfo info = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> savedOptions = info.getOptions();
-    assertEquals(2, savedOptions.size());
+    assertThat(savedOptions).hasSize(2);
     List configuredServers = (List) savedOptions.get(PYRAT_CONFIGURED_SERVERS);
-    assertEquals(2, configuredServers.size());
-    assertEquals("mice server", ((Map<String, String>) configuredServers.get(0)).get("alias"));
-    assertEquals(
-        "https://pyrat1.server.com", ((Map<String, String>) configuredServers.get(0)).get("url"));
-    assertEquals("frogs server", ((Map<String, String>) configuredServers.get(1)).get("alias"));
-    assertEquals(
-        "https://pyrat2.server.com", ((Map<String, String>) configuredServers.get(1)).get("url"));
+    assertThat(configuredServers).hasSize(2);
+    assertThat(((Map<String, String>) configuredServers.get(0)))
+        .containsEntry("alias", "mice server");
+    assertThat(((Map<String, String>) configuredServers.get(0)))
+        .containsEntry("url", "https://pyrat1.server.com");
+    assertThat(((Map<String, String>) configuredServers.get(1)))
+        .containsEntry("alias", "frogs server");
+    assertThat(((Map<String, String>) configuredServers.get(1)))
+        .containsEntry("url", "https://pyrat2.server.com");
 
     String optionsSetId = "";
     for (String key : savedOptions.keySet()) {
@@ -409,19 +502,19 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
         optionsSetId = key;
       }
     }
-    assertTrue(StringUtils.isNotEmpty(optionsSetId));
+    assertThat(optionsSetId).isNotEmpty();
 
     Map<String, String> uiOptions = (Map<String, String>) savedOptions.get(optionsSetId);
-    assertEquals("mice server", uiOptions.get(PYRAT_ALIAS));
+    assertThat(uiOptions).containsEntry(PYRAT_ALIAS, "mice server");
     // verify the apikey is returned as empty in the ui options since it is not saved in clear
-    assertEquals(Strings.EMPTY, uiOptions.get(PYRAT_APIKEY));
+    assertThat(uiOptions).containsEntry(PYRAT_APIKEY, Strings.EMPTY);
     // verify the api-key is not saved into UserConnection table (cause it is saved into the
     // AppConfig)
-    assertTrue(
-        userConnectionManager
-            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
-            .isEmpty());
-    assertEquals("http://pyrat1.server.com", uiOptions.get(PYRAT_URL));
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(
+                piUser.getUsername(), PYRAT_APP_NAME, "mice server"))
+        .isEmpty();
+    assertThat(uiOptions).containsEntry(PYRAT_URL, "http://pyrat1.server.com");
 
     // add a server api-key to the configuration
     channelOptions = new HashMap<>();
@@ -444,14 +537,14 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     assertNull(result.getResolvedException());
 
     uiOptions = (Map<String, String>) savedOptions.get(optionsSetId);
-    assertEquals("mice server", uiOptions.get(PYRAT_ALIAS));
+    assertThat(uiOptions).containsEntry(PYRAT_ALIAS, "mice server");
     // make sure the apikey is returned as empty since it is not saved in clear
-    assertEquals(Strings.EMPTY, uiOptions.get(PYRAT_APIKEY));
-    assertTrue(
-        userConnectionManager
-            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
-            .isPresent());
-    assertEquals("http://pyrat1.server.com", uiOptions.get(PYRAT_URL));
+    assertThat(uiOptions).containsEntry(PYRAT_APIKEY, Strings.EMPTY);
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(
+                piUser.getUsername(), PYRAT_APP_NAME, "mice server"))
+        .isPresent();
+    assertThat(uiOptions).containsEntry(PYRAT_URL, "http://pyrat1.server.com");
 
     // delete the user configuration
     result =
@@ -468,12 +561,80 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
     // verify the ui options and the api-key are not anymore there
     IntegrationInfo deletedChannelInfo = getFromJsonAjaxReturnObject(result, IntegrationInfo.class);
     Map<String, Object> deletedOptions = deletedChannelInfo.getOptions();
-    assertEquals(1, deletedOptions.size());
-    assertTrue(deletedOptions.containsKey(PYRAT_CONFIGURED_SERVERS));
-    assertTrue(
-        userConnectionManager
-            .findByUserNameProviderName(piUser.getUsername(), PYRAT_APP_NAME, "mice server")
-            .isEmpty());
+    assertThat(deletedOptions).hasSize(1);
+    assertThat(deletedOptions).containsKey(PYRAT_CONFIGURED_SERVERS);
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(
+                piUser.getUsername(), PYRAT_APP_NAME, "mice server"))
+        .isEmpty();
+  }
+
+  @Test
+  public void galaxyKeyIsKeptOnlyInTheUserConnection() throws Exception {
+    logoutAndLoginAs(piUser);
+    Map<String, String> serverOptions = new HashMap<>();
+    serverOptions.put(GALAXY_ALIAS, "galaxy eu");
+    serverOptions.put(GALAXY_APIKEY, "");
+    serverOptions.put("GALAXY_URL", "https://usegalaxy.eu");
+    MvcResult added = saveGalaxyOptions(serverOptions, null);
+    String optionsSetId =
+        getFromJsonAjaxReturnObject(added, IntegrationInfo.class).getOptions().keySet().stream()
+            .filter(key -> !key.equals(GALAXY_CONFIGURED_SERVERS))
+            .findFirst()
+            .orElseThrow();
+
+    serverOptions.put(GALAXY_APIKEY, "galaxy-key");
+    MvcResult edited = saveGalaxyOptions(serverOptions, optionsSetId);
+
+    // RSDEV-1525: the key is sent as null (stored, withheld) and kept only in the encrypted
+    // connection; the raw body must carry the key, as an absent one would read as "no key"
+    assertThat(edited.getResponse().getContentAsString())
+        .containsPattern("\"GALAXY_APIKEY\"\\s*:\\s*null");
+    Map<String, String> uiOptions =
+        (Map<String, String>)
+            getFromJsonAjaxReturnObject(edited, IntegrationInfo.class)
+                .getOptions()
+                .get(optionsSetId);
+    assertThat(uiOptions).containsEntry(GALAXY_APIKEY, null);
+    assertThat(
+            userAppConfigManager
+                .getAppConfigElementSetById(Long.valueOf(optionsSetId))
+                .getConfigElements())
+        .extracting(element -> element.getAppConfigElementDescriptor().getDescriptor().getName())
+        .containsExactlyInAnyOrder(GALAXY_ALIAS, "GALAXY_URL");
+    assertThat(
+            userConnectionManager
+                .findByUserNameProviderName(piUser.getUsername(), GALAXY_APP_NAME, "galaxy eu")
+                .map(UserConnection::getAccessToken))
+        .contains("galaxy-key");
+
+    mockMvc
+        .perform(
+            post("/integration/deleteAppOptions")
+                .param("optionsId", optionsSetId)
+                .param("appName", GALAXY_APP_NAME)
+                .principal(mockPrincipal))
+        .andExpect(status().is2xxSuccessful());
+    assertThat(
+            userConnectionManager.findByUserNameProviderName(
+                piUser.getUsername(), GALAXY_APP_NAME, "galaxy eu"))
+        .isEmpty();
+  }
+
+  private MvcResult saveGalaxyOptions(Map<String, String> options, String optionsId)
+      throws Exception {
+    MockHttpServletRequestBuilder request =
+        post("/integration/saveAppOptions")
+            .param("appName", GALAXY_APP_NAME)
+            .content(mvcUtils.getAsJsonString(options))
+            .contentType(MediaType.APPLICATION_JSON)
+            .principal(mockPrincipal);
+    if (optionsId != null) {
+      request.param("optionsId", optionsId);
+    }
+    MvcResult result = mockMvc.perform(request).andExpect(status().is2xxSuccessful()).andReturn();
+    assertNull(result.getResolvedException());
+    return result;
   }
 
   @Test
@@ -512,7 +673,7 @@ public class IntegrationControllerMVCIT extends MVCTestBase {
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     List elements = getFromJsonAjaxReturnObject(result, List.class);
-    assertEquals(2, elements.size());
+    assertThat(elements).hasSize(2);
   }
 
   private IntegrationInfo getIntegrationInfoFromServer(Principal mock, String integrationName)

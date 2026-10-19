@@ -1,6 +1,6 @@
 package com.researchspace.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.researchspace.model.ArchivalCheckSum;
@@ -33,9 +33,9 @@ public class ArchiveDaoTest extends SpringTransactionalTest {
     ArchivalCheckSum csum = TestFactory.createAnArchivalChecksum();
     dao.save(csum);
 
-    assertEquals(1, dao.getUnexpiredArchives().size());
+    assertThat(dao.getUnexpiredArchives()).hasSize(1);
     csum.setDownloadTimeExpired(true);
     dao.save(csum);
-    assertEquals(0, dao.getUnexpiredArchives().size());
+    assertThat(dao.getUnexpiredArchives()).isEmpty();
   }
 }

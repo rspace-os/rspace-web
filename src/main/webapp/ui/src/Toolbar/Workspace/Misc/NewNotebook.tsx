@@ -46,7 +46,7 @@ export default function NewNotebook() {
     const form = $("<form></form>");
     form.attr("method", "POST");
     form.attr("action", `/workspace/create_notebook/${workspaceSettings.parentFolderId}`);
-    form.append($(`<input name="notebookNameField" value="${name}"/>`).attr("type", "hidden"));
+    form.append($("<input/>").attr({ type: "hidden", name: "notebookNameField", value: name }));
     $("body").append(form);
     form.submit();
     trackEvent("user:create:notebook:workspace");

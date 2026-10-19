@@ -1,6 +1,7 @@
 package com.researchspace.api.v1.controller;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -138,7 +139,7 @@ public class API_ModelTestUtils {
 
   public void assertApiFieldsListMatchFields(
       List<ApiDocumentField> apiFields, List<Field> docFields) {
-    assertEquals(docFields.size(), apiFields.size());
+    assertThat(apiFields).hasSameSizeAs(docFields);
     for (int i = 0; i < apiFields.size(); i++) {
       assertApiFieldMatchField(apiFields.get(i), docFields.get(i));
     }
@@ -146,7 +147,7 @@ public class API_ModelTestUtils {
 
   private void assertApiFieldMatchField(ApiField apiField, Field field) {
     assertEquals(field.getId(), apiField.getId());
-    assertEquals(field.getType().toString().toLowerCase(), apiField.getType().toString());
+    assertThat(apiField.getType()).hasToString(field.getType().toString().toLowerCase());
     assertEquals(field.getFieldData(), apiField.getContent());
     assertEquals(field.getModificationDate(), apiField.getLastModifiedMillis());
   }
@@ -159,7 +160,7 @@ public class API_ModelTestUtils {
     assertEquals(mediaFile.getOwnerParent().get().getId(), apiFile.getParentFolderId());
     assertEquals(Long.valueOf(mediaFile.getCreationDate().getTime()), apiFile.getCreatedMillis());
 
-    assertEquals(2, apiFile.getLinks().size());
+    assertThat(apiFile.getLinks()).hasSize(2);
     assertEquals(ApiLinkItem.SELF_REL, apiFile.getLinks().get(0).getRel());
     assertEquals(ApiLinkItem.ENCLOSURE_REL, apiFile.getLinks().get(1).getRel());
   }
@@ -171,9 +172,9 @@ public class API_ModelTestUtils {
   public static void assertRowAndColumnCount(
       String csv, final int expectedLineCount, int expectedColumnCount) throws IOException {
     String[] lines = csv.split("\n");
-    assertEquals(expectedLineCount, lines.length);
+    assertThat(lines).hasSize(expectedLineCount);
     for (String line : lines) {
-      assertEquals(expectedColumnCount, line.split(",").length);
+      assertThat(line.split(",")).hasSize(expectedColumnCount);
     }
   }
 
@@ -197,7 +198,7 @@ public class API_ModelTestUtils {
     try (ICsvBeanReader beanReader =
         new CsvBeanReader(new StringReader(csv), CsvPreference.STANDARD_PREFERENCE)) {
       String[] headers = beanReader.getHeader(true);
-      assertEquals(expectedColumnCount, headers.length);
+      assertThat(headers).hasSize(expectedColumnCount);
       int rowCount = 1;
       while (beanReader.read(
               ApiError.class,

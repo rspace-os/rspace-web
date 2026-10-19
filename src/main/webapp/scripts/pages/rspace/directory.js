@@ -25,7 +25,7 @@ var settings = {
 			"defaultOrderByParam" : "displayName",
 			"allOrderByParams" : {
 				"displayName" : "orderByName",
-				"owner.lastName" : "orderByPi"
+				"owner" : "orderByPi"
 			}
 		},
 		"communities" : {

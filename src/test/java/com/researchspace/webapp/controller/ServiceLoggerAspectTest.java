@@ -1,31 +1,37 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.license.InactiveLicenseTestService;
 import com.researchspace.licensews.LicenseExpiredException;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
-import com.researchspace.testutils.SpringTransactionalTest;
+import java.lang.reflect.Method;
+import java.util.Map;
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.Signature;
-import org.junit.jupiter.api.AfterEach;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @ExtendWith(MockitoExtension.class)
-public class ServiceLoggerAspectTest extends SpringTransactionalTest {
+public class ServiceLoggerAspectTest {
   @Mock JoinPoint joinpoint;
   @Mock Signature signature;
-  @Autowired private ServiceLoggerAspct aspect;
+  private ServiceLoggerAspct aspect;
 
-  @AfterEach
-  public void tearDown() throws Exception {
-    // return to default after test ends
+  @BeforeEach
+  public void setUp() {
+    aspect = new ServiceLoggerAspct();
     aspect.setLicenseService(new NoCheckLicenseService());
   }
 
@@ -34,9 +40,31 @@ public class ServiceLoggerAspectTest extends SpringTransactionalTest {
     ServiceLoggerAspct sla = new ServiceLoggerAspct();
     sla.getTruncatedArgumentString(5, null);
     sla.getTruncatedArgumentString(5, new Object[] {null});
-    assertTrue(
-        sla.getTruncatedArgumentString(5, new Object[] {"LongerThanLimit"}).length()
-            < "LongerThanLimit".length());
+    assertThat(sla.getTruncatedArgumentString(5, new Object[] {"LongerThanLimit"}).length())
+        .isLessThan("LongerThanLimit".length());
+  }
+
+  @Test
+  public void hidesCredentialsWhenLoggingNewAppConfigConnections() throws Exception {
+    Method method =
+        UserConnectionManager.class.getMethod(
+            "saveWithNewAppConfigElementSet",
+            Map.class,
+            String.class,
+            String.class,
+            String.class,
+            boolean.class,
+            com.researchspace.model.User.class);
+    ProceedingJoinPoint joinPoint = mock(ProceedingJoinPoint.class);
+    MethodSignature methodSignature = mock(MethodSignature.class);
+    when(joinPoint.getSignature()).thenReturn(methodSignature);
+    when(methodSignature.getMethod()).thenReturn(method);
+    when(methodSignature.getDeclaringTypeName()).thenReturn(UserConnectionManager.class.getName());
+
+    String logMessage = aspect.methodInfo(joinPoint, method.getName());
+    verify(joinPoint, never()).getArgs();
+
+    assertThat(logMessage).contains("(args hidden)");
   }
 
   @Test

@@ -1,9 +1,44 @@
 import { expect } from "@playwright/test";
+import { galleryEmptyStateLocator } from "@/__tests__/e2e/components/gallery/GalleryEmptyState";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
 import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
 test.describe("Gallery sorting and views", { tag: tags.MOBILE }, () => {
+  test("As a user, Tree view survives visiting an empty section, and I can still select an image in it", async ({
+    page,
+    pageGallery,
+    clientFiles,
+  }) => {
+    const name = `${uniqueName("e2e-gallery-empty-view")}.png`;
+    await clientFiles.uploadFile({ name, mimeType: "image/png", buffer: TINY_PNG });
+    await pageGallery.open();
+    await pageGallery.isLoaded();
+    await pageGallery.views.switchTo("Tree");
+
+    // The sidebar, not GalleryPage.openSection(), so the view isn't normalised back to Grid.
+    await pageGallery.sidebar.openSection("Documents");
+    await expect(galleryEmptyStateLocator(page)).toBeVisible();
+
+    await pageGallery.sidebar.openSection("Images");
+    const tree = page.getByRole("tree");
+    await expect(tree).toBeVisible();
+    await expect(pageGallery.fileGrid).toBeHidden();
+    await tree
+      .getByRole("treeitem")
+      .filter({ has: page.getByText("Api Inbox", { exact: true }) })
+      .dblclick();
+    // A folder item also contains its children's labels; a file item has no nested group.
+    const image = tree
+      .getByRole("treeitem")
+      .filter({ has: page.getByText(name, { exact: true }), hasNot: page.getByRole("group") });
+    await expect(image).not.toBeChecked();
+    await image.click();
+    // The multi-select tree exposes selection as aria-checked.
+    await expect(image).toBeChecked();
+    await pageGallery.infoPanel.waitUntilSelected(name);
+  });
+
   test("As a user, I can sort files by Modification Date and by Name, in either direction", async ({
     pageGallery,
     clientFiles,

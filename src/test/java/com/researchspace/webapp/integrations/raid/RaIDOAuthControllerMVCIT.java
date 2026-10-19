@@ -1,6 +1,7 @@
 package com.researchspace.webapp.integrations.raid;
 
 import static java.net.URLEncoder.encode;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -16,6 +17,7 @@ import com.researchspace.api.v1.controller.API_MVC_TestBase;
 import com.researchspace.model.User;
 import com.researchspace.raid.model.exception.RaIDException;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller.AccessToken;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +27,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @WebAppConfiguration
 public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
@@ -49,30 +52,20 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void testConnect() throws Exception {
-    when(mockedRaidClientAdapter.performRedirectConnect(eq(SERVER_ALIAS)))
-        .thenReturn(
-            "https://demo.raid.org/realms/raid/protocol/openid-connect/auth?client_id=rspace&"
-                + "redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapps%2Fraid%2Fcallback&"
-                + "response_type=code&scope=openid&state=DEMO");
-
-    MvcResult result =
-        mockMvc
-            .perform(post("/apps/raid/connect/DEMO").principal(user::getUsername))
-            .andExpect(status().is(302))
-            .andReturn();
+    MvcResult result = startOAuthFlow();
 
     String actualRedirectedUrl = result.getResponse().getRedirectedUrl();
-    assertTrue(
-        actualRedirectedUrl.contains(
-            "https://demo.raid.org/realms/raid/protocol/openid-connect/auth?"));
-    assertTrue(actualRedirectedUrl.contains("client_id=rspace"));
-    assertTrue(
-        actualRedirectedUrl.contains(
+    assertThat(actualRedirectedUrl)
+        .contains("https://demo.raid.org/realms/raid/protocol/openid-connect/auth?");
+    assertThat(actualRedirectedUrl).contains("client_id=rspace");
+    assertThat(actualRedirectedUrl)
+        .contains(
             "redirect_uri="
-                + encode("http://localhost:8080/apps/raid/callback", StandardCharsets.UTF_8)));
+                + encode("http://localhost:8080/apps/raid/callback", StandardCharsets.UTF_8));
     assertTrue(actualRedirectedUrl.contains("response_type=code"));
     assertTrue(actualRedirectedUrl.contains("scope=openid"));
-    assertTrue(actualRedirectedUrl.contains("state=" + SERVER_ALIAS));
+    assertThat(stateFrom(result)).isNotBlank().isNotEqualTo(SERVER_ALIAS);
+    assertEquals(SERVER_ALIAS, SessionAttributeUtils.getSessionAttribute("rs.raid.pendingAlias"));
   }
 
   @Test
@@ -81,19 +74,20 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             eq(user.getUsername()), eq(SERVER_ALIAS), eq(AUTH_CODE)))
         .thenReturn(createAccessToken());
 
+    MvcResult connectResult = startOAuthFlow();
     MvcResult result =
         mockMvc
             .perform(
                 get("/apps/raid/callback")
                     .principal(user::getUsername)
-                    .param("state", SERVER_ALIAS)
+                    .param("state", stateFrom(connectResult))
                     .param("code", AUTH_CODE))
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertEquals(SERVER_ALIAS, result.getModelAndView().getModel().get("connectionAlias"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("connectionAlias", SERVER_ALIAS);
     assertNull(result.getModelAndView().getModel().get("connectionError"));
   }
 
@@ -103,21 +97,21 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             eq(user.getUsername()), eq(SERVER_ALIAS), eq(AUTH_CODE)))
         .thenThrow(new RaIDException(RAID_EXCEPTION_MESSAGE));
 
+    MvcResult connectResult = startOAuthFlow();
     MvcResult result =
         mockMvc
             .perform(
                 get("/apps/raid/callback")
                     .principal(user::getUsername)
-                    .param("state", SERVER_ALIAS)
+                    .param("state", stateFrom(connectResult))
                     .param("code", AUTH_CODE))
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertTrue(
-        ((String) result.getModelAndView().getModel().get("connectionError"))
-            .contains(RAID_EXCEPTION_MESSAGE));
+    assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
+        .contains(RAID_EXCEPTION_MESSAGE);
   }
 
   @Test
@@ -131,9 +125,9 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertEquals(SERVER_ALIAS, result.getModelAndView().getModel().get("connectionAlias"));
+    assertThat(result.getModelAndView().getModel()).containsEntry("connectionAlias", SERVER_ALIAS);
     assertNull(result.getModelAndView().getModel().get("connectionError"));
   }
 
@@ -148,11 +142,10 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
-    assertTrue(result.getResponse().getForwardedUrl().contains(URL_CONNECTED));
+    assertThat(result.getResponse().getForwardedUrl()).contains(URL_CONNECTED);
 
-    assertTrue(
-        ((String) result.getModelAndView().getModel().get("connectionError"))
-            .contains(RAID_EXCEPTION_MESSAGE));
+    assertThat(((String) result.getModelAndView().getModel().get("connectionError")))
+        .contains(RAID_EXCEPTION_MESSAGE);
   }
 
   @Test
@@ -202,5 +195,25 @@ public class RaIDOAuthControllerMVCIT extends API_MVC_TestBase {
     accessToken.setRefreshToken("REFRESH_TOKEN");
     accessToken.setExpiresIn(299L);
     return accessToken;
+  }
+
+  private MvcResult startOAuthFlow() throws Exception {
+    when(mockedRaidClientAdapter.performRedirectConnect(eq(SERVER_ALIAS)))
+        .thenReturn(
+            "https://demo.raid.org/realms/raid/protocol/openid-connect/auth?client_id=rspace&"
+                + "redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fapps%2Fraid%2Fcallback&"
+                + "response_type=code&scope=openid&state=DEMO");
+
+    return mockMvc
+        .perform(post("/apps/raid/connect/" + SERVER_ALIAS).principal(user::getUsername))
+        .andExpect(status().is(302))
+        .andReturn();
+  }
+
+  private String stateFrom(MvcResult connectResult) {
+    return UriComponentsBuilder.fromUriString(connectResult.getResponse().getRedirectedUrl())
+        .build()
+        .getQueryParams()
+        .getFirst("state");
   }
 }

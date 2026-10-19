@@ -1,11 +1,13 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.TestGroup.LABADMIN_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestGroup;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,8 +50,7 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
     User otherCommAdmin = createCommunity(otherGroup);
     logoutAndLoginAs(otherCommAdmin);
     assertAlterRoleNotAuthorised(testgrp, otherCommAdmin);
-    assertAuthorisationExceptionThrown(
-        () -> assertSetLabAdminViewAllAuthorised(testgrp, otherCommAdmin));
+    assertSetLabAdminViewAllNotAuthorised(testgrp, otherCommAdmin);
   }
 
   @Test
@@ -67,8 +68,7 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
     TestGroup other = createTestGroup(0);
     logoutAndLoginAs(other.getPi());
     assertAlterRoleNotAuthorised(testgrp, other.getPi());
-    assertAuthorisationExceptionThrown(
-        () -> assertSetLabAdminViewAllAuthorised(testgrp, other.getPi()));
+    assertSetLabAdminViewAllNotAuthorised(testgrp, other.getPi());
   }
 
   @Test
@@ -76,8 +76,7 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
     TestGroup testgrp = createTestGroup(1, new TestGroupConfig(true));
     logoutAndLoginAs(getLabAdmin(testgrp));
     assertAlterRoleNotAuthorised(testgrp, getLabAdmin(testgrp));
-    assertAuthorisationExceptionThrown(
-        () -> assertSetLabAdminViewAllAuthorised(testgrp, getLabAdmin(testgrp)));
+    assertSetLabAdminViewAllNotAuthorised(testgrp, getLabAdmin(testgrp));
   }
 
   @Test
@@ -86,8 +85,7 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
     User useringroup = getLabAdmin(testgrp);
     logoutAndLoginAs(useringroup);
     assertAlterRoleNotAuthorised(testgrp, useringroup);
-    assertAuthorisationExceptionThrown(
-        () -> assertSetLabAdminViewAllAuthorised(testgrp, useringroup));
+    assertSetLabAdminViewAllNotAuthorised(testgrp, useringroup);
   }
 
   private User getLabAdmin(TestGroup testgrp) {
@@ -95,10 +93,16 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
   }
 
   private void assertAlterRoleNotAuthorised(TestGroup testgrp, User subject) throws Exception {
-    assertAuthorisationExceptionThrown(
-        () -> setAndAssertUserRole(testgrp, "u1", RoleInGroup.RS_LAB_ADMIN, subject));
-    assertAuthorisationExceptionThrown(
-        () -> setAndAssertUserRole(testgrp, "u1", RoleInGroup.DEFAULT, subject));
+    Long groupId = testgrp.getGroup().getId();
+    Long userId = testgrp.getUserByPrefix("u1").getId();
+    String labAdminRole = RoleInGroup.RS_LAB_ADMIN.name();
+    String defaultRole = RoleInGroup.DEFAULT.name();
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.setRoleForUser(groupId, userId, labAdminRole, subject));
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.setRoleForUser(groupId, userId, defaultRole, subject));
   }
 
   private void assertRolesCanBeAltered(TestGroup testgrp, User subject) {
@@ -115,6 +119,18 @@ public class GroupManagerChangeUserRolePermissionsTest extends GroupPermissionsT
         groupRole.name(),
         subject);
     assertTrue(testgrp.getUserByPrefix(prefix).hasRoleInGroup(testgrp.getGroup(), groupRole));
+  }
+
+  private void assertSetLabAdminViewAllNotAuthorised(TestGroup testgrp, User subject)
+      throws Exception {
+    Long labAdminId = getLabAdmin(testgrp).getId();
+    Long groupId = testgrp.getGroup().getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, subject, groupId, true));
+    assertThrows(
+        AuthorizationException.class,
+        () -> grpMgr.authorizeLabAdminToViewAll(labAdminId, subject, groupId, false));
   }
 
   private void assertSetLabAdminViewAllAuthorised(TestGroup testgrp, User subject) {

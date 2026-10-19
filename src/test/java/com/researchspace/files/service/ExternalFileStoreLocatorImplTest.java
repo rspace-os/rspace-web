@@ -1,9 +1,8 @@
 package com.researchspace.files.service;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -40,7 +39,7 @@ public class ExternalFileStoreLocatorImplTest {
     setUpUserConnectionExists(userConnection);
     Optional<ExternalFileStoreWithCredentials> efs =
         extFileLocator.getExternalFileStoreForUser(user.getUsername());
-    assertTrue(efs.isPresent());
+    assertThat(efs).isPresent();
     assertEquals(userConnection, efs.get().getUserConnection());
     assertEquals(extFileStore, efs.get().getExtFileStore());
   }
@@ -51,7 +50,7 @@ public class ExternalFileStoreLocatorImplTest {
     setUpUserConnectionNotExists(uc);
     Optional<ExternalFileStoreWithCredentials> efs =
         extFileLocator.getExternalFileStoreForUser(user.getUsername());
-    assertFalse(efs.isPresent());
+    assertThat(efs).isNotPresent();
   }
 
   private UserConnection getUserConnectionForUser() {

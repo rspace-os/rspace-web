@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -57,17 +58,11 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     DetailedRecordInformation entry1Info =
         infoProvider.getDetailedRecordInformation(
             notebook.getChildrens().iterator().next().getId(), u1, null, null);
-    assertTrue(entry1Info.getImplicitShares().containsKey(notebook.getGlobalIdentifier()));
-    assertTrue(
-        entry1Info
-            .getImplicitShares()
-            .get(notebook.getGlobalIdentifier())
-            .contains(group.getGroup().getDisplayName()));
-    assertTrue(
-        entry1Info
-            .getImplicitShares()
-            .get(notebook.getGlobalIdentifier())
-            .contains(group2.getGroup().getDisplayName()));
+    assertThat(entry1Info.getImplicitShares()).containsKey(notebook.getGlobalIdentifier());
+    assertThat(entry1Info.getImplicitShares().get(notebook.getGlobalIdentifier()))
+        .contains(group.getGroup().getDisplayName());
+    assertThat(entry1Info.getImplicitShares().get(notebook.getGlobalIdentifier()))
+        .contains(group2.getGroup().getDisplayName());
   }
 
   @Test
@@ -183,7 +178,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     assertEquals(0, myRecordInfo.getLinkedByCount());
 
     List<RecordInformation> linkedBy1 = infoProvider.getLinkedByRecords(userDoc.getId(), user);
-    assertEquals(0, linkedBy1.size());
+    assertThat(linkedBy1).isEmpty();
 
     // check target doc details
     DetailedRecordInformation targetRecordInfo =
@@ -192,7 +187,7 @@ public class DetailedRecordInformationProviderTest extends SpringTransactionalTe
     assertEquals(2, targetRecordInfo.getLinkedByCount());
 
     List<RecordInformation> linkedBy2 = infoProvider.getLinkedByRecords(targetDoc.getId(), user);
-    assertEquals(2, linkedBy2.size());
+    assertThat(linkedBy2).hasSize(2);
     assertEquals(userDoc.getGlobalIdentifier(), linkedBy2.get(0).getOid().toString());
     assertEquals(userDoc.getName(), linkedBy2.get(0).getName());
     assertEquals(userDoc.getOwner().getFullName(), linkedBy2.get(0).getOwnerFullName());

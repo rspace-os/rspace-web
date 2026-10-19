@@ -38,6 +38,7 @@ public class RestoreDeletedItemResultTest {
     assertEquals(2, result.getRestoredItemCount());
     assertEquals(folder, result.getFirstItem().get());
 
-    assertThrows(UnsupportedOperationException.class, () -> result.getRestoredItems().add(sd1));
+    var restoredItems = result.getRestoredItems();
+    assertThrows(UnsupportedOperationException.class, () -> restoredItems.add(sd1));
   }
 }

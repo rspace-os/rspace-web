@@ -22,6 +22,13 @@ export class RecordInfoDialog {
     return value;
   }
 
+  async getTags(): Promise<string[]> {
+    const labelCell = this.root.getByRole("cell", { name: "Tags:", exact: true });
+    if ((await labelCell.count()) === 0) return [];
+    const value = await this.field("Tags");
+    return value.length === 0 ? [] : value.split(",").map((tag) => tag.trim());
+  }
+
   get relatedInventoryItemsContent(): Locator {
     // jQuery injects this section without a role or label; the class is its only stable hook.
     return this.root.locator(".relatedInventoryItemsContent");

@@ -1,9 +1,10 @@
-import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import type { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClient";
 import type { ToastsComponent } from "@/__tests__/e2e/components/shared/ToastsComponent";
 import { env } from "@/__tests__/e2e/env";
 import { test } from "@/__tests__/e2e/fixtures/flows";
+import { mintedHandleUrl } from "@/__tests__/e2e/mocks/b2inst";
+import { setB2instReviewStatus } from "@/__tests__/e2e/mocks/b2instControl";
 import type { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
 import { uniqueName } from "@/__tests__/e2e/testData";
@@ -16,8 +17,7 @@ async function deleteDraftPidinstIdentifier(
     pageInventory,
     clientInventory,
     componentToasts,
-    page,
-  }: { pageInventory: InventoryPage; clientInventory: InventoryClient; componentToasts: ToastsComponent; page: Page },
+  }: { pageInventory: InventoryPage; clientInventory: InventoryClient; componentToasts: ToastsComponent },
 ): Promise<void> {
   const instrumentName = uniqueName(namePrefix);
 
@@ -28,7 +28,7 @@ async function deleteDraftPidinstIdentifier(
   });
 
   const identifiers = pageInventory.detailsPanel.identifiers();
-  await page.goto(`/inventory/instrument/${instrument.id}`);
+  await pageInventory.openInstrument(instrument.id);
   await pageInventory.detailsPanel.expandSection("Identifiers");
   await identifiers.waitForState("Draft");
 
@@ -68,26 +68,20 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       const createDialog = await pageInventory.detailsPanel.createIdentifier("PIDINST");
       await createDialog.confirm(identifiers);
 
-      /*
-       * B2INST manages its own community-specific metadata on its own side, so unlike DataCite
-       * PIDINSTs there are no Recommended Identifier Properties (Subjects/Descriptions/Dates) to
-       * fill in here - RSDEV-1359.
-       */
       await pageInventory.detailsPanel.saveEdit();
       await expect(componentToasts.byVariant("success", "updated successfully.")).toBeVisible();
 
       await identifiers.waitForState("Draft");
 
-      await identifiers.clickPreview();
+      const preview = await identifiers.clickPreview();
       await expect(page.getByRole("heading", { name: instrumentName })).toBeVisible();
-      await page.getByRole("button", { name: "Close", exact: true }).click();
+      await preview.close();
     });
 
     test(`As a user, I do not see Required/Recommended Identifier Properties for a B2INST PIDINST identifier`, async ({
       pageInventory,
       clientInventory,
       flowPidinstB2instConfig,
-      page,
     }) => {
       void flowPidinstB2instConfig;
       const instrumentName = uniqueName("e2e-pidinst-b2inst-properties-instrument");
@@ -99,7 +93,7 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       });
 
       const identifiers = pageInventory.detailsPanel.identifiers();
-      await page.goto(`/inventory/instrument/${instrument.id}`);
+      await pageInventory.openInstrument(instrument.id);
       await pageInventory.detailsPanel.expandSection("Identifiers");
       await identifiers.waitForState("Draft");
 
@@ -117,14 +111,77 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       clientInventory,
       componentToasts,
       flowPidinstB2instConfig,
-      page,
     }) => {
       void flowPidinstB2instConfig;
       await deleteDraftPidinstIdentifier("e2e-pidinst-delete-instrument", {
         pageInventory,
         clientInventory,
         componentToasts,
-        page,
+      });
+    });
+
+    test(`As a user, Refresh reflects the B2INST community's review decision`, async ({
+      pageInventory,
+      clientInventory,
+      flowPidinstB2instConfig,
+    }, testInfo) => {
+      testInfo.skip(
+        INTEGRATION_MODE === "real",
+        "setB2instReviewStatus drives the mock server's test-only control endpoint, which has no " +
+          "real-B2INST equivalent - nothing can simulate a curator's decision against the real sandbox",
+      );
+      void flowPidinstB2instConfig;
+
+      /** Leaves the instrument open with its Identifiers section expanded, ready for Refresh. */
+      async function mintAndSubmit(namePrefix: string): Promise<{ instrumentId: number; rid: string }> {
+        const instrument = await clientInventory.createInstrument({ name: uniqueName(namePrefix) });
+        const info = await clientInventory.registerIdentifier({ parentGlobalId: instrument.globalId });
+
+        const identifiers = pageInventory.detailsPanel.identifiers();
+        await pageInventory.openInstrument(instrument.id);
+        await pageInventory.detailsPanel.expandSection("Identifiers");
+        await identifiers.waitForState("Draft");
+        await identifiers.clickPublish();
+        await identifiers.waitForState("Submitted");
+
+        return { instrumentId: instrument.id, rid: info.doi };
+      }
+
+      await test.step("When Refresh runs after the community declines, then only Delete remains", async () => {
+        const { instrumentId, rid } = await mintAndSubmit("e2e-pidinst-refresh-declined");
+        await setB2instReviewStatus(rid, "declined");
+
+        const identifiers = pageInventory.detailsPanel.identifiers();
+        await identifiers.clickRefresh();
+        await expect(identifiers.stateLabel("Declined")).toBeVisible();
+
+        await expect(identifiers.publish).toBeHidden();
+        await expect(identifiers.refresh).toBeHidden();
+        await expect(identifiers.delete).toBeEnabled();
+
+        // Refresh saves the provider's decision, so it must survive reopening the instrument.
+        await pageInventory.openInstrument(instrumentId);
+        await pageInventory.detailsPanel.expandSection("Identifiers");
+        await expect(identifiers.stateLabel("Declined")).toBeVisible();
+      });
+
+      await test.step("When Refresh runs after the community accepts, then Retract is disabled", async () => {
+        const { instrumentId, rid } = await mintAndSubmit("e2e-pidinst-refresh-accepted");
+        await setB2instReviewStatus(rid, "accepted");
+
+        const identifiers = pageInventory.detailsPanel.identifiers();
+        await identifiers.clickRefresh();
+        await expect(identifiers.stateLabel("Accepted")).toBeVisible();
+
+        await expect(identifiers.identifierLink(mintedHandleUrl(rid))).toBeVisible();
+        await expect(identifiers.publish).toBeHidden();
+        await expect(identifiers.refresh).toBeVisible();
+        await expect(identifiers.retract).toBeDisabled();
+
+        await pageInventory.openInstrument(instrumentId);
+        await pageInventory.detailsPanel.expandSection("Identifiers");
+        await expect(identifiers.stateLabel("Accepted")).toBeVisible();
+        await expect(identifiers.identifierLink(mintedHandleUrl(rid))).toBeVisible();
       });
     });
   });
@@ -139,7 +196,6 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       pageInventory,
       componentToasts,
       flowPidinstDataciteConfig,
-      page,
     }) => {
       void flowPidinstDataciteConfig;
       const instrumentName = uniqueName("e2e-pidinst-datacite-instrument");
@@ -173,9 +229,9 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
 
       await identifiers.waitForState("Draft");
 
-      await identifiers.clickPreview();
+      const preview = await identifiers.clickPreview();
       await expect(identifiers.subjects).toBeVisible();
-      await page.getByRole("button", { name: "Close", exact: true }).click();
+      await preview.close();
 
       await identifiers.clickPublish();
       await expect(componentToasts.byText("published")).toBeVisible();
@@ -188,7 +244,6 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       clientInventory,
       componentToasts,
       flowPidinstDataciteConfig,
-      page,
     }) => {
       void flowPidinstDataciteConfig;
       const instrumentName = uniqueName("e2e-pidinst-datacite-retract-instrument");
@@ -201,7 +256,7 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       });
 
       const identifiers = pageInventory.detailsPanel.identifiers();
-      await page.goto(`/inventory/instrument/${instrument.id}`);
+      await pageInventory.openInstrument(instrument.id);
       await pageInventory.detailsPanel.expandSection("Identifiers");
       await identifiers.waitForState("Findable");
 
@@ -216,14 +271,12 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       clientInventory,
       componentToasts,
       flowPidinstDataciteConfig,
-      page,
     }) => {
       void flowPidinstDataciteConfig;
       await deleteDraftPidinstIdentifier("e2e-pidinst-datacite-delete-instrument", {
         pageInventory,
         clientInventory,
         componentToasts,
-        page,
       });
     });
 
@@ -231,7 +284,6 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       pageInventory,
       clientInventory,
       flowPidinstDataciteConfig,
-      page,
     }) => {
       void flowPidinstDataciteConfig;
       const instrumentName = uniqueName("e2e-pidinst-datacite-properties-instrument");
@@ -243,7 +295,7 @@ test.describe(`Inventory PIDINST Identifiers`, { tag: [tags.INVENTORY, tags.MOBI
       });
 
       const identifiers = pageInventory.detailsPanel.identifiers();
-      await page.goto(`/inventory/instrument/${instrument.id}`);
+      await pageInventory.openInstrument(instrument.id);
       await pageInventory.detailsPanel.expandSection("Identifiers");
       await identifiers.waitForState("Draft");
 

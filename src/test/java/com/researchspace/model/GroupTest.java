@@ -1,5 +1,6 @@
 package com.researchspace.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -88,10 +89,10 @@ class GroupTest {
     assertTrue(group.hasPIs());
     group.addMember(u2, RoleInGroup.RS_LAB_ADMIN);
     group.addMember(u3, RoleInGroup.DEFAULT);
-    assertEquals(1, group.getPiusers().size());
-    assertEquals(1, group.getAdminUsers().size());
-    assertEquals(1, group.getDefaultUsers().size());
-    assertEquals(2, group.getUsersByRole(RoleInGroup.PI, RoleInGroup.RS_LAB_ADMIN).size());
+    assertThat(group.getPiusers()).hasSize(1);
+    assertThat(group.getAdminUsers()).hasSize(1);
+    assertThat(group.getDefaultUsers()).hasSize(1);
+    assertThat(group.getUsersByRole(RoleInGroup.PI, RoleInGroup.RS_LAB_ADMIN)).hasSize(2);
 
     assertEquals(RoleInGroup.RS_LAB_ADMIN, group.getRoleForUser(u2));
     assertEquals(RoleInGroup.PI, group.getRoleForUser(pi1));
@@ -109,7 +110,7 @@ class GroupTest {
   void testGetGroupOwnerUsersReturnsGroupOwnerSet() {
     group.setGroupType(GroupType.PROJECT_GROUP);
     group.addMember(u2, RoleInGroup.GROUP_OWNER);
-    assertEquals(1, group.getGroupOwnerUsers().size());
+    assertThat(group.getGroupOwnerUsers()).hasSize(1);
   }
 
   @Test
@@ -130,7 +131,7 @@ class GroupTest {
     group.addMember(u3, RoleInGroup.RS_LAB_ADMIN);
     group.addMember(pi1, RoleInGroup.PI);
     group.setLabAdminViewAll(u3, true);
-    assertEquals(1, group.getLabAdminsWithViewAllPermission().size());
+    assertThat(group.getLabAdminsWithViewAllPermission()).hasSize(1);
     assertEquals(u3, group.getLabAdminsWithViewAllPermission().iterator().next());
   }
 
@@ -141,7 +142,7 @@ class GroupTest {
     group.addMember(u3, RoleInGroup.RS_LAB_ADMIN);
     group.setLabAdminViewAll(u3, true);
     // pi + u3
-    assertEquals(2, group.getMembersWithDefaultViewAllPermissions().size());
+    assertThat(group.getMembersWithDefaultViewAllPermissions()).hasSize(2);
   }
 
   @Test
@@ -161,19 +162,19 @@ class GroupTest {
     g2.addMember(pi1);
     grps.add(g2);
     grps.add(g1);
-    assertEquals(1, Group.getUniqueUsersInGroups(grps, null).size());
+    assertThat(Group.getUniqueUsersInGroups(grps, null)).hasSize(1);
     g1.addMember(u2);
-    assertEquals(2, Group.getUniqueUsersInGroups(grps, User.LAST_NAME_COMPARATOR).size());
+    assertThat(Group.getUniqueUsersInGroups(grps, User.LAST_NAME_COMPARATOR)).hasSize(2);
     // exclude u2
-    assertEquals(1, Group.getUniqueUsersInGroups(grps, User.LAST_NAME_COMPARATOR, u2).size());
+    assertThat(Group.getUniqueUsersInGroups(grps, User.LAST_NAME_COMPARATOR, u2)).hasSize(1);
   }
 
   @Test
   void testCannotAddUserToSameGroupTwice() {
     group.addMember(pi1, RoleInGroup.RS_LAB_ADMIN);
-    assertEquals(1, group.getMembers().size());
+    assertThat(group.getMembers()).hasSize(1);
     group.addMember(pi1, RoleInGroup.RS_LAB_ADMIN);
-    assertEquals(1, group.getMembers().size()); // unchanged
+    assertThat(group.getMembers()).hasSize(1); // unchanged
   }
 
   @Test
@@ -185,11 +186,11 @@ class GroupTest {
 
     String TOO_LONG_NAME = RandomStringUtils.randomAlphabetic(256);
     g.setDisplayName(TOO_LONG_NAME);
-    assertEquals(255, g.getDisplayName().length());
+    assertThat(g.getDisplayName()).hasSize(255);
 
     String uniquename = g.getUniqueName();
     assertNotNull(uniquename);
-    assertTrue(uniquename.contains("something"));
+    assertThat(uniquename).contains("something");
     // try again, username should remain the same
     g.createAndSetUniqueGroupName();
     assertEquals(uniquename, g.getUniqueName()); // all alphabetic chars removed
@@ -219,12 +220,12 @@ class GroupTest {
     Group g1 = new Group();
     assertNull(g1.getUniqueName());
     g1.createAndSetUniqueGroupName();
-    assertTrue(g1.getUniqueName().matches("^[A-Za-z0-9]+$")); // all non a
+    assertThat(g1.getUniqueName()).matches("^[A-Za-z0-9]+$"); // all non a
 
     Group g2 = new Group();
     g2.setDisplayName("someone's group");
     g2.createAndSetUniqueGroupName();
-    assertTrue(g2.getUniqueName().matches("^[A-Za-z0-9]+$")); // all non a
+    assertThat(g2.getUniqueName()).matches("^[A-Za-z0-9]+$"); // all non a
   }
 
   @Test
@@ -254,14 +255,14 @@ class GroupTest {
     collabGroup.addMember(pi2, RoleInGroup.PI);
 
     // If each PI is only the PI of one group, all groups should be listed
-    assertEquals(2, collabGroup.getMemberGroupsForCollabGroup().size());
+    assertThat(collabGroup.getMemberGroupsForCollabGroup()).hasSize(2);
 
     Group pi1Group2 = new Group("Pi1Group2");
     pi1Group2.setOwner(pi1);
     pi1Group2.addMember(pi1, RoleInGroup.PI);
 
     // Groups of PIs that have more than 1 group shouldn't be displayed
-    assertEquals(1, collabGroup.getMemberGroupsForCollabGroup().size());
+    assertThat(collabGroup.getMemberGroupsForCollabGroup()).hasSize(1);
 
     User user1 = new User("User1");
     user1.addRole(Role.USER_ROLE);
@@ -276,7 +277,7 @@ class GroupTest {
     collabGroup.addMember(user2);
 
     // If a group has collaborating users, groups of collaborating users should be displayed
-    assertEquals(2, collabGroup.getMemberGroupsForCollabGroup().size());
+    assertThat(collabGroup.getMemberGroupsForCollabGroup()).hasSize(2);
 
     // Groups from which the members are not in the collab group shouldn't be displayed
     User user3 = new User("User3");
@@ -284,7 +285,7 @@ class GroupTest {
     user3.setLastName("User3");
     pi1Group2.addMember(user3);
 
-    assertEquals(2, collabGroup.getMemberGroupsForCollabGroup().size());
-    assertFalse(collabGroup.getMemberGroupsForCollabGroup().contains(pi1Group2));
+    assertThat(collabGroup.getMemberGroupsForCollabGroup()).hasSize(2);
+    assertThat(collabGroup.getMemberGroupsForCollabGroup()).doesNotContain(pi1Group2);
   }
 }

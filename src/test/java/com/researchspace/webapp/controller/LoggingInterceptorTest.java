@@ -1,17 +1,20 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.model.dtos.RunAsUserCommand;
 import com.researchspace.testutils.SpringTransactionalTest;
+import com.researchspace.webapp.integrations.github.GitHubController;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.Collection;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,10 +57,10 @@ public class LoggingInterceptorTest extends SpringTransactionalTest {
     // should always return true
     assertTrue(logInterceptor.preHandle(httpRequest, httpResponse, handler));
     // test log contents
-    assertTrue(strglogger.logContents.contains(requestURI));
-    assertTrue(strglogger.logContents.contains(remoteAddr));
+    assertThat(strglogger.logContents).contains(requestURI);
+    assertThat(strglogger.logContents).contains(remoteAddr);
     // check request params are logged
-    assertTrue(strglogger.logContents.contains("valueToBeLogged"));
+    assertThat(strglogger.logContents).contains("valueToBeLogged");
   }
 
   @Test
@@ -68,7 +71,7 @@ public class LoggingInterceptorTest extends SpringTransactionalTest {
     ServletInvocableHandlerMethod handler = new ServletInvocableHandlerMethod(dc, method);
     setUpRequestCoreData();
     assertTrue(logInterceptor.preHandle(httpRequest, httpResponse, handler));
-    assertTrue(strglogger.logContents.isEmpty());
+    assertThat(strglogger.logContents).isEmpty();
   }
 
   @Test
@@ -92,9 +95,28 @@ public class LoggingInterceptorTest extends SpringTransactionalTest {
     httpRequest.setParameter("runAsUsername", "should be logged");
     assertTrue(logInterceptor.preHandle(httpRequest, httpResponse, handler));
 
-    assertTrue(strglogger.logContents.contains(requestURI));
-    assertFalse(strglogger.logContents.contains("should be ignored"));
-    assertTrue(strglogger.logContents.contains("should be logged"));
+    assertThat(strglogger.logContents).contains(requestURI);
+    assertThat(strglogger.logContents).doesNotContain("should be ignored");
+    assertThat(strglogger.logContents).contains("should be logged");
+  }
+
+  @Test
+  public void testOAuthCallbacksDoNotLogCodeOrState() throws Exception {
+    Method method =
+        GitHubController.class.getMethod(
+            "onAuthorization", Map.class, Model.class, Principal.class, HttpServletRequest.class);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/github/redirect_uri");
+    request.setParameter("code", "github-code-secret");
+    request.setParameter("state", "github-state-secret");
+
+    ServletInvocableHandlerMethod handler =
+        new ServletInvocableHandlerMethod(new GitHubController(null), method);
+    assertTrue(logInterceptor.preHandle(request, httpResponse, handler));
+
+    assertThat(strglogger.logContents)
+        .contains("/github/redirect_uri")
+        .doesNotContain("github-code-secret", "github-state-secret");
   }
 
   protected void setUpRequestCoreData() {
@@ -117,7 +139,7 @@ public class LoggingInterceptorTest extends SpringTransactionalTest {
     assertTrue(httpRequest.getParameter("bigString").equals(bigData));
 
     // assertlog is truncated
-    assertTrue(strglogger.logContents.length() < 150); // 100 + boilerplate log statement
+    assertThat(strglogger.logContents.length()).isLessThan(150); // 100 + boilerplate log statement
   }
 
   @Test

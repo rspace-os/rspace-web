@@ -5,12 +5,14 @@ import com.researchspace.b2inst.model.request.B2instReviewReceiver;
 import com.researchspace.b2inst.model.request.B2instReviewRequest;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import jakarta.annotation.PostConstruct;
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,9 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -34,7 +39,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * {@link B2instConnector} implementation over Spring {@link RestTemplate}. Reads its configuration
  * from the {@code pidinst.b2inst.*} system properties (B2INST reuses the IdentifierSettings shape:
- * {@code username} holds the community id and {@code password} holds the bearer token).
+ * {@code username} holds the community id and {@code password} holds the bearer token). The
+ * public-registry lookup is the exception: it reads only the {@code pidinst.lookup.b2inst.url}
+ * deployment property and sends no token (ADR 0011).
  */
 @Slf4j
 public class B2instConnectorImpl implements B2instConnector {
@@ -64,8 +71,21 @@ public class B2instConnectorImpl implements B2instConnector {
   private String token;
   private RestTemplate restTemplate = new RestTemplate(timeoutBoundedRequestFactory());
 
+  /**
+   * The public registry (ADR 0011). A deployment property, so it is injected once and never
+   * reloaded.
+   */
+  @Value("${pidinst.lookup.b2inst.url}")
+  private String lookupServerUrl;
+
+  /**
+   * No bearer: the public registry is read anonymously and the minting token never leaves its host.
+   */
+  private final RestTemplate lookupRestTemplate = buildRestTemplate(null);
+
   @PostConstruct
   @Override
+  @CacheEvict(value = "pidinstLookupResults", allEntries = true)
   public void reloadClient() {
     Map<String, SystemPropertyValue> props = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     enabled = Boolean.parseBoolean(getProperty(props, SystemPropertyName.PIDINST_B2INST_ENABLED));
@@ -76,6 +96,11 @@ public class B2instConnectorImpl implements B2instConnector {
     token = getProperty(props, SystemPropertyName.PIDINST_B2INST_TOKEN);
     restTemplate = buildRestTemplate(token);
     log.info("Reloaded B2INST client for server {} (enabled={})", serverUrl, enabled);
+    lookupServerUrl = StringUtils.removeEnd(StringUtils.trimToEmpty(lookupServerUrl), "/");
+    if (lookupServerUrl.isEmpty()) {
+      log.warn(
+          "pidinst.lookup.b2inst.url is blank: the B2INST public registry lookup is unavailable");
+    }
   }
 
   /** See {@link #CONNECT_TIMEOUT}: never build a B2INST client without these bounds. */
@@ -177,6 +202,16 @@ public class B2instConnectorImpl implements B2instConnector {
         throw new B2instConnectionException(
             "B2INST review did not return a submit action for record " + rid,
             messages.getMessage("errors.inventory.identifier.b2instNoSubmitAction"));
+      }
+      if (!isOnConfiguredServer(submitUrl)) {
+        throw new B2instConnectionException(
+            "B2INST submit action for record "
+                + rid
+                + " points away from "
+                + serverUrl
+                + ": "
+                + submitUrl,
+            messages.getMessage("errors.inventory.identifier.b2instSubmitActionOtherHost"));
       }
       return restTemplate.postForObject(submitUrl, emptyJsonBody(), B2instRequestResponse.class);
     } catch (RestClientException e) {
@@ -359,6 +394,72 @@ public class B2instConnectorImpl implements B2instConnector {
     return getRecord(recordUrl(rid, "draft"), rid);
   }
 
+  @Override
+  @Cacheable(
+      value = "pidinstLookupResults",
+      key = "'b2inst:' + #query + ':' + #pageNumber + ':' + #pageSize")
+  public B2instSearchResult searchPublicRecords(String query, int pageNumber, int pageSize) {
+    // The term must stay a template variable expanded after encode(): encoding the built components
+    // leaves '+' raw, and InvenioRDM reads a raw '+' as a space (RSDEV-1576, ADR 0011).
+    // A URI, not a String: RestTemplate treats a String as a URI template and encodes it again, so
+    // a space would reach B2INST as %2520
+    URI url =
+        UriComponentsBuilder.fromUriString(lookupApiBase())
+            .pathSegment("records")
+            .queryParam("q", "{q}")
+            .queryParam("size", pageSize)
+            // InvenioRDM pages are 1-based; the API and the manager count from 0
+            .queryParam("page", pageNumber + 1)
+            .queryParam("sort", "updated-desc")
+            .encode()
+            .buildAndExpand(Map.of("q", query))
+            .toUri();
+    try {
+      B2instSearchResult result = lookupRestTemplate.getForObject(url, B2instSearchResult.class);
+      return result == null ? new B2instSearchResult() : result;
+    } catch (RestClientException e) {
+      throw new B2instConnectionException(
+          "Error searching the B2INST public registry: " + developerDetail(e),
+          describeFailure(e),
+          e);
+    }
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getPublicRecordByHandle(String handle) {
+    Optional<String> suffix = B2instConnector.handleSuffix(handle);
+    if (suffix.isEmpty()) {
+      return Optional.empty();
+    }
+    String url =
+        UriComponentsBuilder.fromUriString(lookupApiBase())
+            .pathSegment("records")
+            .pathSegment(suffix.get())
+            .build()
+            .encode()
+            .toUriString();
+    try {
+      return Optional.ofNullable(lookupRestTemplate.getForObject(url, B2instDraftRecord.class));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (RestClientException e) {
+      throw new B2instConnectionException(
+          "Error reading B2INST public record " + suffix.get() + ": " + developerDetail(e),
+          describeFailure(e),
+          e);
+    }
+  }
+
+  private String lookupApiBase() {
+    if (StringUtils.isBlank(lookupServerUrl)) {
+      throw new B2instConnectionException(
+          "The B2INST public registry is not configured: pidinst.lookup.b2inst.url is blank",
+          "not configured",
+          null);
+    }
+    return lookupServerUrl + "/api";
+  }
+
   private Optional<B2instDraftRecord> getRecord(String url, String rid) {
     try {
       return Optional.ofNullable(restTemplate.getForObject(url, B2instDraftRecord.class));
@@ -396,6 +497,21 @@ public class B2instConnectorImpl implements B2instConnector {
     return created.getLinks().getActions().getSubmit();
   }
 
+  /**
+   * The bearer token goes on every request this client makes, so a link taken from a B2INST
+   * response is only followed when its scheme and authority (user info, host, port) are the
+   * configured server's. A plain prefix check would accept {@code
+   * https://<server>.attacker.example}.
+   */
+  private boolean isOnConfiguredServer(String url) {
+    try {
+      return URI.create(url).resolve("/").equals(URI.create(serverUrl).resolve("/"));
+    } catch (IllegalArgumentException e) {
+      log.warn("B2INST submit action is not a usable URL: {}", url, e);
+      return false;
+    }
+  }
+
   private String apiBase() {
     return serverUrl + "/api";
   }
@@ -408,5 +524,10 @@ public class B2instConnectorImpl implements B2instConnector {
   /** Visible for testing: lets a MockRestServiceServer bind to the currently configured client. */
   RestTemplate getRestTemplate() {
     return restTemplate;
+  }
+
+  /** Visible for testing: the anonymous client the public-registry lookup uses. */
+  RestTemplate getLookupRestTemplate() {
+    return lookupRestTemplate;
   }
 }

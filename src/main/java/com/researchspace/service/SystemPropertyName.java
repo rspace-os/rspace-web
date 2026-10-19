@@ -1,5 +1,9 @@
 package com.researchspace.service;
 
+import com.researchspace.model.preference.SettingsType;
+import com.researchspace.model.system.SystemProperty;
+import java.util.EnumSet;
+import java.util.Set;
 import lombok.Getter;
 
 @Getter
@@ -27,6 +31,7 @@ public enum SystemPropertyName {
   GOOGLE_DRIVE_AVAILABLE("googledrive.available"),
   GROUP_AUTOSHARING_AVAILABLE("group_autosharing.available"),
   INVENTORY_AVAILABLE("inventory.available"),
+  INVENTORY_OPERATIONS_AVAILABLE("inventory.operations.available"),
   ORCID_AVAILABLE("orcid.available"),
   PUBLIC_LAST_LOGIN_AVAILABLE("publicLastLogin.available"),
   PUBLIC_SHARING("public_sharing"),
@@ -60,6 +65,17 @@ public enum SystemPropertyName {
   DSW_AVAILABLE("dsw.available");
 
   private String propertyName;
+
+  private static final Set<SettingsType> NON_TEXT_TYPES =
+      EnumSet.of(SettingsType.BOOLEAN, SettingsType.NUMBER, SettingsType.ENUM);
+
+  /**
+   * Whether the legacy settings read endpoints may return this property's value. Free-text settings
+   * can hold credentials, so they are never returned (RSDEV-1525).
+   */
+  public static boolean isClientReadable(SystemProperty property) {
+    return NON_TEXT_TYPES.contains(property.getType());
+  }
 
   private SystemPropertyName(String propertyName) {
     this.propertyName = propertyName;

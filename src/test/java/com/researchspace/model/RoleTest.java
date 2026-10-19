@@ -1,5 +1,6 @@
 package com.researchspace.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -60,8 +61,8 @@ public class RoleTest {
     ConstraintPermissionResolver parser = new ConstraintPermissionResolver();
     ConstraintBasedPermission cbp = parser.resolvePermission("FORM:READ");
     role.addPermission(cbp);
-    assertTrue(role.getPermissions().contains(cbp));
+    assertThat(role.getPermissions()).contains(cbp);
     role.removePermission(cbp);
-    assertFalse(role.getPermissions().contains(cbp));
+    assertThat(role.getPermissions()).doesNotContain(cbp);
   }
 }

@@ -1,6 +1,6 @@
 package com.researchspace.model.views;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,14 +33,14 @@ public class GroupListResultTest {
     assertTrue(m.matches());
     String input1 = "name1<123>, name2<567>";
     Set<Long> ids = GroupListResult.getGroupIdsfromMultiGroupAutocomplete(input1);
-    assertEquals(2, ids.size());
-    assertTrue(ids.contains(567L));
+    assertThat(ids).hasSize(2);
+    assertThat(ids).contains(567L);
 
     String[] singleGroupInputs = new String[] {"name1<123>,", "name1<123>, "};
     for (String in : singleGroupInputs) {
       assertTrue(GroupListResult.validateMultiGroupAutocompleteInput(in));
       Set<Long> ids2 = GroupListResult.getGroupIdsfromMultiGroupAutocomplete(in);
-      assertEquals(1, ids2.size());
+      assertThat(ids2).hasSize(1);
     }
 
     String[] inputs =
@@ -53,8 +53,8 @@ public class GroupListResultTest {
     for (String in : inputs) {
       assertTrue(GroupListResult.validateMultiGroupAutocompleteInput(in));
       Set<Long> ids2 = GroupListResult.getGroupIdsfromMultiGroupAutocomplete(in);
-      assertEquals(2, ids2.size());
-      assertTrue(ids2.contains(567L));
+      assertThat(ids2).hasSize(2);
+      assertThat(ids2).contains(567L);
     }
   }
 }

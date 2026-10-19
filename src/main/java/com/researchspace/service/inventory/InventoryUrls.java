@@ -19,7 +19,9 @@ import org.apache.commons.lang3.StringUtils;
  *
  * <p>Replaces {@code GlobalIdUrls}, whose builder went with the retired auto-fill (ADR 0006 item
  * 3), leaving only a path segment RSpace had to recognise. RSDEV-1253 gave that segment a composer
- * again, for a different purpose: PIDINST related identifiers (ADR 0007).
+ * again, for a different purpose: PIDINST related identifiers (ADR 0007). RSDEV-1528 added the
+ * inverse, {@link #globalIdOfOwnPage}, so import and registration agree about which addresses are
+ * ours.
  */
 public final class InventoryUrls {
 
@@ -96,6 +98,70 @@ public final class InventoryUrls {
       return Optional.empty();
     }
     return Optional.of(StringUtils.stripEnd(trimmed, "/") + GLOBAL_ID_PATH + globalId.trim());
+  }
+
+  /**
+   * The Global ID named by an address when that address is this deployment's own globalId page,
+   * else empty: the inverse of {@link #globalIdPageUrl}, deciding whether an address read back by
+   * an import names a local record, for the PIDINST import's related identifiers (RSDEV-1528, ADR
+   * 0009 decision 9) and the CSV link import alike.
+   *
+   * <p>Only a web address counts, http or https alike, because http and https on one host are one
+   * deployment. Same server means same host (case-insensitive), port (a scheme's default port is
+   * the same whether written or left out) and path before the segment; the segment itself is
+   * matched exactly, because the route is case-sensitive and {@code /GLOBALID/} answers 404. A
+   * version suffix is returned as it is, so the caller keeps the pin the address named. A server
+   * URL that has since changed, like a differently cased segment, is deliberately not recognised,
+   * unlike in {@link #namesGlobalIdPage}.
+   */
+  public static Optional<String> globalIdOfOwnPage(String address, String serverUrl) {
+    URI page = parseOrNull(address);
+    URI server = parseOrNull(serverUrl);
+    if (page == null
+        || server == null
+        || !StringUtils.equalsAnyIgnoreCase(page.getScheme(), "http", "https")
+        || page.getHost() == null
+        || server.getHost() == null) {
+      return Optional.empty();
+    }
+    String path = StringUtils.stripEnd(StringUtils.defaultString(page.getPath()), "/");
+    int segment = path.lastIndexOf(GLOBAL_ID_PATH);
+    if (segment < 0) {
+      return Optional.empty();
+    }
+    String globalId = path.substring(segment + GLOBAL_ID_PATH.length());
+    boolean sameServer =
+        page.getHost().equalsIgnoreCase(server.getHost())
+            && portOf(page) == portOf(server)
+            && path.substring(0, segment)
+                .equals(StringUtils.stripEnd(StringUtils.defaultString(server.getPath()), "/"));
+    return sameServer && !globalId.contains("/") ? Optional.of(globalId) : Optional.empty();
+  }
+
+  /**
+   * The port, or -1 when it is the scheme's own default, so {@code https://h:443} and {@code
+   * https://h} compare equal, as they are one origin; a port left out on both sides still matches
+   * across http and https.
+   */
+  private static int portOf(URI uri) {
+    int port = uri.getPort();
+    boolean schemeDefault =
+        (port == 80 && "http".equalsIgnoreCase(uri.getScheme()))
+            || (port == 443 && "https".equalsIgnoreCase(uri.getScheme()));
+    return schemeDefault ? -1 : port;
+  }
+
+  /** The value as a normalised URI, or null when blank or unparseable. */
+  private static URI parseOrNull(String value) {
+    String trimmed = StringUtils.trimToNull(value);
+    if (trimmed == null) {
+      return null;
+    }
+    try {
+      return URI.create(trimmed).normalize();
+    } catch (IllegalArgumentException unparseable) {
+      return null;
+    }
   }
 
   /**

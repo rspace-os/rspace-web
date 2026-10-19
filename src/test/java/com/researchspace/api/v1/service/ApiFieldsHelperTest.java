@@ -4,9 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.api.v1.model.ApiDocumentField;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.model.field.FieldForm;
+import com.researchspace.model.field.TextFieldForm;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
 import java.util.HashMap;
@@ -32,6 +35,17 @@ public class ApiFieldsHelperTest {
     templateField.setName("Related items");
     templateField.setMandatory(true);
     return templateField;
+  }
+
+  @Test
+  public void ignoresDeletedDocumentFormFields() {
+    FieldForm deletedField = new TextFieldForm("Old field");
+    deletedField.setDeleted(true);
+
+    helper.checkApiFieldsMatchingFormFields(
+        List.of(new ApiDocumentField()),
+        List.of(deletedField, new TextFieldForm("Current field")),
+        null);
   }
 
   @Test

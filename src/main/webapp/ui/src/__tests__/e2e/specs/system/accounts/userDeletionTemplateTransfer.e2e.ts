@@ -2,6 +2,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
+import { deleteDynamicUser } from "@/__tests__/e2e/deleteDynamicUser";
 import { test } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
 import { DYNAMIC_USER_PASSWORD, uniqueName } from "@/__tests__/e2e/testData";
@@ -46,7 +47,7 @@ test.describe("User deletion and template transfer", { tag: tags.SYSTEM }, () =>
 
     const { users, auditTrail } = flowSysadminGroupAdmin;
     await users.open();
-    await users.deleteUser(member.username);
+    await deleteDynamicUser(users, clientSysadmin, member.username);
     await users.searchExpectingNoResults(member.username);
 
     await auditTrail.open();
@@ -99,7 +100,7 @@ test.describe("User deletion and template transfer", { tag: tags.SYSTEM }, () =>
 
     const { users, auditTrail, workspace: sysWorkspace } = flowSysadminGroupAdmin;
     await users.open();
-    await users.deleteUser(member.username);
+    await deleteDynamicUser(users, clientSysadmin, member.username);
     await users.searchExpectingNoResults(member.username);
 
     await auditTrail.open();
@@ -162,7 +163,7 @@ test.describe("User deletion and template transfer", { tag: tags.SYSTEM }, () =>
 
     const { users, auditTrail, workspace: sysWorkspace, gallery } = flowSysadminGroupAdmin;
     await users.open();
-    await users.deleteUser(member.username);
+    await deleteDynamicUser(users, clientSysadmin, member.username);
     await users.searchExpectingNoResults(member.username);
 
     await auditTrail.open();

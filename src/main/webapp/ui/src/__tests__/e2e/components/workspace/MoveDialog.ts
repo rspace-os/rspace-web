@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { AppriseAlertComponent } from "@/__tests__/e2e/components/system/AppriseAlertComponent";
 import { awaitTableRefresh } from "./WorkspaceTable";
 
 export type MoveDialogSortField = "name" | "creationdate" | "modificationdate";
@@ -23,6 +24,7 @@ export class MoveDialog {
   readonly path: Locator;
   readonly cancelButton: Locator;
   readonly moveButton: Locator;
+  readonly rejection: AppriseAlertComponent;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("dialog", { name: "Select target folder" });
@@ -32,6 +34,7 @@ export class MoveDialog {
     this.path = this.root.locator("#folder-move-path");
     this.cancelButton = this.root.getByRole("button", { name: "Cancel" });
     this.moveButton = this.root.getByRole("button", { name: "Move" });
+    this.rejection = new AppriseAlertComponent(page);
   }
 
   async waitUntilVisible(): Promise<void> {
@@ -44,8 +47,26 @@ export class MoveDialog {
 
   async clickFolder(name: string): Promise<void> {
     const target = this.path.filter({ hasText: name });
+    await this.waitForTreeToSettle();
     await this.folder(name).click();
     await target.waitFor({ state: "visible" });
+    await this.waitForTreeToSettle();
+  }
+
+  // The tree sorter re-attaches every node on each slide frame, so webkit drops a click landing mid-slide.
+  private async waitForTreeToSettle(): Promise<void> {
+    await this.page.waitForFunction(
+      () => {
+        const tree = document.querySelector("#movefolder-tree");
+        if (!tree || tree.querySelector(".wait")) return false;
+
+        // jQuery restores inline overflow when the slide finishes.
+        return Array.from(tree.querySelectorAll("ul")).every((list) => list.style.overflow !== "hidden");
+      },
+      undefined,
+      // waitForFunction never times out by default.
+      { timeout: 10_000 },
+    );
   }
 
   async setOrdering(field: MoveDialogSortField, order: MoveDialogSortOrder): Promise<void> {

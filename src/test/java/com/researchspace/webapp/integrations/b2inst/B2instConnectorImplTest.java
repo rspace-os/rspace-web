@@ -1,5 +1,6 @@
 package com.researchspace.webapp.integrations.b2inst;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -13,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.headerDoesNotExist;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -25,6 +27,7 @@ import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.MessageSourceUtils;
@@ -195,7 +198,8 @@ class B2instConnectorImplTest {
         .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
         .andRespond(withServerError());
 
-    assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+    var draft = draftWithName("X");
+    assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
   }
 
   @Test
@@ -279,6 +283,55 @@ class B2instConnectorImplTest {
         .andRespond(withSuccess("{\"status\":\"submitted\"}", MediaType.APPLICATION_JSON));
 
     assertEquals("submitted", connector.publishDoi("k2j9p-7yh21").getStatus());
+    server.verify();
+  }
+
+  @Test
+  void publishDoiRefusesSubmitActionOnAnotherHost() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    expectNoExistingReview(server);
+    // shares the configured host as a prefix, so a startsWith check would have followed it
+    String elsewhere =
+        "https://b2inst-test.gwdg.de.attacker.example/api/requests/REQ-1/actions/submit";
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"created\",\"links\":{\"actions\":{\"submit\":\""
+                    + elsewhere
+                    + "\"}}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instConnectionException thrown =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals("errors.inventory.identifier.b2instSubmitActionOtherHost", thrown.getReason());
+    // no POST went to the other host: every expected request has been consumed
+    server.verify();
+  }
+
+  @Test
+  void publishDoiRefusesUnparseableSubmitAction() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    expectNoExistingReview(server);
+    server
+        .expect(requestTo(REVIEW_URL))
+        .andExpect(method(HttpMethod.PUT))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"created\",\"links\":{\"actions\":"
+                    + "{\"submit\":\"https://b2inst-test.gwdg.de/a b\"}}}",
+                MediaType.APPLICATION_JSON));
+
+    B2instConnectionException thrown =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals("errors.inventory.identifier.b2instSubmitActionOtherHost", thrown.getReason());
     server.verify();
   }
 
@@ -367,14 +420,16 @@ class B2instConnectorImplTest {
             withStatus(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("{\"status\":400,\"message\":\"rejected Authorization: Bearer TOK123\"}"));
+    var draft = draftWithName("X");
 
     B2instConnectionException thrown =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
-    assertFalse(thrown.getReason().contains("TOK123"), "the token must not reach the reason");
-    assertTrue(thrown.getReason().contains("***"), "it should be redacted, not dropped");
-    assertFalse(thrown.getMessage().contains("TOK123"), "nor the logged message");
+    assertThat(thrown.getReason())
+        .as("the token must not reach the reason")
+        .doesNotContain("TOK123");
+    assertThat(thrown.getReason()).as("it should be redacted, not dropped").contains("***");
+    assertThat(thrown.getMessage()).as("nor the logged message").doesNotContain("TOK123");
   }
 
   @Test
@@ -385,12 +440,12 @@ class B2instConnectorImplTest {
     server
         .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
         .andRespond(withException(new IOException("proxy echoed Bearer TOK123")));
+    var draft = draftWithName("X");
 
     B2instConnectionException thrown =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
-    assertFalse(thrown.getReason().contains("TOK123"));
+    assertThat(thrown.getReason()).doesNotContain("TOK123");
   }
 
   @Test
@@ -401,13 +456,13 @@ class B2instConnectorImplTest {
     B2instConnectionException thrown =
         assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
 
-    assertTrue(
-        thrown.getMessage().contains("pidinst.b2inst.community.id"),
-        "the developer message should name the property, for the logs");
+    assertThat(thrown.getMessage())
+        .as("the developer message should name the property, for the logs")
+        .contains("pidinst.b2inst.community.id");
     assertNotNull(thrown.getReason(), "a provider failure must always carry a reason");
-    assertFalse(
-        thrown.getReason().contains("pidinst.b2inst.community.id"),
-        "the reason is shown to a user and must not disclose an internal property name");
+    assertThat(thrown.getReason())
+        .as("the reason is shown to a user and must not disclose an internal property name")
+        .doesNotContain("pidinst.b2inst.community.id");
   }
 
   @Test
@@ -525,9 +580,9 @@ class B2instConnectorImplTest {
             .filter(message -> message.contains("B2INST error response"))
             .findFirst()
             .orElseThrow();
-    assertTrue(warning.contains("No usable failure reason"));
-    assertTrue(warning.contains("..."));
-    assertTrue(warning.length() < 700);
+    assertThat(warning).contains("No usable failure reason");
+    assertThat(warning).contains("...");
+    assertThat(warning.length()).isLessThan(700);
   }
 
   @Test
@@ -569,10 +624,9 @@ class B2instConnectorImplTest {
     B2instConnectionException ex =
         assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
 
-    assertTrue(
-        ex.getMessage()
-            .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: "));
-    assertTrue(ex.getMessage().contains("connect timed out"));
+    assertThat(ex.getMessage())
+        .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: ");
+    assertThat(ex.getMessage()).contains("connect timed out");
     server.verify();
   }
 
@@ -590,10 +644,10 @@ class B2instConnectorImplTest {
                     "{\"status\":400,\"message\":\"A validation error occurred.\",\"errors\":"
                         + "[{\"field\":\"community\",\"messages\":[\"Missing data for required"
                         + " field.\"]}]}"));
+    var draft = draftWithName("X");
 
     B2instConnectionException ex =
-        assertThrows(
-            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+        assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draft));
 
     assertEquals(
         "Error creating B2INST draft record: community: Missing data for required field.",
@@ -640,8 +694,8 @@ class B2instConnectorImplTest {
             .filter(message -> message.contains("B2INST error response"))
             .findFirst()
             .orElseThrow();
-    assertFalse(warning.contains("TOK123"));
-    assertTrue(warning.contains("***"));
+    assertThat(warning).doesNotContain("TOK123");
+    assertThat(warning).contains("***");
   }
 
   /**
@@ -691,7 +745,7 @@ class B2instConnectorImplTest {
 
     Optional<B2instRequestResponse> review = connector.getReviewOf("k2j9p-7yh21");
 
-    assertTrue(review.isPresent());
+    assertThat(review).isPresent();
     assertEquals("declined", review.get().getStatus());
     server.verify();
   }
@@ -706,7 +760,7 @@ class B2instConnectorImplTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-    assertTrue(connector.getReviewOf("k2j9p-7yh21").isEmpty());
+    assertThat(connector.getReviewOf("k2j9p-7yh21")).isEmpty();
     server.verify();
   }
 
@@ -727,10 +781,10 @@ class B2instConnectorImplTest {
 
     Optional<B2instDraftRecord> record = connector.getPublishedRecord("k2j9p-7yh21");
 
-    assertTrue(record.isPresent());
+    assertThat(record).isPresent();
     assertEquals(
         "https://b2inst-test.gwdg.de/records/k2j9p-7yh21", record.get().getLinks().getSelfHtml());
-    assertTrue(record.get().getPids().containsKey("epic"));
+    assertThat(record.get().getPids()).containsKey("epic");
     server.verify();
   }
 
@@ -748,8 +802,8 @@ class B2instConnectorImplTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-    assertTrue(connector.getPublishedRecord("k2j9p-7yh21").isEmpty());
-    assertTrue(connector.getDraftRecord("k2j9p-7yh21").isEmpty());
+    assertThat(connector.getPublishedRecord("k2j9p-7yh21")).isEmpty();
+    assertThat(connector.getDraftRecord("k2j9p-7yh21")).isEmpty();
     server.verify();
   }
 
@@ -984,6 +1038,140 @@ class B2instConnectorImplTest {
             () -> connector.updateDraftDoi("k2j9p-7yh21", draftWithName("X")));
 
     assertEquals("The persistent identifier does not exist.", thrown.getReason());
+    server.verify();
+  }
+
+  private static final String PUBLIC_HIT =
+      "{\"hits\":{\"hits\":[{\"id\":\"tpqdy-6zd98\",\"is_published\":true,\"metadata\":{\"Name\":\"Olympus"
+          + " IX71 TIRF\",\"Identifier\":{\"identifierType\":\"Handle\","
+          + "\"identifierValue\":\"21.11157/44b18238-bba1-4b42-abcc-975017181420\"}},"
+          + "\"links\":{\"self_html\":\"https://b2inst.gwdg.de/records/tpqdy-6zd98\"}}],"
+          + "\"total\":3}}";
+
+  /**
+   * The public registry comes from the deployment property, not from the pidinst.b2inst.* settings.
+   */
+  private MockRestServiceServer lookupServer() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", "https://b2inst.gwdg.de/");
+    connector.reloadClient();
+    return MockRestServiceServer.bindTo(connector.getLookupRestTemplate()).build();
+  }
+
+  @Test
+  void searchPublicRecordsAsksThePublicRegistryAnonymouslyNewestUpdateFirst() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst.gwdg.de/api/records?q=microscope&size=50&page=3&sort=updated-desc"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(headerDoesNotExist("Authorization"))
+        .andRespond(withSuccess(PUBLIC_HIT, MediaType.APPLICATION_JSON));
+
+    B2instSearchResult result = connector.searchPublicRecords("microscope", 2, 50);
+
+    assertEquals(3, result.getHits().getTotal());
+    assertEquals("tpqdy-6zd98", result.getHits().getHits().get(0).getId());
+    server.verify();
+  }
+
+  @Test
+  void searchPublicRecordsSendsAQueryWithDelimitersExactlyOnceEncoded() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst.gwdg.de/api/records"
+                    + "?q=Zeiss%20microscope%20%26size%3D999%20100%25%20%23top&size=50&page=1&sort=updated-desc"))
+        .andRespond(
+            withSuccess("{\"hits\":{\"hits\":[],\"total\":0}}", MediaType.APPLICATION_JSON));
+
+    connector.searchPublicRecords("Zeiss microscope &size=999 100% #top", 0, 50);
+
+    server.verify();
+  }
+
+  /** The term the manager builds for {@code G1+G2 Glider} (RSDEV-1576). */
+  @Test
+  void searchPublicRecordsSendsAPlusSignAsItselfNotAsASpace() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(
+            requestTo(
+                "https://b2inst.gwdg.de/api/records"
+                    + "?q=%2F.%2A%5BGg%5D1%5C%2B%5BGg%5D2%20"
+                    + "%5BGg%5D%5BLl%5D%5BIi%5D%5BDd%5D%5BEe%5D%5BRr%5D.%2A%2F"
+                    + "&size=50&page=1&sort=updated-desc"))
+        .andRespond(
+            withSuccess("{\"hits\":{\"hits\":[],\"total\":0}}", MediaType.APPLICATION_JSON));
+
+    connector.searchPublicRecords("/.*[Gg]1\\+[Gg]2 [Gg][Ll][Ii][Dd][Ee][Rr].*/", 0, 50);
+
+    server.verify();
+  }
+
+  @Test
+  void getPublicRecordByHandleReadsThePublishedRecordUnderTheHandleSuffixAnonymously() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(
+            requestTo("https://b2inst.gwdg.de/api/records/44b18238-bba1-4b42-abcc-975017181420"))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(headerDoesNotExist("Authorization"))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"tpqdy-6zd98\",\"is_published\":true}", MediaType.APPLICATION_JSON));
+
+    Optional<B2instDraftRecord> record =
+        connector.getPublicRecordByHandle(
+            "https://hdl.handle.net/21.11157/44b18238-bba1-4b42-abcc-975017181420");
+
+    assertEquals("tpqdy-6zd98", record.orElseThrow().getId());
+    server.verify();
+  }
+
+  @Test
+  void getPublicRecordByHandleIsEmptyFor404AndForAValueThatIsNotAHandle() {
+    MockRestServiceServer server = lookupServer();
+    // /api/records/{rid} serves published records only, and only those may be imported
+    // (RSDEV-1326): a draft, submitted or declined record answers 404 there
+    server
+        .expect(requestTo("https://b2inst.gwdg.de/api/records/nope-00000"))
+        .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+    assertTrue(connector.getPublicRecordByHandle("21.11157/nope-00000").isEmpty());
+    assertTrue(connector.getPublicRecordByHandle("no slash here").isEmpty());
+    // a suffix that is not a record id shape is answered locally, never sent to the provider
+    assertTrue(connector.getPublicRecordByHandle("21.11157/not a record id!").isEmpty());
+    server.verify();
+  }
+
+  @Test
+  void aBlankLookupUrlFailsTheSearchWithoutARequest() {
+    ReflectionTestUtils.setField(connector, "lookupServerUrl", " ");
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getLookupRestTemplate()).build();
+
+    B2instConnectionException thrown =
+        assertThrows(
+            B2instConnectionException.class,
+            () -> connector.searchPublicRecords("microscope", 0, 50));
+
+    assertTrue(thrown.getMessage().contains("pidinst.lookup.b2inst.url"), thrown.getMessage());
+    server.verify();
+  }
+
+  @Test
+  void getPublicRecordByHandleRaisesARegistryFailureOtherThan404() {
+    MockRestServiceServer server = lookupServer();
+    server
+        .expect(requestTo("https://b2inst.gwdg.de/api/records/abc-123"))
+        .andRespond(withServerError());
+
+    assertThrows(
+        B2instConnectionException.class,
+        () -> connector.getPublicRecordByHandle("21.11157/abc-123"));
     server.verify();
   }
 }

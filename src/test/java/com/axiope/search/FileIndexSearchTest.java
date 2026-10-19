@@ -1,6 +1,7 @@
 package com.axiope.search;
 
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -118,17 +119,29 @@ public class FileIndexSearchTest {
 
   @Test
   void failFastIndexerThrowsIAEForCorrupted() throws Exception {
-    assertThrows(IOException.class, () -> setUpIndexFiles(true, pathsToIndexWithCorruptFile));
-    assertEquals(0, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
+    for (String path : pathsToIndexWithCorruptFile) {
+      copyToDataFolder(new File(path));
+    }
+    FileIndexer indexer = new FileIndexerTSS();
+    try {
+      indexer.setIndexFolderDirectly(indexFolder);
+      searcher.setIndexFolderDirectly(indexFolder);
+      indexer.init(true);
+
+      assertThrows(IOException.class, () -> indexer.indexFolder(dataFolder, true));
+    } finally {
+      indexer.close();
+    }
+    assertThat(searcher.searchFiles(odtSearch, createAnyUser("any"))).isEmpty();
     // this gets indexed first, before NonIdexable.pdf, and can still be searched
-    assertEquals(1, searcher.searchFiles(msSearch, createAnyUser("any")).size());
+    assertThat(searcher.searchFiles(msSearch, createAnyUser("any"))).hasSize(1);
   }
 
   @Test
   void failFastIndexerContinues() throws Exception {
     setUpIndexFiles(false, pathsToIndexWithCorruptFile);
     // even though an earlier file fails, this still gets indexed
-    assertEquals(1, searcher.searchFiles(odtSearch, createAnyUser("any")).size());
+    assertThat(searcher.searchFiles(odtSearch, createAnyUser("any"))).hasSize(1);
   }
 
   // this specific type of file (docx with embedded EMF with embedded PDF) has previously caused
@@ -139,8 +152,8 @@ public class FileIndexSearchTest {
 
     List<FileSearchResult> results = searcher.searchFiles("Outer_haystack", createAnyUser("any"));
 
-    assertTrue(
-        results.stream().anyMatch(f -> f.getFileName().equals("docWithEmbeddedEMFPDF.docx")));
+    assertThat(results.stream())
+        .anyMatch(f -> f.getFileName().equals("docWithEmbeddedEMFPDF.docx"));
   }
 
   @Test
@@ -156,10 +169,8 @@ public class FileIndexSearchTest {
               try {
                 List<FileSearchResult> results =
                     searcher.searchFiles(terms.get(i), createAnyUser("any"));
-                assertTrue(
-                    results.stream()
-                        .anyMatch(
-                            f -> f.getFileName().equals(FilenameUtils.getName(files.get(i)))));
+                assertThat(results.stream())
+                    .anyMatch(f -> f.getFileName().equals(FilenameUtils.getName(files.get(i))));
               } catch (IOException e) {
                 e.printStackTrace();
               }

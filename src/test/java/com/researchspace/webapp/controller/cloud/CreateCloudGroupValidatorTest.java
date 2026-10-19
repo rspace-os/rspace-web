@@ -121,6 +121,19 @@ public class CreateCloudGroupValidatorTest extends SpringTransactionalTest {
     assertFalse(errors.hasFieldErrors());
   }
 
+  @Test
+  public void emailWithLineBreakIsInvalid() {
+    User loginUser = createAndSaveUserIfNotExists("testUser");
+    logoutAndLoginAs(loginUser);
+    createCloudGroup.setSessionUser(loginUser);
+    createCloudGroup.setGroupName("testGroup");
+    createCloudGroup.setPiEmail(loginUser.getEmail());
+    createCloudGroup.setEmails(new String[] {"victim@example.com\r\nBcc:attacker.test"});
+    Errors errors = setUpErrorsObject();
+    createCloudGroupValidator.validate(createCloudGroup, errors);
+    assertTrue(ValidationTestUtils.hasError("groups.creation.errors.memberEmailInvalid", errors));
+  }
+
   private BeanPropertyBindingResult setUpErrorsObject() {
     return new BeanPropertyBindingResult(createCloudGroup, "MyObject");
   }

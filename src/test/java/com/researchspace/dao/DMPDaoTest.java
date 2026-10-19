@@ -1,9 +1,7 @@
 package com.researchspace.dao;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dmps.DMPUser;
@@ -36,17 +34,17 @@ public class DMPDaoTest extends SpringTransactionalTest {
   public void findDMPsForUser() {
     DmpDto dmpDto = createDMP();
     DMPUser dmpUser = saveDMPUser(dmpDto, anyUser);
-    assertEquals(1, dmpDao.findDMPsForUser(dmpUser.getUser()).size());
+    assertThat(dmpDao.findDMPsForUser(dmpUser.getUser())).hasSize(1);
     User another = createAndSaveUserIfNotExists("another");
-    assertEquals(0, dmpDao.findDMPsForUser(another).size());
+    assertThat(dmpDao.findDMPsForUser(another)).isEmpty();
   }
 
   @Test
   public void findDMPByDmpId() {
     DmpDto dmpDto = createDMP();
     DMPUser dmpUser = saveDMPUser(dmpDto, anyUser);
-    assertTrue(dmpDao.findByDmpId(dmpDto.getDmpId(), anyUser).isPresent());
-    assertFalse(dmpDao.findByDmpId("xxxx", anyUser).isPresent());
+    assertThat(dmpDao.findByDmpId(dmpDto.getDmpId(), anyUser)).isPresent();
+    assertThat(dmpDao.findByDmpId("xxxx", anyUser)).isNotPresent();
   }
 
   private DMPUser saveDMPUser(DmpDto dmpDto, User user) {

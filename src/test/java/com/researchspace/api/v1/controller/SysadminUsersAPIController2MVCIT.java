@@ -1,8 +1,8 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.api.v1.controller.API_ModelTestUtils.createAnyUserPost;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.controller.SysadminApiController.UserApiPost;
@@ -54,7 +54,7 @@ public class SysadminUsersAPIController2MVCIT extends API_MVC_TestBase {
             .andExpect(status().is4xxClientError())
             .andReturn();
     ApiError error = getErrorFromJsonResponseBody(res, ApiError.class);
-    assertTrue(error.getMessage().contains("already exists"));
+    assertThat(error.getMessage()).contains("already exists");
 
     // check that newly created user cannot use API
     mockMvc

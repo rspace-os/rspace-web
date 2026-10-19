@@ -1,5 +1,6 @@
 package com.researchspace.netfiles.s3;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -118,11 +119,11 @@ public class S3NfsClientTest {
   public void uploadFile_destinationKeyAlreadyExists_throwsIOExceptionAndDoesNotUpload()
       throws IOException {
     when(s3Utilities.isFileInS3("dest/folder", "Picture1.png")).thenReturn(true);
+    File source = new File("Picture1.png");
 
     IOException ex =
-        assertThrows(
-            IOException.class, () -> client.uploadFile(new File("Picture1.png"), "dest/folder"));
-    assertTrue(ex.getMessage().contains("already exists"));
+        assertThrows(IOException.class, () -> client.uploadFile(source, "dest/folder"));
+    assertThat(ex.getMessage()).contains("already exists");
     verify(s3Utilities, never()).uploadToS3(any(), any(), any());
   }
 
@@ -131,8 +132,7 @@ public class S3NfsClientTest {
     File f1 = new File("file1.png");
     File f2 = new File("file2.png");
     WriteAttribution attribution =
-        new WriteAttribution(
-            "alice", Map.of(123L, "file1", 456L, "file2"), java.time.Instant.now());
+        new WriteAttribution("alice", Map.of(123L, "file1", 456L, "file2"), Instant.now());
 
     client.uploadFilesToNfs("dest", Map.of(123L, f1, 456L, f2), attribution);
 
@@ -163,8 +163,9 @@ public class S3NfsClientTest {
   public void createFolder_whenFileExistsAtPath_throws() {
     S3FolderContentItem file = new S3FolderContentItem("new", false, 10L, Instant.now());
     when(s3Utilities.getObjectDetails("parent/new")).thenReturn(file);
+    Map<String, String> metadata = Map.of();
 
-    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", metadata));
   }
 
   @Test
@@ -172,8 +173,9 @@ public class S3NfsClientTest {
     // Re-creating an existing folder must not overwrite its created-by/created-at provenance.
     S3FolderContentItem folder = new S3FolderContentItem("new", true, null, null);
     when(s3Utilities.getObjectDetails("parent/new")).thenReturn(folder);
+    Map<String, String> metadata = Map.of();
 
-    assertThrows(IOException.class, () -> client.createFolder("parent/new", Map.of()));
+    assertThrows(IOException.class, () -> client.createFolder("parent/new", metadata));
     verify(s3Utilities, never()).createFolder(any(), any());
   }
 
@@ -187,7 +189,7 @@ public class S3NfsClientTest {
     NfsFileTreeNode root = client.createFileTree("", null, null);
 
     verify(s3Utilities).listFolderContents("");
-    assertEquals(1, root.getNodes().size());
+    assertThat(root.getNodes()).hasSize(1);
   }
 
   @Test
@@ -396,7 +398,7 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/huge.bin", dest.client, "dest/huge.bin"));
-    assertTrue(ex.getMessage().contains("5"));
+    assertThat(ex.getMessage()).contains("5");
     verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
@@ -410,7 +412,7 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/file.txt", dest.client, "dest/file.txt"));
-    assertTrue(ex.getMessage().contains("already exists"));
+    assertThat(ex.getMessage()).contains("already exists");
     verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
@@ -426,7 +428,7 @@ public class S3NfsClientTest {
         assertThrows(
             IOException.class,
             () -> client.copyObject("source/photos", dest.client, "dest/photos"));
-    assertTrue(ex.getMessage().contains("already exists"));
+    assertThat(ex.getMessage()).contains("already exists");
     verify(dest.mockS3Utilities, never()).copyObjectFromBucket(any(), any(), any(), any());
   }
 
@@ -477,7 +479,7 @@ public class S3NfsClientTest {
     assertEquals("testTarget", rootNode.getFileName());
     assertEquals("testTopLevelFolder/testTarget", rootNode.getNodePath());
     assertTrue(rootNode.getIsFolder());
-    assertEquals(1, rootNode.getNodes().size());
+    assertThat(rootNode.getNodes()).hasSize(1);
 
     NfsFileTreeNode child = rootNode.getNodes().get(0);
     assertEquals("test1.txt", child.getFileName());
@@ -569,7 +571,7 @@ public class S3NfsClientTest {
     assertEquals("folder", details.getName());
     assertEquals("test/folder", details.getFileSystemFullPath());
     assertEquals("test", details.getFileSystemParentPath());
-    assertEquals(2, details.getContent().size());
+    assertThat(details.getContent()).hasSize(2);
 
     NfsResourceDetails res1 = details.getContent().get(0);
     assertEquals("file1.txt", res1.getName());

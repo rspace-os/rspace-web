@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.testutils.NetFilesTestFactory.createAnyNfsFileSystem;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -66,7 +67,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
     nfsMgr.saveNfsFileStore(fileStore);
     assertNotNull(fileStore.getId());
     assertFalse(fileStore.isDeleted());
-    assertEquals(initialFolderCount + 1, nfsMgr.getFileStoreInfosForUser(user).size());
+    assertThat(nfsMgr.getFileStoreInfosForUser(user)).hasSize(initialFolderCount + 1);
     assertNotNull(fileStore.getFileSystem());
     assertEquals(testFileSystem, fileStore.getFileSystem());
 
@@ -74,7 +75,7 @@ public class NfsManagerTest extends SpringTransactionalTest {
     NfsFileStore deletedFolder = nfsMgr.getNfsFileStore(fileStore.getId());
     assertNotNull(deletedFolder);
     assertTrue(deletedFolder.isDeleted());
-    assertEquals(initialFolderCount, nfsMgr.getFileStoreInfosForUser(user).size());
+    assertThat(nfsMgr.getFileStoreInfosForUser(user)).hasSize(initialFolderCount);
   }
 
   @Test
@@ -86,10 +87,10 @@ public class NfsManagerTest extends SpringTransactionalTest {
     nfsMgr.saveNfsFileSystem(testFileSystem);
     assertNotNull(testFileSystem.getId());
     assertFalse(testFileSystem.isDisabled());
-    assertEquals(initialFileSystemsCount + 1, nfsMgr.getFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount + 1);
 
     nfsMgr.deleteNfsFileSystem(testFileSystem.getId());
-    assertEquals(initialFileSystemsCount, nfsMgr.getFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount);
   }
 
   @Test
@@ -106,12 +107,12 @@ public class NfsManagerTest extends SpringTransactionalTest {
     nfsMgr.saveNfsFileSystem(fileSystem1);
     nfsMgr.saveNfsFileSystem(fileSystem2);
 
-    assertEquals(initialFileSystemsCount + 2, nfsMgr.getFileSystems().size());
-    assertEquals(initialActiveFileSystemsCount + 1, nfsMgr.getActiveFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount + 2);
+    assertThat(nfsMgr.getActiveFileSystems()).hasSize(initialActiveFileSystemsCount + 1);
 
     nfsMgr.deleteNfsFileSystem(fileSystem1.getId());
     nfsMgr.deleteNfsFileSystem(fileSystem2.getId());
-    assertEquals(initialFileSystemsCount, nfsMgr.getFileSystems().size());
+    assertThat(nfsMgr.getFileSystems()).hasSize(initialFileSystemsCount);
   }
 
   @Test

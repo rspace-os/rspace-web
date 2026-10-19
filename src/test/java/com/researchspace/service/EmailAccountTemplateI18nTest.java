@@ -1,7 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -21,7 +20,7 @@ class EmailAccountTemplateI18nTest {
     String output = templates.render(templateCase.template(), templateCase.model());
 
     for (String expected : templateCase.expected()) {
-      assertTrue(output.contains(expected), () -> "Missing '" + expected + "' in: " + output);
+      assertThat(output).as(() -> "Missing '" + expected + "' in: " + output).contains(expected);
     }
   }
 
@@ -52,9 +51,9 @@ class EmailAccountTemplateI18nTest {
                 "accountDisabled",
                 "false"));
 
-    assertTrue(disabled.contains("admin@example.com"), disabled);
-    assertFalse(disabled.contains(BASE_URL + "/workspace"), disabled);
-    assertTrue(enabled.contains(BASE_URL + "/workspace"), enabled);
+    assertThat(disabled).as(disabled).contains("admin@example.com");
+    assertThat(disabled).as(disabled).doesNotContain(BASE_URL + "/workspace");
+    assertThat(enabled).as(enabled).contains(BASE_URL + "/workspace");
   }
 
   @Test
@@ -68,9 +67,9 @@ class EmailAccountTemplateI18nTest {
             "defaultWelcomePostBatchSignupemail.vm",
             Map.of("userFirstName", "Alice", "htmlDomainPrefix", BASE_URL));
 
-    assertTrue(groupWelcome.contains("Smith Lab"), groupWelcome);
-    assertFalse(individualWelcome.contains("Smith Lab"), individualWelcome);
-    assertTrue(individualWelcome.contains("individual user"), individualWelcome);
+    assertThat(groupWelcome).as(groupWelcome).contains("Smith Lab");
+    assertThat(individualWelcome).as(individualWelcome).doesNotContain("Smith Lab");
+    assertThat(individualWelcome).as(individualWelcome).contains("individual user");
   }
 
   @Test
@@ -83,9 +82,9 @@ class EmailAccountTemplateI18nTest {
                 "loginLink", BASE_URL + "/login",
                 "ipAddress", "10.0.0.2"));
 
-    assertTrue(output.contains("jdoe"), output);
-    assertTrue(output.contains(BASE_URL + "/login"), output);
-    assertFalse(output.contains("<a"), output);
+    assertThat(output).as(output).contains("jdoe");
+    assertThat(output).as(output).contains(BASE_URL + "/login");
+    assertThat(output).as(output).doesNotContain("<a");
   }
 
   private static Stream<TemplateCase> templateCases() {

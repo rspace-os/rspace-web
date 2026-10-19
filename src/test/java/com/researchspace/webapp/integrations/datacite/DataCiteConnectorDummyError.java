@@ -3,6 +3,8 @@ package com.researchspace.webapp.integrations.datacite;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiSearchResult;
+import java.util.Optional;
 import lombok.Getter;
 
 public class DataCiteConnectorDummyError implements DataCiteConnector {
@@ -31,6 +33,17 @@ public class DataCiteConnectorDummyError implements DataCiteConnector {
 
   @Override
   public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
+    throw new DataCiteConnectionException("Error when contacting DataCite", null);
+  }
+
+  @Override
+  public Optional<DataCiteDoi> findPublicDoi(String doiId) {
+    throw new DataCiteConnectionException("Error when contacting DataCite", null);
+  }
+
+  @Override
+  public DataCiteDoiSearchResult searchPublicInstrumentDois(
+      String query, int pageNumber, int pageSize) {
     throw new DataCiteConnectionException("Error when contacting DataCite", null);
   }
 

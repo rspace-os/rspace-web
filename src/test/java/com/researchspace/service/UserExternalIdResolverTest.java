@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static com.researchspace.repository.spi.IdentifierScheme.ORCID;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,7 +50,7 @@ public class UserExternalIdResolverTest {
     setUpOrcidAvailable();
     IntegrationInfo info = createAvailableOrcid();
     when(handler.getIntegration(anyUser, ORCID.name())).thenReturn(info);
-    assertTrue(idResolver.getExternalIdForUser(anyUser, ORCID).isPresent());
+    assertThat(idResolver.getExternalIdForUser(anyUser, ORCID)).isPresent();
   }
 
   private IntegrationInfo createAvailableOrcid() {

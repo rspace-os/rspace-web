@@ -1,8 +1,7 @@
 package com.researchspace.model.events;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.researchspace.model.User;
 import com.researchspace.model.record.TestFactory;
@@ -17,8 +16,8 @@ class UserAccountEventTest {
     UserAccountEvent e1 = new UserAccountEvent(anyUser, AccountEventType.DISABLED);
     Thread.sleep(1);
     UserAccountEvent e2 = new UserAccountEvent(anyUser, AccountEventType.DISABLED);
-    assertThat(e1, not(equalTo(e2)));
-    assertThat(e1.hashCode(), not(equalTo(e2.hashCode())));
+    assertNotEquals(e2, e1);
+    assertNotEquals(e2.hashCode(), e1.hashCode());
   }
 
   @Test
@@ -28,7 +27,7 @@ class UserAccountEventTest {
     UserAccountEvent e1 = new UserAccountEvent(1L, anyUser, AccountEventType.DISABLED, nowInstant);
     Thread.sleep(1);
     UserAccountEvent e2 = new UserAccountEvent(1L, anyUser, AccountEventType.DISABLED, nowInstant);
-    assertThat(e1, equalTo(e2));
-    assertThat(e1.hashCode(), equalTo(e2.hashCode()));
+    assertEquals(e2, e1);
+    assertEquals(e2.hashCode(), e1.hashCode());
   }
 }

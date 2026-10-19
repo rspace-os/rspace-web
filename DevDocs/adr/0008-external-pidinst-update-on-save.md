@@ -114,6 +114,27 @@ anything that is not accepted, so an identifier really can be sitting in
    transfer left the registered record naming the previous owner. A corrected
    owner is one of the three examples this ticket opens with.
 
+   Amended by RSDEV-1540 (2026-10-08): `ownerOf` no longer sends `ownerContact`
+   at all. The record owner's account email was reaching B2INST unasked, and once
+   a curator accepted the record it sat on a permanent public record that RSpace
+   can neither change nor remove; an anonymous read of b2inst-test on 2026-10-08
+   still showed one. PIDINST 1.0 lists `ownerContact` as optional (obligation O,
+   occurrence 0-1), and B2INST accepts and publishes records whose Owner carries
+   only `ownerName`: records n7k88-cmc92 and smzcd-1x840 on b2inst-test are
+   published that way. So the Owner entry now carries `ownerName` only. The
+   transfer still pushes, because `ownerName` still falls back to the record
+   owner's full name whenever the Owner field is blank, and a push that changes
+   nothing is harmless by decision 3. Whether a contact should ever be sent
+   again, and whose (a facility mailbox chosen by the sysadmin, or a value typed
+   on the instrument), is deferred to a separate decision; an account attribute
+   will not be the source. Records accepted before this change keep the address
+   they were accepted with; writable drafts lose it on their next push. Nothing
+   makes that push come first, though: a record a curator accepts before its
+   instrument is saved again is accepted with the address. No customer
+   deployment had B2INST enabled when this shipped, so rather than re-push
+   every pending record on startup, the release notes ask for instruments with
+   a B2INST identifier still awaiting review to be saved once after upgrading.
+
    That transfer is also why the push takes its candidates from the **record**
    rather than from the response it decorates. A transfer leaves the departing
    owner with `LIMITED_READ`, and `clearPropertiesForLimitedView` blanks that
@@ -138,6 +159,9 @@ anything that is not accepted, so an identifier really can be sitting in
   itself can no longer be lost to a provider outage.
 - Drift windows exist only between a failed push and the next save, and the
   response says so each time.
+- B2INST Owner entries carry no contact address (RSDEV-1540, decision 4). A
+  curator or reader who wants to reach the owner has the landing page and the
+  owner's name, nothing more, until a deliberately chosen contact exists.
 - Sample, subsample and container draft DOIs still drift (out of scope), as do
   instrument changes made by template sync until the next ordinary save.
 - The DataCite title is taken from the instrument's **current name**, not from
@@ -193,6 +217,30 @@ anything that is not accepted, so an identifier really can be sitting in
   DataCite side, and a save quietly restores a DOI someone removed there. That
   is consistent with always-push self-healing and is left as is, but it means
   RSpace's record of a DOI, not DataCite's, is what keeps it alive.
+- **CANCEL and DECLINE are not symmetric at B2INST**, verified through its portal on
+  2026-09-11 (RSDEV-1326). Declining a submitted review leaves the request readable, so
+  `refreshIdentifier` stores **`declined`** and the identifiers panel offers Delete. Cancelling
+  one removes it from the draft instead: the review URL 404s, refresh falls through to "a
+  surviving draft" and stores **`draft`**, and the identifier is publishable again. So the state
+  a user lands in is decided by which button the curator pressed, and `cancelled` is not produced
+  by the portal's own Cancel action - the Context above observed that status by another route.
+  `declined` is therefore the closed-review state that actually occurs, which is what makes the
+  UI's closed-review handling everyday behaviour rather than defensive.
+
+- The Context's probe finding - that an identifier can really be sitting in `created`,
+  `cancelled`, `declined` or `expired`, because `refreshIdentifier` stores the review's
+  status verbatim - is also what decides which states the identifiers panel offers its
+  Refresh button for (RSDEV-1326). `created` is offered on exactly that evidence: the
+  record behind it is still a draft at B2INST, so the submitter can submit or delete it
+  there and RSpace hears about it no other way. Withheld only for the three states that
+  close a review without publishing, and for a linked identifier, which the server refuses
+  outright (ADR 0009).
+
+  The same argument arguably reaches `cancelled`, since cancelling a review drops the
+  record's own status back to `draft` and a fresh review can be raised at B2INST at any
+  time. Left out for now: nothing has been observed doing that, and the panel already
+  offers Delete and Publish there, which is what a user wanting to move on actually needs.
+
 - Verifying the above turned up a **pre-existing defect on the publish/retract
   path**, unrelated to this decision but found by it: an explicit `null` clears a
   DataCite property just as `[]` does, and only an absent key preserves it. The

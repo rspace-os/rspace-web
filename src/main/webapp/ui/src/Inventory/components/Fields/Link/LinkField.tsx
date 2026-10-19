@@ -17,7 +17,14 @@ import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import type { ExtraInventoryLink } from "../../../../stores/definitions/ExtraField";
 import ElnRecordInfoDialog from "./ElnRecordInfoDialog";
 import InventoryInfoDialog from "./InventoryInfoDialog";
-import { iconForGlobalId, isInventoryGlobalId, openUrlForTarget, supportsVersionPin } from "./iconForGlobalId";
+import {
+  iconForGlobalId,
+  isInventoryGlobalId,
+  openUrlForTarget,
+  pinnedGlobalId,
+  prefixOf,
+  supportsVersionPin,
+} from "./iconForGlobalId";
 import { GLOBAL_ID_PATTERN } from "./linkTarget";
 import useLinkTargetSummary from "./useLinkTargetSummary";
 
@@ -75,17 +82,21 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
   const [infoOpen, setInfoOpen] = useState(false);
   // current state of the target; null while loading or unresolvable, which
   // renders the card exactly as before the summary existed (no pill, Open on)
-  const targetSummary = useLinkTargetSummary(props.link.targetGlobalId);
+  const targetSummary = useLinkTargetSummary(pinnedGlobalId(props.link.targetGlobalId, props.link.versionPin));
   const targetDeleted = targetSummary?.deleted === true;
-  // ELN targets the viewer cannot read get a "No access" pill; inventory
-  // targets ignore readability because every logged-in user keeps the
-  // limited-read view. A redacted summary always has deleted=false, so the
-  // two pills can never co-occur.
-  const noAccess = targetSummary?.readable === false && !targetIsInventory;
-  // deleted inventory items live on in the trash and their viewer works, so
-  // only deleted or unreadable ELN targets lose Open (their routes are just
-  // error pages)
-  const openBlocked = !targetIsInventory && (targetDeleted || noAccess);
+  // a target the viewer cannot resolve gets "No access", whatever its kind. The server
+  // redacts unreadable and nonexistent targets identically (ADR-0002), so this covers both
+  // and the card never claims a record is deleted when it cannot see whether it is.
+  const noAccess = targetSummary?.readable === false;
+  // links saved before the pin was checked on save, CSV dangling links, or targets whose history
+  // was purged. No access wins: a redacted summary carries no pinnedVersionFound at all.
+  const pinnedVersionMissing = targetSummary?.readable === true && targetSummary.pinnedVersionFound === false;
+  // the Inventory and Gallery views explain a missing version themselves; an ELN document's
+  // version route is just an error page
+  const documentVersionMissing = pinnedVersionMissing && prefixOf(props.link.targetGlobalId) === "SD";
+  // deleted inventory items live on in the trash and their viewer works, so they keep Open;
+  // a deleted ELN target's route is just an error page, as is any unresolvable target's
+  const openBlocked = noAccess || (!targetIsInventory && targetDeleted) || documentVersionMissing;
 
   const openHref = openHrefForLink(props.link, targetIsInventory);
   return (
@@ -155,14 +166,30 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             />
           )}
           {noAccess && (
-            // no "no longer" in the tooltip: the pill also shows for
-            // viewers who never had access (ADR-0002)
-            <Tooltip title={t("fields.link.linkField.noPermission")}>
+            // the tooltip names both causes without saying which applies, and avoids
+            // implying the viewer once had access: the pill also shows to viewers who
+            // never did, and to ones whose target never existed (ADR-0002)
+            <Tooltip describeChild title={t("fields.link.linkField.noPermission")}>
               <Chip
+                tabIndex={0}
                 size="small"
                 color="warning"
                 label={t("fields.link.linkField.noAccess")}
                 data-test-id="LinkField-noAccess"
+              />
+            </Tooltip>
+          )}
+          {pinnedVersionMissing && (
+            <Tooltip
+              describeChild
+              title={t("fields.link.linkField.versionNotFoundDetail", { version: props.link.versionPin })}
+            >
+              <Chip
+                tabIndex={0}
+                size="small"
+                color="warning"
+                label={t("fields.link.linkField.versionNotFound")}
+                data-test-id="LinkField-versionNotFound"
               />
             </Tooltip>
           )}
@@ -202,12 +229,14 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           open={infoOpen}
           globalId={props.link.targetGlobalId}
           versionPin={props.link.versionPin}
-          // a deleted or unreadable ELN target only routes to an error page, so
-          // the dialog drops its Open button (matching the card). Deleted
+          // a deleted or unreadable ELN target, or a document whose pinned version
+          // is gone, only routes to an error page, so the dialog drops its Open
+          // button (matching the card). Deleted
           // inventory targets stay viewable in the trash and use
           // InventoryInfoDialog, which has no Open button.
           targetDeleted={targetDeleted}
           noAccess={noAccess}
+          versionNotFound={documentVersionMissing}
           onClose={() => setInfoOpen(false)}
         />
       )}

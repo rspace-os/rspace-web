@@ -1,8 +1,7 @@
 package com.axiope.webapp.dev;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
@@ -85,7 +84,7 @@ public class ViteDevServerProxyServletTest {
     verify(response).setStatus(HttpServletResponse.SC_OK);
     verify(response).setContentType("text/javascript");
     assertEquals("text/javascript", responseContentType.get());
-    assertTrue(responseBody.toString(StandardCharsets.UTF_8).contains("export const ok"));
+    assertThat(responseBody.toString(StandardCharsets.UTF_8)).contains("export const ok");
   }
 
   @Test
@@ -172,7 +171,7 @@ public class ViteDevServerProxyServletTest {
 
       servlet.service(request, response);
 
-      assertFalse(proxiedRequest.get().headers().firstValue("KEEP-ALIVE").isPresent());
+      assertThat(proxiedRequest.get().headers().firstValue("KEEP-ALIVE")).isNotPresent();
       assertEquals("value", proxiedRequest.get().headers().firstValue("X-Test").orElse(null));
     } finally {
       Locale.setDefault(originalLocale);

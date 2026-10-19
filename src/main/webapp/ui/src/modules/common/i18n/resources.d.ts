@@ -447,12 +447,14 @@ export default interface Resources {
           "removeSuccess": "Successfully removed repository."
         },
         "description": "Store and manage your code through a software development and Git version control platform.",
+        "errors": {
+          "authWindowFailed": "Failed to open GitHub authentication window"
+        },
         "helpLink": "GitHub integration docs",
         "name": "GitHub",
         "orElse": "Error getting configured repositories",
         "repositories": {
           "additionalHeading": "Link Additional Repositories",
-          "invalidState": "Repository is in an invalid state. Please remove and re-add.",
           "linkedHeading": "Linked Repositories",
           "loading": "Loading available repositories",
           "nameHeader": "Repository Name",
@@ -652,6 +654,10 @@ export default interface Resources {
           "labelSuccess": "Successfully changed label."
         },
         "description": "Message and collaborate with your team with a cloud-based communication tool.",
+        "errors": {
+          "authWindowFailed": "Failed to open Slack authentication window",
+          "resultsUnavailable": "Save completed but cannot show results."
+        },
         "fields": {
           "channelName": "Channel name",
           "rspaceLabel": "RSpace Label",
@@ -1023,6 +1029,7 @@ export default interface Resources {
       "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
       "permissions": "n09nmg4ax7-permissions",
       "pidinstIdentifiers": "oahocdfqyg-pidinst-identifiers",
+      "pidinstImport": "dtzsvyhh44-search-and-import-pidinst-instruments-into-your-inventory",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
       "publicationOfDocuments": "lqxsej13hv-publication-of-documents",
@@ -1079,6 +1086,14 @@ export default interface Resources {
       },
       "referenceField": {
         "notYetSupported": "Not yet supported."
+      },
+      "secretField": {
+        "clear": "Clear {label}",
+        "defaultName": "secret",
+        "hide": "Hide {label}",
+        "show": "Show {label}",
+        "unchanged": "(unchanged)",
+        "undoClear": "Undo clear {label}"
       },
       "selectedFileInfo": {
         "invalidFile": "Invalid file.",
@@ -2656,6 +2671,7 @@ export default interface Resources {
         "sample": "Info on creating samples.",
         "template": "Info on creating templates."
       },
+      "importPidinst": "From PIDINST registry",
       "newContainer": "New Container",
       "newInstrument": "New Instrument",
       "newInstrumentTemplate": "New Instrument Template",
@@ -2956,7 +2972,8 @@ export default interface Resources {
           "pidinst": "PIDINST"
         },
         "formField": {
-          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
+          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>.",
+          "pidinstExplanation": "See the Documentation for information on <helpDocs docLink=\"pidinstIdentifiers\">adding and publishing identifiers</helpDocs>."
         },
         "geoLocationField": {
           "addValueToPublish": "Add value to enable publishing.",
@@ -3017,7 +3034,6 @@ export default interface Resources {
           "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
           "publishAwaitingReview": "This instrument PID has been submitted to the B2INST community and is awaiting curator review.",
-          "publishPidinstPublished": "The community accepted this submission. The instrument PID is already published and cannot be published again.",
           "refresh": "Refresh",
           "rorError": "Could not get RoR data.",
           "show": "Show",
@@ -3026,6 +3042,7 @@ export default interface Resources {
             "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
             "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+            "linkedPidinst": "This PIDINST was minted outside RSpace and is linked to this instrument. It resolves at its own registry, not on an RSpace page, and RSpace does not publish or update it.",
             "pidinstAccepted": "This PIDINST ID is Accepted. The PIDINST ID is a citable ePIC Handle that redirects to the <externalLink href=\"{link}\">registered landing page</externalLink>. The metadata is publicly available through that page and the instrument's B2INST record.",
             "pidinstCancelled": "The submission was cancelled before review. The instrument PID remains a draft. You can delete this identifier and register a new one.",
             "pidinstCreated": "The review request was created but has not been submitted to the community yet. Press Publish to submit it.",
@@ -3051,6 +3068,7 @@ export default interface Resources {
           "tooltips": {
             "deleteClosedReview": "Delete this identifier so a new one can be registered",
             "deleteDraft": "Delete Draft",
+            "linkedReadOnly": "This PID was minted outside RSpace, so RSpace cannot publish, retract or refresh it. Removing the link is an API operation.",
             "missingData": "Some missing data",
             "notPublished": "Not published yet",
             "pidinstNotRetractable": "B2INST instrument PIDs cannot be retracted or deleted once the record has been sent for community review.",
@@ -3247,17 +3265,20 @@ export default interface Resources {
         },
         "infoDialog": {
           "label": "Info for {globalId}",
+          "versionNotFound": "Version {versionPin} of {globalId} cannot be found. It may never have existed, or its history may have been removed.",
           "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
         },
         "linkField": {
           "editLink": "Edit link",
           "editToChangePinned": "Edit the link to change the pinned version",
           "noAccess": "No access",
-          "noPermission": "You do not have permission to view this item",
+          "noPermission": "This item is not available to you: it may not be shared with you, or it may no longer exist",
           "openLabel": "Open {globalId}",
           "pinVersionLabel": "Pin version for {globalId}",
           "showInfoLabel": "Show info for {globalId}",
-          "targetDeleted": "Target deleted"
+          "targetDeleted": "Target deleted",
+          "versionNotFound": "Version not found",
+          "versionNotFoundDetail": "Version {version} of this item cannot be found: it may never have existed, or its history may have been removed"
         },
         "relatedInventoryItems": {
           "attachment": "Attachment",
@@ -3939,6 +3960,161 @@ export default interface Resources {
       },
       "showItems": "Show items being moved"
     },
+    "operations": {
+      "action": {
+        "process": "Process"
+      },
+      "aliquot": {
+        "description": "Take equal-volume aliquots. Same material; parent volume decremented.",
+        "label": "Aliquot",
+        "linkFieldName": "Derived from"
+      },
+      "confirm": {
+        "cardSubheader": "New sample · via {operation}",
+        "cardSubheaderTerminal": "Origin subsample · via {operation}",
+        "labels": {
+          "amountTaken": "Amount taken",
+          "amountTakenEach": "Amount taken from each subsample",
+          "documentation": "Documented by",
+          "linkBack": "Links back to",
+          "originEmptied": "Origin volume",
+          "process": "Process",
+          "storageTemp": "Storage temperature",
+          "subsamples": "New subsamples",
+          "template": "Template"
+        },
+        "values": {
+          "amountTaken": "{amount} {unit}",
+          "emptied": "Will be set to 0",
+          "originAmount": "{origin}: {amount}",
+          "storageTemp": "{temp} °C",
+          "subsamples": "{count} × {amount} {unit} each",
+          "takeAll": "All (subsamples emptied)"
+        }
+      },
+      "cryopreserve": {
+        "cryomediumField": "Cryomedium",
+        "description": "Freeze material into new vials at a chosen storage temperature.",
+        "label": "Cryopreserve",
+        "linkFieldName": "Frozen from"
+      },
+      "derive": {
+        "description": "Extract or process material into a new sample, recording a derivation.",
+        "label": "Derive",
+        "linkFieldName": "Is Derived From using process: {processName}"
+      },
+      "destroy": {
+        "description": "Dispose of the subsample: set its volume to zero and record today's disposal date.",
+        "disposedField": "Disposed",
+        "label": "Destroy"
+      },
+      "documentation": {
+        "choose": "Choose document",
+        "description": "Optionally link this operation to a document in ELN or Gallery, such as a protocol (SOP).",
+        "fieldName": "Documented by",
+        "none": "No document linked.",
+        "selected": "Linked document: {name}",
+        "trashed": "The remembered document \"{name}\" is in the trash."
+      },
+      "fields": {
+        "amountMode": "Amount to take",
+        "amountModeAll": "Take all",
+        "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
+        "amountModePerSubsample": "Per subsample",
+        "amountModeSame": "Same amount",
+        "amountRequired": "Enter an amount greater than zero.",
+        "amountTaken": "Amount taken from original",
+        "amountTakenEach": "Amount taken from each",
+        "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
+        "amountTooLarge": "Enter at most {max, number}.",
+        "count": "Number of new subsamples",
+        "countMin": "Enter a whole number of {min} or more.",
+        "countRange": "Enter a whole number between {min} and {max}.",
+        "cryomedium": "Cryomedium",
+        "eachAmount": "Amount per new subsample",
+        "originAmountZero": "{count, plural, one {Subsample {names} has} other {Subsamples {names} have}} an amount of 0.",
+        "originCategoryUnsupported": "This subsample's quantity is not an amount (volume, mass or count), so no operation can take from it.",
+        "processName": "Process name",
+        "processNameRequired": "Enter a process name first.",
+        "rememberProcessValues": "Remember values for this process: {name}",
+        "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
+        "required": "This field is required.",
+        "sampleName": "New sample name",
+        "storageTemp": "Storage temperature",
+        "storageTempInvalid": "Enter a temperature at or above -273.15°C, with at most 3 decimal places.",
+        "storageTempMax": "Storage temperature must be at most {max}°C.",
+        "storageTempMin": "Storage temperature must be at least {min}°C.",
+        "storageTempRequired": "Enter a storage temperature.",
+        "storageTempWhole": "Enter whole degrees only.",
+        "temperatureUnit": "°C",
+        "tooLong": "At most {max} characters.",
+        "unitFor": "Unit for {field}",
+        "unitRequired": "Choose a unit."
+      },
+      "passage": {
+        "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",
+        "label": "Passage",
+        "linkFieldName": "Passaged from",
+        "numberField": "Passage number"
+      },
+      "picker": {
+        "needsMultiple": "Select two or more subsamples to pool.",
+        "sameCategory": "Select subsamples of the same measurement type to pool.",
+        "singleOnly": "Select a single subsample for this operation.",
+        "tooManySelected": "Select at most 100 subsamples for this operation."
+      },
+      "pool": {
+        "description": "Combine an equal amount from several subsamples into one new pooled sample.",
+        "label": "Pool",
+        "linkFieldName": "Pooled from: {originName}"
+      },
+      "revive": {
+        "description": "Revive frozen material into a new sample, recorded as a variant of the original.",
+        "label": "Revive",
+        "linkFieldName": "Revived from"
+      },
+      "template": {
+        "checking": "Checking template…",
+        "description": "Optionally choose a template for the new sample.",
+        "fromSample": "Use the parent sample's template",
+        "loadingTemplates": "Loading templates…",
+        "lookupFailed": "This template could not be checked. Try choosing it again.",
+        "mandatoryFieldsError": "{count, plural, one {This template cannot be used: the required field {fields} has no default value. Choose another template.} other {This template cannot be used: the required fields {fields} have no default value. Choose another template.}}",
+        "noTemplates": "No templates found",
+        "none": "No template",
+        "parentHasNoTemplate": "The parent sample has no template, so this option is unavailable. Choose an existing template or none.",
+        "pick": "Choose an existing template",
+        "poolHasNoParentTemplate": "A pool has several parent samples, so choose a template or none.",
+        "rememberedDeleted": "The remembered template \"{name}\" is in the trash and cannot be used. Choose another template.",
+        "searchLabel": "Search templates",
+        "selectedLabel": "Selected template: {name}",
+        "templateDeleted": "The template \"{name}\" is in the trash and cannot be used. Choose another template.",
+        "valueFromSample": "From {name}",
+        "valueNone": "None (ad-hoc sample)"
+      },
+      "wizard": {
+        "failed": "The operation could not be completed",
+        "fieldReason": "{label}: {reason}",
+        "headingWithProcess": "{operation}: {process}",
+        "inProgress": "Performing operation…",
+        "lockExpired": "Your edit session on these subsamples has expired. Close the wizard and start again.",
+        "notEnabled": "Operations are not enabled on this RSpace.",
+        "originIndex": "{reason} (origin {index})",
+        "originsLocked": "Cannot start this operation",
+        "originsOpenElsewhere": "These subsamples are open for editing elsewhere, perhaps in another tab. Close that editor and try again.",
+        "perform": "Perform",
+        "refreshFailed": "The operation completed, but the view could not be refreshed. Reload to see the changes.",
+        "reviewEdit": "Review / edit",
+        "step": {
+          "amounts": "Amounts",
+          "confirm": "Confirm",
+          "details": "Details",
+          "documentation": "Documentation",
+          "template": "Template"
+        },
+        "title": "Process subsample"
+      }
+    },
     "pageTitle": "RSpace Inventory",
     "pageTitleWithContext": "{pageContext} | RSpace Inventory",
     "peopleField": {
@@ -3962,6 +4138,100 @@ export default interface Resources {
       },
       "pending": {
         "exportData": "Exporting User Data..."
+      }
+    },
+    "pidinstImport": {
+      "appBarTitle": "PIDINST",
+      "closeConfirm": {
+        "cancel": "Continue importing",
+        "confirm": "Close anyway",
+        "message": "An import is in progress. Closing this dialog will not stop it, but you will not see the result here.",
+        "title": "Import in progress"
+      },
+      "columns": {
+        "commissioned": "Commissioned",
+        "instrumentTypes": "Instrument type",
+        "linkedTo": "Linked to",
+        "manufacturers": "Manufacturer",
+        "model": "Model",
+        "name": "Name",
+        "owners": "Owner",
+        "pid": "PID",
+        "provider": "Registry",
+        "state": "Registry state"
+      },
+      "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
+      "descriptionLinks": "See our <helpDocs docLink=\"pidinstImport\">PIDINST identifiers docs</helpDocs> for more.",
+      "helpTitle": "PIDINST help",
+      "importError": "Could not import the instrument.",
+      "importSuccess": "Successfully imported the instrument.",
+      "importing": {
+        "message": "Importing \"{name}\" from the PID registry.",
+        "title": "Importing instrument"
+      },
+      "linkedTo": {
+        "noAccess": "No access",
+        "noAccessDetail": "An instrument you cannot access"
+      },
+      "preview": {
+        "alreadyLinked": "This PID is already linked to an instrument in RSpace:",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+        "alternateIdentifier": "Alternate identifier",
+        "calibration": "Calibration",
+        "commissioned": "Commissioned",
+        "decommissioned": "Decommissioned",
+        "description": "Description",
+        "instrumentTypes": "Instrument types",
+        "landingPage": "Landing page",
+        "manufacturers": "Manufacturers",
+        "measuredVariables": "Measured variables",
+        "measurementTechnique": "Measurement technique",
+        "model": "Model",
+        "owners": "Owners",
+        "pid": "PID",
+        "providerRecord": "Registry record",
+        "title": "Selected record"
+      },
+      "providers": {
+        "b2inst": "B2INST",
+        "datacite": "DataCite"
+      },
+      "registries": {
+        "label": "Registries to search",
+        "validation": {
+          "none": "Tick at least one registry to search."
+        }
+      },
+      "results": {
+        "none": "No published instrument records match this search.",
+        "pageSummary": "Showing {from} to {to} of {total, plural, one {# record} other {# records}} ({breakdown}).",
+        "prompt": "Search to list published instrument records.",
+        "registryTotal": "{provider}: {total}"
+      },
+      "search": {
+        "label": "Search the registries",
+        "placeholder": "Name, manufacturer, owner, DOI or Handle",
+        "searching": "Searching the registries…",
+        "validation": {
+          "tooShort": "Enter at least {min} characters to search."
+        }
+      },
+      "searchError": "Could not search the PID registry.",
+      "selectRadioLabel": "Select record: {name}",
+      "skipped": {
+        "message": "{count, plural, one {# entry} other {# entries}} of the registry record could not be linked from the new instrument. Each is listed here with the reason.",
+        "reasons": {
+          "notAnAddressHere": "It is not the address of an item in this RSpace: <address/>",
+          "notAvailable": "The item it points at is not available to you: <address/>",
+          "otherServer": "It points at another server ({host}): <address/>"
+        },
+        "title": "Some registry entries were not imported"
+      },
+      "title": "Import Instrument from PIDINST",
+      "validation": {
+        "alreadyLinked": "This PID is already linked to instrument {globalId}.",
+        "alreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+        "noSelection": "Select a record to import."
       }
     },
     "print": {
@@ -5214,8 +5484,10 @@ export default interface Resources {
       },
       "slack": {
         "errors": {
+          "missingResponseField": "The Slack response is missing required field {0}",
           "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
           "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
+          "noWebhook": "Please add this Slack channel again on RSpace (no webhook URL found).",
           "tooManyConnectedUsers": "There is more than 1 RSpace user associated with this Slack account! [{0}, {1}...]",
           "verificationCodeMismatch": "Verification token does not match!"
         },
@@ -5644,6 +5916,7 @@ export default interface Resources {
     "validation": {
       "errors": {
         "allVersionsRequired": "allVersions is a required field.",
+        "archiveTypeInvalid": "archiveType must be one of xml, html or eln.",
         "archiveTypeRequired": "archiveType is a required field.",
         "authorsCollectionRange": "Authors must contain between {min} and {max} entries.",
         "authorsRequired": "Authors are required.",
@@ -6738,6 +7011,9 @@ export default interface Resources {
           "notFound": "No container with id: {0}",
           "typeRequired": "Container type (cType) is required and must be one of {0}."
         },
+        "editLock": {
+          "heldBy": "{0} is currently being edited by {1}."
+        },
         "export": {
           "exportMode": {
             "invalid": "exportMode should be either 'FULL' or 'COMPACT'"
@@ -6763,6 +7039,7 @@ export default interface Resources {
           "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
           "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
           "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+          "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
@@ -6792,6 +7069,7 @@ export default interface Resources {
           "b2instRegisterFailed": "Could not register a new instrument PID with B2INST. {0}",
           "b2instRegisterNoDraft": "Could not register a new instrument PID with B2INST: the service accepted the request but returned no draft record.",
           "b2instRetractUnsupported": "Instrument PIDs registered with B2INST cannot be retracted from RSpace.",
+          "b2instSubmitActionOtherHost": "B2INST offered a submit action on a different server, so the record was not submitted.",
           "b2instUnreachable": "B2INST could not be reached.",
           "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
           "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
@@ -6804,17 +7082,30 @@ export default interface Resources {
           "externalUpdateNotPossibleB2inst": "The instrument metadata held by {0} could not be updated because its community review has been accepted, so the record no longer has a draft open for changes. The instrument itself was saved.",
           "externalUpdateNotPossibleDataCite": "The instrument metadata held by {0} could not be updated because its identifier is no longer a draft. Publishing or republishing the identifier sends its current metadata. The instrument itself was saved.",
           "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
+          "linkedReadOnly": "This identifier was minted outside RSpace and is only linked to this instrument. It cannot be published, retracted or refreshed from RSpace; delete it to remove the link.",
           "mintingUnsupportedType": "unsupported type for minting: {0}",
+          "pidinstAlreadyLinked": "This PID is already linked to instrument {0}.",
+          "pidinstAlreadyLinkedNoAccess": "This PID is already linked to an instrument in RSpace that you cannot access.",
+          "pidinstImportPidRequired": "A PID is required to import an instrument.",
+          "pidinstImportProviderRequired": "The registry the PID belongs to is required to import an instrument: PIDINST_DATACITE or PIDINST_B2INST.",
+          "pidinstMandatoryMissing": "The registry record has no {0}, which the \"Instrument (PIDINST 1.0)\" template requires, so it cannot be imported.",
+          "pidinstNotFound": "No published instrument record was found for \"{0}\" in the public registry.",
+          "pidinstPageOutOfRange": "Only the first {0} pages of results can be shown. Narrow the search to see more.",
+          "pidinstQueryTooShort": "Enter at least {0} characters to search the PID registries.",
+          "pidinstRegistryRequired": "Choose at least one registry to search: PIDINST_DATACITE or PIDINST_B2INST.",
+          "pidinstTemplateMissing": "This RSpace has no \"{0}\" template, which importing an instrument requires. Ask your system administrator to check the installation.",
           "refreshNoIdentifier": "This item has no identifier to refresh. Register an identifier before refreshing its status.",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
+          "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
+          "importIdentifierAlreadyUsed": "Import identifier {0} was already used in row {1}",
           "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
-          "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
           "instrumentUnrecognizedFieldMapping": "Unrecognized field mapping for instrument import: {0}",
+          "linkValueInvalid": "Link value ''{0}'' must be a DataCite relation type followed by a link URL on this server, for example ''IsDerivedFrom https://your-rspace/globalId/SA123v2''",
           "parentContainerGlobalIdInvalid": "Parent Container Global Id ''{0}'' is not a valid global id of an inventory container",
           "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
           "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",
@@ -6860,6 +7151,44 @@ export default interface Resources {
           "validationTooLong": "Name cannot be longer than 255 characters"
         },
         "notEnabled": "Inventory is not enabled on this RSpace instance.",
+        "operation": {
+          "amountTakenCategoryMismatch": "The amount taken must use the origin's measurement category (e.g. millilitres from a volume origin).",
+          "amountTakenExceedsOrigin": "Cannot take more from an origin than it currently holds.",
+          "amountTakenInvalid": "Each origin must specify a non-negative amount, with a unit, to take from it.",
+          "amountTakenNotApplicable": "This operation decides what it takes from each origin, so no amount taken may be sent.",
+          "amountTakenNotSubtractable": "The amount taken is too fine to record against this origin; it cannot be represented in any unit of its category.",
+          "amountTakenNotWithTakeAll": "takeAll takes each origin's whole quantity, so no amount taken may be sent with it.",
+          "amountTakenPositive": "This operation takes from each origin, so the amount taken must be greater than zero.",
+          "amountTakenTooPrecise": "The amount taken supports at most 3 decimal places.",
+          "countNotWhole": "Must be a whole number.",
+          "createdAmountNotPositive": "Each created subsample must be given a quantity greater than zero.",
+          "documentationLinkTargetInvalid": "A documentation link must target an ELN document, notebook or Gallery file.",
+          "duplicateOrigin": "An origin subsample may appear at most once in an operation.",
+          "inProgress": "Another operation on {0} is still in progress. Wait for it to finish, then reload and try again.",
+          "inputAboveMaximum": "Must be at most {value}.",
+          "inputBelowMinimum": "Must be at least {value}.",
+          "inputNotStorable": "Supports at most 3 decimal places.",
+          "inputRequired": "Required by this operation.",
+          "inputTooLong": "This input supports at most {max} characters.",
+          "mustEmptyOrigin": "This operation must take the origin's entire remaining quantity.",
+          "originCategoryMismatch": "All origin subsamples must use the same measurement category (e.g. all volume or all mass).",
+          "originCountMinimum": "This operation requires at least two origin subsamples.",
+          "originEmpty": "An origin subsample that currently holds nothing cannot be operated on.",
+          "originFieldNameClash": "The origin subsample already has a field named {0} of a different type. Rename or remove that field, then try again.",
+          "originGlobalIdInvalid": "Each origin must be identified by a subsample global id (SS followed by a number), was [{0}].",
+          "originIdRequired": "Each origin must identify a subsample by id.",
+          "originsRequired": "At least one origin subsample must be provided for the operation.",
+          "passageLimitReached": "The parent sample is already at passage {0}, the highest supported, so it cannot be passaged again.",
+          "passageNumberUnreadable": "The parent sample''s passage number ''{0}'' is not a whole number from 0 to 9999. Correct it on the parent sample, then try again.",
+          "storageTempAboveMax": "The storage temperature must be at most {0}°C for this operation.",
+          "storageTempBelowMin": "The storage temperature must be at least {0}°C for this operation.",
+          "subSampleCategoryMismatch": "Each new subsample must use the origin's measurement category (e.g. all volume or all mass).",
+          "tooManyOrigins": "This operation accepts at most {max} origin subsamples.",
+          "totalNotStorable": "The new subsamples hold more in total than a quantity can store; reduce the amount or the number of subsamples."
+        },
+        "operations": {
+          "notEnabled": "Inventory operations API is not enabled on this RSpace instance (inventory.operations.available=DENIED)."
+        },
         "publicLink": {
           "unavailable": "The item you try to see is not publicly available right now."
         },
@@ -6878,6 +7207,7 @@ export default interface Resources {
           "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
           "templateNotFound": "No sample template with id: {0}",
+          "tooManySubSamples": "A sample can be created with at most {max} subsamples",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
         "search": {
@@ -6911,11 +7241,15 @@ export default interface Resources {
           "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
         },
         "temperature": {
+          "belowAbsoluteZero": "The temperature is below absolute zero.",
           "invalidUnit": "Unit id is not a valid temperature unit.",
           "minGreaterThanMax": "Min temperature is greater than max temperature.",
-          "unitsNotComparable": "Temperature units are not mutually comparable."
+          "notStorable": "Temperature must be within the range the system stores, with at most 3 decimal places.",
+          "unitsNotComparable": "Temperature units are not mutually comparable.",
+          "valueRequired": "A temperature needs a numeric value."
         },
         "template": {
+          "deleted": "Sample template {0} is in the trash and cannot be used to create a sample. Restore it, or choose another template.",
           "emptyFieldName": "Field name cannot be empty",
           "emptyFieldType": "Field type cannot be empty",
           "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
@@ -7157,13 +7491,16 @@ export default interface Resources {
         },
         "word": {
           "allImported": "All documents imported, reloading page...",
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "chooseFiles": "Please choose some {0} files to upload.",
           "converted": "These documents were converted: {0}",
           "folderChooserPrompt": "{0} to put the imported documents. Otherwise, they will be put in the current folder.",
           "importAction": "Importing Word Documents",
           "importTitle": "Import",
           "importing": "Importing files...",
-          "notConverted": "<br>These documents were not converted: {0}"
+          "notConverted": "<br>These documents were not converted: {0}",
+          "oneFileRequired": "Choose exactly one file to update a document.",
+          "selectOneTarget": "Select exactly one target document, or open a notebook entry, to update from Word."
         }
       },
       "directory": {
@@ -8768,6 +9105,7 @@ export default interface Resources {
           "googleDriveAvailable": "Makes Google Drive integration available to the users. After enabling the integration, user can link to Google Drive in text field editor",
           "groupAutosharingAvailable": "Enables the management of group-wide autosharing.Enables PIs and lab admins with the 'View All' permission to manage the autoshare status for non-PI lab members.",
           "inventoryAvailable": "Enables Inventory module.",
+          "inventoryOperationsAvailable": "Makes the Inventory operations wizard and its API available.",
           "msTeamsAvailable": "Makes MS Teams integration available to the users. After enabling the integration, user can connect to their MS Teams channels to send messages or forward notifications",
           "nextcloudAvailable": "Makes Nextcloud integration available to the users. After enabling the integration, users can link to Nextcloud in text field editor",
           "omeroAvailable": "Makes Omero integration available. After enabling the integration, users can link to Omero image data.",
@@ -9066,7 +9404,12 @@ export default interface Resources {
         "optionalLinkText": "Optionally, choose a folder or notebook"
       },
       "importFromWord": {
-        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:"
+        "afterImport": "After importing:",
+        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:",
+        "newDocuments": "Save as new documents",
+        "newEntries": "Save as new entries",
+        "replaceDocument": "Update selected document",
+        "replaceEntry": "Update current entry"
       },
       "moveRecord": {
         "dialogTitle": "Select move target",
@@ -9803,7 +10146,7 @@ export default interface Resources {
       "apiKey": {
         "confirmPasswordLabel": "Please confirm your password",
         "docsLinkPrefix": "See <a href=\"/public/apiDocs\" target=\"_blank\">API Documentation</a>.",
-        "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os\" target=\"_blank\">GitHub</a>.",
+        "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os/api-tutorial\" target=\"_blank\">GitHub</a>.",
         "generateKeyButton": "Generate key",
         "generateWarningIntro": "This API key provides access to your account, research data, and intellectual property. If exposed or compromised:",
         "generateWarningRisk1": "Unauthorized users could access and steal your data",
@@ -9964,12 +10307,17 @@ export default interface Resources {
       },
       "word": {
         "import": {
+          "basicDocumentRequired": "Only a Basic Document can be updated from Word.",
           "createFailed": "Could not create document from {0}",
           "createFailedWithReason": "Could not create document from {0} - {1}",
           "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
           "noImporterForFileType": "No importer for file type {0}",
+          "notAuthorized": "You do not have permission to update this document.",
+          "oneFileRequired": "Choose exactly one file to update a document.",
           "progressDescription": "Processed file ''{0}''. Import is {1}% complete.",
-          "progressStarted": "Importing files..."
+          "progressStarted": "Importing files...",
+          "targetNotEditable": "This document cannot be updated because it is signed, deleted, or not editable.",
+          "updateAction": "update document from Word"
         }
       }
     },

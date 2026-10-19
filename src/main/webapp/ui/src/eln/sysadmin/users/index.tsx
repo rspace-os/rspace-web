@@ -75,6 +75,7 @@ import CustomTooltip from "../../../components/CustomTooltip";
 import ErrorBoundary from "../../../components/ErrorBoundary";
 import ExportMenuItem from "../../../components/ExportMenuItem";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import SecretField from "../../../components/Inputs/SecretField";
 import LoaderCircular from "../../../components/LoadingCircular";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import ExportDialog from "../../../Export/ExportDialog";
@@ -566,15 +567,12 @@ const PiAction = ({
                               values={{ fullName: selectedUser.map((u) => u.fullName).orElse("") }}
                             />
                           </DialogContentText>
-                          <TextField
-                            type="password"
+                          <SecretField
                             autoComplete="current-password"
                             size="small"
                             label={t("usersPage.piRoleDialog.password")}
                             value={password}
-                            onChange={(e) => {
-                              setPassword(e.target.value);
-                            }}
+                            onChange={setPassword}
                             fullWidth
                           />
                         </>
@@ -1887,8 +1885,8 @@ export const UsersPage = (): React.ReactNode => {
                               ]);
                               const apiOrderBy = {
                                 username: "username",
-                                fileUsage: "fileUsage()",
-                                recordCount: "recordCount()",
+                                fileUsage: "fileUsage",
+                                recordCount: "recordCount",
                                 lastLogin: "lastLogin",
                                 created: "creationDate",
                                 fullNameSurnameFirst: "lastName",

@@ -299,6 +299,11 @@ The following optional properties enable RSpace to connect to Orcid  API (if thi
 * **orcid.client.id** Client id of Orcid App registered for given RSpace instance
 * **orcid.client.secret** Client secret of Orcid App registered for given RSpace instance
 
+The following properties enable BioPortal ontology term suggestions in tag autocomplete:
+* **bioportal.base.url** BioPortal website, used only to build a display link for a matched term
+* **bioportal.api.base.url** BioPortal REST API URL for search suggestions. It must be `https://data.bioontology.org`; requests always use that fixed origin
+* **bioportal.api.key** API key for the BioPortal REST API; without it, BioPortal suggestions are silently unavailable
+
 The following optional properties enable RSpace to connect to RaID API (if this integration is enabled):
 * **raid.server.config** configures the RaID server alias associated to *server url* .
   **raid.server.config** should be configured (for local use) in dev/deployment.properties as we 
@@ -337,7 +342,7 @@ The following optional properties allow configuring RSpace integration with Data
 The following optional properties enable RSpace to connect to Slack (if this integration is enabled):
 * **slack.client.id** Client id of Slack App registered for given RSpace instance
 * **slack.secret** Client secret of Slack App registered for given RSpace instance
-* **slack.verification.token** Verification token.
+* **slack.signing.secret** Signing Secret from the Slack app's Basic Information page. Required for slash commands. RSpace verifies the exact request body and rejects signatures older than five minutes. The legacy verification token is no longer accepted.
 
 The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
 * **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
@@ -605,6 +610,11 @@ Settings to rate-limit the number of API calls made to the server.
 * **api.user.minInterval** Minimum interval between requests, in millis. Default = 0, which means no minimal interval.
 
 * **api.beta.enabled** Whether beta API is enabled or not. Default=true
+
+* **oauth.passwordGrant.maxFailures** Wrong passwords allowed per username on the OAuth password grant (`/oauth/token`, `grant_type=password`) inside the window. After that the username gets the ordinary invalid-credentials response on this route, at the cost of one password check, until the window passes with no further counted failure. Minimum 1. Default=5
+* **oauth.passwordGrant.failureWindowSeconds** Length of that window in seconds. Minimum 1. Default=600
+
+The public Inventory client that every install ships is accepted on this route by design, so the client check is not a guessing control; these two settings are. The count is held in memory on each application server and resets on restart, so with several servers the effective limit is `maxFailures` per server. A blocked username gets the same response as a wrong password, so an administrator sees a block only in the security log. Anyone who knows a username can keep it blocked on this route by sending wrong passwords; raising `maxFailures` makes that harder at the cost of more allowed guesses. The web login page lockout and API keys are unaffected.
 
 ### Monitoring
 

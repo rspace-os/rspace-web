@@ -1,11 +1,10 @@
 package com.researchspace.service;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
@@ -78,11 +77,11 @@ public class SystemPropertyManagerTest extends SpringTransactionalTest {
     // calling get twice returns identical(cached) object
     SystemPropertyValue original = sysPropMgr.findByName(SystemPropertyName.GOOGLE_DRIVE_AVAILABLE);
     SystemPropertyValue cached = sysPropMgr.findByName(SystemPropertyName.GOOGLE_DRIVE_AVAILABLE);
-    assertThat(original, sameInstance(cached));
+    assertSame(cached, original);
     // now save, which will update the cache with a new object instance
     sysPropMgr.save(cached.getProperty().getName(), reverse(original.getValue()), sysadmin);
     SystemPropertyValue reloaded = sysPropMgr.findByName(SystemPropertyName.GOOGLE_DRIVE_AVAILABLE);
-    assertThat(reloaded, not(sameInstance(cached)));
+    assertNotSame(cached, reloaded);
     // assert value is updated
     assertEquals(reloaded.getValue(), reverse(original.getValue()));
     // revert to previous value

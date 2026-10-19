@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import App from "../App";
 import "@/__tests__/assertSemanticHeadings";
 import { ThemeProvider } from "@mui/material/styles";
@@ -91,5 +92,29 @@ describe("Apps page", () => {
       { level: 2, content: "apps:page.sections.unavailable.title" },
       { level: 2, content: "apps:page.sections.external.title" },
     ]);
+  });
+  test("keeps an app's dialog open, with its unsaved input, while the app is enabled", async () => {
+    const user = userEvent.setup();
+    mockAxios.onGet("integration/allIntegrations").reply(200, allIntegrationsAreDisabled);
+    mockAxios.onPost("integration/update").reply(200, {
+      success: true,
+      data: { name: "ZENODO", available: true, enabled: true, options: {} },
+    });
+    renderApp();
+    const disabled = await screen.findByRole("region", { name: "apps:page.sections.disabled.title" });
+    await user.click(await within(disabled).findByRole("button", { name: "apps:integrations.zenodo.name" }));
+    const dialog = screen.getByRole("dialog");
+    const apiKey = within(dialog).getAllByLabelText("apps:integrations.zenodo.fields.apiKey")[0];
+
+    await user.type(apiKey, "unsaved-key");
+    await user.click(within(dialog).getByRole("button", { name: "apps:integrationCard.enable" }));
+
+    expect(await within(dialog).findByRole("button", { name: "apps:integrationCard.disable" })).toBeVisible();
+    expect(apiKey).toHaveValue("unsaved-key");
+
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.close" }));
+    // the page is aria-hidden until the dialog has finished closing
+    const enabled = await screen.findByRole("region", { name: "apps:page.sections.enabled.title" });
+    expect(await within(enabled).findByRole("button", { name: "apps:integrations.zenodo.name" })).toBeVisible();
   });
 });

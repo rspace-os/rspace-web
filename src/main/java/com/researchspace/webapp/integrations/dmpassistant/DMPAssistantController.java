@@ -14,6 +14,7 @@ import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -143,6 +144,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
   }
 
   @GetMapping("/callback")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(
       @RequestParam Map<String, String> params,
       Model model,

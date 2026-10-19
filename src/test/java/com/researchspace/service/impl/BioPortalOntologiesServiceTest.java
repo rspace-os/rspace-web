@@ -1,62 +1,94 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.client.BioPortalLinks;
 import com.researchspace.client.BioPortalOntologiesClient;
+import com.researchspace.client.BioPortalSearchResult;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 
 @ExtendWith(MockitoExtension.class)
-@Slf4j
-@Service
-public class BioPortalOntologiesServiceTest {
-  public static final String realBioData =
-      "Ctenotus"
-          + " hanloni|http://purl.bioontology.org/ontology/NCBITAXON/480744||NCBITAXON|http://purl.bioontology.org/ontology/NCBITAXON/480744|Ctenotus"
-          + " hanloni||National Center for Biotechnology Information (NCBI) Organismal"
-          + " Classification|NCBITAXON|~!~Ctenotus"
-          + " hanloni|http://purl.obolibrary.org/obo/VTO_0018361||VTO|http://purl.obolibrary.org/obo/VTO_0018361|Ctenotus"
-          + " hanloni||Vertebrate Taxonomy Ontology|VTO|";
+class BioPortalOntologiesServiceTest {
+
   @Mock private BioPortalOntologiesClient bioOntologiesClientMock;
   @InjectMocks private BioPortalOntologiesService testee;
 
   @Test
-  public void shouldSwallowExceptions() {
-    doThrow(RuntimeException.class)
+  void shouldSwallowProviderRestClientExceptions() {
+    doThrow(new RestClientException("boom"))
         .when(bioOntologiesClientMock)
-        .getBioOntologyData(any(String.class));
-    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
+        .search(any(String.class));
+    assertThat(testee.getBioOntologyDataForQuery("abc")).isEmpty();
   }
 
   @Test
-  public void shouldReturnEmptyListWhenNoBioData() {
-    assertEquals(0, testee.getBioOntologyDataForQuery("").size());
+  void shouldSwallowUnexpectedMappingExceptions() {
+    doThrow(RuntimeException.class).when(bioOntologiesClientMock).search(any(String.class));
+    assertThat(testee.getBioOntologyDataForQuery("abc")).isEmpty();
   }
 
   @Test
-  public void shouldReturnEmptyListWhenFilterTermLessThanTwoChars() {
-    assertEquals(0, testee.getBioOntologyDataForQuery("aa").size());
+  void shouldReturnEmptyListWhenNoFilterTerm() {
+    assertThat(testee.getBioOntologyDataForQuery("")).isEmpty();
+    verify(bioOntologiesClientMock, never()).search(anyString());
   }
 
   @Test
-  public void shouldReturnFormattedValuesWhenFilterMatchesDataReturnedFromBioPortal() {
-    when(bioOntologiesClientMock.getBioOntologyData(any(String.class))).thenReturn(realBioData);
+  void shouldReturnEmptyListWhenFilterTermIsTwoCharsOrFewer() {
+    assertThat(testee.getBioOntologyDataForQuery("a")).isEmpty();
+    assertThat(testee.getBioOntologyDataForQuery("aa")).isEmpty();
+    verify(bioOntologiesClientMock, never()).search(anyString());
+  }
+
+  @Test
+  void shouldCallClientOnceFilterTermIsThreeCharsOrMore() {
+    when(bioOntologiesClientMock.search(anyString())).thenReturn(List.of());
+    testee.getBioOntologyDataForQuery("aaa");
+    verify(bioOntologiesClientMock).search("aaa");
+  }
+
+  @Test
+  void shouldNormalizeSurroundingWhitespaceBeforeThresholdAndSearch() {
+    when(bioOntologiesClientMock.search(anyString())).thenReturn(List.of());
+    testee.getBioOntologyDataForQuery("  aaa  ");
+    verify(bioOntologiesClientMock).search("aaa");
+  }
+
+  @Test
+  void shouldReturnFormattedValuesForValidResults() {
+    when(bioOntologiesClientMock.search("cen"))
+        .thenReturn(
+            List.of(
+                new BioPortalSearchResult(
+                    "http://purl.bioontology.org/ontology/NCBITAXON/480744",
+                    "Ctenotus hanloni",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/NCBITAXON")),
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/VTO_0018361",
+                    "Ctenotus hanloni",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/VTO"))));
     when(bioOntologiesClientMock.getBioportalBaseUrl())
         .thenReturn("https://bioportal.bioontology.org");
+
     List<String> data = testee.getBioOntologyDataForQuery("cen");
+
     assertEquals(2, data.size());
     assertTrue(
         data.contains(
@@ -72,6 +104,110 @@ public class BioPortalOntologiesServiceTest {
                 + "  on: "
                 + getTodayDateFormatted()),
         "unexpected: " + Arrays.toString(data.toArray()));
+  }
+
+  @Test
+  void shouldKeepDuplicateLabelsFromDifferentOntologiesDistinguishable() {
+    when(bioOntologiesClientMock.search("Toluene"))
+        .thenReturn(
+            List.of(
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/CHEAR_1",
+                    "Toluene",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/CHEAR")),
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/HHEAR_1",
+                    "Toluene",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/HHEAR"))));
+    when(bioOntologiesClientMock.getBioportalBaseUrl())
+        .thenReturn("https://bioportal.bioontology.org");
+
+    List<String> data = testee.getBioOntologyDataForQuery("Toluene");
+
+    assertEquals(2, data.size());
+    assertTrue(data.get(0).contains("__RSP_EXTONT_NAME_DELIM__CHEAR__"));
+    assertTrue(data.get(1).contains("__RSP_EXTONT_NAME_DELIM__HHEAR__"));
+  }
+
+  @Test
+  void shouldSkipMalformedResultsButKeepValidOnes() {
+    when(bioOntologiesClientMock.search("abc"))
+        .thenReturn(
+            List.of(
+                new BioPortalSearchResult("some-uri", "Something", new BioPortalLinks(null)),
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/GAZ_00593210",
+                    "Lev Tolstoy",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
+    when(bioOntologiesClientMock.getBioportalBaseUrl())
+        .thenReturn("https://bioportal.bioontology.org");
+
+    List<String> data = testee.getBioOntologyDataForQuery("abc");
+
+    assertEquals(1, data.size());
+    assertTrue(data.get(0).startsWith("Lev Tolstoy__RSP_EXTONT_URL_DELIM__"));
+  }
+
+  @Test
+  void shouldSkipNullResultButKeepValidOnesBeforeAndAfterIt() {
+
+    when(bioOntologiesClientMock.search("abc"))
+        .thenReturn(
+            Arrays.asList(
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/GAZ_00593210",
+                    "Lev Tolstoy",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ")),
+                null,
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/GAZ_00245556",
+                    "Town of Tolstoy",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
+    when(bioOntologiesClientMock.getBioportalBaseUrl())
+        .thenReturn("https://bioportal.bioontology.org");
+
+    List<String> data = testee.getBioOntologyDataForQuery("abc");
+
+    assertEquals(2, data.size());
+    assertTrue(data.get(0).startsWith("Lev Tolstoy__RSP_EXTONT_URL_DELIM__"));
+    assertTrue(data.get(1).startsWith("Town of Tolstoy__RSP_EXTONT_URL_DELIM__"));
+  }
+
+  @Test
+  void shouldSkipResultWithBlankPrefLabel() {
+    when(bioOntologiesClientMock.search("abc"))
+        .thenReturn(
+            List.of(
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/GAZ_00593210",
+                    " ",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
+
+    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
+  }
+
+  @Test
+  void shouldSkipResultWithBlankId() {
+    when(bioOntologiesClientMock.search("abc"))
+        .thenReturn(
+            List.of(
+                new BioPortalSearchResult(
+                    " ",
+                    "Lev Tolstoy",
+                    new BioPortalLinks("https://data.bioontology.org/ontologies/GAZ"))));
+
+    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
+  }
+
+  @Test
+  void shouldSkipResultWithNullLinksObject() {
+    when(bioOntologiesClientMock.search("abc"))
+        .thenReturn(
+            List.of(
+                new BioPortalSearchResult(
+                    "http://purl.obolibrary.org/obo/GAZ_00593210", "Lev Tolstoy", null)));
+
+    assertEquals(0, testee.getBioOntologyDataForQuery("abc").size());
   }
 
   private String getTodayDateFormatted() {

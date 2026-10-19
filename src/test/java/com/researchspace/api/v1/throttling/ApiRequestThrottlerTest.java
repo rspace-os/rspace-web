@@ -1,7 +1,6 @@
 package com.researchspace.api.v1.throttling;
 
 import static com.researchspace.api.v1.throttling.ApiRequestThrottlerImpl.DEFAULT_MIN_INTERVAL_MILLIS;
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -80,7 +79,7 @@ public class ApiRequestThrottlerTest {
   public void minIntervalAccepts0() throws Exception {
     throttler = setUpThrottler();
     throttler.setMinIntervalMillis(0);
-    assertIllegalArgumentException(() -> throttler.setMinIntervalMillis(-1));
+    assertThrows(IllegalArgumentException.class, () -> throttler.setMinIntervalMillis(-1));
   }
 
   @Test

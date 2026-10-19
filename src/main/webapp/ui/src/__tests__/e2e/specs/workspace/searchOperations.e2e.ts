@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
-import { storageStatePath } from "@/__tests__/e2e/authState";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { WorkspacePage } from "@/__tests__/e2e/pageObjects/workspace/WorkspacePage";
+import { freshStorageState } from "@/__tests__/e2e/savedSessions";
 import { uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN } from "@/__tests__/e2e/users";
 
@@ -155,7 +155,7 @@ test.describe(`Workspace search operations`, () => {
   }) => {
     const ctx = await browser.newContext({
       ...browserContextOptions,
-      storageState: storageStatePath(SYSADMIN.username),
+      storageState: await freshStorageState(SYSADMIN),
     });
     try {
       const page = await ctx.newPage();
@@ -165,13 +165,7 @@ test.describe(`Workspace search operations`, () => {
         await workspace.open();
       });
 
-      await test.step("When I search with a term shorter than 5 characters", async () => {
-        await workspace.searchBar.search("abcd");
-      });
-
-      await test.step("Then a validation message tells me the term must be at least 5 characters", async () => {
-        await expect(page.getByText("at least 5 characters")).toBeVisible();
-      });
+      await workspace.searchBar.searchExpectingValidationError("abcd", "at least 5 characters");
     } finally {
       await ctx.close();
     }

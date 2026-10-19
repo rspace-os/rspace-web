@@ -1,5 +1,6 @@
 package com.researchspace.linkedelements;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
@@ -81,7 +82,7 @@ public class FieldLinksEntitiesSynchronizerTest {
     // f1 has an image. we'll simulate that the text link has been
     // removed....
     permanentField1.addMediaFileLink(el);
-    assertTrue(permanentField1.getLinkedMediaFiles().size() == 1, " media link was not added!");
+    assertThat(permanentField1.getLinkedMediaFiles()).as(" media link was not added!").hasSize(1);
     // we'll simulate that the text link has been removed....
     final FieldContentDelta removedDelta = new FieldContentDelta(new FieldContents(), removed);
     Mockito.when(parser.findFieldElementChanges(permanentField1.getFieldData(), incomingData))

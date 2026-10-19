@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.impl.license.NoCheckLicenseService;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.webapp.controller.MVCTestBase;
@@ -44,6 +45,7 @@ public class CloudSignupControllerMVCIT extends MVCTestBase {
   }
 
   @Autowired SignupController signupController;
+  @Autowired IPropertyHolder propertyHolder;
 
   @Autowired private WebApplicationContext wac;
 

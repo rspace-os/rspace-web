@@ -53,6 +53,29 @@ public class WorkspaceSearchInputValidatorTest {
   }
 
   @Test
+  public void separatorsMayBeSurroundedByWhitespace() {
+    String[] options = {RECORDS_SEARCH_OPTION, NAME_SEARCH_OPTION};
+    String[] terms = {"SD1 , NB22 ;FL333", "name"};
+    Errors errors = reinitializeErrors();
+    input = new WorkspaceListingConfig(crit, options, terms, -1L, true);
+    validator.validate(input, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    String[] dateOptions = {CREATION_DATE_SEARCH_OPTION};
+    String[] dateTerms = {" 2020-01-10T00:00:00Z ; null "};
+    errors = reinitializeErrors();
+    input = new WorkspaceListingConfig(crit, dateOptions, dateTerms, -1L, true);
+    validator.validate(input, errors);
+    assertFalse(errors.hasGlobalErrors());
+
+    String[] badTerms = {"SD1 , X2", "name"};
+    errors = reinitializeErrors();
+    input = new WorkspaceListingConfig(crit, options, badTerms, -1L, true);
+    validator.validate(input, errors);
+    assertEquals("errors.termCannotParse", errors.getAllErrors().get(0).getCode());
+  }
+
+  @Test
   public void testValidate() {
     Errors errors = reinitializeErrors();
     validator.validate(input, errors);

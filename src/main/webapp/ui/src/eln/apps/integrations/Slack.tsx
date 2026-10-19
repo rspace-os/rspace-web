@@ -23,17 +23,6 @@ import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 import { useSlackEndpoint } from "../useSlackEndpoint";
 
-type Channel = {
-  SLACK_TEAM_NAME: string;
-  SLACK_CHANNEL_ID: string;
-  SLACK_CHANNEL_NAME: string;
-  SLACK_USER_ID: string;
-  SLACK_CHANNEL_LABEL: string;
-  SLACK_USER_ACCESS_TOKEN: string;
-  SLACK_TEAM_ID: string;
-  SLACK_WEBHOOK_URL: string;
-};
-
 type UnwrapOptional<T> = T extends Optional<infer U> ? U : T;
 
 type UnwrapArray<T extends Array<unknown>> = {
@@ -42,7 +31,6 @@ type UnwrapArray<T extends Array<unknown>> = {
 
 export interface SlackConnectedMessage extends Record<string, unknown> {
   type: "SLACK_CONNECTED";
-  response?: string;
   error?: string;
 }
 export const SLACK_CONNECTION_CHANNEL = "rspace.apps.slack.connection";
@@ -57,10 +45,9 @@ const DialogContent = observer(
   }) => {
     const { t } = useTranslation(["apps", "common"]);
     const [loadingNewChannel, setLoadingNewChannel] = useState(false);
-    const [newChannel, setNewChannel] = useState<Channel | null>(null);
     const { addAlert } = useContext(AlertContext);
     const { oauthUrl } = useSlackEndpoint();
-    const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
+    const { allIntegrations, saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
     const copyOfChannels = useLocalObservable(() => linkedChannels.map((x) => observable(x)));
 
     useBroadcastChannel<SlackConnectedMessage>(SLACK_CONNECTION_CHANNEL, (e: MessageEvent<SlackConnectedMessage>) => {
@@ -76,65 +63,44 @@ const DialogContent = observer(
         setLoadingNewChannel(false);
         return;
       }
-      if (e.data.response) {
+      // the server saved the channel when Slack redirected back, so fetch it
+      void (async () => {
         try {
-          const channelDetailsJson = e.data.response;
-          const channelDetails: unknown = JSON.parse(channelDetailsJson);
-          if (typeof channelDetails !== "object" || channelDetails === null)
-            throw new Error("Could not decode channel details. Invalid root object");
-          const channelDetailsRecord = channelDetails as Record<string, unknown>;
-          if (
-            typeof channelDetailsRecord.incoming_webhook !== "object" ||
-            channelDetailsRecord.incoming_webhook === null
-          )
-            throw new Error("Could not decode channel details. Invalid incoming_webhook");
-          const incomingWebhookRecord = channelDetailsRecord.incoming_webhook as Record<string, unknown>;
-          if (typeof channelDetailsRecord.team_name !== "string")
-            throw new Error("Could not decode channel details. Invalid team name");
-          const SLACK_TEAM_NAME = channelDetailsRecord.team_name;
-          if (typeof incomingWebhookRecord.channel_id !== "string")
-            throw new Error("Could not decode channel details. Invalid channel id");
-          const SLACK_CHANNEL_ID = incomingWebhookRecord.channel_id;
-          if (typeof incomingWebhookRecord.channel !== "string")
-            throw new Error("Could not decode channel details. Invalid channel name");
-          const SLACK_CHANNEL_NAME = incomingWebhookRecord.channel;
-          const SLACK_CHANNEL_LABEL = SLACK_CHANNEL_NAME;
-          if (typeof channelDetailsRecord.user_id !== "string")
-            throw new Error("Could not decode channel details. Invalid user id");
-          const SLACK_USER_ID = channelDetailsRecord.user_id;
-          if (typeof channelDetailsRecord.access_token !== "string")
-            throw new Error("Could not decode channel details. Invalid access token");
-          const SLACK_USER_ACCESS_TOKEN = channelDetailsRecord.access_token;
-          if (typeof channelDetailsRecord.team_id !== "string")
-            throw new Error("Could not decode channel details. Invalid user id");
-          const SLACK_TEAM_ID = channelDetailsRecord.team_id;
-          if (typeof incomingWebhookRecord.url !== "string")
-            throw new Error("Could not decode channel details. Invalid url");
-          const SLACK_WEBHOOK_URL = incomingWebhookRecord.url;
-          setNewChannel(
-            observable({
-              SLACK_TEAM_NAME,
-              SLACK_CHANNEL_ID,
-              SLACK_CHANNEL_NAME,
-              SLACK_USER_ID,
-              SLACK_CHANNEL_LABEL,
-              SLACK_USER_ACCESS_TOKEN,
-              SLACK_TEAM_ID,
-              SLACK_WEBHOOK_URL,
-            }),
-          );
+          const { SLACK } = await allIntegrations();
+          const channels = ArrayUtils.all(SLACK.credentials)
+            .toResult(() => new Error(t("integrations.slack.errors.resultsUnavailable")))
+            .elseThrow();
+          // reuse the local observables so unsaved label edits survive the refetch
+          const existing = new Map(copyOfChannels.map((c) => [c.optionsId, c]));
+          const anyNew = channels.some((c) => !existing.has(c.optionsId));
+          runInAction(() => {
+            integrationState.credentials = SLACK.credentials;
+            copyOfChannels.splice(
+              0,
+              copyOfChannels.length,
+              ...channels.map((c) => existing.get(c.optionsId) ?? observable(c)),
+            );
+          });
+          if (anyNew)
+            addAlert(
+              mkAlert({
+                variant: "success",
+                message: t("integrations.slack.alerts.addSuccess"),
+              }),
+            );
         } catch (e) {
           if (e instanceof Error)
             addAlert(
               mkAlert({
                 variant: "error",
-                title: t("integrations.slack.alerts.channelDetailsError"),
+                title: t("integrations.slack.alerts.addError"),
                 message: e.message,
               }),
             );
+        } finally {
+          setLoadingNewChannel(false);
         }
-      }
-      setLoadingNewChannel(false);
+      })();
     });
 
     const addHandler = async () => {
@@ -142,7 +108,7 @@ const DialogContent = observer(
       try {
         const authWindow = window.open(await oauthUrl());
         if (!authWindow) {
-          throw new Error("Failed to open Slack authentication window");
+          throw new Error(t("integrations.slack.errors.authWindowFailed"));
         }
       } catch (e) {
         if (e instanceof Error)
@@ -158,7 +124,7 @@ const DialogContent = observer(
     };
     return (
       <Stack spacing={1} sx={{ mt: 1 }}>
-        {copyOfChannels.map((channel, index) => (
+        {copyOfChannels.map((channel) => (
           <Box key={channel.optionsId}>
             <Card variant="outlined">
               <form
@@ -174,12 +140,14 @@ const DialogContent = observer(
                       runInAction(() => {
                         integrationState.credentials = newState.credentials;
                         const newCreds = ArrayUtils.all(newState.credentials)
-                          .toResult(() => new Error("Save completed but cannot show results"))
+                          .toResult(() => new Error(t("integrations.slack.errors.resultsUnavailable")))
                           .elseThrow();
                         const indexOfNewConfig = newCreds.findIndex((c) => c.optionsId === channel.optionsId);
-                        if (indexOfNewConfig === -1) throw new Error("Save completed but cannot show results.");
+                        if (indexOfNewConfig === -1) throw new Error(t("integrations.slack.errors.resultsUnavailable"));
 
-                        copyOfChannels.splice(index, 1, observable(newCreds[indexOfNewConfig]));
+                        // by identity, as a refetch during the save can move the row
+                        const current = copyOfChannels.indexOf(channel);
+                        if (current !== -1) copyOfChannels.splice(current, 1, observable(newCreds[indexOfNewConfig]));
                       });
                       addAlert(
                         mkAlert({
@@ -234,9 +202,12 @@ const DialogContent = observer(
                         try {
                           await deleteAppOptions("SLACK", channel.optionsId);
                           runInAction(() => {
-                            const deletedIndex = copyOfChannels.indexOf(channel);
-                            copyOfChannels.splice(deletedIndex, 1);
-                            integrationState.credentials.splice(deletedIndex, 1);
+                            const localIndex = copyOfChannels.findIndex((c) => c.optionsId === channel.optionsId);
+                            if (localIndex !== -1) copyOfChannels.splice(localIndex, 1);
+                            const credentialIndex = integrationState.credentials.findIndex((credential) =>
+                              credential.map(({ optionsId }) => optionsId === channel.optionsId).orElse(false),
+                            );
+                            if (credentialIndex !== -1) integrationState.credentials.splice(credentialIndex, 1);
                           });
                           addAlert(
                             mkAlert({
@@ -265,88 +236,9 @@ const DialogContent = observer(
           </Box>
         ))}
         <Box>
-          {newChannel ? (
-            <Card variant="outlined">
-              <form
-                onSubmit={(event) => {
-                  void (async () => {
-                    event.preventDefault();
-                    try {
-                      const newState = await saveAppOptions("SLACK", Optional.empty(), newChannel);
-                      const optionIdsOfExistingRepos = new Set(copyOfChannels.map(({ optionsId }) => optionsId));
-                      runInAction(() => {
-                        integrationState.credentials = newState.credentials;
-                        const newlySavedRepo = newState.credentials
-                          .find((credential) =>
-                            credential.map(({ optionsId }) => !optionIdsOfExistingRepos.has(optionsId)).orElse(false),
-                          )
-                          ?.orElseGet(() => {
-                            throw new Error("Save completed but cannot show results.");
-                          });
-                        if (!newlySavedRepo) throw new Error("Save completed but cannot show results.");
-                        copyOfChannels.push(newlySavedRepo);
-                      });
-                      setNewChannel(null);
-                      addAlert(
-                        mkAlert({
-                          variant: "success",
-                          message: t("integrations.slack.alerts.addSuccess"),
-                        }),
-                      );
-                    } catch (e) {
-                      if (e instanceof Error)
-                        addAlert(
-                          mkAlert({
-                            variant: "error",
-                            title: t("integrations.slack.alerts.addError"),
-                            message: e.message,
-                          }),
-                        );
-                    }
-                  })();
-                }}
-              >
-                <CardContent>
-                  <DescriptionList
-                    content={[
-                      {
-                        label: t("integrations.slack.fields.workspace"),
-                        value: newChannel.SLACK_TEAM_NAME,
-                      },
-                      {
-                        label: t("integrations.slack.fields.channelName"),
-                        value: newChannel.SLACK_CHANNEL_NAME,
-                      },
-                    ]}
-                  />
-                  <TextField
-                    fullWidth
-                    value={newChannel.SLACK_CHANNEL_LABEL}
-                    onChange={({ target: { value } }) => {
-                      runInAction(() => {
-                        newChannel.SLACK_CHANNEL_LABEL = value;
-                      });
-                    }}
-                    label={t("integrations.slack.fields.rspaceLabel")}
-                  />
-                </CardContent>
-                <CardActions>
-                  <Button
-                    onClick={() => {
-                      setNewChannel(null);
-                    }}
-                  >
-                    {t("common:actions.cancel")}
-                  </Button>
-                  <Button type="submit">{t("common:actions.save")}</Button>
-                </CardActions>
-              </form>
-            </Card>
-          ) : (
-            <Button disabled={loadingNewChannel} onClick={() => void addHandler()}>
-              {loadingNewChannel ? t("integrations.slack.loadingChannel") : t("common:actions.add")}
-            </Button>
-          )}
+          <Button disabled={loadingNewChannel} onClick={() => void addHandler()}>
+            {loadingNewChannel ? t("integrations.slack.loadingChannel") : t("common:actions.add")}
+          </Button>
         </Box>
       </Stack>
     );

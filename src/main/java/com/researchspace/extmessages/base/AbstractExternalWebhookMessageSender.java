@@ -16,6 +16,7 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -79,7 +80,8 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
       }
       return resp;
     } catch (RestClientException rce) {
-      log.warn("Posting  message to URL {} failed", uri.toString());
+      // not the URL: a webhook URL is a credential (RSDEV-1525)
+      log.warn("Posting message to {} webhook failed", getClass().getSimpleName());
       throw rce;
     }
   }
@@ -92,14 +94,17 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   }
 
   /**
-   * Headers applied to the webhook POST. The default sends no explicit headers (the body is then
-   * posted as {@code text/plain}); subclasses can override to set a content type the webhook
-   * requires.
+   * Creates the headers for the webhook POST.
    *
-   * @return headers to attach to the outgoing request
+   * <p>Declares {@code application/json} so the body is sent as UTF-8. Without it, a String body is
+   * sent as ISO-8859-1 and non-Latin-1 characters become {@code ?}.
+   *
+   * @return headers with an {@code application/json} content type
    */
   protected HttpHeaders createPostHeaders() {
-    return new HttpHeaders();
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
   }
 
   /**
@@ -108,13 +113,6 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
    * @return
    */
   protected abstract String createMessage(MessageDetails internalMsg);
-
-  /**
-   * Gets the name of the AppConfig property that stores the URL to send the message to.
-   *
-   * @return
-   */
-  protected abstract String getPostUrlSetting();
 
   /**
    * Queries configuration for the name of the URL property saved as a webhook.
@@ -128,14 +126,12 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
     try {
       uri = new URI(webhookUrl);
     } catch (URISyntaxException e) {
-      log.error("Couldn't make a URl from webhook URL {}", webhookUrl);
+      log.error("Couldn't make a URI from the webhook URL: {}", e.getReason());
     }
     return Optional.ofNullable(uri);
   }
 
-  String doGetPostUrl(AppConfigElementSet messageConfig) {
-    return messageConfig.findElementByPropertyName(getPostUrlSetting()).getValue();
-  }
+  protected abstract String doGetPostUrl(AppConfigElementSet messageConfig);
 
   // converts <br/> from form into newlines
   static final Pattern BR_TAG = Pattern.compile("<\\s*br\\s*/>");

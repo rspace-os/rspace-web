@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -102,8 +103,8 @@ public class InventoryPublicApiControllerMVCIT extends API_MVC_InventoryTestBase
     // mark as retracted/registered
     ApiInventoryRecordInfo retracted =
         identifierApiManager.retractIdentifier(basicSample.getOid(), anyUser);
-    assertEquals("", retracted.getIdentifiers().get(0).getCreatorAffiliation());
-    assertEquals("", retracted.getIdentifiers().get(0).getCreatorAffiliationIdentifier());
+    assertThat(retracted.getIdentifiers().get(0).getCreatorAffiliation()).isEmpty();
+    assertThat(retracted.getIdentifiers().get(0).getCreatorAffiliationIdentifier()).isEmpty();
     assertEquals(
         null,
         dataCiteConnectorManualMock
@@ -179,13 +180,13 @@ public class InventoryPublicApiControllerMVCIT extends API_MVC_InventoryTestBase
         getFromJsonResponseBody(result, ApiInventoryRecordInfo.class);
     assertNotNull(foundRecord);
     // expect only identifier property being populated
-    assertEquals(1, foundRecord.getIdentifiers().size());
+    assertThat(foundRecord.getIdentifiers()).hasSize(1);
     assertFalse(foundRecord.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
     assertNull(foundRecord.getName());
-    assertEquals(0, foundRecord.getTags().size());
+    assertThat(foundRecord.getTags()).isEmpty();
     assertNull(foundRecord.getDescription());
-    assertEquals(0, ((ApiSampleWithoutSubSamples) foundRecord).getFields().size());
-    assertEquals(0, foundRecord.getExtraFields().size());
+    assertThat(((ApiSampleWithoutSubSamples) foundRecord).getFields()).isEmpty();
+    assertThat(foundRecord.getExtraFields()).isEmpty();
 
     // update identifier so custom fields are being published
     ApiSample sampleUpdate = new ApiSample();
@@ -215,12 +216,12 @@ public class InventoryPublicApiControllerMVCIT extends API_MVC_InventoryTestBase
     foundRecord = getFromJsonResponseBody(result, ApiInventoryRecordInfo.class);
     assertNotNull(foundRecord);
     // more details expected if customFieldsOnPublicPage=true (RSDEV-76)
-    assertEquals(1, foundRecord.getIdentifiers().size());
+    assertThat(foundRecord.getIdentifiers()).hasSize(1);
     assertTrue(foundRecord.getIdentifiers().get(0).getCustomFieldsOnPublicPage());
     assertNull(foundRecord.getName()); // name always null
-    assertEquals(1, foundRecord.getTags().size());
+    assertThat(foundRecord.getTags()).hasSize(1);
     assertEquals("complexSampleDescription", foundRecord.getDescription());
-    assertEquals(10, ((ApiSampleWithoutSubSamples) foundRecord).getFields().size());
-    assertEquals(1, foundRecord.getExtraFields().size());
+    assertThat(((ApiSampleWithoutSubSamples) foundRecord).getFields()).hasSize(10);
+    assertThat(foundRecord.getExtraFields()).hasSize(1);
   }
 }

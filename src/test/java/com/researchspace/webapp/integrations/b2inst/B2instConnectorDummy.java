@@ -4,8 +4,10 @@ import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instRecordLinks;
 import com.researchspace.b2inst.model.response.B2instRequestResponse;
+import com.researchspace.b2inst.model.response.B2instSearchResult;
 import java.util.Optional;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Test double capturing the payload sent to B2INST; always configured and enabled. Mirrors {@code
@@ -63,13 +65,34 @@ public class B2instConnectorDummy implements B2instConnector {
     return Optional.empty();
   }
 
+  /** The one published record this double knows, answered by search and by id; null means none. */
+  @Setter private B2instDraftRecord publishedRecord;
+
+  /** The one record this double knows is on page 0 only, so a paging test sees page 1 empty. */
+  @Override
+  public B2instSearchResult searchPublicRecords(String query, int pageNumber, int pageSize) {
+    B2instSearchResult result = new B2instSearchResult();
+    if (publishedRecord != null && pageNumber == 0) {
+      result.getHits().getHits().add(publishedRecord);
+    }
+    result.getHits().setTotal(publishedRecord == null ? 0 : 1);
+    return result;
+  }
+
+  @Override
+  public Optional<B2instDraftRecord> getPublicRecordByHandle(String handle) {
+    return B2instConnector.handleSuffix(handle).flatMap(this::getPublishedRecord);
+  }
+
   /**
-   * Nothing published: {@link #publishDoi(String)} here does not move the record on, so a record
-   * this double created is still only a draft.
+   * Nothing published unless a test set {@code publishedRecord}: {@link #publishDoi(String)} here
+   * does not move the record on, so a record this double created is still only a draft.
    */
   @Override
   public Optional<B2instDraftRecord> getPublishedRecord(String rid) {
-    return Optional.empty();
+    return publishedRecord != null && rid.equals(publishedRecord.getId())
+        ? Optional.of(publishedRecord)
+        : Optional.empty();
   }
 
   /**

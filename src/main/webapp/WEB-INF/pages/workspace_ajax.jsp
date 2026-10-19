@@ -249,6 +249,6 @@
 </div>
 
 <div class="tabularViewBottom">
-    <axt:paginate_new paginationList="${paginationList}" omitATagLinkId="true"></axt:paginate_new>
+    <axt:paginate paginationList="${paginationList}" omitATagLinkId="true"></axt:paginate>
     <axt:numRecords></axt:numRecords>
 </div>

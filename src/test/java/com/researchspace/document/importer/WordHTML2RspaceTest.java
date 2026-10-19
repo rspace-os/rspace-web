@@ -1,13 +1,16 @@
 package com.researchspace.document.importer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.linkedelements.FieldContents;
+import com.researchspace.linkedelements.FieldParser;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
+import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
@@ -26,6 +29,8 @@ public class WordHTML2RspaceTest extends SpringTransactionalTest {
 
   File wordHtml;
   File word2rspaceFolder;
+  @Autowired FieldParser fieldParser;
+  @Autowired IPermissionUtils permissionUtils;
   @Autowired RichTextUpdater updater;
   @Autowired RSpaceDocumentCreator creator;
   final int NUM_IMAGES_IN_HTML = 3;
@@ -57,6 +62,47 @@ public class WordHTML2RspaceTest extends SpringTransactionalTest {
     String text = getBasicDocumentText(created);
     FieldContents contents = fieldParser.findFieldElementsInContent(text);
     assertEquals(3, contents.getElements(EcatImage.class).size());
+  }
+
+  @Test
+  public void replacementPreservesIdentityAndSynchronizesImages() throws Exception {
+    User user = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(user);
+    logoutAndLoginAs(user);
+    Folder root = folderDao.getRootRecordForUser(user);
+    StructuredDocument target = recordMgr.createBasicDocument(root.getId(), user);
+    target.setName("Keep this name");
+    recordMgr.save(target, user);
+    Long fieldId = target.getFields().get(0).getId();
+    HTMLContentProvider provider = new HTMLContentProvider(word2rspaceFolder, wordHtml);
+    var updated = creator.replace(target.getId(), provider, "different.docx", user);
+    assertEquals(target.getId(), updated.getId());
+    assertEquals("Keep this name", updated.getName());
+    assertEquals(fieldId, updated.asStrucDoc().getFields().get(0).getId());
+    assertEquals(NUM_IMAGES_IN_HTML, getImagesFromTextField(updated.asStrucDoc()).size());
+    // Replacing again retires old links while retaining them for revision history.
+    updated = creator.replace(target.getId(), provider, "different.docx", user);
+    assertEquals(NUM_IMAGES_IN_HTML, getImagesFromTextField(updated.asStrucDoc()).size());
+    var attachments = fieldMgr.getFieldAttachments(fieldId);
+    assertEquals(
+        NUM_IMAGES_IN_HTML, attachments.stream().filter(link -> !link.isDeleted()).count());
+    assertEquals(NUM_IMAGES_IN_HTML, attachments.stream().filter(link -> link.isDeleted()).count());
+  }
+
+  @Test
+  public void replacementRejectsDocumentDeletedForOwner() throws Exception {
+    User user = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(user);
+    logoutAndLoginAs(user);
+    Folder root = folderDao.getRootRecordForUser(user);
+    StructuredDocument target = recordMgr.createBasicDocument(root.getId(), user);
+    recordMgr.save(target, user);
+    target.getParents().iterator().next().markRecordInFolderDeleted(true);
+    HTMLContentProvider provider = new HTMLContentProvider(word2rspaceFolder, wordHtml);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> creator.replace(target.getId(), provider, "different.docx", user));
   }
 
   @Test

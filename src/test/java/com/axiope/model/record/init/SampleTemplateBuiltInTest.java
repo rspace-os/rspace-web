@@ -1,7 +1,6 @@
 package com.axiope.model.record.init;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleTemplate;
@@ -25,7 +24,7 @@ public class SampleTemplateBuiltInTest {
 
     User anyUser = TestFactory.createAnyUser("any");
     Optional<SampleTemplate> opt = antibody.createSampleTemplate(anyUser);
-    assertTrue(opt.isPresent());
-    assertEquals(10, opt.get().getActiveFields().size());
+    assertThat(opt).isPresent();
+    assertThat(opt.get().getActiveFields()).hasSize(10);
   }
 }

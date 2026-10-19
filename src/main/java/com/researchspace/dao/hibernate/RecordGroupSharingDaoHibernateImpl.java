@@ -16,6 +16,7 @@ import com.researchspace.model.TaggableElnRecord;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.sort.SharedRecordSort;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -377,7 +378,12 @@ public class RecordGroupSharingDaoHibernateImpl
       }
     }
 
-    qStr = qStr + " order by " + translateOrderBy(pcg.getOrderBy()) + " " + pcg.getSortOrder();
+    qStr =
+        qStr
+            + " order by "
+            + orderByPath(SharedRecordSort.fromRequest(pcg.getOrderBy()))
+            + " "
+            + pcg.getSortOrder();
 
     Query<Long> countQ = session.createQuery(qStrCount, Long.class);
     Query<RecordGroupSharing> query = session.createQuery(qStr, RecordGroupSharing.class);
@@ -407,20 +413,20 @@ public class RecordGroupSharingDaoHibernateImpl
     return rc;
   }
 
-  private String translateOrderBy(String orderBy) {
-    if (orderBy != null) {
-      switch (orderBy) {
-        case "sharee":
-          return "coalesce(rgs.sharee.displayName, concat(rgs.sharee.firstName, ' ',"
-              + " rgs.sharee.lastName))";
-        case "creationDate":
-          return "rgs.creationDate";
-        case "name":
-        default:
-          return "rgs.shared.editInfo.name";
-      }
-    } else {
-      return "rgs.shared.editInfo.name";
+  private String orderByPath(SharedRecordSort sort) {
+    switch (sort) {
+      case SHAREE:
+        return "coalesce(rgs.sharee.displayName, concat(rgs.sharee.firstName, ' ',"
+            + " rgs.sharee.lastName))";
+      case CREATION_DATE:
+        return "rgs.creationDate";
+      case CREATION_DATE_MILLIS:
+        return "rgs.shared.editInfo.creationDateMillis";
+      case MODIFICATION_DATE_MILLIS:
+        return "rgs.shared.editInfo.modificationDateMillis";
+      case NAME:
+      default:
+        return "rgs.shared.editInfo.name";
     }
   }
 

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,7 +37,7 @@ public class QuantitiesApiControllerMVCIT extends API_MVC_TestBase {
             .andReturn();
     assertNull(result.getResolvedException());
     ApiQuantityInfo resultQuantity = getFromJsonResponseBody(result, ApiQuantityInfo.class);
-    assertEquals("251", resultQuantity.getNumericValue().toString());
+    assertThat(resultQuantity.getNumericValue()).hasToString("251");
     assertEquals(3, resultQuantity.getUnitId());
   }
 }
