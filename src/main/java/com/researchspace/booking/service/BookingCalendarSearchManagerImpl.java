@@ -4,6 +4,7 @@ import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingCalendarQuery;
 import com.researchspace.booking.dao.BookingItemQuery;
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.collection.ResourcePage;
@@ -54,7 +55,7 @@ public class BookingCalendarSearchManagerImpl implements BookingCalendarSearchMa
     return bookings.getBookings(
         unfiltered.restrict(BookingCalendarQuery.interval(start, end)),
         caller,
-        BookingItemQuery.and(
+        Predicate.and(
             query.eventFilter(request, text, caller),
             ownedByCaller
                 ? itemQuery.ownedBy(caller, "booking.bookingConfiguration.target")
