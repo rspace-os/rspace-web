@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  * <p>Pure string handling. Anything here that binds a value takes the {@link RsqlCompilationState}
  * so the parameter name it generates stays unique across the whole predicate.
  */
-final class RsqlSqlFragments {
+public final class RsqlSqlFragments {
 
   private RsqlSqlFragments() {}
 
@@ -62,7 +62,7 @@ final class RsqlSqlFragments {
                 Collectors.joining(" AND "), expression -> "(" + expression + ")"));
   }
 
-  static String like(String path, String parameter, boolean negated) {
+  public static String like(String path, String parameter, boolean negated) {
     return "LOWER("
         + path
         + ") "

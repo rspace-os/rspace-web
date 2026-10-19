@@ -4,7 +4,17 @@
  * <p>{@link com.researchspace.dao.query.RsqlCollectionQuery} is the public entry point. Expression
  * traversal routes selectors to relationship or runtime-field storage compilers. Value predicates
  * are delegated through {@code RsqlFieldPredicateCompilerRegistry}; parameters, aliases,
- * subqueries, and complexity counters remain in one compilation state.
+ * subqueries, and complexity counters remain in compilation state. Nested scopes share one name
+ * allocator while keeping their subqueries inside the correlated parent. Independent compilations
+ * are deterministic; use {@code newCompilation()} when composing several predicates in one query,
+ * or use distinct explicit prefixes for independently compiled restrictions. Compose predicates
+ * through {@code Predicate.and/or} to reject conflicting bindings, then use {@code applyTo} to
+ * install their expression, recursive subqueries, and parameters together.
+ *
+ * <p>The parser limits caller filters to 10 LIKE-producing comparisons. Compilation separately
+ * limits the generated LIKE/NOT LIKE predicates to 50 across direct and nested caller filters: one
+ * word-based LIKE comparison can generate several predicates. Trusted access constraints do not
+ * consume this caller budget.
  *
  * <p>To add a runtime field type, define its parsing, serialization, and permitted operators in the
  * collection model, then explicitly register its storage comparison semantics. Canonical ISO dates

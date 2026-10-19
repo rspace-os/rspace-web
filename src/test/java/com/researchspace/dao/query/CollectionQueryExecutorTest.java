@@ -1,6 +1,8 @@
 package com.researchspace.dao.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -8,10 +10,14 @@ import static org.mockito.Mockito.when;
 
 import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.blazebit.persistence.MultipleSubqueryInitiator;
 import com.blazebit.persistence.PagedList;
 import com.blazebit.persistence.PaginatedCriteriaBuilder;
 import com.blazebit.persistence.SelectObjectBuilder;
+import com.blazebit.persistence.SubqueryBuilder;
+import com.blazebit.persistence.SubqueryInitiator;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
+import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.Field;
@@ -24,6 +30,7 @@ import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.Sort;
 import java.util.List;
+import java.util.Map;
 import org.hibernate.Session;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -127,11 +134,11 @@ class CollectionQueryExecutorTest {
 
     assertEquals(List.of(row), result.resources());
     assertEquals(5L, result.total());
-    verify(projection).whereExpression("item.name = :rsql0");
+    verify(projection)
+        .whereExpression(
+            "(item.name = :rsql0) AND (item.entityId < :rsql1) AND (item.entityId > :rsqlAccess0)");
     verify(projection).setParameter("rsql0", "Ada");
-    verify(projection).whereExpression("item.entityId < :rsqlRequestAccess0");
-    verify(projection).setParameter("rsqlRequestAccess0", 10L);
-    verify(projection).whereExpression("item.entityId > :rsqlAccess0");
+    verify(projection).setParameter("rsql1", 10L);
     verify(projection).setParameter("rsqlAccess0", 1L);
     verify(projection).orderBy("item.name", false);
     verify(projection).page(2, 2);
@@ -169,6 +176,23 @@ class CollectionQueryExecutorTest {
     verify(query).setMaxResults(1000);
   }
 
+  @Test
+  void rejectsARestrictionThatWouldOverwriteTheCallerFilter() {
+    ResourceRequest request =
+        request(
+            new FilterExpression.Comparison("displayName", Operator.EQUAL, List.of("Ada"), false),
+            List.of(),
+            1,
+            20);
+    Predicate restriction = new Predicate("item.name = :rsql0", Map.of("rsql0", "Grace"));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> executor.count(factory, session, request, restriction));
+    verify(query, never()).setParameter("rsql0", "Ada");
+    verify(query, never()).setParameter("rsql0", "Grace");
+  }
+
   private static <T> void stubPage(
       CriteriaBuilder<T> builder, int first, int max, long total, Object... rows) {
     PaginatedCriteriaBuilder<T> paginated = erasedMock(PaginatedCriteriaBuilder.class);
@@ -195,6 +219,41 @@ class CollectionQueryExecutorTest {
   @SuppressWarnings("unchecked") // Mockito has no Class token for parameterized third-party APIs.
   private static <T> T erasedMock(Class<?> rawType) {
     return (T) mock(rawType);
+  }
+
+  @Test
+  void recursivelyBuildsNestedExistsSubqueriesThroughBlaze() {
+    SubqueryBuilder<?> outerBuilder = erasedMock(SubqueryBuilder.class);
+    SubqueryInitiator<?> outerSubquery = erasedMock(SubqueryInitiator.class);
+    MultipleSubqueryInitiator<?> outerInitiator = erasedMock(MultipleSubqueryInitiator.class);
+    SubqueryBuilder<?> innerBuilder = erasedMock(SubqueryBuilder.class);
+    SubqueryInitiator<?> innerSubquery = erasedMock(SubqueryInitiator.class);
+    MultipleSubqueryInitiator<?> innerInitiator = erasedMock(MultipleSubqueryInitiator.class);
+    stubPage(query, 0, 1, 1);
+
+    doReturn(outerInitiator).when(query).whereExpressionSubqueries("EXISTS outerSub");
+    doReturn(outerSubquery).when(outerInitiator).with("outerSub");
+    doReturn(outerBuilder).when(outerSubquery).from(Widget.class, "outer");
+    doReturn(outerBuilder).when(outerBuilder).select("1");
+    doReturn(innerInitiator).when(outerBuilder).whereExpressionSubqueries("EXISTS innerSub");
+    doReturn(innerSubquery).when(innerInitiator).with("innerSub");
+    doReturn(innerBuilder).when(innerSubquery).from(Widget.class, "inner");
+    doReturn(innerBuilder).when(innerBuilder).select("1");
+
+    Subquery nested = new Subquery(Widget.class, "inner", "inner.entityId = outer.entityId");
+    Subquery outer =
+        new Subquery(Widget.class, "outer", "EXISTS innerSub", Map.of("innerSub", nested));
+    Predicate restriction =
+        new Predicate("EXISTS outerSub", Map.of("nestedParam", 7L), Map.of("outerSub", outer));
+
+    assertEquals(
+        1L, executor.count(factory, session, request(null, List.of(), 1, 20), restriction));
+
+    verify(query).whereExpressionSubqueries("EXISTS outerSub");
+    verify(outerBuilder).whereExpressionSubqueries("EXISTS innerSub");
+    verify(outerBuilder, never()).whereExpression("EXISTS innerSub");
+    verify(innerBuilder).whereExpression("inner.entityId = outer.entityId");
+    verify(query).setParameter("nestedParam", 7L);
   }
 
   private static ResourceRequest request(

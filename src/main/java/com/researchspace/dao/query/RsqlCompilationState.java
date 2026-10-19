@@ -6,70 +6,90 @@ import com.researchspace.model.collection.RuntimeFieldSelection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * The mutable state built up while compiling one collection filter: the bound parameters, the
- * subqueries hoisted out of it, and the counters that keep generated names distinct and hold the
- * complexity limit.
- *
- * <p>Threaded through the compiler as an explicit argument rather than held on {@link
- * RsqlCollectionQuery}, so that a single query object can compile several predicates without them
- * bleeding into each other.
- */
+/** Parameters and subqueries belong to a scope; generated names span its whole compilation. */
 final class RsqlCompilationState {
 
-  private final String prefix;
+  /** Owned by one compilation, including its nested scopes. Never shared by independent calls. */
+  static final class Names {
+    private final String prefix;
+    private int parameters;
+    private int aliases;
+
+    Names(String prefix) {
+      this.prefix = prefix;
+    }
+
+    String parameter() {
+      return prefix + parameters++;
+    }
+
+    String alias() {
+      return prefix + "Target" + aliases++;
+    }
+  }
+
+  private final Names names;
   private final boolean enforceComplexityLimit;
-  private int sequence;
   private int likePredicates;
-  private int targetAliases;
+  private final Map<String, Object> parameters = new LinkedHashMap<>();
+  private final Map<String, RsqlCollectionQuery.Subquery> subqueries = new LinkedHashMap<>();
 
   final RelationshipReadAccess targets;
   final RuntimeFieldSelection runtime;
-  final Map<String, Object> parameters = new LinkedHashMap<>();
-  final Map<String, RsqlCollectionQuery.Subquery> subqueries = new LinkedHashMap<>();
 
   RsqlCompilationState(
-      String prefix,
+      Names names,
       RelationshipReadAccess targets,
       RuntimeFieldSelection runtime,
       boolean enforceComplexityLimit) {
-    this.prefix = prefix;
+    this.names = names;
     this.targets = targets;
     this.runtime = runtime;
     this.enforceComplexityLimit = enforceComplexityLimit;
+  }
+
+  RsqlCompilationState nested(boolean enforceLimit) {
+    return new RsqlCompilationState(
+        names, RelationshipReadAccess.none(), RuntimeFieldSelection.empty(), enforceLimit);
   }
 
   boolean enforcesComplexityLimit() {
     return enforceComplexityLimit;
   }
 
-  int likePredicateCount() {
-    return likePredicates;
+  RsqlCollectionQuery.Predicate predicate(String expression) {
+    return new RsqlCollectionQuery.Predicate(expression, parameters, subqueries, likePredicates);
   }
 
-  /** A distinct alias per subquery, so nested targets cannot shadow each other. */
   String nextTargetAlias() {
-    return prefix + "Target" + targetAliases++;
+    return names.alias();
   }
 
-  /** Folds a separately compiled predicate in, keeping its already-distinct parameter names. */
   String merge(RsqlCollectionQuery.Predicate predicate) {
+    RsqlCollectionQuery.mergeMappings(parameters, predicate.parameters(), "parameter");
+    RsqlCollectionQuery.mergeMappings(subqueries, predicate.subqueries(), "subquery");
     recordLikePredicates(predicate.callerLikePredicateCount());
-    parameters.putAll(predicate.parameters());
-    subqueries.putAll(predicate.subqueries());
     return predicate.expression();
   }
 
-  /** A placeholder distinct from the subquery's own entity alias, which Blaze also parses. */
   String addSubquery(RsqlCollectionQuery.Subquery subquery) {
     String name = subquery.alias() + "Sub";
-    subqueries.put(name, subquery);
+    RsqlCollectionQuery.mergeMappings(subqueries, Map.of(name, subquery), "subquery");
     return name;
   }
 
+  /** Keeps the nested scope's subqueries inside their correlated parent. */
+  String addSubquery(
+      Class<?> entityType, String alias, String expression, RsqlCompilationState scope) {
+    RsqlCollectionQuery.mergeMappings(parameters, scope.parameters, "parameter");
+    recordLikePredicates(scope.likePredicates);
+    return addSubquery(
+        new RsqlCollectionQuery.Subquery(entityType, alias, expression, scope.subqueries));
+  }
+
   String add(Object value) {
-    String name = prefix + sequence++;
-    parameters.put(name, value);
+    String name = names.parameter();
+    RsqlCollectionQuery.mergeMappings(parameters, Map.of(name, value), "parameter");
     return name;
   }
 

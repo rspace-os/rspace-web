@@ -3,10 +3,13 @@ package com.researchspace.dao.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
+import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessFunction;
@@ -26,6 +29,7 @@ import com.researchspace.model.collection.ResourceMember;
 import com.researchspace.model.collection.ResourceReference;
 import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.RsqlFilterParser;
+import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.SplitReferenceBinding;
 import java.time.Instant;
@@ -388,6 +392,78 @@ class RsqlCollectionQueryTest {
         query.translateTrusted(likeComparison("target.name", 51), fixture.targets());
 
     assertEquals(51, likeParameterCount(trusted));
+  }
+
+  @Test
+  void composesPresentPredicatesWithoutChangingBooleanGrouping() {
+    Predicate either =
+        new Predicate("item.id = :one OR item.id = :two", Map.of("one", 1L, "two", 2L));
+    Predicate after = new Predicate("item.id > :zero", Map.of("zero", 0L));
+
+    assertNull(Predicate.and(null, null));
+    assertNull(Predicate.or());
+    assertSame(either, Predicate.and(null, either));
+    assertEquals(
+        "(item.id = :one OR item.id = :two) AND (item.id > :zero)",
+        Predicate.and(either, null, after).expression());
+    assertEquals(
+        "(item.id = :one OR item.id = :two) OR (item.id > :zero)",
+        Predicate.or(either, after).expression());
+  }
+
+  @Test
+  void rejectsConflictingBindingsButAllowsEqualMappings() {
+    Subquery original = new Subquery(RelatedTarget.class, "target", "target.id = item.id");
+    Predicate first = new Predicate("EXISTS check", Map.of("id", 1L), Map.of("check", original), 2);
+    Predicate same = new Predicate("EXISTS check", Map.of("id", 1L), Map.of("check", original), 3);
+    Predicate differentParameter = new Predicate("item.id = :id", Map.of("id", 2L));
+    Predicate differentSubquery =
+        new Predicate(
+            "EXISTS check",
+            Map.of(),
+            Map.of("check", new Subquery(RelatedSample.class, "target", "target.id = item.id")));
+
+    Predicate reused = Predicate.and(first, same);
+    assertEquals(first.parameters(), reused.parameters());
+    assertEquals(first.subqueries(), reused.subqueries());
+    assertEquals(5, reused.callerLikePredicateCount());
+    assertThrows(IllegalArgumentException.class, () -> Predicate.and(first, differentParameter));
+    assertThrows(IllegalArgumentException.class, () -> Predicate.or(first, differentSubquery));
+
+    RsqlCompilationState state =
+        new RsqlCompilationState(
+            new RsqlCompilationState.Names("test"),
+            RelationshipReadAccess.none(),
+            RuntimeFieldSelection.empty(),
+            true);
+    state.merge(first);
+    state.merge(same);
+    state.addSubquery(original);
+    state.addSubquery(original);
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            state.addSubquery(new Subquery(RelatedSample.class, "target", "target.id = item.id")));
+    assertThrows(IllegalArgumentException.class, () -> state.merge(differentParameter));
+    assertThrows(IllegalArgumentException.class, () -> state.merge(differentSubquery));
+  }
+
+  @Test
+  void sharesNamesWithinAnOperationAndRestartsThemForIndependentCompilations() {
+    LikeBudgetFixture fixture = likeBudgetFixture();
+    RsqlCollectionQuery query = new RsqlCollectionQuery(fixture.source(), "item");
+    RsqlCollectionQuery.Compilation compilation = query.newCompilation();
+    FilterExpression filter = likeComparison("target.name", 1);
+
+    Predicate caller = compilation.translate(filter, fixture.targets());
+    Predicate access = compilation.translateTrusted(filter, fixture.targets());
+    Predicate combined = Predicate.and(caller, access);
+
+    assertEquals(2, combined.parameters().size());
+    assertEquals(2, combined.subqueries().size());
+    assertEquals(1, combined.callerLikePredicateCount());
+    assertEquals(
+        query.translate(filter, fixture.targets()), query.translate(filter, fixture.targets()));
   }
 
   private static FilterExpression.Comparison likeComparison(String field, int wordCount) {
