@@ -12,8 +12,7 @@ import com.researchspace.model.collection.Operator;
 /** Comparisons against native scalar properties or canonical text values. */
 final class RsqlScalarPredicateCompiler implements RsqlFieldPredicateCompiler {
   @Override
-  public String compile(
-      FilterExpression.Comparison comparison, String path, RsqlCompilationState state) {
+  public String compile(FilterExpression.Comparison comparison, String path, Context state) {
     Operator operator = comparison.operator();
     if (operator == Operator.IN || operator == Operator.NOT_IN) {
       String parameter = state.add(comparison.values());

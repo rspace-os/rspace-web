@@ -42,13 +42,30 @@ public final class RsqlCollectionQuery {
    */
   public RsqlCollectionQuery(
       CollectionDescription<?> description, String alias, String parameterPrefix) {
-    this.description = description;
+    this(description, alias, parameterPrefix, RsqlFieldPredicateCompilerRegistry.builtIns());
+  }
+
+  public RsqlCollectionQuery(
+      CollectionDescription<?> description,
+      String alias,
+      RsqlFieldPredicateCompilerRegistry compilers) {
+    this(description, alias, "rsql", compilers);
+  }
+
+  /** Uses one immutable compiler registry throughout root and nested predicates. */
+  public RsqlCollectionQuery(
+      CollectionDescription<?> description,
+      String alias,
+      String parameterPrefix,
+      RsqlFieldPredicateCompilerRegistry compilers) {
+    this.description = Objects.requireNonNull(description, "Collection description");
+    Objects.requireNonNull(compilers, "Comparison compilers").validate(description);
     if (parameterPrefix == null || parameterPrefix.isBlank()) {
       throw new IllegalArgumentException("Parameter prefix must not be blank");
     }
     this.parameterPrefix = parameterPrefix;
-    this.relationships = new RsqlRelationshipCompiler(description, alias);
-    this.expressions = new RsqlExpressionCompiler(description, alias, relationships);
+    this.relationships = new RsqlRelationshipCompiler(description, alias, compilers);
+    this.expressions = new RsqlExpressionCompiler(description, alias, relationships, compilers);
   }
 
   /** Starts a name scope for predicates that will be composed into the same query. */
