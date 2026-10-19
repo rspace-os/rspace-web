@@ -9,6 +9,12 @@ import i18n from "../../../modules/common/i18n";
 import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import { Optional } from "../../../util/optional";
 
+declare const tinyMCE: {
+  PluginManager: {
+    add: (name: string, plugin: new (editor: Editor) => unknown) => void;
+  };
+};
+
 declare global {
   interface Window {
     insertActions?: Map<
@@ -104,5 +110,4 @@ class IdentifiersPlugin {
   }
 }
 
-// @ts-expect-error TS does not recognise the PluginManager property
 tinyMCE.PluginManager.add("identifiers", IdentifiersPlugin);

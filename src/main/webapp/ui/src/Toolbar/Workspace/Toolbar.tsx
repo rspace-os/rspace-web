@@ -27,15 +27,21 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import CreateMenu from "../ToolbarCreateMenu";
 import SocialActions from "../ToolbarSocial";
+import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
 import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
 import TagDialog from "./TagDialog";
 
-// biome-ignore lint/suspicious/noExplicitAny: legacy class component; props typed loosely like the other toolbars
-class WorkspaceToolbar extends React.Component<any, any> {
-  constructor(props) {
+export type WorkspaceToolbarProps = {
+  domContainer: HTMLElement;
+  conditionalRender: Partial<ToolbarConditionalRender>;
+  eventHandlers: Pick<ToolbarEventHandlers, "onCreateRequest">;
+};
+
+class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
+  constructor(props: WorkspaceToolbarProps) {
     super(props);
     this.state = {
       open: [false, false],

@@ -8,8 +8,7 @@ import Alerts from "@/components/Alerts/Alerts";
 import materialTheme from "../../theme";
 import OAuthTable from "./OAuthTable";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export default function OAuthTrigger(_props: any) {
+export default function OAuthTrigger() {
   const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
 

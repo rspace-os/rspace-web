@@ -1216,8 +1216,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
    * table to a valid state.
    */
   const exportAllRows = async () => {
-    // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
-    let priorSearchParameters;
+    let priorSearchParameters: ReturnType<UserListing["getSearchParameters"]> | undefined;
     const newListing: UserListing = await FetchingData.match(userListing, {
       loading: () => Promise.reject(new Error("loading")),
       error: () => Promise.reject(new Error("error")),

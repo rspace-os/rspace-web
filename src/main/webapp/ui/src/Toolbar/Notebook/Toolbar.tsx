@@ -20,11 +20,26 @@ import materialTheme from "../../theme";
 import PrintButton from "../components/PrintButton";
 import CreateMenu from "../ToolbarCreateMenu";
 import SocialActions from "../ToolbarSocial";
+import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-class NotebookToolbar extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  constructor(props: any) {
+export type NotebookToolbarProps = {
+  domContainer: HTMLElement;
+  conditionalRender: ToolbarConditionalRender;
+  eventHandlers: Pick<ToolbarEventHandlers, "onCreateRequest" | "onExportDocument">;
+};
+
+type NotebookToolbarState = {
+  workspaceFolderId: string | null;
+  settingsKey: string | null;
+  canCreateRecord: boolean;
+  pioEnabled: boolean;
+  asposeEnabled: boolean;
+  canDelete: boolean;
+  canShare: boolean;
+};
+
+class NotebookToolbar extends React.Component<NotebookToolbarProps, NotebookToolbarState> {
+  constructor(props: NotebookToolbarProps) {
     super(props);
     this.state = {
       workspaceFolderId: props.domContainer.getAttribute("data-workspace-folder-id"),

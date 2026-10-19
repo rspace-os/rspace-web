@@ -1,36 +1,31 @@
 import Skeleton from "@mui/material/Skeleton";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
-import WorkspaceToolbar from "./Toolbar";
+import type { ToolbarUpdate } from "../types";
+import WorkspaceToolbar, { type WorkspaceToolbarProps } from "./Toolbar";
 
-declare global {
-  interface Window {
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    renderToolbar: (newProps?: any) => void;
-  }
-}
-
-// biome-ignore lint/suspicious/noExplicitAny: globals assigned before use
-let rootNode: any;
-// biome-ignore lint/suspicious/noExplicitAny: globals assigned before use
-let domContainer: any;
+let rootNode: Root | null = null;
+let domContainer: HTMLElement | null = null;
 
 /*
  * We remember the last props so that renderToolbar only needs to be passed the
  * props that have changed
  */
-let prevProps = {
+let prevProps: Omit<WorkspaceToolbarProps, "domContainer"> = {
   conditionalRender: {},
   eventHandlers: {
     onCreateRequest: () => {},
   },
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-window.renderToolbar = (newProps: any) => {
-  if (!rootNode) {
-    domContainer = document.getElementById("toolbar2");
-    rootNode = createRoot(domContainer);
+window.renderToolbar = (newProps?: ToolbarUpdate) => {
+  if (!rootNode || !domContainer) {
+    const container = document.getElementById("toolbar2");
+    if (!container) {
+      throw new Error("Required workspace toolbar mount container #toolbar2 was not found.");
+    }
+    domContainer = container;
+    rootNode = createRoot(container);
   }
   prevProps = {
     conditionalRender: {

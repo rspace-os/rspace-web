@@ -21,14 +21,36 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import PrintButton from "../components/PrintButton";
 import SocialActions from "../ToolbarSocial";
+import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import SaveMenu from "./ToolbarSaveMenu";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-class StructuredDocumentToolbar extends React.Component<any, any> {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  declare context: any;
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  constructor(props: any) {
+export type StructuredDocumentToolbarProps = {
+  domContainer: HTMLElement;
+  conditionalRender: Partial<ToolbarConditionalRender>;
+  eventHandlers: ToolbarEventHandlers;
+  canSign: boolean;
+};
+
+type StructuredDocumentToolbarState = {
+  closeHref: string | null;
+  canCopy: boolean;
+  canShare: boolean;
+  canWitness: boolean;
+  canSign: boolean;
+  canDelete: boolean;
+  isCloud: boolean;
+  isTemplate: boolean;
+  emptyDocrevision: boolean;
+  version: string | null;
+};
+
+class StructuredDocumentToolbar extends React.Component<
+  StructuredDocumentToolbarProps,
+  StructuredDocumentToolbarState
+> {
+  declare context: React.ContextType<typeof AnalyticsContext>;
+
+  constructor(props: StructuredDocumentToolbarProps) {
     super(props);
     this.state = {
       closeHref: props.domContainer.getAttribute("data-close-href"),
@@ -49,7 +71,12 @@ class StructuredDocumentToolbar extends React.Component<any, any> {
       <>
         <Box component="span" sx={{ display: "flex", width: "100%" }}>
           <Tooltip title={i18n.t("common:actions.close")} enterDelay={300}>
-            <IconButton data-test-id="structured-document-back" href={this.state.closeHref} id="close">
+            <IconButton
+              component="a"
+              data-test-id="structured-document-back"
+              href={this.state.closeHref ?? undefined}
+              id="close"
+            >
               <FontAwesomeIcon icon={faTimes} />
             </IconButton>
           </Tooltip>

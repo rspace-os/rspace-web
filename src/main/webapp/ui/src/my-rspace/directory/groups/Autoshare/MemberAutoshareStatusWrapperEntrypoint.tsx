@@ -1,7 +1,9 @@
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import MemberAutoshareStatusWrapper from "@/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper";
+import MemberAutoshareStatusWrapper, {
+  type AutoshareMemberStatus,
+} from "@/my-rspace/directory/groups/Autoshare/MemberAutoshareStatusWrapper";
 
 const domContainer = document.getElementById("memberAutoshareStatusWrapper");
 
@@ -15,32 +17,30 @@ const isLabGroup = domContainer?.dataset.islabgroup === "true";
 
 const url = `/groups/ajax/autoshareMemberStatus/${groupId}`;
 
-axios.get(url).then((response) => {
+axios.get<{ data: AutoshareMemberStatus[] }>(url).then((response) => {
   const members = response.data.data;
 
-  members
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    .filter((member: any) => Boolean(document.getElementById(`autoshareStatus-${member.userId}`)))
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    .forEach((member: any) => {
-      const root = createRoot(document.getElementById(`autoshareStatus-${member.userId}`) as HTMLElement);
-      root.render(
-        <I18nRoot namespaces={["common"]}>
-          <MemberAutoshareStatusWrapper
-            isCloud={isCloud}
-            isGroupAutoshareAllowed={isGroupAutoshareAllowed}
-            groupId={groupId}
-            groupDisplayName={groupDisplayName}
-            subjectId={subjectId}
-            canManageAutoshare={canManageAutoshare}
-            isLabGroup={isLabGroup}
-            userId={member.userId}
-            username={member.username}
-            isPI={member.isPI}
-            autoshareEnabled={member.autoshareEnabled}
-            isAutoshareInProgress={member.isAutoshareInProgress}
-          />
-        </I18nRoot>,
-      );
-    });
+  members.forEach((member) => {
+    const container = document.getElementById(`autoshareStatus-${member.userId}`);
+    if (!container) return;
+    const root = createRoot(container);
+    root.render(
+      <I18nRoot namespaces={["common"]}>
+        <MemberAutoshareStatusWrapper
+          isCloud={isCloud}
+          isGroupAutoshareAllowed={isGroupAutoshareAllowed}
+          groupId={groupId}
+          groupDisplayName={groupDisplayName}
+          subjectId={subjectId}
+          canManageAutoshare={canManageAutoshare}
+          isLabGroup={isLabGroup}
+          userId={member.userId}
+          username={member.username}
+          isPI={member.isPI}
+          autoshareEnabled={member.autoshareEnabled}
+          isAutoshareInProgress={member.isAutoshareInProgress}
+        />
+      </I18nRoot>,
+    );
+  });
 });

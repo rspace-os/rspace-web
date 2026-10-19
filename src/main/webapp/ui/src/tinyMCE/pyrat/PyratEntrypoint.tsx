@@ -5,16 +5,19 @@ import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import PyratDialog from "./PyratDialog";
+import PyratDialog, { type PyratDialogProps, type PyratEditor } from "./PyratDialog";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const tinymce: any;
+type PyratDialogUpdates = Partial<Pick<PyratDialogProps, "open" | "onClose">>;
+
+declare const tinymce: {
+  PluginManager: {
+    add: (name: string, plugin: new (editor: PyratEditor) => unknown) => void;
+  };
+};
 
 class PyratPlugin {
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  constructor(editor: any) {
-    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-    function* renderPyrat(domContainer: any): Generator<void, void, any> {
+  constructor(editor: PyratEditor) {
+    function* renderPyrat(domContainer: HTMLElement): Generator<void, void, PyratDialogUpdates> {
       const root = createRoot(domContainer);
       while (true) {
         const newProps = yield;
@@ -30,12 +33,14 @@ class PyratPlugin {
       }
     }
 
-    if (!document.getElementById("tinymce-pyrat")) {
+    let domContainer = document.getElementById("tinymce-pyrat");
+    if (!domContainer) {
       const div = document.createElement("div");
       div.id = "tinymce-pyrat";
       document.body.appendChild(div);
+      domContainer = div;
     }
-    const pyratRenderer = renderPyrat(document.getElementById("tinymce-pyrat"));
+    const pyratRenderer = renderPyrat(domContainer);
     pyratRenderer.next({ open: false });
 
     // Add a button to the toolbar

@@ -7,8 +7,7 @@ import { useTranslation } from "react-i18next";
 import materialTheme from "../../theme";
 import ConnectedAppsTable from "./ConnectedAppsTable";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export default function ConnectedAppsTrigger(_props: any) {
+export default function ConnectedAppsTrigger() {
   const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
 

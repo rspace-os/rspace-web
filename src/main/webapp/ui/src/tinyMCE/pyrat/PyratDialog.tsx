@@ -33,6 +33,23 @@ import Filter from "./Filter";
 import FilterButton from "./FilterButton";
 import ResultsTable from "./ResultsTable";
 
+export type PyratEditor = {
+  id: string;
+  execCommand: (command: string, ui: boolean, value?: string) => void;
+  ui: {
+    registry: {
+      addButton: (name: string, config: { tooltip: string; icon: string; onAction: () => void }) => void;
+      addMenuItem: (name: string, config: { text: string; icon: string; onAction: () => void }) => void;
+    };
+  };
+};
+
+export type PyratDialogProps = {
+  editor: PyratEditor;
+  open: boolean;
+  onClose: () => void;
+};
+
 function useAuthenticatedServers() {
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [servers, setServers] = React.useState<any[]>([]);
@@ -527,8 +544,7 @@ function PyratListing({
   );
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-export default function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClose: any }) {
+export default function PyratDialog({ editor, open, onClose }: PyratDialogProps) {
   const [selectedServer, setSelectedServer] = React.useState<PyratServer | null>(null);
   const servers = useAuthenticatedServers();
   const { t } = useTranslation(["apps", "common", "workspace"]);
