@@ -120,7 +120,7 @@ pipeline {
                     notify currentBuild.result
                 }
                 success {
-                    junit 'target/surefire-reports/*.xml'
+                    junit 'target/surefire-reports/**/*.xml'
                 }
             }
         }
@@ -324,7 +324,7 @@ pipeline {
                 }
 
                 success {
-                    junit 'target/surefire-reports/*.xml'
+                    junit 'target/surefire-reports/**/*.xml'
                     jacoco(
                             execPattern: '**/**.exec',
                             classPattern: '**/classes',
@@ -362,7 +362,7 @@ pipeline {
                 always {
                     script {
                         try {
-                            junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+                            junit testResults: 'target/surefire-reports/**/*.xml', allowEmptyResults: true
                         } finally {
                             sh 'docker stop "${CHEMISTRY_CONTAINER_NAME}" || true'
                             sh 'rm -rf "${RS_FILE_BASE}"'

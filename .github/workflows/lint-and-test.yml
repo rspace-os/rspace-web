@@ -131,7 +131,7 @@ jobs:
           )
         with:
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: target/surefire-reports/**/*.xml
 
   frontend-checks:
     runs-on: ubuntu-latest
@@ -668,7 +668,7 @@ jobs:
         with:
           check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: target/surefire-reports/**/*.xml
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -762,7 +762,7 @@ jobs:
         with:
           check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: target/surefire-reports/**/*.xml
 
   chemistry-tests:
     runs-on: ubuntu-latest
@@ -847,7 +847,7 @@ jobs:
         with:
           check_name: Chemistry integration tests
           comment_mode: off
-          files: target/surefire-reports/*.xml
+          files: target/surefire-reports/**/*.xml
 
   # WAR build with the production frontend bundle, tests skipped. Replaces the
   # Jenkins "Build feature branch" stage. Needs both the JDK and Node/pnpm
