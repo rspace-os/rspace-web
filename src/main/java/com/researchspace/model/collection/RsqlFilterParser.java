@@ -18,10 +18,8 @@ import cz.jirutka.rsql.parser.ast.ComparisonOperator;
 import cz.jirutka.rsql.parser.ast.LogicalNode;
 import cz.jirutka.rsql.parser.ast.Node;
 import cz.jirutka.rsql.parser.ast.OrNode;
-import cz.jirutka.rsql.parser.ast.RSQLOperators;
 import cz.jirutka.rsql.parser.ast.RSQLVisitor;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,17 +47,9 @@ public final class RsqlFilterParser {
           Map.entry(CONTAINS, Operator.CONTAINS),
           Map.entry(LIKE, Operator.LIKE),
           Map.entry(EXISTS, Operator.EXISTS));
-  private static final Set<ComparisonOperator> OPERATORS;
+  private static final Set<ComparisonOperator> OPERATORS = Set.copyOf(OPERATOR_MAPPING.keySet());
   private static final String CURRENT_SUBJECT_ALIAS = "me";
   private static final String USERS_RESOURCE = "users";
-
-  static {
-    Set<ComparisonOperator> operators = new HashSet<>(RSQLOperators.defaultOperators());
-    operators.add(CONTAINS);
-    operators.add(LIKE);
-    operators.add(EXISTS);
-    OPERATORS = Set.copyOf(operators);
-  }
 
   private final CollectionDescription<?> description;
   private final ResourceRegistry registry;
@@ -159,11 +149,14 @@ public final class RsqlFilterParser {
   }
 
   public FilterExpression parse(String rsql) {
-    if (rsql == null || rsql.isBlank()) {
+    if (rsql == null) {
       return null;
     }
     if (rsql.length() > CollectionQueryLimits.MAX_WHERE_LENGTH) {
       throw new CollectionQueryException(CollectionQueryException.Reason.COMPLEXITY);
+    }
+    if (rsql.isBlank()) {
+      return null;
     }
     validateNesting(rsql);
     try {
