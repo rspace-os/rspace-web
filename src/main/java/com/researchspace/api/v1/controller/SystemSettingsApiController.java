@@ -118,7 +118,9 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
     settings.setEnabled(getPropertyValue(propertiesMap, p.enabled()));
     settings.setServerUrl(getPropertyValue(propertiesMap, p.serverUrl()));
     settings.setUsername(getPropertyValue(propertiesMap, p.username()));
-    settings.setPassword(getPropertyValue(propertiesMap, p.password()));
+    // RSDEV-1525: a stored secret is returned as null and an unset one as ""; null keeps it on save
+    String password = getPropertyValue(propertiesMap, p.password());
+    settings.setPassword(password == null || password.isEmpty() ? "" : null);
     settings.setRepositoryPrefix(
         p.repositoryPrefix() == null ? "" : getPropertyValue(propertiesMap, p.repositoryPrefix()));
     return settings;

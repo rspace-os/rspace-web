@@ -25,11 +25,6 @@ class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
     return message;
   }
 
-  @Override
-  protected String getPostUrlSetting() {
-    return url;
-  }
-
   RestTemplate getRestTemplate() {
     return template;
   }
@@ -38,7 +33,8 @@ class DummyExternalMessageSender extends AbstractExternalWebhookMessageSender {
     this.template = template;
   }
 
-  String doGetPostUrl(AppConfigElementSet messageConfig) {
+  @Override
+  protected String doGetPostUrl(AppConfigElementSet messageConfig) {
     return url;
   }
 

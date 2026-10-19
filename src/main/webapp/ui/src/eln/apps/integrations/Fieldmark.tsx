@@ -3,19 +3,19 @@ import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/fieldmark";
 import FieldmarktIcon from "../../../assets/branding/fieldmark/logo.svg";
+import SecretField, { secretAfterSave } from "../../../components/Inputs/SecretField";
 import { Optional } from "../../../util/optional";
 import IntegrationCard from "../IntegrationCard";
 import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type FieldmarkArgs = {
   integrationState: IntegrationStates["FIELDMARK"];
-  update: (newIntegrationState: IntegrationStates["FIELDMARK"]) => void;
+  update: (newIntegrationState: IntegrationStates["FIELDMARK"]) => Promise<void>;
 };
 
 /*
@@ -26,6 +26,8 @@ type FieldmarkArgs = {
 function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode {
   const { t } = useTranslation(["apps", "common"]);
   const [apiKey, setApiKey] = React.useState(integrationState.credentials.FIELDMARK_USER_TOKEN.orElse(""));
+  const [storedSecretExists, setStoredSecretExists] = React.useState(apiKey !== "");
+  const [saving, setSaving] = React.useState(false);
 
   return (
     <Grid
@@ -53,29 +55,43 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
+                  if (saving) return;
+                  setSaving(true);
                   void update({
                     mode: integrationState.mode,
                     credentials: {
                       FIELDMARK_USER_TOKEN: Optional.present(apiKey),
                     },
-                  });
+                  })
+                    .then(
+                      () => {
+                        setStoredSecretExists(apiKey !== "");
+                        setApiKey(secretAfterSave(apiKey));
+                      },
+                      () => {
+                        // update() has already shown the error; keep the typed key so it can be retried
+                      },
+                    )
+                    .finally(() => setSaving(false));
                 }}
               >
                 <CardContent>
-                  <TextField
+                  <SecretField
                     fullWidth
                     variant="outlined"
                     label={t("integrations.fieldmark.fields.apiKey")}
-                    type="password"
                     size="small"
+                    autoComplete="new-password"
                     value={apiKey}
-                    onChange={({ target: { value } }) => {
-                      setApiKey(value);
-                    }}
+                    storedSecretExists={storedSecretExists}
+                    disabled={saving}
+                    onChange={setApiKey}
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">{t("common:actions.save")}</Button>
+                  <Button type="submit" disabled={saving}>
+                    {t("common:actions.save")}
+                  </Button>
                 </CardActions>
               </form>
             </Card>

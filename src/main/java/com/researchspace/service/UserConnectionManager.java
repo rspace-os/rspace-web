@@ -1,8 +1,10 @@
 package com.researchspace.service;
 
+import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /** Service to handle storage and retrieval of UserConnection OAuth tokens */
@@ -58,4 +60,24 @@ public interface UserConnectionManager extends GenericManager<UserConnection, Us
    * @return the saved connection
    */
   UserConnection replaceConnection(UserConnection connection);
+
+  /**
+   * Saves a new app config set and the encrypted connection holding its credentials in one
+   * transaction, so neither is kept without the other. The connection is keyed and ranked by the
+   * new set's id, which is unique, so concurrent saves cannot collide on rank.
+   *
+   * @param settings the new set's non-secret settings
+   * @param providerName the connection's provider, e.g. 'SLACK'
+   * @param secret the connection's secret, may be null
+   * @param user the owner of the set and the connection
+   * @return the saved connection
+   */
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
+  UserConnection saveWithNewAppConfigElementSet(
+      Map<String, String> settings,
+      String providerName,
+      String accessToken,
+      String secret,
+      boolean trustedOrigin,
+      User user);
 }

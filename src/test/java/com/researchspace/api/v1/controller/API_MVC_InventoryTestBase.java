@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -9,6 +10,8 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
+import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.SystemPropertyName;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -47,10 +50,14 @@ public class API_MVC_InventoryTestBase extends API_MVC_TestBase {
   protected ApiInventorySystemSettings.IdentifierSettings captureIdentifierSettings(
       SystemSettingsApiController settingsController, IdentifierType provider) throws Exception {
     User sysadmin = logoutAndLoginAsSysAdmin();
-    return settingsController
-        .getInventorySettings(new MockHttpServletRequest(), sysadmin)
-        .findByProvider(provider)
-        .orElse(null);
+    ApiInventorySystemSettings.IdentifierSettings captured =
+        settingsController
+            .getInventorySettings(new MockHttpServletRequest(), sysadmin)
+            .findByProvider(provider)
+            .orElseThrow();
+    // the GET returns a stored secret as null, and restoring null would keep what the test wrote
+    captured.setPassword(storedSecret(provider));
+    return captured;
   }
 
   /**
@@ -71,6 +78,21 @@ public class API_MVC_InventoryTestBase extends API_MVC_TestBase {
     original.setProvider(provider);
     settingsController.updateInventorySettings(
         new MockHttpServletRequest(), original, mock(BindingResult.class), sysadmin);
+    if (original.getPassword() != null) {
+      assertEquals(
+          original.getPassword(), storedSecret(provider), "identifier secret not restored");
+    }
+  }
+
+  private String storedSecret(IdentifierType provider) {
+    SystemPropertyName name =
+        switch (provider) {
+          case IGSN_DATACITE -> SystemPropertyName.IGSN_DATACITE_PASSWORD;
+          case PIDINST_DATACITE -> SystemPropertyName.PIDINST_DATACITE_PASSWORD;
+          case PIDINST_B2INST -> SystemPropertyName.PIDINST_B2INST_TOKEN;
+        };
+    SystemPropertyValue value = sysPropMgr.findByName(name);
+    return value == null ? null : value.getValue();
   }
 
   protected MockHttpServletRequestBuilder getSampleById(User user, String apiKey, Long sampleId) {
