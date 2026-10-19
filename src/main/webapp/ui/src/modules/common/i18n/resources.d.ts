@@ -1745,7 +1745,8 @@ export default interface Resources {
       "noValue": "No Value",
       "none": "None",
       "unknown": "Unknown",
-      "unknownItem": "Unknown item"
+      "unknownItem": "Unknown item",
+      "userWithUsername": "{name} ({username})"
     },
     "versionLockPicker": {
       "columns": {
