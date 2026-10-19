@@ -9,17 +9,21 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.DeclaredFieldType;
 import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
 import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.Sort;
 import com.researchspace.model.collection.WriteOperation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class ApiV2DeclaredArrayDocumentParserTest {
@@ -33,6 +37,63 @@ class ApiV2DeclaredArrayDocumentParserTest {
           Row.class,
           List.of(NAME, NUMBER),
           values -> new Row((String) values.get("name"), (Integer) values.get("number")));
+
+  @Test
+  void embeddedScalarUsesItsDocumentDecoderAndRetainsNestedErrors() throws Exception {
+    CollectionFieldType<String> nameType =
+        new CollectionFieldType<>() {
+          @Override
+          public Class<String> javaType() {
+            return String.class;
+          }
+
+          @Override
+          public InputKind inputKind() {
+            return InputKind.STRING;
+          }
+
+          @Override
+          public String parse(String value) {
+            return value;
+          }
+
+          @Override
+          public Object serialize(String value) {
+            return value;
+          }
+
+          @Override
+          public Set<Operator> operators() {
+            return Set.of();
+          }
+
+          @Override
+          public String parseDocument(JsonNode value, WriteOperation operation) {
+            assertEquals(WriteOperation.UPDATE, operation);
+            if (value.textValue().isBlank()) {
+              throw new IllegalArgumentException("Blank name");
+            }
+            return value.textValue().toUpperCase(Locale.ROOT);
+          }
+        };
+    DeclaredFieldType<List<Row>> rows =
+        CollectionFieldTypes.array(
+            Row.class,
+            List.of(Field.embedded("name", nameType, Row::name).required(), NUMBER),
+            values -> new Row((String) values.get("name"), (Integer) values.get("number")));
+    CollectionDescription<Item> description = items(rows);
+    assertEquals(
+        List.of(new Row("DECODED", 2)),
+        parse("{\"rows\":[{\"name\":\"decoded\"}]}", description, WriteOperation.UPDATE)
+            .values()
+            .get("rows"));
+    assertViolation(
+        "{\"rows\":[{\"name\":\"\"}]}",
+        description,
+        WriteOperation.UPDATE,
+        "rows[0].name",
+        Reason.INVALID_VALUE);
+  }
 
   @Test
   void replacementsRequireChildrenAndApplyChildDefaultsOnBothWriteOperations() throws Exception {
