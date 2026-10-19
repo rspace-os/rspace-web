@@ -84,6 +84,11 @@ public interface CollectionFieldType<V> {
     return parse(value.asText());
   }
 
+  /** Decodes a document value after its JSON kind has been checked, without write validation. */
+  default V parseDocument(JsonNode value, WriteOperation operation) {
+    return parseScalar(value);
+  }
+
   Object serialize(V value);
 
   /**
@@ -101,6 +106,11 @@ public interface CollectionFieldType<V> {
   }
 
   Set<Operator> operators();
+
+  /** Storage comparison semantics used to select a query adapter. */
+  default FieldComparisonStrategy comparisonStrategy() {
+    return operators().isEmpty() ? FieldComparisonStrategy.NONE : FieldComparisonStrategy.SCALAR;
+  }
 
   default boolean supportsWildcards() {
     return false;

@@ -9,8 +9,7 @@ import java.util.List;
 /** Membership comparisons for choices persisted as a JSON array of strings. */
 final class RsqlChoicePredicateCompiler implements RsqlFieldPredicateCompiler {
   @Override
-  public String compile(
-      FilterExpression.Comparison comparison, String valuePath, RsqlCompilationState state) {
+  public String compile(FilterExpression.Comparison comparison, String valuePath, Context state) {
     List<String> disjuncts = new ArrayList<>();
     String safeJson =
         "CASE WHEN FUNCTION('JSON_VALID', "
