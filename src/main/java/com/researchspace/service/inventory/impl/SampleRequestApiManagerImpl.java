@@ -122,10 +122,10 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
         sampleRequestDao.getRequestsForUser(pgCrit, role, statuses, sampleId, user);
 
     // the same few users appear on most rows, so each is looked up once per page
-    Map<String, ApiUser> usersByName = new HashMap<>();
+    Map<Long, ApiUser> usersById = new HashMap<>();
     List<ApiSampleRequestInfo> requests =
         dbRequests.getResults().stream()
-            .map(request -> toInfo(request, user, usersByName))
+            .map(request -> toInfo(request, user, usersById))
             .collect(Collectors.toList());
 
     ApiSampleRequestSearchResult apiSearchResult = new ApiSampleRequestSearchResult();
@@ -167,11 +167,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private void assertPermittedActor(SampleRequest request, User user, Actor actor) {
-    String permitted =
+    boolean permitted =
         Actor.CURRENT_OWNER.equals(actor)
-            ? request.getSample().getOwner().getUsername()
-            : request.getRequesterUsername();
-    if (!user.getUsername().equals(permitted)) {
+            ? user.getUsername().equals(request.getSample().getOwner().getUsername())
+            : request.isRequester(user);
+    if (!permitted) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.wrongActor");
     }
   }
@@ -212,21 +212,25 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   private ApiSampleRequestInfo toInfo(
-      SampleRequest request, User user, Map<String, ApiUser> usersByName) {
+      SampleRequest request, User user, Map<Long, ApiUser> usersById) {
     ApiSampleRequestInfo info = new ApiSampleRequestInfo(request);
-    info.setRequester(usersByName.computeIfAbsent(request.getRequesterUsername(), this::toApiUser));
-    info.setOriginalOwner(usersByName.computeIfAbsent(request.getOriginalOwner(), this::toApiUser));
+    info.setRequester(
+        usersById.computeIfAbsent(
+            request.getRequesterId(), id -> toApiUser(request.getRequesterUsername(), id)));
+    info.setOriginalOwner(
+        usersById.computeIfAbsent(
+            request.getOriginalOwnerId(), id -> toApiUser(request.getOriginalOwner(), id)));
     return applyOutgoingSampleRules(info, request, user);
   }
 
   private ApiSampleRequest toDetail(SampleRequest request, User user) {
     ApiSampleRequest detail = new ApiSampleRequest(request);
-    detail.setRequester(toApiUser(request.getRequesterUsername()));
-    detail.setOriginalOwner(toApiUser(request.getOriginalOwner()));
+    detail.setRequester(toApiUser(request.getRequesterUsername(), request.getRequesterId()));
+    detail.setOriginalOwner(toApiUser(request.getOriginalOwner(), request.getOriginalOwnerId()));
     for (int i = 0; i < detail.getStatusChanges().size(); i++) {
       ApiSampleRequestStatusChange apiChange = detail.getStatusChanges().get(i);
       SampleRequestStatusChange change = request.getStatusChanges().get(i);
-      apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername()));
+      apiChange.setCreatedBy(toApiUser(change.getCreatedByUsername(), change.getCreatedById()));
       if (change.getTransferredSample() != null) {
         sampleApiManager.setOtherFieldsForOutgoingApiInventoryRecord(
             apiChange.getTransferredSample(), change.getTransferredSample(), user);
@@ -236,9 +240,9 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /** A deleted user keeps their username in the record, with no id or name to resolve. */
-  private ApiUser toApiUser(String username) {
+  private ApiUser toApiUser(String username, Long userId) {
     return userDao
-        .getOptionalUserByUsername(username)
+        .getSafeNull(userId)
         .map(found -> new ApiUser(found, true))
         .orElseGet(
             () -> {
@@ -306,7 +310,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
             "inventory.sampleRequest.autoRejectedReason", new Object[] {newOwner.getFullName()});
     String fulfilledReason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
     for (SampleRequest request : sampleRequestDao.getActiveRequestsForSample(sampleId)) {
-      boolean toRequester = request.getRequesterUsername().equals(newOwner.getUsername());
+      boolean toRequester = request.isRequester(newOwner);
       SampleRequestStatus target =
           toRequester ? SampleRequestStatus.FULFILLED : SampleRequestStatus.REJECTED;
       // a PI or admin of the owner's group may transfer too, so only legality is checked
@@ -326,8 +330,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
    * see a request.
    */
   private void assertUserIsPartyToRequest(SampleRequest request, User user) {
-    if (!user.getUsername().equals(request.getRequesterUsername())
-        && !user.getUsername().equals(request.getOriginalOwner())
+    if (!request.isRequester(user)
+        && !request.isOriginalOwner(user)
         && !user.equals(request.getSample().getOwner())) {
       throw requestNotFound(request.getId());
     }

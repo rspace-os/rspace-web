@@ -96,11 +96,12 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
    * whoever was asked even after a transfer. A null role means either side.
    */
   private String roleClause(SampleRequestRole role) {
+    // ids, not usernames, so a later account with a deleted user's username does not inherit them
     return role == null
-        ? "(req.requesterUsername = :username or req.originalOwner = :username)"
+        ? "(req.requesterId = :userId or req.originalOwnerId = :userId)"
         : switch (role) {
-          case REQUESTER -> "req.requesterUsername = :username";
-          case OWNER -> "req.originalOwner = :username";
+          case REQUESTER -> "req.requesterId = :userId";
+          case OWNER -> "req.originalOwnerId = :userId";
         };
   }
 
@@ -124,7 +125,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
-    query.setParameter("username", user.getUsername());
+    query.setParameter("userId", user.getId());
     if (CollectionUtils.isNotEmpty(statuses)) {
       query.setParameterList("statuses", statuses);
     }

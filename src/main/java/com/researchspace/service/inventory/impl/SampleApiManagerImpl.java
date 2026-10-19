@@ -753,9 +753,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   /**
-   * Whoever may transfer the sample may change whether it is requestable. Resending the current
-   * value is not a change, and only turning it on needs sample requests to be enabled, so existing
-   * requestable samples stay editable.
+   * Whoever may edit and transfer the sample may change whether it is requestable; the caller has
+   * already passed the edit check. Resending the current value is not a change, and only turning it
+   * on needs sample requests to be enabled, so existing requestable samples stay editable.
    */
   private void assertRequestableChangeAllowed(
       ApiSampleWithoutSubSamples update, ApiSample current, SampleEntity dbSample, User user) {

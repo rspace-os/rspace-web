@@ -4930,12 +4930,14 @@ components:
               description: >-
                 Whether other users may request material from this sample. Always
                 false on a new sample: it can only be set by updating an existing
-                sample, by whoever may transfer it (its owner, or a PI or Lab Admin
-                of the owner's group); a change sent by anyone else is refused
-                with 422. Turning it on is also refused with 422 while sample
-                requests are not enabled for the caller; turning it off is always
-                allowed. Requests always go to the sample's owner. Visible in every
-                view of the sample, including the public view; null for templates.
+                sample, by whoever may both edit and transfer it (its owner, or a
+                PI or Lab Admin of the owner's group who may also edit it, so not a
+                PI on a member's sample shared with no one); a change sent by
+                anyone else is refused with 422. Turning it on is also refused
+                with 422 while sample requests are not enabled for the caller;
+                turning it off is always allowed. Requests always go to the
+                sample's owner. Visible in every view of the sample, including the
+                public view; null for templates.
               example: false
             revisionId:
               type: number

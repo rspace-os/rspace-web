@@ -47,6 +47,7 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -1362,6 +1363,41 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(SampleRequestStatus.FULFILLED, fulfilment.getStatus());
     assertEquals(labAdminUsername, fulfilment.getCreatedBy().getUsername());
     assertNull(fulfilment.getCreatedBy().getId(), "a deleted actor has no id");
+  }
+
+  @Test
+  public void reusedUsernameDoesNotInheritADeletedRequestersRequests() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    assertTrue(
+        userDeletionMgr
+            .removeUser(
+                fixture.requester.getId(),
+                new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+                sysadmin)
+            .isSucceeded());
+    User reused = createAndSaveUser(fixture.requesterUsername);
+
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.getRequestById(fixture.requestId, reused));
+    assertEquals(
+        0L,
+        sampleRequestApiMgr
+            .getRequestsForUser(
+                PaginationCriteria.createDefaultForClass(SampleRequest.class),
+                null,
+                null,
+                null,
+                reused)
+            .getTotalHits()
+            .longValue());
+    ApiSampleRequestStatusPut cancel = new ApiSampleRequestStatusPut();
+    cancel.setStatus(SampleRequestStatus.CANCELLED);
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.updateStatus(fixture.requestId, cancel, reused));
   }
 
   private static class SampleRequestFixture {

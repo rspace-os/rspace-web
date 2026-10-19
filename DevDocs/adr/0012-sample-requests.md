@@ -43,10 +43,13 @@ sample. An explicit `ownedBy` still narrows that search, and trashed samples nev
 it, whatever `deletedItems` says, since they cannot be requested. Its name filter (`query`)
 applies to requestable searches only; other sample searches go through Lucene as before.
 
-The flag may be changed by whoever may transfer the sample: its owner, or a PI or Lab Admin
-of the owner's group (`InventoryPermissionUtils.canUserTransferInventoryRecord`). Anyone
-else, including a group member who may edit the sample, is refused with 422. Requests still
-go to the owner, so a PI can put a member's sample up for requests: a lesser power than
+The flag may be changed by whoever may both edit and transfer the sample: its owner, or a
+PI or Lab Admin of the owner's group
+(`InventoryPermissionUtils.canUserTransferInventoryRecord`) who may also edit it. A group
+member who may only edit the sample is refused with 422. A PI cannot change it on a
+member's sample shared with no one (`OWNER_ONLY`): they may transfer that sample but not
+edit it, so the owner's choice to keep it private is not overridden. Requests still go to
+the owner, so a PI can put a member's shared sample up for requests: a lesser power than
 giving the whole sample away, which they can already do. The flag cannot be set on create,
 only by updating an existing sample, and it survives a transfer: the new owner, including a
 requester who has just received it, keeps it requestable until they switch it off.
@@ -84,16 +87,18 @@ Acting on a request is a different question: approve, reject and fulfil belong t
 sample's current owner. A request is visible to its requester, the current owner and the
 original owner; anyone else gets 404, so its existence is not disclosed.
 
-### D6 Users are stored by username
+### D6 Users are stored by id and username, without foreign keys
 
-`requesterUsername`, `originalOwner` and each history entry's `createdByUsername` are
-usernames, not foreign keys, so a request and its history survive the deletion of either
-party. The API returns them as user objects; a deleted user keeps their username with a
-null id. Deleting a user deletes the requests against their own samples, with their
-history. Where usernames are reused (SSO deployments, see `User.getSid`), a new account
-with a deleted requester's username sees that user's old requests as its own, and could
-cancel a pending one; matching on that security identifier would close this, and is left
-until reuse is seen in practice.
+The requester, the original owner and each history entry's actor are stored as a user id
+(`requesterId`, `originalOwnerId`, `createdById`) and a username, with no foreign key to
+`User`, so a request and its history survive the deletion of either party and never block
+it. Access, listings, the requester's actions and the automatic fulfilment on transfer all
+match on the id. A username can pass to a different person once its holder is deleted (a
+new local signup, or an SSO identity provider reassigning it), but an id is never reused,
+so the new account does not inherit the deleted user's requests. The username stays for
+display: the API returns each party as a user object, and a deleted user keeps their
+username with a null id. Deleting a user deletes the requests against their own samples,
+with their history.
 
 ### D7 A fixed transition table, enforced in one place
 

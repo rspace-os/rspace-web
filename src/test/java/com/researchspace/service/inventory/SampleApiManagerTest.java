@@ -1395,6 +1395,31 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void requestable_onAnOwnerOnlySample_staysWithItsOwner() {
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    initialiseContentWithEmptyContent(pi, owner);
+    Group group = createGroup("group", pi);
+    addUsersToGroup(pi, group, owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "private sample");
+    ApiSample makePrivate = new ApiSample();
+    makePrivate.setId(sample.getId());
+    makePrivate.setSharingMode(ApiInventoryRecordInfo.ApiInventorySharingMode.OWNER_ONLY);
+    sampleApiMgr.updateApiSample(makePrivate, owner);
+    // the premise: the PI may still transfer the sample, but not edit it
+    assertEquals(
+        List.of(
+            ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.CHANGE_OWNER),
+        sampleApiMgr.getApiSampleById(sample.getId(), pi).getPermittedActions());
+
+    ApiSample piChange = new ApiSample();
+    piChange.setId(sample.getId());
+    piChange.setRequestable(true);
+    assertThrows(IllegalArgumentException.class, () -> sampleApiMgr.updateApiSample(piChange, pi));
+    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+  }
+
+  @Test
   public void nameQuery_isIgnoredOutsideARequestableSearch() {
     User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
     initialiseContentWithEmptyContent(alice);

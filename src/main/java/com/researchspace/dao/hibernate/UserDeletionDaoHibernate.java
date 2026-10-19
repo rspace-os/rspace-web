@@ -312,7 +312,7 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
     }
 
     // sample requests against this user's samples, and their status history. The actors are
-    // stored as usernames, so need no clearing.
+    // stored as ids and usernames without foreign keys, so need no clearing.
     execute(
         userId,
         session,

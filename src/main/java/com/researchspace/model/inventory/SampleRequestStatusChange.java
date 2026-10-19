@@ -31,6 +31,7 @@ public class SampleRequestStatusChange implements Serializable {
   private Long id;
   private SampleRequest sampleRequest;
   private String createdByUsername;
+  private Long createdById;
   private SampleRequestStatus status;
   private String reason;
   private Sample transferredSample;
@@ -47,6 +48,7 @@ public class SampleRequestStatusChange implements Serializable {
       Sample transferredSample) {
     this.sampleRequest = sampleRequest;
     this.createdByUsername = createdBy.getUsername();
+    this.createdById = createdBy.getId();
     this.status = status;
     this.reason = reason;
     this.transferredSample = transferredSample;
@@ -72,12 +74,18 @@ public class SampleRequestStatusChange implements Serializable {
   }
 
   /**
-   * The requester for the PENDING entry and for a cancellation, otherwise the sample owner. Stored
-   * as a username so the history survives that user's deletion and cannot block it.
+   * The requester for the PENDING entry and for a cancellation, otherwise the sample owner. Kept
+   * for display, including after that user's deletion; {@link #getCreatedById()} identifies them.
    */
   @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
   public String getCreatedByUsername() {
     return createdByUsername;
+  }
+
+  /** The actor's user id, with no foreign key; a later account with their username is not them. */
+  @Column(nullable = false)
+  public Long getCreatedById() {
+    return createdById;
   }
 
   @Enumerated(EnumType.STRING)
