@@ -1,9 +1,9 @@
 package com.researchspace.booking.service;
 
-import com.researchspace.booking.dao.BookingItemQuery;
 import com.researchspace.booking.dao.BookingLocationQuery;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.query.RsqlCollectionQuery;
+import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.collection.CollectionQueryException;
@@ -69,7 +69,7 @@ public class BookingLocationFilterManagerImpl implements BookingLocationFilterMa
           constraints = accessConstraints(caller);
         }
         restriction =
-            BookingItemQuery.and(
+            Predicate.and(
                 restriction,
                 correlated(comparison, caller, targetPath, names + hoisted++, constraints));
       } else {

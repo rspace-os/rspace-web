@@ -278,8 +278,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
                   caller, true, capability == Capability.CREATE_BLOCKOUT, CONFIGURATION_TARGET));
     }
     if (ownedByCaller) {
-      restriction =
-          Predicate.and(restriction, itemQuery.ownedBy(caller, CONFIGURATION_TARGET));
+      restriction = Predicate.and(restriction, itemQuery.ownedBy(caller, CONFIGURATION_TARGET));
     }
     if (query != null && !query.isBlank()) {
       Set<Long> matchingTargetIds =
