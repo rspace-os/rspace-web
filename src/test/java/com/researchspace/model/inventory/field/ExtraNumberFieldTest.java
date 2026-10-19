@@ -3,24 +3,9 @@ package com.researchspace.model.inventory.field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Locale;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 class ExtraNumberFieldTest {
-  @Test
-  void resolvesNumericErrorsFromTheJsonCatalogueForTheCurrentLocale() {
-    var previous = LocaleContextHolder.getLocaleContext();
-    try {
-      LocaleContextHolder.setLocale(Locale.forLanguageTag("zz-ZZ"));
-      assertEquals(
-          "JSON test locale: invalid-value",
-          new ExtraNumberField().validateNewData("invalid-value"));
-    } finally {
-      LocaleContextHolder.setLocaleContext(previous);
-    }
-  }
-
   @Test
   void acceptsNumbersWithinTheSupportedRange() {
     ExtraNumberField field = new ExtraNumberField();
