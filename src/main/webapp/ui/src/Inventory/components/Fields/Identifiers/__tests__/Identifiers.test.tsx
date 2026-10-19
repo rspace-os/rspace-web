@@ -561,8 +561,16 @@ describe("Identifiers section", () => {
   });
 
   test.each([
-    { recordType: "an Instrument", makeRecord: makeMockInstrument, explanation: "pidinstExplanation" },
-    { recordType: "a Sample", makeRecord: makeMockSample, explanation: "explanation" },
+    {
+      recordType: "an Instrument",
+      makeRecord: makeMockInstrument,
+      explanation: "inventory:fields.identifiers.formField.pidinstExplanation",
+    },
+    {
+      recordType: "a Sample",
+      makeRecord: makeMockSample,
+      explanation: "inventory:fields.identifiers.formField.explanation",
+    },
   ])("the field's help text on $recordType is its own explanation", ({ makeRecord, explanation }) => {
     const record = makeRecord();
     record.setEditable(new Set(["identifiers"]), true);
@@ -573,6 +581,6 @@ describe("Identifiers section", () => {
         </storesContext.Provider>
       </ThemeProvider>,
     );
-    expect(screen.getByText(`inventory:fields.identifiers.formField.${explanation}`)).toBeInTheDocument();
+    expect(screen.getByText(explanation)).toBeInTheDocument();
   });
 });
