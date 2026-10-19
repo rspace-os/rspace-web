@@ -2,7 +2,6 @@ package com.researchspace.model.booking;
 
 import static com.researchspace.model.collection.ApiV2ResourceField.AccessPreset.NEVER;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.ApiV2RelationshipTarget;
@@ -16,7 +15,6 @@ import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.Field;
 import com.researchspace.model.collection.OpenApiSchemaDocumentation;
-import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
@@ -28,7 +26,6 @@ import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.model.resourceaccess.ResourceRoleSourceKind;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 @ApiV2ResourceDefinition(
@@ -129,64 +126,7 @@ public record ApiV2BookingConfigurationResource(
     }
   }
 
-  private static final CollectionFieldType<Object> GRANTEE_ID_TYPE =
-      new CollectionFieldType<>() {
-        @Override
-        public Class<Object> javaType() {
-          return Object.class;
-        }
-
-        @Override
-        public InputKind inputKind() {
-          return InputKind.STRING;
-        }
-
-        @Override
-        public Schema schema() {
-          return new Schema(
-              "integer",
-              null,
-              null,
-              Map.of(
-                  "type",
-                  List.of("integer", "string"),
-                  "oneOf",
-                  List.of(
-                      Map.of("type", "integer", "format", "int64"),
-                      Map.of("type", "string", "enum", List.of("ALL_USERS")))));
-        }
-
-        @Override
-        public boolean accepts(JsonNode value) {
-          return value.isIntegralNumber() && value.canConvertToLong()
-              || value.isTextual() && "ALL_USERS".equals(value.textValue());
-        }
-
-        @Override
-        public Object parse(String value) {
-          return "ALL_USERS".equals(value) ? value : Long.valueOf(value);
-        }
-
-        @Override
-        public Object parseScalar(JsonNode value) {
-          return value.isIntegralNumber() ? value.longValue() : parse(value.textValue());
-        }
-
-        @Override
-        public Object serialize(Object value) {
-          return value;
-        }
-
-        @Override
-        public Set<Operator> operators() {
-          return Set.of();
-        }
-
-        @Override
-        public boolean sortable() {
-          return false;
-        }
-      };
+  private static final CollectionFieldType<Object> GRANTEE_ID_TYPE = new GranteeIdFieldType();
 
   private static final CollectionFieldType<RoleSourceGrantee> GRANTEE_TYPE =
       CollectionFieldTypes.object(
