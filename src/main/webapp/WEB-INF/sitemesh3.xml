@@ -32,6 +32,7 @@
     <mapping path="*/ajax/*" exclude="true"/>
     <mapping path="/scripts/**" exclude="true"/>
     <mapping path="/ui/dist/**" exclude="true"/>
+    <mapping path="/public/storybook*" exclude="true"/>
     <mapping path="/resources/*" exclude="true"/>
     <mapping path="/image/getImage/**" exclude="true"/>
     <mapping path="/image/getImageForEdit/**" exclude="true"/>

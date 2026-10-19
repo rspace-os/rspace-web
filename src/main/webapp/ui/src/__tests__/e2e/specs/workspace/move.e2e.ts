@@ -14,10 +14,6 @@ async function createTopLevelDoc(pageWorkspace: WorkspacePage, name: string): Pr
 }
 
 test.describe(`Workspace move`, () => {
-  test.beforeEach(async ({ browserName }) => {
-    test.skip(browserName === "webkit", "Move dialog folder-tree clicks don't register on webkit");
-  });
-
   test(`As a user, I can move a document between folders and back Home`, async ({ pageWorkspace, clientFolders }) => {
     const folder1 = uniqueName("e2e-move-folder1");
     const folder2 = uniqueName("e2e-move-folder2");

@@ -1,12 +1,10 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
+import { fixturePath } from "@/__tests__/e2e/testData";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const DNA_FILE = resolve(currentDir, "fixtures/alpha-2-macroglobulin.gb");
+const DNA_FILE = fixturePath(import.meta.url, "fixtures/alpha-2-macroglobulin.gb");
 const DNA_FILE_NAME = "alpha-2-macroglobulin.gb";
 
 const MOCK_ENZYME_NAME = "EcoRI";

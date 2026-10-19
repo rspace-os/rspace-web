@@ -1,13 +1,18 @@
 package com.researchspace.slack;
 
+import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
+
 import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.ExternalMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
+import com.researchspace.model.apps.AppConfigElementSet;
 import com.researchspace.model.core.IRSpaceDoc;
+import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.UserConnectionManager;
 import java.net.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,11 +22,15 @@ import org.springframework.http.ResponseEntity;
 public class SlackMessageSender extends AbstractExternalWebhookMessageSender
     implements ExternalMessageSender {
 
-  private String webhookURLSettingName = "SLACK_WEBHOOK_URL";
   Logger log = LoggerFactory.getLogger(SlackMessageSender.class);
 
   int MAX_ATTACHMENTS = 20;
   @Autowired IPropertyHolder props;
+  private final UserConnectionManager userConnectionManager;
+
+  public SlackMessageSender(UserConnectionManager userConnectionManager) {
+    this.userConnectionManager = userConnectionManager;
+  }
 
   @Override
   public boolean supportsApp(App app) {
@@ -58,20 +67,28 @@ public class SlackMessageSender extends AbstractExternalWebhookMessageSender
         + convert(message.getMessage());
   }
 
+  // the webhook URL is a credential, kept in the channel's encrypted UserConnection
   @Override
-  protected String getPostUrlSetting() {
-    return webhookURLSettingName;
+  protected String doGetPostUrl(AppConfigElementSet messageConfig) {
+    return userConnectionManager
+        .findByUserNameProviderName(
+            messageConfig.getUserAppConfig().getUser().getUsername(),
+            SLACK_APP_NAME,
+            String.valueOf(messageConfig.getId()))
+        .map(UserConnection::getSecret)
+        .filter(url -> !url.isEmpty())
+        .orElseThrow(
+            () -> new IllegalStateException(messages.getMessage("apps.slack.errors.noWebhook")));
   }
 
   @Override
   protected void postSendMessage(
       ResponseEntity<String> rc, URI uri, MessageDetails message, User subject) {
     log.info(
-        "Message sent with response code {} by {} [{}] to URI {}",
+        "Message sent with response code {} by {} [{}]",
         rc.getStatusCodeValue(),
         subject.getUsername(),
-        subject.getId(),
-        uri);
+        subject.getId());
     analyticsMgr.trackChatApp(subject, "message_post", AnalyticsEvent.SLACK_USED);
   }
 }

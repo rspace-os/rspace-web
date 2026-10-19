@@ -101,7 +101,16 @@ export class BatchUserRegistrationComponent {
   }
 
   async clickCreateAll(): Promise<void> {
+    const batchCreateResponse = this.page
+      .waitForResponse(
+        (res) => res.url().includes("/system/userRegistration/batchCreate") && res.request().method() === "POST",
+        { timeout: 1_000 },
+      )
+      .catch(() => undefined);
     await this.createAllButton.click();
+    await batchCreateResponse;
+    // RS.blockPage()/RS.unblockPage() wrap the batchCreate round-trip, so wait for it before proceeding.
+    await this.page.locator(".blockUI.blockMsg.blockPage").waitFor({ state: "hidden" });
   }
 
   async validationErrorCount(): Promise<number> {

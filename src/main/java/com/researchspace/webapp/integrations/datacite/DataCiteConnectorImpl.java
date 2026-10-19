@@ -5,22 +5,33 @@ import com.researchspace.datacite.client.DataCiteClient;
 import com.researchspace.datacite.client.DataCiteClientImpl;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
+import com.researchspace.datacite.model.DataCiteDoiSearchResult;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
+import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 
 @Slf4j
 public class DataCiteConnectorImpl implements DataCiteConnector {
+
+  /** The only DataCite state a PID lookup offers: a DOI that resolves publicly (RSDEV-1326). */
+  private static final String STATE_FINDABLE = "findable";
 
   @Autowired private SystemPropertyManager sysPropertyMgr;
 
@@ -30,8 +41,50 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   private final Map<InventorySettingType, Boolean> dataCiteEnabled =
       new EnumMap<>(InventorySettingType.class);
 
+  @Value("${pidinst.lookup.datacite.url}")
+  private String lookupServerUrl;
+
+  @Value("${sysadmin.rspace.support.email}")
+  private String supportEmail;
+
+  /**
+   * Anonymous client for the public registry (ADR 0011); null when the property is blank or
+   * unparsable.
+   */
+  private DataCiteClient lookupClient;
+
+  @PostConstruct
+  void initLookupClient() {
+    String url = StringUtils.trimToEmpty(lookupServerUrl);
+    if (url.isEmpty()) {
+      log.warn(
+          "pidinst.lookup.datacite.url is blank: the DataCite public registry lookup is"
+              + " unavailable");
+      lookupClient = null;
+      return;
+    }
+    try {
+      lookupClient = new DataCiteClientImpl(new URI(url), supportEmail);
+      log.info("Configured the anonymous DataCite lookup client for {}", url);
+    } catch (URISyntaxException e) {
+      log.warn("Cannot parse pidinst.lookup.datacite.url {}: {}", url, e.getMessage());
+      lookupClient = null;
+    }
+  }
+
+  private DataCiteClient lookupClient() {
+    if (lookupClient == null) {
+      throw new DataCiteConnectionException(
+          "The DataCite public registry is not configured: pidinst.lookup.datacite.url is blank or"
+              + " invalid",
+          null);
+    }
+    return lookupClient;
+  }
+
   @EventListener(ContextRefreshedEvent.class)
   @Transactional(readOnly = true)
+  @CacheEvict(value = "pidinstLookupResults", allEntries = true)
   public void reloadDataCiteClient() {
     Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     reloadClientForType(
@@ -141,5 +194,38 @@ public class DataCiteConnectorImpl implements DataCiteConnector {
   @Override
   public DataCiteDoi updateDoi(DataCiteDoi dataCiteDoi, InventorySettingType settingType) {
     return getClient(settingType).updateDoi(dataCiteDoi);
+  }
+
+  @Override
+  public Optional<DataCiteDoi> findPublicDoi(String doiId) {
+    try {
+      return Optional.ofNullable(lookupClient().retrieveDoi(doiId));
+    } catch (HttpClientErrorException.NotFound e) {
+      return Optional.empty();
+    } catch (IllegalArgumentException e) {
+      // DataCiteClientImpl refuses to put a non-DOI in a request path: nothing to find
+      log.info("Not looking up '{}' in DataCite: {}", doiId, e.getMessage());
+      return Optional.empty();
+    } catch (RestClientException e) {
+      /*
+       * Anything else - 401, 403, 429, 5xx - is a real failure and must not be read as "no such
+       * DOI". It is wrapped rather than rethrown because in Spring 6
+       * RestClientResponseException.getMessage() embeds the raw response body, and an unhandled
+       * exception reaches the caller through handle500Error, which echoes getLocalizedMessage()
+       * into the API response. searchPublicInstrumentDois is already wrapped inside the client.
+       */
+      throw new DataCiteConnectionException("Problem with looking up a DOI in DataCite API.", e);
+    }
+  }
+
+  @Override
+  @Cacheable(
+      value = "pidinstLookupResults",
+      key = "'datacite:' + #query + ':' + #pageNumber + ':' + #pageSize")
+  public DataCiteDoiSearchResult searchPublicInstrumentDois(
+      String query, int pageNumber, int pageSize) {
+    // DataCite's page[number] is 1-based
+    return lookupClient()
+        .searchDois(query, "instrument", STATE_FINDABLE, pageSize, pageNumber + 1, "-updated");
   }
 }

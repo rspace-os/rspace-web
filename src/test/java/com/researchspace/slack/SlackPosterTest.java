@@ -11,15 +11,15 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-@Disabled("requires correct real secret webhook")
+@EnabledIfSystemProperty(named = "slack.realConnectionTests", matches = "true")
 public class SlackPosterTest extends SpringTransactionalTest {
 
   @Value("${slack.realConnectionTest.webhookUrl}")

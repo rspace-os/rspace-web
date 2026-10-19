@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
@@ -28,7 +29,7 @@ public class BasketsApiControllerTest extends SpringTransactionalTest {
 
     User testUser = createInitAndLoginAnyUser();
     List<ApiBasketInfo> userBaskets = basketsApi.getBasketsForUser(testUser);
-    assertEquals(0, userBaskets.size());
+    assertThat(userBaskets).isEmpty();
 
     ApiContainer basicContainer = createBasicContainerForUser(testUser);
     ApiBasketPost basketCreatePost = new ApiBasketPost();
@@ -38,15 +39,15 @@ public class BasketsApiControllerTest extends SpringTransactionalTest {
     ApiBasket createdBasket =
         basketsApi.createNewBasket(basketCreatePost, mockBindingResult, testUser);
     userBaskets = basketsApi.getBasketsForUser(testUser);
-    assertEquals(1, userBaskets.size());
+    assertThat(userBaskets).hasSize(1);
     assertEquals(createdBasket.getGlobalId(), userBaskets.get(0).getGlobalId());
     assertEquals(1, userBaskets.get(0).getItemCount());
 
     ApiBasket retrievedBasket = basketsApi.getBasketById(createdBasket.getId(), testUser);
-    assertEquals(1, retrievedBasket.getItems().size());
+    assertThat(retrievedBasket.getItems()).hasSize(1);
     ApiInventoryRecordInfo containerInBasketInfo = retrievedBasket.getItems().get(0);
     assertEquals(basicContainer.getGlobalId(), containerInBasketInfo.getGlobalId());
-    assertEquals(3, containerInBasketInfo.getPermittedActions().size());
+    assertThat(containerInBasketInfo.getPermittedActions()).hasSize(3);
 
     // add/remove item (works with deleted)
     ApiSampleWithFullSubSamples basicSample = createBasicSampleForUser(testUser);

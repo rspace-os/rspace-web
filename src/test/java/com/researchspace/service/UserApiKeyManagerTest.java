@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -47,10 +48,10 @@ public class UserApiKeyManagerTest extends SpringTransactionalTest {
     assertNotNull(key.getId());
     assertNotNull(key.getCreated());
     assertFalse(key.getCreated().before(now));
-    assertEquals(initialCount + 1, apiMgr.getAll().size());
+    assertThat(apiMgr.getAll()).hasSize(initialCount + 1);
 
     apiMgr.remove(key.getId());
-    assertEquals(initialCount, apiMgr.getAll().size());
+    assertThat(apiMgr.getAll()).hasSize(initialCount);
   }
 
   @Test
@@ -67,7 +68,7 @@ public class UserApiKeyManagerTest extends SpringTransactionalTest {
     UserApiKey userApiKey = apiMgr.createKeyForUser(anyUser);
     String keyStr1 = userApiKey.getApiKey();
     assertNotNull(userApiKey);
-    assertEquals(32, userApiKey.getApiKey().length());
+    assertThat(userApiKey.getApiKey()).hasSize(32);
     assertEquals(anyUser, apiMgr.findUserByKey(keyStr1).get());
 
     // test can just create another, overwriting the original.

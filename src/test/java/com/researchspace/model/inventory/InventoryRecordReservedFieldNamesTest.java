@@ -1,8 +1,8 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.inventory.field.ExtraTextField;
 import java.util.HashSet;
@@ -98,9 +98,9 @@ class InventoryRecordReservedFieldNamesTest {
 
     IllegalArgumentException iae =
         assertThrows(IllegalArgumentException.class, () -> container.addExtraField(field));
-    assertTrue(
-        iae.getMessage().contains("'Type'"),
-        "Expected message to mention 'Type', got: " + iae.getMessage());
+    assertThat(iae.getMessage())
+        .as("Expected message to mention 'Type', got: " + iae.getMessage())
+        .contains("'Type'");
   }
 
   @Test

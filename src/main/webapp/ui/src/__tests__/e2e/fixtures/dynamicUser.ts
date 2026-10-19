@@ -1,9 +1,8 @@
 import { createDynamicUser } from "../createDynamicUser";
-import { LoginPage } from "../pageObjects/auth/LoginPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
-import { DYNAMIC_USER_PASSWORD } from "../testData";
+import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
-import { loginInNewContext } from "./flows/userSessions";
+import { loginInNewContext, performLogin } from "./flows/sessions/userSessions";
 
 type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
 
@@ -12,29 +11,36 @@ type DynamicUserFixtures = {
     role: CreatableRole,
     namePrefix?: string,
   ) => Promise<{ username: string; apiKey: string; workspace: WorkspacePage }>;
+  flowFreshPiPermissions: (namePrefix?: string) => Promise<{ username: string; apiKey: string; groupName: string }>;
 };
+
+export const DYNAMIC_APP_USER_LAST_NAME = "DynamicUser";
 
 export const dynamicUserTest = test.extend<DynamicUserFixtures>({
   appUser: async ({ clientSysadmin }, use) => {
-    const { username, apiKey } = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2eDynUser", "DynamicUser");
+    const { username, apiKey } = await createDynamicUser(
+      clientSysadmin,
+      "ROLE_PI",
+      "e2eDynUser",
+      DYNAMIC_APP_USER_LAST_NAME,
+    );
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
   storageState: async ({ appUser, browser, browserContextOptions }, use) => {
-    // Manual contexts must set baseURL and clear the project's seed-user storage state.
-    const ctx = await browser.newContext({ ...browserContextOptions, storageState: undefined });
+    const { context, page, close } = await loginInNewContext(
+      browser,
+      browserContextOptions,
+      appUser.username,
+      appUser.password,
+    );
     try {
-      const page = await ctx.newPage();
-      const loginPage = new LoginPage(page);
-      await loginPage.open();
-      await loginPage.login(appUser.username, appUser.password);
-      await page.waitForURL((url) => url.pathname === "/workspace");
       const workspace = new WorkspacePage(page);
       if (!(await workspace.isLoaded())) {
         throw new Error(`Workspace did not load after authenticating dynamic user '${appUser.username}'.`);
       }
-      await use(await ctx.storageState());
+      await use(await context.storageState());
     } finally {
-      await ctx.close();
+      await close();
     }
   },
 
@@ -60,5 +66,24 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
         }
       }
     }
+  },
+
+  flowFreshPiPermissions: async ({ appUser, clientSysadmin, flowCreateUser, page, pageWorkspace }, use) => {
+    await use(async (namePrefix = "e2ePublishMember") => {
+      const member = await flowCreateUser("ROLE_USER", namePrefix);
+      const groupName = uniqueName(`${namePrefix}-group`);
+      await clientSysadmin.createGroup({
+        displayName: groupName,
+        type: "LAB_GROUP",
+        users: [
+          { username: appUser.username, roleInGroup: "PI" },
+          { username: member.username, roleInGroup: "DEFAULT" },
+        ],
+      });
+      await pageWorkspace.open();
+      await pageWorkspace.header.logOut();
+      await performLogin(page, appUser.username, appUser.password);
+      return { ...member, groupName };
+    });
   },
 });

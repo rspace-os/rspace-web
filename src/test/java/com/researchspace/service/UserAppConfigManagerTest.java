@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -12,6 +13,7 @@ import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,7 @@ import org.springframework.test.context.jdbc.Sql;
     })
 public class UserAppConfigManagerTest extends SpringTransactionalTest {
 
+  private static final String SLACK_APP = "slack.app";
   private static final String SLACK_CHANNEL_LABEL = "slackChannelLabel";
   private static final String SLACK_CHANNEL_NAME = "slackChannelName";
   private static final String SLACK_CHANNEL1 = "slackChannel1";
@@ -53,12 +56,13 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
   @Test
   public void testSaveAndRetrieveNewCfg() {
     Map<String, String> props = createValidPropertyMap();
-    UserAppConfig savedCfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
+    UserAppConfig savedCfg =
+        userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1, SLACK_APP);
     AppConfigElementSet retrievedElementSet =
         userAppCfgMgr.getAppConfigElementSetById(
             savedCfg.getAppConfigElementSets().iterator().next().getId());
     assertEquals("slack.app", savedCfg.getApp().getName());
-    assertEquals(1, savedCfg.getAppConfigElementSets().size());
+    assertThat(savedCfg.getAppConfigElementSets()).hasSize(1);
     assertEquals(
         SLACK_CHANNEL1,
         retrievedElementSet.findElementByPropertyName(SLACK_CHANNEL_NAME).getValue());
@@ -67,17 +71,53 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
   @Test
   public void testDeleteCfg() throws Exception {
     Map<String, String> props = createValidPropertyMap();
-    UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
+    UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1, SLACK_APP);
     Long idToDelete = cfg.getAppConfigElementSets().iterator().next().getId();
     // otherUser lacks permissions
     logoutAndLoginAs(otherUser);
-    assertAuthorisationExceptionThrown(
-        () -> userAppCfgMgr.deleteAppConfigSet(idToDelete, otherUser));
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.deleteAppConfigSet(idToDelete, otherUser, SLACK_APP));
     logoutAndLoginAs(u1);
-    AppConfigElementSet deleted = userAppCfgMgr.deleteAppConfigSet(idToDelete, u1);
+    AppConfigElementSet deleted = userAppCfgMgr.deleteAppConfigSet(idToDelete, u1, SLACK_APP);
     assertNotNull(deleted);
     List<UserAppConfig> cfgs = userAppCfgMgr.getAll();
-    assertEquals(0, cfgs.get(0).getAppConfigElementSets().size());
+    assertThat(cfgs.get(0).getAppConfigElementSets()).isEmpty();
+  }
+
+  @Test
+  public void deleteChecksTheAppOnlyAfterPermission() {
+    UserAppConfig cfg =
+        userAppCfgMgr.saveAppConfigElementSet(createValidPropertyMap(), null, false, u1, SLACK_APP);
+    Long setId = cfg.getAppConfigElementSets().iterator().next().getId();
+
+    // another user learns nothing about the set's app, and a missing set looks the same
+    logoutAndLoginAs(otherUser);
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.deleteAppConfigSet(setId, otherUser, "dataverse.app"));
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.deleteAppConfigSet(-1L, otherUser, SLACK_APP));
+
+    logoutAndLoginAs(u1);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userAppCfgMgr.deleteAppConfigSet(setId, u1, "dataverse.app"));
+    assertNotNull(userAppCfgMgr.getAppConfigElementSetById(setId));
+  }
+
+  @Test
+  public void expectedAppNameIsCaseInsensitiveLikeTheDatabase() {
+    UserAppConfig cfg =
+        userAppCfgMgr.saveAppConfigElementSet(
+            createValidPropertyMap(), null, false, u1, "SLACK.App");
+    assertEquals(SLACK_APP, cfg.getApp().getName());
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            userAppCfgMgr.saveAppConfigElementSet(
+                createValidPropertyMap(), null, false, u1, "dataverse.app"));
   }
 
   @Test
@@ -87,7 +127,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL1);
     assertThrows(
         IllegalArgumentException.class,
-        () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1));
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1, SLACK_APP));
   }
 
   @Test
@@ -95,12 +135,13 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     Map<String, String> props = new HashMap<>();
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL1);
     props.put(SLACK_CHANNEL_LABEL, "label");
-    UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1);
+    UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1, SLACK_APP);
     props.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL2);
     Long setId = cfg.getAppConfigElementSets().iterator().next().getId();
-    assertAuthorisationExceptionThrown(
-        () -> userAppCfgMgr.saveAppConfigElementSet(props, setId, false, otherUser));
-    cfg = userAppCfgMgr.saveAppConfigElementSet(props, setId, false, u1);
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, setId, false, otherUser, SLACK_APP));
+    cfg = userAppCfgMgr.saveAppConfigElementSet(props, setId, false, u1, SLACK_APP);
     assertEquals(
         SLACK_CHANNEL2,
         cfg.getAppConfigElementSets()
@@ -116,11 +157,12 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     props.put("ORCID_ID", "testId");
 
     // untrusted call to create new options
-    assertAuthorisationExceptionThrown(
-        () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1));
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1, "app.orcid"));
 
     // trusted call
-    UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, true, u1);
+    UserAppConfig cfg = userAppCfgMgr.saveAppConfigElementSet(props, null, true, u1, "app.orcid");
     AppConfigElementSet elementSet = cfg.getAppConfigElementSets().iterator().next();
     assertEquals("testId", elementSet.findElementByPropertyName("ORCID_ID").getValue());
 
@@ -128,13 +170,64 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     props.put("ORCID_ID", "testId2");
 
     // untrusted call to update existing options
-    assertAuthorisationExceptionThrown(
-        () -> userAppCfgMgr.saveAppConfigElementSet(props, elementSet.getId(), false, u1));
+    Long elementSetId = elementSet.getId();
+    assertThrows(
+        AuthorizationException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, elementSetId, false, u1, "app.orcid"));
 
     // trusted call executes fine
-    cfg = userAppCfgMgr.saveAppConfigElementSet(props, elementSet.getId(), true, u1);
+    cfg = userAppCfgMgr.saveAppConfigElementSet(props, elementSet.getId(), true, u1, "app.orcid");
     AppConfigElementSet updatedElementSet = cfg.getAppConfigElementSets().iterator().next();
     assertEquals("testId2", updatedElementSet.findElementByPropertyName("ORCID_ID").getValue());
+  }
+
+  @Test
+  public void postedNullKeepsTheStoredValue() {
+    UserAppConfig cfg =
+        userAppCfgMgr.saveAppConfigElementSet(createValidPropertyMap(), null, false, u1, SLACK_APP);
+    Long setId = cfg.getAppConfigElementSets().iterator().next().getId();
+    Map<String, String> update = createValidPropertyMap();
+    update.put(SLACK_CHANNEL_NAME, null); // what the UI posts for an untouched secret
+    update.put(SLACK_CHANNEL_LABEL, "renamed");
+
+    userAppCfgMgr.saveAppConfigElementSet(update, setId, false, u1, SLACK_APP);
+
+    AppConfigElementSet saved = userAppCfgMgr.getAppConfigElementSetById(setId);
+    assertEquals(SLACK_CHANNEL1, saved.findElementByPropertyName(SLACK_CHANNEL_NAME).getValue());
+    assertEquals("renamed", saved.findElementByPropertyName(SLACK_CHANNEL_LABEL).getValue());
+  }
+
+  @Test
+  public void newSetCannotKeepANullValue() {
+    Map<String, String> props = createValidPropertyMap();
+    props.put(SLACK_CHANNEL_NAME, null);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userAppCfgMgr.saveAppConfigElementSet(props, null, false, u1, SLACK_APP));
+  }
+
+  @Test
+  public void cannotUpdateAnotherUsersSetById() {
+    UserAppConfig u1Cfg =
+        userAppCfgMgr.saveAppConfigElementSet(createValidPropertyMap(), null, false, u1, SLACK_APP);
+    Long u1SetId = u1Cfg.getAppConfigElementSets().iterator().next().getId();
+    logoutAndLoginAs(otherUser);
+    userAppCfgMgr.saveAppConfigElementSet(
+        createValidPropertyMap(), null, false, otherUser, SLACK_APP);
+    Map<String, String> overwrite = createValidPropertyMap();
+    overwrite.put(SLACK_CHANNEL_NAME, SLACK_CHANNEL2);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            userAppCfgMgr.saveAppConfigElementSet(overwrite, u1SetId, false, otherUser, SLACK_APP));
+    assertEquals(
+        SLACK_CHANNEL1,
+        userAppCfgMgr
+            .getAppConfigElementSetById(u1SetId)
+            .findElementByPropertyName(SLACK_CHANNEL_NAME)
+            .getValue());
   }
 
   private Map<String, String> createValidPropertyMap() {
@@ -150,7 +243,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     unknownProps.put("unknown", "any");
     assertThrows(
         IllegalArgumentException.class,
-        () -> userAppCfgMgr.saveAppConfigElementSet(unknownProps, null, false, u1));
+        () -> userAppCfgMgr.saveAppConfigElementSet(unknownProps, null, false, u1, SLACK_APP));
   }
 
   @Test
@@ -158,7 +251,7 @@ public class UserAppConfigManagerTest extends SpringTransactionalTest {
     Map<String, String> emptyProps = new HashMap<>();
     assertThrows(
         IllegalArgumentException.class,
-        () -> userAppCfgMgr.saveAppConfigElementSet(emptyProps, null, false, u1));
+        () -> userAppCfgMgr.saveAppConfigElementSet(emptyProps, null, false, u1, SLACK_APP));
   }
 
   @Test

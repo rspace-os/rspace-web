@@ -1,25 +1,22 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
-import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 public class GenericDaoTest extends BaseDaoTestCase {
   Logger log = LoggerFactory.getLogger(GenericDaoTest.class);
   GenericDao<User, Long> genericDao;
-  @Autowired SessionFactory sessionFactory;
 
   @BeforeEach
   public void setUp() {
@@ -36,7 +33,7 @@ public class GenericDaoTest extends BaseDaoTestCase {
   @Test
   public void testGetThrowsExceptionIfObjectNotFound() {
     final Long UNKNOWNID = -1234556L;
-    assertFalse(genericDao.getSafeNull(UNKNOWNID).isPresent());
+    assertThat(genericDao.getSafeNull(UNKNOWNID)).isNotPresent();
     assertThrows(ObjectRetrievalFailureException.class, () -> genericDao.get(-UNKNOWNID));
   }
 

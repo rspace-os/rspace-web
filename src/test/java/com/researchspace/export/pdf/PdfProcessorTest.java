@@ -1,8 +1,8 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.testutils.RSpaceTestUtils.loadTextResourceFromPdfDir;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
@@ -85,14 +85,14 @@ public class PdfProcessorTest {
     pdfProcessor.makeExport(outputFile, exportProcessorInput, document, config);
     String output = readPdfContent(outputFile);
 
-    assertTrue(output.contains(nonAscii));
+    assertThat(output).contains(nonAscii);
   }
 
   @Test
   public void concatenatesFiles() throws Exception {
     String output = concatTwoDocuments();
-    assertTrue(output.contains("This is document 1."));
-    assertTrue(output.contains("This is document 2."));
+    assertThat(output).contains("This is document 1.");
+    assertThat(output).contains("This is document 2.");
   }
 
   private String concatTwoDocuments() throws Exception {

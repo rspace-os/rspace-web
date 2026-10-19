@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -109,7 +109,7 @@ public class RecordFavoritesManagerTest extends SpringTransactionalTest {
     recordFavoritesManager.saveFavoriteRecord(subfolder.getId(), user.getId());
     assertTrue(recordFavoritesManager.getFavoriteRecordsByUser(user.getId()).size() > 1);
     recordFavoritesManager.deleteFavorites(folder.getId(), user);
-    assertEquals(0, recordFavoritesManager.getFavoriteRecordsByUser(user.getId()).size());
+    assertThat(recordFavoritesManager.getFavoriteRecordsByUser(user.getId())).isEmpty();
   }
 
   @Test
@@ -121,6 +121,6 @@ public class RecordFavoritesManagerTest extends SpringTransactionalTest {
     }
     assertTrue(recordFavoritesManager.getFavoriteRecordsByUser(user.getId()).size() > 1);
     recordFavoritesManager.deleteFavorites(notebook.getId(), user);
-    assertEquals(0, recordFavoritesManager.getFavoriteRecordsByUser(user.getId()).size());
+    assertThat(recordFavoritesManager.getFavoriteRecordsByUser(user.getId())).isEmpty();
   }
 }

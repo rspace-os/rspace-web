@@ -1,8 +1,8 @@
 package com.researchspace.dao;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SortOrder;
@@ -62,7 +62,7 @@ public class EcatDocumentFileDaoTest extends SpringTransactionalTest {
     String unknownLocation = savedLocation.toString().replace(KNOWN_FILE, UNKNOWN_FILE);
     isr = docFileDao.getEcatDocumentFileByURI(pgCrit, any.getUsername(), toList(unknownLocation));
     assertEquals(0, isr.getTotalHits().intValue());
-    assertTrue(isr.getResults().isEmpty());
+    assertThat(isr.getResults()).isEmpty();
 
     EcatDocumentFile doc2 = TestFactory.createEcatDocument(2L, any);
     File actualFile2 = RSpaceTestUtils.getResource(KNOWN_FILE2);

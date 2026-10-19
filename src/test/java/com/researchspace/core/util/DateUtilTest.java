@@ -87,16 +87,16 @@ public class DateUtilTest {
   @Test
   public void testConvertMillisToISOFormatRequiresNotNull() {
     Long millis = null;
-    assertThrows(
-        NullPointerException.class,
-        () -> convertDateToISOFormat(millis, TimeZone.getTimeZone("UTC")));
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+
+    assertThrows(NullPointerException.class, () -> convertDateToISOFormat(millis, utc));
   }
 
   @Test
   public void testConvertDateToISOFormatRequiresNotNull() {
     Date date = null;
-    assertThrows(
-        NullPointerException.class,
-        () -> convertDateToISOFormat(date, TimeZone.getTimeZone("UTC")));
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+
+    assertThrows(NullPointerException.class, () -> convertDateToISOFormat(date, utc));
   }
 }

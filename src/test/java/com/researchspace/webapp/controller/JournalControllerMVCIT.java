@@ -1,13 +1,11 @@
 package com.researchspace.webapp.controller;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -155,7 +153,8 @@ public class JournalControllerMVCIT extends MVCTestBase {
     if (isMatch) {
       result.andExpect(jsonPath("$[0].id").value(entry.getId().intValue()));
     } else {
-      result.andExpect(content().string(not(containsString(entry.getId() + ""))));
+      String body = result.andReturn().getResponse().getContentAsString();
+      assertThat(body).as(body).doesNotContain(entry.getId() + "");
     }
     if (isMatch) {
       result.andExpect(jsonPath("$.length()").value(1));

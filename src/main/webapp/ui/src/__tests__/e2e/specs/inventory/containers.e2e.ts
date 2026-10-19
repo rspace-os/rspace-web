@@ -1,14 +1,11 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
-import { uniqueName } from "@/__tests__/e2e/testData";
+import { fixturePath, uniqueName } from "@/__tests__/e2e/testData";
 import { SYSADMIN, USERS } from "@/__tests__/e2e/users";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
-const PREVIEW_IMAGE = resolve(currentDir, "fixtures/container_preview.png");
-const BACKGROUND_IMAGE = resolve(currentDir, "fixtures/container_background.png");
+const PREVIEW_IMAGE = fixturePath(import.meta.url, "fixtures/container_preview.png");
+const BACKGROUND_IMAGE = fixturePath(import.meta.url, "fixtures/container_background.png");
 
 test.describe(`Inventory Containers`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
   test(`As a user, I can create a sample inside a list container`, async ({

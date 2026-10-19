@@ -1,6 +1,7 @@
 package com.researchspace.dao;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -70,7 +71,7 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
 
   @Test
   public void fileUsageForGroupsHandlesEmptyList() {
-    assertEquals(0, filedao.getTotalFileUsageForGroups(Collections.emptyList()).size());
+    assertThat(filedao.getTotalFileUsageForGroups(Collections.emptyList())).isEmpty();
   }
 
   private int getTotalFileUsage() {
@@ -125,7 +126,7 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
     List<User> users2 = List.of(u1LessUsage, u2MoreUsage);
     Map<String, DatabaseUsageByUserGroupByResult> usageForUsers2 =
         filedao.getTotalFileUsageForUsers(users2, pgCrit);
-    assertEquals(2, usageForUsers2.size());
+    assertThat(usageForUsers2).hasSize(2);
 
     // default ordering is desc
     assertEquals(u2MoreUsage.getUsername(), usageForUsers2.keySet().iterator().next());
@@ -209,18 +210,18 @@ public class FileMetadataDaoTest extends SpringTransactionalTest {
     initialiseContentWithEmptyContent(user);
 
     List<File> paths = filedao.collectUserFilestoreResources(user);
-    assertEquals(0, paths.size());
+    assertThat(paths).isEmpty();
 
     StructuredDocument docD1 = createBasicDocumentInRootFolderWithText(user, "test");
     addAudioFileToField(docD1.getFields().get(0), user);
 
     paths = filedao.collectUserFilestoreResources(user);
-    assertEquals(1, paths.size());
+    assertThat(paths).hasSize(1);
     File audioFile = paths.get(0);
-    assertTrue(
-        audioFile.getName().contains("mpthreetest"),
-        "expect audio filename but was " + audioFile.getName());
-    assertTrue(audioFile.exists(), "expected file to exist");
-    assertEquals(198658, audioFile.length());
+    assertThat(audioFile.getName())
+        .as("expect audio filename but was " + audioFile.getName())
+        .contains("mpthreetest");
+    assertThat(audioFile).as("expected file to exist").exists();
+    assertThat(audioFile).hasSize(198658);
   }
 }

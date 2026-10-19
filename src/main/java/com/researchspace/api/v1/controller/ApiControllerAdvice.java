@@ -16,6 +16,9 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.chemistry.StoichiometryException;
+import com.researchspace.service.inventory.InventoryEditLockHeldException;
+import com.researchspace.service.inventory.InventoryOperationInProgressException;
+import com.researchspace.service.inventory.PidinstAlreadyLinkedException;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +82,42 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             ex.getLocalizedMessage(),
             "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  /** A 409 carrying an already-resolved message, as every EDIT_CONFLICT handler reports it. */
+  private ResponseEntity<Object> conflict(final String message) {
+    final ApiError apiError =
+        new ApiError(HttpStatus.CONFLICT, ApiErrorCodes.EDIT_CONFLICT.getCode(), message, "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(PidinstAlreadyLinkedException.class)
+  protected ResponseEntity<Object> handlePidinstAlreadyLinkedException(
+      final PidinstAlreadyLinkedException ex, final WebRequest request) {
+    logException(ex);
+    return conflict(messages.getMessage(ex.getMessageKey(), ex.getArgs()));
+  }
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(InventoryEditLockHeldException.class)
+  public ResponseEntity<Object> handleInventoryEditLockHeld(
+      final InventoryEditLockHeldException ex, final WebRequest request) {
+    log.warn("inventory edit lock held: {}", ex.getMessage());
+    return conflict(
+        messages.getMessage(
+            "errors.inventory.editLock.heldBy",
+            new Object[] {ex.getGlobalId(), ex.getOwnerDisplayName()}));
+  }
+
+  @ResponseStatus(HttpStatus.CONFLICT)
+  @ExceptionHandler(InventoryOperationInProgressException.class)
+  public ResponseEntity<Object> handleInventoryOperationInProgress(
+      final InventoryOperationInProgressException ex, final WebRequest request) {
+    log.warn("inventory operation already in progress: {}", ex.getMessage());
+    return conflict(
+        messages.getMessage(
+            "errors.inventory.operation.inProgress", new Object[] {ex.getGlobalId()}));
   }
 
   // 403

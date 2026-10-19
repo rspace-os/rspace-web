@@ -1,28 +1,56 @@
 import type { APIRequestContext } from "@playwright/test";
 import { request } from "@playwright/test";
+import { B2instClient } from "../api/clients/B2instClient";
+import { DataCiteClient } from "../api/clients/DataCiteClient";
 import { DocumentsClient } from "../api/clients/DocumentsClient";
 import { FilesClient } from "../api/clients/FilesClient";
 import { FoldersClient } from "../api/clients/FoldersClient";
+import { FormsClient } from "../api/clients/FormsClient";
 import { InventoryClient } from "../api/clients/InventoryClient";
 import { MailpitClient } from "../api/clients/MailpitClient";
+import { ShareClient } from "../api/clients/ShareClient";
 import { SnippetsClient } from "../api/clients/SnippetsClient";
+import { StatusClient } from "../api/clients/StatusClient";
+import { StoichiometryClient } from "../api/clients/StoichiometryClient";
 import { SysadminClient } from "../api/clients/SysadminClient";
 import { env } from "../env";
 import { SYSADMIN } from "../users";
 import { uiTest } from "./ui";
 
 type ApiFixtures = {
+  clientDataCite: DataCiteClient;
   apiContext: APIRequestContext;
   clientDocuments: DocumentsClient;
   clientFiles: FilesClient;
   clientFolders: FoldersClient;
+  clientForms: FormsClient;
   clientInventory: InventoryClient;
   clientSnippets: SnippetsClient;
+  clientShare: ShareClient;
+  clientStatus: StatusClient;
+  clientStoichiometry: StoichiometryClient;
   clientSysadmin: SysadminClient;
   clientMailpit: MailpitClient;
+  clientB2inst: B2instClient;
 };
 
 export const apiTest = uiTest.extend<ApiFixtures>({
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientDataCite: async ({}, use) => {
+    const context = await request.newContext({
+      baseURL: env.integrationMode === "mock" ? env.mockBaseUrl : env.igsnServerUrl,
+      storageState: { cookies: [], origins: [] },
+      httpCredentials:
+        env.integrationMode === "real"
+          ? { username: env.igsnAccountId, password: env.igsnPassword, send: "always" }
+          : undefined,
+    });
+    try {
+      await use(new DataCiteClient(context));
+    } finally {
+      await context.dispose();
+    }
+  },
   // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
   apiContext: async ({}, use) => {
     // Playwright request contexts inherit the project's storageState by default, which would
@@ -44,24 +72,50 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   clientFolders: async ({ apiContext, appUser }, use) => {
     await use(new FoldersClient(apiContext, appUser.apiKey));
   },
+  clientForms: async ({ apiContext, appUser }, use) => {
+    await use(new FormsClient(apiContext, appUser.apiKey));
+  },
   clientInventory: async ({ apiContext, appUser }, use) => {
     await use(new InventoryClient(apiContext, appUser.apiKey));
   },
   clientSnippets: async ({ page }, use) => {
     await use(new SnippetsClient(page));
   },
+  clientShare: async ({ apiContext, appUser }, use) => {
+    await use(new ShareClient(apiContext, appUser.apiKey));
+  },
+  clientStatus: async ({ apiContext, appUser }, use) => {
+    await use(new StatusClient(apiContext, appUser.apiKey));
+  },
+  clientStoichiometry: async ({ apiContext, appUser }, use) => {
+    await use(new StoichiometryClient(apiContext, appUser.apiKey));
+  },
   clientSysadmin: async ({ apiContext }, use) => {
     const client = new SysadminClient(apiContext, SYSADMIN.apiKey);
+    let cleanupError: Error | undefined;
     try {
       await use(client);
     } finally {
-      // allSettled: one failed disable must not hide another's failure, or the test's own.
-      const results = await Promise.allSettled(client.createdUserIds.toReversed().map((id) => client.disableUser(id)));
-      for (const result of results) {
-        if (result.status === "rejected") {
-          console.error("Failed to disable e2e user during teardown:", result.reason);
-        }
+      // allSettled: one failed disable must not hide another's failure. Users a scenario already
+      // deleted itself are excluded via pendingCleanup.
+      const pending = client.pendingCleanup;
+      const results = await Promise.allSettled(pending.map((user) => client.disableUser(user.id)));
+      const failures = results
+        .map((result, index) => ({ result, user: pending[index] }))
+        .filter(
+          (entry): entry is typeof entry & { result: PromiseRejectedResult } => entry.result.status === "rejected",
+        );
+      for (const { result, user } of failures) {
+        console.error(`Failed to disable e2e user "${user.username}" (id ${user.id}) during teardown:`, result.reason);
       }
+      if (failures.length > 0) {
+        cleanupError = new Error(
+          `${failures.length} e2e user(s) failed cleanup: ${failures.map(({ user }) => user.username).join(", ")}`,
+        );
+      }
+    }
+    if (cleanupError) {
+      throw cleanupError;
     }
   },
 
@@ -69,6 +123,18 @@ export const apiTest = uiTest.extend<ApiFixtures>({
   clientMailpit: async ({}, use) => {
     const context = await request.newContext({ baseURL: env.mailpitBaseUrl });
     await use(new MailpitClient(context));
+    await context.dispose();
+  },
+
+  // biome-ignore lint/correctness/noEmptyPattern: Playwright requires destructuring pattern for fixture arg
+  clientB2inst: async ({}, use) => {
+    const real = env.integrationMode === "real";
+    const context = await request.newContext({
+      baseURL: real ? env.pidinstB2instServerUrl : env.mockBaseUrl,
+      extraHTTPHeaders: real ? { Authorization: `Bearer ${env.pidinstB2instToken}` } : {},
+      storageState: { cookies: [], origins: [] },
+    });
+    await use(new B2instClient(context));
     await context.dispose();
   },
 });

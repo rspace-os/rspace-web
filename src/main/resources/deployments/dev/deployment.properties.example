@@ -17,6 +17,8 @@ rs.customer.name.short=RSpace Local
 rs.usergroup.initfile=deployments/dev/initUsers.csv
 email.enabled=false
 license.server.active=false
+# Unauthenticated Storybook preview route; enable only on local/development instances, never production.
+dev.storybook.preview.enabled=true
 
 api.beta.enabled=true
 #api.beta.allowUnauthorizedLinks=true
@@ -49,7 +51,7 @@ onedrive.redirect=
 # slack integration that redirects to localhost:8080 after authentication
 slack.client.id=
 slack.secret=
-slack.verification.token=
+slack.signing.secret=
 
 # box app with a redirect link pointing to https://localhost:8443
 box.client.id=
@@ -112,6 +114,10 @@ dryad.client.secret=
 #ROR
 #ror.api.url=https://api.dev.ror.org/v2/organizations
 ror.enabled=true
+
+# Public PID registries searched by "From PIDINST registry"; override only for a sandbox
+#pidinst.lookup.datacite.url=https://api.test.datacite.org
+#pidinst.lookup.b2inst.url=https://b2inst-test.gwdg.de
 
 user.signup.captcha.enabled=false
 user.signup.captcha.site.key=
@@ -212,3 +218,4 @@ irods.realConnection.server.password=
 
 deployment.description=Localhost deployment for testing purposes
 deployment.helpEmail=support@researchspace.com
+deployment.test.fb.instance=false

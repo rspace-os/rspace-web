@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -9,11 +10,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryImportInstrumentImportResult;
 import com.researchspace.api.v1.model.ApiInventoryImportInstrumentParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiTagInfo;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,7 +66,7 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
     ApiInstrumentTemplatePost suggestedTemplate = parseResult.getTemplateInfo();
     assertNotNull(suggestedTemplate);
     assertEquals("microscopes", suggestedTemplate.getName());
-    assertEquals(2, suggestedTemplate.getFields().size());
+    assertThat(suggestedTemplate.getFields()).hasSize(2);
   }
 
   @Test
@@ -157,6 +160,39 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
     assertEquals(false, instrumentResult.isTemplateCreated());
     assertEquals(template.getId(), instrumentResult.getTemplate().getRecord().getId());
     assertEquals(2, instrumentResult.getSuccessCount());
+  }
+
+  @Test
+  public void importInstrumentsKeepsTags() throws Exception {
+    ApiInstrumentTemplate template = createBasicInstrumentTemplateForUser(anyUser, "tags-tmpl");
+    String csv = "Name,Tags,text\nMicroscope A,microscopy,val-a\nMicroscope B,microscopy,val-b\n";
+
+    String settingsJson =
+        "{ \"instrumentSettings\": { \"fieldMappings\": { \"Name\": \"name\", \"Tags\": \"tags\" },"
+            + " \"templateId\": "
+            + template.getId()
+            + " } }";
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                multipart(createUrl(API_VERSION.ONE, "/import/importFiles"))
+                    .file(csvFile("instrumentsFile", "instruments.csv", csv))
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .param("importSettings", settingsJson)
+                    .header("apiKey", apiKey))
+            .andReturn();
+    assertNull(result.getResolvedException());
+
+    ApiInventoryImportInstrumentImportResult instrumentResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class).getInstrumentResult();
+    assertEquals(2, instrumentResult.getSuccessCount());
+    for (ApiInventoryBulkOperationRecordResult imported : instrumentResult.getResults()) {
+      ApiInstrument saved =
+          instrumentApiMgr.getApiInstrumentById(imported.getRecord().getId(), anyUser);
+      assertEquals(1, saved.getVersion());
+      assertThat(saved.getTags()).extracting(ApiTagInfo::getValue).containsExactly("microscopy");
+    }
   }
 
   @Test

@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,7 +59,7 @@ public class ImageControllerTest extends JakartaValidatorTest {
     byte[] fallback = new byte[] {1, 2, 3, 4};
     when(mediaFactory.getFileSuffixIcon(doc.getFileName())).thenReturn(fallback);
     ResponseEntity<byte[]> resp = imgController.getDocThumbnail(doc.getId(), null);
-    assertEquals(fallback.length, resp.getBody().length);
+    assertThat(resp.getBody()).hasSameSizeAs(fallback);
     verify(recordMgr, never()).save(doc, anyUser);
   }
 
@@ -87,7 +87,7 @@ public class ImageControllerTest extends JakartaValidatorTest {
 
     ResponseEntity<byte[]> resp = imgController.getDocThumbnail(doc.getId(), null);
     final int ATTACH_FILE_LENGTH = 506;
-    assertEquals(ATTACH_FILE_LENGTH, resp.getBody().length);
+    assertThat(resp.getBody()).hasSize(ATTACH_FILE_LENGTH);
     verify(recordMgr).save(doc, anyUser);
   }
 }

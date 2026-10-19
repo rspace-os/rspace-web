@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -29,7 +30,7 @@ public class InventoryAttachmentsApiControllerMVCIT extends API_MVC_InventoryTes
     String apiKey = createNewApiKeyForUser(anyUser);
 
     ApiContainer apiContainer = createBasicContainerForUser(anyUser);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
 
     EcatImage galleryImage = addImageToGallery(anyUser);
     assertEquals("Picture1.png", galleryImage.getName());
@@ -58,7 +59,7 @@ public class InventoryAttachmentsApiControllerMVCIT extends API_MVC_InventoryTes
     assertNull(result.getResolvedException());
     byte[] responseBytes = result.getResponse().getContentAsByteArray();
     assertNotNull(responseBytes);
-    assertEquals(47326, responseBytes.length);
+    assertThat(responseBytes).hasSize(47326);
 
     // check latest container lists the file
     MvcResult retrieveResult =
@@ -66,7 +67,7 @@ public class InventoryAttachmentsApiControllerMVCIT extends API_MVC_InventoryTes
             .perform(getContainerById(anyUser, apiKey, apiContainer.getId(), false))
             .andReturn();
     apiContainer = getFromJsonResponseBody(retrieveResult, ApiContainer.class);
-    assertEquals(1, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).hasSize(1);
 
     // delete the file
     result = doFileDelete(anyUser, apiKey, attachmentId);
@@ -78,7 +79,7 @@ public class InventoryAttachmentsApiControllerMVCIT extends API_MVC_InventoryTes
             .perform(getContainerById(anyUser, apiKey, apiContainer.getId(), false))
             .andReturn();
     apiContainer = getFromJsonResponseBody(retrieveResult, ApiContainer.class);
-    assertEquals(0, apiContainer.getAttachments().size());
+    assertThat(apiContainer.getAttachments()).isEmpty();
   }
 
   private ApiInventoryFile doAttachGalleryFilePost(

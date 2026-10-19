@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.model.dtos.RevisionSearchCriteria;
 import java.lang.reflect.InvocationTargetException;
@@ -13,13 +13,13 @@ public class RevisionSearchCriteriaTest {
   @Test
   public void testGetSearchTermField2Values()
       throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-    assertEquals(0, ar.getSearchTermField2Values().keySet().size());
+    assertThat(ar.getSearchTermField2Values()).isEmpty();
     ar.setModifiedBy("user");
-    assertEquals(1, ar.getSearchTermField2Values().keySet().size());
+    assertThat(ar.getSearchTermField2Values().keySet()).hasSize(1);
     ar.setSelectedFields(new String[] {"a"});
-    assertEquals(2, ar.getSearchTermField2Values().keySet().size());
+    assertThat(ar.getSearchTermField2Values().keySet()).hasSize(2);
     // empty array should npt be added to map
     ar.setSelectedFields(new String[] {});
-    assertEquals(1, ar.getSearchTermField2Values().keySet().size());
+    assertThat(ar.getSearchTermField2Values().keySet()).hasSize(1);
   }
 }

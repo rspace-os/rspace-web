@@ -1,7 +1,7 @@
 package com.researchspace.model.dtos;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -26,10 +26,10 @@ public class GroupSearchCriteriaTest {
   @Test
   public void inputValidation() {
     filter.setDisplayName(getRandomName(300));
-    assertEquals(255, filter.getDisplayName().length(), "display name not truncated");
+    assertThat(filter.getDisplayName()).as("display name not truncated").hasSize(255);
 
     filter.setUniqueName(getRandomName(300));
-    assertEquals(255, filter.getUniqueName().length(), "unique name  not trunctated");
+    assertThat(filter.getUniqueName()).as("unique name  not trunctated").hasSize(255);
   }
 
   @Test
@@ -52,8 +52,8 @@ public class GroupSearchCriteriaTest {
     filter.setCommunityId(null);
     String urlquery = filter.getURLQueryString();
     // should nto be i  url query if not set
-    assertFalse(urlquery.contains("communityId=false"));
-    assertFalse(urlquery.contains("communityId"));
+    assertThat(urlquery).doesNotContain("communityId=false");
+    assertThat(urlquery).doesNotContain("communityId");
   }
 
   private void assertAllFiltersTrue() {

@@ -13,6 +13,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.GroupSearchCriteria;
+import com.researchspace.model.sort.GroupSort;
 import com.researchspace.service.GroupManager;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,10 +38,11 @@ public class SysAdminGroupsManagerImpl extends AbstractSysadminMgr implements Sy
     List<GroupUsageInfo> groupinfo = new ArrayList<>();
     log.info("Calculating total file usage");
     Long totalUsage = fileDao.getTotalFileUsage();
-    if (pgCrit.isOrderByAnInstanceProperty() || "owner.lastName".equals(pgCrit.getOrderBy())) {
-      log.info("Ordering by username or group property.. {}", pgCrit.getOrderBy());
+    GroupSort sort = GroupSort.fromRequest(pgCrit.getOrderBy());
+    if (sort != GroupSort.USAGE) {
+      log.info("Ordering by group property.. {}", sort);
       return doStandardGroupBasedList(admin, pgCrit, groupinfo, totalUsage);
-    } else if ("usage".equalsIgnoreCase(pgCrit.getOrderBy())) {
+    } else {
       log.info("Ordering by usage..");
       // do db search for file usage
       // restrict by community
@@ -82,11 +84,6 @@ public class SysAdminGroupsManagerImpl extends AbstractSysadminMgr implements Sy
         groupinfo.add(info);
       }
       return createGrpSearchResults(groupinfo, fileUsage);
-    } else {
-      log.warn(
-          "Unknown order by setting [{}], reverting to default 'displayName'", pgCrit.getOrderBy());
-      pgCrit.setOrderBy(Group.DEFAULT_ORDERBY_FIELD);
-      return doStandardGroupBasedList(admin, pgCrit, groupinfo, totalUsage);
     }
   }
 

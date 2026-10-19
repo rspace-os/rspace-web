@@ -1,6 +1,6 @@
 package com.researchspace.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,39 +29,39 @@ class FilestoreAclCheckerTest {
 
   @Test
   void parseList_nullOrEmpty_returnsEmpty() {
-    assertTrue(FilestoreAclChecker.parseList(null).isEmpty());
-    assertTrue(FilestoreAclChecker.parseList("").isEmpty());
-    assertTrue(FilestoreAclChecker.parseList("   ").isEmpty());
+    assertThat(FilestoreAclChecker.parseList(null)).isEmpty();
+    assertThat(FilestoreAclChecker.parseList("")).isEmpty();
+    assertThat(FilestoreAclChecker.parseList("   ")).isEmpty();
   }
 
   @Test
   void parseList_singleToken() {
     Set<String> tokens = FilestoreAclChecker.parseList("alice");
-    assertEquals(1, tokens.size());
-    assertTrue(tokens.contains("alice"));
+    assertThat(tokens).hasSize(1);
+    assertThat(tokens).contains("alice");
   }
 
   @Test
   void parseList_multipleTokensTrimsWhitespace() {
     Set<String> tokens = FilestoreAclChecker.parseList("  alice ,  bob  ");
-    assertEquals(2, tokens.size());
-    assertTrue(tokens.contains("alice"));
-    assertTrue(tokens.contains("bob"));
+    assertThat(tokens).hasSize(2);
+    assertThat(tokens).contains("alice");
+    assertThat(tokens).contains("bob");
   }
 
   @Test
   void parseList_dropsEmptyTokens() {
     Set<String> tokens = FilestoreAclChecker.parseList("alice,,bob,");
-    assertEquals(2, tokens.size());
-    assertTrue(tokens.contains("alice"));
-    assertTrue(tokens.contains("bob"));
+    assertThat(tokens).hasSize(2);
+    assertThat(tokens).contains("alice");
+    assertThat(tokens).contains("bob");
   }
 
   @Test
   void parseList_everyoneSentinel() {
     Set<String> tokens = FilestoreAclChecker.parseList("*");
-    assertEquals(1, tokens.size());
-    assertTrue(tokens.contains("*"));
+    assertThat(tokens).hasSize(1);
+    assertThat(tokens).contains("*");
   }
 
   // --- canRead / canWrite, authType=NONE ---
@@ -190,23 +190,27 @@ class FilestoreAclCheckerTest {
   @Test
   void assertCanRead_unauthorized_throws() {
     NfsFileSystem fs = s3FileSystem("alice", null);
-    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(user("bob"), fs));
+    User bob = user("bob");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(bob, fs));
   }
 
   @Test
   void assertCanWrite_unauthorized_throws() {
     NfsFileSystem fs = s3FileSystem(null, "alice");
-    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(user("bob"), fs));
+    User bob = user("bob");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(bob, fs));
   }
 
   @Test
   void assertCanRead_nullFilesystem_throwsAuthorizationExceptionNotNpe() {
-    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(user("alice"), null));
+    User alice = user("alice");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanRead(alice, null));
   }
 
   @Test
   void assertCanWrite_nullFilesystem_throwsAuthorizationExceptionNotNpe() {
-    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(user("alice"), null));
+    User alice = user("alice");
+    assertThrows(AuthorizationException.class, () -> checker.assertCanWrite(alice, null));
   }
 
   // --- helpers ---

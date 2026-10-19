@@ -31,6 +31,7 @@ import type { BlobUrl } from "../../../util/types";
 import { preventEventBubbling } from "../../../util/Util";
 import ContentsChips from "../../Container/Content/ContentsChips";
 import contextActions from "../ContextMenu/ContextActions";
+import { useProcessAvailable } from "../ContextMenu/useProcessAvailable";
 import { RecordLink } from "../RecordLink";
 import CardStructure from "./CardStructure";
 
@@ -98,12 +99,15 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const filteredOutReason = isFilteredOut ? search.uiConfig?.alwaysFilteredOutReason : undefined;
   const tooltipText = filteredOutReason ?? (!hasPermission ? t("detailedListing.card.requiredPermissions") : undefined);
 
+  const processAvailable = useProcessAvailable();
+
   const menuItems = contextActions({
     selectedResults: [record],
     menuID: menuIDs.CARD,
     closeMenu: () => setAnchorEl(null),
     forceDisabled: search.processingContextActions ? t("contextMenu.actionInProgress") : "",
     basketSearch: search.fetcher.basketSearch,
+    processAvailable,
   })("menuitem");
 
   const navigateOnClick = !disabled && !anchorEl && !cardIsGreyedOut && Boolean(isChild);

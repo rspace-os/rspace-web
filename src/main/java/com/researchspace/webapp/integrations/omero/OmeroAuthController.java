@@ -137,6 +137,7 @@ public class OmeroAuthController extends BaseController {
   }
 
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String onAuthorization(Model model) {
     ConnectionResultPage.addConnectionAttributes(
         model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);

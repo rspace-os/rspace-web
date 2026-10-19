@@ -1,6 +1,7 @@
 package com.researchspace.export.pdf;
 
 import static com.researchspace.testutils.RSpaceTestUtils.setupVelocityWithTextFieldTemplates;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -154,11 +155,11 @@ public class MSWordProcessorTest {
 
     File htmlInput = new File(outfile.getParentFile(), outfile.getName().replace(".doc", ".html"));
     String wordInputHtml = FileUtils.readFileToString(htmlInput, "UTF-8");
-    assertTrue(wordInputHtml.contains("external-workflow-data"));
-    assertTrue(wordInputHtml.contains("external-workflow-table"));
-    assertTrue(wordInputHtml.contains("border=\"1\""));
-    assertTrue(wordInputHtml.contains("cellpadding=\"4\""));
-    assertTrue(wordInputHtml.contains("Galaxy data"));
+    assertThat(wordInputHtml).contains("external-workflow-data");
+    assertThat(wordInputHtml).contains("external-workflow-table");
+    assertThat(wordInputHtml).contains("border=\"1\"");
+    assertThat(wordInputHtml).contains("cellpadding=\"4\"");
+    assertThat(wordInputHtml).contains("Galaxy data");
   }
 
   @Test

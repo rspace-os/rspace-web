@@ -25,4 +25,15 @@ public class NfsFileTreeNodeTest {
     testNode.calculateLogicPath("CSE/it/Thumbs.db", testUserFolder);
     assertEquals("1:/it/Thumbs.db", testNode.getLogicPath());
   }
+
+  @Test
+  public void fileNameDropsLeadingAndTrailingSlashesOnly() {
+    NfsFileTreeNode testNode = new NfsFileTreeNode();
+    testNode.calculateFileName("///dir/file.txt//");
+    assertEquals("dir/file.txt", testNode.getFileName());
+    testNode.calculateFileName("plain");
+    assertEquals("plain", testNode.getFileName());
+    testNode.calculateFileName("////");
+    assertEquals("", testNode.getFileName());
+  }
 }

@@ -1,11 +1,10 @@
 package com.researchspace.webapp.integrations.dsw;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -145,10 +144,10 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
-      assertTrue(projects.length > 0);
+      assertThat(projects.length).isGreaterThan(0);
       List<String> projectNames =
           Arrays.stream(projects).map(DSWProject::getName).collect(Collectors.toList());
-      assertTrue(projectNames.contains(TEST_PROJECT_NAME));
+      assertThat(projectNames).contains(TEST_PROJECT_NAME);
     } catch (Exception e) {
       fail(e.getMessage());
     }
@@ -165,7 +164,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
-      assertTrue(projects.length > 0);
+      assertThat(projects.length).isGreaterThan(0);
 
       DSWProject projectForRetrieval =
           Arrays.stream(projects)
@@ -200,7 +199,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
 
       assertNotNull(project);
       assertNull(project.getData());
-      assertEquals(project.getError().getErrorMessages().size(), 1);
+      assertThat(project.getError().getErrorMessages()).hasSize(1);
       assertEquals(MSG_PROJECT_ERROR, project.getError().getErrorMessages().get(0));
 
     } catch (Exception e) {
@@ -220,7 +219,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
       assertNotNull(plansResponse);
       DSWProject[] projects =
           mapper.readValue(((JsonNode) plansResponse.getData()).toString(), DSWProject[].class);
-      assertTrue(projects.length > 0);
+      assertThat(projects.length).isGreaterThan(0);
 
       DSWProject projectForRetrieval =
           Arrays.stream(projects)
@@ -237,7 +236,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
 
       assertNotNull(project);
       assertNull(project.getData());
-      assertEquals(project.getError().getErrorMessages().size(), 1);
+      assertThat(project.getError().getErrorMessages()).hasSize(1);
       assertEquals(MSG_PROJECT_ERROR, project.getError().getErrorMessages().get(0));
 
     } catch (Exception e) {
@@ -250,7 +249,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
     try {
       AppConfigElementSet cfg = dswController.getConfigForServer(u, DSW_SERVER_ALIAS);
       assertNotNull(cfg);
-      assertFalse(cfg.getConfigElements().isEmpty());
+      assertThat(cfg.getConfigElements()).isNotEmpty();
     } catch (Exception e) {
       fail(e.getMessage());
     }
@@ -263,7 +262,7 @@ public class DSWControllerRealConnectionTest extends SpringTransactionalTest {
         assertThrows(
             DSWProjectRetrievalException.class,
             () -> dswController.getConfigForServer(u, TEST_ALIAS));
-    assertTrue(e.getMessage().contains("No instance found"));
-    assertTrue(e.getMessage().contains(TEST_ALIAS));
+    assertThat(e.getMessage()).contains("No instance found");
+    assertThat(e.getMessage()).contains(TEST_ALIAS);
   }
 }

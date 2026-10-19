@@ -37,7 +37,7 @@
 </c:forEach>
 
 <div class="tabularViewBottom" style="opacity: 0">
-	<axt:paginate_new paginationList="${paginationList}"></axt:paginate_new>
+	<axt:paginate paginationList="${paginationList}"></axt:paginate>
 	<axt:numRecords></axt:numRecords>
 	<input type="text" name="" id="resultsPerPage" hidden value="${numberRecords}">
 </div>

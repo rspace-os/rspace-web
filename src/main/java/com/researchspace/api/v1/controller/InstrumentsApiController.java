@@ -7,13 +7,16 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList.ApiInventoryRecordRevision;
+import com.researchspace.api.v1.model.ApiPidinstImportPost;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierExternalUpdateService;
+import com.researchspace.service.inventory.PidinstLookupManager;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.io.IOException;
@@ -39,6 +42,8 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Autowired private InstrumentApiPutValidator instrumentApiPutValidator;
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
   @Autowired private InventoryIdentifierExternalUpdateService externalUpdateService;
+  @Autowired private PidinstLookupManager pidinstLookupMgr;
+  @Autowired private ApiAvailabilityHandler apiHandler;
 
   @Data
   @AllArgsConstructor
@@ -236,10 +241,10 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     instrumentApiMgr.assertUserCanTransferInstrument(id, user);
 
     ApiInstrument updated = instrumentApiMgr.changeApiInstrumentOwner(incomingInstrument, user);
-    // A transfer really does change what the provider holds: RspaceToExternalProviderAdapterImpl
-    // maps ownerContact from the record owner's email unconditionally, and ownerName from the same
-    // owner unless the Owner field overrides it. Left unpushed, the registered record keeps the
-    // previous owner's address, which is exactly the drift this ticket exists to stop.
+    // A transfer can change what the provider holds: RspaceToExternalProviderAdapterImpl
+    // maps ownerName from the record owner's full name unless the Owner field overrides it. Left
+    // unpushed, the registered record keeps naming the previous owner, which is exactly the drift
+    // this ticket exists to stop.
     pushExternalMetadataUpdates(updated, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
@@ -253,6 +258,22 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     ApiInstrument copy = instrumentApiMgr.duplicateInstrument(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;
+  }
+
+  @Override
+  public ApiInstrument importPidinst(
+      @RequestBody @Valid ApiPidinstImportPost post,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+    throwBindExceptionIfErrors(errors);
+    apiHandler.assertInventoryAvailable(user);
+    ApiInstrument created =
+        pidinstLookupMgr.importInstrument(
+            post.getPid(), post.getProvider(), post.getNewTargetLocation(), user);
+    // no external metadata push: the identifier is linked, and the service skips it anyway
+    buildAndAddInventoryRecordLinks(created);
+    return created;
   }
 
   @Override

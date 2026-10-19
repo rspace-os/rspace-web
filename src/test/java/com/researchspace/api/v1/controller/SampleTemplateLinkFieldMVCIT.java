@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,7 +55,8 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
     ApiInventoryEntityField savedLinkField = findLinkField(savedTemplate.getFields());
     assertNotNull(savedLinkField, "saved template should contain a link field");
     assertEquals(ApiFieldType.LINK, savedLinkField.getType());
-    assertEquals(List.of("References", "IsDerivedFrom"), savedLinkField.getAllowedRelationTypes());
+    assertThat(savedLinkField.getAllowedRelationTypes())
+        .containsExactly("References", "IsDerivedFrom");
 
     // instantiate a sample from the template: it inherits the link field + whitelist (shallowCopy)
     ApiSampleWithFullSubSamples apiSample =
@@ -66,8 +68,8 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
     ApiInventoryEntityField inheritedLinkField = findLinkField(fetched.getFields());
     assertNotNull(inheritedLinkField, "sample should inherit the template's link field");
     assertEquals(ApiFieldType.LINK, inheritedLinkField.getType());
-    assertEquals(
-        List.of("References", "IsDerivedFrom"), inheritedLinkField.getAllowedRelationTypes());
+    assertThat(inheritedLinkField.getAllowedRelationTypes())
+        .containsExactly("References", "IsDerivedFrom");
   }
 
   @Test
@@ -156,9 +158,8 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
     // manager -> DTO path and reloads the template to prove the new set persists.
     ApiSampleTemplate savedTemplate = createTemplateWithLinkField();
     Long linkFieldId = findLinkField(savedTemplate.getFields()).getId();
-    assertEquals(
-        List.of("References", "IsDerivedFrom"),
-        findLinkField(savedTemplate.getFields()).getAllowedRelationTypes());
+    assertThat(findLinkField(savedTemplate.getFields()).getAllowedRelationTypes())
+        .containsExactly("References", "IsDerivedFrom");
 
     // edit the whitelist to a different (still valid DataCite) set and save the template
     String updateJson =
@@ -178,18 +179,16 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
 
     ApiSampleTemplate updated = getFromJsonResponseBody(result, ApiSampleTemplate.class);
-    assertEquals(
-        List.of("IsCitedBy", "Cites"),
-        findLinkField(updated.getFields()).getAllowedRelationTypes(),
-        "the edited whitelist should be returned by the update");
+    assertThat(findLinkField(updated.getFields()).getAllowedRelationTypes())
+        .as("the edited whitelist should be returned by the update")
+        .containsExactly("IsCitedBy", "Cites");
 
     // reload the template (the "subsequent edit" the user saw stuck at the old set)
     ApiSampleTemplate reloaded =
         sampleApiManager.getApiSampleTemplateById(savedTemplate.getId(), anyUser);
-    assertEquals(
-        List.of("IsCitedBy", "Cites"),
-        findLinkField(reloaded.getFields()).getAllowedRelationTypes(),
-        "the edited whitelist should persist across reload");
+    assertThat(findLinkField(reloaded.getFields()).getAllowedRelationTypes())
+        .as("the edited whitelist should persist across reload")
+        .containsExactly("IsCitedBy", "Cites");
   }
 
   @Test
@@ -205,10 +204,10 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
         new ApiSampleWithFullSubSamples("existing sample from link template");
     apiSample.setTemplateId(savedTemplate.getId());
     ApiSampleWithFullSubSamples created = sampleApiManager.createNewApiSample(apiSample, anyUser);
-    assertEquals(
-        List.of("References", "IsDerivedFrom"),
-        findLinkField(sampleApiManager.getApiSampleById(created.getId(), anyUser).getFields())
-            .getAllowedRelationTypes());
+    assertThat(
+            findLinkField(sampleApiManager.getApiSampleById(created.getId(), anyUser).getFields())
+                .getAllowedRelationTypes())
+        .containsExactly("References", "IsDerivedFrom");
 
     // edit the template's link-field whitelist (bumps the template version)
     String updateJson =
@@ -229,10 +228,9 @@ public class SampleTemplateLinkFieldMVCIT extends API_MVC_InventoryTestBase {
     sampleApiManager.updateSampleToLatestTemplateVersion(created.getId(), anyUser);
 
     ApiSample synced = sampleApiManager.getApiSampleById(created.getId(), anyUser);
-    assertEquals(
-        List.of("IsCitedBy", "Cites"),
-        findLinkField(synced.getFields()).getAllowedRelationTypes(),
-        "the existing sample should acquire the template's edited whitelist after the sync");
+    assertThat(findLinkField(synced.getFields()).getAllowedRelationTypes())
+        .as("the existing sample should acquire the template's edited whitelist after the sync")
+        .containsExactly("IsCitedBy", "Cites");
   }
 
   private ApiSampleTemplate createTemplateWithLinkField() throws Exception {

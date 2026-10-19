@@ -1,5 +1,6 @@
 package com.researchspace.recordsandbox;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -36,15 +37,15 @@ public class FolderRelationTest {
     Folder child = TestFactory.createAFolder("2", owner);
     parent.addChild(child, owner);
 
-    assertEquals(1, parent.getChildrens().size());
+    assertThat(parent.getChildrens()).hasSize(1);
     assertEquals(child, parent.getChildrens().iterator().next());
 
-    assertEquals(1, child.getParentFolders().size());
+    assertThat(child.getParentFolders()).hasSize(1);
     assertEquals(parent, child.getParentFolders().iterator().next());
 
     assertTrue(parent.removeChild(child));
-    assertEquals(0, parent.getChildrens().size());
-    assertEquals(0, child.getParentFolders().size());
+    assertThat(parent.getChildrens()).isEmpty();
+    assertThat(child.getParentFolders()).isEmpty();
 
     assertFalse(parent.removeChild(TestFactory.createAFolder("3", owner)));
   }
@@ -111,17 +112,17 @@ public class FolderRelationTest {
     u1Labgroups.addChild(u2, owner);
 
     RSPath shortest = node.getShortestPathToParent(u1shared);
-    assertEquals(4, shortest.size());
+    assertThat(shortest).hasSize(4);
 
     RSPath shortestVia = node.getShortestPathToParentVia(u1shared, null, groupShared);
-    assertEquals(5, shortestVia.size());
-    assertTrue(shortestVia.contains(groupShared));
+    assertThat(shortestVia).hasSize(5);
+    assertThat(shortestVia).contains(groupShared);
 
     shortestVia =
         node.getShortestPathToParentVia(
             u1shared, null, TestFactory.createAFolder("notonPath", owner));
-    assertEquals(0, shortestVia.size());
-    assertTrue(shortestVia.isEmpty());
+    assertThat(shortestVia).isEmpty();
+    assertThat(shortestVia).isEmpty();
   }
 
   @Test
@@ -142,16 +143,16 @@ public class FolderRelationTest {
     g.addChild(f1, user2);
     f1.addChild(x, user2);
 
-    assertTrue(x.getShortestPathToParent(unknown).isEmpty());
+    assertThat(x.getShortestPathToParent(unknown)).isEmpty();
     // shortest path to itself includes itself
-    assertEquals(1, x.getShortestPathToParent(x).size());
+    assertThat(x.getShortestPathToParent(x)).hasSize(1);
 
     RSPath sp1 = x.getShortestPathToParent(u1);
-    assertEquals(2, sp1.size());
+    assertThat(sp1).hasSize(2);
     assertEquals(u1, sp1.getFirstElement().get());
 
     RSPath sp2 = x.getShortestPathToParent(g);
-    assertEquals(3, sp2.size());
+    assertThat(sp2).hasSize(3);
     assertEquals(g, sp2.getFirstElement().get());
     assertEquals(f1, sp2.get(1).get());
     assertEquals(x, sp2.getLastElement().get());
@@ -162,7 +163,7 @@ public class FolderRelationTest {
     Folder parent = TestFactory.createAFolder("1", owner);
     parent.addType(RecordType.ROOT);
     owner.setRootFolder(parent);
-    assertEquals(1, parent.getParentHierarchyForUser(owner).size());
+    assertThat(parent.getParentHierarchyForUser(owner)).hasSize(1);
 
     Folder child = TestFactory.createAFolder("3", owner);
     Folder gchild = TestFactory.createAFolder("4", owner);
@@ -170,7 +171,7 @@ public class FolderRelationTest {
     child.addChild(gchild, owner);
     // C->B->A relations
     RSPath trail = gchild.getParentHierarchyForUser(owner);
-    assertEquals(3, trail.size());
+    assertThat(trail).hasSize(3);
     assertEquals(parent, trail.getFirstElement().get());
     assertEquals(child, trail.get(1).get());
     assertEquals(gchild, trail.getLastElement().get());
@@ -182,37 +183,37 @@ public class FolderRelationTest {
     user2.setRootFolder(parent2);
     assertNotNull(parent2.addChild(child, user2));
     RSPath trail2 = gchild.getParentHierarchyForUser(user2);
-    assertEquals(3, trail2.size());
+    assertThat(trail2).hasSize(3);
     assertEquals(parent2, trail2.get(0).get());
     assertEquals(gchild, trail2.get(2).get());
 
     // edges p1-p2, p1-p3, p3-a, a-b, b-c,c-d; p4-cP,cP-c
     createComplexGraph();
     RSPath h1 = d.getParentHierarchyForUser(u4);
-    assertEquals(4, h1.size());
+    assertThat(h1).hasSize(4);
 
     RSPath h2 = d.getParentHierarchyForUser(user2);
-    assertEquals(5, h2.size());
+    assertThat(h2).hasSize(5);
     RSPath h3 = d.getParentHierarchyForUser(owner);
-    assertEquals(6, h3.size());
-    assertEquals(5, d.getParentHierarchyForUser(u3).size());
+    assertThat(h3).hasSize(6);
+    assertThat(d.getParentHierarchyForUser(u3)).hasSize(5);
 
     // now make a shortcut edge from p3-d:
     p3.addChild(d, p3.getOwner());
-    assertEquals(2, d.getParentHierarchyForUser(u3).size());
+    assertThat(d.getParentHierarchyForUser(u3)).hasSize(2);
   }
 
   @Test
   public void testMove() throws IllegalAddChildOperation {
     ROOT_NODE = createComplexGraph();
     assertTrue(c.move(b, a, owner));
-    assertTrue(c.getParentFolders().contains(a));
-    assertTrue(a.getChildrens().contains(c));
-    assertFalse(c.getParentFolders().contains(b));
+    assertThat(c.getParentFolders()).contains(a);
+    assertThat(a.getChildrens()).contains(c);
+    assertThat(c.getParentFolders()).doesNotContain(b);
 
     // can't move into subfolder of oneself
     assertFalse(p1.move(ROOT_NODE, d, owner));
-    assertFalse(p1.getParentFolders().contains(b));
+    assertThat(p1.getParentFolders()).doesNotContain(b);
     // can't move into oneself
     assertFalse(p1.move(ROOT_NODE, p1, owner));
     // move doesn't succeed if 'from' isnt' a direct parent

@@ -1,7 +1,7 @@
 package com.researchspace.service.inventory.csvexport;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.model.User;
@@ -60,7 +60,7 @@ public class CsvListOfMaterialsExporterTest extends SpringTransactionalTest {
     // run the export
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     List<String> csvColumnNames = lomExporter.writeLomCsvHeaderIntoOutput(null, outputStream);
-    assertEquals(6, csvColumnNames.size());
+    assertThat(csvColumnNames).hasSize(6);
     String csvHeaderLineForListOfMaterials = outputStream.toString();
     String expectedColumnNamesLine =
         "List of Materials (Global ID),List of Materials (Name),Used Material (Global ID),"
@@ -95,9 +95,9 @@ public class CsvListOfMaterialsExporterTest extends SpringTransactionalTest {
         lomExporter
             .getCsvCommentFragmentForLom(ExportScope.SELECTION, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(csvComment.startsWith("# " + lomExporter.getCsvCommentHeader()), csvComment);
-    assertTrue(csvComment.contains("# Exported content: LIST_OF_MATERIALS"), csvComment);
-    assertTrue(csvComment.contains("# Export scope: SELECTION"), csvComment);
-    assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);
+    assertThat(csvComment).as(csvComment).startsWith("# " + lomExporter.getCsvCommentHeader());
+    assertThat(csvComment).as(csvComment).contains("# Exported content: LIST_OF_MATERIALS");
+    assertThat(csvComment).as(csvComment).contains("# Export scope: SELECTION");
+    assertThat(csvComment).as(csvComment).contains("# Export mode: COMPACT");
   }
 }

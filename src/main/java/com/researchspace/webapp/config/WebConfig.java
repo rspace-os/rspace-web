@@ -1,5 +1,6 @@
 package com.researchspace.webapp.config;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.researchspace.api.v1.controller.APIFileUploadThrottlingInterceptor;
 import com.researchspace.api.v1.controller.APIRequestThrottlingInterceptor;
@@ -22,6 +23,7 @@ import org.springframework.http.converter.json.AbstractJackson2HttpMessageConver
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.validation.Validator;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 
@@ -31,7 +33,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupp
  */
 @Configuration
 public class WebConfig extends WebMvcConfigurationSupport {
-
   @Autowired WebDefaultConfig defaultConfig;
 
   @Autowired APIRequestThrottlingInterceptor requestThrottle;
@@ -55,6 +56,9 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
   @Value("${deployment.standalone}")
   private String standalone;
+
+  @Value("${dev.storybook.preview.enabled:false}")
+  private String storybookPreviewEnabled;
 
   /**
    * Without this, {@code mvcValidator()} builds its own validator, whose interpolator reads only
@@ -112,7 +116,21 @@ public class WebConfig extends WebMvcConfigurationSupport {
   }
 
   @Override
+  public void addResourceHandlers(ResourceHandlerRegistry registry) {
+    if (isStorybookEnabled()) {
+      registry
+          .addResourceHandler("/public/storybook/**")
+          .addResourceLocations("/WEB-INF/storybook/", "file:src/main/webapp/ui/storybook-static/");
+    }
+  }
+
+  @Override
   public void addViewControllers(ViewControllerRegistry registry) {
+    if (isStorybookEnabled()) {
+      registry
+          .addViewController("/public/storybook")
+          .setViewName("redirect:/public/storybook/index.html");
+    }
     registry.addViewController("/admin").setViewName("admin/admin");
     registry
         .addViewController("/public/signupConfirmation")
@@ -180,6 +198,10 @@ public class WebConfig extends WebMvcConfigurationSupport {
         .setViewName("/public/publishIsDisabled");
   }
 
+  private boolean isStorybookEnabled() {
+    return Boolean.parseBoolean(storybookPreviewEnabled);
+  }
+
   public static final class YamlJackson2HttpMessageConverter
       extends AbstractJackson2HttpMessageConverter {
     public YamlJackson2HttpMessageConverter() {
@@ -191,8 +213,11 @@ public class WebConfig extends WebMvcConfigurationSupport {
   protected void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
     // now let's reconfigure Jackson to use PrettyPrinted object mapper.
     for (HttpMessageConverter<?> converter : converters) {
-      if (converter instanceof MappingJackson2HttpMessageConverter) {
-        ((MappingJackson2HttpMessageConverter) converter).setPrettyPrint(true);
+      if (converter instanceof MappingJackson2HttpMessageConverter jacksonConverter) {
+        jacksonConverter.setPrettyPrint(true);
+        jacksonConverter
+            .getObjectMapper()
+            .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
       }
       // and string response bodies to be UTF8
       if (converter instanceof StringHttpMessageConverter) {

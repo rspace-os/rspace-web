@@ -525,7 +525,8 @@ div .searchButton {
     display: inline-block;
     cursor: pointer;
     float: left; }
-    .pagination.new li a {
+    .pagination.new li a,
+    .pagination.new li span {
       padding: 8px 11px !important;
       line-height: 15px !important;
       font-size: 15px;
@@ -541,7 +542,8 @@ div .searchButton {
         text-shadow: 0px 0px 5px rgba(50, 50, 50, 0.8) !important; }
     .pagination.new li.active {
       cursor: default; }
-      .pagination.new li.active a {
+      .pagination.new li.active a,
+      .pagination.new li.active span {
         background:#00aeef !important;
         color: white !important; }
     .pagination.new li:hover {

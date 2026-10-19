@@ -1,13 +1,16 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertExceptionThrown;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.SystemPropertyTestFactory.createAnyAppWithConfigElements;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -35,6 +38,8 @@ import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO.ArchiveDialogConfig;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
+import com.researchspace.model.permissions.IPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.model.repository.RepositoryTestFactory;
@@ -128,6 +133,7 @@ public class ExportControllerTest {
   @Mock private DiskSpaceChecker diskSpaceChecker;
   @Mock private OntologyDocManager ontologyDocManager;
   @Mock IGroupPermissionUtils grpPermUtils;
+  @Mock IPermissionUtils permissionUtils;
 
   @InjectMocks private ExportController exportController;
 
@@ -323,29 +329,20 @@ public class ExportControllerTest {
         "redirect:/import/archiveImportReport",
         exportController.importArchive(oKfile, session, redirectAttributesMap, principal),
         "Success redirect not sent");
-    assertFalse(
-        redirectAttributesMap
-            .getFlashAttributes()
-            .keySet()
-            .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(redirectAttributesMap.getFlashAttributes().keySet())
+        .doesNotContain(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     // now test error scenarios: empty file rejected
     MultipartFile EMPTYfile =
         new MockMultipartFile("archive.zip", "archive.zip", "zip", new byte[] {});
     exportController.importArchive(EMPTYfile, session, redirectAttributesMap, principal);
-    assertTrue(
-        redirectAttributesMap
-            .getFlashAttributes()
-            .keySet()
-            .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(redirectAttributesMap.getFlashAttributes().keySet())
+        .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     redirectAttributesMap.getFlashAttributes().clear();
     // non-zip file rejected
     MultipartFile NON_ZIPfile = new MockMultipartFile("image.png", "image.png", "png", any_bytes);
     exportController.importArchive(NON_ZIPfile, session, redirectAttributesMap, principal);
-    assertTrue(
-        redirectAttributesMap
-            .getFlashAttributes()
-            .keySet()
-            .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(redirectAttributesMap.getFlashAttributes().keySet())
+        .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     redirectAttributesMap.getFlashAttributes().clear();
   }
 
@@ -368,8 +365,8 @@ public class ExportControllerTest {
             Mockito.any(ImportStrategy.class)))
         .thenThrow(new RuntimeException());
     exportController.importArchive(OKfile, session, ra, principal);
-    assertTrue(
-        ra.getFlashAttributes().keySet().contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
+    assertThat(ra.getFlashAttributes().keySet())
+        .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME);
     ra.getFlashAttributes().clear();
   }
 
@@ -590,24 +587,24 @@ public class ExportControllerTest {
     ServerPath path = new ServerPath();
     path.setServerFilePath("");
     Set<ConstraintViolation<Object>> violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
     path.setServerFilePath("/fff'gggg");
     violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
 
     path.setServerFilePath("/fffgggg.png"); // not a zip
     violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
 
     String TOO_LONG_PATH = randomAlphabetic(252);
     path.setServerFilePath("/" + TOO_LONG_PATH + ".zip");
     violations = validator.validate(path);
-    assertTrue(violations.size() > 0);
+    assertThat(violations.size()).isGreaterThan(0);
     String Max_PATH = randomAlphabetic(251) + ".zip"; // max path component on linux + 4 for .zip
     for (String validPath : toList("/abc.zip", "/a/b/c.zip", "/" + Max_PATH)) {
       path.setServerFilePath(validPath);
       violations = validator.validate(path);
-      assertTrue(violations.size() == 0, "Path " + validPath + " should be valid");
+      assertThat(violations).as("Path " + validPath + " should be valid").isEmpty();
     }
   }
 
@@ -619,13 +616,13 @@ public class ExportControllerTest {
 
   @Test
   public void displayPdfArgumentValidation() throws Exception {
-    assertExceptionThrown(
-        () -> exportController.displayPdf("", "any", principal, response),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> exportController.displayPdf("", "any", principal, response));
 
-    assertExceptionThrown(
-        () -> exportController.displayPdf("../../passwordfile.txt", "any", principal, response),
-        IllegalArgumentException.class);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> exportController.displayPdf("../../passwordfile.txt", "any", principal, response));
 
     when(principal.getName()).thenReturn("user1a");
     when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);
@@ -713,6 +710,29 @@ public class ExportControllerTest {
     Mockito.verify(depositHandler, times(1)).sendArchiveToRepository(any(), any(), any(), any());
     assertEquals(HttpStatus.OK, msg.getStatusCode());
     assertEquals(submissionSuccess, msg.getBody());
+  }
+
+  @Test
+  public void depositToAnotherUsersRepositoryConfigIsRejected() throws Exception {
+    stubArchiveProcessCanStart();
+    final Long appSetId = 1L;
+    UserAppConfig othersCfg = setupMockAppCfg(appSetId, App.APP_DATAVERSE);
+    when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);
+    when(principal.getName()).thenReturn("user1a");
+    when(properties.getServerUrl()).thenReturn("http://www.rspace.com");
+    doThrow(new AuthorizationException())
+        .when(permissionUtils)
+        .assertIsPermitted(eq(othersCfg), eq(PermissionType.READ), eq(user), anyString());
+
+    ResponseEntity<String> msg =
+        exportController.exportArchive(
+            createExportArchiveConfig(ids(5), names(5), types(5), true),
+            errors,
+            request,
+            principal);
+
+    assertEquals(HttpStatus.BAD_REQUEST, msg.getStatusCode());
+    verify(depositHandler, never()).sendArchiveToRepository(any(), any(), any(), any());
   }
 
   @Test

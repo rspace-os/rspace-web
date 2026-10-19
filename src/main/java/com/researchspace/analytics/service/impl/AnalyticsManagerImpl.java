@@ -22,6 +22,7 @@ import com.researchspace.model.events.GroupEventType;
 import com.researchspace.model.events.GroupMembershipEvent;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.model.sort.UserSort;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IntegrationsHandler;
@@ -283,7 +284,7 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
 
     PaginationCriteria<User> allUsersPgCrit = PaginationCriteria.createDefaultForClass(User.class);
     allUsersPgCrit.setResultsPerPage(Integer.MAX_VALUE);
-    allUsersPgCrit.setOrderBy(SysAdminManager.ORDER_BY_FILE_USAGE);
+    allUsersPgCrit.setOrderBy(UserSort.FILE_USAGE.key());
 
     User dummySysadmin = new User();
     dummySysadmin.addRole(Role.SYSTEM_ROLE);

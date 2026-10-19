@@ -1,5 +1,6 @@
 package com.researchspace.model.field;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -40,6 +41,6 @@ public class RadioFieldTest {
 
   @Test
   public void getRadioOptionAsListTest() {
-    assertEquals(3, nf.getRadioOptionAsList().size());
+    assertThat(nf.getRadioOptionAsList()).hasSize(3);
   }
 }

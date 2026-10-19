@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,7 +96,7 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
     // check both image and doc have new revision
     List<AuditedEntity<EcatImage>> updatedImageRevs =
         auditMgr.getRevisionsForEntity(EcatImage.class, image.getId());
-    assertEquals(2, updatedImageRevs.size());
+    assertThat(updatedImageRevs).hasSize(2);
     long firstRevId = updatedImageRevs.get(0).getRevision().longValue();
 
     // download current revision of image
@@ -105,8 +105,8 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
     assertNull(currentRevImageResult.getResolvedException());
     MockHttpServletResponse currentRevResponse = currentRevImageResult.getResponse();
 
-    assertTrue(currentRevResponse.getHeader("Content-Disposition").contains("Picture2"));
-    assertEquals(289399, currentRevResponse.getContentAsByteArray().length);
+    assertThat(currentRevResponse.getHeader("Content-Disposition")).contains("Picture2");
+    assertThat(currentRevResponse.getContentAsByteArray()).hasSize(289399);
 
     // download first revision of image
     MvcResult firstRevImageResult =
@@ -116,7 +116,7 @@ public class FileDownloadControllerMVCIT extends MVCTestBase {
             .andReturn();
     assertNull(firstRevImageResult.getResolvedException());
     MockHttpServletResponse firstRevResponse = firstRevImageResult.getResponse();
-    assertTrue(firstRevResponse.getHeader("Content-Disposition").contains("Picture1"));
-    assertEquals(47326, firstRevResponse.getContentAsByteArray().length);
+    assertThat(firstRevResponse.getHeader("Content-Disposition")).contains("Picture1");
+    assertThat(firstRevResponse.getContentAsByteArray()).hasSize(47326);
   }
 }

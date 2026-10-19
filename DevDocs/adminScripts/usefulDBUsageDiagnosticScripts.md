@@ -125,16 +125,11 @@ select count(*) from StructuredDocument sd inner join BaseRecord br on br.id=sd.
 
 ### Slack usage
 
-Two queries. Gets username and email of users who have registered >= 1 Slack channel
+Gets username and email of users who have registered >= 1 Slack channel
 ```mysql
-select @appIdentifier := id from AppConfigElementDescriptor \
- where descriptor_id = (select id from PropertyDescriptor where name ='SLACK_WEBHOOK_URL');
- 
-select u.username, u.email from User u where  u.id in \
-  (select user_id from UserAppConfig uac  where uac.id in \
-     (select userAppConfig_id from AppConfigElementSet aces where aces.id in \
-        (select appConfigElementSet_id from AppConfigElement where appConfigElementDescriptor_id = @appIdentifier)));
- ```             
+select u.username, u.email from User u where u.username in \
+  (select userId from UserConnection where providerId = 'SLACK');
+```
 
 ### Figshare usage
 

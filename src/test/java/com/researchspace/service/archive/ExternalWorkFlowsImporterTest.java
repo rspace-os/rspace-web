@@ -1,5 +1,6 @@
 package com.researchspace.service.archive;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -101,7 +102,7 @@ public class ExternalWorkFlowsImporterTest {
     importer.importExternalWorkFlows(
         newDoc, ref, oldIdToNewGalleryItem, externalWorkFlowDataManager);
     ExternalWorkFlowData data = makeExternalWFDataAssertions();
-    assertEquals(0, data.getExternalWorkflowInvocations().size());
+    assertThat(data.getExternalWorkflowInvocations()).isEmpty();
   }
 
   @Test
@@ -147,7 +148,7 @@ public class ExternalWorkFlowsImporterTest {
     ExternalWorkFlowData data = externalWorkFlowDataArgumentCaptor.getAllValues().get(0);
     Set<ExternalWorkFlowInvocation> externalWorkFlowInvocations =
         data.getExternalWorkflowInvocations();
-    assertEquals(2, externalWorkFlowInvocations.size());
+    assertThat(externalWorkFlowInvocations).hasSize(2);
     List<ExternalWorkFlowInvocation> externalWorkFlowInvocationsWithWF =
         data.getExternalWorkflowInvocations().stream()
             .filter(
@@ -156,7 +157,7 @@ public class ExternalWorkFlowsImporterTest {
                         .getName()
                         .equals(ArchiveExternalWorkFlowTestMother.NAME))
             .collect(Collectors.toList());
-    assertEquals(1, externalWorkFlowInvocationsWithWF.size());
+    assertThat(externalWorkFlowInvocationsWithWF).hasSize(1);
   }
 
   @AfterEach

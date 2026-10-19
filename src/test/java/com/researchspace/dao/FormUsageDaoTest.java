@@ -1,5 +1,6 @@
 package com.researchspace.dao;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -32,7 +33,7 @@ public class FormUsageDaoTest extends BaseDaoTestCase {
     FormUsage formUsage = new FormUsage(user, forms[0]);
     Thread.sleep(5);
     formUsageDao.save(formUsage);
-    assertEquals(b4 + 1, formUsageDao.getAll().size());
+    assertThat(formUsageDao.getAll()).hasSize(b4 + 1);
     FormUsage formUsage2 = formUsageDao.get(formUsage.getId());
     assertNotNull(formUsage2.getFormStableID());
     assertNotNull(formUsage2.getUser());

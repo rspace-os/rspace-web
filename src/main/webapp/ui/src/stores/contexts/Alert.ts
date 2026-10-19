@@ -26,7 +26,7 @@ export type AlertDetails = {
   title: string;
   variant: AlertVariant;
   record?: LinkableRecord;
-  help?: string;
+  help?: React.ReactNode;
 };
 
 type AlertParams = {

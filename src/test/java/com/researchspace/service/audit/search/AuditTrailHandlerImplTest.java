@@ -1,6 +1,6 @@
 package com.researchspace.service.audit.search;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.api.v1.controller.ApiActivitySrchConfig;
 import com.researchspace.core.util.ISearchResults;
@@ -35,7 +35,7 @@ public class AuditTrailHandlerImplTest {
     IAuditTrailSearchConfig cfg = new ApiActivitySrchConfig();
     cfg.getUsernames().add(other.getUsername());
     AuditTrailSearchElement internalSearchEl = impl.configureUserRestriction(cfg, subject);
-    assertEquals(0, internalSearchEl.getUsernames().size());
+    assertThat(internalSearchEl.getUsernames()).isEmpty();
   }
 
   @Test
@@ -46,7 +46,7 @@ public class AuditTrailHandlerImplTest {
     Mockito.when(searchResults.getResults()).thenReturn(new ArrayList<>());
     IAuditTrailSearchConfig cfg = new ApiActivitySrchConfig();
     AuditTrailSearchElement internalSearchEl = impl.configureUserRestriction(cfg, subject);
-    assertEquals(1, internalSearchEl.getUsernames().size());
+    assertThat(internalSearchEl.getUsernames()).hasSize(1);
   }
 
   @Test
@@ -58,16 +58,16 @@ public class AuditTrailHandlerImplTest {
     IAuditTrailSearchConfig cfg = new ApiActivitySrchConfig();
     cfg.getUsernames().add(other.getUsername());
     AuditTrailSearchElement internalSearchEl = impl.configureUserRestriction(cfg, subject);
-    assertEquals(1, internalSearchEl.getUsernames().size());
+    assertThat(internalSearchEl.getUsernames()).hasSize(1);
 
     cfg.getUsernames().add(subject.getUsername());
     internalSearchEl = impl.configureUserRestriction(cfg, subject);
-    assertEquals(2, internalSearchEl.getUsernames().size());
+    assertThat(internalSearchEl.getUsernames()).hasSize(2);
 
     cfg.getUsernames().clear();
     Mockito.when(searchResults.getResults()).thenReturn(TransformerUtils.toList(subject));
     internalSearchEl = impl.configureUserRestriction(cfg, subject);
-    assertEquals(1, internalSearchEl.getUsernames().size());
+    assertThat(internalSearchEl.getUsernames()).hasSize(1);
   }
 
   private void setUpSearchResults(User subject) {

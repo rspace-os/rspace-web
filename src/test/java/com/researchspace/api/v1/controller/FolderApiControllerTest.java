@@ -3,12 +3,8 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.api.v1.controller.BaseApiController.DOCUMENTS_ENDPOINT;
 import static com.researchspace.api.v1.controller.BaseApiController.FOLDERS_ENDPOINT;
 import static com.researchspace.api.v1.controller.BaseApiController.FOLDER_TREE_ENDPOINT;
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalArgumentException;
 import static com.researchspace.core.util.TransformerUtils.toSet;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasItems;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,7 +22,6 @@ import com.researchspace.api.v1.model.ApiRecordTreeItemListing;
 import com.researchspace.api.v1.model.ApiRecordType;
 import com.researchspace.api.v1.model.LinkableApiObject;
 import com.researchspace.api.v1.model.RecordTreeItemInfo;
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.TransformerUtils;
@@ -192,58 +187,47 @@ public class FolderApiControllerTest {
 
   @Test
   public void createNestedNotebookNotAllowed() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiNotebookToPost();
-          toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
-          when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
-          controller.createNewFolder(
-              toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
-        });
+    ApiFolder toCreate = createApiNotebookToPost();
+    Long parentFolderId = existingNotebook.getId();
+    toCreate.setParentFolderId(parentFolderId); // this should not be allowed
+    when(folderMgr.getFolder(parentFolderId, subject)).thenReturn(existingNotebook);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
   }
 
   @Test
   public void createTopLevelGalleryFolder() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiFolderToPost();
-          toCreate.setParentFolderId(topLevelGalleryFolder.getId()); // this should not be allowed
-          when(folderMgr.getFolder(topLevelGalleryFolder.getId(), subject))
-              .thenReturn(topLevelGalleryFolder);
-          controller.createNewFolder(
-              toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
-        });
+    ApiFolder toCreate = createApiFolderToPost();
+    Long parentFolderId = topLevelGalleryFolder.getId();
+    toCreate.setParentFolderId(parentFolderId); // this should not be allowed
+    when(folderMgr.getFolder(parentFolderId, subject)).thenReturn(topLevelGalleryFolder);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
   }
 
   @Test
   public void createNestedFolderInNotebookNotAllowed() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiFolderToPost();
-          toCreate.setParentFolderId(existingNotebook.getId()); // this should not be allowed
-          when(folderMgr.getFolder(existingNotebook.getId(), subject)).thenReturn(existingNotebook);
-          controller.createNewFolder(
-              toCreate, new BeanPropertyBindingResult(toCreate, "bean"), subject);
-        });
+    ApiFolder toCreate = createApiFolderToPost();
+    Long parentFolderId = existingNotebook.getId();
+    toCreate.setParentFolderId(parentFolderId); // this should not be allowed
+    when(folderMgr.getFolder(parentFolderId, subject)).thenReturn(existingNotebook);
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
   }
 
   @Test
   public void bindExceptionThrownIfValidationFails() {
-    assertThrows(
-        BindException.class,
-        () -> {
-          ApiFolder toCreate = createApiFolderToPost();
-          // validation is not actually performed in this test, this is just an example
-          toCreate.setName(RandomStringUtils.insecure().nextAlphabetic(300));
-          BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
-          errors.reject("some.value");
-          controller.createNewFolder(toCreate, errors, subject);
-          verify(folderMgr, never())
-              .createNewFolder(Mockito.anyLong(), Mockito.anyString(), eq(subject));
-        });
+    ApiFolder toCreate = createApiFolderToPost();
+    // validation is not actually performed in this test, this is just an example
+    toCreate.setName(RandomStringUtils.insecure().nextAlphabetic(300));
+    BeanPropertyBindingResult errors = new BeanPropertyBindingResult(toCreate, "bean");
+    errors.reject("some.value");
+
+    assertThrows(BindException.class, () -> controller.createNewFolder(toCreate, errors, subject));
+    verify(folderMgr, never()).createNewFolder(Mockito.anyLong(), Mockito.anyString(), eq(subject));
   }
 
   @Test
@@ -293,12 +277,9 @@ public class FolderApiControllerTest {
 
   @Test
   public void getFolderThrowsNotFoundExIfNoExists() {
-    assertThrows(
-        NotFoundException.class,
-        () -> {
-          when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
-          controller.getFolder(1L, false, null, subject);
-        });
+    when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
+
+    assertThrows(NotFoundException.class, () -> controller.getFolder(1L, false, null, subject));
   }
 
   @Test
@@ -314,12 +295,14 @@ public class FolderApiControllerTest {
     RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
     actualFilter = controller.generateRecordFilter(toSet("notebook"));
-    assertThat(actualFilter.getWantedTypes(), hasItem(RecordType.NOTEBOOK));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NORMAL, RecordType.FOLDER));
+    assertThat(actualFilter.getWantedTypes()).contains(RecordType.NOTEBOOK);
+    assertThat(actualFilter.getExcludedTypes()).contains(RecordType.NORMAL);
+    assertThat(actualFilter.getExcludedTypes()).contains(RecordType.FOLDER);
 
     actualFilter = controller.generateRecordFilter(toSet("document", "folder"));
-    assertThat(actualFilter.getWantedTypes(), hasItems(RecordType.NORMAL, RecordType.FOLDER));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NOTEBOOK));
+    assertThat(actualFilter.getWantedTypes()).contains(RecordType.NORMAL);
+    assertThat(actualFilter.getWantedTypes()).contains(RecordType.FOLDER);
+    assertThat(actualFilter.getExcludedTypes()).contains(RecordType.NOTEBOOK);
   }
 
   @Test
@@ -327,21 +310,25 @@ public class FolderApiControllerTest {
     RecordTypeFilter actualFilter = controller.generateRecordFilter(Collections.emptySet());
     assertEquals(EnumSet.allOf(RecordType.class), actualFilter.getWantedTypes());
     actualFilter = controller.generateRecordFilter(toSet("folder"));
-    assertThat(actualFilter.getWantedTypes(), hasItem(RecordType.FOLDER));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NORMAL, RecordType.MEDIA_FILE));
+    assertThat(actualFilter.getWantedTypes()).contains(RecordType.FOLDER);
+    assertThat(actualFilter.getExcludedTypes()).contains(RecordType.NORMAL);
+    assertThat(actualFilter.getExcludedTypes()).contains(RecordType.MEDIA_FILE);
 
     actualFilter = controller.generateRecordFilter(toSet("document", "folder"));
-    assertThat(actualFilter.getWantedTypes(), hasItems(RecordType.MEDIA_FILE, RecordType.FOLDER));
-    assertThat(actualFilter.getExcludedTypes(), hasItems(RecordType.NOTEBOOK));
+    assertThat(actualFilter.getWantedTypes()).contains(RecordType.MEDIA_FILE);
+    assertThat(actualFilter.getWantedTypes()).contains(RecordType.FOLDER);
+    assertThat(actualFilter.getExcludedTypes()).contains(RecordType.NOTEBOOK);
   }
 
   @Test
   public void rejectInvalidFolderTreeFilter() {
     DocumentApiPaginationCriteria pgCriteria = new DocumentApiPaginationCriteria();
-    CoreTestUtils.assertIllegalArgumentException(
-        () ->
-            controller.rootFolderTree(
-                TransformerUtils.toSet("unknown"), pgCriteria, errorsObject(pgCriteria), subject));
+    var filter = TransformerUtils.toSet("unknown");
+    BeanPropertyBindingResult errors = errorsObject(pgCriteria);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> controller.rootFolderTree(filter, pgCriteria, errors, subject));
   }
 
   @Test
@@ -362,7 +349,7 @@ public class FolderApiControllerTest {
     when(folderMgr.getRootFolderForUser(subject)).thenReturn(root);
     ApiRecordTreeItemListing listing =
         controller.rootFolderTree(null, pgCriteria, errorsObject(pgCriteria), subject);
-    assertEquals(3, listing.getRecords().size());
+    assertThat(listing.getRecords()).hasSize(3);
     assertEquals(subject.getRootFolder().getId(), listing.getFolderId());
     assertSelfLink(FOLDER_TREE_ENDPOINT, listing);
 
@@ -394,7 +381,7 @@ public class FolderApiControllerTest {
     ApiRecordTreeItemListing listing =
         controller.folderTreeById(
             subFolder.getId(), null, pgCriteria, errorsObject(pgCriteria), subject);
-    assertEquals(0, listing.getRecords().size());
+    assertThat(listing.getRecords()).isEmpty();
     assertEquals(subFolder.getId(), listing.getFolderId());
   }
 
@@ -428,7 +415,7 @@ public class FolderApiControllerTest {
             pgCriteria,
             errorsObject(pgCriteria),
             subject);
-    assertEquals(1, listing.getRecords().size());
+    assertThat(listing.getRecords()).hasSize(1);
     assertEquals(folderSetup.getMediaImgExamples().getId(), listing.getFolderId());
   }
 
@@ -442,7 +429,9 @@ public class FolderApiControllerTest {
   }
 
   private void assertSelfLink(String expectedPathMatch, LinkableApiObject nbInfo) {
-    assertThat(nbInfo.getLinks().get(0).getLink(), containsString(expectedPathMatch));
+    assertThat(nbInfo.getLinks().get(0).getLink())
+        .as(nbInfo.getLinks().get(0).getLink())
+        .contains(expectedPathMatch);
   }
 
   private RecordTreeItemInfo findResultById(final Long docId, ApiRecordTreeItemListing listing) {
@@ -474,16 +463,15 @@ public class FolderApiControllerTest {
     // root folder
     createdFolder.addType(RecordType.ROOT);
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.of(createdFolder));
-    assertIllegalArgumentException(() -> controller.deleteFolder(1L, subject));
+    assertThrows(IllegalArgumentException.class, () -> controller.deleteFolder(1L, subject));
 
     // or any system folder
     createdFolder.removeType(RecordType.ROOT);
     createdFolder.setSystemFolder(true);
-    assertIllegalArgumentException(() -> controller.deleteFolder(1L, subject));
+    assertThrows(IllegalArgumentException.class, () -> controller.deleteFolder(1L, subject));
     // not a folder or unauth
     when(folderMgr.getFolderSafe(1L, subject)).thenReturn(Optional.empty());
-    CoreTestUtils.assertExceptionThrown(
-        () -> controller.deleteFolder(1L, subject), NotFoundException.class);
+    assertThrows(NotFoundException.class, () -> controller.deleteFolder(1L, subject));
 
     // happy case
     ServiceOperationResultCollection<CompositeRecordOperationResult, Long> result = successResult();
@@ -501,8 +489,7 @@ public class FolderApiControllerTest {
 
     // deletion fails internally
     result.addFailure(10L); // simulate a failure
-    CoreTestUtils.assertExceptionThrown(
-        () -> controller.deleteFolder(1L, subject), RuntimeException.class);
+    assertThrows(RuntimeException.class, () -> controller.deleteFolder(1L, subject));
   }
 
   private ServiceOperationResultCollection<CompositeRecordOperationResult, Long> successResult() {

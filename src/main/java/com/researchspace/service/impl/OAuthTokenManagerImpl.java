@@ -18,10 +18,10 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,6 @@ import org.springframework.stereotype.Service;
 public class OAuthTokenManagerImpl implements OAuthTokenManager {
   private static final int ALLOWED_CLOCK_SKEW = 3 * 60;
   private static final int TOKEN_LENGTH = 32; // 192 bits in base64 (6bit)
-  private static final Pattern jwtToken = Pattern.compile(".+\\..+\\..+");
 
   @Autowired OAuthTokenDao tokenDao;
 
@@ -45,9 +44,9 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
     if (StringUtils.isEmpty(token)) {
       return new ServiceOperationResult<>(null, false, "token empty or missing");
     }
-    boolean isJwtToken = jwtToken.matcher(token).matches();
-    if (isJwtToken) {
-      for (String section : token.split("\\.")) {
+    String[] sections = token.split("\\.", -1);
+    if (looksLikeJwt(sections)) {
+      for (String section : sections) {
         if (!Base64.isBase64(section)) {
           return new ServiceOperationResult<>(null, false, section + " not in base64 format");
         }
@@ -65,7 +64,7 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
 
   @Override
   public ServiceOperationResult<OAuthToken> authenticate(String accessToken) {
-    boolean isJwtToken = jwtToken.matcher(accessToken).matches();
+    boolean isJwtToken = looksLikeJwt(accessToken.split("\\.", -1));
     if (isJwtToken) {
       Jws<Claims> jws;
       try {
@@ -285,5 +284,10 @@ public class OAuthTokenManagerImpl implements OAuthTokenManager {
     int tokensRemoved = tokenDao.removeAllTokens(clientId);
 
     return new ServiceOperationResult<>(null, true, "Tokens removed: " + tokensRemoved);
+  }
+
+  /** A JWT is three or more non-empty dot-separated sections. */
+  private static boolean looksLikeJwt(String[] sections) {
+    return sections.length >= 3 && Arrays.stream(sections).noneMatch(String::isEmpty);
   }
 }

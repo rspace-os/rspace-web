@@ -2,6 +2,7 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.model.netfiles.NfsFileSystemOption.USER_DIRS_REQUIRED;
 import static com.researchspace.webapp.controller.NfsController.NEED_LOG_IN_MSG;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -135,9 +136,9 @@ public class NfsControllerTest extends SpringTransactionalTest {
         "{\"id\":11,\"name\":\"testFileSystem\",\"url\":\"smb://test.com\","
             + "\"clientType\":\"SAMBA\",\"authType\":\"PASSWORD\",\"options\":{\"USER_DIRS_REQUIRED\":\"true\"},\"loggedAs\":null}";
     String expectedFilesystemJson = StringEscapeUtils.escapeEcmaScript(filesystemJson);
-    assertEquals(
-        "[" + expectedFilesystemJson + "]",
-        model.asMap().get(NfsViewProperty.FILE_SYSTEMS_JSON.toString()));
+    assertThat(model.asMap())
+        .containsEntry(
+            NfsViewProperty.FILE_SYSTEMS_JSON.toString(), "[" + expectedFilesystemJson + "]");
   }
 
   @Test
@@ -200,8 +201,8 @@ public class NfsControllerTest extends SpringTransactionalTest {
 
     File tempFile = new File(downloadPath);
     File tempParentFolder = tempFile.getParentFile();
-    assertTrue(tempFile.exists(), "download path should point to temp file");
-    assertEquals(testDownlodaFileName, tempFile.getName());
+    assertThat(tempFile).as("download path should point to temp file").exists();
+    assertThat(tempFile).hasName(testDownlodaFileName);
 
     controller.downloadNfsFile(request, response);
     assertEquals("application/octet-stream", response.getContentType());

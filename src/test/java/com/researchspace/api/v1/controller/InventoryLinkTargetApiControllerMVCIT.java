@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventoryLinkTargetSummary;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
@@ -67,6 +70,31 @@ public class InventoryLinkTargetApiControllerMVCIT extends API_MVC_InventoryTest
   }
 
   @Test
+  public void unshareAfterAnEditIsReflectedInSummary() throws Exception {
+    // the rename writes an audit revision that captures the shared ACL; the unshare writes none,
+    // so a summary that trusted the newest snapshot's ACL would keep granting read
+    User owner = createAndSaveUser("pi" + getRandomName(8), Constants.PI_ROLE);
+    User viewer = createAndSaveUser(getRandomName(10));
+    initUsers(owner, viewer);
+    Group group = createGroupForPiAndUsers(owner, new User[] {owner, viewer});
+
+    logoutAndLoginAs(owner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(owner, "edited target");
+    RecordGroupSharing share = shareRecordWithGroup(owner, group, doc);
+    recordMgr.renameRecord("edited while shared", doc.getId(), owner);
+    String docGlobalId = doc.getOid().getIdString();
+    String viewerKey = createNewApiKeyForUser(viewer);
+    assertTrue(fetchSummary(viewerKey, viewer, docGlobalId).isReadable());
+
+    logoutAndLoginAs(owner);
+    sharingHandler.unshare(share.getId(), owner);
+
+    ApiInventoryLinkTargetSummary unshared = fetchSummary(viewerKey, viewer, docGlobalId);
+    assertFalse(unshared.isReadable(), "the live ACL decides, not the snapshot taken while shared");
+    assertNull(unshared.getName());
+  }
+
+  @Test
   public void reShareRestoresReadableSummaryWithoutServerRestart() throws Exception {
     User owner = createAndSaveUser("pi" + getRandomName(8), Constants.PI_ROLE);
     User viewer = createAndSaveUser(getRandomName(10));
@@ -93,15 +121,54 @@ public class InventoryLinkTargetApiControllerMVCIT extends API_MVC_InventoryTest
     assertNotNull(reshared.getName());
   }
 
+  /** RSDEV-1530: a reader learns whether a pinned version resolves; a stranger learns nothing. */
+  @Test
+  public void aVersionedIdReportsWhetherThePinnedVersionResolvesToReadersOnly() throws Exception {
+    User owner = createInitAndLoginAnyUser();
+    String ownerKey = createNewApiKeyForUser(owner);
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
+
+    ApiInventoryLinkTargetSummary existing =
+        fetchSummary(ownerKey, owner, target.getGlobalId() + "v1");
+    assertTrue(existing.isReadable());
+    assertEquals(Boolean.TRUE, existing.getPinnedVersionFound());
+
+    ApiInventoryLinkTargetSummary missing =
+        fetchSummary(ownerKey, owner, target.getGlobalId() + "v7");
+    assertTrue(missing.isReadable());
+    assertEquals(Boolean.FALSE, missing.getPinnedVersionFound());
+    assertEquals(target.getName(), missing.getName(), "the target itself is still described");
+
+    // the raw JSON, not the DTO: a "pinnedVersionFound": null key would deserialise to null too
+    JsonNode unpinned = fetchSummaryJson(ownerKey, owner, target.getGlobalId());
+    assertFalse(unpinned.has("pinnedVersionFound"), unpinned.toString());
+
+    // a stranger's summary is the redacted payload, with no word about versions (ADR 0002)
+    User stranger = createInitAndLoginAnyUser();
+    String strangerKey = createNewApiKeyForUser(stranger);
+    JsonNode redacted = fetchSummaryJson(strangerKey, stranger, target.getGlobalId() + "v7");
+    assertFalse(redacted.get("readable").asBoolean());
+    assertFalse(redacted.hasNonNull("name"));
+    assertFalse(redacted.has("pinnedVersionFound"), redacted.toString());
+  }
+
   private ApiInventoryLinkTargetSummary fetchSummary(String apiKey, User user, String globalId)
       throws Exception {
-    MvcResult result =
-        mockMvc
-            .perform(
-                createBuilderForGet(
-                    API_VERSION.ONE, apiKey, "/linkTargets/{globalId}/summary", user, globalId))
-            .andExpect(status().isOk())
-            .andReturn();
-    return getFromJsonResponseBody(result, ApiInventoryLinkTargetSummary.class);
+    return getFromJsonResponseBody(
+        summaryResult(apiKey, user, globalId), ApiInventoryLinkTargetSummary.class);
+  }
+
+  private JsonNode fetchSummaryJson(String apiKey, User user, String globalId) throws Exception {
+    return new ObjectMapper()
+        .readTree(summaryResult(apiKey, user, globalId).getResponse().getContentAsString());
+  }
+
+  private MvcResult summaryResult(String apiKey, User user, String globalId) throws Exception {
+    return mockMvc
+        .perform(
+            createBuilderForGet(
+                API_VERSION.ONE, apiKey, "/linkTargets/{globalId}/summary", user, globalId))
+        .andExpect(status().isOk())
+        .andReturn();
   }
 }

@@ -1,7 +1,7 @@
 package com.researchspace.testutils;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.auth.GlobalInitSysadminAuthenticationToken;
@@ -77,7 +77,7 @@ public class ProdConfigWiringTest {
   @Test
   public void testGlobalInits() {
     List<IApplicationInitialisor> inits = globalInitManager.getApplicationInitialisors();
-    assertTrue(inits.size() > 0);
+    assertThat(inits).hasSizeGreaterThan(0);
     boolean containsSnippetFolderInit = false;
     for (IApplicationInitialisor anInit : inits) {
       if (AopProxyUtils.getSingletonTarget(anInit)
@@ -121,7 +121,7 @@ public class ProdConfigWiringTest {
           folderManager.getFolder(group.getSharedSnippetGroupFolderId(), group.getOwner());
       shareSnippet.setSharingACL(new RecordSharingACL());
       folderManager.save(shareSnippet, sysAdmin);
-      assertTrue(shareSnippet.getSharingACL().getAclElements().size() == 0);
+      assertThat(shareSnippet.getSharingACL().getAclElements()).isEmpty();
       group.setSharedSnippetGroupFolderId(null);
       groupManager.saveGroup(group, group.getOwner());
     }
@@ -129,7 +129,7 @@ public class ProdConfigWiringTest {
     for (Group group : groupManager.list()) {
       Folder shareSnippet =
           folderManager.getFolder(group.getSharedSnippetGroupFolderId(), group.getOwner());
-      assertTrue(shareSnippet.getSharingACL().getAclElements().size() > 0);
+      assertThat(shareSnippet.getSharingACL().getAclElements()).hasSizeGreaterThan(0);
     }
   }
 }

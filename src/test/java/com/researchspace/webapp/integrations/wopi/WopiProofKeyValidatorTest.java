@@ -1,6 +1,6 @@
 package com.researchspace.webapp.integrations.wopi;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,15 +10,15 @@ public class WopiProofKeyValidatorTest {
 
   @Test
   public void testProofBytesCalculation() {
-    assertFalse(
-        "test content removed pre open-sourcing, contact ResearchSpace if you need this code"
-            .isEmpty());
+    assertThat(
+            "test content removed pre open-sourcing, contact ResearchSpace if you need this code")
+        .isNotEmpty();
   }
 
   @Test
   public void testProofKeyVerification() {
-    assertFalse(
-        "test content removed pre open-sourcing, contact ResearchSpace if you need this code"
-            .isEmpty());
+    assertThat(
+            "test content removed pre open-sourcing, contact ResearchSpace if you need this code")
+        .isNotEmpty();
   }
 }

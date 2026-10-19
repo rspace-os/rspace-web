@@ -1,7 +1,6 @@
 package com.researchspace.dao;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -13,7 +12,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,13 +34,13 @@ public class OAuthTokenDaoTest extends SpringTransactionalTest {
     assertNotNull(validToken.getId());
     assertEquals(
         validToken, tokenDao.findByAccessTokenHash(validToken.getHashedAccessToken()).get());
-    assertThat(tokenDao.findByAccessTokenHash("missing hash"), equalTo(Optional.empty()));
-    assertThat(
-        tokenDao.getToken(anyClientId, anyUser.getId(), validToken.getTokenType()).isPresent(),
-        Matchers.is(true));
-    assertThat(
-        tokenDao.getToken("unknownClient", anyUser.getId(), validToken.getTokenType()).isPresent(),
-        Matchers.is(false));
+    assertEquals(Optional.empty(), tokenDao.findByAccessTokenHash("missing hash"));
+    assertEquals(
+        true,
+        tokenDao.getToken(anyClientId, anyUser.getId(), validToken.getTokenType()).isPresent());
+    assertEquals(
+        false,
+        tokenDao.getToken("unknownClient", anyUser.getId(), validToken.getTokenType()).isPresent());
   }
 
   @Test
@@ -52,25 +50,25 @@ public class OAuthTokenDaoTest extends SpringTransactionalTest {
     assertNotNull(validToken.getId());
     assertEquals(
         validToken, tokenDao.findByRefreshTokenHash(validToken.getHashedRefreshToken()).get());
-    assertThat(tokenDao.findByRefreshTokenHash("missing hash"), equalTo(Optional.empty()));
+    assertEquals(Optional.empty(), tokenDao.findByRefreshTokenHash("missing hash"));
   }
 
   @Test
   public void listTokensForUser() {
     OAuthToken validToken = createValidOAuthToken(anyUser);
     validToken = tokenDao.save(validToken);
-    assertEquals(1, tokenDao.listTokensForUser(anyUser.getId()).size());
+    assertThat(tokenDao.listTokensForUser(anyUser.getId())).hasSize(1);
     final long UNKNOWN_USER_ID = -2000L;
 
-    assertEquals(0, tokenDao.listTokensForUser(UNKNOWN_USER_ID).size());
+    assertThat(tokenDao.listTokensForUser(UNKNOWN_USER_ID)).isEmpty();
   }
 
   @Test
   public void listTokensForClient() {
     OAuthToken validToken = createValidOAuthToken(anyUser);
     validToken = tokenDao.save(validToken);
-    assertEquals(1, tokenDao.listTokensForClient(anyClientId).size());
-    assertEquals(0, tokenDao.listTokensForClient("unknownclient").size());
+    assertThat(tokenDao.listTokensForClient(anyClientId)).hasSize(1);
+    assertThat(tokenDao.listTokensForClient("unknownclient")).isEmpty();
   }
 
   private OAuthToken createValidOAuthToken(User user) {

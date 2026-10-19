@@ -1,12 +1,18 @@
 package com.researchspace.service.impl;
 
 import static com.researchspace.CacheNames.INTEGRATION_INFO;
+import static com.researchspace.model.dto.IntegrationInfo.getAppNameFromIntegrationName;
 
 import com.researchspace.dao.UserConnectionDao;
+import com.researchspace.model.User;
+import com.researchspace.model.apps.AppConfigElementSet;
+import com.researchspace.model.apps.UserAppConfig;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.service.UserConnectionManager;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -18,10 +24,13 @@ public class UserConnectionManagerImpl extends GenericManagerImpl<UserConnection
 
   static final String SAVE_CONNECTION_SPEL = "#connection.id.userId + #connection.id.providerId";
   private UserConnectionDao userConnectionDao;
+  private final UserAppConfigManager userAppConfigManager;
 
-  public UserConnectionManagerImpl(@Autowired UserConnectionDao userDao) {
+  public UserConnectionManagerImpl(
+      @Autowired UserConnectionDao userDao, UserAppConfigManager userAppConfigManager) {
     this.dao = userDao;
     this.userConnectionDao = userDao;
+    this.userAppConfigManager = userAppConfigManager;
   }
 
   @Override
@@ -75,6 +84,33 @@ public class UserConnectionManagerImpl extends GenericManagerImpl<UserConnection
     // straight to the DAO because a self-invocation would bypass the transactional proxy anyway.
     userConnectionDao.deleteByUserAndProvider(
         connection.getId().getUserId(), connection.getId().getProviderId());
+    return userConnectionDao.save(connection);
+  }
+
+  @Override
+  @CacheEvict(value = INTEGRATION_INFO, key = "#user.username + #providerName")
+  public UserConnection saveWithNewAppConfigElementSet(
+      Map<String, String> settings,
+      String providerName,
+      String accessToken,
+      String secret,
+      boolean trustedOrigin,
+      User user) {
+    UserAppConfig cfg =
+        userAppConfigManager.saveAppConfigElementSet(
+            settings, null, trustedOrigin, user, getAppNameFromIntegrationName(providerName));
+    // set ids only increase, so the new set has the highest
+    long setId =
+        cfg.getAppConfigElementSets().stream()
+            .mapToLong(AppConfigElementSet::getId)
+            .max()
+            .orElseThrow();
+    UserConnection connection =
+        new UserConnection(
+            new UserConnectionId(user.getUsername(), providerName, String.valueOf(setId)),
+            accessToken);
+    connection.setSecret(secret);
+    connection.setRank(Math.toIntExact(setId));
     return userConnectionDao.save(connection);
   }
 }

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -56,7 +57,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     List<ApiListOfMaterials> foundLists =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(foundLists);
-    assertEquals(0, foundLists.size());
+    assertThat(foundLists).isEmpty();
 
     // add list of materials
     String newListJson = "{ \"name\": \"my list\", \"elnFieldId\": " + myField.getId() + " } ";
@@ -73,7 +74,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals("my list", createdList.getName());
     assertEquals(myField.getId(), createdList.getElnFieldId());
     assertEquals(myDoc.getGlobalIdentifier(), createdList.getElnDocument().getGlobalId());
-    assertEquals(0, createdList.getMaterials().size());
+    assertThat(createdList.getMaterials()).isEmpty();
 
     // update added list
     String listUpdateJson =
@@ -96,7 +97,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
         mvcUtils.getFromJsonResponseBody(result, ApiListOfMaterials.class);
     assertEquals("my list (updated)", updatedList.getName());
     assertEquals(myDoc.getGlobalIdentifier(), updatedList.getElnDocument().getGlobalId());
-    assertEquals(1, updatedList.getMaterials().size());
+    assertThat(updatedList.getMaterials()).hasSize(1);
     ApiMaterialUsage updatedUsage = updatedList.getMaterials().get(0);
     assertEquals("1 g", updatedUsage.getUsedQuantity().toQuantityInfo().toPlainString());
     // inventory quantity reduced ("updateInventoryQuantity": true flag)
@@ -116,7 +117,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNull(result.getResolvedException());
     foundLists = mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(foundLists);
-    assertEquals(1, foundLists.size());
+    assertThat(foundLists).hasSize(1);
 
     // check lists attached to the inventory item
     result =
@@ -132,7 +133,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNull(result.getResolvedException());
     foundLists = mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(foundLists);
-    assertEquals(1, foundLists.size());
+    assertThat(foundLists).hasSize(1);
 
     // delete added list
     result =
@@ -158,7 +159,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertNull(result.getResolvedException());
     foundLists = mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(foundLists);
-    assertEquals(0, foundLists.size());
+    assertThat(foundLists).isEmpty();
   }
 
   @Test
@@ -209,8 +210,9 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
 
     // ... and the decrement is a new entry in the revision history (creation + decrement)
     ApiInventoryRecordRevisionList history = getRevisions(apiKey, anyUser, subSampleId);
-    assertEquals(
-        2, history.getRevisions().size(), "a stock decrement must add a revision-history entry");
+    assertThat(history.getRevisions())
+        .as("a stock decrement must add a revision-history entry")
+        .hasSize(2);
 
     // the two revisions carry distinct versions 1 and 2, so each version resolves to a snapshot
     ApiSubSample revision1 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 0);
@@ -244,7 +246,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(2L, reloaded.getVersion(), "two decrements in one transaction are one version");
 
     ApiInventoryRecordRevisionList history = getRevisions(apiKey, anyUser, subSampleId);
-    assertEquals(2, history.getRevisions().size(), "one transaction writes one revision");
+    assertThat(history.getRevisions()).as("one transaction writes one revision").hasSize(2);
     ApiSubSample revision2 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 1);
     assertEquals(2L, revision2.getVersion(), "the live version must resolve to a revision");
     assertEquals("3 g", revision2.getQuantity().toQuantityInfo().toPlainString());
@@ -258,7 +260,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(3L, reloaded.getVersion(), "a new transaction bumps the version again");
 
     history = getRevisions(apiKey, anyUser, subSampleId);
-    assertEquals(3, history.getRevisions().size());
+    assertThat(history.getRevisions()).hasSize(3);
     ApiSubSample revision3 = getRevisionSnapshot(apiKey, anyUser, subSampleId, history, 2);
     assertEquals(3L, revision3.getVersion());
     assertEquals("2 g", revision3.getQuantity().toQuantityInfo().toPlainString());
@@ -362,7 +364,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     List<ApiListOfMaterials> foundLists =
         mvcUtils.getFromJsonResponseBodyByTypeRef(result, new TypeReference<>() {});
     assertNotNull(foundLists);
-    assertEquals(1, foundLists.size());
+    assertThat(foundLists).hasSize(1);
 
     // the endpoint returns the list of linked documents: each LoM carries its ELN document
     ApiListOfMaterials lom = foundLists.get(0);
@@ -370,7 +372,7 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(myDoc.getGlobalIdentifier(), lom.getElnDocument().getGlobalId());
 
     // and the linked material is the instrument we added
-    assertEquals(1, lom.getMaterials().size());
+    assertThat(lom.getMaterials()).hasSize(1);
     assertEquals(myInstrument.getGlobalId(), lom.getMaterials().get(0).getRecord().getGlobalId());
   }
 
@@ -438,8 +440,8 @@ public class ListOfMaterialsApiControllerMVCIT extends API_MVC_InventoryTestBase
             .andReturn();
     ApiListOfMaterials savedList =
         mvcUtils.getFromJsonResponseBody(result, ApiListOfMaterials.class);
-    assertEquals(255, savedList.getName().length());
-    assertEquals(255, savedList.getDescription().length());
+    assertThat(savedList.getName()).hasSize(255);
+    assertThat(savedList.getDescription()).hasSize(255);
   }
 
   @Test

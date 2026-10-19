@@ -7,6 +7,7 @@ import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import React from "react";
 import { useTranslation } from "react-i18next";
 // Reuse the Gallery's own extension groupings so MEDIA files get the Gallery's per-type icons.
+import { parseGallerySection, translateGallerySectionLabel } from "@/eln/gallery/common";
 import EXT_BY_TYPE from "@/eln/gallery/fileExtensionsByType.json";
 import { justFilenameExtension } from "@/util/files";
 import { Tree, TreeItem } from "../../../../components/Tree";
@@ -92,6 +93,12 @@ function iconUrlForNode(node: FolderTreeNode): string {
 
 /** A node label matching the ELN tree: the node's type icon followed by its name only. */
 function NodeLabel({ node }: { node: FolderTreeNode }): React.ReactElement {
+  const { t } = useTranslation("gallery");
+  const name = node.systemFolder
+    ? parseGallerySection(node.name)
+        .map((section) => translateGallerySectionLabel(section, t))
+        .orElse(node.name)
+    : node.name;
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, minHeight: "25px" }}>
       <Box
@@ -102,7 +109,7 @@ function NodeLabel({ node }: { node: FolderTreeNode }): React.ReactElement {
         sx={{ width: 22, height: 22, objectFit: "contain", flexShrink: 0 }}
       />
       <Typography variant="body2" noWrap>
-        {node.name}
+        {name}
       </Typography>
     </Box>
   );

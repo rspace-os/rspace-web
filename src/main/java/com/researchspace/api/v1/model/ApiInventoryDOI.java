@@ -55,6 +55,7 @@ import org.apache.commons.lang3.StringUtils;
       "rsPublicId",
       "publicUrl",
       "providerUrl",
+      "linked",
       "customFieldsOnPublicPage",
       "externalMetadataUpdate",
       "_links"
@@ -271,13 +272,14 @@ public class ApiInventoryDOI extends LinkableApiObject {
   }
 
   /**
-   * The citable, publicly resolvable address of the identifier, set when it is published.
+   * The identifier's public URL (CONTEXT.md), read through {@link
+   * DigitalObjectIdentifier#getPublicUrl()}: null while the PID does not resolve.
    *
    * <p>Server-owned for the same reason as {@link #providerUrl}, and more importantly so: this one
    * is rendered on the unauthenticated public identifier page, so a client-supplied value would
-   * reach readers who never signed in. It is only ever written from the DOI at publish time, so
-   * {@link JsonProperty.Access#READ_ONLY} costs nothing; a client that still sends it is ignored
-   * rather than rejected, and the stored value stands.
+   * reach readers who never signed in. Only the server writes it, on publish, on a B2INST refresh
+   * and on import, so {@link JsonProperty.Access#READ_ONLY} costs nothing; a client that still
+   * sends it is ignored rather than rejected, and the stored value stands.
    */
   @JsonProperty(value = "publicUrl", access = JsonProperty.Access.READ_ONLY)
   private String publicUrl;
@@ -295,6 +297,14 @@ public class ApiInventoryDOI extends LinkableApiObject {
    */
   @JsonProperty(value = "providerUrl", access = JsonProperty.Access.READ_ONLY)
   private String providerUrl;
+
+  /**
+   * True for a linked identifier: a PID minted outside RSpace and attached by an instrument import
+   * (RSDEV-1326, ADR 0009). Server-owned: the import sets it in Java, and no client may turn an
+   * identifier RSpace registered into one it does not own, or the reverse.
+   */
+  @JsonProperty(value = "linked", access = JsonProperty.Access.READ_ONLY)
+  private boolean linked;
 
   @JsonProperty("customFieldsOnPublicPage")
   private Boolean customFieldsOnPublicPage;
@@ -360,8 +370,9 @@ public class ApiInventoryDOI extends LinkableApiObject {
     // already-persisted publicLink here would let a second row claim an existing identifier's
     // public page, which UNIQUE KEY isPublicLink rejects at flush - after the provider call in the
     // same transaction has already created a draft. rsPublicId above carries the value for reads.
-    setPublicUrl(identifier.getOtherData(IdentifierOtherProperty.PUBLIC_URL));
+    setPublicUrl(identifier.getPublicUrl());
     setProviderUrl(identifier.getOtherData(IdentifierOtherProperty.PROVIDER_URL));
+    setLinked(identifier.isLinked());
     setCustomFieldsOnPublicPage(identifier.isCustomFieldsOnPublicPage());
 
     setSubjects(
@@ -463,6 +474,12 @@ public class ApiInventoryDOI extends LinkableApiObject {
         contentChanged = true;
       }
     }
+    // Only while creating, like the type and the identifier above: an identifier's origin is fixed
+    // for its lifetime, and the flag is READ_ONLY over JSON, so only the import path can set it.
+    if (dbIdentifier.getId() == null && isLinked() && !dbIdentifier.isLinked()) {
+      dbIdentifier.markLinked();
+      contentChanged = true;
+    }
     if (getState() != null) {
       if (!getState().equals(dbIdentifier.getState())) {
         dbIdentifier.setState(getState());
@@ -543,7 +560,11 @@ public class ApiInventoryDOI extends LinkableApiObject {
         contentChanged = true;
       }
     }
-    if (getUrl() != null) {
+    // never for a linked identifier: RSpace serves no public page for one (ADR 0009), so a
+    // LOCAL_URL on it is an address that resolves to a permanent 404. markLinked above has
+    // already run, so the flag is reliable here. ApiIdentifiersHelper skips writing one on the
+    // import path too; this is the invariant, that is the shortcut.
+    if (getUrl() != null && !dbIdentifier.isLinked()) {
       if (!getUrl().equals(dbIdentifier.getOtherData(IdentifierOtherProperty.LOCAL_URL))) {
         dbIdentifier.addOtherData(IdentifierOtherProperty.LOCAL_URL, getUrl());
         contentChanged = true;

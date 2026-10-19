@@ -1,10 +1,7 @@
 package com.researchspace.webapp.integrations.slack;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -19,19 +16,25 @@ import java.util.*;
 import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class SlackControllerTest {
 
-  private SlackController slackController = new SlackController();
+  @Mock private UserAppConfigManager userAppCfgMgr;
 
-  private UserAppConfigManager userAppCfgMgr = mock(UserAppConfigManager.class);
+  @Spy private Clock clock = Clock.fixed(Instant.parse("2017-12-28T01:23:45Z"), ZoneId.of("UTC"));
+
+  @InjectMocks private SlackController slackController;
+
   MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @BeforeEach
   public void setUp() throws Exception {
-    slackController.setVerificationToken("dummyToken");
-    slackController.setUserAppCfgMgr(userAppCfgMgr);
-    slackController.setClock(Clock.fixed(Instant.parse("2017-12-28T01:23:45Z"), ZoneId.of("UTC")));
     slackController.setMessageSource(messages);
   }
 
@@ -41,7 +44,7 @@ public class SlackControllerTest {
     List<User> noUsers = new ArrayList<>();
     when(userAppCfgMgr.findByAppConfigValue(any(), any())).thenReturn(noUsers);
 
-    Map<String, String> params = getParamsWithGoodToken();
+    Map<String, String> params = new HashMap<>();
     params.put("text", "");
     SlackMessage noTimePeriodResponse = slackController.saveConversation(params);
     assertEquals(
@@ -64,48 +67,40 @@ public class SlackControllerTest {
   public void checkParseTimePeriodLastDaysFormat() throws Exception {
     SlackController.TimePeriod timePeriod =
         slackController.parseTimeInterval("5 days", DateTimeZone.UTC);
-    assertThat(
-        timePeriod.getFromTimestampMillis(),
-        is(Instant.parse("2017-12-23T01:23:45Z").toEpochMilli()));
-    assertThat(
-        timePeriod.getToTimestampMillis(),
-        is(Instant.parse("2017-12-28T01:23:45Z").toEpochMilli()));
+    assertEquals(
+        Instant.parse("2017-12-23T01:23:45Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
+    assertEquals(
+        Instant.parse("2017-12-28T01:23:45Z").toEpochMilli(), timePeriod.getToTimestampMillis());
   }
 
   @Test
   public void checkParseTimePeriodLastDaysHoursMinsFormat() throws Exception {
     SlackController.TimePeriod timePeriod =
         slackController.parseTimeInterval("1d 2h 3min", DateTimeZone.UTC);
-    assertThat(
-        timePeriod.getFromTimestampMillis(),
-        is(Instant.parse("2017-12-26T23:20:45Z").toEpochMilli()));
-    assertThat(
-        timePeriod.getToTimestampMillis(),
-        is(Instant.parse("2017-12-28T01:23:45Z").toEpochMilli()));
+    assertEquals(
+        Instant.parse("2017-12-26T23:20:45Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
+    assertEquals(
+        Instant.parse("2017-12-28T01:23:45Z").toEpochMilli(), timePeriod.getToTimestampMillis());
   }
 
   @Test
   public void checkParseTimePeriodFromSimpleDateFormat() throws Exception {
     SlackController.TimePeriod timePeriod =
         slackController.parseTimeInterval("from 2017-12-23", DateTimeZone.UTC);
-    assertThat(
-        timePeriod.getFromTimestampMillis(),
-        is(Instant.parse("2017-12-23T00:00:00Z").toEpochMilli()));
-    assertThat(
-        timePeriod.getToTimestampMillis(),
-        is(Instant.parse("2017-12-28T01:23:45Z").toEpochMilli()));
+    assertEquals(
+        Instant.parse("2017-12-23T00:00:00Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
+    assertEquals(
+        Instant.parse("2017-12-28T01:23:45Z").toEpochMilli(), timePeriod.getToTimestampMillis());
   }
 
   @Test
   public void checkParseTimePeriodFromISO8601DateFormat() throws Exception {
     SlackController.TimePeriod timePeriod =
         slackController.parseTimeInterval("from 2017-12-23T14:00", DateTimeZone.UTC);
-    assertThat(
-        timePeriod.getFromTimestampMillis(),
-        is(Instant.parse("2017-12-23T14:00:00Z").toEpochMilli()));
-    assertThat(
-        timePeriod.getToTimestampMillis(),
-        is(Instant.parse("2017-12-28T01:23:45Z").toEpochMilli()));
+    assertEquals(
+        Instant.parse("2017-12-23T14:00:00Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
+    assertEquals(
+        Instant.parse("2017-12-28T01:23:45Z").toEpochMilli(), timePeriod.getToTimestampMillis());
   }
 
   @Test
@@ -113,12 +108,10 @@ public class SlackControllerTest {
     SlackController.TimePeriod timePeriod =
         slackController.parseTimeInterval("to 2017-12-23", DateTimeZone.UTC);
     // MAX_REQUESTED_DURATION_MILLIS millis time period is returned
-    assertThat(
-        timePeriod.getFromTimestampMillis(),
-        is(Instant.parse("2017-09-24T00:00:00Z").toEpochMilli()));
-    assertThat(
-        timePeriod.getToTimestampMillis(),
-        is(Instant.parse("2017-12-23T00:00:00Z").toEpochMilli()));
+    assertEquals(
+        Instant.parse("2017-09-24T00:00:00Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
+    assertEquals(
+        Instant.parse("2017-12-23T00:00:00Z").toEpochMilli(), timePeriod.getToTimestampMillis());
   }
 
   @Test
@@ -126,29 +119,19 @@ public class SlackControllerTest {
     SlackController.TimePeriod timePeriod =
         slackController.parseTimeInterval("to 2017-12-23T14:00", DateTimeZone.UTC);
     // MAX_REQUESTED_DURATION_MILLIS millis time period is returned
-    assertThat(
-        timePeriod.getFromTimestampMillis(),
-        is(Instant.parse("2017-09-24T14:00:00Z").toEpochMilli()));
-    assertThat(
-        timePeriod.getToTimestampMillis(),
-        is(Instant.parse("2017-12-23T14:00:00Z").toEpochMilli()));
+    assertEquals(
+        Instant.parse("2017-09-24T14:00:00Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
+    assertEquals(
+        Instant.parse("2017-12-23T14:00:00Z").toEpochMilli(), timePeriod.getToTimestampMillis());
   }
 
   @Test
   public void checkParseTimePeriodFromToDateFormat() throws Exception {
     SlackController.TimePeriod timePeriod =
         slackController.parseTimeInterval("from 2017-10-12 to 2017-12-23T14:00", DateTimeZone.UTC);
-    assertThat(
-        timePeriod.getFromTimestampMillis(),
-        is(Instant.parse("2017-10-12T00:00:00Z").toEpochMilli()));
-    assertThat(
-        timePeriod.getToTimestampMillis(),
-        is(Instant.parse("2017-12-23T14:00:00Z").toEpochMilli()));
-  }
-
-  private Map<String, String> getParamsWithGoodToken() {
-    Map<String, String> params = new HashMap<>();
-    params.put("token", "dummyToken");
-    return params;
+    assertEquals(
+        Instant.parse("2017-10-12T00:00:00Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
+    assertEquals(
+        Instant.parse("2017-12-23T14:00:00Z").toEpochMilli(), timePeriod.getToTimestampMillis());
   }
 }

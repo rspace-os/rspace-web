@@ -1,5 +1,6 @@
 package com.researchspace.model.field;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -38,6 +39,6 @@ public class ChoiceFieldTest {
   @Test
   public void getRadioOptionAsListTest() {
     assertEquals("2", nf.getChoiceOptionSelectedAsString());
-    assertEquals(2, nf.getChoiceOptionAsList().size());
+    assertThat(nf.getChoiceOptionAsList()).hasSize(2);
   }
 }

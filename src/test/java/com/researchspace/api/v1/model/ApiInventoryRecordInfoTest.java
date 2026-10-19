@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,18 +38,18 @@ public class ApiInventoryRecordInfoTest {
 
   @Test
   public void testCreateApiTagInfoList() {
-    assertTrue(testee.getTags().isEmpty());
+    assertThat(testee.getTags()).isEmpty();
     testee.setApiTagInfo("A local ontology Tag");
-    assertEquals(1, testee.getTags().size());
+    assertThat(testee.getTags()).hasSize(1);
     assertEquals("A local ontology Tag", testee.getTags().get(0).getValue());
     testee.setApiTagInfo("A local ontology Tag, another");
-    assertEquals(2, testee.getTags().size());
+    assertThat(testee.getTags()).hasSize(2);
     assertEquals("A local ontology Tag", testee.getTags().get(0).getValue());
     assertEquals("another", testee.getTags().get(1).getValue());
     testee.setApiTagInfo(
         "A local ontology Tag, another,"
             + " tag1__RSP_EXTONT_URL_DELIM__NONE__RSP_EXTONT_NAME_DELIM__MYONTOLOGY__RSP_EXTONT_VERSION_DELIM__1");
-    assertEquals(3, testee.getTags().size());
+    assertThat(testee.getTags()).hasSize(3);
     assertEquals("A local ontology Tag", testee.getTags().get(0).getValue());
     assertEquals("another", testee.getTags().get(1).getValue());
     ApiTagInfo tagWithMeta = testee.getTags().get(2);
@@ -61,7 +62,7 @@ public class ApiInventoryRecordInfoTest {
   @Test
   public void testGetDBStringFromTags() {
     String forDB = testee.getDBStringFromTags();
-    assertEquals("", forDB);
+    assertThat(forDB).isEmpty();
     String tagPlusMeta =
         "A local ontology"
             + " Tag,another,tag1__RSP_EXTONT_URL_DELIM__NONE__RSP_EXTONT_NAME_DELIM__MYONTOLOGY__RSP_EXTONT_VERSION_DELIM__1";
@@ -190,7 +191,7 @@ public class ApiInventoryRecordInfoTest {
 
     subSample.buildAndAddInventoryRecordLinks(BASE_URL);
 
-    assertFalse(subSample.getSampleInfo().getLinks().isEmpty());
+    assertThat(subSample.getSampleInfo().getLinks()).isNotEmpty();
     assertTrue(hasImageOrThumbnailLink(subSample.getSampleInfo()));
   }
 

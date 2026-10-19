@@ -15,14 +15,13 @@ import com.researchspace.service.UserConnectionManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 
-@Disabled(
-    "We leave the test Disabled so we can potentially run it manually by adding the bearer token")
+@EnabledIfSystemProperty(named = "fieldmark.realConnectionTests", matches = "true")
 public class FieldmarkApiControllerRealConnectionTest extends SpringTransactionalTest {
 
   private @Autowired FieldmarkApiController fieldmarkApiController;

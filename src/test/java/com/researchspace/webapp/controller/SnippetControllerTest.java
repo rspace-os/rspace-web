@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,7 +36,7 @@ public class SnippetControllerTest extends SpringTransactionalTest {
   public void testCreateNewSimpleSnippet() throws Exception {
     SnippetResponse response = snippetController.createSnippet("a", "b", 0L, principalTestUserStub);
     assertEquals("gallery.snippet.creation.ok", response.data().key());
-    assertEquals(List.of("a"), response.data().arguments());
+    assertThat(response.data().arguments()).containsExactly("a");
 
     // test invalid names
     String invalidName = "<img src=\"image.png\" onerror=\"alert('1');\">";

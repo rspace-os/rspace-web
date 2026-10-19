@@ -1,6 +1,7 @@
 package com.researchspace.model;
 
 import static com.researchspace.model.permissions.ConstraintBasedPermissionTest.createPermissonActionSet;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -61,8 +62,8 @@ public class UserTest {
   public void testNaturalORderinf() {
     List<User> unorderedusers = Arrays.asList(new User[] {u2, u3, u1});
     Collections.sort(unorderedusers);
-    assertEquals(u1, unorderedusers.get(0));
-    assertEquals(u3, unorderedusers.get(2));
+    assertThat(unorderedusers).element(0).isEqualTo(u1);
+    assertThat(unorderedusers).element(2).isEqualTo(u3);
   }
 
   @Test
@@ -72,8 +73,8 @@ public class UserTest {
     u3.setLastName("zlob");
     List<User> unorderedusers = Arrays.asList(new User[] {u2, u3, u1});
     Collections.sort(unorderedusers, User.LAST_NAME_COMPARATOR);
-    assertEquals(u1, unorderedusers.get(0));
-    assertEquals(u3, unorderedusers.get(2));
+    assertThat(unorderedusers).element(0).isEqualTo(u1);
+    assertThat(unorderedusers).element(2).isEqualTo(u3);
   }
 
   @Test
@@ -144,9 +145,9 @@ public class UserTest {
   @Test
   public void testGetCollabGroups() {
     gp1.addMember(u1);
-    assertEquals(0, u1.getCollaborationGroups().size());
+    assertThat(u1.getCollaborationGroups()).isEmpty();
     gp1.setGroupType(GroupType.COLLABORATION_GROUP);
-    assertEquals(1, u1.getCollaborationGroups().size());
+    assertThat(u1.getCollaborationGroups()).hasSize(1);
   }
 
   @Test
@@ -189,12 +190,12 @@ public class UserTest {
     assertFalse(u1.isPermitted(recordInfo, true));
     // now add back
     gp1.addPermission(p1);
-    assertEquals(1, u1.getAllPermissions(false, true).size());
+    assertThat(u1.getAllPermissions(false, true)).hasSize(1);
 
     // now we'll unset permissions from gp1
     u1.setIncludePermissionForGroup(gp1, false);
     assertFalse(u1.isPermitted(recordInfo, true));
-    assertEquals(0, u1.getAllPermissions(false, true).size());
+    assertThat(u1.getAllPermissions(false, true)).isEmpty();
 
     // and reset permissions from gp1, permission restored
     u1.setIncludePermissionForGroup(gp1, true);
@@ -218,24 +219,24 @@ public class UserTest {
     String[] tests = new String[] {userStr1, userStr2, userStr3, userStr4};
     for (String test : tests) {
       String[] parsed = User.getUsernamesFromMultiUser(test);
-      assertEquals(3, parsed.length, "parsing [" + test + "] failed");
+      assertThat(parsed).as("parsing [" + test + "] failed").hasSize(3);
       assertEquals("user1", parsed[0]);
       assertEquals("user2", parsed[1]);
       assertEquals("user3", parsed[2]);
     }
     String singleUser = " user1<Bob Jones>, "; // ignore blank suffix
     String[] parsed = User.getUsernamesFromMultiUser(singleUser);
-    assertEquals(1, parsed.length);
+    assertThat(parsed).hasSize(1);
   }
 
   @Test
   public void testUserEditableAttributesAreTruncatedIfTooLong() {
     String TOO_LONG_text = CoreTestUtils.getRandomName(User.MAX_UNAME_LENGTH + 1);
     u1.setFirstName(TOO_LONG_text);
-    assertEquals(User.MAX_UNAME_LENGTH, u1.getFirstName().length());
+    assertThat(u1.getFirstName()).hasSize(User.MAX_UNAME_LENGTH);
 
     u1.setLastName(TOO_LONG_text);
-    assertEquals(User.MAX_UNAME_LENGTH, u1.getLastName().length());
+    assertThat(u1.getLastName()).hasSize(User.MAX_UNAME_LENGTH);
   }
 
   @Test
@@ -248,21 +249,21 @@ public class UserTest {
   public void addRemoveRole() {
     Role userrole = Role.USER_ROLE;
     u1.addRole(userrole);
-    assertEquals(1, u1.getRoles().size());
+    assertThat(u1.getRoles()).hasSize(1);
 
     // not removed as would leave no roles, if removed
     assertFalse(u1.removeRole(userrole));
-    assertEquals(1, u1.getRoles().size());
+    assertThat(u1.getRoles()).hasSize(1);
 
     // not removed, as does not have role
     assertFalse(u1.removeRole(Role.PI_ROLE));
     Role pirole = Role.PI_ROLE;
     u1.addRole(pirole);
-    assertEquals(2, u1.getRoles().size());
+    assertThat(u1.getRoles()).hasSize(2);
 
     // now can remove PI role as still has user role
     assertTrue(u1.removeRole(pirole));
-    assertEquals(1, u1.getRoles().size());
+    assertThat(u1.getRoles()).hasSize(1);
   }
 
   @Test
@@ -368,17 +369,17 @@ public class UserTest {
     gp2.addMember(u3);
     gp2.addMember(u1);
 
-    assertEquals(3, u1.getAllGroupMembers().size());
+    assertThat(u1.getAllGroupMembers()).hasSize(3);
     // u1 is only pi in gp1.
-    assertEquals(1, u1.getNonPiLabGroupMembersForPiOrViewAllAdmin().size());
-    assertEquals(0, u2.getNonPiLabGroupMembersForPiOrViewAllAdmin().size());
+    assertThat(u1.getNonPiLabGroupMembersForPiOrViewAllAdmin()).hasSize(1);
+    assertThat(u2.getNonPiLabGroupMembersForPiOrViewAllAdmin()).isEmpty();
     gp1.getUserGroupForUser(u2).setRoleInGroup(RoleInGroup.RS_LAB_ADMIN);
     gp1.setLabAdminViewAll(u2, false);
     // can't get group members
-    assertEquals(0, u2.getNonPiLabGroupMembersForPiOrViewAllAdmin().size());
+    assertThat(u2.getNonPiLabGroupMembersForPiOrViewAllAdmin()).isEmpty();
     gp1.setLabAdminViewAll(u2, true);
     // now is like PI
-    assertEquals(1, u2.getNonPiLabGroupMembersForPiOrViewAllAdmin().size());
+    assertThat(u2.getNonPiLabGroupMembersForPiOrViewAllAdmin()).hasSize(1);
   }
 
   @Test
@@ -388,12 +389,12 @@ public class UserTest {
     gp1.addMember(u2);
     // no autoshare groups set up
     assertFalse(u2.hasAutoshareGroups());
-    assertEquals(0, u2.getAutoshareGroups().size());
+    assertThat(u2.getAutoshareGroups()).isEmpty();
 
     u2.getUserGroups().iterator().next().setAutoshareEnabled(true);
     // after setting up:
     assertTrue(u2.hasAutoshareGroups());
-    assertEquals(1, u2.getAutoshareGroups().size());
+    assertThat(u2.getAutoshareGroups()).hasSize(1);
   }
 
   @Test
@@ -428,22 +429,22 @@ public class UserTest {
     enableViewAll(gp2, gp2LabAdminViewAll);
 
     // No one can see PIs work
-    assertEquals(0, gp1Pi1.getGroupMembersWithViewAll().size());
-    assertEquals(0, gp1Pi1.getGroupMembersWithViewAll(gp1).size());
+    assertThat(gp1Pi1.getGroupMembersWithViewAll()).isEmpty();
+    assertThat(gp1Pi1.getGroupMembersWithViewAll(gp1)).isEmpty();
 
     // PIs and Lab Admins with view all can see regular member's and lab admin work
-    assertEquals(3, gp1RegularUser.getGroupMembersWithViewAll().size());
-    assertEquals(3, gp1LabAdmin.getGroupMembersWithViewAll(gp1).size());
+    assertThat(gp1RegularUser.getGroupMembersWithViewAll()).hasSize(3);
+    assertThat(gp1LabAdmin.getGroupMembersWithViewAll(gp1)).hasSize(3);
 
     // Test with multiple groups
-    assertEquals(0, user.getGroupMembersWithViewAll().size());
+    assertThat(user.getGroupMembersWithViewAll()).isEmpty();
     gp1.addMember(user);
-    assertEquals(3, user.getGroupMembersWithViewAll().size());
-    assertEquals(3, user.getGroupMembersWithViewAll(gp1).size());
+    assertThat(user.getGroupMembersWithViewAll()).hasSize(3);
+    assertThat(user.getGroupMembersWithViewAll(gp1)).hasSize(3);
     gp2.addMember(user);
-    assertEquals(3, user.getGroupMembersWithViewAll(gp1).size());
-    assertEquals(2, user.getGroupMembersWithViewAll(gp2).size());
-    assertEquals(5, user.getGroupMembersWithViewAll().size());
+    assertThat(user.getGroupMembersWithViewAll(gp1)).hasSize(3);
+    assertThat(user.getGroupMembersWithViewAll(gp2)).hasSize(2);
+    assertThat(user.getGroupMembersWithViewAll()).hasSize(5);
   }
 
   private void enableViewAll(Group group, User user) {

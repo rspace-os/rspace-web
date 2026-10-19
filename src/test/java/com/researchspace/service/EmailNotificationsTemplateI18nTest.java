@@ -1,5 +1,6 @@
 package com.researchspace.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Date;
@@ -67,14 +68,14 @@ class EmailNotificationsTemplateI18nTest {
     model.put("removalPolicyMessage", "This archive will never be removed.");
 
     String out = templates.render("exportCompleteNotification.vm", model);
-    assertTrue(
-        out.contains("Your export [TestExport] is completed and generated an archive of size 5 MB"),
-        "rendered: " + out);
-    assertTrue(out.contains("More details are available on the"), "rendered: " + out);
-    assertTrue(out.contains("export report page"), "rendered: " + out);
-    assertTrue(
-        out.contains("Please click on, or copy the link into a browser to access the export:"),
-        "rendered: " + out);
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("Your export [TestExport] is completed and generated an archive of size 5 MB");
+    assertThat(out).as("rendered: " + out).contains("More details are available on the");
+    assertThat(out).as("rendered: " + out).contains("export report page");
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("Please click on, or copy the link into a browser to access the export:");
   }
 
   @Test
@@ -86,11 +87,11 @@ class EmailNotificationsTemplateI18nTest {
     model.put("date", new DateTool());
 
     String out = templates.render("message.vm", model);
-    assertTrue(out.contains("RSpace message from"), "rendered: " + out);
-    assertTrue(out.contains("sent you a message on"), "rendered: " + out);
-    assertTrue(
-        out.contains("To reply to the sender of this message, please do so in"),
-        "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("RSpace message from");
+    assertThat(out).as("rendered: " + out).contains("sent you a message on");
+    assertThat(out)
+        .as("rendered: " + out)
+        .contains("To reply to the sender of this message, please do so in");
   }
 
   @Test
@@ -103,9 +104,9 @@ class EmailNotificationsTemplateI18nTest {
     model.put("notificationTypeKey", "notificationType.documentShared");
 
     String out = templates.render("notification.vm", model);
-    assertTrue(out.contains("Notification from RSpace"), "rendered: " + out);
-    assertTrue(out.contains("generated a notification for you of type"), "rendered: " + out);
-    assertTrue(out.contains("Document Shared"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("Notification from RSpace");
+    assertThat(out).as("rendered: " + out).contains("generated a notification for you of type");
+    assertThat(out).as("rendered: " + out).contains("Document Shared");
   }
 
   @Test
@@ -118,9 +119,9 @@ class EmailNotificationsTemplateI18nTest {
     model.put("identifier", "abc.123");
 
     String out = templates.render("raidUpdateCompleteNotification.vm", model);
-    assertTrue(out.contains("has been added to your RAiD record"), "rendered: " + out);
-    assertTrue(out.contains("Your research output recently deposited on"), "rendered: " + out);
-    assertTrue(out.contains("with the DOI"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("has been added to your RAiD record");
+    assertThat(out).as("rendered: " + out).contains("Your research output recently deposited on");
+    assertThat(out).as("rendered: " + out).contains("with the DOI");
   }
 
   @Test
@@ -133,7 +134,7 @@ class EmailNotificationsTemplateI18nTest {
     model.put("identifier", "abc.123");
 
     String out = templates.render("raidUpdateCompleteNotification.vm", model);
-    assertTrue(out.contains("could not be added to your RAiD record"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("could not be added to your RAiD record");
   }
 
   @Test
@@ -148,8 +149,8 @@ class EmailNotificationsTemplateI18nTest {
     model.put("app", Map.of("label", "Zenodo"));
 
     String out = templates.render("repoDepositCompleteNotification.vm", model);
-    assertTrue(out.contains("is complete"), "rendered: " + out);
-    assertTrue(out.contains("Zenodo"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("is complete");
+    assertThat(out).as("rendered: " + out).contains("Zenodo");
   }
 
   @Test
@@ -159,8 +160,8 @@ class EmailNotificationsTemplateI18nTest {
     model.put("app", Map.of("label", "Zenodo"));
 
     String out = templates.render("repoDepositCompleteNotification.vm", model);
-    assertTrue(out.contains("failed"), "rendered: " + out);
-    assertTrue(out.contains("No URL for the repository could be retrieved"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("failed");
+    assertThat(out).as("rendered: " + out).contains("No URL for the repository could be retrieved");
   }
 
   @Test
@@ -172,10 +173,10 @@ class EmailNotificationsTemplateI18nTest {
     model.put("date", new DateTool());
 
     String out = templates.render("request.vm", model);
-    assertTrue(out.contains("In order to join the"), "rendered: " + out);
-    assertTrue(out.contains("Lab"), "rendered: " + out);
-    assertTrue(out.contains("group's PI will be permitted"), "rendered: " + out);
-    assertTrue(out.contains("sent you a request on"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("In order to join the");
+    assertThat(out).as("rendered: " + out).contains("Lab");
+    assertThat(out).as("rendered: " + out).contains("group's PI will be permitted");
+    assertThat(out).as("rendered: " + out).contains("sent you a request on");
   }
 
   @Test
@@ -187,9 +188,9 @@ class EmailNotificationsTemplateI18nTest {
     model.put("date", new DateTool());
 
     String out = templates.render("request.vm", model);
-    assertTrue(out.contains("In order to join the"), "rendered: " + out);
-    assertTrue(out.contains("Project"), "rendered: " + out);
-    assertTrue(out.contains("won't be visible"), "rendered: " + out);
+    assertThat(out).as("rendered: " + out).contains("In order to join the");
+    assertThat(out).as("rendered: " + out).contains("Project");
+    assertThat(out).as("rendered: " + out).contains("won't be visible");
   }
 
   @Test

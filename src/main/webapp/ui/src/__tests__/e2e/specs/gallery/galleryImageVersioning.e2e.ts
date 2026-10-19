@@ -1,14 +1,11 @@
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect } from "@playwright/test";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
-import { TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
+import { fixturePath, TINY_PNG, uniqueName } from "@/__tests__/e2e/testData";
 
-const currentDir = dirname(fileURLToPath(import.meta.url));
 // Must share the original's .png extension - the app rejects an uploaded new version whose
 // extension doesn't match (live-verified: "Cannot update .png file with .jpg").
-const REPLACEMENT_IMAGE_PATH = resolve(currentDir, "../inventory/fixtures/container_preview.png");
+const REPLACEMENT_IMAGE_PATH = fixturePath(import.meta.url, "../inventory/fixtures/container_preview.png");
 
 test.describe("Gallery image versioning", () => {
   test("As a user, I can upload a new version of an image and see both versions in its history", {
@@ -118,13 +115,9 @@ test.describe("Gallery image versioning", () => {
     pageGallery,
     clientFiles,
   }) => {
-    // Known bug: rotating an image in the Edit Image dialog and clicking "Save as new
-    // image" does not currently produce a new gallery item as expected. Live-reproduced
-    // 2026-08-19 via MCP: Actions -> Edit -> rotate clockwise -> "Save as new image".
-    // Tracked for follow-up; unskip once fixed.
-    test.skip(true, "Known bug: 'Save as new image' after rotating does not create a new item");
-
-    const originalName = `${uniqueName("e2e-gallery-edit")}.png`;
+    const baseName = uniqueName("e2e-gallery-edit");
+    const originalName = `${baseName}.png`;
+    const editedName = `${baseName}_edited.png`;
 
     await test.step("Given an uploaded image", async () => {
       const uploaded = await clientFiles.uploadFile({ name: originalName, mimeType: "image/png", buffer: TINY_PNG });
@@ -143,6 +136,8 @@ test.describe("Gallery image versioning", () => {
 
     await test.step("Then a new gallery item is created alongside the original", async () => {
       await expect.poll(() => pageGallery.itemsCount()).toBe(initialCount + 1);
+      await expect(pageGallery.fileCell(editedName)).toBeVisible();
+      await expect(pageGallery.fileCell(originalName)).toBeVisible();
     });
   });
 });

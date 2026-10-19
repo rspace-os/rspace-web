@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { CreateSnippetDialogComponent } from "@/__tests__/e2e/components/document/CreateSnippetDialogComponent";
-import { resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
+import { activateFieldForEditing, resolveFieldId } from "@/__tests__/e2e/components/document/DocumentFieldHelpers";
 import { DocumentToolbar } from "@/__tests__/e2e/components/document/DocumentToolbar";
 import { InternalLinkDialogComponent } from "@/__tests__/e2e/components/document/InternalLinkDialogComponent";
 import { MaterialsDialogComponent } from "@/__tests__/e2e/components/document/MaterialsDialogComponent";
@@ -8,6 +8,7 @@ import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor
 import { VideoEmbedDialogComponent } from "@/__tests__/e2e/components/document/VideoEmbedDialogComponent";
 import { GalleryPickerComponent } from "@/__tests__/e2e/components/shared/GalleryPickerComponent";
 import { CaliraDialogComponent } from "@/modules/calira/__tests__/pageObjects/CaliraDialogComponent";
+import { KetcherDialogComponent } from "@/modules/chemistry/__tests__/pageObjects/KetcherDialogComponent";
 import { EgnyteDialogComponent } from "@/modules/egnyte/__tests__/pageObjects/EgnyteDialogComponent";
 import { ExternalWorkflowDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/ExternalWorkflowDialogComponent";
 import { GalaxyDialogComponent } from "@/modules/galaxy/__tests__/pageObjects/GalaxyDialogComponent";
@@ -25,6 +26,7 @@ type ToolbarDialog = { waitForOpen(): Promise<void> };
 export class DocumentEditorPage extends DocumentPage {
   readonly editToolbar: DocumentToolbar;
   readonly pubchemDialog: PubchemDialogComponent;
+  readonly ketcherDialog: KetcherDialogComponent;
   readonly galleryPicker: GalleryPickerComponent;
   readonly galaxyDialog: GalaxyDialogComponent;
   readonly externalWorkflowDialog: ExternalWorkflowDialogComponent;
@@ -45,6 +47,7 @@ export class DocumentEditorPage extends DocumentPage {
     this.editToolbar = new DocumentToolbar(page);
     this.videoEmbedDialog = new VideoEmbedDialogComponent(page);
     this.pubchemDialog = new PubchemDialogComponent(page);
+    this.ketcherDialog = new KetcherDialogComponent(page);
     this.galleryPicker = new GalleryPickerComponent(page);
     this.galaxyDialog = new GalaxyDialogComponent(page);
     this.externalWorkflowDialog = new ExternalWorkflowDialogComponent(page);
@@ -73,9 +76,8 @@ export class DocumentEditorPage extends DocumentPage {
 
   async getField(fieldName: string, index = 0): Promise<TinyMceEditor> {
     const fieldId = await resolveFieldId(this.page, fieldName, index, "getField");
-    const editorId = `rtf_${fieldId}`;
-    await this.page.locator(`iframe#${editorId}_ifr`).waitFor({ state: "visible" });
-    return new TinyMceEditor(this.page, editorId).waitForReady();
+    await activateFieldForEditing(this.page, fieldId);
+    return new TinyMceEditor(this.page, fieldId).waitForReady();
   }
 
   async saveAndView(): Promise<DocumentPage> {
@@ -83,6 +85,22 @@ export class DocumentEditorPage extends DocumentPage {
     const viewPage = new DocumentPage(this.page);
     await viewPage.isLoaded();
     return viewPage;
+  }
+
+  /** Saves the current entry and lands on a fresh entry, still in edit mode. */
+  async saveAndNew(): Promise<DocumentEditorPage> {
+    await this.editToolbar.saveAndNew();
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
+  /** Saves the current entry and lands on a "<name>-copy" duplicate, still in edit mode. */
+  async saveAndClone(): Promise<DocumentEditorPage> {
+    await this.editToolbar.saveAndClone();
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
   }
 
   /** Clicks a toolbar button by its accessible name, then waits for the given dialog to open. */
@@ -94,6 +112,10 @@ export class DocumentEditorPage extends DocumentPage {
 
   async openPubchemDialog(): Promise<PubchemDialogComponent> {
     return this.openToolbarDialog("Insert from PubChem", this.pubchemDialog);
+  }
+
+  async openKetcherDialog(): Promise<KetcherDialogComponent> {
+    return this.openToolbarDialog("Ketcher Insert chemical structure", this.ketcherDialog);
   }
 
   get insertFromGalleryButton(): Locator {

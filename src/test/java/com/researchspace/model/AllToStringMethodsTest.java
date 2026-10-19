@@ -1,6 +1,6 @@
 package com.researchspace.model;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
@@ -28,7 +28,7 @@ public class AllToStringMethodsTest {
     StringBuffer sb = new StringBuffer();
     callToStrings("com.axiope", sb);
     callToStrings("com.researchspace", sb);
-    assertTrue(sb.length() == 0, "Failed classes: " + sb);
+    assertThat(sb).as("Failed classes: " + sb).isEmpty();
   }
 
   private void callToStrings(String packageRoot, StringBuffer sb) {

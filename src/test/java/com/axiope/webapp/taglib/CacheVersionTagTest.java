@@ -1,5 +1,6 @@
 package com.axiope.webapp.taglib;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -68,7 +69,7 @@ public class CacheVersionTagTest {
     assertEquals(TagSupport.SKIP_BODY, tag.doStartTag());
 
     String first = output.toString();
-    assertEquals(true, first.matches("[0-9a-f-]{8,}"), "expected a UUID-like token: " + first);
+    assertThat(first).as("expected a UUID-like token: " + first).matches("[0-9a-f-]{8,}");
   }
 
   @Test

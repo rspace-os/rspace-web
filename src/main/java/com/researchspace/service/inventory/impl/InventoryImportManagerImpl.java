@@ -695,14 +695,10 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         targetParent = getDefaultContainerForImportedItems(importResult, csvResult);
       }
       try {
-        ApiContainer moveRequest = new ApiContainer();
-        moveRequest.setId(importedRecord.getId());
-        moveRequest.setParentContainer(targetParent);
-        /* needed for backward compatibility as explained on the method
-        ApiInventoryRecordInfo.applyChangesToDatabaseInventoryRecord(...) */
-        moveRequest.setTags(null);
         ApiContainer updatedContainer =
-            containerManager.updateApiContainer(moveRequest, importResult.getCurrentUser());
+            containerManager.updateApiContainer(
+                moveRequest(new ApiContainer(), importedRecord.getId(), targetParent),
+                importResult.getCurrentUser());
         importedRecordResult.setRecord(updatedContainer);
 
       } catch (Exception e) {
@@ -718,6 +714,19 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
         throw new InventoryImportException(error, importResult);
       }
     }
+  }
+
+  /**
+   * A request that only moves an item into {@code targetParent}. Tags must be null: the default
+   * empty list would clear the item's tags, see
+   * ApiInventoryRecordInfo.applyChangesToDatabaseInventoryRecord.
+   */
+  private static <T extends ApiInventoryRecordInfo> T moveRequest(
+      T request, Long id, ApiContainer targetParent) {
+    request.setId(id);
+    request.setParentContainer(targetParent);
+    request.setTags(null);
+    return request;
   }
 
   private ApiContainer getDefaultContainerForImportedItems(
@@ -839,11 +848,10 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
           targetParent = getDefaultContainerForImportedItems(importResult, csvResult);
         }
         try {
-          ApiSubSample moveRequest = new ApiSubSample();
-          moveRequest.setId(importedSubSample.getId());
-          moveRequest.setParentContainer(targetParent);
           ApiSubSample updatedSubSample =
-              subSampleManager.updateApiSubSample(moveRequest, importResult.getCurrentUser());
+              subSampleManager.updateApiSubSample(
+                  moveRequest(new ApiSubSample(), importedSubSample.getId(), targetParent),
+                  importResult.getCurrentUser());
           movedSubSamples.add(updatedSubSample);
 
         } catch (Exception e) {
@@ -978,11 +986,11 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       ApiInventoryBulkOperationRecordResult importedSubSample =
           importResult.getSubSampleResult().getResults().get(subSampleCount);
       try {
-        ApiSubSample moveRequest = new ApiSubSample();
-        moveRequest.setId(importedSubSample.getRecord().getId());
-        moveRequest.setParentContainer(targetParent);
         ApiSubSample updatedSubSample =
-            subSampleManager.updateApiSubSample(moveRequest, importResult.getCurrentUser());
+            subSampleManager.updateApiSubSample(
+                moveRequest(
+                    new ApiSubSample(), importedSubSample.getRecord().getId(), targetParent),
+                importResult.getCurrentUser());
         importedSubSample.setRecord(updatedSubSample);
 
       } catch (Exception e) {
@@ -1052,11 +1060,10 @@ public class InventoryImportManagerImpl implements InventoryImportManager {
       }
 
       try {
-        ApiInstrument moveRequest = new ApiInstrument();
-        moveRequest.setId(importedInstrument.getId());
-        moveRequest.setParentContainer(targetParent);
         ApiInstrument updatedInstrument =
-            instrumentApiMgr.updateApiInstrument(moveRequest, importResult.getCurrentUser());
+            instrumentApiMgr.updateApiInstrument(
+                moveRequest(new ApiInstrument(), importedInstrument.getId(), targetParent),
+                importResult.getCurrentUser());
         importedRecordResult.setRecord(updatedInstrument);
       } catch (Exception e) {
         log.warn(

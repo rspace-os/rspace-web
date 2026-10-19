@@ -1,7 +1,7 @@
 package com.researchspace.webapp.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -165,7 +165,7 @@ class DispatcherServletInitializerTest {
     assertEquals(-1L, config.getMaxFileSize());
     assertEquals(12345L, config.getMaxRequestSize());
     assertEquals(0, config.getFileSizeThreshold());
-    assertEquals("", config.getLocation());
+    assertThat(config.getLocation()).isEmpty();
   }
 
   /**
@@ -207,12 +207,13 @@ class DispatcherServletInitializerTest {
         }
       }
     }
-    assertTrue(
-        uncovered.isEmpty(),
-        "Upload-accepting controllers not covered by"
-            + " DispatcherServletInitializer.MULTIPART_SOURCE_PATTERNS (uploads on these paths"
-            + " fail under Tomcat): "
-            + uncovered);
+    assertThat(uncovered)
+        .as(
+            "Upload-accepting controllers not covered by"
+                + " DispatcherServletInitializer.MULTIPART_SOURCE_PATTERNS (uploads on these paths"
+                + " fail under Tomcat): "
+                + uncovered)
+        .isEmpty();
   }
 
   private static boolean takesMultipartFile(Method method) {

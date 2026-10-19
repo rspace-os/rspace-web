@@ -3,6 +3,7 @@ package com.researchspace.model.record;
 import static com.researchspace.model.record.TestFactory.createAFolder;
 import static com.researchspace.model.record.TestFactory.createAnyGroup;
 import static com.researchspace.model.record.TestFactory.createAnyUserWithRole;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,7 +50,7 @@ public class NotebookTest {
   @Test
   public void addNotebookToFolder() throws IllegalAddChildOperation {
     Folder f = TestFactory.createAFolder("any", anyuser);
-    assertEquals(0, f.getChildren().size());
+    assertThat(f.getChildren()).isEmpty();
     sleep();
     f.addChild(notebook, anyuser, true);
     assertEquals(f, notebook.getParent());
@@ -75,18 +76,18 @@ public class NotebookTest {
     assertNotNull(folder1);
     assertNotNull(t1Copy);
     assertEquals("notebook tag", t1Copy.getDocTag());
-    assertEquals(1, t1Copy.getChildren().size());
+    assertThat(t1Copy.getChildren()).hasSize(1);
   }
 
   @Test
   public void removeRecordFromNotebook() throws IllegalAddChildOperation {
-    assertEquals(0, notebook.getChildren().size());
+    assertThat(notebook.getChildren()).isEmpty();
     StructuredDocument c1 = TestFactory.createAnySD(TestFactory.createAnyForm());
     notebook.addChild(c1, anyuser);
-    assertEquals(1, notebook.getChildren().size());
+    assertThat(notebook.getChildren()).hasSize(1);
     notebook.removeChild(c1);
     assertNull(c1.getParent());
-    assertEquals(0, notebook.getChildren().size());
+    assertThat(notebook.getChildren()).isEmpty();
   }
 
   @Test
@@ -102,8 +103,8 @@ public class NotebookTest {
     notebook.addChild(sd, anyuser);
     folder1 = createAFolder("any", anyuser);
     assertTrue(sd.move(notebook, folder1, anyuser));
-    assertEquals(0, notebook.getChildrens().size());
-    assertEquals(1, folder1.getChildrens().size());
+    assertThat(notebook.getChildrens()).isEmpty();
+    assertThat(folder1.getChildrens()).hasSize(1);
   }
 
   @Test
@@ -113,8 +114,8 @@ public class NotebookTest {
     // owner of notebook is not the same as document in owner
     sd.setOwner(TestFactory.createAnyUser("other"));
     assertFalse(sd.move(notebook, folder1, anyuser));
-    assertEquals(1, notebook.getChildrens().size());
-    assertEquals(0, folder1.getChildrens().size());
+    assertThat(notebook.getChildrens()).hasSize(1);
+    assertThat(folder1.getChildrens()).isEmpty();
   }
 
   @Test

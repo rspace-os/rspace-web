@@ -127,8 +127,9 @@ test.describe("Lab Group role management", { tag: tags.SYSTEM }, () => {
     const pi = await createDynamicUser(clientSysadmin, "ROLE_PI", "e2eRoleMgmtPi");
     const labAdmin = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eRoleMgmtLabAdmin");
     const invitee = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eRoleMgmtInvitee");
+    const groupName = uniqueName("e2eRoleMgmtGroup");
     const group = await clientSysadmin.createGroup({
-      displayName: uniqueName("e2eRoleMgmtGroup"),
+      displayName: groupName,
       type: "LAB_GROUP",
       users: [
         { username: pi.username, roleInGroup: "PI" },
@@ -143,7 +144,7 @@ test.describe("Lab Group role management", { tag: tags.SYSTEM }, () => {
     await piSession.groupDetails.inviteMember(invitee.username);
 
     const inviteeSession = await flowUserSession(invitee.username, DYNAMIC_USER_PASSWORD);
-    await inviteeSession.groupInvitation.accept();
+    await inviteeSession.groupRequest(groupName).accept();
 
     const docName = uniqueName("e2eRoleMgmtInviteeDoc");
     await new DocumentsClient(apiContext, invitee.apiKey).create({ name: docName });

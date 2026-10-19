@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.core.util.DateUtil.localDateToDateUTC;
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,7 +56,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     FormTemplatesCommon.FormPost regenerated =
         JacksonUtil.fromJson(jsonBody, FormTemplatesCommon.FormPost.class);
     assertEquals(formPost, regenerated);
-    assertTrue(regenerated.getFields().stream().allMatch(ff -> ff.getType() != null));
+    assertThat(regenerated.getFields()).allMatch(ff -> ff.getType() != null);
   }
 
   @Test
@@ -205,7 +206,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     RSForm newForm = createNewForm();
     ApiForm apiForm = new ApiForm(newForm);
     addLinks(newForm, apiForm);
-    assertEquals(EXPECTED_LINK_COUNT, apiForm.getLinks().size());
+    assertThat(apiForm.getLinks()).hasSize(EXPECTED_LINK_COUNT);
     assertTrue(isPublishLink(apiForm));
     assertTrue(isShareLink(apiForm));
     assertFalse(isUnPublishLink(apiForm));
@@ -218,7 +219,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     newForm.publish();
     ApiForm apiForm = new ApiForm(newForm);
     addLinks(newForm, apiForm);
-    assertEquals(EXPECTED_LINK_COUNT, apiForm.getLinks().size());
+    assertThat(apiForm.getLinks()).hasSize(EXPECTED_LINK_COUNT);
     assertFalse(isPublishLink(apiForm));
     assertTrue(isShareLink(apiForm));
     assertTrue(isUnPublishLink(apiForm));
@@ -232,7 +233,7 @@ public class FormTemplatesCommonTest extends JakartaValidatorTest {
     newForm.getAccessControl().setGroupPermissionType(PermissionType.READ);
     ApiForm apiForm = new ApiForm(newForm);
     addLinks(newForm, apiForm);
-    assertEquals(EXPECTED_LINK_COUNT, apiForm.getLinks().size());
+    assertThat(apiForm.getLinks()).hasSize(EXPECTED_LINK_COUNT);
     assertFalse(isPublishLink(apiForm));
     assertFalse(isShareLink(apiForm));
     assertTrue(isUnPublishLink(apiForm));

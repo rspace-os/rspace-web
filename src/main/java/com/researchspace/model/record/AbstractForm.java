@@ -370,6 +370,10 @@ public abstract class AbstractForm
    * To add /remove {@link FieldForm}s from this Form, use the add/removeFieldForm methods in this
    * Form class.
    *
+   * <p>May include soft-deleted FieldForms. The {@code notdeleted} filter below only applies on a
+   * session where the form DAO enabled it, so a form reached through an association is unfiltered.
+   * Callers that need only live fields must filter for themselves.
+   *
    * @return A possibly empty but non-null {@link List} of FieldForms.
    */
   @OneToMany(mappedBy = "form", cascade = CascadeType.ALL, orphanRemoval = true)

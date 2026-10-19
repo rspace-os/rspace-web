@@ -55,9 +55,8 @@ public class CloudSignupHandlerTest {
   @Test
   public void testSaveUserThrowsISEIfNotConfiguredForCloud() throws UserExistsException {
     props.setCloud("false");
-    assertThrows(
-        IllegalStateException.class,
-        () -> cloudSignupPolicy.saveUser(TestFactory.createAnyUser("any"), request));
+    User user = TestFactory.createAnyUser("any");
+    assertThrows(IllegalStateException.class, () -> cloudSignupPolicy.saveUser(user, request));
   }
 
   @Test

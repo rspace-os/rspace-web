@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -95,7 +96,7 @@ public class PubchemSearcherTest {
         pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "aspirin");
 
     assertNotNull(results);
-    assertEquals(1, results.size());
+    assertThat(results).hasSize(1);
 
     ChemicalImportSearchResult result = results.get(0);
     assertEquals("2244", result.getPubchemId());
@@ -120,7 +121,7 @@ public class PubchemSearcherTest {
         pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "nonexistent");
 
     assertNotNull(results);
-    assertTrue(results.isEmpty());
+    assertThat(results).isEmpty();
   }
 
   @Test
@@ -132,7 +133,7 @@ public class PubchemSearcherTest {
         pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "notfound");
 
     assertNotNull(results);
-    assertTrue(results.isEmpty());
+    assertThat(results).isEmpty();
   }
 
   @Test
@@ -145,7 +146,7 @@ public class PubchemSearcherTest {
             ChemicalImportException.class,
             () -> pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"));
 
-    assertTrue(exception.getMessage().contains("Rate limit exceeded"));
+    assertThat(exception.getMessage()).contains("Rate limit exceeded");
   }
 
   @Test
@@ -158,7 +159,7 @@ public class PubchemSearcherTest {
             ChemicalImportException.class,
             () -> pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "invalid-search"));
 
-    assertTrue(exception.getMessage().contains("Invalid request to PubChem API"));
+    assertThat(exception.getMessage()).contains("Invalid request to PubChem API");
   }
 
   @Test
@@ -167,7 +168,7 @@ public class PubchemSearcherTest {
         assertThrows(
             ChemicalImportException.class, () -> pubchemSearcher.searchChemicals(null, "aspirin"));
 
-    assertTrue(exception.getMessage().contains("Search type and term are required"));
+    assertThat(exception.getMessage()).contains("Search type and term are required");
   }
 
   @ParameterizedTest
@@ -178,7 +179,7 @@ public class PubchemSearcherTest {
             ChemicalImportException.class,
             () -> pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, searchTerm));
 
-    assertTrue(exception.getMessage().contains("Search type and term are required"));
+    assertThat(exception.getMessage()).contains("Search type and term are required");
   }
 
   @Test
@@ -191,7 +192,7 @@ public class PubchemSearcherTest {
             ChemicalImportException.class,
             () -> pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"));
 
-    assertTrue(exception.getMessage().contains("Error communicating with PubChem API"));
+    assertThat(exception.getMessage()).contains("Error communicating with PubChem API");
   }
 
   @Test
@@ -204,7 +205,7 @@ public class PubchemSearcherTest {
             ChemicalImportException.class,
             () -> pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"));
 
-    assertTrue(exception.getMessage().contains("Error communicating with PubChem API"));
+    assertThat(exception.getMessage()).contains("Error communicating with PubChem API");
   }
 
   @Test
@@ -217,7 +218,7 @@ public class PubchemSearcherTest {
             ChemicalImportException.class,
             () -> pubchemSearcher.searchChemicals(ChemicalImportSearchType.NAME, "aspirin"));
 
-    assertTrue(exception.getMessage().contains("Unexpected error"));
+    assertThat(exception.getMessage()).contains("Unexpected error");
   }
 
   @Test

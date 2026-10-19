@@ -2,6 +2,7 @@ package com.researchspace.model.record;
 
 import static com.researchspace.model.record.TestFactory.createAnyGroup;
 import static com.researchspace.model.record.TestFactory.createAnyUserWithRole;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -54,11 +55,11 @@ public class StructuredDocumentTest {
   @Test
   public void testSettingSameNameDoesNotGenerateDelta() {
     sd.setName("a");
-    assertFalse(StringUtils.isEmpty(sd.getDeltaStr()));
+    assertThat(sd.getDeltaStr()).isNotEmpty();
 
     sd.clearDelta();
     sd.setName("a");
-    assertTrue(StringUtils.isEmpty(sd.getDeltaStr()));
+    assertThat(sd.getDeltaStr()).isNullOrEmpty();
   }
 
   @Test
@@ -75,11 +76,11 @@ public class StructuredDocumentTest {
     Field f = TestFactory.createAnyField();
     sd.addField(f);
     assertNotNull(f.getStructuredDocument());
-    assertEquals(2, sd.getFields().size());
+    assertThat(sd.getFields()).hasSize(2);
 
     sd.removeField(f);
     assertNull(f.getStructuredDocument());
-    assertEquals(1, sd.getFields().size());
+    assertThat(sd.getFields()).hasSize(1);
   }
 
   @Test
@@ -127,11 +128,11 @@ public class StructuredDocumentTest {
     Field f = TestFactory.createAnyField();
     sd.addField(f);
     assertNotNull(f.getStructuredDocument());
-    assertEquals(2, sd.getFields().size());
+    assertThat(sd.getFields()).hasSize(2);
 
     sd.removeAllFields();
 
-    assertEquals(0, sd.getFields().size());
+    assertThat(sd.getFields()).isEmpty();
   }
 
   @Test
@@ -167,7 +168,7 @@ public class StructuredDocumentTest {
     assertFalse(sd.isDeleted()); // initial state is false
     sd.setRecordDeleted(true);
     assertTrue(sd.isDeleted());
-    assertTrue(sd.getDeltaStr().contains(DeltaType.DELETED.toString()));
+    assertThat(sd.getDeltaStr()).contains(DeltaType.DELETED.toString());
     assertNotNull(sd.getDeletedDate());
   }
 
@@ -205,16 +206,16 @@ public class StructuredDocumentTest {
     StructuredDocument sd = TestFactory.createAnySD(TestFactory.createAnyForm());
 
     assertNotNull(sd.getDelta());
-    assertTrue(sd.getDelta().getDeltaString().contains(DeltaType.RENAME.toString()));
+    assertThat(sd.getDelta().getDeltaString()).contains(DeltaType.RENAME.toString());
     Long b4 = sd.getEditInfo().getModificationDateMillis();
-    assertFalse(sd.getDelta().getDeltaString().contains(DeltaType.FIELD_CHG.toString()));
+    assertThat(sd.getDelta().getDeltaString()).doesNotContain(DeltaType.FIELD_CHG.toString());
     Thread.sleep(5); // ensure time difference
     sd.getFields().get(0).setFieldData("NEW");
 
-    assertTrue(sd.getDelta().getDeltaString().contains(DeltaType.FIELD_CHG.toString()));
+    assertThat(sd.getDelta().getDeltaString()).contains(DeltaType.FIELD_CHG.toString());
 
     Long after1 = sd.getEditInfo().getModificationDateMillis();
-    assertTrue(after1 > b4);
+    assertThat(after1).isGreaterThan(b4);
 
     assertTrue(sd.hasAuditableDeltas());
     sd.clearDelta();
@@ -231,7 +232,7 @@ public class StructuredDocumentTest {
     sd.notifyDelta(DeltaType.RESTORED);
     assertTrue(sd.isMarkedForVersionIncrement());
 
-    assertTrue(oldModified.toEpochMilli() < sd.getModificationDateMillis());
+    assertThat(oldModified.toEpochMilli()).isLessThan(sd.getModificationDateMillis());
 
     sd.clearDelta();
     sd.setModificationDate(oldModified.toEpochMilli());
@@ -308,7 +309,7 @@ public class StructuredDocumentTest {
   }
 
   private void fieldsAreEqualSize(StructuredDocument sd2, StructuredDocument copy) {
-    assertEquals(sd2.getFields().size(), copy.getFields().size());
+    assertThat(copy.getFields()).hasSize(sd2.getFields().size());
   }
 
   @Test

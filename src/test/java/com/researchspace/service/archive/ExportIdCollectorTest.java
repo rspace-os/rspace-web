@@ -4,8 +4,7 @@ import static com.researchspace.model.core.RecordType.FOLDER;
 import static com.researchspace.model.core.RecordType.MEDIA_FILE;
 import static com.researchspace.model.core.RecordType.NORMAL;
 import static com.researchspace.testutils.TestFactory.createAnyUser;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.researchspace.archive.ImmutableExportRecordList;
 import com.researchspace.archive.model.ArchiveExportConfig;
@@ -49,8 +48,8 @@ public class ExportIdCollectorTest {
     String[] types = new String[] {folder.getType(), notebook.getType()};
 
     ImmutableExportRecordList recordList = exportIdCollector.getRecordsToArchive(ids, types, user);
-    assertEquals(0, recordList.getRecordsToExport().size());
-    assertEquals(2, recordList.getFolderTree().size());
+    assertThat(recordList.getRecordsToExport()).isEmpty();
+    assertThat(recordList.getFolderTree()).hasSize(2);
   }
 
   @Test
@@ -72,12 +71,10 @@ public class ExportIdCollectorTest {
     ImmutableExportRecordList recordList =
         exportIdCollector.getRecordsToArchive(ids, types, createAnyUser("any"));
     // media
-    assertTrue(
-        recordList.getRecordsToExport().subList(0, 4).stream()
-            .allMatch(oid -> oid.getDbId() % 2 == 0));
+    assertThat(recordList.getRecordsToExport().subList(0, 4))
+        .allMatch(oid -> oid.getDbId() % 2 == 0);
     // normal
-    assertTrue(
-        recordList.getRecordsToExport().subList(4, 8).stream()
-            .allMatch(oid -> oid.getDbId() % 2 == 1));
+    assertThat(recordList.getRecordsToExport().subList(4, 8))
+        .allMatch(oid -> oid.getDbId() % 2 == 1);
   }
 }

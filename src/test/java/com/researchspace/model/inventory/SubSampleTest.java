@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -89,8 +90,8 @@ public class SubSampleTest {
     assertEquals(subSample.getImageFileProperty(), copy.getImageFileProperty());
     assertEquals(subSample.getThumbnailFileProperty(), copy.getThumbnailFileProperty());
     assertEquals(sample, copy.getSample());
-    assertEquals(2, copy.getActiveExtraFields().size());
-    assertEquals(2, copy.getNotes().size());
+    assertThat(copy.getActiveExtraFields()).hasSize(2);
+    assertThat(copy.getNotes()).hasSize(2);
     assertEquals(subSample.getName() + "_COPY", copy.getName());
   }
 }

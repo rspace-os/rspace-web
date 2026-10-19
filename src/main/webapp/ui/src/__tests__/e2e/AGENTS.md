@@ -8,10 +8,11 @@ API tests (HTTP against `/api/v1/`). `CLAUDE.md` in this directory symlinks here
 Shared infrastructure lives here:
 - `specs/` — test files for cross-cutting concerns such as auth. Check here before writing a new one.
 - `pageObjects/` — page objects grouped by feature subfolder (`document/`,
-  `notebook/`, `workspace/`, `inventory/`, `auth/`, `system/`, `apps/`);
+  `notebook/`, `workspace/`, `inventory/`, `auth/`, `system/`, `apps/`,
+  `gallery/`, `myrspace/`, `groups/`);
   `BasePage.ts` stays at the root — it's the abstract base, not feature-specific.
 - `components/` — UI fragments composed into page objects, grouped the same
-  way (`document/`, `notebook/`, `workspace/`, `navigation/`), plus
+  way (`document/`, `notebook/`, `workspace/`, `navigation/`, `groups/`, …), plus
   `shared/` for pieces used across features (`AppHeader`, `ToolbarCreateMenu`,
   `ToolbarCommonActions`).
 - `api/clients/` — one class per API resource (e.g. `DocumentsClient.ts`).
@@ -97,6 +98,21 @@ File suffix drives `testMatch` in the config — wrong suffix = silently never r
 Authentication is provided by each project's `storageState`. Use
 `pageLogin`/`pageWorkspace` directly only when login is the behaviour under
 test or when a deliberately unauthenticated context is required.
+
+## Must: deleting a dynamic user leaves a dangling reference unless you release it
+
+`users.deleteUser(username)` removes the account from RSpace, but `clientSysadmin` still holds its
+id and will try to disable it at teardown — a disable-by-id against a user that's already gone,
+which the backend answers with an uncaught 500, not a not-found. Delete and release together:
+
+```ts
+import { deleteDynamicUser } from "@/__tests__/e2e/deleteDynamicUser";
+await deleteDynamicUser(users, clientSysadmin, username); // deletes + releases the id, together
+```
+
+Teardown cleanup failures aren't just logged anymore, either: an unexpected one now **fails the
+test**, even one that otherwise passed. Deliberate — a silently-swallowed cleanup failure used to
+let leaked/broken accounts pass CI invisibly.
 
 ## Must: import style — relative within a folder, `@/` across feature folders
 

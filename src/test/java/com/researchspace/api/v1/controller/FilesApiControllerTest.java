@@ -1,9 +1,9 @@
 package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.EcatDocumentFile;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
@@ -104,8 +104,7 @@ public class FilesApiControllerTest {
   }
 
   private void assertNotFoundExceptionThrown(MockMultipartFile mockFile) throws Exception {
-    CoreTestUtils.assertExceptionThrown(
-        () -> fileController.updateFile(1L, mockFile, subject), NotFoundException.class);
+    assertThrows(NotFoundException.class, () -> fileController.updateFile(1L, mockFile, subject));
     Mockito.verifyNoInteractions(mediaMgr);
   }
 }

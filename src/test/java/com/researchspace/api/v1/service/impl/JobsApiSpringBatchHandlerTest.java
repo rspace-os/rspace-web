@@ -5,6 +5,8 @@ import static com.researchspace.api.v1.service.impl.ExportTasklet.JOB_TYPE;
 import static com.researchspace.api.v1.service.impl.ExportTasklet.JOB_TYPE_KEY;
 import static com.researchspace.testutils.RSpaceTestUtils.getResource;
 import static org.apache.commons.io.FileUtils.readFileToString;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.researchspace.api.v1.controller.ExportApiController.ExportApiConfig;
@@ -62,11 +64,11 @@ public class JobsApiSpringBatchHandlerTest {
   void testProgressReportingFormatting() {
     ProgressMonitor pm = new ProgressMonitorImpl(7, "test");
     pm.worked(1);
-    assertEquals("14.29", handler.roundTo3sf(pm).toString());
+    assertThat(handler.roundTo3sf(pm)).hasToString("14.29");
     pm.worked(5);
-    assertEquals("85.71", handler.roundTo3sf(pm).toString());
+    assertThat(handler.roundTo3sf(pm)).hasToString("85.71");
     pm.worked(1);
-    assertEquals("100.0", handler.roundTo3sf(pm).toString());
+    assertThat(handler.roundTo3sf(pm)).hasToString("100.0");
   }
 
   @Test
@@ -93,7 +95,7 @@ public class JobsApiSpringBatchHandlerTest {
     assertFalse(job.isCompleted());
     assertTrue(job.getResult() != null);
     assertTrue(job.getResult() instanceof ApiError);
-    assertTrue(((ApiError) job.getResult()).getErrors().get(0).contains("ExportFailureException"));
+    assertThat(((ApiError) job.getResult()).getErrors().get(0)).contains("ExportFailureException");
   }
 
   @Test
@@ -113,7 +115,7 @@ public class JobsApiSpringBatchHandlerTest {
     ApiJob job = handler.getJob(jobId, user);
     assertNotNull(job);
     assertTrue(job.isCompleted());
-    assertEquals(100, job.getPercentComplete(), 0.00001);
+    assertThat(job.getPercentComplete()).isCloseTo(100, within(0.00001));
     assertNotNull(job.getResult());
   }
 

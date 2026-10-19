@@ -1,5 +1,6 @@
 package com.researchspace.netfiles.irods;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -68,7 +69,7 @@ class IRODSClientTest {
         subjectUnderTest.createFileTree(IRODS_HOME_DIR, "", testFileStore);
     // Check root node has path set
     assertEquals(IRODS_HOME_DIR, fileTreeNode.getNodePath());
-    assertEquals(2, fileTreeNode.getNodes().size());
+    assertThat(fileTreeNode.getNodes()).hasSize(2);
     List<NfsFileTreeNode> nodes = fileTreeNode.getNodes();
     // Check first node has /tempZone/home/alice/test as path and nfsId is set
     assertEquals("/tempZone/home/alice/test", nodes.get(0).getNodePath());
@@ -88,7 +89,7 @@ class IRODSClientTest {
     NfsFileTreeNode fileTreeNode = subjectUnderTest.createFileTree(testPath, "", testFileStore);
     // Check root node has path set
     assertEquals(testPath, fileTreeNode.getNodePath());
-    assertEquals(2, fileTreeNode.getNodes().size());
+    assertThat(fileTreeNode.getNodes()).hasSize(2);
     List<NfsFileTreeNode> nodes = fileTreeNode.getNodes();
     // Check first node has /tempZone/home/alice/test as path and nfsId is set
     assertEquals("coffee.jpg", nodes.get(0).getNodePath());
@@ -184,7 +185,7 @@ class IRODSClientTest {
     assertEquals(IRODS_HOME_DIR + "/test", folderDetails.getFileSystemFullPath());
     assertEquals(IRODS_HOME_DIR, folderDetails.getFileSystemParentPath());
     assertEquals(10045L, folderDetails.getNfsId());
-    assertEquals(2, folderDetails.getContent().size());
+    assertThat(folderDetails.getContent()).hasSize(2);
   }
 
   private List<CollectionAndDataObjectListingEntry> getTestListingForUserHomeDirectory() {

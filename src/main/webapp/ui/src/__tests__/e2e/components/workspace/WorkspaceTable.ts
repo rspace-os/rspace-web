@@ -1,12 +1,47 @@
-import type { ElementHandle, Locator, Page } from "@playwright/test";
+import { type ElementHandle, expect, type Locator, type Page } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
+import { rowWithLink } from "@/__tests__/e2e/pageObjects/rowHelpers";
+import { MiniProfilePopover } from "./MiniProfilePopover";
 import { WorkspaceSelectionBar } from "./WorkspaceSelectionBar";
 
+/** The workspace listing re-renders #file_table as a new element; the stale one proves nothing refreshed. */
 export async function waitForTableSwap(page: Page, staleTable: ElementHandle | null): Promise<void> {
   if (!staleTable) return;
   await page
-    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable, { timeout: 5_000 })
-    .catch(() => {});
+    // waitForFunction never times out by default; bound it so a missing refresh fails here.
+    .waitForFunction((oldEl) => document.querySelector("#file_table") !== oldEl, staleTable, { timeout: 15_000 })
+    .catch((error: unknown) => {
+      throw new Error("The workspace table was not re-rendered after the refresh it was waiting for.", {
+        cause: error,
+      });
+    });
+}
+
+/**
+ * The legacy workspace reveals its listing with jQuery slide/fade effects that keep moving the rows
+ * for a few hundred ms after they render; a click that lands mid-slide focuses its target without
+ * activating it. Resolves once no jQuery animation is running.
+ */
+export async function waitForWorkspaceAnimations(page: Page): Promise<void> {
+  const animating = () => {
+    const { jQuery } = window as unknown as { jQuery?: (selector: string) => ArrayLike<Element> };
+    return jQuery ? Array.from(jQuery(":animated"), (el) => el.id || el.className) : [];
+  };
+  // expect.poll stops on a thrown callback, so a navigation mid-poll is reported as a value and retried.
+  const read = async () => {
+    try {
+      return await page.evaluate(animating);
+    } catch (error) {
+      return [`unreadable: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`];
+    }
+  };
+  await expect
+    .poll(read, {
+      message: "animations still running after 10s",
+      intervals: [100],
+      timeout: 10_000,
+    })
+    .toEqual([]);
 }
 
 export async function awaitTableRefresh(page: Page, trigger: () => Promise<void>): Promise<void> {
@@ -14,6 +49,7 @@ export async function awaitTableRefresh(page: Page, trigger: () => Promise<void>
   await trigger();
   await page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
   await waitForTableSwap(page, staleTable);
+  await waitForWorkspaceAnimations(page);
 }
 
 export class WorkspaceTable {
@@ -26,17 +62,19 @@ export class WorkspaceTable {
   }
 
   row(name: string): Locator {
-    return this.root.getByRole("row").filter({
-      has: this.page.getByRole("link", { name, exact: true }),
-    });
+    return rowWithLink(this.root, name);
   }
 
   checkbox(name: string): Locator {
     return this.row(name).getByRole("checkbox", { name: "Select record" });
   }
 
+  signedIcon(name: string): Locator {
+    return this.row(name).getByRole("img", { name: "Record Is Signed" });
+  }
+
   globalIdLink(name: string): Locator {
-    return this.row(name).getByRole("link", { name: /^(SD|NB|FL)\d+$/ });
+    return this.row(name).locator(".workspace-record-id-link");
   }
 
   get selectAllCheckbox(): Locator {
@@ -51,15 +89,42 @@ export class WorkspaceTable {
     for (const [i, name] of names.entries()) {
       await this.checkbox(name).check();
       if (i === 0) await this.selectionBar.waitUntilVisible();
+      // The selection bar fades in or out above the table, sliding the rows under the next click.
+      await waitForWorkspaceAnimations(this.page);
     }
   }
 
   async deselectRecord(name: string): Promise<void> {
     await this.checkbox(name).uncheck();
+    await waitForWorkspaceAnimations(this.page);
   }
 
   async openRecord(name: string): Promise<void> {
-    await this.row(name).getByRole("link", { name, exact: true }).click();
+    const link = this.row(name).getByRole("link", { name, exact: true });
+    // Folder and notebook name links reload the listing in place (a.folder); others navigate away.
+    if (await link.evaluate((el) => el.classList.contains("folder"))) {
+      await awaitTableRefresh(this.page, () => link.click());
+    } else {
+      await link.click();
+    }
+  }
+
+  async openNotebook(name: string): Promise<void> {
+    // The row's name link (recordNameCell, matched by openRecord()) browses into a notebook
+    // as a folder at /workspace/{id}. Only the icon link, rendered by recod_glyphicon.tag
+    // with this stable "notebook" class, opens the notebook editor at /notebookEditor/{id}.
+    await this.row(name).locator("a.notebook").click();
+  }
+
+  ownerButton(name: string): Locator {
+    return this.row(name).locator(".workspace-record-ownerName").getByRole("button");
+  }
+
+  async openOwnerMiniProfile(name: string): Promise<MiniProfilePopover> {
+    await this.ownerButton(name).click();
+    const popover = new MiniProfilePopover(this.page);
+    await popover.waitUntilVisible();
+    return popover;
   }
 
   async openInfoFor(name: string): Promise<RecordInfoDialog> {

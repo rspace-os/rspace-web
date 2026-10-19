@@ -1,7 +1,8 @@
 package com.researchspace.webapp.integrations.orcid;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -18,6 +19,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ui.ExtendedModelMap;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class OrcidControllerTest extends SpringTransactionalTest {
 
@@ -36,26 +39,50 @@ public class OrcidControllerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void oauthStateIsRequiredAndConsumedOnce() {
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("orcidStateUser"));
+    logoutAndLoginAs(user);
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.onAuthorization(Map.of(), new ExtendedModelMap(), user::getUsername));
+    String state =
+        UriComponentsBuilder.fromUriString(controller.authorize().getUrl())
+            .build()
+            .getQueryParams()
+            .getFirst("state");
+    assertEquals(32, state.length());
+    assertEquals(
+        "connect/orcid/connected",
+        controller.onAuthorization(
+            Map.of("state", state), new ExtendedModelMap(), user::getUsername));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            controller.onAuthorization(
+                Map.of("state", state), new ExtendedModelMap(), user::getUsername));
+  }
+
+  @Test
   public void updatingUserOrcidId() {
 
     User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("orcidUser"));
     logoutAndLoginAs(user);
-    assertFalse(extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID).isPresent());
+    assertThat(extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID)).isNotPresent();
     assertTrue(
         extIdResolver.isIdentifierSchemeAvailable(
             user, IdentifierScheme.ORCID)); // enabled by default
 
     String testOrcidId1 = "http://orcid.id/testId";
     controller.updateUserOrcidApp(user, testOrcidId1);
-    assertTrue(extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID).isPresent());
+    assertThat(extIdResolver.getExternalIdForUser(user, IdentifierScheme.ORCID)).isPresent();
 
     // orcid id should be set now
     IntegrationInfo orcidIntegration =
         integrationsHandler.getIntegration(user, IntegrationsHandler.ORCID_APP_NAME);
     Map<String, Object> optionSets = orcidIntegration.getOptions();
-    assertEquals(1, optionSets.size());
+    assertThat(optionSets).hasSize(1);
     Map<String, String> options = (Map<String, String>) optionSets.values().iterator().next();
-    assertEquals(1, options.size());
+    assertThat(options).hasSize(1);
     assertEquals(testOrcidId1, options.values().iterator().next());
 
     // call update method again, for different code
@@ -66,10 +93,10 @@ public class OrcidControllerTest extends SpringTransactionalTest {
     IntegrationInfo updatedIntegration =
         integrationsHandler.getIntegration(user, IntegrationsHandler.ORCID_APP_NAME);
     Map<String, Object> updatedSet = updatedIntegration.getOptions();
-    assertEquals(1, updatedSet.size());
+    assertThat(updatedSet).hasSize(1);
     Map<String, String> updatedOptions =
         (Map<String, String>) optionSets.values().iterator().next();
-    assertEquals(1, updatedOptions.size());
+    assertThat(updatedOptions).hasSize(1);
     assertEquals(testOrcidId1, updatedOptions.values().iterator().next());
   }
 }

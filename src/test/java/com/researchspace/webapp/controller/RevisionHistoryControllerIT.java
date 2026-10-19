@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedRecord;
@@ -29,32 +28,27 @@ public class RevisionHistoryControllerIT extends RealTransactionSpringTestBase {
 
   @Test
   public void testExceptionThrownForUnauthorisedRevisionListAccess() throws Exception {
+    StructuredDocument sd = setUpLoginAsPIUserAndCreateADocument();
+    User other = createAndSaveUser(getRandomAlphabeticString("revHistory"));
+    Long documentId = sd.getId();
+    revisionHistoryController.getListOfVersions(
+        documentId,
+        model,
+        "",
+        mockPrincipal,
+        createDefaultAuditedRecordListPagCrit(),
+        createSearchCriteria());
+
+    logoutAndLoginAs(other);
+    MockPrincipal otherPrincipal = new MockPrincipal(other.getUsername());
+    var pagination = createDefaultAuditedRecordListPagCrit();
+    RevisionSearchCriteria searchCriteria = createSearchCriteria();
+
     assertThrows(
         AuthorizationException.class,
-        () -> {
-          StructuredDocument sd = setUpLoginAsPIUserAndCreateADocument();
-          User other = createAndSaveUser(getRandomAlphabeticString("revHistory"));
-          try {
+        () ->
             revisionHistoryController.getListOfVersions(
-                sd.getId(),
-                model,
-                "",
-                mockPrincipal,
-                createDefaultAuditedRecordListPagCrit(),
-                createSearchCriteria());
-          } catch (AuthorizationException ae) {
-            fail("Should be allowed");
-          }
-
-          logoutAndLoginAs(other);
-          revisionHistoryController.getListOfVersions(
-              sd.getId(),
-              model,
-              "",
-              new MockPrincipal(other.getUsername()),
-              createDefaultAuditedRecordListPagCrit(),
-              createSearchCriteria());
-        });
+                documentId, model, "", otherPrincipal, pagination, searchCriteria));
   }
 
   protected RevisionSearchCriteria createSearchCriteria() {
@@ -63,38 +57,29 @@ public class RevisionHistoryControllerIT extends RealTransactionSpringTestBase {
 
   @Test
   public void testExceptionThrownForUnauthorisedRevisionViewAccess() throws Exception {
+    StructuredDocument sd = setUpLoginAsPIUserAndCreateADocument();
+    User other = createAndSaveUser(getRandomAlphabeticString("revHistory"));
+    Long documentId = sd.getId();
+    revisionHistoryController.getListOfVersions(
+        documentId,
+        model,
+        "",
+        mockPrincipal,
+        createDefaultAuditedRecordListPagCrit(),
+        createSearchCriteria());
+    List<AuditedRecord> audits = (List) modelTss.get("history");
+    AuditedRecord sdAudit = audits.get(0);
+    int revision = sdAudit.getRevision().intValue();
+    structuredDocumentController.getDocumentRevision(
+        documentId, revision, "", model, mockPrincipal, null);
+
+    logoutAndLoginAs(other);
+    MockPrincipal otherPrincipal = new MockPrincipal(other.getUsername());
+
     assertThrows(
         AuthorizationException.class,
-        () -> {
-          StructuredDocument sd = setUpLoginAsPIUserAndCreateADocument();
-          User other = createAndSaveUser(getRandomAlphabeticString("revHistory"));
-
-          AuditedRecord sdAudit = null;
-          try {
-            revisionHistoryController.getListOfVersions(
-                sd.getId(),
-                model,
-                "",
-                mockPrincipal,
-                createDefaultAuditedRecordListPagCrit(),
-                createSearchCriteria());
-            List<AuditedRecord> audits = (List) modelTss.get("history");
-            sdAudit = audits.get(0);
+        () ->
             structuredDocumentController.getDocumentRevision(
-                sd.getId(), sdAudit.getRevision().intValue(), "", model, mockPrincipal, null);
-
-          } catch (AuthorizationException ae) {
-            fail("Should be allowed");
-          }
-
-          logoutAndLoginAs(other);
-          structuredDocumentController.getDocumentRevision(
-              sd.getId(),
-              sdAudit.getRevision().intValue(),
-              "",
-              model,
-              new MockPrincipal(other.getUsername()),
-              null);
-        });
+                documentId, revision, "", model, otherPrincipal, null));
   }
 }

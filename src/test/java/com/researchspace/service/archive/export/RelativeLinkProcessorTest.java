@@ -1,11 +1,11 @@
 package com.researchspace.service.archive.export;
 
 import static com.researchspace.core.util.MediaUtils.IMAGES_MEDIA_FLDER_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -121,14 +121,14 @@ public class RelativeLinkProcessorTest extends SpringTransactionalTest {
     FieldExportContext context = new FieldExportContext(ouputFolder, ouputFolder, cfg, exportList);
     processor = new RelativeLinkProcessor(context, support);
     assertFalse(StringUtils.isEmpty(processor.getOriginalFile(media)));
-    assertTrue(processor.getOriginalFile(media).contains("../"));
+    assertThat(processor.getOriginalFile(media)).contains("../");
   }
 
   @Test
   public void availableDiskSpaceCheckedDuringCopyToArchiveFolder() throws IOException {
 
     File ouputFolder = Files.createTempDirectory("relativeLinkProcessorTest").toFile();
-    assertEquals(0, ouputFolder.listFiles().length);
+    assertThat(ouputFolder.listFiles()).isEmpty();
 
     File testFileSmall = RSpaceTestUtils.getAnyAttachment();
     File testFileTooLarge = RSpaceTestUtils.getAnyPdf();
@@ -146,7 +146,7 @@ public class RelativeLinkProcessorTest extends SpringTransactionalTest {
     processor = new RelativeLinkProcessor(context, mockedSupport);
 
     processor.copyResourceToArchiveFolder(testFileSmall, ouputFolder);
-    assertEquals(1, ouputFolder.listFiles().length);
+    assertThat(ouputFolder.listFiles()).hasSize(1);
 
     try {
       processor.copyResourceToArchiveFolder(testFileTooLarge, ouputFolder);

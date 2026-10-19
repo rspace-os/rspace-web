@@ -7,8 +7,8 @@ echo 'Building rspace-web'
 /*
  This is the main build script for Jenkins to run tests.
  In Jenkins, it is called from 'rspace-web' project as a multi branch build
- For feature branches, it runs 'quick' JUnit tests
- For master/dev branches, it runs full Java tests (i.e. with IT tests).
+ For the main branch, it runs 'quick' JUnit tests
+ When FULL_JAVA_TESTS is set, it runs full Java tests (i.e. with IT tests) instead.
  The script takes several parameters; there are other Jenkins jobs to run nightly test-suites on other JDKs and also
  with 'nightly' tests which are more long running tests.
  Java 17 and 21 are both supported. The defaults below stay on 17 until Temurin 21 is installed on the agents,
@@ -25,8 +25,10 @@ pipeline {
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
+        booleanParam(name: 'STORYBOOK', defaultValue: false, description: 'Build and bundle Storybook in the WAR; serving requires dev.storybook.preview.enabled=true')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
+        booleanParam(name: 'ACCESS_OUTSIDE_VPN', defaultValue: false, description: 'Only used with AWS deploy. Tick if the deployed instance should be accessible outside of VPN (HTTPS access from 0.0.0.0), e.g. to test on a mobile device or share the instance with external users')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -44,7 +46,8 @@ pipeline {
         SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
-        AWS_TOMCAT_AMI = 'ami-04a32018c63fb81e9'
+        CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
+        AWS_TOMCAT_AMI = 'ami-0a3f8106db17a5218'
         APP_VERSION = readMavenPom().getVersion()
 
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
@@ -68,7 +71,7 @@ pipeline {
             }
         }
 
-        stage('Fast JUnit tests') {
+        stage("Fast JUnit tests ('main' only)") {
             when {
                 not {
                     anyOf {
@@ -77,10 +80,11 @@ pipeline {
                     }
                 }
                 changeset '**/*.java'
+                branch 'main'
             }
 
             steps {
-                echo 'This is a feature branch, running fast, non Spring tests only'
+                echo 'This is the main branch, running fast, non Spring tests only'
                 sh "./mvnw clean  test -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
                    -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                    -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR}"
@@ -104,12 +108,18 @@ pipeline {
                 anyOf {
                     expression { return params.AWS_DEPLOY }
                     expression { return params.ONLY_BUILD_WAR }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
+                    expression { return params.STORYBOOK }
+                    allOf {
+                        branch 'main'
+                        anyOf {
+                            changeset '**/*.js'
+                            changeset '**/*.ts'
+                            changeset '**/*.tsx'
+                            changeset '**/*.jsp'
+                            changeset '**/*.css'
+                            changeset '**/*.json'
+                        }
+                    }
                 }
                 not {
                     anyOf {
@@ -122,7 +132,7 @@ pipeline {
             steps {
                 echo 'Building feature branch'
                 sh '''
-                ./mvnw clean package -DgenerateReactDist -DskipTests=true \
+                ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
                 -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                 -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
@@ -149,7 +159,7 @@ pipeline {
             steps {
                 echo "Building prodRelease .war package"
                  sh '''
-                 ./mvnw clean package -DgenerateReactDist -DskipTests=true \
+                 ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
                 -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
                 -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
@@ -199,6 +209,11 @@ pipeline {
                                         $class: 'StringParameterValue',
                                         name: 'DEPLOYMENT_PROPERTY_OVERRIDE',
                                         value: "$WORKSPACE/${SAFE_BRANCH_NAME}.properties"
+                                ],
+                                [
+                                        $class: 'BooleanParameterValue',
+                                        name: 'ACCESS_OUTSIDE_VPN',
+                                        value: params.ACCESS_OUTSIDE_VPN
                                 ]
                         ],
                         wait: false
@@ -250,7 +265,7 @@ pipeline {
                 // this is to create a valid datbase name from the branch name
 
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
-                sh "./mvnw clean verify -DgenerateReactDist -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                sh "./mvnw clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
@@ -287,6 +302,52 @@ pipeline {
                     )
                 }
             } // end post test handler
+        }
+
+        stage('Chemistry tests') {
+            when {
+                expression { return params.FULL_JAVA_TESTS && !params.LIQUIBASE }
+            }
+
+            steps {
+                sh '''
+                    mkdir -p "${RS_FILE_BASE}"
+                    docker run --detach --rm \
+                      --name "${CHEMISTRY_CONTAINER_NAME}" \
+                      --publish 127.0.0.1::8090 \
+                      rspaceops/oss-chemistry:latest
+                    CHEMISTRY_PORT=$(docker port "${CHEMISTRY_CONTAINER_NAME}" 8090/tcp | sed 's/.*://')
+                    export CHEMISTRY_URL="http://127.0.0.1:${CHEMISTRY_PORT}"
+                    export JDBC_DB="${SANITIZED_DBNAME}"
+                    export JDBC_URL="jdbc:mysql://localhost:3306/${SANITIZED_DBNAME}"
+                    if ! scripts/run-chemistry-tests.sh; then
+                      docker logs "${CHEMISTRY_CONTAINER_NAME}"
+                      exit 1
+                    fi
+                '''
+            }
+
+            post {
+                always {
+                    script {
+                        try {
+                            junit testResults: 'target/surefire-reports/*.xml', allowEmptyResults: true
+                        } finally {
+                            sh 'docker stop "${CHEMISTRY_CONTAINER_NAME}" || true'
+                            sh 'rm -rf "${RS_FILE_BASE}"'
+                            sh 'mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd -e "drop database if exists ${SANITIZED_DBNAME}"'
+                        }
+                    }
+                }
+                failure {
+                    notify currentBuild.result
+                    notifySlack('FAILURE', 'Chemistry tests failed')
+                }
+                fixed {
+                    notify currentBuild.result
+                    notifySlack('SUCCESS', 'Chemistry tests fixed')
+                }
+            }
         }
     }
 }

@@ -284,7 +284,7 @@ class RSQueryBuilder {
       if (term.field().equals(FieldNames.MODIFICATION_DATE)
           || term.field().equals(FieldNames.CREATION_DATE)) {
         // Validator should have already checked that the string contains ';'
-        String[] toAndFrom = term.text().split("\\s*[,;]\\s*", -1);
+        String[] toAndFrom = splitDateRangeTerm(term.text());
         Date dateTo, dateFrom;
 
         if (toAndFrom[0].isEmpty() || toAndFrom[0].equals("null"))
@@ -475,5 +475,23 @@ class RSQueryBuilder {
       mustClauses = mustClauses.must(f.match().fields(flds).matching(tk.nextToken().trim()));
     }
     return mustClauses.toPredicate();
+  }
+
+  /**
+   * Splits a date-range term into its from and to halves. This must stay in step with {@link
+   * com.axiope.search.WorkspaceSearchInputValidator}, which is what guarantees the two halves parse
+   * as ISO-8601: if the validator accepts a term this rejects, the parse below throws instead of
+   * the user getting a validation error.
+   */
+  static String[] splitDateRangeTerm(String term) {
+    String[] halves = term.split("[,;]", -1);
+    if (halves.length != 2) {
+      throw new SearchQueryParseException(
+          new Exception("A date range term needs exactly one ',' or ';' separator"));
+    }
+    for (int i = 0; i < halves.length; i++) {
+      halves[i] = halves[i].trim();
+    }
+    return halves;
   }
 }

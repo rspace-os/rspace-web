@@ -1,11 +1,11 @@
 package com.researchspace.api.v1.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
@@ -44,7 +44,7 @@ public class WorkbenchApiControllerMVCIT extends API_MVC_InventoryTestBase {
         getFromJsonResponseBody(result, ApiContainerSearchResult.class);
     assertNotNull(workbenches);
     assertEquals(2, workbenches.getTotalHits().intValue());
-    assertEquals(2, workbenches.getContainers().size());
+    assertThat(workbenches.getContainers()).hasSize(2);
 
     ApiContainerInfo piWorkbenchInfo = workbenches.getContainers().get(0);
     assertEquals("WB " + pi.getUsername(), piWorkbenchInfo.getName());
@@ -60,7 +60,7 @@ public class WorkbenchApiControllerMVCIT extends API_MVC_InventoryTestBase {
     ApiContainer retrievedPiContainer = getFromJsonResponseBody(result, ApiContainer.class);
     assertNotNull(retrievedPiContainer);
     assertNotNull(retrievedPiContainer.getCreatedBy()); // full view
-    assertTrue(retrievedPiContainer.getStoredContent().isEmpty());
+    assertThat(retrievedPiContainer.getStoredContent()).isEmpty();
 
     // user outside the group see only their workbench
     result = retrieveVisibleWorkbenches(secondUser, secondUserApiKey);

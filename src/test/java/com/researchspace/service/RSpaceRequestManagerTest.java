@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
-import static com.researchspace.core.testutil.CoreTestUtils.assertIllegalStateExceptionThrown;
 import static com.researchspace.testutils.CommsTestUtils.createRequestOfType;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +48,6 @@ public class RSpaceRequestManagerTest extends SpringTransactionalTest {
 
     Communication globalMsg = createRequestOfType(user, MessageType.GLOBAL_MESSAGE);
     when(mockCommDao.get(1L)).thenReturn(globalMsg);
-    assertIllegalStateExceptionThrown(() -> requestMgr.replyToMessage("user", 1L, "reply"));
+    assertThrows(IllegalStateException.class, () -> requestMgr.replyToMessage("user", 1L, "reply"));
   }
 }

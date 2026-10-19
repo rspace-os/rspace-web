@@ -229,7 +229,7 @@ public class InventoryIdentifierExternalUpdateService {
    * <p>The response's own list is used when it has one, which costs nothing on an ordinary save. An
    * EMPTY one says nothing, though: {@code clearPropertiesForLimitedView} blanks the list entirely
    * for a permission-filtered response, which is exactly the owner-transfer case, and trusting it
-   * there skipped the push while the provider kept the previous owner's address. So an empty list
+   * there skipped the push while the provider kept naming the previous owner. So an empty list
    * falls back to the record. A non-empty one can only have come from an unfiltered view, since
    * filtering blanks rather than trims.
    */
@@ -253,8 +253,10 @@ public class InventoryIdentifierExternalUpdateService {
    * a failure sentence on every later save of every instrument still holding a draft.
    */
   private boolean isPushable(ApiInventoryDOI doi) {
+    // a linked identifier is a PID another party minted: RSpace holds no provider record to update
     return isNotBlank(doi.getDoi())
         && isNotBlank(doi.getState())
+        && !doi.isLinked()
         && isEnabledPidinstProvider(typeOf(doi));
   }
 

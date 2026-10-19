@@ -2,10 +2,9 @@ package com.researchspace.core.util;
 
 import static com.researchspace.core.util.JacksonUtil.fromJson;
 import static com.researchspace.core.util.JacksonUtil.fromJsonOpt;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,10 +28,10 @@ class JacksonUtilTest {
   void testIgnoreEmptyFields() {
     TestObject testObject = new TestObject(1L, "any name", "");
     String jsonString = JacksonUtil.toJson(testObject);
-    assertTrue(jsonString.contains("empty"));
+    assertThat(jsonString).contains("empty");
     // empty field ignored
     jsonString = JacksonUtil.toJsonWithoutEmptyFields(testObject);
-    assertFalse(jsonString.contains("empty"));
+    assertThat(jsonString).doesNotContain("empty");
   }
 
   @Test
@@ -48,7 +47,7 @@ class JacksonUtilTest {
     testObject = fromJson(jsonString, TestObject.class, operator);
     assertNotNull(testObject);
 
-    assertTrue(fromJsonOpt(jsonString, TestObject.class, operator).isPresent());
+    assertThat(fromJsonOpt(jsonString, TestObject.class, operator)).isPresent();
     assertNotNull(testObject);
   }
 }

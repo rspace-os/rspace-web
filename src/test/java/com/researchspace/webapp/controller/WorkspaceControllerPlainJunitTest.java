@@ -1,5 +1,6 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -64,7 +65,7 @@ public class WorkspaceControllerPlainJunitTest {
   }
 
   private void assertTemplateOrdering(List<RecordInformation> results) {
-    assertEquals(TEMPLATE_COUNT, results.size());
+    assertThat(results).hasSize(TEMPLATE_COUNT);
     for (int i = 0; i < results.size() - 1; i++) {
       int thisSuffix = Integer.parseInt(results.get(i).getName().split("-")[1]);
       int nextSuffix = Integer.parseInt(results.get(i + 1).getName().split("-")[1]);

@@ -1,87 +1,120 @@
 import type { Locator } from "@playwright/test";
 import {
-  PublishShareDialogComponent,
-  type SharePermission,
-  type WorldSharePermission,
-} from "@/__tests__/e2e/components/myrspace/PublishShareDialogComponent";
+  FormAccessDialogComponent,
+  type GroupFormPermission,
+  type WorldFormPermission,
+} from "@/__tests__/e2e/components/myrspace/FormAccessDialogComponent";
 import { BasePage } from "../BasePage";
+import { rowWithLink } from "../rowHelpers";
+import { CreateFormPage } from "./CreateFormPage";
+
+export type FormAction =
+  | "Delete"
+  | "Publish"
+  | "Unpublish"
+  | "Permissions"
+  | "Duplicate"
+  | "Add to Menu"
+  | "Remove from Menu";
 
 export class ManageFormsPage extends BasePage {
-  readonly path = "/workspace/editor/form/list";
+  readonly path = "/workspace/editor/form/list?orderBy=name&sortOrder=ASC&userFormsOnly=true";
 
-  private get allFormsRadio(): Locator {
-    return this.page.getByRole("radio", { name: "All forms:", exact: true });
-  }
-
-  private get searchInput(): Locator {
-    return this.page.getByRole("textbox", { name: "Search", exact: true });
-  }
-
-  private get searchButton(): Locator {
-    return this.page.getByRole("button", { name: "Search", exact: true });
-  }
-
-  // Stable legacy JSP table id
-  private get formsTable(): Locator {
-    return this.page.locator("#templateList");
-  }
-
-  async isLoaded(): Promise<void> {
+  async waitUntilLoaded(): Promise<void> {
     await this.page.getByRole("heading", { name: "Manage Forms" }).waitFor({ state: "visible" });
   }
 
+  get formsTable(): Locator {
+    return this.page.getByRole("table");
+  }
+
+  formRow(name: string): Locator {
+    return rowWithLink(this.formsTable, name);
+  }
+
   async showAllForms(): Promise<void> {
-    await Promise.all([
-      this.page.waitForResponse((res) => res.url().includes("/workspace/editor/form/ajax/list")),
-      this.allFormsRadio.check(),
-    ]);
+    await this.page.getByRole("radio", { name: "All forms:" }).check();
+    await this.page.waitForLoadState("networkidle");
   }
 
-  async search(formName: string): Promise<void> {
-    await Promise.all([
-      this.page.waitForResponse((res) => res.url().includes("/workspace/editor/form/ajax/")),
-      this.searchInput.fill(formName).then(() => this.searchButton.click()),
-    ]);
-    await this.formRow(formName).waitFor({ state: "visible" });
+  async search(query: string): Promise<void> {
+    await this.page.getByRole("textbox", { name: "Search" }).fill(query);
+    await this.page.getByRole("button", { name: "Search" }).click();
+    await this.page.getByRole("button", { name: "Clear search" }).waitFor({ state: "visible" });
   }
 
-  formRow(formName: string): Locator {
-    return this.formsTable
-      .getByRole("row")
-      .filter({ has: this.page.getByRole("link", { name: formName, exact: true }) });
+  async selectForm(name: string): Promise<void> {
+    await this.formRow(name).getByRole("checkbox", { name: "Select form" }).check();
   }
 
-  async checkForm(formName: string): Promise<void> {
-    await this.formRow(formName).getByRole("checkbox", { name: "Select form", exact: true }).check();
+  action(name: FormAction): Locator {
+    return this.page.getByRole("listitem").filter({
+      has: this.page.getByText(name, { exact: true }),
+    });
   }
 
-  private formAction(action: string): Locator {
-    return this.page.locator(`#formActions li.formAction.${action}`);
-  }
-
-  async publishWithPermissions(formName: string, group: SharePermission, world: WorldSharePermission): Promise<void> {
-    await this.checkForm(formName);
-    const publishAction = this.formAction("publish");
-    await publishAction.waitFor({ state: "visible" });
-    await publishAction.click();
-    const dialog = new PublishShareDialogComponent(this.page);
+  async configureAccess(name: string, group: GroupFormPermission, world: WorldFormPermission): Promise<void> {
+    await this.selectForm(name);
+    await this.action("Publish").click();
+    const dialog = new FormAccessDialogComponent(this.page);
     await dialog.waitUntilVisible();
     await dialog.setGroup(group);
     await dialog.setWorld(world);
-    await dialog.ok();
+    await dialog.confirm();
   }
 
-  async addToMenu(formName: string): Promise<void> {
-    await this.checkForm(formName);
-    const addToMenuAction = this.formAction("addToMenu");
-    await addToMenuAction.waitFor({ state: "visible" });
-    await Promise.all([
-      this.page.waitForResponse((res) => res.url().includes("/workspace/editor/form/ajax/menutoggle")),
-      addToMenuAction.click(),
-    ]);
+  async toggleMenu(name: string, action: "Add to Menu" | "Remove from Menu"): Promise<void> {
+    await this.selectForm(name);
+    await this.action(action).click();
+    await this.action(action).waitFor({ state: "hidden" });
   }
 
-  isTextInDOM(text: string): Promise<boolean> {
-    return this.formsTable.getByText(text, { exact: true }).first().isVisible();
+  async duplicate(name: string): Promise<void> {
+    await this.selectForm(name);
+    await this.action("Duplicate").click();
+    await this.page.waitForLoadState("networkidle");
+  }
+
+  async unpublish(name: string): Promise<void> {
+    await this.selectForm(name);
+    await this.action("Unpublish").click();
+    await this.page.waitForLoadState("networkidle");
+  }
+
+  async delete(name: string): Promise<void> {
+    await this.selectForm(name);
+    await this.action("Delete").click();
+    const dialog = this.page.getByRole("dialog").filter({ hasText: "delete" });
+    await dialog.getByRole("button", { name: "Confirm" }).click();
+    await this.formRow(name).waitFor({ state: "hidden" });
+  }
+
+  async edit(name: string): Promise<CreateFormPage> {
+    await this.formRow(name).getByRole("link", { name, exact: true }).click();
+    const page = new CreateFormPage(this.page);
+    await page.waitUntilLoaded();
+    return page;
+  }
+
+  status(name: string): Locator {
+    return this.formRow(name).locator("td.publishingState");
+  }
+
+  private async columnIndex(headerName: string): Promise<number> {
+    const headers = this.formsTable.getByRole("columnheader");
+    const count = await headers.count();
+    for (let i = 0; i < count; i++) {
+      if ((await headers.nth(i).innerText()).trim() === headerName) return i;
+    }
+    throw new Error(`columnIndex: no "${headerName}" column header found`);
+  }
+
+  async owner(name: string): Promise<Locator> {
+    const columnIndex = await this.columnIndex("Owner");
+    return this.formRow(name).getByRole("cell").nth(columnIndex);
+  }
+
+  get resultRows(): Locator {
+    return this.formsTable.getByRole("row").filter({ has: this.page.getByRole("checkbox", { name: "Select form" }) });
   }
 }

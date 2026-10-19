@@ -137,6 +137,30 @@ Security events and exceptions should be logged by a security logger
 out of a controller will be logged correctly using the
 `ControllerExceptionHandler` wired into controllers.
 
+## Sorting paginated listings
+
+The `orderBy` request parameter on legacy listings is bound straight onto
+`PaginationCriteria` and used to be concatenated into HQL or SQL. Each listing
+now has a sort enum in `com.researchspace.model.sort` (`UserSort`, `GroupSort`,
+`FormSort`, `RecordSort`, `CommunicationSort` and so on). Before database query
+construction, the enum's `fromRequest(String)` method resolves the request
+string: a blank value gives the listing default and an unknown value throws
+`UnknownSortKeyException`. `ControllerExceptionHandler` turns that into HTTP
+400 on an ajax request, which is how listings are re-sorted. A full page load
+gets the error page with the 500 that `error.jsp` produces for every page
+rendering it. DAOs decode the key on entry and build the order clause from a
+`switch`, so no request text reaches query construction.
+
+To add a sort key, add a constant to the listing's enum and a `case` to the
+DAO's switch. Clients send the bare token (`owner`, `sender`, `fileUsage`), not
+a property path. Never read `pgCrit.getOrderBy()` directly in query code: pass
+it through the listing's enum first. This is a review rule, not something the
+build checks.
+
+In-memory result sorting (`SearchUtils.sortList` and `sortInventoryList`) still
+compares the requested key directly. That is safe because the value never
+reaches query construction.
+
 ## UI notes
 
 There are some JSP tags in the Shiro: and rs: namespaces that can be
@@ -169,3 +193,9 @@ Endpoints that serve stored file content should send
 of sniffing without also declaring the type the browser should honour. This
 matters most where bytes are returned inline, without a `Content-Disposition`
 header.
+
+### Integration authorization
+
+OAuth callbacks must reject absent or mismatched state before exchanging codes. `BaseOAuth2Controller` generates a random 32-character state in the login session and consumes it on every validation attempt. Provider metadata such as a RAiD server alias stays in the session, separate from the random state. GitHub repository selection uses a session-bound pending token that expires after 15 minutes and is cleared when the user disables the app or removes the last repository. Per-repository credentials remain encrypted in `UserConnection`.
+
+Slack commands require `slack.signing.secret`. `SlackSignatureFilter` authenticates the exact form body before parameter parsing, accepts timestamps within five minutes, and rejects unsigned query parameters. Authorization codes, state, webhook URLs, and tokens must be excluded from request and exception logs.

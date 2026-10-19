@@ -1,7 +1,7 @@
 package com.researchspace.service.archive;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.ExportScope;
 import com.researchspace.archive.model.ArchiveExportConfig;
@@ -159,9 +159,8 @@ public class ExportTreeTraversorTest {
   @Test
   public void testProcessIncludesGallery() {
     setup.getUserRoot().process(traversor);
-    assertTrue(
-        traversor.getExportRecordList().getFolderTree().stream()
-            .anyMatch(af -> af.getName().equals("Gallery")));
+    assertThat(traversor.getExportRecordList().getFolderTree())
+        .anyMatch(af -> af.getName().equals("Gallery"));
   }
 
   private Folder createAFolder(String name) {

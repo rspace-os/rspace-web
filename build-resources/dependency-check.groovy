@@ -10,12 +10,22 @@ pipeline {
 
     options { disableConcurrentBuilds() }
 
+    parameters {
+        booleanParam(name: 'DEPENDENCY_CHECK', defaultValue: false, description: 'Run dependency check on a non-main branch (always runs on main)')
+    }
+
     environment {
         APP_VERSION = readMavenPom().getVersion()
     }
 
     stages {
         stage ('Package Java') {
+            when {
+                anyOf {
+                    branch 'main'
+                    expression { return params.DEPENDENCY_CHECK }
+                }
+            }
             steps {
                 echo "Analysing branch"
                 sh '''
@@ -31,6 +41,12 @@ pipeline {
         }
 
         stage ('Dependency Check') {
+            when {
+                anyOf {
+                    branch 'main'
+                    expression { return params.DEPENDENCY_CHECK }
+                }
+            }
             steps {
                 withCredentials([string(credentialsId: 'dbd7e93e-36f3-4ca0-8f01-2b142585abcc', variable: 'NVD_API_KEY')]) {
 

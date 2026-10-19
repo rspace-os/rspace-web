@@ -1,8 +1,7 @@
 package com.researchspace.service.archive.export;
 
 import static org.apache.commons.io.FileUtils.readFileToString;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ArchivalField;
@@ -78,8 +77,8 @@ public class LinkedRecordFieldExporterTest {
     field.setFieldData(LINKEDRECORD_EXAMPLE);
     linkedRecExporter.export(context, recordInfo);
     String updatedFieldData = context.getArchiveField().getFieldData();
-    assertTrue(updatedFieldData.contains("-4670.xml"), updatedFieldData);
-    assertTrue(updatedFieldData.contains("/globalId/SD4670v2"), updatedFieldData);
+    assertThat(updatedFieldData).as(updatedFieldData).contains("-4670.xml");
+    assertThat(updatedFieldData).as(updatedFieldData).contains("/globalId/SD4670v2");
 
     // check replacement of versioned link pointing to latest version
     RecordInformation recInfoLatestVersion = doc.toRecordInfo();
@@ -89,8 +88,8 @@ public class LinkedRecordFieldExporterTest {
     field.setFieldData(LINKEDRECORD_EXAMPLE);
     linkedRecExporter.export(context, recordInfoLatestRecord);
     updatedFieldData = context.getArchiveField().getFieldData();
-    assertTrue(updatedFieldData.contains("-4670.xml"), updatedFieldData);
-    assertFalse(updatedFieldData.contains("/globalId/SD4670v2"), updatedFieldData);
+    assertThat(updatedFieldData).as(updatedFieldData).contains("-4670.xml");
+    assertThat(updatedFieldData).as(updatedFieldData).doesNotContain("/globalId/SD4670v2");
 
     // check replacement of versioned link pointing to non-latest version
     RecordInformation recInfoOldVersion = doc.toRecordInfo();
@@ -104,9 +103,9 @@ public class LinkedRecordFieldExporterTest {
     field.setFieldData(LINKEDRECORD_EXAMPLE);
     linkedRecExporter.export(context, recordInfoOldRecord);
     updatedFieldData = context.getArchiveField().getFieldData();
-    assertFalse(updatedFieldData.contains("-4670.xml"), updatedFieldData);
-    assertFalse(updatedFieldData.contains("/globalId/SD4670v2"), updatedFieldData);
-    assertTrue(updatedFieldData.contains("-4670-rev5555.xml"), updatedFieldData);
+    assertThat(updatedFieldData).as(updatedFieldData).doesNotContain("-4670.xml");
+    assertThat(updatedFieldData).as(updatedFieldData).doesNotContain("/globalId/SD4670v2");
+    assertThat(updatedFieldData).as(updatedFieldData).contains("-4670-rev5555.xml");
   }
 
   private String readLinkedRecordExampleHtml() throws IOException {

@@ -1,6 +1,7 @@
 package com.researchspace.service;
 
 import static com.researchspace.model.PaginationCriteria.createDefaultForClass;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -160,7 +161,7 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
     labAdmin = userMgr.get(labAdmin.getId()); // refresh user details
     CompositeRecordOperationResult res =
         recordDeletionMgr.deleteFolder(groupSharedFolder.getId(), sharedSub1.getId(), labAdmin);
-    assertEquals(5, res.getRecords().size());
+    assertThat(res.getRecords()).hasSize(5);
 
     // now assert that notebook entries are intact and all items are still parented in PIs folder:
     logoutAndLoginAs(group.getPi());
@@ -171,9 +172,12 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
     assertEquals(piHomFolder, toShare.getParent());
 
     // also assert that notebook and document are unshared after deletion:
-    assertTrue(sharingMgr.getRecordSharingInfo(nb.getId()).isEmpty(), "Notebook is still shared");
-    assertTrue(
-        sharingMgr.getRecordSharingInfo(toShare.getId()).isEmpty(), "Document is still shared");
+    assertThat(sharingMgr.getRecordSharingInfo(nb.getId()))
+        .as("Notebook is still shared")
+        .isEmpty();
+    assertThat(sharingMgr.getRecordSharingInfo(toShare.getId()))
+        .as("Document is still shared")
+        .isEmpty();
 
     // also check that shared folder root has no visible subfolders:
     ISearchResults<BaseRecord> results =
@@ -196,7 +200,7 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
         communicationMgr.getNewNotificationsForUser(
             RecordGroupSharing.ANONYMOUS_USER,
             PaginationCriteria.createDefaultForClass(CommunicationTarget.class));
-    assertEquals(0, newNots.getResults().size());
+    assertThat(newNots.getResults()).isEmpty();
     ISearchResults<RecordGroupSharing> rgsU1 =
         sharingMgr.listUserRecordsPublished(
             u1, PaginationCriteria.createDefaultForClass(RecordGroupSharing.class));
@@ -277,7 +281,7 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
 
     List<RecordGroupSharing> rgs =
         doInTransaction(() -> groupShareDao.getRecordGroupSharingsForRecord(doc1.getId()));
-    assertEquals(1, rgs.size());
+    assertThat(rgs).hasSize(1);
     ErrorList el =
         sharingMgr.updatePermissionForRecord(rgs.get(0).getId(), "edit", u1.getUsername());
     assertNull(el);
@@ -308,10 +312,10 @@ public class RecordSharingManagerIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<List<RecordGroupSharing>> result =
         sharingMgr.shareRecord(u1, doc1.getId(), new ShareConfigElement[] {withGroup, withU2});
     assertTrue(result.isSucceeded());
-    assertEquals(2, result.getEntity().size());
+    assertThat(result.getEntity()).hasSize(2);
 
     doc1 = recordMgr.get(doc1.getId()).asStrucDoc();
-    assertTrue(doc1.getParentFolders().contains(targetFolder));
+    assertThat(doc1.getParentFolders()).contains(targetFolder);
   }
 
   private PaginationCriteria<BaseRecord> getDefaultRecordPageCriteria() {

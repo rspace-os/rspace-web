@@ -10,6 +10,7 @@ import StyledMenu from "../../../components/StyledMenu";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
 import contextActions from "./ContextActions";
+import { useProcessAvailable } from "./useProcessAvailable";
 
 type ContextAction = {
   hidden?: boolean;
@@ -34,13 +35,12 @@ function ContextMenu({
   basketSearch,
 }: ContextMenuArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
+  const processAvailable = useProcessAvailable();
   const anySelected = selectedResults.length > 0;
   const mixedSelectedStatus = selectedResults.some((r) => r.deleted) && selectedResults.some((r) => !r.deleted);
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [overflow, setOverflow] = useState<Set<number>>(new Set());
-  // Buttons stay hidden until the first width measurement so that only the
-  // ones that actually fit are ever shown, rather than flashing the full set.
   const [measured, setMeasured] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -52,6 +52,7 @@ function ContextMenu({
     onSelectOptions,
     menuID,
     basketSearch,
+    processAvailable,
   });
 
   const buttonList = actions("button");

@@ -17,11 +17,11 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@Disabled("We leave the test Disabled so we can potentially run it manually by the bearer token")
+@EnabledIfSystemProperty(named = "fieldmark.realConnectionTests", matches = "true")
 public class FieldmarkServiceClientAdapterRealConnectionTest extends SpringTransactionalTest {
 
   @Autowired private FieldmarkServiceClientAdapter fieldmarkServiceClientAdapter;

@@ -1,5 +1,6 @@
 package com.researchspace.linkedelements;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -85,7 +86,7 @@ public class NfsConverterTest extends AbstractParserTest {
   }
 
   private void assertNoElement(FieldContents fieldContents, Optional<NfsElement> fieldElement) {
-    assertFalse(fieldElement.isPresent());
+    assertThat(fieldElement).isNotPresent();
     assertEquals(0, fieldContents.getElements(NfsElement.class).size());
   }
 }

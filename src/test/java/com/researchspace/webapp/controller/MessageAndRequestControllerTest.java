@@ -1,6 +1,6 @@
 package com.researchspace.webapp.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -70,11 +70,10 @@ public class MessageAndRequestControllerTest {
     MsgOrReqstCreationCfg cfg = new MsgOrReqstCreationCfg(notAdmin, permUtilsStub);
     cfg.setMessageType(MessageType.GLOBAL_MESSAGE);
     BindingResult result = new BeanPropertyBindingResult(cfg, "cfg");
+    Set<User> recipients = TransformerUtils.toSet(recipient);
     assertThrows(
         AuthorizationException.class,
-        () ->
-            ctrller.getUsernamesFromInput(
-                notAdmin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient)));
+        () -> ctrller.getUsernamesFromInput(notAdmin, cfg, result, comTargetPolicy, recipients));
   }
 
   @Test
@@ -92,7 +91,7 @@ public class MessageAndRequestControllerTest {
     Set<String> users =
         ctrller.getUsernamesFromInput(
             admin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient));
-    assertTrue(users.isEmpty());
+    assertThat(users).isEmpty();
   }
 
   @Test
@@ -112,7 +111,7 @@ public class MessageAndRequestControllerTest {
     Set<String> users =
         ctrller.getUsernamesFromInput(
             admin, cfg, result, comTargetPolicy, TransformerUtils.toSet(recipient));
-    assertEquals(1, users.size());
+    assertThat(users).hasSize(1);
   }
 
   @Test
@@ -126,7 +125,7 @@ public class MessageAndRequestControllerTest {
     event.setStart("2020-05-19T17:00:00Z");
     AjaxReturnObject<Boolean> aro = ctrller.createCalendarEvent(event, request);
     assertNull(aro.getData());
-    assertEquals(1, aro.getError().getErrorMessages().size());
+    assertThat(aro.getError().getErrorMessages()).hasSize(1);
   }
 
   @Test

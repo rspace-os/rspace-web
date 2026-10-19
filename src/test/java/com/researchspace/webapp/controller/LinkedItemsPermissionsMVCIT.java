@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -99,7 +99,7 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
 
     openTransaction();
     FieldContents originalContents = fieldParser.findFieldElementsInContent(originaltext);
-    assertTrue(originalContents.getAllMediaFiles().size() > 0);
+    assertThat(originalContents.getAllMediaFiles().size()).isGreaterThan(0);
     List<String> originalLinks = originalContents.getAllStringLinks();
     commitTransaction();
 
@@ -112,12 +112,12 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
 
     // check contents, should have same number of elements
     assertNotEquals(originalTextParsed, snip.getContent());
-    assertEquals(originalLinks.size(), snipLinks.size());
+    assertThat(snipLinks).hasSameSizeAs(originalLinks);
     assertEquals(
         originalContents.getAllMediaFiles().size(), snipContents.getAllMediaFiles().size());
 
     // snippet should have all media linked with record attachments
-    assertEquals(originalContents.getAllMediaFiles().size(), snip.getLinkedMediaFiles().size());
+    assertThat(snip.getLinkedMediaFiles()).hasSize(originalContents.getAllMediaFiles().size());
 
     // check links are OK for logged in user
     assertAllLinksAreAuthorised(snipLinks, true, false);
@@ -136,7 +136,7 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
     // and there should be no record attachments in that new snippet
     Set<RecordAttachment> otherSnipMediaFiles = otherSnip.getLinkedMediaFiles();
     assertNotNull(otherSnipMediaFiles);
-    assertEquals(0, otherSnipMediaFiles.size());
+    assertThat(otherSnipMediaFiles).isEmpty();
   }
 
   @Test
@@ -150,7 +150,7 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
     FieldContents originalContents = fieldParser.findFieldElementsInContent(originaltext);
     List<EcatMediaFile> originalContentsMediaFiles =
         originalContents.getAllMediaFiles().getElements();
-    assertTrue(originalContentsMediaFiles.size() > 0); // also does lazy init
+    assertThat(originalContentsMediaFiles.size()).isGreaterThan(0); // also does lazy init
     List<String> originalLinks = originalContents.getAllStringLinks();
     commitTransaction();
 
@@ -168,11 +168,11 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
 
     // check contents, should have same number of elements
     assertNotEquals(originalTextParsed, fieldCopy.getFieldData());
-    assertEquals(originalLinks.size(), copyLinks.size());
+    assertThat(copyLinks).hasSameSizeAs(originalLinks);
     assertEquals(originalContentsMediaFiles.size(), copyContents.getAllMediaFiles().size());
 
     // copied field should have all media linked through field attachments
-    assertEquals(originalContentsMediaFiles.size(), fieldCopy.getLinkedMediaFiles().size());
+    assertThat(fieldCopy.getLinkedMediaFiles()).hasSameSizeAs(originalContentsMediaFiles);
 
     // check links are OK for logged in user
     assertAllLinksAreAuthorised(copyLinks, true, false);
@@ -204,7 +204,7 @@ public class LinkedItemsPermissionsMVCIT extends MVCTestBase {
     // and there should be no field attachments in copy
     Set<FieldAttachment> otherFieldCopyMediaFiles = otherFieldCopy.getLinkedMediaFiles();
     assertNotNull(otherFieldCopyMediaFiles);
-    assertEquals(0, otherFieldCopyMediaFiles.size());
+    assertThat(otherFieldCopyMediaFiles).isEmpty();
   }
 
   // iterate over found links and assert that they are authorised ( or not).
