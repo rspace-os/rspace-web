@@ -1,4 +1,11 @@
-import type { BookingEventKind } from "@/modules/booking/domain/booking";
+import { Temporal } from "@js-temporal/polyfill";
+import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
+import {
+  type OpeningHoursEntry,
+  type OpeningSchedule,
+  openingIntervals,
+} from "@/modules/booking/domain/bookingOpeningHours";
+import type { AbsoluteDisplayInterval } from "@/modules/booking/domain/bookingTime";
 
 export type AvailabilityInterval = {
   kind: "booking" | "blockout";
@@ -14,6 +21,10 @@ type AvailabilitySegment = {
   state: AvailabilityState;
 };
 
+/**
+ * Bookings retain original bounds before buffer widening or display clipping.
+ * Closed-hours sources describe gaps within the display interval.
+ */
 export type AvailabilitySource = {
   id: string;
   startsAt: Date;
@@ -29,6 +40,7 @@ export type AvailabilitySource = {
 };
 
 export type SourcedAvailabilityInterval = AvailabilityInterval & {
+  /** Original event for labels and buffer-only conflicts; outer bounds represent occupied time. */
   source: AvailabilitySource;
 };
 
@@ -155,3 +167,144 @@ export function classifyCurrentDayAvailability(
     ? "free-later-today"
     : "unavailable-today";
 }
+
+export type CalendarAvailabilityRow = OpeningSchedule & {
+  globalId: string;
+  timezone: string;
+  /** With bufferAfterMinutes, defines one shared gap using their maximum; see sharedBufferGapMinutes. */
+  bufferBeforeMinutes: number;
+  /** Shares the gap defined by bufferBeforeMinutes, matching server scheduling checks. */
+  bufferAfterMinutes: number;
+  allowDoubleBooking: boolean;
+};
+
+export function calendarAvailabilityRow(row: {
+  globalId: string;
+  timezone?: string;
+  openingHours?: readonly OpeningHoursEntry[];
+  bufferBeforeMinutes?: number;
+  bufferAfterMinutes?: number;
+  allowDoubleBooking?: boolean;
+}): CalendarAvailabilityRow | undefined {
+  if (
+    row.timezone === undefined ||
+    row.openingHours === undefined ||
+    row.bufferBeforeMinutes === undefined ||
+    row.bufferAfterMinutes === undefined ||
+    row.allowDoubleBooking === undefined
+  ) {
+    return undefined;
+  }
+  return {
+    globalId: row.globalId,
+    timezone: row.timezone,
+    openingHours: row.openingHours,
+    bufferBeforeMinutes: row.bufferBeforeMinutes,
+    bufferAfterMinutes: row.bufferAfterMinutes,
+    allowDoubleBooking: row.allowDoubleBooking,
+  };
+}
+
+function availabilityEnvelope(rows: readonly CalendarAvailabilityRow[], interval: AbsoluteDisplayInterval) {
+  const before = Math.max(...rows.map((row) => row.bufferBeforeMinutes));
+  const after = Math.max(...rows.map((row) => row.bufferAfterMinutes));
+  return {
+    start: Temporal.Instant.from(interval.start).subtract({ minutes: after }).toString(),
+    end: Temporal.Instant.from(interval.end).add({ minutes: before }).toString(),
+  };
+}
+
+function clipInterval<T extends AvailabilityInterval>(candidate: T, interval: AbsoluteDisplayInterval): T | undefined {
+  const start = Math.max(candidate.startsAt.getTime(), Date.parse(interval.start));
+  const end = Math.min(candidate.endsAt.getTime(), Date.parse(interval.end));
+  return end > start ? { ...candidate, startsAt: new Date(start), endsAt: new Date(end) } : undefined;
+}
+
+function sourcedInterval(
+  kind: AvailabilityInterval["kind"],
+  id: string,
+  startsAt: string | number,
+  endsAt: string | number,
+  booking?: Booking,
+): SourcedAvailabilityInterval {
+  const sourceStartsAt = new Date(startsAt);
+  const sourceEndsAt = new Date(endsAt);
+  return {
+    kind,
+    startsAt: sourceStartsAt,
+    endsAt: sourceEndsAt,
+    source: {
+      id,
+      startsAt: sourceStartsAt,
+      endsAt: sourceEndsAt,
+      ...(booking
+        ? {
+            booking: {
+              id: booking.id,
+              kind: booking.kind,
+              privacy: booking.privacy,
+              purpose: booking.purpose,
+              bookedBy: booking.bookedBy,
+              createdBy: booking.createdBy,
+            },
+          }
+        : {}),
+    },
+  };
+}
+
+function closedInterval(
+  row: CalendarAvailabilityRow,
+  startsAt: string,
+  endsAt: string,
+  interval: AbsoluteDisplayInterval,
+): SourcedAvailabilityInterval | undefined {
+  const candidate = sourcedInterval(
+    "blockout",
+    `opening-hours:${row.globalId}:${new Date(startsAt).toISOString()}:${new Date(endsAt).toISOString()}`,
+    startsAt,
+    endsAt,
+  );
+  return clipInterval(candidate, interval);
+}
+
+function closedIntervals(
+  row: CalendarAvailabilityRow,
+  interval: AbsoluteDisplayInterval,
+): SourcedAvailabilityInterval[] {
+  const closed: SourcedAvailabilityInterval[] = [];
+  let cursor = interval.start;
+  for (const opening of [
+    ...openingIntervals(row, row.timezone, interval),
+    { start: interval.end, end: interval.end },
+  ]) {
+    const gap = closedInterval(row, cursor, opening.start, interval);
+    if (gap) closed.push(gap);
+    cursor = opening.end;
+  }
+  return closed;
+}
+
+function bookingInterval(
+  booking: Booking,
+  row: CalendarAvailabilityRow,
+  interval: AbsoluteDisplayInterval,
+): SourcedAvailabilityInterval | undefined {
+  const candidate = sourcedInterval(
+    booking.kind === "MAINTENANCE" ? "blockout" : "booking",
+    `booking:${booking.id}`,
+    booking.start,
+    booking.end,
+    booking,
+  );
+  return clipInterval(
+    {
+      ...candidate,
+      startsAt: new Date(candidate.startsAt.getTime() - row.bufferBeforeMinutes * 60_000),
+      endsAt: new Date(candidate.endsAt.getTime() + row.bufferAfterMinutes * 60_000),
+    },
+    interval,
+  );
+}
+
+export { availabilityEnvelope, bookingInterval, closedIntervals };
