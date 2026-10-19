@@ -987,7 +987,8 @@
     "none": "None",
     "noValue": "No Value",
     "unknown": "Unknown",
-    "unknownItem": "Unknown item"
+    "unknownItem": "Unknown item",
+    "userWithUsername": "{name} ({username})"
   },
   "versionLockPicker": {
     "columns": {

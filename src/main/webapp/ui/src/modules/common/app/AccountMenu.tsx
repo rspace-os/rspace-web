@@ -8,39 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/modules/common/ui/avatar"
 import { buttonVariants } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuLinkItem, MenuSeparator, MenuTrigger } from "@/modules/common/ui/menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { userInitials } from "@/modules/common/ui/user-badge";
 import { clearStoredToken } from "@/modules/common/utils/auth";
-
-function getInitials(fullName: string) {
-  const initials = fullName
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("");
-
-  return initials || "?";
-}
-
-function signOutOfGoogleIfPresent() {
-  if (typeof window.gapi === "undefined" || !window.gapi.auth2) return;
-
-  const auth2 = window.gapi.auth2.getAuthInstance();
-  if (auth2) {
-    void auth2.signOut();
-  }
-}
-
-export function formatFullName({
-  firstName,
-  lastName,
-  username,
-}: Pick<CurrentUser, "firstName" | "lastName" | "username">) {
-  return [firstName.trim(), lastName.trim()].filter(Boolean).join(" ") || username;
-}
-
-export function logoutHrefForSession(operatedAs: boolean) {
-  return operatedAs ? "/logout/runAsRelease" : "/logout";
-}
 
 function UserAvatar({
   operatedAs,
@@ -60,7 +29,7 @@ function UserAvatar({
       ) : (
         <>
           {profileImgSrc && <AvatarImage src={profileImgSrc} alt="" />}
-          <AvatarFallback>{getInitials(fullName)}</AvatarFallback>
+          <AvatarFallback>{userInitials(fullName)}</AvatarFallback>
         </>
       )}
     </Avatar>
@@ -76,16 +45,20 @@ export default function AccountMenu({
 }) {
   const { t } = useTranslation("common");
   const clearSessions = useUserSessionStore((state) => state.clearSessions);
-  const fullName = formatFullName(currentUser);
+  const fullName =
+    [currentUser.firstName.trim(), currentUser.lastName.trim()].filter(Boolean).join(" ") || currentUser.username;
   const { operatedAs } = currentUser.session;
 
-  const logoutHref = logoutHrefForSession(operatedAs);
+  const logoutHref = operatedAs ? "/logout/runAsRelease" : "/logout";
   const logoutLabel = operatedAs ? t("appBar.release") : t("appBar.logOut");
 
   const handleLogout = () => {
     clearSessions();
     clearStoredToken();
-    if (!operatedAs) signOutOfGoogleIfPresent();
+    if (!operatedAs && typeof window.gapi !== "undefined" && window.gapi.auth2) {
+      const auth2 = window.gapi.auth2.getAuthInstance();
+      if (auth2) void auth2.signOut();
+    }
     window.location.href = logoutHref;
   };
 

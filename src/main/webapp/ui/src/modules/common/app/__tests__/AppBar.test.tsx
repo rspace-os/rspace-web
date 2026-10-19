@@ -5,13 +5,15 @@ import { HttpResponse, http } from "msw";
 import { type ComponentProps, type ReactElement, Suspense } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { currentUserResponse } from "@/__tests__/helpers/currentUserResponse";
+import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
-import AccountMenu, { formatFullName, logoutHrefForSession } from "@/modules/common/app/AccountMenu";
+import AccountMenu from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
 import HelpMenu from "@/modules/common/app/HelpMenu";
 import { useLighthouseSdk } from "@/modules/common/app/lighthouse";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
 import { createUserSessionStore, UserSessionStoreProvider } from "@/modules/common/stores/userSessionStore";
 import { ID_TOKEN_KEY } from "@/modules/common/utils/auth";
@@ -212,14 +214,24 @@ describe("HelpMenu", () => {
 });
 
 describe("AccountMenu", () => {
-  it("derives a full name and falls back to the username", () => {
-    expect(formatFullName({ firstName: " Ada ", lastName: " Lovelace ", username: "ada" })).toBe("Ada Lovelace");
-    expect(formatFullName({ firstName: " ", lastName: "", username: "ada" })).toBe("ada");
-  });
+  it.each([
+    [" Ada ", " Lovelace ", "Ada Lovelace (ada)", "AL"],
+    ["Maria", "van den Heuvel", "Maria van den Heuvel (ada)", "MH"],
+    [" ", "", "ada (ada)", "A"],
+  ])("renders identity from first name '%s' and last name '%s'", async (firstName, lastName, identity, initials) => {
+    const user = userEvent.setup();
+    renderAccountMenu(
+      await wrapWithRealI18n(
+        <AccountMenu currentUser={{ ...currentUserResponse, firstName, lastName }} bannerImageUrl="" />,
+        { resources: { common: commonEn }, defaultNS: "common" },
+      ),
+    );
 
-  it("selects the ordinary and operated-as logout destinations", () => {
-    expect(logoutHrefForSession(false)).toBe("/logout");
-    expect(logoutHrefForSession(true)).toBe("/logout/runAsRelease");
+    const accountMenu = screen.getByRole("button", { name: "Account Menu" });
+    expect(within(accountMenu).getByText(initials)).toBeVisible();
+    await user.click(accountMenu);
+
+    expect(await screen.findByText(identity)).toBeVisible();
   });
 
   it.each([
@@ -265,6 +277,8 @@ describe("AccountMenu", () => {
 
   it("clears canonical authentication state when releasing an operated-as session", async () => {
     const user = userEvent.setup();
+    const signOut = vi.fn();
+    vi.stubGlobal("gapi", { auth2: { getAuthInstance: () => ({ signOut }) } });
     const sessionStore = createUserSessionStore();
     sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id), token: "token" });
     sessionStorage.setItem(ID_TOKEN_KEY, "token");
@@ -281,6 +295,43 @@ describe("AccountMenu", () => {
 
     expect(sessionStore.getState().sessions).toEqual([]);
     expect(sessionStore.getState().activeAccountId).toBeNull();
+    expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["gapi", undefined],
+    ["auth2", {}],
+    ["the auth instance", { auth2: { getAuthInstance: () => null } }],
+  ])("logs out an ordinary session without %s", async (_missing, gapi) => {
+    const user = userEvent.setup();
+    vi.stubGlobal("gapi", gapi);
+    sessionStorage.setItem(ID_TOKEN_KEY, "token");
+    const sessionStore = createUserSessionStore();
+    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id), token: "token" });
+    renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />, sessionStore);
+
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(await screen.findByRole("menuitem", { name: "common:appBar.logOut" }));
+
+    expect(sessionStore.getState().sessions).toEqual([]);
+    expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
+  });
+
+  it("starts Google sign-out when logging out an ordinary session", async () => {
+    const user = userEvent.setup();
+    const signOut = vi.fn(() => new Promise<void>(() => {}));
+    vi.stubGlobal("gapi", { auth2: { getAuthInstance: () => ({ signOut }) } });
+    sessionStorage.setItem(ID_TOKEN_KEY, "token");
+    const sessionStore = createUserSessionStore();
+    sessionStore.getState().upsertSession({ accountId: String(currentUserResponse.id), token: "token" });
+    renderAccountMenu(<AccountMenu currentUser={currentUserResponse} bannerImageUrl="" />, sessionStore);
+
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+    await user.click(await screen.findByRole("menuitem", { name: "common:appBar.logOut" }));
+
+    expect(signOut).toHaveBeenCalledOnce();
+    expect(sessionStore.getState().sessions).toEqual([]);
     expect(sessionStorage.getItem(ID_TOKEN_KEY)).toBeNull();
   });
 
