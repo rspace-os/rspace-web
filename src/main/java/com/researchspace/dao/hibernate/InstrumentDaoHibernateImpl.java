@@ -211,7 +211,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     String nameFilter =
         query == null || query.isBlank()
             ? ""
-            : " lower(parent.editInfo.name) like :locationQuery escape '\\'";
+            : " lower(parent.editInfo.name) like :locationQuery escape '!'";
     String whereClause =
         new StringBuilder("type(instrument)=Instrument and instrument.deleted=false ")
             .append("and configuration.state=:configurationState and configuration.enabled=true ")
@@ -401,7 +401,7 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
     String searchPredicate =
         byGlobalId
             ? "concat('IN', cast(instrument.id as string)) = :query"
-            : "lower(instrument.editInfo.name) like :query escape '\\'";
+            : "lower(instrument.editInfo.name) like :query escape '!'";
     StringBuilder hql =
         new StringBuilder("from Instrument instrument where type(instrument) = Instrument and")
             .append(" instrument.deleted = false and ")
@@ -440,11 +440,11 @@ public class InstrumentDaoHibernateImpl extends InventoryDaoHibernate<Instrument
             + "left join instrument.parentLocation location "
             + "left join location.container parent "
             + "where type(instrument) = Instrument and instrument.deleted = false "
-            + "and (lower(instrument.editInfo.name) like :search escape '\\' "
-            + "or lower(instrument.editInfo.description) like :search escape '\\' "
+            + "and (lower(instrument.editInfo.name) like :search escape '!' "
+            + "or lower(instrument.editInfo.description) like :search escape '!' "
             + "or (location.storedInstrument.id = instrument.id and parent.deleted = false and "
             + context.readableContainerPredicate(this, "parent")
-            + " and lower(parent.editInfo.name) like :search escape '\\'))";
+            + " and lower(parent.editInfo.name) like :search escape '!'))";
     Query<Long> query =
         getSession()
             .createQuery(hql, Long.class)
