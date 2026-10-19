@@ -65,12 +65,14 @@ export const RequestableSwitch = observer(({ activeResult }: { activeResult: Sam
     .map((value) => value === "ALLOWED")
     .orElse(false);
 
-  // canTransfer (CHANGE_OWNER in the API's permittedActions) is what the backend itself actually
-  // checks before allowing requestable to change (see SampleApiManagerImpl.
-  // assertRequestableChangeAllowed, which reuses canUserTransferInventoryRecord) - owner, or a PI
-  // or Lab Admin of a group the owner belongs to. A plain currentUserIsOwner check would hide this
-  // switch from a PI who the backend would otherwise let toggle it.
-  if (!sampleRequestsAvailable || !activeResult.canTransfer) return null;
+  // canEdit (UPDATE in the API's permittedActions) is what the backend itself actually checks
+  // before allowing requestable to change (see SampleApiManagerImpl.
+  // assertRequestableChangeAllowed, which calls canUserEditInventoryRecord) - owner, or a PI/Lab
+  // Admin/any other group member sharing edit access to the owner's sample. A plain
+  // currentUserIsOwner check would hide this switch from a PI who the backend would otherwise let
+  // toggle it; canTransfer (CHANGE_OWNER) would be the wrong getter here instead - it also covers
+  // a sysadmin's admin-override transfer ability, which must not extend to toggling requestable.
+  if (!sampleRequestsAvailable || !activeResult.canEdit) return null;
 
   return (
     <Box
@@ -245,9 +247,10 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
   };
 
   // Mirrors RequestableSwitch's own guard above, so the two stay mutually exclusive: anyone who
-  // can toggle requestable (the owner, or a PI/Lab Admin of the owner's group) sees that switch
-  // instead of a request form for a sample they can already manage directly.
-  if (!sampleRequestsAvailable || activeResult.canTransfer) return null;
+  // can toggle requestable (the owner, or anyone else sharing edit access, e.g. a PI/Lab Admin of
+  // the owner's group) sees that switch instead of a request form for a sample they can already
+  // manage directly.
+  if (!sampleRequestsAvailable || activeResult.canEdit) return null;
 
   const showActionError = (action: string, error: unknown) => {
     console.error(action, error);

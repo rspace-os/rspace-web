@@ -507,10 +507,16 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsDenied,
   }) => {
     // Six separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    // This test exercises the direct-transfer ("Transfer Sample") path specifically, which only
+    // shows once inventory.operations.available is DENIED - without forcing it, a local instance
+    // left with it ALLOWED (e.g. from earlier manual testing) instead shows "Prepare Sample",
+    // and the subsequent transferSampleButton lookup never finds a matching button.
+    void flowOperationsDenied;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -585,10 +591,14 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsDenied,
   }) => {
     // Five separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    // See the equivalent comment in the previous test: this exercises the direct-transfer path,
+    // which requires inventory.operations.available to actually be DENIED.
+    void flowOperationsDenied;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");
@@ -661,10 +671,14 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
     clientSysadmin,
     apiContext,
     flowSampleRequestsAvailable,
+    flowOperationsDenied,
   }) => {
     // Six separate logins (a fresh browser context each), so allow extra time on a cold backend.
     test.slow();
     void flowSampleRequestsAvailable;
+    // See the equivalent comment on the earlier direct-transfer test: this also exercises that
+    // path, which requires inventory.operations.available to actually be DENIED.
+    void flowOperationsDenied;
 
     const alice = await test.step("Given Alice owns Sample X", async () => {
       const actor = await createInventoryActor(clientSysadmin, apiContext, "Alice");

@@ -16,10 +16,11 @@ export class RequestsPage extends BasePage {
   /**
    * Owner-only: opens the Transfer Ownership dialog directly for the currently selected
    * subsample. Labelled "Transfer Sample" rather than "Prepare Sample" because
-   * inventory.operations.available has no seeded backend property at all (it was never
-   * reintroduced after the Operations Wizard integration was reverted out of this branch), so
-   * RequestDetailPanel's `operationsAvailable` reads permanently false and `skipChooseMethodDialog`
-   * is always true whenever sampleRequests.available is ALLOWED - i.e. always, in these tests.
+   * inventory.operations.available is DENIED, making RequestDetailPanel's `skipChooseMethodDialog`
+   * true - the Operations Wizard this branch would otherwise offer isn't present here at all, so
+   * every spec that reaches this button pairs `flowSampleRequestsAvailable` with
+   * `flowOperationsDenied` to guarantee that, rather than relying on whatever this property
+   * happens to be left as on a given instance.
    */
   readonly transferSampleButton: Locator;
 

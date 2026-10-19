@@ -1371,7 +1371,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void requestable_canOnlyBeChangedByWhoeverMayTransferTheSample() {
+  public void requestable_canBeChangedByWhoeverMayEditTheSample() {
     User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
     User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
@@ -1379,7 +1379,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     Group group = createGroup("group", pi);
     addUsersToGroup(pi, group, owner, member);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "group-shared sample");
-    // the premise: the member may edit the owner's group-shared sample, but not transfer it
+    // the premise: the member may edit the owner's group-shared sample, but not transfer it -
+    // edit permission, not transfer permission, is the gate for changing requestable, so this
+    // member is exactly the case that distinguishes the two.
     assertEquals(
         List.of(ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.UPDATE),
         sampleApiMgr.getApiSampleById(sample.getId(), member).getPermittedActions());
@@ -1387,16 +1389,36 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample memberChange = new ApiSample();
     memberChange.setId(sample.getId());
     memberChange.setRequestable(true);
-    assertThrows(
-        ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(memberChange, member));
-    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+    sampleApiMgr.updateApiSample(memberChange, member);
+    assertTrue(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+  }
 
-    // other edits that resend the current value are not a change
-    ApiSample memberRename = new ApiSample();
-    memberRename.setId(sample.getId());
-    memberRename.setName("renamed by member");
-    memberRename.setRequestable(false);
-    assertEquals("renamed by member", sampleApiMgr.updateApiSample(memberRename, member).getName());
+  @Test
+  public void requestable_cannotBeChangedByASysadminWhoIsNotOtherwiseAnEditor() {
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
+    initialiseContentWithEmptyContent(owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner, "my sample");
+    User sysadmin = createAndSaveSysadminUser();
+    // the premise: a sysadmin may transfer (CHANGE_OWNER) any sample as an admin override, but
+    // that is not the same as being able to edit it - requestable must stay gated on edit
+    // permission specifically, which a sysadmin does not have here (they're not the owner, nor
+    // shared the sample via group/sharing permission).
+    assertEquals(
+        List.of(
+            ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.CHANGE_OWNER),
+        sampleApiMgr.getApiSampleById(sample.getId(), sysadmin).getPermittedActions());
+
+    ApiSample sysadminChange = new ApiSample();
+    sysadminChange.setId(sample.getId());
+    sysadminChange.setRequestable(true);
+    // A sysadmin isn't a general editor of this sample at all, so the broader edit check
+    // (assertUserCanEditSample, run before the requestable-specific gate) is what actually
+    // rejects this - still proving a sysadmin cannot reach the point of changing requestable,
+    // regardless of which check along the way is responsible.
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> sampleApiMgr.updateApiSample(sysadminChange, sysadmin));
+    assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
   }
 
   @Test
