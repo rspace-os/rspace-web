@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.researchspace.Constants;
@@ -13,6 +14,7 @@ import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.service.SystemPropertyName;
 import java.security.Principal;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,5 +85,20 @@ public class CommunityAdminControllerMVCIT extends MVCTestBase {
                 .getCommunityWithAdminsAndGroups(Community.DEFAULT_COMMUNITY_ID)
                 .getLabGroups())
         .contains(grp);
+  }
+
+  @Test
+  public void editablePropertiesOmitCredentials() throws Exception {
+    MvcResult res =
+        mockMvc
+            .perform(
+                get("/community/admin/ajax/editableProperties")
+                    .principal(sysAdminPrincipal)
+                    .param("communityId", Community.DEFAULT_COMMUNITY_ID + ""))
+            .andReturn();
+    Map<String, Object> data = parseJSONObjectFromResponseStream(res);
+    assertThat(data.keySet())
+        .contains(SystemPropertyName.CHEMISTRY_AVAILABLE.getPropertyName())
+        .doesNotContainAnyElementsOf(SystemAndDeploymentPropsControllerMVCIT.FREE_TEXT_SETTINGS);
   }
 }

@@ -41,9 +41,13 @@ Once an integration is available at the system level (sysadmin toggle is on), in
    No extra per-user options are required. The App row plus classification in code is enough (see classification below).
    b. If the App requires per-user configuration options:
    Define one or more `PropertyDescriptor` rows for your option keys and link them to your App via `AppConfigElementDescriptor` rows. Example: [adding an API key](/src/main/resources/sqlUpdates/changeLog-rsdev-369.xml).
+
+   Option values are treated as secrets unless listed in `CLIENT_READABLE_SETTINGS` in `IntegrationsHandlerImpl` (RSDEV-1525). A stored unlisted value reaches the browser as `null` (an unset one as `""`), and posting `null` back keeps the stored value. Add your non-secret keys (URLs, aliases, labels) to that set, or the UI receives `null` in their place. Server code that needs a real secret must read it from the database, because `IntegrationInfo` options withhold secrets.
 3. Code changes:
    - Add your integration to `IntegrationsHandlerImpl.isAppConfigIntegration()` if it has more than one option set per user.
    - Otherwise, if it has only a single option set per user, add it to `isSingleOptionSetAppConfigIntegration()`.
+
+`saveAppOptions` and `deleteAppOptions` accept `appName` in any case and normalize it to the uppercase integration name, which is also the `UserConnection` provider ID and cache key. `UserAppConfigManager` saves and deletes a config set only when it belongs to the expected database app name (for example `app.github`); the comparison is case-insensitive, like the database's.
 
 ### 3) Deployment properties (where applicable)
 
@@ -58,6 +62,8 @@ newplugin.api.key=your-api-key-here
 
 Always add the property to the `defaultDeployment.properties` file at a minimum. See the [Property files docs](/DevDocs/DeveloperNotes/PropertyFiles.md) for more info. Deployment-level options go in `PropertyHolder`/property files; user-level options go via `AppConfigElementDescriptor`.
 
+If the browser needs a deployment property, add a `@Value` field for it to `DeploymentPropertiesController` and mark it `@ClientReadable`; both `/deploymentproperties/ajax/property` and `/ajax/properties` then return it. Unmarked fields are never returned, so never mark a secret `@ClientReadable`. A secret the browser genuinely needs (such as a browser API key) gets `@ClientReadableSecret("why the browser needs it")` instead, which also exposes it (RSDEV-1525).
+
 ### 4) Authentication
 
 #### OAuth flow
@@ -70,6 +76,11 @@ For integrations using OAuth 2.0, implement both of the following:
    - Handles the OAuth callback
    - Stores the access token using `UserConnectionManager`
 
+Tokens are never returned to the browser (RSDEV-1525):
+
+- `IntegrationsHandlerImpl` withholds OAuth tokens in `IntegrationInfo`: a connected app's `ACCESS_TOKEN` key is present with a `null` value. The only exceptions are apps listed in `CLIENT_READABLE_TOKEN_APPS`, whose browser code calls the provider directly. Add an app there only when there is no server-side alternative, and annotate any endpoint or value that sends a secret to the browser with `@ClientReadableSecret("why the browser needs it")`.
+- Use the config-set ID as the connection discriminant for credentials that belong to an individual configuration, including Dataverse API keys (`accessToken`) and Microsoft Teams webhook URLs (`secret`).
+
 #### Single-user token/API key
 
 For integrations that use a simple API key or token per user:
@@ -80,6 +91,7 @@ For integrations that use a simple API key or token per user:
    - `userId`: The user's username
    - `providerId`: Your integration's app name
    - `accessToken`: The actual token/API key
+4. Return the token to the UI as `null` (`setSingleUserToken` does this), keep the stored token when `null` is posted back, and treat a stored `""` as unset.
 
 ## Frontend changes
 

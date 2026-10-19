@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
@@ -211,7 +212,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     return OauthAuthorizationError.builder().appName("ownCloud");
   }
 
-  /** Likely unused? */
+  @ClientReadableSecret("the ownCloud TinyMCE plugin calls ownCloud from the browser")
   @GetMapping("/accessCredentials")
   public @ResponseBody Map<String, String> getAccessCredentials(Principal subject) {
     Optional<UserConnection> connection =
@@ -229,6 +230,7 @@ public class OwnCloudController extends BaseOAuth2Controller {
     }
   }
 
+  @ClientReadableSecret("the ownCloud TinyMCE plugin calls ownCloud from the browser")
   @GetMapping("/refreshToken")
   public @ResponseBody Map<String, String> refreshAccessCredentials(Principal subject) {
     Optional<UserConnection> connectionOption =

@@ -6,12 +6,10 @@ import static com.researchspace.session.SessionAttributeUtils.removeSessionAttri
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.core.util.SecureStringUtils;
-import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.webapp.controller.BaseController;
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.Principal;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -62,12 +60,5 @@ public class BaseOAuth2Controller extends BaseController {
     String state = (String) getSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE);
     removeSessionAttribute(SessionAttributeUtils.RS_OAUTH_STATE);
     return state;
-  }
-
-  protected String doGetAccessToken(Principal subject, String providerName) {
-    return userConnectionManager
-        .findByUserNameProviderName(subject.getName(), providerName)
-        .map(UserConnection::getAccessToken)
-        .orElse("");
   }
 }
