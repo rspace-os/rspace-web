@@ -1,4 +1,3 @@
-import { getInput } from "@formisch/react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { type SelectOption, selectOptionText } from "@/modules/common/collection/collectionConfig";
@@ -7,33 +6,32 @@ import { RadioGroup, RadioGroupItem } from "@/modules/common/ui/radio-group";
 import { controlAttributes } from "../controlAttributes";
 import { FormField } from "../FormField";
 import { emptyNullableValue } from "../fieldValues";
+import { formData } from "../formData";
 import type { ControlProps, FieldRendererProps } from "../RenderFields.types";
 
 type SelectFieldControlProps<TDocument> = ControlProps<TDocument, "select"> & {
-  data: Partial<TDocument>;
-  isOptionDisabled: ((option: SelectOption, data: Partial<TDocument>) => boolean) | undefined;
   options: readonly NormalizedSelectOption[];
 };
 
 type NormalizedSelectOption = {
   content: ReactNode;
-  source: SelectOption;
+  disabled: boolean;
   textValue: string;
   value: string;
 };
 
-function normalizeOption(option: SelectOption): NormalizedSelectOption {
-  if (typeof option === "string") return { content: option, source: option, textValue: option, value: option };
+function normalizeOption(option: SelectOption, disabled: boolean): NormalizedSelectOption {
+  if (typeof option === "string") return { content: option, disabled, textValue: option, value: option };
   return {
     content: "content" in option ? (option.content ?? option.label) : option.label,
-    source: option,
+    disabled,
     textValue: selectOptionText(option),
     value: option.value,
   };
 }
 
 function CardSelectFieldControl<TDocument extends Record<string, unknown>>(props: SelectFieldControlProps<TDocument>) {
-  const { disabled, fieldApi, fieldConfig, isOptionDisabled, label, options, data } = props;
+  const { disabled, fieldApi, fieldConfig, label, options } = props;
 
   return (
     <RadioGroup
@@ -50,7 +48,7 @@ function CardSelectFieldControl<TDocument extends Record<string, unknown>>(props
         <RadioGroupItem
           aria-label={option.textValue}
           className="aspect-auto size-auto min-h-20 w-full cursor-pointer items-start justify-start gap-3 rounded-sm border bg-card p-4 text-left shadow-sm transition-colors after:hidden focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50 data-checked:border-primary/40 data-checked:bg-primary/5"
-          disabled={isOptionDisabled ? isOptionDisabled(option.source, data) : false}
+          disabled={option.disabled}
           key={option.value}
           value={option.value}
         >
@@ -62,7 +60,7 @@ function CardSelectFieldControl<TDocument extends Record<string, unknown>>(props
 }
 
 function RadioSelectFieldControl<TDocument extends Record<string, unknown>>(props: SelectFieldControlProps<TDocument>) {
-  const { disabled, fieldApi, fieldConfig, id, isOptionDisabled, label, options, data } = props;
+  const { disabled, fieldApi, fieldConfig, id, label, options } = props;
 
   return (
     <RadioGroup
@@ -78,18 +76,17 @@ function RadioSelectFieldControl<TDocument extends Record<string, unknown>>(prop
       {options.map((option, index) => {
         const optionId = `${id}-option-${index}`;
         const optionLabelId = `${optionId}-label`;
-        const optionDisabled = isOptionDisabled ? isOptionDisabled(option.source, data) : false;
 
         return (
           <div className="flex items-center gap-2" key={option.value}>
             <RadioGroupItem
               aria-labelledby={optionLabelId}
-              disabled={optionDisabled}
+              disabled={option.disabled}
               id={optionId}
               value={option.value}
             />
             <label
-              className={`select-none ${disabled || fieldConfig.readOnly || optionDisabled ? "cursor-default" : "cursor-pointer"}`}
+              className={`select-none ${disabled || fieldConfig.readOnly || option.disabled ? "cursor-default" : "cursor-pointer"}`}
               htmlFor={optionId}
               id={optionLabelId}
             >
@@ -105,7 +102,7 @@ function RadioSelectFieldControl<TDocument extends Record<string, unknown>>(prop
 function ComboboxSelectFieldControl<TDocument extends Record<string, unknown>>(
   props: SelectFieldControlProps<TDocument>,
 ) {
-  const { data, disabled, fieldApi, fieldConfig, isOptionDisabled, label, options } = props;
+  const { disabled, fieldApi, fieldConfig, label, options } = props;
   const { t } = useTranslation("common");
   const selected = options.find((option) => option.value === fieldApi.input) ?? null;
 
@@ -134,12 +131,7 @@ function ComboboxSelectFieldControl<TDocument extends Record<string, unknown>>(
       <ComboboxContent>
         <ComboboxList>
           {(option: (typeof options)[number]) => (
-            <ComboboxItem
-              key={option.value}
-              value={option}
-              aria-label={option.textValue}
-              disabled={isOptionDisabled ? isOptionDisabled(option.source, data) : false}
-            >
+            <ComboboxItem key={option.value} value={option} aria-label={option.textValue} disabled={option.disabled}>
               {option.content}
             </ComboboxItem>
           )}
@@ -163,15 +155,15 @@ export function SelectField<TDocument extends Record<string, unknown>>(props: Fi
           if (widget === "radio") throw new Error("Radio select does not support multiple values");
         }
 
-        const options = fieldConfig.options.map(normalizeOption);
-        const data = getInput(props.form) as Partial<TDocument>;
         const isOptionDisabled = formConfig?.isOptionDisabled;
+        const data = isOptionDisabled ? formData<TDocument>(props.form) : undefined;
+        const options = fieldConfig.options.map((option) =>
+          normalizeOption(option, isOptionDisabled && data ? isOptionDisabled(option, data) : false),
+        );
         const controlPropsWithOptions = {
           ...controlProps,
           fieldConfig,
           options,
-          data,
-          isOptionDisabled,
         };
         const controls: Record<typeof widget, (props: SelectFieldControlProps<TDocument>) => ReactNode> = {
           card: (controlProps) => <CardSelectFieldControl {...controlProps} />,
