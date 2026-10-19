@@ -1,24 +1,17 @@
 package com.researchspace.model.collection;
 
-import com.researchspace.model.User;
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import org.hibernate.proxy.HibernateProxy;
-import org.springframework.beans.BeanUtils;
 import org.springframework.util.ClassUtils;
 
 /** Maps an annotated API record and its entity bean properties to a collection description. */
@@ -43,23 +36,20 @@ final class AnnotatedCollectionDescriptionFactory {
       throw new IllegalArgumentException(
           "Resource definition entity must be " + entityType.getName());
     }
-    Map<String, PropertyDescriptor> properties = properties(entityType);
-    Stream<ResourceMember<T>> members =
-        Stream.<ResourceMember<T>>concat(
-            AnnotatedCollectionDescriptionFactory.<T>fieldsFrom(
-                resourceType, definition, properties, fieldTypes)
-                .stream(),
-            relationships.stream());
+    Map<String, PropertyDescriptor> properties = BeanPropertyAccess.properties(entityType);
+    List<ResourceMember<T>> members = new ArrayList<>();
+    members.addAll(fieldsFrom(resourceType, definition, properties, fieldTypes));
     if (definition.auditFields()) {
-      members =
-          Stream.concat(
-              members,
-              AnnotatedCollectionDescriptionFactory.<T>auditRelationships(properties).stream());
+      members.addAll(AuditResourceMembers.fields(properties));
+    }
+    members.addAll(relationships);
+    if (definition.auditFields()) {
+      members.addAll(AuditResourceMembers.relationships(properties));
     }
     return new CollectionDescription<>(
         definition.name(),
         entityType,
-        members.toList(),
+        members,
         definition.id(),
         defaultSort,
         accessPolicy,
@@ -71,151 +61,11 @@ final class AnnotatedCollectionDescriptionFactory {
       ApiV2ResourceDefinition definition,
       Map<String, PropertyDescriptor> properties,
       CollectionFieldTypeRegistry fieldTypes) {
-    List<Field<T, ?>> fields =
-        Arrays.stream(resourceType.getRecordComponents())
-            .<Field<T, ?>>map(
-                component ->
-                    fieldFrom(resourceType, component, properties, definition.id(), fieldTypes))
-            .toList();
-    return definition.auditFields()
-        ? Stream.concat(
-                fields.stream(),
-                AnnotatedCollectionDescriptionFactory.<T>auditFields(properties).stream())
-            .toList()
-        : fields;
-  }
-
-  private static <T> List<Field<T, ?>> auditFields(Map<String, PropertyDescriptor> properties) {
-    List<Field<T, ?>> fields = new ArrayList<>();
-    AnnotatedCollectionDescriptionFactory.<T, Date>auditProperty(
-            properties, Date.class, "createdAt", "creationDate")
-        .map(
-            source ->
-                auditDateField("createdAt", "Time at which the resource was created.", source))
-        .ifPresent(fields::add);
-    AnnotatedCollectionDescriptionFactory.<T, Date>auditProperty(
-            properties, Date.class, "updatedAt", "modificationDate")
-        .map(
-            source ->
-                auditDateField("updatedAt", "Time at which the resource was last updated.", source))
-        .ifPresent(fields::add);
-    return List.copyOf(fields);
-  }
-
-  private static <T> List<Relationship<T>> auditRelationships(
-      Map<String, PropertyDescriptor> properties) {
-    List<Relationship<T>> relationships = new ArrayList<>();
-    AnnotatedCollectionDescriptionFactory.<T>auditUserRelationship(
-            properties, "createdBy", "createdBy")
-        .ifPresent(relationships::add);
-    AnnotatedCollectionDescriptionFactory.<T>auditUserRelationship(
-            properties, "updatedBy", "updatedBy", "lastUpdatedBy", "modifiedBy")
-        .ifPresent(relationships::add);
-    return List.copyOf(relationships);
-  }
-
-  private static <T> Field<T, Date> auditDateField(
-      String name, String description, AuditProperty<T, Date> source) {
-    return Field.readOnly(name, source.property(), CollectionFieldTypes.instant(), source.reader())
-        .allowNull()
-        .documented(auditDocumentation(description));
-  }
-
-  private static <T> Optional<Relationship<T>> auditUserRelationship(
-      Map<String, PropertyDescriptor> properties, String name, String... candidates) {
-    Method reader = auditReadMethod(properties, candidates);
-    if (reader == null) {
-      return Optional.empty();
-    }
-    if (!User.class.isAssignableFrom(reader.getReturnType())) {
-      throw new IllegalArgumentException(
-          "Audit property " + reader.getName() + " must return " + User.class.getName());
-    }
-    String property = readerProperty(properties, reader);
-    Function<T, User> userReader = entity -> (User) invoke(reader, entity);
-    return Optional.of(
-        Relationship.referenceToOne(
-                name,
-                "users",
-                CollectionFieldTypes.longNumber(),
-                User.class,
-                userReader,
-                AnnotatedCollectionDescriptionFactory::auditUserId,
-                property + ".id")
-            .allowNull()
-            .documented(
-                auditDocumentation(
-                    name.equals("createdBy")
-                        ? "User who created the resource."
-                        : "User who last updated the resource.")));
-  }
-
-  /**
-   * Reads the audit user's identifier without initialising a lazy association.
-   *
-   * <p>{@code User::getId} looks harmless but is not: {@code ResourceRenderer} runs at the HTTP
-   * boundary, after the manager's transaction has closed, so calling a getter on an uninitialised
-   * proxy throws {@code LazyInitializationException} and the whole response becomes a 500. Every
-   * resource with {@code auditFields = true} over a lazily mapped {@code User} would hit that on
-   * read, list, update and delete.
-   *
-   * <p>A proxy already carries its identifier, so taking it from the initialiser is both correct
-   * outside a session and one fewer SELECT per rendered row. At depth 0 the identifier is all the
-   * reference needs; a deeper expansion resolves the target through its own registration.
-   */
-  private static Long auditUserId(User user) {
-    if (user instanceof HibernateProxy proxy) {
-      return (Long) proxy.getHibernateLazyInitializer().getIdentifier();
-    }
-    return user.getId();
-  }
-
-  private static String readerProperty(Map<String, PropertyDescriptor> properties, Method reader) {
-    return properties.entrySet().stream()
-        .filter(entry -> reader.equals(entry.getValue().getReadMethod()))
-        .map(Map.Entry::getKey)
-        .findFirst()
-        .orElseThrow(() -> new IllegalArgumentException("Audit reader is not a bean property"));
-  }
-
-  private static OpenApiSchemaDocumentation auditDocumentation(String description) {
-    return OpenApiSchemaDocumentation.of(null, description, null);
-  }
-
-  private static <T, V> Optional<AuditProperty<T, V>> auditProperty(
-      Map<String, PropertyDescriptor> properties, Class<V> type, String... candidates) {
-    Method reader = auditReadMethod(properties, candidates);
-    if (reader == null) {
-      return Optional.empty();
-    }
-    if (!type.isAssignableFrom(reader.getReturnType())) {
-      throw new IllegalArgumentException(
-          "Audit property " + reader.getName() + " must return " + type.getName());
-    }
-    return Optional.of(
-        new AuditProperty<>(
-            readerProperty(properties, reader), entity -> type.cast(invoke(reader, entity))));
-  }
-
-  private record AuditProperty<T, V>(String property, Function<T, V> reader) {}
-
-  private static Method auditReadMethod(
-      Map<String, PropertyDescriptor> properties, String... candidates) {
-    for (String candidate : candidates) {
-      PropertyDescriptor descriptor = properties.get(candidate);
-      if (descriptor != null && descriptor.getReadMethod() != null) {
-        return descriptor.getReadMethod();
-      }
-    }
-    return null;
-  }
-
-  private static Map<String, PropertyDescriptor> properties(Class<?> entityType) {
-    Map<String, PropertyDescriptor> properties = new LinkedHashMap<>();
-    for (PropertyDescriptor property : BeanUtils.getPropertyDescriptors(entityType)) {
-      properties.put(property.getName(), property);
-    }
-    return properties;
+    return Arrays.stream(resourceType.getRecordComponents())
+        .<Field<T, ?>>map(
+            component ->
+                fieldFrom(resourceType, component, properties, definition.id(), fieldTypes))
+        .toList();
   }
 
   private static <T> Field<T, ?> fieldFrom(
@@ -254,7 +104,7 @@ final class AnnotatedCollectionDescriptionFactory {
       PropertyDescriptor descriptor,
       CollectionFieldType<V> type,
       String idField) {
-    Function<T, V> read = entity -> type.javaType().cast(invoke(reader, entity));
+    Function<T, V> read = entity -> type.javaType().cast(BeanPropertyAccess.invoke(reader, entity));
     Method writer = descriptor.getWriteMethod();
     boolean createWritable =
         !component.getName().equals(idField)
@@ -269,7 +119,7 @@ final class AnnotatedCollectionDescriptionFactory {
       field = Field.readOnly(component.getName(), property, type, read);
     } else {
       requireCompatibleType(component, writer.getParameterTypes()[0], "writer");
-      BiConsumer<T, V> write = (entity, value) -> invoke(writer, entity, value);
+      BiConsumer<T, V> write = (entity, value) -> BeanPropertyAccess.invoke(writer, entity, value);
       field = Field.writable(component.getName(), property, type, read, write);
       if (createWritable && !updateWritable) {
         field = field.writeOnlyOn(WriteOperation.CREATE);
@@ -348,22 +198,5 @@ final class AnnotatedCollectionDescriptionFactory {
 
   private static Class<?> boxed(Class<?> type) {
     return ClassUtils.resolvePrimitiveIfNecessary(type);
-  }
-
-  private static Object invoke(Method method, Object target, Object... arguments) {
-    try {
-      return method.invoke(target, arguments);
-    } catch (InvocationTargetException ex) {
-      Throwable cause = ex.getCause();
-      if (cause instanceof RuntimeException runtime) {
-        throw runtime;
-      }
-      if (cause instanceof Error error) {
-        throw error;
-      }
-      throw new IllegalStateException("Resource accessor failed", cause);
-    } catch (IllegalAccessException ex) {
-      throw new IllegalStateException("Cannot invoke resource accessor", ex);
-    }
   }
 }
