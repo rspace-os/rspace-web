@@ -1,23 +1,20 @@
 import { renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import "@/__tests__/__mocks__/matchMedia";
+import { afterEach, describe, expect, it } from "vitest";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
 import { useTheme } from "../useTheme";
 
-beforeEach(() => {
-  localStorage.clear();
-  document.documentElement.classList.remove("dark");
-});
-
 afterEach(() => {
-  localStorage.clear();
   document.documentElement.classList.remove("dark");
 });
 
 describe("useTheme", () => {
-  it("defaults to light when no storage and no system preference", () => {
+  it("applies forced light mode to the document", () => {
+    document.documentElement.classList.add("dark");
+
     const { result } = renderHook(() => useTheme(), { wrapper: UIStoreProvider });
+
     expect(result.current.theme).toBe("light");
-    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    expect(document.documentElement).not.toHaveClass("dark");
+    expect(localStorage.getItem("rspace-ds-theme")).toBe("light");
   });
 });
