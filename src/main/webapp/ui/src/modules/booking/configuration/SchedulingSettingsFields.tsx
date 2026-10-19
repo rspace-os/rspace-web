@@ -16,6 +16,7 @@ import {
   validMaximumForIncrement,
 } from "@/modules/booking/domain/bookingIncrement";
 import { MAX_BOOKING_DURATION_MINUTES, type OpeningSchedule } from "@/modules/booking/domain/bookingOpeningHours";
+import { formData } from "@/modules/common/collection-form/formData";
 import {
   RESPONSIVE_INLINE_FIELD_CONTAINER_CLASS_NAME,
   RESPONSIVE_INLINE_FIELD_GRID_CLASS_NAME,
@@ -202,7 +203,7 @@ function TimeIncrementField({ form, id, disabled }: { form: FormStore; id: strin
 function MaximumDurationField({ form, id, disabled }: { form: FormStore; id: string; disabled: boolean }) {
   const { t } = useTranslation("booking");
   const maximumDuration = useField(form, { path: ["maxBookingDurationMinutes"] });
-  const values = getInput(form) as Partial<SchedulingSettings>;
+  const values = formData<SchedulingSettings>(form);
   const increment = numberInput(values.slotGranularityMinutes);
   const unit = incrementUnitInput(values.incrementUnit);
   const invalid =
@@ -267,8 +268,7 @@ export function SchedulingSettingsFields({
     inputRef: allowDoubleBooking.props.ref,
     onCheckedChange: (checked: boolean | "indeterminate") => allowDoubleBooking.onChange(checked),
   };
-  const values = getInput(form) as Partial<SchedulingSettings>;
-  const mixedBuffers = values.bufferBeforeMinutes !== values.bufferAfterMinutes;
+  const mixedBuffers = bufferBefore.input !== bufferAfter.input;
 
   if (layout === "inline") {
     const bufferBeforeErrorId = `${id}-buffer-before-error`;
