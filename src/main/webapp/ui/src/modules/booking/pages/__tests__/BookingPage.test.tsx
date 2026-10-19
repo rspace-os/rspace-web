@@ -25,7 +25,6 @@ import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/searc
 import { collectionResponse } from "@/modules/booking/pages/mocks/bookingCalendarFixtures";
 import { currentUser as currentUserFixture } from "@/modules/booking/pages/mocks/currentUserFixture";
 import { inheritedBrowserBookingPreferences } from "@/modules/booking/pages/preferences/bookingPreferencesFixtures";
-import { getSidebarRenderer } from "@/modules/common/app/AppShell";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { Sidebar, SidebarContent, SidebarInset, SidebarProvider, SidebarTrigger } from "@/modules/common/ui/sidebar";
@@ -47,9 +46,9 @@ beforeEach(() => {
   mockedUseOauthTokenQuery.mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
 });
 
-/** Mirrors how AppShell resolves and renders the sidebar, without its auth/query dependencies. */
+/** Renders the inherited route sidebar without AppShell's auth/query dependencies. */
 function TestShell() {
-  const renderSidebar = useMatches({ select: getSidebarRenderer });
+  const renderSidebar = useMatches({ select: (matches) => matches.at(-1)?.context.sidebar });
 
   return (
     <SidebarProvider defaultOpen={Boolean(renderSidebar)}>
