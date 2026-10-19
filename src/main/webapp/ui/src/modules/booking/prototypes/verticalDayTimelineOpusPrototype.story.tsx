@@ -13,13 +13,10 @@ import {
 } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { type DayTimelineEvent, DayTimelineEventCard } from "@/modules/booking/components/DayTimeline";
 import { formatMinuteWithDayOffset } from "@/modules/booking/components/DayTimelineEvent";
-import type { EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
-import { openingIntervals } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   addCalendarDays,
   type BookingWindowDraft,
@@ -31,366 +28,27 @@ import {
 import { Alert, AlertAction, AlertDescription } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup, ButtonGroupText } from "@/modules/common/ui/button-group";
-import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
-
-// ---------------------------------------------------------------------------
-// Fixtures (in memory; no API calls)
-// ---------------------------------------------------------------------------
-
-export type FixtureEvent = { id: number; kind: "BOOKING" | "MAINTENANCE"; start: string; end: string } & (
-  | { privacy: "busy" }
-  | { privacy: "full"; bookedBy: string; purpose?: string }
-);
-
-export type Scenario = {
-  label: string;
-  date: string;
-  displayTimezone: string;
-  item: BookableItemOption;
-  events: readonly FixtureEvent[];
-  draftStart: string;
-  draftEnd: string;
-  initialWindow: BookingWindowDraft;
-};
-
-function instrument(overrides: Partial<BookableItemOption>): BookableItemOption {
-  return {
-    configurationId: 9001,
-    targetId: 123,
-    globalId: "IN123",
-    name: "Confocal microscope",
-    timezone: "Europe/Berlin",
-    slotGranularityMinutes: 15,
-    openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "07:00", end: "19:00" })),
-    bufferBeforeMinutes: 0,
-    bufferAfterMinutes: 0,
-    maxBookingDurationMinutes: 240,
-    allowDoubleBooking: false,
-    ...overrides,
-  };
-}
-
-function scenario(value: Omit<Scenario, "initialWindow">): Scenario {
-  return {
-    ...value,
-    initialWindow: wallClockDraftFromInstants(value.draftStart, value.draftEnd, value.displayTimezone),
-  };
-}
-
-const full = (id: number, start: string, end: string, bookedBy: string, purpose?: string): FixtureEvent => ({
-  id,
-  kind: "BOOKING",
-  privacy: "full",
-  start,
-  end,
-  bookedBy,
-  purpose,
-});
-const busy = (id: number, start: string, end: string): FixtureEvent => ({
-  id,
-  kind: "BOOKING",
-  privacy: "busy",
-  start,
-  end,
-});
-const maintenance = (id: number, start: string, end: string, purpose: string): FixtureEvent => ({
-  id,
-  kind: "MAINTENANCE",
-  privacy: "full",
-  start,
-  end,
-  bookedBy: "Facilities",
-  purpose,
-});
-
-export const SCENARIOS = {
-  standard: scenario({
-    label: "Ordinary day (Berlin, 15 min slots, 15 min buffer after)",
-    date: "2026-11-16",
-    displayTimezone: "Europe/Berlin",
-    item: instrument({ bufferAfterMinutes: 15 }),
-    events: [
-      full(101, "2026-11-16T07:00:00Z", "2026-11-16T08:15:00Z", "Ada Lovelace", "Cell imaging"),
-      maintenance(102, "2026-11-16T10:00:00Z", "2026-11-16T11:00:00Z", "Lens alignment"),
-      full(103, "2026-11-16T12:00:00Z", "2026-11-16T13:30:00Z", "Grace Hopper", "Cryo-grid screening"),
-      busy(104, "2026-11-16T12:30:00Z", "2026-11-16T13:00:00Z"),
-      busy(105, "2026-11-16T15:00:00Z", "2026-11-16T16:30:00Z"),
-    ],
-    draftStart: "2026-11-16T08:30:00Z",
-    draftEnd: "2026-11-16T09:30:00Z",
-  }),
-  dense: scenario({
-    label: "Dense and 5-minute bookings (double booking allowed)",
-    date: "2026-11-17",
-    displayTimezone: "Europe/Berlin",
-    item: instrument({ slotGranularityMinutes: 5, allowDoubleBooking: true }),
-    events: [
-      full(201, "2026-11-17T08:00:00Z", "2026-11-17T08:05:00Z", "Ada Lovelace", "Calibration"),
-      busy(202, "2026-11-17T08:05:00Z", "2026-11-17T08:10:00Z"),
-      full(203, "2026-11-17T09:00:00Z", "2026-11-17T10:00:00Z", "Grace Hopper", "Screening"),
-      busy(204, "2026-11-17T09:10:00Z", "2026-11-17T09:40:00Z"),
-      full(205, "2026-11-17T09:20:00Z", "2026-11-17T10:30:00Z", "Katherine Johnson", "Tomography"),
-      busy(206, "2026-11-17T09:30:00Z", "2026-11-17T09:50:00Z"),
-      maintenance(207, "2026-11-17T11:00:00Z", "2026-11-17T11:05:00Z", "Laser check"),
-      full(208, "2026-11-17T13:00:00Z", "2026-11-17T14:00:00Z", "Ada Lovelace", "Live imaging"),
-    ],
-    draftStart: "2026-11-17T09:15:00Z",
-    draftEnd: "2026-11-17T09:45:00Z",
-  }),
-  springForward: scenario({
-    label: "Spring forward: 23-hour day (Berlin, 28 Mar 2027)",
-    date: "2027-03-28",
-    displayTimezone: "Europe/Berlin",
-    item: instrument({
-      slotGranularityMinutes: 30,
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-      maxBookingDurationMinutes: 0,
-    }),
-    events: [
-      full(301, "2027-03-27T23:30:00Z", "2027-03-28T00:30:00Z", "Ada Lovelace", "Night acquisition"),
-      busy(302, "2027-03-28T00:30:00Z", "2027-03-28T01:30:00Z"),
-      maintenance(303, "2027-03-28T04:00:00Z", "2027-03-28T05:00:00Z", "Chiller service"),
-    ],
-    draftStart: "2027-03-28T01:30:00Z",
-    draftEnd: "2027-03-28T02:30:00Z",
-  }),
-  fallBack: scenario({
-    label: "Fall back: 25-hour day, repeated 02:00 (Berlin, 25 Oct 2026)",
-    date: "2026-10-25",
-    displayTimezone: "Europe/Berlin",
-    item: instrument({
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-      maxBookingDurationMinutes: 0,
-    }),
-    events: [
-      full(401, "2026-10-25T00:15:00Z", "2026-10-25T00:45:00Z", "Grace Hopper", "First pass"),
-      busy(402, "2026-10-25T01:15:00Z", "2026-10-25T01:45:00Z"),
-      full(403, "2026-10-25T04:00:00Z", "2026-10-25T05:00:00Z", "Ada Lovelace", "Second pass"),
-    ],
-    draftStart: "2026-10-25T01:45:00Z",
-    draftEnd: "2026-10-25T02:30:00Z",
-  }),
-  overnight: scenario({
-    label: "Overnight and cross-day (Berlin)",
-    date: "2026-11-19",
-    displayTimezone: "Europe/Berlin",
-    item: instrument({
-      slotGranularityMinutes: 30,
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-      maxBookingDurationMinutes: 0,
-    }),
-    events: [
-      full(501, "2026-11-18T20:00:00Z", "2026-11-18T23:00:00Z", "Grace Hopper", "Ends at next-day midnight"),
-      maintenance(502, "2026-11-18T22:00:00Z", "2026-11-19T02:00:00Z", "Overnight chiller service"),
-      full(503, "2026-11-19T07:00:00Z", "2026-11-19T11:00:00Z", "Ada Lovelace", "Long acquisition"),
-      busy(504, "2026-11-20T03:00:00Z", "2026-11-20T05:00:00Z"),
-    ],
-    draftStart: "2026-11-19T19:00:00Z",
-    draftEnd: "2026-11-20T01:00:00Z",
-  }),
-  displayDiffers: scenario({
-    label: "Display Asia/Kolkata (+05:30), instrument Berlin, hourly slots",
-    date: "2026-11-16",
-    displayTimezone: "Asia/Kolkata",
-    item: instrument({
-      slotGranularityMinutes: 60,
-      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "08:00", end: "18:00" })),
-    }),
-    events: [
-      full(601, "2026-11-16T11:00:00Z", "2026-11-16T12:00:00Z", "Grace Hopper", "Live imaging"),
-      busy(602, "2026-11-16T13:00:00Z", "2026-11-16T15:00:00Z"),
-    ],
-    draftStart: "2026-11-16T08:00:00Z",
-    draftEnd: "2026-11-16T10:00:00Z",
-  }),
-} satisfies Record<string, Scenario>;
-
-export type ScenarioId = keyof typeof SCENARIOS;
-export const SCENARIO_IDS = Object.keys(SCENARIOS) as ScenarioId[];
-
-export const ORIGINAL_BOOKING_ID = 41;
-const ORIGINAL_PURPOSE = "My imaging session";
-
-/** The edited booking as the day query would return it, so exclusion is exercised rather than assumed. */
-export function originalFixtureFor(value: Scenario): FixtureEvent {
-  return full(ORIGINAL_BOOKING_ID, value.draftStart, value.draftEnd, "You", ORIGINAL_PURPOSE);
-}
-
-export function editableBookingFor(value: Scenario): EditableBooking {
-  return {
-    id: ORIGINAL_BOOKING_ID,
-    version: 0,
-    target: {
-      relationTo: "booking-instruments",
-      globalId: value.item.globalId,
-      value: { id: value.item.targetId, name: value.item.name, deleted: false },
-    },
-    timezone: value.item.timezone,
-    start: value.draftStart,
-    end: value.draftEnd,
-    state: "CONFIRMED",
-    kind: "BOOKING",
-    privacy: "full",
-    cancellationReason: null,
-    purpose: ORIGINAL_PURPOSE,
-    bookedBy: "You",
-    createdBy: "You",
-    canEdit: true,
-    canCancel: true,
-    createdAt: "2026-08-01T09:00:00Z",
-    updatedAt: "2026-08-01T09:00:00Z",
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Pure range logic (prototype stand-in for creation/verticalTimelineRange.ts)
-// ---------------------------------------------------------------------------
-
-const MINUTE_MS = 60_000;
-/** Epoch minutes. Absolute, so repeated wall-clock hours never collide. */
-export type EpochRange = { start: number; end: number };
-export type AdjustMode = "move" | "start" | "end";
-type SlotGrid = { dayStart: number; dayEnd: number; slots: number[]; valid: Set<number> };
-
-export const instantMinute = (instant: string) => Temporal.Instant.from(instant).epochMilliseconds / MINUTE_MS;
-const minuteInstant = (minute: number) =>
-  Temporal.Instant.fromEpochMilliseconds(Math.round(minute * MINUTE_MS)).toString();
-const sameRange = (left: EpochRange | undefined, right: EpochRange | undefined) =>
-  left?.start === right?.start && left?.end === right?.end;
-
-/**
- * Every instant in the displayed zoned day (end inclusive) that sits on a slot in the
- * scheduling timezone's wall clock, the same rule validateBookingWindow applies.
- * ponytail: assumes whole-minute UTC offsets; historic LMT offsets would need second precision.
- */
-function slotGrid(date: string, displayTimezone: string, schedulingTimezone: string, granularity: number): SlotGrid {
-  const bounds = zonedDayBounds(date, displayTimezone);
-  const dayStart = instantMinute(bounds.start);
-  const dayEnd = instantMinute(bounds.end);
-  const slots: number[] = [];
-  let cursor = dayStart;
-  let zoned = Temporal.Instant.from(bounds.start).toZonedDateTimeISO(schedulingTimezone);
-  while (cursor <= dayEnd) {
-    const offset = zoned.offsetNanoseconds / (MINUTE_MS * 1_000_000);
-    const transition = zoned.getTimeZoneTransition("next");
-    const segmentEnd = transition ? Math.min(dayEnd + 1, transition.epochMilliseconds / MINUTE_MS) : dayEnd + 1;
-    for (let minute = Math.ceil(cursor); minute < segmentEnd; minute++) {
-      const wallMinute = (((minute + offset) % 1440) + 1440) % 1440;
-      if (wallMinute % granularity === 0) slots.push(minute);
-    }
-    if (!transition || segmentEnd > dayEnd) break;
-    cursor = segmentEnd;
-    zoned = transition;
-  }
-  return { dayStart, dayEnd, slots, valid: new Set(slots) };
-}
-
-/**
- * One calculation for keyboard and pointer. Move keeps the duration and only accepts starts
- * whose end is also a valid slot; resize never crosses the other endpoint. No valid
- * candidate leaves the range unchanged. Pointer ties go to the earlier instant.
- */
-function adjustRange(
-  range: EpochRange,
-  mode: AdjustMode,
-  grid: SlotGrid,
-  request: { kind: "step"; direction: -1 | 1 } | { kind: "pointer"; target: number },
-): EpochRange {
-  const duration = range.end - range.start;
-  const accepts = (slot: number) =>
-    mode === "start" ? slot < range.end : mode === "end" ? slot > range.start : grid.valid.has(slot + duration);
-  const current = mode === "end" ? range.end : range.start;
-  let chosen: number | undefined;
-  if (request.kind === "step" && request.direction < 0) {
-    for (const slot of grid.slots) {
-      if (slot >= current) break;
-      if (accepts(slot)) chosen = slot;
-    }
-  } else if (request.kind === "step") {
-    chosen = grid.slots.find((slot) => slot > current && accepts(slot));
-  } else {
-    let best = Number.POSITIVE_INFINITY;
-    for (const slot of grid.slots) {
-      const distance = Math.abs(slot - request.target);
-      if (accepts(slot) && distance < best) {
-        best = distance;
-        chosen = slot;
-      }
-    }
-  }
-  if (chosen === undefined) return range;
-  if (mode === "start") return { start: chosen, end: range.end };
-  if (mode === "end") return { start: range.start, end: chosen };
-  return { start: chosen, end: chosen + duration };
-}
-
-type Placed<T> = { item: T; start: number; end: number; lane: number; lanes: number; cluster: number };
-
-/** Deterministic half-open lanes: sort by start, end, id; first free lane inside each overlap group. */
-function placeInLanes<T extends { id: string }>(entries: readonly { item: T; start: number; end: number }[]) {
-  const sorted = [...entries].sort((a, b) => a.start - b.start || a.end - b.end || a.item.id.localeCompare(b.item.id));
-  const placed: Placed<T>[] = [];
-  let group: Placed<T>[] = [];
-  let laneEnds: number[] = [];
-  let groupEnd = Number.NEGATIVE_INFINITY;
-  let cluster = 0;
-  const flush = () => {
-    for (const entry of group) entry.lanes = laneEnds.length;
-    group = [];
-    laneEnds = [];
-    cluster++;
-  };
-  for (const entry of sorted) {
-    if (group.length > 0 && entry.start >= groupEnd) flush();
-    let lane = laneEnds.findIndex((end) => end <= entry.start);
-    if (lane < 0) {
-      lane = laneEnds.length;
-      laneEnds.push(entry.end);
-    } else laneEnds[lane] = entry.end;
-    const next = { ...entry, lane, lanes: 1, cluster };
-    group.push(next);
-    placed.push(next);
-    groupEnd = Math.max(groupEnd, entry.end);
-  }
-  flush();
-  return placed;
-}
-
-function openingRanges(grid: SlotGrid, item: BookableItemOption): EpochRange[] {
-  try {
-    return openingIntervals(item, item.timezone, {
-      start: Temporal.Instant.fromEpochMilliseconds(grid.dayStart * MINUTE_MS).toString(),
-      end: Temporal.Instant.fromEpochMilliseconds(grid.dayEnd * MINUTE_MS).toString(),
-    }).map((interval) => ({ start: instantMinute(interval.start), end: instantMinute(interval.end) }));
-  } catch {
-    // An invalid opening configuration leaves the whole day shaded as closed.
-    return [];
-  }
-}
-
-export function sameDraft(left: BookingWindowDraft, right: BookingWindowDraft) {
-  return (
-    left.startDate === right.startDate &&
-    left.startTime === right.startTime &&
-    left.startOccurrence === right.startOccurrence &&
-    left.endDate === right.endDate &&
-    left.endTime === right.endTime &&
-    left.endOccurrence === right.endOccurrence
-  );
-}
-
-export function formatInterval(start: string, end: string, timezone: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    timeZone: timezone,
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZoneName: "shortOffset",
-  }).formatRange(new Date(start), new Date(end));
-}
+import {
+  DayCanvasView,
+  EventListView,
+  GUTTER_PX,
+  MIN_LANE_PX,
+  MIN_TARGET_PX,
+} from "./VerticalDayTimelineOpusViews.story";
+import type { DayQueryFixture, FixtureEvent } from "./verticalDayTimelineOpusFixtures";
+import {
+  type AdjustMode,
+  adjustRange,
+  type EpochRange,
+  formatInterval,
+  instantMinute,
+  minuteInstant,
+  openingRanges,
+  placeInLanes,
+  sameRange,
+  slotGrid,
+} from "./verticalDayTimelineOpusModel";
 
 // ---------------------------------------------------------------------------
 // Simulated availability policy (prototype stand-in for the shared draft-availability hook)
@@ -452,8 +110,6 @@ export function draftStatus({
     ? { tone: "error", text: `Conflicts with ${conflictCount} ${conflictCount === 1 ? "event" : "events"}` }
     : { tone: "warning", text: `Overlaps ${conflictCount} · warning only` };
 }
-
-export type DayQueryFixture = "ready" | "loading" | "empty" | "error" | "truncated";
 
 /** Simulates the browsed-day query. Retry resolves to "ready" after a short delay. */
 export function useSimulatedDayQuery(initial: DayQueryFixture) {
@@ -517,20 +173,6 @@ export function FixtureSelect<T extends string | number>({
   );
 }
 
-export const SCENARIO_OPTIONS = SCENARIO_IDS.map((id) => ({ value: id, label: SCENARIOS[id].label }));
-export const QUERY_OPTIONS: readonly { value: DayQueryFixture; label: string }[] = [
-  { value: "ready", label: "Loaded" },
-  { value: "loading", label: "Loading" },
-  { value: "empty", label: "Empty" },
-  { value: "error", label: "Failed" },
-  { value: "truncated", label: "Over 1,000 results" },
-];
-export const HOUR_HEIGHT_OPTIONS: readonly { value: number; label: string }[] = [
-  { value: 48, label: "48 px/hour" },
-  { value: 72, label: "72 px/hour" },
-  { value: 120, label: "120 px/hour" },
-];
-
 export function DraftReadout({ draft }: { draft: BookingWindowDraft }) {
   const endpoint = (date: string, time: string, occurrence?: string) =>
     `${date || "—"} ${time || "—"}${occurrence ? ` (${occurrence})` : ""}`;
@@ -546,49 +188,7 @@ export function DraftReadout({ draft }: { draft: BookingWindowDraft }) {
 // Vertical day timeline (proposed production UI)
 // ---------------------------------------------------------------------------
 
-const GUTTER_PX = 56;
-const MIN_LANE_PX = 96; // 6rem
-const MIN_TARGET_PX = 24;
 const MODE_LABEL: Record<AdjustMode, string> = { move: "Move", start: "Start", end: "End" };
-
-function toDayEvent(event: FixtureEvent, dayStart: number, item: BookableItemOption): DayTimelineEvent {
-  const base = {
-    id: String(event.id),
-    startMinute: instantMinute(event.start) - dayStart,
-    endMinute: instantMinute(event.end) - dayStart,
-    startInstant: event.start,
-    endInstant: event.end,
-    instrumentTimeZone: item.timezone,
-  };
-  const reference = { name: item.name, globalId: item.globalId };
-  // Busy-only rows never receive private fields; the fixture type cannot carry them.
-  if (event.privacy === "busy") return { ...base, kind: "booking", privacy: "busy" };
-  if (event.kind === "MAINTENANCE") {
-    return {
-      ...base,
-      kind: "blockout",
-      title: "Maintenance",
-      item: reference,
-      createdBy: event.bookedBy,
-      notes: event.purpose,
-    };
-  }
-  return {
-    ...base,
-    kind: "booking",
-    privacy: "full",
-    title: item.name,
-    bookedBy: event.bookedBy,
-    item: reference,
-    canEdit: false,
-    notes: event.purpose,
-  };
-}
-
-function markClass(event: FixtureEvent) {
-  if (event.kind === "MAINTENANCE") return "bg-amber-600";
-  return event.privacy === "busy" ? "bg-slate-500" : "bg-blue-600";
-}
 
 function StatusLine({ status }: { status: DraftStatus }) {
   const Icon = status.tone === "success" ? CheckIcon : status.tone === "neutral" ? InfoIcon : TriangleAlertIcon;
@@ -914,192 +514,6 @@ export function VerticalDayTimeline({
       </Alert>
     ) : null;
 
-  const canvasBody = (
-    <div ref={setCanvas} className="relative select-none" style={{ height: elapsed * pxPerMinute }}>
-      <div aria-hidden="true" className="absolute inset-y-0 right-0 bg-muted" style={{ left: GUTTER_PX }} />
-      {opening.map((range) => {
-        const block = segment(range);
-        return block ? (
-          <div
-            key={range.start}
-            aria-hidden="true"
-            className="absolute right-0 bg-card"
-            style={{ left: GUTTER_PX, top: block.top, height: block.height }}
-          />
-        ) : null;
-      })}
-      {hours.map((hour) => (
-        <div
-          key={hour.minute}
-          aria-hidden="true"
-          className="absolute inset-x-0 border-t border-border"
-          style={{ top: hour.minute * pxPerMinute }}
-        >
-          <span className="absolute top-0.5 left-1 bg-card text-[10px] leading-tight text-muted-foreground tabular-nums">
-            {hour.time}
-            {hour.nextDay ? " +1" : ""}
-            {hour.offset ? <span className="block">{hour.offset}</span> : null}
-          </span>
-        </div>
-      ))}
-      {query === "loading" ? (
-        <div aria-hidden="true">
-          {[0.2, 0.45, 0.7].map((fraction) => (
-            <Skeleton
-              key={fraction}
-              className="absolute h-16 bg-muted-foreground/20"
-              style={{ top: fraction * elapsed * pxPerMinute, ...laneStyle(0, 1) }}
-            />
-          ))}
-        </div>
-      ) : null}
-      {/* Occupancy marks are decorative; the list view carries their details. */}
-      <div aria-hidden="true">
-        {placed.filter(isMark).map((entry) => {
-          const block = segment(entry);
-          if (!block) return null;
-          const dense = denseClusters.has(entry.cluster);
-          const style = dense
-            ? {
-                left: `calc(${GUTTER_PX}px + (100% - ${GUTTER_PX}px) * ${entry.lane / entry.lanes})`,
-                width: 6,
-              }
-            : laneStyle(entry.lane, entry.lanes);
-          return (
-            <div
-              key={entry.item.id}
-              className={cn("absolute rounded-full", markClass(entry.item.fixture))}
-              style={{ top: block.top, height: Math.max(block.height, 3), ...style }}
-            />
-          );
-        })}
-      </div>
-      <ol aria-label="Bookings on this day" className="m-0 list-none p-0">
-        {placed
-          .filter((entry) => !isMark(entry))
-          .map((entry) => {
-            const block = segment(entry);
-            if (!block) return null;
-            const event = entry.item.fixture;
-            return (
-              <li
-                key={entry.item.id}
-                data-event-id={entry.item.id}
-                className="absolute [&>article]:max-w-full"
-                style={{ top: block.top, height: block.height, ...laneStyle(entry.lane, entry.lanes) }}
-              >
-                <DayTimelineEventCard
-                  event={toDayEvent(event, grid.dayStart, item)}
-                  date={browseDate}
-                  timezone={timezone}
-                  variant="timeline"
-                  compactCards={false}
-                />
-                {instantMinute(event.start) < grid.dayStart ? (
-                  <ChevronUpIcon
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-1 left-1/2 z-20 size-4 -translate-x-1/2 rounded-full bg-background"
-                  />
-                ) : null}
-                {instantMinute(event.end) > grid.dayEnd ? (
-                  <ChevronDownIcon
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -bottom-1 left-1/2 z-20 size-4 -translate-x-1/2 rounded-full bg-background"
-                  />
-                ) : null}
-              </li>
-            );
-          })}
-      </ol>
-      {/* Drafts span the booking area; the transparent wrapper lets other cards receive clicks. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-1" style={{ left: GUTTER_PX }}>
-        {originalSegment ? (
-          <div
-            className="absolute inset-x-0 rounded-sm border-2 border-dashed border-muted-foreground"
-            style={{ top: originalSegment.top, height: originalSegment.height }}
-          >
-            {originalSegment.height >= 16 ? <span className="px-1 text-[10px] font-medium">Original</span> : null}
-          </div>
-        ) : null}
-        {draftSegment && shown ? (
-          <div
-            className="pointer-events-auto absolute inset-x-0 overflow-hidden rounded-sm border-2 border-primary bg-[color-mix(in_srgb,var(--primary)_25%,var(--background))] text-[11px] leading-tight text-foreground shadow-sm ring-3 ring-ring/40"
-            style={{ top: draftSegment.top, height: Math.max(draftSegment.height, 3) }}
-          >
-            {handles === "full" ? (
-              <>
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  aria-label="Drag draft start"
-                  className="absolute inset-x-0 top-0 h-6 cursor-ns-resize touch-none border-b border-current/20"
-                  {...pointerHandlers("start")}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  aria-label="Drag draft"
-                  className="absolute inset-x-0 top-6 bottom-6 cursor-grab touch-none px-1 text-left font-medium"
-                  {...pointerHandlers("move")}
-                >
-                  {minuteLabel(shown.start)}–{minuteLabel(shown.end)}
-                </button>
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  aria-label="Drag draft end"
-                  className="absolute inset-x-0 bottom-0 h-6 cursor-ns-resize touch-none border-t border-current/20"
-                  {...pointerHandlers("end")}
-                />
-              </>
-            ) : handles === "move" ? (
-              <button
-                type="button"
-                tabIndex={-1}
-                aria-label="Drag draft"
-                className="absolute inset-0 cursor-grab touch-none px-1 text-left font-medium"
-                {...pointerHandlers("move")}
-              >
-                {minuteLabel(shown.start)}
-              </button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-
-  const listBody =
-    query === "loading" ? (
-      <div aria-hidden="true" className="space-y-2 p-3">
-        {[0, 1, 2].map((row) => (
-          <Skeleton key={row} className="h-12 w-full" />
-        ))}
-      </div>
-    ) : (
-      <ol aria-label="Bookings on this day" className="m-0 list-none space-y-2 p-3">
-        {original ? (
-          <li className="rounded-sm border-2 border-dashed border-muted-foreground p-2 text-xs">
-            <span className="font-medium">Original booking</span> ·{" "}
-            {formatInterval(original.start, original.end, timezone, locale)}
-            <span className="block text-muted-foreground">Not counted as a conflict</span>
-          </li>
-        ) : null}
-        {listEvents.map((event) => (
-          <li key={event.id} data-event-id={String(event.id)}>
-            <DayTimelineEventCard
-              event={toDayEvent(event, grid.dayStart, item)}
-              date={browseDate}
-              timezone={timezone}
-              variant="flow"
-              compactCards={false}
-            />
-          </li>
-        ))}
-        {loaded && listEvents.length === 0 ? <li className="text-xs text-muted-foreground">No bookings.</li> : null}
-      </ol>
-    );
-
   const draftText = resolved
     ? formatInterval(
         minuteInstant(preview?.start ?? resolved.start),
@@ -1194,7 +608,43 @@ export function VerticalDayTimeline({
           layout === "sticky" ? "min-h-48 flex-1" : "max-h-[28rem]",
         )}
       >
-        {view === "day" ? canvasBody : listBody}
+        {view === "day" ? (
+          <DayCanvasView
+            setCanvas={setCanvas}
+            elapsed={elapsed}
+            pxPerMinute={pxPerMinute}
+            opening={opening}
+            segment={segment}
+            hours={hours}
+            query={query}
+            laneStyle={laneStyle}
+            placed={placed}
+            isMark={isMark}
+            denseClusters={denseClusters}
+            grid={grid}
+            item={item}
+            browseDate={browseDate}
+            timezone={timezone}
+            originalSegment={originalSegment}
+            draftSegment={draftSegment}
+            shown={shown}
+            handles={handles}
+            pointerHandlers={pointerHandlers}
+            minuteLabel={minuteLabel}
+          />
+        ) : (
+          <EventListView
+            query={query}
+            original={original}
+            timezone={timezone}
+            locale={locale}
+            listEvents={listEvents}
+            grid={grid}
+            item={item}
+            browseDate={browseDate}
+            loaded={loaded}
+          />
+        )}
       </section>
       <div className="space-y-2 border-t p-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-2 text-sm">

@@ -7,17 +7,19 @@ import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { Button } from "@/modules/common/ui/button";
 import {
   type DayQueryFixture,
-  DraftReadout,
-  draftConflicts,
-  draftStatus,
-  FixtureSelect,
   HOUR_HEIGHT_OPTIONS,
-  PrototypeControls,
   QUERY_OPTIONS,
   SCENARIO_OPTIONS,
   SCENARIOS,
   type Scenario,
   type ScenarioId,
+} from "./verticalDayTimelineOpusFixtures";
+import {
+  DraftReadout,
+  draftConflicts,
+  draftStatus,
+  FixtureSelect,
+  PrototypeControls,
   useSimulatedDayQuery,
   VerticalDayTimeline,
 } from "./verticalDayTimelineOpusPrototype.story";

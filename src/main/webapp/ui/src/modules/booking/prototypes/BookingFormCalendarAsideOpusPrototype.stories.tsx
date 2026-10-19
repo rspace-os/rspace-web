@@ -14,23 +14,24 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/modules/c
 import { Heading } from "@/modules/common/ui/typography";
 import { cn } from "@/modules/common/utils/cn";
 import {
-  type AvailabilityFixture,
   type DayQueryFixture,
-  DraftReadout,
-  draftConflicts,
-  draftStatus,
   editableBookingFor,
-  FixtureSelect,
-  formatInterval,
   HOUR_HEIGHT_OPTIONS,
   originalFixtureFor,
-  PrototypeControls,
   QUERY_OPTIONS,
   SCENARIO_OPTIONS,
   SCENARIOS,
   type Scenario,
   type ScenarioId,
-  sameDraft,
+} from "./verticalDayTimelineOpusFixtures";
+import { formatInterval, sameDraft } from "./verticalDayTimelineOpusModel";
+import {
+  type AvailabilityFixture,
+  DraftReadout,
+  draftConflicts,
+  draftStatus,
+  FixtureSelect,
+  PrototypeControls,
   useSimulatedDayQuery,
   VerticalDayTimeline,
 } from "./verticalDayTimelineOpusPrototype.story";
