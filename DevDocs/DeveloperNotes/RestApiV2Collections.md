@@ -6,6 +6,20 @@ An `ApiV2ResourceSpec` registers the description and an operations class that de
 transactional domain manager. DAOs apply access constraints and client filters together, before
 pagination and counting. Do not filter results in the controller after pagination.
 
+## Compile and combine query predicates
+
+`RsqlCollectionQuery.Subquery` carries nested subqueries in the scope where their correlated
+aliases are visible. Apply a compiled predicate with `Predicate.applyTo(query)`, or
+`Predicate.applyTo(nestedBuilder, rootQuery)` inside an existing subquery. Both forms register
+nested subqueries and bind parameters on the root query.
+
+Combine compiled predicates with `Predicate.and(...)` or `Predicate.or(...)`. They ignore null
+predicates and reject conflicting parameter or subquery bindings. Use one
+`RsqlCollectionQuery.newCompilation()` session when compiling several predicates for the same
+operation; its allocator keeps generated names distinct across nested scopes. Independent
+compilations still need distinct prefixes when they will be combined. Keep sessions local to an
+operation rather than storing them on a reusable DAO.
+
 ## Routes
 
 | Route | Access |
