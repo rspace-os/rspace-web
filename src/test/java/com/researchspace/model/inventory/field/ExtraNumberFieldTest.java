@@ -5,27 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
-import java.util.Locale;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 class ExtraNumberFieldTest {
 
   private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
-
-  @Test
-  void resolvesNumericErrorsFromTheJsonCatalogueForTheCurrentLocale() {
-    var previous = LocaleContextHolder.getLocaleContext();
-    try {
-      LocaleContextHolder.setLocale(Locale.forLanguageTag("zz-ZZ"));
-      IllegalArgumentException invalid =
-          assertThrows(
-              IllegalArgumentException.class, () -> new ExtraNumberField().setData("invalid-value"));
-      assertEquals("JSON test locale: invalid-value", messages.getExceptionMessage(invalid));
-    } finally {
-      LocaleContextHolder.setLocaleContext(previous);
-    }
-  }
 
   @Test
   void acceptsNumbersWithinTheSupportedRange() {

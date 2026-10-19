@@ -37,19 +37,19 @@ final class AnnotatedCollectionDescriptionFactory {
           "Resource definition entity must be " + entityType.getName());
     }
     Map<String, PropertyDescriptor> properties = BeanPropertyAccess.properties(entityType);
-    List<ResourceMember<T>> members = new ArrayList<>();
-    members.addAll(fieldsFrom(resourceType, definition, properties, fieldTypes));
+    List<ResourceMember<T>> fields = new ArrayList<>();
+    fields.addAll(fieldsFrom(resourceType, definition, properties, fieldTypes));
     if (definition.auditFields()) {
-      members.addAll(AuditResourceMembers.fields(properties));
+      fields.addAll(AuditResourceMembers.fields(properties));
     }
-    members.addAll(relationships);
+    fields.addAll(relationships);
     if (definition.auditFields()) {
-      members.addAll(AuditResourceMembers.relationships(properties));
+      fields.addAll(AuditResourceMembers.relationships(properties));
     }
     return new CollectionDescription<>(
         definition.name(),
         entityType,
-        members,
+        fields,
         definition.id(),
         defaultSort,
         accessPolicy,
