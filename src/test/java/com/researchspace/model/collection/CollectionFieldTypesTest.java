@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import java.math.BigDecimal;
 import java.util.List;
@@ -163,6 +164,43 @@ class CollectionFieldTypesTest {
     assertThrows(
         IllegalArgumentException.class, () -> CollectionFieldTypes.text(3).validate("abcd"));
     assertFalse(CollectionFieldTypes.text(3).writeConstraints().containsKey("maxLength"));
+  }
+
+  @Test
+  void scalarCompatibilityKeepsLiteralParsingSeparateFromWriteRules() {
+    CollectionFieldType<Integer> constrained =
+        CollectionFieldTypes.constrained(
+            CollectionFieldTypes.integer(),
+            new Constraints(BigDecimal.ONE, BigDecimal.TEN, null, null, null));
+    assertEquals(0, constrained.parse("0"));
+    assertThrows(IllegalArgumentException.class, () -> constrained.validate(0));
+    assertThrows(IllegalArgumentException.class, () -> CollectionFieldTypes.bool().parse("TRUE"));
+    assertThrows(
+        IllegalArgumentException.class, () -> CollectionFieldTypes.integer().parse("2147483648"));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> CollectionFieldTypes.longNumber().parse("9223372036854775808"));
+    assertEquals(2, CollectionFieldTypes.text(2).parse("\uD83D\uDE00").length());
+    assertThrows(
+        IllegalArgumentException.class, () -> CollectionFieldTypes.text(1).parse("\uD83D\uDE00"));
+  }
+
+  @Test
+  void publicImplementationsRetainDeclarationGuards() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new com.researchspace.model.collection.types.ConstrainedFieldType<>(
+                CollectionFieldTypes.object(), minLength(1).toFieldConstraints()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            new com.researchspace.model.collection.types.StructuredValueFieldType<>(
+                String.class,
+                CollectionFieldType.InputKind.ARRAY,
+                new CollectionFieldType.Schema("array", null, null),
+                JsonNode::toString,
+                value -> value));
   }
 
   private static Constraints pattern(String regex) {

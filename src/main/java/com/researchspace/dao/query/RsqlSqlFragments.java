@@ -50,7 +50,7 @@ public final class RsqlSqlFragments {
     };
   }
 
-  static String wordsLike(String path, String value, RsqlCompilationState state) {
+  static String wordsLike(String path, String value, RsqlFieldPredicateCompiler.Context state) {
     return Arrays.stream(value.trim().split("\\s+"))
         .map(
             word -> {

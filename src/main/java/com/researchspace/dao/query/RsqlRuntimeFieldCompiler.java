@@ -17,10 +17,15 @@ final class RsqlRuntimeFieldCompiler {
   private final CollectionDescription<?> description;
   private final String alias;
   private final RsqlRelationshipCompiler relationships;
+  private final RsqlFieldPredicateCompilerRegistry compilers;
 
   RsqlRuntimeFieldCompiler(
-      CollectionDescription<?> description, String alias, RsqlRelationshipCompiler relationships) {
+      CollectionDescription<?> description,
+      String alias,
+      RsqlRelationshipCompiler relationships,
+      RsqlFieldPredicateCompilerRegistry compilers) {
     this.description = description;
+    this.compilers = compilers;
     this.alias = alias;
     this.relationships = relationships;
   }
@@ -41,6 +46,7 @@ final class RsqlRuntimeFieldCompiler {
       ResolvedRuntimeField field,
       String parentIdPath,
       RsqlCompilationState state) {
+    compilers.validate(field.type());
     Operator operator = comparison.operator();
     if (!field.definition().operators().contains(operator)) {
       throw new CollectionQueryException(CollectionQueryException.Reason.OPERATOR);
@@ -103,7 +109,8 @@ final class RsqlRuntimeFieldCompiler {
     }
     return present
         + " AND "
-        + RsqlFieldPredicateCompilerRegistry.runtime(field.type())
+        + compilers
+            .require(field.type().comparisonStrategy())
             .compile(comparison, valuePath, state);
   }
 }

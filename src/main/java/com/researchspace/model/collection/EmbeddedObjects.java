@@ -188,7 +188,7 @@ public final class EmbeddedObjects {
       if (field.type() instanceof DeclaredFieldType<?> declared) {
         return parse(declared, node, operation, path);
       }
-      return field.validateValue(field.type().parseScalar(node));
+      return field.validateValue(field.type().parseDocument(node, operation));
     } catch (EmbeddedFieldException ex) {
       throw ex;
     } catch (RuntimeException ex) {

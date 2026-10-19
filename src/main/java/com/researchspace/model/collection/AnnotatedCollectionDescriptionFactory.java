@@ -32,7 +32,8 @@ final class AnnotatedCollectionDescriptionFactory {
       List<Relationship<T>> relationships,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy,
-      List<InternalFilter> internalFilters) {
+      List<InternalFilter> internalFilters,
+      CollectionFieldTypeRegistry fieldTypes) {
     ApiV2ResourceDefinition definition = resourceType.getAnnotation(ApiV2ResourceDefinition.class);
     if (definition == null || !resourceType.isRecord()) {
       throw new IllegalArgumentException(
@@ -46,7 +47,7 @@ final class AnnotatedCollectionDescriptionFactory {
     Stream<ResourceMember<T>> members =
         Stream.<ResourceMember<T>>concat(
             AnnotatedCollectionDescriptionFactory.<T>fieldsFrom(
-                resourceType, definition, properties)
+                resourceType, definition, properties, fieldTypes)
                 .stream(),
             relationships.stream());
     if (definition.auditFields()) {
@@ -68,11 +69,13 @@ final class AnnotatedCollectionDescriptionFactory {
   private static <T> List<Field<T, ?>> fieldsFrom(
       Class<?> resourceType,
       ApiV2ResourceDefinition definition,
-      Map<String, PropertyDescriptor> properties) {
+      Map<String, PropertyDescriptor> properties,
+      CollectionFieldTypeRegistry fieldTypes) {
     List<Field<T, ?>> fields =
         Arrays.stream(resourceType.getRecordComponents())
             .<Field<T, ?>>map(
-                component -> fieldFrom(resourceType, component, properties, definition.id()))
+                component ->
+                    fieldFrom(resourceType, component, properties, definition.id(), fieldTypes))
             .toList();
     return definition.auditFields()
         ? Stream.concat(
@@ -219,7 +222,8 @@ final class AnnotatedCollectionDescriptionFactory {
       Class<?> resourceType,
       RecordComponent component,
       Map<String, PropertyDescriptor> properties,
-      String idField) {
+      String idField,
+      CollectionFieldTypeRegistry fieldTypes) {
     ApiV2ResourceField definition = component.getAnnotation(ApiV2ResourceField.class);
     if (definition == null) {
       throw new IllegalArgumentException(
@@ -234,7 +238,11 @@ final class AnnotatedCollectionDescriptionFactory {
     requireCompatibleType(component, reader.getReturnType(), "reader");
 
     CollectionFieldType<?> type =
-        constrained(fieldType(component.getType(), definition.maxLength()), definition);
+        constrained(
+            fieldTypes.resolve(
+                component.getType(),
+                new CollectionFieldTypeRegistry.DeclarationOptions(definition.maxLength())),
+            definition);
     return fieldFromTyped(component, definition, property, reader, descriptor, type, idField);
   }
 
@@ -323,44 +331,6 @@ final class AnnotatedCollectionDescriptionFactory {
             definition.pattern().isBlank() ? null : Pattern.compile(definition.pattern()),
             definition.enumValues().length == 0 ? null : List.of(definition.enumValues()));
     return constraints.isEmpty() ? type : CollectionFieldTypes.constrained(type, constraints);
-  }
-
-  private static CollectionFieldType<?> fieldType(Class<?> type, int maxLength) {
-    if (type.isArray() || Iterable.class.isAssignableFrom(type)) {
-      throw new IllegalArgumentException(
-          "Array resource fields require declared children. Use CollectionFieldTypes.array with"
-              + " Field.embedded children in a programmatic CollectionDescription.");
-    }
-    if (type == String.class) {
-      if (maxLength < -1) {
-        throw new IllegalArgumentException("Text maximum length must not be less than -1");
-      }
-      return maxLength == -1 ? CollectionFieldTypes.text() : CollectionFieldTypes.text(maxLength);
-    }
-    if (maxLength != -1) {
-      throw new IllegalArgumentException("Maximum length is only supported for text fields");
-    }
-    if (type == Long.class || type == long.class) {
-      return CollectionFieldTypes.longNumber();
-    }
-    if (type == Integer.class || type == int.class) {
-      return CollectionFieldTypes.integer();
-    }
-    if (type == Date.class) {
-      return CollectionFieldTypes.instant();
-    }
-    if (type == Boolean.class || type == boolean.class) {
-      return CollectionFieldTypes.bool();
-    }
-    if (type.isEnum()) {
-      return enumFieldType(type);
-    }
-    throw new IllegalArgumentException("Unsupported resource field type " + type.getName());
-  }
-
-  @SuppressWarnings({"rawtypes", "unchecked"})
-  private static CollectionFieldType<?> enumFieldType(Class<?> type) {
-    return CollectionFieldTypes.enumeration((Class<? extends Enum>) type);
   }
 
   private static void requireCompatibleType(
