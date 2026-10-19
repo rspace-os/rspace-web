@@ -191,6 +191,262 @@ describe("RequestsPage deep-linking", () => {
     consoleErrorSpy.mockRestore();
   });
 
+  test("recovers by showing a list-selected request after a failed deep link, instead of leaving the error stuck", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () =>
+        HttpResponse.json({
+          requests: [
+            {
+              id: 7,
+              status: "PENDING",
+              created: "2026-01-02T10:00:00Z",
+              note: null,
+              requester: { id: 2, username: "other", firstName: "Oscar", lastName: "Other" },
+              sample: { id: 9, globalId: "SA9", name: "Sample Nine", owner: { id: 1 } },
+            },
+          ],
+          totalHits: 1,
+        }),
+      ),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, () => HttpResponse.json({ message: "Not found" }, { status: 404 })),
+    );
+
+    renderWithProviders("?requestId=999");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await user.keyboard("{Enter}");
+
+    // The bug this guards against: a failed deep link's error flag, once set, never cleared on a
+    // plain list click (only a *new* URL id could change the comparison it was derived from),
+    // permanently hiding the request the user just picked behind the stale error message.
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+    expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+  });
+
+  test("replaces a stuck error with the linked request once a retry of the same id succeeds", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet(Number(params.id));
+        const callsForThisId = apiGet.mock.calls.filter((call) => call[0] === 42).length;
+        if (callsForThisId <= 1) return new HttpResponse(null, { status: 503 });
+        return HttpResponse.json(requestDetailResponse(42));
+      }),
+    );
+    const { queryClient } = renderWithProviders("?requestId=42");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    // Simulates a retry - e.g. a refetch on window focus/reconnect - of the very same id that
+    // initially failed with a transient error.
+    await queryClient.invalidateQueries({ queryKey: ["sampleRequests"] });
+    await waitFor(() => {
+      const state = queryClient.getQueryState(["sampleRequests", "detail", 42]);
+      expect(state?.status).toBe("success");
+    });
+
+    // The bug this guards against: marking an id "handled" on its initial failure made the guard
+    // skip every later result for that id too, so a subsequent successful retry never replaced the
+    // stuck error, even once the query's own cache had settled on a successful status.
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:42"));
+    expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+  });
+
+  test("does not let a deep link's late successful retry override a request picked manually after its failure", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () =>
+        HttpResponse.json({
+          requests: [
+            {
+              id: 7,
+              status: "PENDING",
+              created: "2026-01-02T10:00:00Z",
+              note: null,
+              requester: { id: 2, username: "other", firstName: "Oscar", lastName: "Other" },
+              sample: { id: 9, globalId: "SA9", name: "Sample Nine", owner: { id: 1 } },
+            },
+          ],
+          totalHits: 1,
+        }),
+      ),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet(Number(params.id));
+        const callsForThisId = apiGet.mock.calls.filter((call) => call[0] === 42).length;
+        if (callsForThisId <= 1) return new HttpResponse(null, { status: 503 });
+        return HttpResponse.json(requestDetailResponse(42));
+      }),
+    );
+    const { queryClient } = renderWithProviders("?requestId=42");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+
+    // The since-superseded id's own retry succeeding in the background must not clobber the
+    // manual pick, exactly as an unrelated background refetch of an already-selected id must not.
+    await queryClient.invalidateQueries({ queryKey: ["sampleRequests"] });
+    await waitFor(() => {
+      const state = queryClient.getQueryState(["sampleRequests", "detail", 42]);
+      expect(state?.status).toBe("success");
+    });
+
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7");
+    expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+  });
+
+  test("clears a stuck deep-link error when navigating away to the plain /inventory/requests URL", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(http.get(SAMPLE_REQUEST_DETAIL_URL, () => HttpResponse.json({ message: "Not found" }, { status: 404 })));
+    const { navigateTo } = renderWithProviders("?requestId=999");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    // Simulates the sidebar's "Requests" link, which navigates to the plain route while this page
+    // stays mounted - the bug this guards against: the effect did nothing at all once the URL's
+    // requestId was gone, so the error (and its handled-id bookkeeping) stayed stuck forever.
+    navigateTo("");
+
+    await waitFor(() =>
+      expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("none");
+    consoleErrorSpy.mockRestore();
+  });
+
+  test("clears a stale deep-linked selection when navigating away to the plain /inventory/requests URL", async () => {
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => HttpResponse.json(requestDetailResponse(Number(params.id)))),
+    );
+    const { navigateTo } = renderWithProviders("?requestId=42");
+
+    await waitFor(() => expect(receivedRequest).toHaveBeenCalledWith(expect.objectContaining({ id: 42 })));
+
+    navigateTo("");
+
+    // The bug this guards against: the old, deep-linked request stayed selected forever, even once
+    // the URL no longer referenced it at all.
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("none"));
+  });
+
+  test("keeps a manually picked request selected when navigating away from a failed deep link to the plain URL", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () =>
+        HttpResponse.json({
+          requests: [
+            {
+              id: 7,
+              status: "PENDING",
+              created: "2026-01-02T10:00:00Z",
+              note: null,
+              requester: { id: 2, username: "other", firstName: "Oscar", lastName: "Other" },
+              sample: { id: 9, globalId: "SA9", name: "Sample Nine", owner: { id: 1 } },
+            },
+          ],
+          totalHits: 1,
+        }),
+      ),
+      http.get(SAMPLE_REQUEST_DETAIL_URL, () => HttpResponse.json({ message: "Not found" }, { status: 404 })),
+    );
+    const { navigateTo } = renderWithProviders("?requestId=999");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+
+    navigateTo("");
+
+    // Leaving the deep link must only drop a selection *it* made, not one the user picked
+    // themselves - the same protection the deep link's own background refetches already get.
+    expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7");
+    consoleErrorSpy.mockRestore();
+  });
+
+  test.each(["abc", "", "1.5", "0", "-3"])(
+    "shows the deep-link error immediately for an invalid requestId=%s, without querying the detail endpoint",
+    async (invalidValue) => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+      server.use(
+        http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+          apiGet(params.id);
+          return HttpResponse.json({ message: "should never be reached" }, { status: 404 });
+        }),
+      );
+
+      renderWithProviders(`?requestId=${invalidValue}`);
+
+      await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+      // The bug this guards against: Number("abc") is NaN, Number("") is 0, Number("1.5") is 1.5,
+      // and 0/-3 aren't valid ids either - none of this was validated, so each became a real (and,
+      // for NaN specifically, permanently un-dedupable, since NaN !== NaN) GET sampleRequests/{id}
+      // request instead of being rejected before ever touching the network.
+      expect(apiGet).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    },
+  );
+
+  test("recovers by showing a list-selected request after an invalid requestId, instead of leaving the error stuck", async () => {
+    server.use(
+      http.get(SAMPLE_REQUESTS_URL, () =>
+        HttpResponse.json({
+          requests: [
+            {
+              id: 7,
+              status: "PENDING",
+              created: "2026-01-02T10:00:00Z",
+              note: null,
+              requester: { id: 2, username: "other", firstName: "Oscar", lastName: "Other" },
+              sample: { id: 9, globalId: "SA9", name: "Sample Nine", owner: { id: 1 } },
+            },
+          ],
+          totalHits: 1,
+        }),
+      ),
+    );
+
+    renderWithProviders("?requestId=abc");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    const user = userEvent.setup();
+    (await screen.findByText("SA9")).closest("tr")?.focus();
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => expect(screen.getByTestId("mock-detail-panel")).toHaveTextContent("id:7"));
+    expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+  });
+
+  test("resolves normally once the URL changes from an invalid requestId to a valid one", async () => {
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet(Number(params.id));
+        return HttpResponse.json(requestDetailResponse(42));
+      }),
+    );
+    const { navigateTo } = renderWithProviders("?requestId=abc");
+
+    await waitFor(() => expect(screen.getByText("inventory:requestsManagement.deepLinkError")).toBeInTheDocument());
+
+    navigateTo("?requestId=42");
+
+    await waitFor(() => expect(receivedRequest).toHaveBeenCalledWith(expect.objectContaining({ id: 42 })));
+    expect(screen.queryByText("inventory:requestsManagement.deepLinkError")).not.toBeInTheDocument();
+  });
+
   test("renders the detail panel's own empty state when there is no requestId in the URL", async () => {
     renderWithProviders("");
 

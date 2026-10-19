@@ -51,7 +51,7 @@ onedrive.redirect=
 # slack integration that redirects to localhost:8080 after authentication
 slack.client.id=
 slack.secret=
-slack.verification.token=
+slack.signing.secret=
 
 # box app with a redirect link pointing to https://localhost:8443
 box.client.id=

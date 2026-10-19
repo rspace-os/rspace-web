@@ -33,14 +33,19 @@ public interface SystemPropertyManager extends GenericManager<SystemPropertyValu
    */
   SystemPropertyValue save(SystemPropertyName name, HierarchicalPermission newValue, User subject);
 
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   SystemPropertyValue save(SystemPropertyName name, String newValue, User subject);
 
   SystemPropertyValue save(Preference preference, String newValue, User subject);
 
   @Deprecated // use strongly-typed save method variant
+  @IgnoreInServiceLoggerAspct(ignoreAllRequestParams = true)
   SystemPropertyValue save(String propertyUniqueName, String newValue, User subject);
 
   /**
+   * Requires community write permission for community settings, or a sysadmin for global settings.
+   * A null subject is permitted for internal changes to global settings.
+   *
    * @param value the value to update
    * @param subject
    * @return the updated SystemPropertyValue

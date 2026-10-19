@@ -63,6 +63,7 @@ const DEFAULT_TEMPLATE: TemplateAttrs = {
   sampleSource: "LAB_CREATED",
   expiryDate: null,
   requestable: false,
+  canSetRequestable: false,
   iconId: null,
   owner: null,
   created: null,

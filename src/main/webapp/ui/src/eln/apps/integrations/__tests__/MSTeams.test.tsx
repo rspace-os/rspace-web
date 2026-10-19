@@ -119,7 +119,9 @@ describe("MSTeams", () => {
       fireEvent.change(screen.getByRole("textbox", { name: "apps:integrations.msteams.fields.channelName" }), {
         target: { value: "new name" },
       });
-      fireEvent.change(screen.getByRole("textbox", { name: "apps:integrations.msteams.fields.webhookUrl" }), {
+      const webhookField = screen.getByLabelText("apps:integrations.msteams.fields.webhookUrl");
+      expect(webhookField).toHaveAttribute("type", "password");
+      fireEvent.change(webhookField, {
         target: { value: "example.com" },
       });
 

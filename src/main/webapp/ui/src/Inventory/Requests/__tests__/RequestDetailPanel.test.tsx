@@ -1123,6 +1123,59 @@ describe("RequestDetailPanel", () => {
     ).toBeNull();
   });
 
+  it("keeps the Prepare Sample button disabled until a subsample is selected when operations.available is on", async () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+    deploymentProperties["inventory.operations.available"] = "ALLOWED";
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    expect(
+      screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }),
+    ).toBeDisabled();
+  });
+
+  it("enables the Transfer Sample button without a subsample selection when operations.available is off, since the transfer applies to the whole sample regardless", async () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
+    deploymentProperties["inventory.operations.available"] = "DENIED";
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    // No "mock-select-subsample" click here - the bug this guards against required one before the
+    // button (which transfers the whole sample, not a particular subsample, on this path) would
+    // ever enable.
+    expect(
+      screen.getByRole("button", { name: "inventory:requestsManagement.detail.transferSampleButton" }),
+    ).toBeEnabled();
+    expect(
+      screen.getByText("inventory:requestsManagement.detail.preparationHint.approvedReadyToTransfer"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the generic 'prepare a subsample' hint for a pending request when operations.available is on", async () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+    deploymentProperties["inventory.operations.available"] = "ALLOWED";
+    renderPanel(baseRequest({ status: "PENDING" }));
+    await waitForInitialFetches();
+
+    expect(screen.getByText("inventory:requestsManagement.detail.preparationHint.pending")).toBeInTheDocument();
+    expect(screen.queryByText("inventory:requestsManagement.detail.preparationHint.pendingTransferOnly")).toBeNull();
+  });
+
+  it("shows the transfer-only hint for a pending request when operations.available is off", async () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
+    deploymentProperties["inventory.operations.available"] = "DENIED";
+    renderPanel(baseRequest({ status: "PENDING" }));
+    await waitForInitialFetches();
+
+    // The bug this guards against: the generic hint mentions "preparing a subsample", which isn't
+    // accurate once the Operations Wizard is unavailable - every route from here ends in
+    // transferring the whole sample directly, regardless of any particular subsample.
+    expect(
+      screen.getByText("inventory:requestsManagement.detail.preparationHint.pendingTransferOnly"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("inventory:requestsManagement.detail.preparationHint.pending")).toBeNull();
+  });
+
   describe("Choose Sample to Prepare dialog warnings", () => {
     /** Reaches the Choose Sample to Prepare dialog with the "transfer" radio already selected. */
     async function openChooseMethodDialogWithTransferSelected(user: ReturnType<typeof userEvent.setup>) {

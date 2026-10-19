@@ -15,10 +15,12 @@ export class RequestsPage extends BasePage {
   readonly heading: Locator;
   /**
    * Owner-only: opens the Transfer Ownership dialog directly for the currently selected
-   * subsample, skipping the Choose Sample to Prepare dialog. Shown in place of
-   * `prepareSampleButton` only when inventory.operations.available is DENIED - with nothing for
-   * the Operations Wizard route to offer, RequestDetailPanel's `skipChooseMethodDialog` goes
-   * straight to a direct transfer instead of making the owner pick between the two.
+   * subsample. Labelled "Transfer Sample" rather than "Prepare Sample" because
+   * inventory.operations.available is DENIED, making RequestDetailPanel's `skipChooseMethodDialog`
+   * true - the Operations Wizard this branch would otherwise offer isn't present here at all, so
+   * every spec that reaches this button pairs `flowSampleRequestsAvailable` with
+   * `flowOperationsDenied` to guarantee that, rather than relying on whatever this property
+   * happens to be left as on a given instance.
    */
   readonly transferSampleButton: Locator;
   /**

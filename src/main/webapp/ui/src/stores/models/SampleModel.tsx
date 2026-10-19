@@ -91,6 +91,13 @@ export type SampleAttrs = {
   sampleSource: SampleSource;
   expiryDate: string | null;
   requestable: boolean;
+  // Server-computed, read-only (never sent back) - mirrors exactly who the backend lets change
+  // `requestable` (SampleApiManagerImpl.assertRequestableChangeAllowed ->
+  // InventoryPermissionUtils.canUserTransferInventoryRecord): the owner, or a PI/Lab Admin of the
+  // owner's group. Deliberately not the generic canEdit/canTransfer getters further up the
+  // hierarchy - canEdit also covers any other group member with mere edit access, and canTransfer
+  // also covers a sysadmin's admin-override ability, both of which are broader than this.
+  canSetRequestable: boolean;
   iconId: number | null;
   owner: PersonAttrs | null;
   created: string | null;
@@ -128,6 +135,7 @@ const DEFAULT_SAMPLE: SampleAttrs = {
   sampleSource: "LAB_CREATED",
   expiryDate: null,
   requestable: false,
+  canSetRequestable: false,
   iconId: null,
   owner: null,
   created: null,
@@ -193,6 +201,8 @@ export default class SampleModel
   sampleSource: SampleEditableFields["sampleSource"];
   // @ts-expect-error requestable is initialised by populateFromJson
   requestable: SampleEditableFields["requestable"];
+  // @ts-expect-error canSetRequestable is initialised by populateFromJson
+  canSetRequestable: boolean;
   search: Search;
   // @ts-expect-error subSampleAlias is initialised by populateFromJson
   subSampleAlias: Alias;
@@ -236,6 +246,7 @@ export default class SampleModel
       template: observable,
       sampleSource: observable,
       requestable: observable,
+      canSetRequestable: observable,
       search: observable,
       subSampleAlias: observable,
       templateId: observable,
@@ -308,6 +319,7 @@ export default class SampleModel
     this.template = params.template || null;
     this.sampleSource = params.sampleSource;
     this.requestable = params.requestable ?? false;
+    this.canSetRequestable = params.canSetRequestable ?? false;
     this.subSampleAlias = params.subSampleAlias;
     this.templateId = params.templateId;
     this.templateVersion = params.templateVersion ?? 1;

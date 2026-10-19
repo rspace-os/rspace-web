@@ -29,7 +29,7 @@ function planListResponse(origin: string, ids: string[]) {
 }
 
 export const dmpassistantHandlers = [
-  mockOAuthAuthorize("/dmpassistant/oauth/authorize", "mock-dmpassistant-auth-code", { echoState: true }),
+  mockOAuthAuthorize("/dmpassistant/oauth/authorize", "mock-dmpassistant-auth-code"),
 
   http.post("/dmpassistant/oauth/token", () =>
     HttpResponse.json({

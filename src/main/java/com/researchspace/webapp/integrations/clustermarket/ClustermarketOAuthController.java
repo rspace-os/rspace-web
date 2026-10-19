@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.CLUSTERMARKET_APP_NA
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.User;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -22,7 +23,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.servlet.view.RedirectView;
 
@@ -67,18 +67,8 @@ public class ClustermarketOAuthController extends BaseOAuth2Controller {
     log.info("Deleted {} Clustermarket connection(s) for user {}", deleted, principal.getName());
   }
 
-  /**
-   * Gets the access token id there is one, else returns empty string.
-   *
-   * @param subject
-   * @return
-   */
-  @GetMapping("/accessToken")
-  public @ResponseBody String getAccessToken(Principal subject) {
-    return doGetAccessToken(subject, CLUSTERMARKET_APP_NAME);
-  }
-
   @GetMapping("/redirect_uri")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String onAuthorization(
       @RequestParam Map<String, String> params, Model model, HttpServletRequest request) {
     User subject = userManager.getAuthenticatedUserInSession();

@@ -702,7 +702,8 @@
         "pidinst": "PIDINST"
       },
       "formField": {
-        "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
+        "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>.",
+        "pidinstExplanation": "See the Documentation for information on <helpDocs docLink=\"pidinstIdentifiers\">adding and publishing identifiers</helpDocs>."
       },
       "geoLocationField": {
         "addValueToPublish": "Add value to enable publishing.",
@@ -994,7 +995,8 @@
       },
       "infoDialog": {
         "label": "Info for {globalId}",
-        "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
+        "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version.",
+        "versionNotFound": "Version {versionPin} of {globalId} cannot be found. It may never have existed, or its history may have been removed."
       },
       "linkField": {
         "editLink": "Edit link",
@@ -1004,7 +1006,9 @@
         "openLabel": "Open {globalId}",
         "pinVersionLabel": "Pin version for {globalId}",
         "showInfoLabel": "Show info for {globalId}",
-        "targetDeleted": "Target deleted"
+        "targetDeleted": "Target deleted",
+        "versionNotFound": "Version not found",
+        "versionNotFoundDetail": "Version {version} of this item cannot be found: it may never have existed, or its history may have been removed"
       },
       "relatedInventoryItems": {
         "attachment": "Attachment",
@@ -1890,7 +1894,7 @@
       "state": "Registry state"
     },
     "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
-    "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
+    "descriptionLinks": "See our <helpDocs docLink=\"pidinstImport\">PIDINST identifiers docs</helpDocs> for more.",
     "helpTitle": "PIDINST help",
     "importError": "Could not import the instrument.",
     "importing": {
@@ -2174,8 +2178,10 @@
       "markAsFulfilledButton": "Mark as Fulfilled",
       "preparationHint": {
         "approvedNoSelection": "Select a subsample from the list below to prepare the sample for transfer. Mark the request fulfilled if it has been handled outside of RSpace.",
+        "approvedReadyToTransfer": "This sample can now be transferred to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
         "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
-        "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer."
+        "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer.",
+        "pendingTransferOnly": "Approve the request to transfer a sample, or immediately transfer the sample."
       },
       "prepareSampleButton": "Prepare Sample",
       "rejectButton": "Reject",
@@ -2201,7 +2207,7 @@
           "newSampleMoved": "The new sample and subsamples will be moved to {requester}'s bench",
           "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
           "requestFulfilled": "Request {id} will be marked as fulfilled",
-          "subsamplesMoved": "Subsamples will be moved from their current locations to {requester}'s bench",
+          "subsamplesMoved": "Subsamples that are currently on your bench will be moved to {requester}'s bench",
           "subsamplesTransferred": "All {count} subsamples will be transferred to user {requester}",
           "subsamplesTransferredBoth": "Both subsamples will be transferred to user {requester}"
         },

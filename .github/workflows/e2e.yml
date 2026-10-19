@@ -68,7 +68,7 @@ jobs:
     env:
       E2E_CLOUD: ${{ matrix.cloud && 'true' || 'false' }}
 
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -245,10 +245,11 @@ jobs:
               "-Dgithub.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/github/oauth/authorize"
               "-Dgithub.oauth.access.token.url=http://localhost:$E2E_MOCK_PORT/github/oauth/token"
               "-Dgithub.api.base.url=http://localhost:$E2E_MOCK_PORT/github-api"
+              "-Dorcid.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/orcid/oauth/authorize"
               "-Dorcid.oauth.token.url=http://localhost:$E2E_MOCK_PORT/orcid/oauth/token"
               "-Dslack.client.id=mock-client"
               "-Dslack.secret=mock-secret"
-              "-Dslack.verification.token=mock-verification-token"
+              "-Dslack.signing.secret=mock-signing-secret"
               "-Dslack.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/slack/oauth/authorize"
               "-Dslack.api.base.url=http://localhost:$E2E_MOCK_PORT/slack-api"
               "-Dror.api.url=http://localhost:$E2E_MOCK_PORT/ror"

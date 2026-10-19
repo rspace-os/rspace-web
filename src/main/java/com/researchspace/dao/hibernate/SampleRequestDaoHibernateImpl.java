@@ -47,7 +47,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
       User user) {
 
     boolean hasStatusFilter = CollectionUtils.isNotEmpty(statuses);
-    // a deleted sample must not drive a pending count; the request row itself is kept for history
+    // requests against a trashed sample drop out of listings, but stay readable by id
     String where = " where " + roleClause(role) + " and req.sample.deleted = false";
     if (hasStatusFilter) {
       where += " and req.status in (:statuses)";
@@ -96,11 +96,12 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
    * whoever was asked even after a transfer. A null role means either side.
    */
   private String roleClause(SampleRequestRole role) {
+    // ids, not usernames, so a later account with a deleted user's username does not inherit them
     return role == null
-        ? "(req.requesterUsername = :username or req.originalOwner = :username)"
+        ? "(req.requesterId = :userId or req.originalOwnerId = :userId)"
         : switch (role) {
-          case REQUESTER -> "req.requesterUsername = :username";
-          case OWNER -> "req.originalOwner = :username";
+          case REQUESTER -> "req.requesterId = :userId";
+          case OWNER -> "req.originalOwnerId = :userId";
         };
   }
 
@@ -124,7 +125,7 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
       Set<SampleRequestStatus> statuses,
       Long sampleId,
       User user) {
-    query.setParameter("username", user.getUsername());
+    query.setParameter("userId", user.getId());
     if (CollectionUtils.isNotEmpty(statuses)) {
       query.setParameterList("statuses", statuses);
     }

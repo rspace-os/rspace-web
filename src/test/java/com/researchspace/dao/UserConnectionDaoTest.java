@@ -2,6 +2,7 @@ package com.researchspace.dao;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
@@ -16,6 +17,63 @@ public class UserConnectionDaoTest extends SpringTransactionalTest {
   private static final String PROVIDER_NAME = "egnyte";
   private static final String RSPACEUSERNAME = "rspaceusername";
   private @Autowired UserConnectionDao userConnectionDao;
+
+  @Test
+  void savesUpdatedReadOnlyCredentialsAndNeverFlushesADecryptedRead() {
+    UserConnectionId id = new UserConnectionId(RSPACEUSERNAME, PROVIDER_NAME, "readonly");
+    userConnectionDao.save(new UserConnection(id, "first-token"));
+    UserConnection loaded =
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "readonly")
+            .orElseThrow();
+    loaded.setAccessToken("replacement-token");
+    loaded.setSecret("replacement-webhook");
+    userConnectionDao.save(loaded);
+    assertEquals(
+        "replacement-token",
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "readonly")
+            .orElseThrow()
+            .getAccessToken());
+    sessionFactory.getCurrentSession().flush();
+    assertNotEquals(
+        "replacement-token",
+        sessionFactory
+            .getCurrentSession()
+            .createNativeQuery(
+                "select accessToken from UserConnection where userId=:user and providerId=:provider"
+                    + " and providerUserId='readonly'",
+                String.class)
+            .setParameter("user", RSPACEUSERNAME)
+            .setParameter("provider", PROVIDER_NAME)
+            .getSingleResult());
+    sessionFactory.getCurrentSession().clear();
+    UserConnection persisted =
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "readonly")
+            .orElseThrow();
+    assertEquals("replacement-token", persisted.getAccessToken());
+    assertEquals("replacement-webhook", persisted.getSecret());
+  }
+
+  @Test
+  void replacementAfterBulkDeleteDoesNotReuseTheDeletedManagedIdentity() {
+    UserConnectionId id = new UserConnectionId(RSPACEUSERNAME, PROVIDER_NAME, "replaced");
+    userConnectionDao.save(new UserConnection(id, "old-token"));
+    userConnectionDao
+        .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "replaced")
+        .orElseThrow();
+    userConnectionDao.deleteByUserAndProvider(RSPACEUSERNAME, PROVIDER_NAME, "replaced");
+    userConnectionDao.save(new UserConnection(id, "new-token"));
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().clear();
+    assertEquals(
+        "new-token",
+        userConnectionDao
+            .findByUserNameProviderName(RSPACEUSERNAME, PROVIDER_NAME, "replaced")
+            .orElseThrow()
+            .getAccessToken());
+  }
 
   @Test
   public void createSaveAndFindAndDelete() {

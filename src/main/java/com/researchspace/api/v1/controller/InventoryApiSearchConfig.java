@@ -53,8 +53,8 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
 
   /**
    * Limits Sample search results to samples with a matching {@code requestable} value. When {@code
-   * true}, this is an instance-wide search across all requestable Samples, regardless of the
-   * requesting user's own permissions, ownership, or group membership.
+   * true}, this is an instance-wide search across all requestable Samples not in the trash,
+   * regardless of the caller's own permissions, ownership, or group membership.
    */
   @JsonProperty("requestable")
   private Boolean requestable;

@@ -13,6 +13,7 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
+import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.imageutils.ImageUtils;
 import com.researchspace.dao.ContainerDao;
@@ -430,6 +431,15 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   public void setOtherFieldsForOutgoingApiInventoryRecord(
       ApiInventoryRecordInfo recordInfo, InventoryRecord invRec, User user) {
     invPermissions.setPermissionsInApiInventoryRecord(recordInfo, invRec, user);
+    if (recordInfo instanceof ApiSampleInfo apiSampleInfo) {
+      // Mirrors SampleApiManagerImpl.assertRequestableChangeAllowed's own permission check
+      // exactly, so the frontend can gate the "make requestable" control on the same rule the
+      // backend actually enforces, rather than reusing permittedActions' CHANGE_OWNER (which also
+      // covers a sysadmin's admin-override transfer ability - broader than this) or UPDATE (which
+      // also covers any other group member with mere edit access - also broader than this).
+      apiSampleInfo.setCanSetRequestable(
+          invPermissions.canUserTransferInventoryRecord(invRec, user));
+    }
     if (recordInfo.isLimitedReadItem()) {
       recordInfo.clearPropertiesForLimitedView();
     } else if (recordInfo.isPublicReadItem()) {

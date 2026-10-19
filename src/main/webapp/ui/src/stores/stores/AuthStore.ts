@@ -180,7 +180,7 @@ export default class AuthStore {
           variant: "error",
         }),
       );
-      console.error(`Error updating system settings`, error);
+      console.error("Error updating system settings", getErrorMessage(error, ""));
       throw error;
     }
   }

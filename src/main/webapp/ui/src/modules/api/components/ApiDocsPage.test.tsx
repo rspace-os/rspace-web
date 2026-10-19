@@ -38,13 +38,13 @@ describe("createApiDocsConfiguration", () => {
     expect(eln).toMatchObject({
       title: "common:apiDocs.sources.eln",
       slug: "rspace-eln",
-      url: "https://example.com/resources/rspace_api_specs_2_25_0.yaml",
+      url: "https://example.com/resources/rspace_api_specs_2_27_1.yaml",
       default: true,
     });
     expect(inventory).toMatchObject({
       title: "common:apiDocs.sources.inventory",
       slug: "rspace-inventory",
-      url: "https://example.com/resources/rspace_api_inventory_specs_2_27_0.yaml",
+      url: "https://example.com/resources/rspace_api_inventory_specs_2_27_1.yaml",
     });
     // Only the ELN spec is the default document.
     expect(inventory).not.toHaveProperty("default", true);

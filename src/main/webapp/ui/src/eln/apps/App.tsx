@@ -21,6 +21,7 @@ import AnalyticsContext from "../../stores/contexts/Analytics";
 import * as FetchingData from "../../util/fetchingData";
 import { getByKey } from "../../util/optional";
 import CardListing from "./CardListing";
+import CardPlacementContext, { type FrozenModes } from "./CardPlacementContext";
 import { type IntegrationStates, useIntegrationsEndpoint } from "./useIntegrationsEndpoint";
 
 function LoadingSkeleton() {
@@ -123,6 +124,14 @@ function App(): React.ReactNode {
   const [, setLastDialogOpened] = useState<string | null>(null);
 
   const [allStates, setAllStates] = useState<FetchingData.Fetched<IntegrationStates>>(observable({ tag: "loading" }));
+  const [frozenModes, setFrozenModes] = useState<FrozenModes | null>(null);
+  const cardPlacement = {
+    frozenModes,
+    dialogOpened: () => {
+      if (allStates.tag === "success") setFrozenModes(mapValues(allStates.value, (state) => state.mode));
+    },
+    dialogClosed: () => setFrozenModes(null),
+  };
 
   useEffect(() => {
     void (async () => {
@@ -187,36 +196,38 @@ function App(): React.ReactNode {
                 <Typography variant="body1">
                   <TransRichText i18nKey="apps:page.introText" />
                 </Typography>
-                <Stack spacing={6} sx={{ mt: 1 }}>
-                  <AppsSection
-                    id="enabled"
-                    title={t("page.sections.enabled.title")}
-                    description={t("page.sections.enabled.description")}
-                    mode="ENABLED"
-                    allStates={allStates}
-                  />
-                  <AppsSection
-                    id="disabled"
-                    title={t("page.sections.disabled.title")}
-                    description={t("page.sections.disabled.description")}
-                    mode="DISABLED"
-                    allStates={allStates}
-                  />
-                  <AppsSection
-                    id="unavailable"
-                    title={t("page.sections.unavailable.title")}
-                    description={t("page.sections.unavailable.description")}
-                    mode="UNAVAILABLE"
-                    allStates={allStates}
-                  />
-                  <AppsSection
-                    id="third-party-rspace-integrations"
-                    title={t("page.sections.external.title")}
-                    description={t("page.sections.external.description")}
-                    mode="EXTERNAL"
-                    allStates={allStates}
-                  />
-                </Stack>
+                <CardPlacementContext.Provider value={cardPlacement}>
+                  <Stack spacing={6} sx={{ mt: 1 }}>
+                    <AppsSection
+                      id="enabled"
+                      title={t("page.sections.enabled.title")}
+                      description={t("page.sections.enabled.description")}
+                      mode="ENABLED"
+                      allStates={allStates}
+                    />
+                    <AppsSection
+                      id="disabled"
+                      title={t("page.sections.disabled.title")}
+                      description={t("page.sections.disabled.description")}
+                      mode="DISABLED"
+                      allStates={allStates}
+                    />
+                    <AppsSection
+                      id="unavailable"
+                      title={t("page.sections.unavailable.title")}
+                      description={t("page.sections.unavailable.description")}
+                      mode="UNAVAILABLE"
+                      allStates={allStates}
+                    />
+                    <AppsSection
+                      id="third-party-rspace-integrations"
+                      title={t("page.sections.external.title")}
+                      description={t("page.sections.external.description")}
+                      mode="EXTERNAL"
+                      allStates={allStates}
+                    />
+                  </Stack>
+                </CardPlacementContext.Provider>
               </Box>
             </Box>
           </AnalyticsContext.Provider>

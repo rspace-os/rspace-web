@@ -65,7 +65,13 @@ export const RequestableSwitch = observer(({ activeResult }: { activeResult: Sam
     .map((value) => value === "ALLOWED")
     .orElse(false);
 
-  if (!sampleRequestsAvailable || !activeResult.currentUserIsOwner) return null;
+  // canSetRequestable is computed server-side from the exact same check the backend itself
+  // enforces before allowing requestable to change (SampleApiManagerImpl.
+  // assertRequestableChangeAllowed -> canUserTransferInventoryRecord: the owner, or a PI/Lab Admin
+  // of the owner's group). Neither of the generic getters further up the hierarchy is right here:
+  // canEdit also covers any other group member with mere edit access, and canTransfer (CHANGE_OWNER)
+  // also covers a sysadmin's admin-override ability - both broader than who may actually toggle this.
+  if (!sampleRequestsAvailable || !activeResult.canSetRequestable) return null;
 
   return (
     <Box
@@ -235,7 +241,12 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
     navigate(`/inventory/requests?requestId=${existingRequest.id}`);
   };
 
-  if (!sampleRequestsAvailable || activeResult.currentUserIsOwner) return null;
+  // Mirrors RequestableSwitch's own guard above, so the two stay mutually exclusive: anyone who
+  // can toggle requestable (the owner, or a PI/Lab Admin of the owner's group) sees that switch
+  // instead of a request form for a sample they can already manage directly. Deliberately not
+  // canEdit: a plain group member who can edit but not transfer the sample is still a candidate
+  // to request it from, not someone who can already manage it directly.
+  if (!sampleRequestsAvailable || activeResult.canSetRequestable) return null;
 
   const showActionError = (action: string, error: unknown) => {
     console.error(action, error);

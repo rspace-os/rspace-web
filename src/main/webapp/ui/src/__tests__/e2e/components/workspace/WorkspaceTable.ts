@@ -1,4 +1,4 @@
-import type { ElementHandle, Locator, Page } from "@playwright/test";
+import { type ElementHandle, expect, type Locator, type Page } from "@playwright/test";
 import { RecordInfoDialog } from "@/__tests__/e2e/components/shared/RecordInfoDialog";
 import { rowWithLink } from "@/__tests__/e2e/pageObjects/rowHelpers";
 import { MiniProfilePopover } from "./MiniProfilePopover";
@@ -27,21 +27,21 @@ export async function waitForWorkspaceAnimations(page: Page): Promise<void> {
     const { jQuery } = window as unknown as { jQuery?: (selector: string) => ArrayLike<Element> };
     return jQuery ? Array.from(jQuery(":animated"), (el) => el.id || el.className) : [];
   };
-  await page
-    .waitForFunction(
-      () => {
-        const { jQuery } = window as unknown as { jQuery?: (selector: string) => ArrayLike<Element> };
-        return !jQuery || jQuery(":animated").length === 0;
-      },
-      undefined,
-      { timeout: 10_000 },
-    )
-    .catch(async (error: unknown) => {
-      const stillRunning = await page.evaluate(animating).catch(() => []);
-      throw new Error(`Workspace animations still running after 10s: ${stillRunning.join(", ") || "unknown"}`, {
-        cause: error,
-      });
-    });
+  // expect.poll stops on a thrown callback, so a navigation mid-poll is reported as a value and retried.
+  const read = async () => {
+    try {
+      return await page.evaluate(animating);
+    } catch (error) {
+      return [`unreadable: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`];
+    }
+  };
+  await expect
+    .poll(read, {
+      message: "animations still running after 10s",
+      intervals: [100],
+      timeout: 10_000,
+    })
+    .toEqual([]);
 }
 
 export async function awaitTableRefresh(page: Page, trigger: () => Promise<void>): Promise<void> {
@@ -89,11 +89,14 @@ export class WorkspaceTable {
     for (const [i, name] of names.entries()) {
       await this.checkbox(name).check();
       if (i === 0) await this.selectionBar.waitUntilVisible();
+      // The selection bar fades in or out above the table, sliding the rows under the next click.
+      await waitForWorkspaceAnimations(this.page);
     }
   }
 
   async deselectRecord(name: string): Promise<void> {
     await this.checkbox(name).uncheck();
+    await waitForWorkspaceAnimations(this.page);
   }
 
   async openRecord(name: string): Promise<void> {

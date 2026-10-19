@@ -63,6 +63,7 @@
         "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
         "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
         "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+        "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",
         "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
         "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
         "notFound": "No inventory entity field with id: {0}",
@@ -224,7 +225,7 @@
         "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
       },
       "sampleRequest": {
-        "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+        "notEnabled": "Sample requests are not enabled on this RSpace instance (or in your community).",
         "illegalTransition": "A sample request cannot move from {0} to {1}.",
         "notRequestable": "Sample {0} is not available to request.",
         "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",

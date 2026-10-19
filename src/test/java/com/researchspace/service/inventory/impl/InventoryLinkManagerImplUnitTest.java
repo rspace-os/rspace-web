@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -30,7 +31,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 /**
  * Pure unit tests for the write path of {@link InventoryLinkManagerImpl}: a pinned link captures
  * the resolved Envers revision; a "latest" link leaves it null. The Spring-transactional {@code
- * InventoryLinkManagerImplTest} covers the DB-backed behaviour.
+ * InventoryLinkManagerImplTest} covers the DB-backed behaviour, and {@code
+ * InventoryLinkManagerImplIT} the pinned versions, which need committed audit rows.
  */
 @ExtendWith(MockitoExtension.class)
 class InventoryLinkManagerImplUnitTest {
@@ -116,6 +118,57 @@ class InventoryLinkManagerImplUnitTest {
   }
 
   @Test
+  void createLinkRejectsAPinToAVersionTheTargetDoesNotHave() {
+    stubReadableTarget();
+    when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 6L, 7L)).thenReturn(null);
+    ApiInventoryLink api = new ApiInventoryLink();
+    api.setRelationType("References");
+    api.setTargetGlobalId("SA6v7");
+
+    ApiRuntimeException refused =
+        assertThrows(ApiRuntimeException.class, () -> linkManager.createLink(api, actor));
+
+    assertEquals("errors.inventory.field.linkTargetVersionNotFound", refused.getErrorCode());
+    assertArrayEquals(new Object[] {"SA6", 7L}, refused.getArgs());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void updateLinkRejectsAVersionPinTheTargetDoesNotHave() {
+    // the pin arrives as versionPin on an unsuffixed id, which is how the UI sends it
+    stubReadableTarget();
+    when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 6L, 7L)).thenReturn(null);
+    ApiInventoryLink update = new ApiInventoryLink();
+    update.setRelationType("References");
+    update.setTargetGlobalId("SA6");
+    update.setVersionPin(7L);
+
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class,
+            () -> linkManager.updateLink(new InventoryLink(), update, actor));
+
+    assertEquals("errors.inventory.field.linkTargetVersionNotFound", refused.getErrorCode());
+    verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  void anUnreadableTargetFailsAsNotFoundBeforeItsVersionsAreLookedAt() {
+    // ADR 0002: a missing item and an unreadable one must keep looking the same, so the
+    // version is never consulted for a target the actor cannot read
+    when(linkTargetResolver.targetExistsAndIsReadable(any(), any())).thenReturn(false);
+    ApiInventoryLink api = new ApiInventoryLink();
+    api.setRelationType("References");
+    api.setTargetGlobalId("SA6v7");
+
+    ApiRuntimeException refused =
+        assertThrows(ApiRuntimeException.class, () -> linkManager.createLink(api, actor));
+
+    assertEquals("errors.inventory.field.linkTargetNotFound", refused.getErrorCode());
+    verify(snapshotResolver, never()).resolveRevisionForVersion(any(), any(), any());
+  }
+
+  @Test
   void findReferencingItemsRejectsTargetTheCallerCannotReadWithoutQuerying() {
     // unreadable and missing targets deliberately produce the same error, so the
     // response does not confirm to a guessing caller that the record exists
@@ -145,7 +198,7 @@ class InventoryLinkManagerImplUnitTest {
   void targetSummaryForGlobalIdResolvesCurrentStateOfTheBaseRecord() {
     // the summary backs the "Target deleted" pill, which must reflect the
     // record as it is NOW: the pin/revision are deliberately not consulted,
-    // and a version suffix on the id is ignored
+    // and a version suffix on the id does not change that state
     ApiInventoryLinkTargetSummary expected = new ApiInventoryLinkTargetSummary();
     expected.setGlobalId("SD42");
     expected.setDeleted(true);
@@ -153,6 +206,56 @@ class InventoryLinkManagerImplUnitTest {
         .thenReturn(expected);
 
     assertSame(expected, linkManager.getTargetSummary("SD42v3", actor));
+  }
+
+  @Test
+  void targetSummaryForAVersionedIdSaysWhetherThatVersionResolvesForAReader() {
+    ApiInventoryLinkTargetSummary readable = new ApiInventoryLinkTargetSummary();
+    readable.setGlobalId("SA6");
+    readable.setReadable(true);
+    when(snapshotResolver.resolveSummary(GlobalIdPrefix.SA, 6L, null, null, actor))
+        .thenReturn(readable);
+    when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 6L, 7L)).thenReturn(null);
+
+    assertEquals(
+        Boolean.FALSE, linkManager.getTargetSummary("SA6v7", actor).getPinnedVersionFound());
+  }
+
+  @Test
+  void targetSummaryForAVersionedIdReportsAResolvedVersionAsFound() {
+    ApiInventoryLinkTargetSummary readable = new ApiInventoryLinkTargetSummary();
+    readable.setGlobalId("SA6");
+    readable.setReadable(true);
+    when(snapshotResolver.resolveSummary(GlobalIdPrefix.SA, 6L, null, null, actor))
+        .thenReturn(readable);
+    when(snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SA, 6L, 1L)).thenReturn(44L);
+
+    assertEquals(
+        Boolean.TRUE, linkManager.getTargetSummary("SA6v1", actor).getPinnedVersionFound());
+  }
+
+  @Test
+  void targetSummaryForAVersionedIdOfAnUnreadableTargetSaysNothingAboutVersions() {
+    // ADR 0002: the redacted payload stays field-for-field what it is for a missing item
+    ApiInventoryLinkTargetSummary redacted = new ApiInventoryLinkTargetSummary();
+    redacted.setGlobalId("SA6");
+    when(snapshotResolver.resolveSummary(GlobalIdPrefix.SA, 6L, null, null, actor))
+        .thenReturn(redacted);
+
+    assertNull(linkManager.getTargetSummary("SA6v7", actor).getPinnedVersionFound());
+    verify(snapshotResolver, never()).resolveRevisionForVersion(any(), any(), any());
+  }
+
+  @Test
+  void targetSummaryForAnUnpinnedIdAsksNothingAboutVersions() {
+    ApiInventoryLinkTargetSummary readable = new ApiInventoryLinkTargetSummary();
+    readable.setGlobalId("SA6");
+    readable.setReadable(true);
+    when(snapshotResolver.resolveSummary(GlobalIdPrefix.SA, 6L, null, null, actor))
+        .thenReturn(readable);
+
+    assertNull(linkManager.getTargetSummary("SA6", actor).getPinnedVersionFound());
+    verify(snapshotResolver, never()).resolveRevisionForVersion(any(), any(), any());
   }
 
   @Test

@@ -456,7 +456,12 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   const requesterFullName = userDisplayName(request.requester, t);
   const isActionableState = status === "PENDING" || status === "APPROVED";
-  const prepareSampleEnabled = isActionableState && selectedSubsampleId !== null && !isProcessingAction;
+  // A subsample selection only matters when there's a choice to make about which one to prepare
+  // (via the Operations Wizard) versus transferring the whole sample directly. With the wizard
+  // unavailable, skipChooseMethodDialog means every route through this button already ends in a
+  // direct transfer of the whole sample (all of its subsamples), so no particular one needs to be
+  // selected first.
+  const prepareSampleEnabled = isActionableState && (skipChooseMethodDialog || selectedSubsampleId !== null);
   const rejectColors = { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" };
   const approveColors = { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" };
   const approvedDisabledColors = { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" };
@@ -464,14 +469,23 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const statusHelpTranslationKey = status ? statusHelpKey(status) : null;
   const infoBoxText =
     status === "PENDING"
-      ? t("requestsManagement.detail.preparationHint.pending")
+      ? skipChooseMethodDialog
+        ? // Without the Operations Wizard to choose between, "prepare a subsample" (the generic
+          // wording below) isn't accurate - every route from here ends in transferring the whole
+          // sample directly.
+          t("requestsManagement.detail.preparationHint.pendingTransferOnly")
+        : t("requestsManagement.detail.preparationHint.pending")
       : status === "APPROVED"
-        ? selectedSubsampleId === null || selectedSubsampleName === null
-          ? t("requestsManagement.detail.preparationHint.approvedNoSelection")
-          : t("requestsManagement.detail.preparationHint.approvedSelected", {
-              subsample: selectedSubsampleName,
-              requester: `${request.requester.firstName} ${request.requester.lastName}`,
-            })
+        ? skipChooseMethodDialog
+          ? // No subsample selection to call out here - the button above is already enabled, and
+            // transfers the whole sample regardless of which (if any) subsample is selected.
+            t("requestsManagement.detail.preparationHint.approvedReadyToTransfer", { requester: requesterFullName })
+          : selectedSubsampleId === null || selectedSubsampleName === null
+            ? t("requestsManagement.detail.preparationHint.approvedNoSelection")
+            : t("requestsManagement.detail.preparationHint.approvedSelected", {
+                subsample: selectedSubsampleName,
+                requester: `${request.requester.firstName} ${request.requester.lastName}`,
+              })
         : null;
   // Named for which other active requests exist, so the warning can say specifically "Pending"
   // or "Approved" rather than always the vaguer "either...or" - which is still used when both

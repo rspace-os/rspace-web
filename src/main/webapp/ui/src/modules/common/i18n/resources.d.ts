@@ -447,12 +447,14 @@ export default interface Resources {
           "removeSuccess": "Successfully removed repository."
         },
         "description": "Store and manage your code through a software development and Git version control platform.",
+        "errors": {
+          "authWindowFailed": "Failed to open GitHub authentication window"
+        },
         "helpLink": "GitHub integration docs",
         "name": "GitHub",
         "orElse": "Error getting configured repositories",
         "repositories": {
           "additionalHeading": "Link Additional Repositories",
-          "invalidState": "Repository is in an invalid state. Please remove and re-add.",
           "linkedHeading": "Linked Repositories",
           "loading": "Loading available repositories",
           "nameHeader": "Repository Name",
@@ -652,6 +654,10 @@ export default interface Resources {
           "labelSuccess": "Successfully changed label."
         },
         "description": "Message and collaborate with your team with a cloud-based communication tool.",
+        "errors": {
+          "authWindowFailed": "Failed to open Slack authentication window",
+          "resultsUnavailable": "Save completed but cannot show results."
+        },
         "fields": {
           "channelName": "Channel name",
           "rspaceLabel": "RSpace Label",
@@ -1023,6 +1029,7 @@ export default interface Resources {
       "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
       "permissions": "n09nmg4ax7-permissions",
       "pidinstIdentifiers": "oahocdfqyg-pidinst-identifiers",
+      "pidinstImport": "dtzsvyhh44-search-and-import-pidinst-instruments-into-your-inventory",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
       "publicationOfDocuments": "lqxsej13hv-publication-of-documents",
@@ -1080,6 +1087,14 @@ export default interface Resources {
       },
       "referenceField": {
         "notYetSupported": "Not yet supported."
+      },
+      "secretField": {
+        "clear": "Clear {label}",
+        "defaultName": "secret",
+        "hide": "Hide {label}",
+        "show": "Show {label}",
+        "unchanged": "(unchanged)",
+        "undoClear": "Undo clear {label}"
       },
       "selectedFileInfo": {
         "invalidFile": "Invalid file.",
@@ -2958,7 +2973,8 @@ export default interface Resources {
           "pidinst": "PIDINST"
         },
         "formField": {
-          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
+          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>.",
+          "pidinstExplanation": "See the Documentation for information on <helpDocs docLink=\"pidinstIdentifiers\">adding and publishing identifiers</helpDocs>."
         },
         "geoLocationField": {
           "addValueToPublish": "Add value to enable publishing.",
@@ -3250,6 +3266,7 @@ export default interface Resources {
         },
         "infoDialog": {
           "label": "Info for {globalId}",
+          "versionNotFound": "Version {versionPin} of {globalId} cannot be found. It may never have existed, or its history may have been removed.",
           "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
         },
         "linkField": {
@@ -3260,7 +3277,9 @@ export default interface Resources {
           "openLabel": "Open {globalId}",
           "pinVersionLabel": "Pin version for {globalId}",
           "showInfoLabel": "Show info for {globalId}",
-          "targetDeleted": "Target deleted"
+          "targetDeleted": "Target deleted",
+          "versionNotFound": "Version not found",
+          "versionNotFoundDetail": "Version {version} of this item cannot be found: it may never have existed, or its history may have been removed"
         },
         "relatedInventoryItems": {
           "attachment": "Attachment",
@@ -4146,7 +4165,7 @@ export default interface Resources {
         "state": "Registry state"
       },
       "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
-      "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
+      "descriptionLinks": "See our <helpDocs docLink=\"pidinstImport\">PIDINST identifiers docs</helpDocs> for more.",
       "helpTitle": "PIDINST help",
       "importError": "Could not import the instrument.",
       "importSuccess": "Successfully imported the instrument.",
@@ -4430,8 +4449,10 @@ export default interface Resources {
         "markAsFulfilledButton": "Mark as Fulfilled",
         "preparationHint": {
           "approvedNoSelection": "Select a subsample from the list below to prepare the sample for transfer. Mark the request fulfilled if it has been handled outside of RSpace.",
+          "approvedReadyToTransfer": "This sample can now be transferred to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
           "approvedSelected": "{subsample} can now be prepared for transfer to {requester}. Mark the request fulfilled if it has been handled outside of RSpace.",
-          "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer."
+          "pending": "Approve the request to prepare a subsample, or select a subsample from the list below to immediately proceed to preparing the sample for transfer.",
+          "pendingTransferOnly": "Approve the request to transfer a sample, or immediately transfer the sample."
         },
         "prepareSampleButton": "Prepare Sample",
         "rejectButton": "Reject",
@@ -4457,7 +4478,7 @@ export default interface Resources {
             "newSampleMoved": "The new sample and subsamples will be moved to {requester}'s bench",
             "otherRequestsRejected": "{count, plural, one {The active request against this sample from {names} will be automatically rejected} other {Active requests against this sample from {names} will be automatically rejected}}",
             "requestFulfilled": "Request {id} will be marked as fulfilled",
-            "subsamplesMoved": "Subsamples will be moved from their current locations to {requester}'s bench",
+            "subsamplesMoved": "Subsamples that are currently on your bench will be moved to {requester}'s bench",
             "subsamplesTransferred": "All {count} subsamples will be transferred to user {requester}",
             "subsamplesTransferredBoth": "Both subsamples will be transferred to user {requester}"
           },
@@ -5634,8 +5655,10 @@ export default interface Resources {
       },
       "slack": {
         "errors": {
+          "missingResponseField": "The Slack response is missing required field {0}",
           "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
           "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
+          "noWebhook": "Please add this Slack channel again on RSpace (no webhook URL found).",
           "tooManyConnectedUsers": "There is more than 1 RSpace user associated with this Slack account! [{0}, {1}...]",
           "verificationCodeMismatch": "Verification token does not match!"
         },
@@ -7188,6 +7211,7 @@ export default interface Resources {
           "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
           "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
           "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+          "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
@@ -7360,7 +7384,7 @@ export default interface Resources {
         },
         "sampleRequest": {
           "illegalTransition": "A sample request cannot move from {0} to {1}.",
-          "notEnabled": "Sample requests are not enabled on this RSpace instance.",
+          "notEnabled": "Sample requests are not enabled on this RSpace instance (or in your community).",
           "notRequestable": "Sample {0} is not available to request.",
           "ownSample": "You cannot request material from a sample that you own.",
           "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
