@@ -1,6 +1,6 @@
 # Installing MariaDB using Docker
 
-As of Jan 2025, you should be starting your database using MariaDB on Docker, this has a similar setup to production RSpace so you're less likely to encounter errors. It is also easier to setup on your machine.
+For local development, use MariaDB 10.11 or 11.8, the versions tested in CI. The [Docker dev stack](/docker/dev/README.md) defaults to 11.8 and uses the database settings from [rspace-docker](https://github.com/rspace-os/rspace-docker), with a smaller InnoDB buffer pool for local use. Use this guide if you need a standalone database container.
 
 Ensure you have docker and docker-compose-v2 installed on your machine.
 
@@ -9,13 +9,13 @@ Below is the main docker-compose.yaml file:
 ```
 services:
     rspace-db:
-      image: 'mariadb:12.3'
+      image: 'mariadb:11.8'
       restart: always
       container_name: rspace-db
       volumes:
         - type: volume
           source: rspace-db
-          target: /var/lib/mysql
+          target: /media/mysql
         - type: bind
           source: ./db-config.cnf
           target: /etc/alternatives/my.cnf

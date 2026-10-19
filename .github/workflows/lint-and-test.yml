@@ -585,7 +585,7 @@ jobs:
       fail-fast: false
       matrix:
         java-version: [17]
-        mariadb-version: ['10.11', '12.3']
+        mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -681,7 +681,7 @@ jobs:
       fail-fast: false
       matrix:
         java-version: [17]
-        mariadb-version: ['10.11', '12.3']
+        mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -776,7 +776,7 @@ jobs:
       inputs.full_java_tests
     services:
       db:
-        image: mariadb:12.3
+        image: mariadb:11.8
         env:
           MARIADB_ROOT_PASSWORD: rspacedbpwd
           MARIADB_DATABASE: rspace
