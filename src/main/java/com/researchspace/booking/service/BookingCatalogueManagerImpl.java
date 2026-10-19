@@ -3,6 +3,7 @@ package com.researchspace.booking.service;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.dao.BookingInstrumentQueryDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.BookableTargetType;
@@ -42,6 +43,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
   private final BookingConfigurationManager configurations;
   private final BookingConfigurationDao configurationDao;
   private final InstrumentDao instruments;
+  private final BookingInstrumentQueryDao bookingInstruments;
   private final FeatureFlagManager featureFlags;
   private final BookingResourceRoleScheme roleScheme;
 
@@ -49,11 +51,13 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       BookingConfigurationManager configurations,
       BookingConfigurationDao configurationDao,
       InstrumentDao instruments,
+      BookingInstrumentQueryDao bookingInstruments,
       FeatureFlagManager featureFlags,
       BookingResourceRoleScheme roleScheme) {
     this.configurations = configurations;
     this.configurationDao = configurationDao;
     this.instruments = instruments;
+    this.bookingInstruments = bookingInstruments;
     this.featureFlags = featureFlags;
     this.roleScheme = roleScheme;
   }
@@ -93,7 +97,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
     }
     if (query != null && !query.isBlank()) {
       Set<Long> matchingTargetIds =
-          new HashSet<>(instruments.searchBookingCatalogueTargetIds(query, caller));
+          new HashSet<>(bookingInstruments.searchBookingCatalogueTargetIds(query, caller));
       ResourceReference<BookableTargetType, Long> globalIdTarget =
           instrumentReference(query.trim().toUpperCase(Locale.ROOT));
       if (globalIdTarget != null) {
@@ -137,7 +141,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
         result.resources().stream()
             .map(configuration -> configuration.getTarget().id())
             .collect(Collectors.toSet());
-    Map<Long, Instrument> targets = instruments.getBookingRelationshipTargets(targetIds);
+    Map<Long, Instrument> targets = bookingInstruments.getBookingRelationshipTargets(targetIds);
     Map<Long, InstrumentParentLocationSummary> locations =
         instruments.getReadableParentLocationSummaries(targetIds, caller);
     return new Page(
@@ -166,7 +170,7 @@ public class BookingCatalogueManagerImpl implements BookingCatalogueManager {
       return new LocationPage(List.of(), page, limit, 0);
     }
     ResourcePage<com.researchspace.model.inventory.InstrumentParentLocationSummary> result =
-        instruments.getBookingCatalogueLocations(
+        bookingInstruments.getBookingCatalogueLocations(
             query,
             page,
             limit,

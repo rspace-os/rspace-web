@@ -53,36 +53,11 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
   Map<Long, InstrumentParentLocationSummary> getReadableParentLocationSummaries(
       Set<Long> instrumentIds, User caller);
 
-  /**
-   * Returns one database-paginated page of immediate parent Containers that are both readable in
-   * Inventory and attached to an active, enabled Booking configuration readable by the caller.
-   */
-  ResourcePage<InstrumentParentLocationSummary> getBookingCatalogueLocations(
-      String query, int page, int limit, User caller, Set<String> readableRoleKeys);
-
   /** Returns readable active instrument scalars for relationship expansion. */
   Map<Long, InstrumentReadSummary> getReadableSummaries(Set<Long> instrumentIds, User user);
 
   /** Returns names for the requested instruments without applying current read permissions. */
   Map<Long, String> getNamesByIds(Set<Long> instrumentIds);
-
-  /** Returns only the safe scalar fields Booking may reveal, independent of Inventory sharing. */
-  Map<Long, InstrumentReadSummary> getBookingSummaries(Set<Long> instrumentIds);
-
-  /**
-   * Returns concrete Instruments for Booking's safe relationship renderer, independent of Inventory
-   * sharing. Callers must render them through Booking's allowlisted description.
-   */
-  Map<Long, Instrument> getBookingRelationshipTargets(Set<Long> instrumentIds);
-
-  /** Searches active concrete Instruments eligible for a new Booking configuration. */
-  List<Instrument> searchEligibleBookingTargets(String query, int limit, User subject);
-
-  /**
-   * Finds active Instrument identifiers whose name, description, or readable immediate parent name
-   * contains the supplied Booking catalogue query.
-   */
-  Set<Long> searchBookingCatalogueTargetIds(String query, User subject);
 
   /**
    * Returns active Instrument identifiers stored directly in readable Containers whose database

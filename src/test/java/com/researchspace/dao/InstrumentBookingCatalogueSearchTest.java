@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 class InstrumentBookingCatalogueSearchTest extends SpringTransactionalTest {
-  private final InstrumentDao instrumentDao;
+  private final BookingInstrumentQueryDao instrumentDao;
 
   @Autowired
-  InstrumentBookingCatalogueSearchTest(InstrumentDao instrumentDao) {
+  InstrumentBookingCatalogueSearchTest(BookingInstrumentQueryDao instrumentDao) {
     this.instrumentDao = instrumentDao;
   }
 
