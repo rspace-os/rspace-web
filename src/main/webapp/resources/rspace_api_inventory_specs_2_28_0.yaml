@@ -4536,10 +4536,10 @@ components:
           description: The last modification time of the item.
         modifiedBy:
           type: string
-          description: Username of the last person modifiying the item.
+          description: Username of the last person modifying the item.
         modifiedByFullName:
           type: string
-          description: Full name of the last person modifiying the item.
+          description: Full name of the last person modifying the item.
         deleted:
           type: boolean
           description: Whether item is deleted or not.
@@ -4593,11 +4593,16 @@ components:
         - $ref: "#/components/schemas/InventoryRecordInfo"
         - properties:
             parentContainers:
-              $ref: "#/components/schemas/ContainerList"
+              type: array
+              description: >
+                The containers this item sits in, nearest first. Each one lists its own parent
+                containers in turn.
+              items:
+                $ref: "#/components/schemas/ParentContainerInfo"
             parentLocation:
               $ref: "#/components/schemas/ContainerLocationInfo"
             lastNonWorkbenchParent:
-              $ref: "#/components/schemas/ContainerInfo"
+              $ref: "#/components/schemas/ParentContainerInfo"
             lastMoveDate:
               type: string
               format: date-time
@@ -5018,7 +5023,7 @@ components:
                 totalCount:
                   type: number
                   description: Total number of items stored directly in this container
-                subSamplesCount:
+                subSampleCount:
                   type: number
                   description: Number of subsamples stored directly in this container
                 containerCount:
@@ -5029,16 +5034,21 @@ components:
                   description: Number of instruments stored directly in this container
             cType:
               type: string
-              description: container type, one of LIST / GRID / IMAGE
+              description: The container type. A Bench is a WORKBENCH container.
+              enum:
+                - LIST
+                - GRID
+                - IMAGE
+                - WORKBENCH
             gridLayout:
               description: Information about the grid layout (GRID containers only)
               properties:
                 columnsNumber:
                   type: number
-                  description: Number of subsamples stored directly in this container
+                  description: Number of columns in the grid
                 rowsNumber:
                   type: number
-                  description: Number of subsamples stored directly in this container
+                  description: Number of rows in the grid
                 columnsLabelType:
                   type: string
                   description: Columns naming mode one of ABC, CBA, N123, N321
@@ -5081,6 +5091,184 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/ContainerInfo"
+    # Written out in full, not as allOf of MovableInventoryRecordInfo: Scalar, the API docs
+    # viewer, overflows its stack on a $ref cycle that runs through allOf, and parent
+    # containers nest (RSDEV-1584). InventoryImportApiSpecTest pins these properties to
+    # ApiContainerInfo.
+    ParentContainerInfo:
+      description: A container that holds an item, with its own parent containers.
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the item.
+        globalId:
+          type: string
+          description: A unique identifier amongst all RSpace data types.
+        name:
+          type: string
+          description: The container's name.
+        description:
+          type: string
+          description: The container's description.
+        created:
+          type: string
+          format: date-time
+          description: The creation time of the item.
+        createdBy:
+          type: string
+          description: Username of the item's creator.
+        lastModified:
+          type: string
+          format: date-time
+          description: The last modification time of the item.
+        modifiedBy:
+          type: string
+          description: Username of the last person modifying the item.
+        modifiedByFullName:
+          type: string
+          description: Full name of the last person modifying the item.
+        deleted:
+          type: boolean
+          description: Whether item is deleted or not.
+        deletedDate:
+          type: string
+          format: date-time
+          description: For deleted item - date of deletion
+        iconId:
+          type: integer
+          format: int64
+          description: The item's icon identifier.
+        quantity:
+          $ref: "#/components/schemas/Quantity"
+        tags:
+          $ref: "#/components/schemas/TagList"
+        type:
+          type: string
+          description: Type of the inventory item, must be one of allowed values.
+          enum:
+            - SAMPLE
+            - SUBSAMPLE
+            - CONTAINER
+            - SAMPLE_TEMPLATE
+            - INSTRUMENT
+            - INSTRUMENT_TEMPLATE
+        attachments:
+          $ref: "#/components/schemas/FileList"
+        barcodes:
+          $ref: "#/components/schemas/BarcodeList"
+        identifiers:
+          type: array
+          description: The container's identifiers, if any (see `/identifiers`).
+          items:
+            type: object
+        owner:
+          $ref: "#/components/schemas/User"
+        permittedActions:
+          type: array
+          description: List of actions that current user can perform with the item
+          items:
+            type: string
+            enum:
+              - READ
+              - LIMITED_READ
+              - UPDATE
+              - CHANGE_OWNER
+        sharingMode:
+          type: string
+          description: The sharing mode of the inventory item
+          enum:
+            - OWNER_GROUPS
+            - WHITELIST
+            - OWNER_ONLY
+        parentContainers:
+          type: array
+          description: >
+            The containers this container sits in, nearest first. Each one lists its own
+            parent containers in turn.
+          items:
+            $ref: "#/components/schemas/ParentContainerInfo"
+        parentLocation:
+          $ref: "#/components/schemas/ContainerLocationInfo"
+        lastNonWorkbenchParent:
+          $ref: "#/components/schemas/ParentContainerInfo"
+        lastMoveDate:
+          type: string
+          format: date-time
+        revisionId:
+          type: number
+          description: Revision id of the container
+        version:
+          type: number
+          description: Version number
+        historicalVersion:
+          type: boolean
+          description: Whether object represents a historical, or latest, version of the container
+        locationsCount:
+          type: number
+          description: Number of defined locations in the container
+        contentSummary:
+          description: Summary information about content of the container
+          properties:
+            totalCount:
+              type: number
+              description: Total number of items stored directly in this container
+            subSampleCount:
+              type: number
+              description: Number of subsamples stored directly in this container
+            containerCount:
+              type: number
+              description: Number of containers stored directly in this container
+            instrumentCount:
+              type: number
+              description: Number of instruments stored directly in this container
+        cType:
+          type: string
+          description: The container type. A Bench is a WORKBENCH container.
+          enum:
+            - LIST
+            - GRID
+            - IMAGE
+            - WORKBENCH
+        ctype:
+          type: string
+          description: The same value as `cType`, also sent under this lower-case name.
+        gridLayout:
+          description: Information about the grid layout (GRID containers only)
+          properties:
+            columnsNumber:
+              type: number
+              description: Number of columns in the grid
+            rowsNumber:
+              type: number
+              description: Number of rows in the grid
+            columnsLabelType:
+              type: string
+              description: Columns naming mode one of ABC, CBA, N123, N321
+              enum:
+                - ABC
+                - CBA
+                - N123
+                - N321
+            rowsLabelType:
+              type: string
+              description: Rows naming mode, one of ABC, CBA, N123, N321
+              enum:
+                - ABC
+                - CBA
+                - N123
+                - N321
+        canStoreSamples:
+          type: boolean
+          description: Whether the container can store samples
+        canStoreContainers:
+          type: boolean
+          description: Whether the container can store containers
+        canStoreInstruments:
+          type: boolean
+          description: Whether the container can store instruments
+        _links:
+          $ref: "#/components/schemas/LinkItemList"
     ContainerLocationInfo:
       description: Info on location within the container
       properties:
@@ -6305,10 +6493,9 @@ components:
             The "imported items" container created on the user's Bench for the items whose row
             names no parent container. Null when every imported item had a parent or the import
             failed its checks; after `REVERTED_ON_ERROR` it can name a container that was rolled
-            back. Only the basic record fields are listed here: the object is a full Container, as
-            returned by `GET /containers/{containerId}`.
+            back.
           allOf:
-            - $ref: "#/components/schemas/InventoryRecordInfo"
+            - $ref: "#/components/schemas/Container"
         containerResults:
           nullable: true
           description: >
