@@ -15,17 +15,11 @@ import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/modules/common/ui/menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { userInitials } from "@/modules/common/ui/user-badge";
 import { cn } from "@/modules/common/utils/cn";
 import type { AccessRow, AccessRowStatus } from "./accessRows";
 import type { ResourceAccessRole } from "./ResourceAccessEditor";
 import type { ResourceGrantee } from "./schemas";
-
-/** Two initials, so a user reads as a person before their name is parsed. */
-function initialsOf(name: string): string {
-  const parts = name.split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  return `${parts[0][0] ?? ""}${parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : ""}`.toUpperCase();
-}
 
 /**
  * The staged-change marker, left of the identity. Colour carries it at a glance; the title and the
@@ -62,7 +56,7 @@ function PrincipalLabel({ grantee }: { grantee: ResourceGrantee }) {
     return (
       <span className="inline-flex min-w-0 items-center gap-1.5">
         <Avatar size="sm" aria-hidden="true">
-          <AvatarFallback>{initialsOf(name)}</AvatarFallback>
+          <AvatarFallback>{userInitials(name)}</AvatarFallback>
         </Avatar>
         <span className="truncate font-medium">{name}</span>
       </span>

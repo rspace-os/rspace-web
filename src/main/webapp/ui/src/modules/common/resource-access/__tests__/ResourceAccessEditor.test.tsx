@@ -94,6 +94,21 @@ function row(name: string) {
 }
 
 describe("ResourceAccessEditor", () => {
+  it("uses name initials when an assignment includes a parenthesized username", async () => {
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () =>
+        HttpResponse.json(
+          document(3, [{ ...owner, grantee: { ...owner.grantee, name: "Maria van den Heuvel (maria)" } }]),
+        ),
+      ),
+    );
+    editor();
+
+    await screen.findByRole("table");
+
+    expect(row("Maria van den Heuvel (maria)").getByText("MH")).toBeInTheDocument();
+  });
+
   it("announces loading without exposing assignment controls before access resolves", async () => {
     const response = Promise.withResolvers<Response>();
     server.use(http.get("/api/v2/test-collections/9/access", () => response.promise));
