@@ -2,7 +2,6 @@ package com.researchspace.dao.query;
 
 import com.blazebit.persistence.CriteriaBuilder;
 import com.blazebit.persistence.CriteriaBuilderFactory;
-import com.blazebit.persistence.MultipleSubqueryInitiator;
 import com.blazebit.persistence.PagedList;
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.model.collection.CollectionDescription;
@@ -24,9 +23,6 @@ public final class CollectionQueryExecutor<T> {
   private final CollectionDescription<T> description;
   private final String alias;
   private final RsqlCollectionQuery filterQuery;
-  private final RsqlCollectionQuery constraintQuery;
-  private final RsqlCollectionQuery requestConstraintQuery;
-  private final RsqlCollectionQuery relationshipConstraintQuery;
 
   public CollectionQueryExecutor(
       Class<T> entityType, CollectionDescription<T> description, String alias) {
@@ -37,10 +33,6 @@ public final class CollectionQueryExecutor<T> {
     }
     this.alias = alias;
     filterQuery = new RsqlCollectionQuery(description, alias);
-    constraintQuery = new RsqlCollectionQuery(description, alias, "rsqlAccess");
-    requestConstraintQuery = new RsqlCollectionQuery(description, alias, "rsqlRequestAccess");
-    relationshipConstraintQuery =
-        new RsqlCollectionQuery(description, alias, "rsqlRelationshipAccess");
   }
 
   public String alias() {
@@ -56,13 +48,14 @@ public final class CollectionQueryExecutor<T> {
    * what lets the same rule be recompiled at another alias, such as inside a subquery.
    */
   public Predicate compileConstraint(QueryConstraint constraint) {
-    return constraintQuery.translateTrusted(constraint);
+    return new RsqlCollectionQuery(description, alias, "rsqlAccess").translateTrusted(constraint);
   }
 
   /** Compiles the target read rule for one relationship against this collection's alias. */
   public Predicate compileReadableRelationship(
       String relationshipName, RelationshipReadAccess targets) {
-    return relationshipConstraintQuery.compileReadableRelationship(relationshipName, targets);
+    return new RsqlCollectionQuery(description, alias, "rsqlRelationshipAccess")
+        .compileReadableRelationship(relationshipName, targets);
   }
 
   public ResourcePage<T> page(
@@ -239,36 +232,15 @@ public final class CollectionQueryExecutor<T> {
       ResourceRequest request,
       Predicate restriction,
       RelationshipReadAccess targets) {
-    // Blaze ANDs each where expression, so the access restriction cannot widen the caller's filter.
-    apply(query, filterQuery.translate(request.filter(), targets, request.runtime()));
-    apply(query, requestConstraintQuery.translateTrusted(request.serverConstraint(), targets));
-    apply(query, restriction);
-  }
-
-  private static void apply(CriteriaBuilder<?> query, Predicate predicate) {
-    if (predicate == null) {
-      return;
+    RsqlCollectionQuery.Compilation compilation = filterQuery.newCompilation();
+    Predicate predicate =
+        Predicate.and(
+            compilation.translate(request.filter(), targets, request.runtime()),
+            compilation.translateTrusted(request.serverConstraint(), targets),
+            restriction);
+    if (predicate != null) {
+      predicate.applyTo(query);
     }
-    if (predicate.subqueries().isEmpty()) {
-      query.whereExpression(predicate.expression());
-    } else {
-      // Blaze parses no subquery inside an expression, so each one is built through the initiator
-      // and referenced from the expression by name.
-      MultipleSubqueryInitiator<?> initiator =
-          query.whereExpressionSubqueries(predicate.expression());
-      predicate
-          .subqueries()
-          .forEach(
-              (name, subquery) ->
-                  initiator
-                      .with(name)
-                      .from(subquery.entityType(), subquery.alias())
-                      .select("1")
-                      .whereExpression(subquery.whereExpression())
-                      .end());
-      initiator.end();
-    }
-    predicate.apply(query);
   }
 
   /** Uses the page count because Blaze's root-count query fails when there are no restrictions. */
