@@ -321,7 +321,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[17,22)</version>
+                  <version>[17,18),[21,22)</version>
                   <message>RSpace builds on Java 17 or 21. Run Maven with one of those (JAVA_HOME), and pass -Djava-version to pick the toolchain JDK.</message>
                 </requireJavaVersion>
               </rules>
