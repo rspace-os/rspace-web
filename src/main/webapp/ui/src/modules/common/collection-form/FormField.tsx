@@ -1,8 +1,9 @@
-import { type FormStore, getInput, useField } from "@formisch/react";
+import { type FormStore, useField } from "@formisch/react";
 import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldConditionContext, ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
+import { formData } from "./formData";
 import type { ControlProps, FieldLayout, RelationshipOptions } from "./RenderFields.types";
 import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "./responsiveFieldLayout";
 
@@ -37,7 +38,7 @@ export function FormField<
   if (
     formConfig?.condition &&
     !formConfig.condition({
-      data: getInput(form) as Partial<TDocument>,
+      data: formData<TDocument>(form),
       value: fieldApi.input as FieldConditionContext<TDocument>["value"],
     })
   ) {
