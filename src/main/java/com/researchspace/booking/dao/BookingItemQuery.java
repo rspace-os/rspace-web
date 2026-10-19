@@ -10,7 +10,6 @@ import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.inventory.InstrumentReadAccess;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Component;
@@ -27,7 +26,7 @@ public class BookingItemQuery {
   /** Builds a correlated item restriction for a trusted configuration target path. */
   public Predicate restriction(User user, boolean edit, boolean owner, String targetPath) {
     if (user == null || !user.isEnabled() || user.isAccountLocked()) {
-      return new Predicate("1 = 0", Map.of());
+      return new Predicate(RsqlCollectionQuery.FALSE_EXPRESSION, Map.of());
     }
     FilterExpression constraint = inventory.constraint(user, edit);
     if (owner && !user.hasSysadminRole()) {
@@ -44,33 +43,22 @@ public class BookingItemQuery {
                 "capabilityInstrument",
                 "bookingItemAccess")
             .translateTrusted(constraint);
-    var parameters = new LinkedHashMap<String, Object>(access.parameters());
-    parameters.put("bookingItemType", BookableTargetType.INSTRUMENT);
-    String where =
-        "capabilityInstrument.id = "
-            + targetPath
-            + ".id AND "
-            + targetPath
-            + ".type = :bookingItemType AND ("
-            + access.expression()
-            + ")";
+    Predicate body =
+        Predicate.and(
+            new Predicate(
+                "capabilityInstrument.id = "
+                    + targetPath
+                    + ".id AND "
+                    + targetPath
+                    + ".type = :bookingItemType",
+                Map.of("bookingItemType", BookableTargetType.INSTRUMENT)),
+            access);
     return new Predicate(
         "EXISTS bookingItemCapability",
-        parameters,
+        body.parameters(),
         Map.of(
             "bookingItemCapability",
-            new Subquery(Instrument.class, "capabilityInstrument", where, access.subqueries())));
-  }
-
-  /** Combines trusted restrictions without changing their parameter or subquery bindings. */
-  public static Predicate and(Predicate left, Predicate right) {
-    if (left == null) return right;
-    if (right == null) return left;
-    var parameters = new LinkedHashMap<String, Object>(left.parameters());
-    parameters.putAll(right.parameters());
-    var subqueries = new LinkedHashMap<String, Subquery>(left.subqueries());
-    subqueries.putAll(right.subqueries());
-    return new Predicate(
-        "(" + left.expression() + ") AND (" + right.expression() + ")", parameters, subqueries);
+            new Subquery(
+                Instrument.class, "capabilityInstrument", body.expression(), body.subqueries())));
   }
 }
