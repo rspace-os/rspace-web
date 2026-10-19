@@ -17,7 +17,6 @@ import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipInputForm;
 import com.researchspace.model.collection.RelationshipTarget;
 import com.researchspace.model.collection.ResourceReference;
-import com.researchspace.model.collection.StructuredFieldType;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.CollectionMutationException;
 import java.util.ArrayList;
@@ -354,13 +353,7 @@ public final class ApiV2DocumentParser {
       return null;
     }
     try {
-      if (field.type() instanceof DeclaredFieldType<?> declared) {
-        return field.validateValue(EmbeddedObjects.parse(declared, node, operation));
-      }
-      if (field.type() instanceof StructuredFieldType<?> structured) {
-        return field.validateValue(structured.parse(node));
-      }
-      return field.validateValue(field.type().parseScalar(node));
+      return field.validateValue(field.type().parseDocument(node, operation));
     } catch (EmbeddedFieldException ex) {
       violations.add(new Violation(path(field.name(), ex.path()), ex.reason()));
       return null;

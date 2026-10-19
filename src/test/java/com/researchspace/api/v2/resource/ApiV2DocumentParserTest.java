@@ -9,11 +9,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.dao.query.RsqlCollectionQuery;
+import com.researchspace.dao.query.RsqlFieldPredicateCompilerRegistry;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.AccessContext;
 import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.ApiV2ResourceDefinition;
+import com.researchspace.model.collection.ApiV2ResourceField;
 import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
+import com.researchspace.model.collection.CollectionFieldTypeRegistry;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import com.researchspace.model.collection.CollectionMutationLimits;
@@ -21,6 +27,8 @@ import com.researchspace.model.collection.DocumentValidationException;
 import com.researchspace.model.collection.DocumentValidationException.Reason;
 import com.researchspace.model.collection.DocumentValidationException.Violation;
 import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.FieldComparisonStrategy;
+import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.RelationshipTarget;
@@ -32,15 +40,119 @@ import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.CollectionMutationException;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 class ApiV2DocumentParserTest {
 
   private final ObjectMapper mapper = new ObjectMapper();
+
+  @Test
+  void delegatesDocumentDecodingAndValidatesTheDecodedValueOnce() throws Exception {
+    AtomicInteger validations = new AtomicInteger();
+    FieldComparisonStrategy strategy = new FieldComparisonStrategy("upper-text");
+    CollectionFieldType<String> type =
+        new CollectionFieldType<>() {
+          @Override
+          public Class<String> javaType() {
+            return String.class;
+          }
+
+          @Override
+          public InputKind inputKind() {
+            return InputKind.STRING;
+          }
+
+          @Override
+          public String parse(String value) {
+            return value.toUpperCase(java.util.Locale.ROOT);
+          }
+
+          @Override
+          public String parseDocument(JsonNode value, WriteOperation operation) {
+            assertEquals(WriteOperation.UPDATE, operation);
+            return value.textValue().toUpperCase(java.util.Locale.ROOT);
+          }
+
+          @Override
+          public Object serialize(String value) {
+            return value;
+          }
+
+          @Override
+          public void validate(String value) {
+            assertEquals("DECODED", value);
+            validations.incrementAndGet();
+          }
+
+          @Override
+          public Set<Operator> operators() {
+            return Set.of(Operator.EQUAL);
+          }
+
+          @Override
+          public FieldComparisonStrategy comparisonStrategy() {
+            return strategy;
+          }
+        };
+    CollectionFieldTypeRegistry types =
+        new CollectionFieldTypeRegistry(
+            List.of(
+                new CollectionFieldTypeRegistry.Registration<>(
+                    Long.class, ignored -> CollectionFieldTypes.longNumber()),
+                new CollectionFieldTypeRegistry.Registration<>(String.class, ignored -> type)));
+    CollectionDescription<RegistryDocument> description =
+        CollectionDescription.fromApiV2Resource(
+            RegistryResource.class, RegistryDocument.class, List.of(new Sort("id", true)), types);
+    ParsedDocument result =
+        ApiV2DocumentParser.parse(
+            mapper.readTree("{\"name\":\"decoded\"}"),
+            description,
+            WriteOperation.UPDATE,
+            "error",
+            writeContext(Operation.UPDATE));
+    assertEquals("DECODED", result.values().get("name"));
+    assertEquals(1, validations.get());
+    List<RsqlFieldPredicateCompilerRegistry.Registration> registrations =
+        new ArrayList<>(RsqlFieldPredicateCompilerRegistry.builtIns().registrations());
+    registrations.add(
+        new RsqlFieldPredicateCompilerRegistry.Registration(
+            strategy,
+            (comparison, path, context) ->
+                "UPPER(" + path + ") = :" + context.add(comparison.values().get(0))));
+    RsqlCollectionQuery.Predicate predicate =
+        new RsqlCollectionQuery(
+                description, "doc", new RsqlFieldPredicateCompilerRegistry(registrations))
+            .translate(new RsqlFilterParser(description).parse("name==decoded"));
+    assertEquals("UPPER(doc.name) = :rsql0", predicate.expression());
+    assertEquals(Map.of("rsql0", "DECODED"), predicate.parameters());
+    assertEquals(1, validations.get());
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "registryDocuments",
+      entity = RegistryDocument.class,
+      id = "id",
+      auditFields = false)
+  private record RegistryResource(@ApiV2ResourceField Long id, @ApiV2ResourceField String name) {}
+
+  public static final class RegistryDocument {
+    public Long getId() {
+      return 1L;
+    }
+
+    public String getName() {
+      return "decoded";
+    }
+
+    public void setName(String name) {}
+  }
 
   @Test
   void preservesPresenceAndExplicitNullMessage() throws Exception {
