@@ -4,10 +4,12 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiGroupBasicInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.api.v1.model.ApiSample;
@@ -559,15 +561,20 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
         invPermissionUtils.canUserReadInventoryRecord(
             containerC1, userF)); // TODO should give 'some details' access, not full
 
-    /* F: UserD removes GroupD from C1's access list.
-    They are warned that they are removing their own access; an operation that they cannot undo.
+    /* F: UserD cannot remove GroupD from C1's access list, as only ownership control may change
+    access permissions (RSDEV-1520 overrules RSINV-235 here), so UserE, the owner, removes it.
     - The only regular user who can view the *full details* of C1 is UserE.
     - UserD can only see *basic details* of C2, and *some details* of C1 (which stores SS1)
     - No change to UserE's access to C2, SA1, SS1, nor SS2.
     - No change to UserF's access to C1, C2, SA1, SS1, nor SS2.
     */
     containerC1Update.setSharedWith(new ArrayList<>());
-    containerApiMgr.updateApiContainer(containerC1Update, userD);
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> containerApiMgr.updateApiContainer(containerC1Update, userD));
+    assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
+    containerApiMgr.updateApiContainer(containerC1Update, userE);
     assertFalse(invPermissionUtils.canUserReadInventoryRecord(containerC2, userD));
     assertTrue(
         invPermissionUtils.canUserReadInventoryRecord(
@@ -686,5 +693,111 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     assertTrue(invPermissionUtils.canUserLimitedReadInventoryRecord(subSampleSS1, userC));
     assertFalse(invPermissionUtils.canUserReadInventoryRecord(sampleSA1, userC));
     assertTrue(invPermissionUtils.canUserLimitedReadInventoryRecord(sampleSA1, userC));
+  }
+
+  @Test
+  public void ownershipControlDecidesWhoMayChangeAccessPermissions() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
+    initialiseContentWithEmptyContent(pi, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, groupmate);
+
+    ApiSampleWithFullSubSamples created = createBasicSampleForUser(testUser);
+    SampleEntity sample = sampleApiMgr.getSampleById(created.getId(), testUser);
+
+    assertTrue(invPermissionUtils.canUserChangeAccessPermissions(sample, testUser));
+    assertTrue(invPermissionUtils.canUserChangeAccessPermissions(sample, pi));
+    assertFalse(invPermissionUtils.canUserChangeAccessPermissions(sample, groupmate));
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> invPermissionUtils.assertUserCanChangeAccessPermissions(sample, groupmate));
+    assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
+  }
+
+  @Test
+  public void groupmateCannotChangeSampleAccessPermissionsButPiCan() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
+    initialiseContentWithEmptyContent(pi, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, groupmate);
+    ApiSampleWithFullSubSamples created = createBasicSampleForUser(testUser);
+    Long id = created.getId();
+
+    // a groupmate may rename while echoing the stored access permissions
+    ApiSample rename = new ApiSample();
+    rename.setId(id);
+    rename.setName("renamed by groupmate");
+    rename.setSharingMode(ApiInventorySharingMode.OWNER_GROUPS);
+    rename.setSharedWith(created.getSharedWith());
+    assertEquals("renamed by groupmate", sampleApiMgr.updateApiSample(rename, groupmate).getName());
+
+    // but not restrict the item
+    ApiSample restrict = new ApiSample();
+    restrict.setId(id);
+    restrict.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> sampleApiMgr.updateApiSample(restrict, groupmate));
+    assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
+    assertEquals(
+        InventorySharingMode.OWNER_GROUPS,
+        sampleApiMgr.getSampleById(id, testUser).getSharingMode());
+
+    // nor change the explicit access list once the owner has set one
+    ApiSample explicitList = new ApiSample();
+    explicitList.setId(id);
+    explicitList.setSharingMode(ApiInventorySharingMode.WHITELIST);
+    explicitList.setSharedWith(
+        List.of(ApiGroupInfoWithSharedFlag.forSharingWithGroup(group, testUser)));
+    sampleApiMgr.updateApiSample(explicitList, testUser);
+    ApiSample unshare = new ApiSample();
+    unshare.setId(id);
+    unshare.setSharedWith(
+        List.of(new ApiGroupInfoWithSharedFlag(new ApiGroupBasicInfo(group), false, true)));
+    assertThrows(
+        IllegalArgumentException.class, () -> sampleApiMgr.updateApiSample(unshare, groupmate));
+    assertThat(sampleApiMgr.getSampleById(id, testUser).getSharedWithUniqueNames())
+        .containsExactly(group.getUniqueName());
+
+    // the PI of the owner's group has ownership control
+    sampleApiMgr.updateApiSample(restrict, pi);
+    assertEquals(
+        InventorySharingMode.OWNER_ONLY, sampleApiMgr.getSampleById(id, testUser).getSharingMode());
+  }
+
+  @Test
+  public void groupmateMayEchoAnAccessListThatNamesADeletedGroup() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User otherPi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
+    initialiseContentWithEmptyContent(pi, otherPi, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, groupmate);
+    Group deletedGroup = createGroup("deleted-" + getRandomName(5), otherPi);
+    addUsersToGroup(otherPi, deletedGroup);
+    Long id = createBasicSampleForUser(testUser).getId();
+
+    ApiSample explicitList = new ApiSample();
+    explicitList.setId(id);
+    explicitList.setSharingMode(ApiInventorySharingMode.WHITELIST);
+    explicitList.setSharedWith(
+        List.of(
+            ApiGroupInfoWithSharedFlag.forSharingWithGroup(group, testUser),
+            ApiGroupInfoWithSharedFlag.forSharingWithGroup(deletedGroup, testUser)));
+    sampleApiMgr.updateApiSample(explicitList, testUser);
+    grpMgr.removeGroup(deletedGroup.getId(), logoutAndLoginAsSysAdmin());
+
+    ApiSample groupmateView = sampleApiMgr.getApiSampleById(id, groupmate);
+    ApiSample rename = new ApiSample();
+    rename.setId(id);
+    rename.setName("renamed by groupmate");
+    rename.setSharingMode(groupmateView.getSharingMode());
+    rename.setSharedWith(groupmateView.getSharedWith());
+    assertEquals("renamed by groupmate", sampleApiMgr.updateApiSample(rename, groupmate).getName());
   }
 }
