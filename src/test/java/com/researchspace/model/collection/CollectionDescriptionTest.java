@@ -77,10 +77,7 @@ class CollectionDescriptionTest {
   void enforcesAnnotatedConstraintsAndAppliesAnnotatedDefaults() {
     CollectionDescription<ConstrainedEntity> description =
         CollectionDescription.fromApiV2Resource(
-            ConstrainedResource.class,
-            ConstrainedEntity.class,
-            List.of(),
-            List.of(new Sort("id", true)));
+            ConstrainedResource.class, ConstrainedEntity.class, List.of(new Sort("id", true)));
     Map<String, FieldSchema> fields = schemaFields(description);
 
     assertEquals(
@@ -121,7 +118,7 @@ class CollectionDescriptionTest {
           IllegalArgumentException.class,
           () ->
               CollectionDescription.fromApiV2Resource(
-                  resource, ConstrainedEntity.class, List.of(), List.of(new Sort("id", true))),
+                  resource, ConstrainedEntity.class, List.of(new Sort("id", true))),
           resource.getSimpleName());
     }
   }
@@ -157,10 +154,7 @@ class CollectionDescriptionTest {
   void buildsACollectionDescriptionFromAnAnnotatedResourceRecord() {
     CollectionDescription<AnnotatedEntity> description =
         CollectionDescription.fromApiV2Resource(
-            ApiV2AnnotatedResource.class,
-            AnnotatedEntity.class,
-            List.of(),
-            List.of(new Sort("id", true)));
+            ApiV2AnnotatedResource.class, AnnotatedEntity.class, List.of(new Sort("id", true)));
     AnnotatedEntity entity = new AnnotatedEntity();
 
     assertEquals(
@@ -202,10 +196,7 @@ class CollectionDescriptionTest {
   void mapsAutomaticAuditFieldsToBeanPropertiesAndOmitsUnavailableProperties() {
     CollectionDescription<DateAuditedEntity> description =
         CollectionDescription.fromApiV2Resource(
-            DateAuditedResource.class,
-            DateAuditedEntity.class,
-            List.of(),
-            List.of(new Sort("id", true)));
+            DateAuditedResource.class, DateAuditedEntity.class, List.of(new Sort("id", true)));
 
     assertEquals(
         List.of("id", "createdAt"), description.fields().stream().map(Field::name).toList());
@@ -223,7 +214,6 @@ class CollectionDescriptionTest {
             CollectionDescription.fromApiV2Resource(
                 UsernameAuditedResource.class,
                 UsernameAuditedEntity.class,
-                List.of(),
                 List.of(new Sort("id", true))));
   }
 

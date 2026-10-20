@@ -85,7 +85,6 @@ public record ApiV2MaintenanceResource(
       CollectionDescription.fromApiV2Resource(
           ApiV2MaintenanceResource.class,
           ScheduledMaintenance.class,
-          List.of(),
           List.of(new Sort("startDate", true), new Sort("id", true)),
           ACCESS);
 }
