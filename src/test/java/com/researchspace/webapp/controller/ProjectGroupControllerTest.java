@@ -95,4 +95,15 @@ public class ProjectGroupControllerTest {
     assertEquals("10", response.getData().get("newGroup"));
     verify(publisher).publishEvent(any(GenericEvent.class));
   }
+
+  @Test
+  public void shouldDeleteOwnProjectGroupWhenAllowed() {
+    stubProjectGroups(true);
+    when(groupManager.getGroup(1L)).thenReturn(newGroup);
+    when(newGroup.isProjectGroup()).thenReturn(true);
+    when(newGroup.getOwner()).thenReturn(owner);
+    assertEquals("redirect:/userform", controller.removeGroup(1L));
+    verify(groupManager).removeGroup(1L, owner);
+    verify(publisher).publishEvent(any(GenericEvent.class));
+  }
 }
