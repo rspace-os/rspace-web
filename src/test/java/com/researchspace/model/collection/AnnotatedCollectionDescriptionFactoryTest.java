@@ -2,6 +2,8 @@ package com.researchspace.model.collection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +15,8 @@ import static org.mockito.Mockito.withSettings;
 
 import com.researchspace.model.User;
 import jakarta.persistence.Embeddable;
+import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,6 +80,11 @@ class AnnotatedCollectionDescriptionFactoryTest {
           description.requireRelationship(name).binding().read(entity));
     }
     verify(proxy, never()).getId();
+
+    ProxyAuditEntity absent = new ProxyAuditEntity(null);
+    for (String name : List.of("createdBy", "target")) {
+      assertNull(description.requireRelationship(name).binding().read(absent));
+    }
   }
 
   @Test
@@ -112,6 +121,32 @@ class AnnotatedCollectionDescriptionFactoryTest {
         assertThrows(
             IllegalStateException.class,
             () -> description.apply(entity, Map.of("value", "new"), WriteOperation.UPDATE)));
+  }
+
+  @Test
+  void rethrowsOriginalErrorFromReader() {
+    CollectionDescription<ErrorEntity> description =
+        CollectionDescription.fromApiV2Resource(
+            ErrorResource.class, ErrorEntity.class, List.of(new Sort("id", true)));
+    Error failure = new AssertionError("reader failed");
+    ErrorEntity entity = new ErrorEntity(failure);
+
+    assertSame(failure, assertThrows(Error.class, () -> description.toDocument(entity)));
+  }
+
+  @Test
+  void wrapsCheckedReaderFailureWithOriginalCause() {
+    CollectionDescription<CheckedFailureEntity> description =
+        CollectionDescription.fromApiV2Resource(
+            CheckedFailureResource.class,
+            CheckedFailureEntity.class,
+            List.of(new Sort("id", true)));
+    IOException failure = new IOException("reader failed");
+    CheckedFailureEntity entity = new CheckedFailureEntity(failure);
+
+    UndeclaredThrowableException wrapper =
+        assertThrows(UndeclaredThrowableException.class, () -> description.toDocument(entity));
+    assertSame(failure, assertInstanceOf(IOException.class, wrapper.getCause()));
   }
 
   private static CollectionDescription<User> usersDescription() {
@@ -293,6 +328,32 @@ class AnnotatedCollectionDescriptionFactoryTest {
 
     public void setValue(String value) {
       throw writerFailure;
+    }
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "errors",
+      entity = ErrorEntity.class,
+      id = "id",
+      auditFields = false)
+  private record ErrorResource(@ApiV2ResourceField Long id) {}
+
+  public record ErrorEntity(Error failure) {
+    public Long getId() {
+      throw failure;
+    }
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "checkedFailures",
+      entity = CheckedFailureEntity.class,
+      id = "id",
+      auditFields = false)
+  private record CheckedFailureResource(@ApiV2ResourceField Long id) {}
+
+  public record CheckedFailureEntity(IOException failure) {
+    public Long getId() throws IOException {
+      throw failure;
     }
   }
 
@@ -501,6 +562,7 @@ class AnnotatedCollectionDescriptionFactoryTest {
         MultipleAnnotationsResource.class, "exactly one resource member annotation");
     assertInvalidResource(NonReferenceResource.class, "must be a ResourceReference");
     assertInvalidResource(UnreadablePropertyResource.class, ".writeOnly is not readable");
+    assertInvalidResource(CapitalizedPropertyResource.class, ".Target is not readable");
     assertInvalidResource(PartialKindsResource.class, "kinds must be set on every target or none");
     assertInvalidResource(UnknownKindResource.class, "unknown kind UNKNOWN");
     assertInvalidResource(MissingIdResource.class, ".missing is not readable");
@@ -532,6 +594,14 @@ class AnnotatedCollectionDescriptionFactoryTest {
   private record UnreadablePropertyResource(
       @ApiV2ResourceRelationship(
               property = "writeOnly",
+              relationTo =
+                  @ApiV2RelationshipTarget(resource = "targets", entity = RelatedTarget.class))
+          ResourceReference<?, ?> target) {}
+
+  @ApiV2ResourceDefinition(name = "invalid", entity = LinkEntity.class, id = "id")
+  private record CapitalizedPropertyResource(
+      @ApiV2ResourceRelationship(
+              property = "Target",
               relationTo =
                   @ApiV2RelationshipTarget(resource = "targets", entity = RelatedTarget.class))
           ResourceReference<?, ?> target) {}
