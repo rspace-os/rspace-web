@@ -8,7 +8,7 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
@@ -83,6 +83,7 @@ function renderEdit() {
       </QueryClientProvider>,
     ),
     router,
+    queryClient,
   };
 }
 
@@ -155,7 +156,7 @@ describe("BookingInlineEditForm", () => {
 
   it.each([
     [409, "errors.api.v2.booking.overlap", "booking:bookings.errors.overlap"],
-    [500, "errors.api.v2.internal", "booking:bookings.errors.generic"],
+    [500, "errors.api.v2.internal", "booking:bookings.errors.outcomeUncertain"],
   ])("retains a %i save error until the draft changes", async (status, code, message) => {
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
@@ -175,6 +176,62 @@ describe("BookingInlineEditForm", () => {
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     expect(save).toBeEnabled();
   });
+
+  it.each(["network", "server"])(
+    "reconciles a committed edit after a lost %s response without replacing the draft",
+    async (failure) => {
+      const user = userEvent.setup();
+      let committed = false;
+      let finishRead: (() => void) | undefined;
+      const reading = new Promise<void>((resolve) => {
+        finishRead = resolve;
+      });
+      const updated = {
+        ...document,
+        version: 8,
+        start: "2026-10-19T09:00:00Z",
+        end: "2026-10-19T11:00:00Z",
+        purpose: "Server value",
+      };
+      server.use(
+        http.get("/api/v2/bookings/41", async () => {
+          if (committed) await reading;
+          return HttpResponse.json(committed ? updated : document);
+        }),
+        http.get("/api/v2/booking-configurations", () => HttpResponse.json(configurationResponse)),
+        http.patch("/api/v2/bookings/41", () => {
+          committed = true;
+          return failure === "network" ? HttpResponse.error() : HttpResponse.json({ status: 503 }, { status: 503 });
+        }),
+      );
+      const { router, queryClient } = renderEdit();
+      const purpose = await screen.findByDisplayValue("Cell imaging");
+      await user.clear(purpose);
+      await user.type(purpose, "Keep this draft");
+      const start = within(screen.getByRole("group", { name: "booking:bookings.form.start" })).getByLabelText(
+        "booking:bookings.form.time",
+      );
+      const originalTime = start.getAttribute("value");
+      const save = screen.getByRole("button", { name: "booking:bookings.form.save" });
+      await user.click(save);
+      await waitFor(() => expect(committed).toBe(true));
+
+      expect(save).toBeDisabled();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(purpose).toHaveValue("Keep this draft");
+      finishRead?.();
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.errors.outcomeUncertain");
+      expect(queryClient.getQueryData(["api-v2", "bookings", 41])).toMatchObject({
+        version: 8,
+        start: updated.start,
+        end: updated.end,
+      });
+      expect(purpose).toHaveValue("Keep this draft");
+      expect(start).toHaveValue(originalTime);
+      expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41/edit");
+    },
+  );
 
   it("normalises a non-editable direct edit URL without rendering a form", async () => {
     server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...document, canEdit: false })));

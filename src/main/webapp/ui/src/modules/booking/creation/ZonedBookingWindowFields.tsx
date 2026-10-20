@@ -51,6 +51,7 @@ export function ZonedBookingWindowFields({
   disabled = false,
   density = "comfortable",
   showErrors = true,
+  startErrorId,
 }: {
   displayTimezone?: string;
   schedulingTimezone?: string;
@@ -65,6 +66,7 @@ export function ZonedBookingWindowFields({
   disabled?: boolean;
   density?: "comfortable" | "compact";
   showErrors?: boolean;
+  startErrorId?: string;
 }) {
   const { t } = useTranslation("booking");
   const fieldId = `booking-window-${useId()}`;
@@ -131,6 +133,7 @@ export function ZonedBookingWindowFields({
     (endpointResolution?.kind === "ambiguous" && !value[`${name}Occurrence`]);
 
   const endpointInvalid = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
+    (name === "start" && Boolean(startErrorId)) ||
     endpointUnresolved(name, endpointResolution) ||
     (name === "end" && result.orderInvalid) ||
     (policyInvalid && !allowPolicyMismatch);
@@ -138,6 +141,7 @@ export function ZonedBookingWindowFields({
   const errorDescription = (name: "start" | "end", endpointResolution: WallClockResolution | undefined) =>
     showErrors
       ? [
+          name === "start" ? startErrorId : undefined,
           endpointUnresolved(name, endpointResolution) ? `${fieldId}-${name}-error` : undefined,
           !endpointResolution || result.orderInvalid || (policyInvalid && !allowPolicyMismatch)
             ? windowErrorId
@@ -289,7 +293,7 @@ export function ZonedBookingWindowFields({
 
   if (density === "compact" && value.startDate === value.endDate) {
     const dateId = `${fieldId}-date`;
-    const dateInvalid = !value.startDate;
+    const dateInvalid = !value.startDate || Boolean(startErrorId);
     return (
       <div className="space-y-4">
         <div className="space-y-2">
@@ -300,7 +304,7 @@ export function ZonedBookingWindowFields({
             type="date"
             required
             aria-invalid={showErrors && dateInvalid ? true : undefined}
-            aria-describedby={showErrors && dateInvalid ? windowErrorId : undefined}
+            aria-describedby={showErrors ? (!value.startDate ? windowErrorId : startErrorId) : undefined}
             disabled={disabled}
             value={value.startDate}
             onChange={(event) =>

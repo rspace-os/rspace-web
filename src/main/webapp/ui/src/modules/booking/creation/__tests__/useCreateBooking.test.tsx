@@ -3,8 +3,9 @@ import { act, renderHook } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
+import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import { upcomingBooking } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
-import { bookingCreationProblemKey, isBookingCreationOutcomeUncertain, useCreateBooking } from "../useCreateBooking";
+import { bookingCreationProblemKey, isBookingOutcomeUncertain, useCreateBooking } from "../useCreateBooking";
 
 it("invalidates every booking view after creation, including the item list and availability index", async () => {
   server.use(http.post("/api/v2/bookings", () => HttpResponse.json(upcomingBooking)));
@@ -79,7 +80,17 @@ it("treats a lost create response as uncertain and refreshes booking queries", a
     }
   });
 
-  expect(isBookingCreationOutcomeUncertain(error)).toBe(true);
+  expect(isBookingOutcomeUncertain(error)).toBe(true);
   expect(bookingCreationProblemKey(error)).toBe("bookings.errors.outcomeUncertain");
   expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
+});
+
+it.each([
+  [null, false],
+  [new Error("Lost response"), true],
+  [new ApiV2ProblemError(302, undefined, "Unexpected redirect"), true],
+  [new ApiV2ProblemError(400, "errors.api.v2.booking.window", "Rejected"), false],
+  [new ApiV2ProblemError(503, undefined, "Unavailable"), true],
+])("classifies booking write outcome uncertainty for %s", (error, uncertain) => {
+  expect(isBookingOutcomeUncertain(error)).toBe(uncertain);
 });

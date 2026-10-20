@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingForm, type BookingFormState, type BookingFormSubmission } from "@/modules/booking/creation/BookingForm";
+import { isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
 import {
   ApiV2ProblemError,
   type BookingDetails,
@@ -24,7 +25,8 @@ function errorKey(
   error: unknown,
 ):
   | "bookings.errors.generic"
-  | "bookings.errors.endAfterStart"
+  | "bookings.errors.window"
+  | "bookings.errors.outcomeUncertain"
   | "bookings.errors.duration"
   | "bookings.errors.maximumDuration"
   | "bookings.errors.overlap"
@@ -33,8 +35,9 @@ function errorKey(
   | "bookings.errors.targetUnavailable"
   | "bookings.errors.forbidden"
   | "bookings.errors.noLongerEditable" {
+  if (isBookingOutcomeUncertain(error)) return "bookings.errors.outcomeUncertain";
   if (!(error instanceof ApiV2ProblemError)) return "bookings.errors.generic";
-  if (error.code === "errors.api.v2.booking.window") return "bookings.errors.endAfterStart";
+  if (error.code === "errors.api.v2.booking.window") return "bookings.errors.window";
   if (error.code === "errors.api.v2.booking.duration") return "bookings.errors.duration";
   if (error.code === "errors.api.v2.booking.maximumDuration") return "bookings.errors.maximumDuration";
   if (error.code === "errors.api.v2.booking.overlap") return "bookings.errors.overlap";
@@ -92,8 +95,9 @@ export default function BookingInlineEditForm() {
         return;
       }
       if (
-        error instanceof ApiV2ProblemError &&
-        (error.code === "errors.api.v2.forbidden" || error.code === "errors.api.v2.booking.state.transition")
+        isBookingOutcomeUncertain(error) ||
+        (error instanceof ApiV2ProblemError &&
+          (error.code === "errors.api.v2.forbidden" || error.code === "errors.api.v2.booking.state.transition"))
       ) {
         await refreshBooking();
       }

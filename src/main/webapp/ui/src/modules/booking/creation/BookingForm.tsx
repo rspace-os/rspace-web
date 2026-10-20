@@ -148,7 +148,8 @@ export function BookingForm(props: BookingFormProps) {
     );
   const [target, setTarget] = useState<BookableItemOption | undefined>(editing ? fixedTarget : initialTarget);
   const [draft, setDraft] = useState<BookingWindowDraft>(() => originalDraft ?? addDraft);
-  const [attempted, setAttempted] = useState(false);
+  const [attemptedAt, setAttemptedAt] = useState<number>();
+  const attempted = attemptedAt !== undefined;
   const form = useForm({
     schema: v.object({ purpose: v.pipe(v.string(), v.maxLength(1000)) }),
     initialInput: { purpose: initialPurpose },
@@ -159,6 +160,7 @@ export function BookingForm(props: BookingFormProps) {
   const submittingRef = useRef(false);
   const generatedFormId = useId();
   const formId = props.formId ?? generatedFormId;
+  const pastStartErrorId = `${formId}-past-start`;
   const [initialState, setInitialState] = useState({
     targetGlobalId: (editing ? fixedTarget : initialTarget)?.globalId ?? "",
     draft: originalDraft ?? addDraft,
@@ -211,10 +213,17 @@ export function BookingForm(props: BookingFormProps) {
       endOccurrence: undefined,
     }));
   };
+  const hasPastStart = () =>
+    window !== undefined &&
+    Date.parse(window.start) <= Date.now() &&
+    (props.mode === "add" ||
+      (Date.parse(props.booking.start) > Date.now() &&
+        (Date.parse(window.start) !== Date.parse(props.booking.start) ||
+          Date.parse(window.end) !== Date.parse(props.booking.end))));
   const submit = async (input: PurposeInput) => {
     // Commit validation attributes before looking up the first invalid field.
-    flushSync(() => setAttempted(true));
-    if (!target || !window || submittingRef.current || busy || props.submissionBlocked) {
+    flushSync(() => setAttemptedAt(Date.now()));
+    if (!target || !window || hasPastStart() || submittingRef.current || busy || props.submissionBlocked) {
       const formElement = document.getElementById(formId);
       (
         formElement?.querySelector<HTMLElement>("[aria-invalid='true']") ??
@@ -243,7 +252,7 @@ export function BookingForm(props: BookingFormProps) {
     (target?.globalId ?? "") !== initialState.targetGlobalId ||
     !sameWindowDraft(draft, initialState.draft) ||
     purposeValue !== initialState.purpose;
-  const bookingInPast = window !== undefined && Date.parse(window.start) <= Date.now();
+  const bookingInPast = hasPastStart();
   const notifyStateChange = useEffectEvent((state: BookingFormState) => props.onStateChange?.(state));
   useEffect(() => {
     notifyStateChange({ target, draft, window, purpose: purposeValue, eventKind, dirty });
@@ -277,6 +286,7 @@ export function BookingForm(props: BookingFormProps) {
       disabled={busy}
       density={props.density}
       showErrors={attempted}
+      startErrorId={bookingInPast ? pastStartErrorId : undefined}
     />
   ) : null;
 
@@ -356,11 +366,7 @@ export function BookingForm(props: BookingFormProps) {
             ) : (
               windowFields
             )}
-            {bookingInPast && (
-              <p role="status" className="text-sm text-amber-800 dark:text-amber-200">
-                {t("bookings.warnings.past")}
-              </p>
-            )}
+            {bookingInPast && <FieldError id={pastStartErrorId}>{t("bookings.warnings.past")}</FieldError>}
           </>
         )}
         {props.error && (

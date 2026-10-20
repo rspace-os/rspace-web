@@ -4,7 +4,7 @@ import { ApiV2ProblemError, createBooking } from "@/modules/booking/domain/booki
 import type { BookingFormSubmission } from "./BookingForm";
 
 const BOOKING_PROBLEM_KEYS = {
-  "errors.api.v2.booking.window": "bookings.errors.endAfterStart",
+  "errors.api.v2.booking.window": "bookings.errors.window",
   "errors.api.v2.booking.duration": "bookings.errors.duration",
   "errors.api.v2.booking.maximumDuration": "bookings.errors.maximumDuration",
   "errors.api.v2.booking.overlap": "bookings.errors.overlap",
@@ -37,13 +37,13 @@ export function bookingProblemMessage(error: unknown, t: TFunction<"booking">): 
 }
 
 export function bookingCreationProblemKey(error: unknown): BookingProblemKey | "bookings.errors.outcomeUncertain" {
-  return isBookingCreationOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
+  return isBookingOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
 }
 
-/** A create request may have committed even when its response was not received. */
-export function isBookingCreationOutcomeUncertain(error: unknown): boolean {
+/** A booking write may have committed even when its response was not received. */
+export function isBookingOutcomeUncertain(error: unknown): boolean {
   if (error == null) return false;
-  return !(error instanceof ApiV2ProblemError) || error.status >= 500;
+  return !(error instanceof ApiV2ProblemError) || error.status < 400 || error.status >= 500;
 }
 
 export function useCreateBooking(token: string) {
@@ -66,7 +66,7 @@ export function useCreateBooking(token: string) {
     },
     onError: (error) => {
       const invalidateBookings =
-        isBookingCreationOutcomeUncertain(error) ||
+        isBookingOutcomeUncertain(error) ||
         (error instanceof ApiV2ProblemError &&
           (error.code === "errors.api.v2.booking.overlap" ||
             error.code === "errors.api.v2.booking.concurrentModification"));
