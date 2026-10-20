@@ -479,10 +479,7 @@ class DeclaredArrayFieldTest {
             IllegalArgumentException.class,
             () ->
                 CollectionDescription.fromApiV2Resource(
-                    ArrayResource.class,
-                    ArrayBean.class,
-                    List.of(),
-                    List.of(new Sort("id", true))));
+                    ArrayResource.class, ArrayBean.class, List.of(new Sort("id", true))));
     assertTrue(failure.getMessage().contains("declared children"));
     assertTrue(failure.getMessage().contains("Field.embedded"));
   }

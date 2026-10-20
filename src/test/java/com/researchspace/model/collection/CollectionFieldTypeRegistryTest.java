@@ -105,7 +105,6 @@ class CollectionFieldTypeRegistryTest {
         CollectionDescription.fromApiV2Resource(
             Resource.class,
             Entity.class,
-            List.of(),
             List.of(new Sort("id", true)),
             new CollectionFieldTypeRegistry(registrations));
 
@@ -122,7 +121,7 @@ class CollectionFieldTypeRegistryTest {
         IllegalArgumentException.class,
         () ->
             CollectionDescription.fromApiV2Resource(
-                Resource.class, Entity.class, List.of(), List.of(new Sort("id", true))));
+                Resource.class, Entity.class, List.of(new Sort("id", true))));
   }
 
   private enum State {

@@ -169,24 +169,18 @@ public final class CollectionDescription<T> {
 
   /** Describes an annotated resource whose every operation requires an authenticated caller. */
   public static <T> CollectionDescription<T> fromApiV2Resource(
-      Class<?> resourceType,
-      Class<T> entityType,
-      List<Relationship<T>> relationships,
-      List<Sort> defaultSort) {
-    return fromApiV2Resource(
-        resourceType, entityType, relationships, defaultSort, AccessPolicy.authenticated());
+      Class<?> resourceType, Class<T> entityType, List<Sort> defaultSort) {
+    return fromApiV2Resource(resourceType, entityType, defaultSort, AccessPolicy.authenticated());
   }
 
   public static <T> CollectionDescription<T> fromApiV2Resource(
       Class<?> resourceType,
       Class<T> entityType,
-      List<Relationship<T>> relationships,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy) {
     return AnnotatedCollectionDescriptionFactory.create(
         resourceType,
         entityType,
-        relationships,
         defaultSort,
         accessPolicy,
         List.of(),
@@ -197,14 +191,12 @@ public final class CollectionDescription<T> {
   public static <T> CollectionDescription<T> fromApiV2Resource(
       Class<?> resourceType,
       Class<T> entityType,
-      List<Relationship<T>> relationships,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy,
       List<InternalFilter> internalFilters) {
     return AnnotatedCollectionDescriptionFactory.create(
         resourceType,
         entityType,
-        relationships,
         defaultSort,
         accessPolicy,
         internalFilters,
@@ -215,23 +207,15 @@ public final class CollectionDescription<T> {
   public static <T> CollectionDescription<T> fromApiV2Resource(
       Class<?> resourceType,
       Class<T> entityType,
-      List<Relationship<T>> relationships,
       List<Sort> defaultSort,
       CollectionFieldTypeRegistry fieldTypes) {
     return fromApiV2Resource(
-        resourceType,
-        entityType,
-        relationships,
-        defaultSort,
-        AccessPolicy.authenticated(),
-        List.of(),
-        fieldTypes);
+        resourceType, entityType, defaultSort, AccessPolicy.authenticated(), List.of(), fieldTypes);
   }
 
   public static <T> CollectionDescription<T> fromApiV2Resource(
       Class<?> resourceType,
       Class<T> entityType,
-      List<Relationship<T>> relationships,
       List<Sort> defaultSort,
       AccessPolicy accessPolicy,
       List<InternalFilter> internalFilters,
@@ -239,7 +223,6 @@ public final class CollectionDescription<T> {
     return AnnotatedCollectionDescriptionFactory.create(
         resourceType,
         entityType,
-        relationships,
         defaultSort,
         accessPolicy,
         internalFilters,
