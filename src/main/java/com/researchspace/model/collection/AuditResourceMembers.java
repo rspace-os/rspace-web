@@ -9,11 +9,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import org.springframework.util.ReflectionUtils;
 
 /** Builds the standard date fields and user relationships inferred from audit properties. */
 final class AuditResourceMembers {
 
-  private static final Method USER_ID_READER = BeanPropertyAccess.reader(User.class, "id");
+  private static final Method USER_ID_READER = ResourcePropertyReaders.reader(User.class, "id");
 
   private AuditResourceMembers() {}
 
@@ -61,7 +62,7 @@ final class AuditResourceMembers {
       throw new IllegalArgumentException(
           "Audit property " + reader.getName() + " must return " + User.class.getName());
     }
-    Function<T, User> userReader = entity -> (User) BeanPropertyAccess.invoke(reader, entity);
+    Function<T, User> userReader = entity -> (User) ReflectionUtils.invokeMethod(reader, entity);
     return Optional.of(
         Relationship.referenceToOne(
                 name,
@@ -69,7 +70,7 @@ final class AuditResourceMembers {
                 CollectionFieldTypes.longNumber(),
                 User.class,
                 userReader,
-                user -> Long.class.cast(BeanPropertyAccess.readId(user, USER_ID_READER)),
+                user -> Long.class.cast(ResourcePropertyReaders.readId(user, USER_ID_READER)),
                 source.property() + ".id")
             .allowNull()
             .documented(
@@ -96,7 +97,7 @@ final class AuditResourceMembers {
     }
     return Optional.of(
         new AuditProperty<>(
-            source.property(), entity -> type.cast(BeanPropertyAccess.invoke(reader, entity))));
+            source.property(), entity -> type.cast(ReflectionUtils.invokeMethod(reader, entity))));
   }
 
   private static AuditReader auditReader(
