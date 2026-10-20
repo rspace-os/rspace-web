@@ -62,7 +62,8 @@ public interface SampleRequestApiManager {
 
   /**
    * Closes every PENDING or APPROVED request against a sample whose ownership is being transferred:
-   * the new owner's own requests are fulfilled with it, all others are rejected.
+   * the new owner's own requests are fulfilled with it, all others are rejected. The caller must
+   * have checked that the actor may transfer the sample: by now its owner has already changed.
    *
    * @param sampleId the sample whose active requests should be closed
    * @param actor attributed as who made the change; the person who performed the transfer

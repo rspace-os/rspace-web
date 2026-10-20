@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.BeanUtils;
 
 /** Representation of a User */
 @Data
@@ -70,11 +71,23 @@ public class ApiUser extends LinkableApiObject implements IdentifiableObject {
   public ApiUser(User user, boolean onlyPublicData) {
     this(user);
     if (onlyPublicData) {
-      this.email = null;
-      this.setHomeFolderId(null);
-      this.setHasPiRole(null);
-      this.setHasSysAdminRole(null);
+      clearNonPublicData();
     }
+  }
+
+  public ApiUser publicDataCopy() {
+    ApiUser copy = new ApiUser();
+    BeanUtils.copyProperties(this, copy);
+    copy.clearNonPublicData();
+    return copy;
+  }
+
+  private void clearNonPublicData() {
+    email = null;
+    homeFolderId = null;
+    workbenchId = null;
+    hasPiRole = null;
+    hasSysAdminRole = null;
   }
 
   /* for testing, does not set homefolder/workbench id etc. */

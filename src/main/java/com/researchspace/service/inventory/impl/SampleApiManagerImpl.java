@@ -753,9 +753,8 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
   }
 
   /**
-   * Whoever may edit and transfer the sample may change whether it is requestable; the caller has
-   * already passed the edit check. Resending the current value is not a change, and only turning it
-   * on needs sample requests to be enabled, so existing requestable samples stay editable.
+   * Resending the current value is not a change, and only turning it on needs sample requests to be
+   * enabled, so existing requestable samples stay editable.
    */
   private void assertRequestableChangeAllowed(
       ApiSampleWithoutSubSamples update, ApiSample current, SampleEntity dbSample, User user) {
@@ -763,7 +762,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     if (wanted == null || wanted.equals(current.getRequestable())) {
       return;
     }
-    if (!invPermissions.canUserTransferInventoryRecord(dbSample, user)) {
+    if (!invPermissions.canUserChangeRequestable(dbSample, user)) {
       throw new ApiRuntimeException("errors.inventory.sampleRequest.requestableNotPermitted");
     }
     if (wanted && !sampleRequestsAvailable(user)) {

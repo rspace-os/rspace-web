@@ -15,6 +15,7 @@ import com.researchspace.model.inventory.field.InventoryEntityField;
 import jakarta.persistence.LockModeType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
@@ -76,10 +77,17 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     boolean unscopedOwnedBy = unscopedRequestableSearch && StringUtils.isNotEmpty(ownedBy);
 
     List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
+        unscopedRequestableSearch
+            ? List.of()
+            : invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
     List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
+        unscopedRequestableSearch
+            ? List.of()
+            : user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
+    List<String> visibleOwners =
+        unscopedRequestableSearch
+            ? List.of()
+            : invPermissionUtils.getOwnersVisibleWithUserRole(user);
     String ownedByAndPermittedItemsQueryFragment =
         unscopedRequestableSearch
             ? (unscopedOwnedBy ? "and owner.username=:ownedBy " : "")
@@ -192,7 +200,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
 
   /** A LIKE pattern matching names that contain the text, with % and _ taken literally. */
   private static String nameContainsPattern(String text) {
-    String escaped = text.toLowerCase().replace("!", "!!").replace("%", "!%").replace("_", "!_");
+    String escaped =
+        text.toLowerCase(Locale.ROOT).replace("!", "!!").replace("%", "!%").replace("_", "!_");
     return "%" + escaped + "%";
   }
 

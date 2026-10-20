@@ -15,7 +15,16 @@ import lombok.NoArgsConstructor;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
-@JsonPropertyOrder({"id", "status", "note", "created", "requester", "sample", "statusChanges"})
+@JsonPropertyOrder({
+  "id",
+  "status",
+  "note",
+  "created",
+  "requester",
+  "originalOwner",
+  "sample",
+  "statusChanges"
+})
 public class ApiSampleRequest extends ApiSampleRequestInfo {
 
   /** Oldest first, starting with the request's creation. */

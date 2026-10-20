@@ -2,6 +2,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import SearchContext from "../../../../stores/contexts/Search";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import { containerAttrs, makeMockContainer } from "../../../../stores/models/__tests__/ContainerModel/mocking";
@@ -104,5 +107,26 @@ describe("Node", () => {
         name: (name) => name.toLowerCase().includes("inventory:recordtypes.container.singular"),
       }),
     ).toBeVisible();
+  });
+  test("When the record has a preview image, the image's alt text names the record", async () => {
+    const search = new Search({ factory: mockFactory() });
+    search.alwaysFilterOut = () => true;
+    const container = makeMockContainer({ name: "Freezer A", parentContainers: [containerAttrs({ globalId: "IC2" })] });
+    container.contentSearch.cacheFetcher.results = [];
+    container.thumbnail = "http://localhost/thumbnail.png";
+    vi.spyOn(container, "fetchAdditionalInfo").mockImplementation(() => Promise.resolve());
+
+    await renderWithRealI18n(
+      <ThemeProvider theme={materialTheme}>
+        <SearchContext.Provider value={{ search, differentSearchForSettingActiveResult: search }}>
+          <SimpleTreeView>
+            <Node node={container} />
+          </SimpleTreeView>
+        </SearchContext.Provider>
+      </ThemeProvider>,
+      { resources: { common: commonEn, inventory: inventoryEn }, defaultNS: "inventory" },
+    );
+
+    expect(screen.getByRole("img", { name: "Thumbnail for Freezer A" })).toBeInTheDocument();
   });
 });

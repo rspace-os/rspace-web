@@ -48,6 +48,8 @@ import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleRequest;
+import com.researchspace.model.inventory.SampleRequestStatusChange;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.SubSampleNote;
@@ -286,6 +288,8 @@ public abstract class HibernateTest {
       SampleTemplate.class,
       Sample.class,
       SubSample.class,
+      SampleRequest.class,
+      SampleRequestStatusChange.class,
       AbstractForm.class,
       Barcode.class,
       DigitalObjectIdentifier.class,
