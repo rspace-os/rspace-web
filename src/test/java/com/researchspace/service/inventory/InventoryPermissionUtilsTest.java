@@ -11,6 +11,7 @@ import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiGroupBasicInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSharedFlag;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -777,5 +778,19 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     rename.setSharingMode(groupmateView.getSharingMode());
     rename.setSharedWith(groupmateView.getSharedWith());
     assertEquals("renamed by groupmate", sampleApiMgr.updateApiSample(rename, groupmate).getName());
+  }
+
+  @Test
+  public void sysadminGroupmateIsNotOfferedOwnershipControl() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User sysadmin = createAndSaveSysadminUser();
+    initialiseContentWithEmptyContent(pi, sysadmin);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, sysadmin);
+    Long id = createBasicSampleForUser(testUser).getId();
+
+    assertThat(sampleApiMgr.getApiSampleById(id, sysadmin).getPermittedActions())
+        .containsExactly(
+            ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.UPDATE);
   }
 }

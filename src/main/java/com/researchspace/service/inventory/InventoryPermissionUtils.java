@@ -345,7 +345,6 @@ public class InventoryPermissionUtils {
 
   public void setPermissionsInApiInventoryRecord(
       ApiInventoryRecordInfo apiInvRec, InventoryRecord invRec, User user) {
-    String invRecOwner = apiInvRec.getOwner().getUsername();
     if (canUserEditInventoryRecord(invRec, user)) {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.READ);
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.UPDATE);
@@ -354,10 +353,7 @@ public class InventoryPermissionUtils {
     } else if (canUserLimitedReadInventoryRecord(invRec, user)) {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.LIMITED_READ);
     }
-    if (!isLockedInstrumentTemplate(invRec)
-        && (user.getUsername().equals(invRecOwner)
-            || isPiOrAdminOfRecordOwnerGroup(user, invRecOwner)
-            || user.hasSysadminRole())) {
+    if (!isLockedInstrumentTemplate(invRec) && canUserChangeAccessPermissions(invRec, user)) {
       // FIXME community admin should also have TRANSFER permission
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
     }
