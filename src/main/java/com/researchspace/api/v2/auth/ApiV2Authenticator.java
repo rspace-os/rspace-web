@@ -26,7 +26,7 @@ import org.springframework.stereotype.Service;
  * Authenticates REST API v2 requests using an API key or OAuth bearer token.
  *
  * <p>Deviates from REST API v1 in several ways; see the "Deviations from REST API v1" table in
- * {@code DevDocs/DeveloperNotes/RestApiV2Collections.md}.
+ * {@code DevDocs/DeveloperNotes/RestApiV2QueriesAndAccess.md}.
  */
 @Service
 @RequiredArgsConstructor

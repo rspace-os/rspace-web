@@ -28,7 +28,7 @@ public interface APIRequestThrottler extends Throttler {
    * @apiNote {@link #getStats} returns {@link Optional#empty()} rather than fabricated numbers, so
    *     callers must not advertise {@code X-Rate-Limit-*} headers when throttling is disabled. This
    *     deviates from v1; see the "Deviations from REST API v1" table in {@code
-   *     DevDocs/DeveloperNotes/RestApiV2Collections.md}.
+   *     DevDocs/DeveloperNotes/RestApiV2QueriesAndAccess.md}.
    */
   APIRequestThrottler PASS_THRU =
       new APIRequestThrottler() {
