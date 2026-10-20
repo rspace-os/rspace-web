@@ -22,7 +22,6 @@ export const templateAttrs = (attrs?: Partial<TemplateAttrs>): TemplateAttrs => 
   sampleSource: "LAB_CREATED",
   expiryDate: null,
   requestable: false,
-  canSetRequestable: false,
   iconId: null,
   owner: {
     id: 1,

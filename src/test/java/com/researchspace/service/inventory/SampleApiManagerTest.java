@@ -1037,7 +1037,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         .hasSize(2); // read/transfer
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
     assertThat(visibleSamples.getSamples().get(1).getPermittedActions())
-        .hasSize(3); // read/edit/transfer
+        .hasSize(4); // read/edit/transfer/change-requestable
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(2).getGlobalId());
     assertThat(visibleSamples.getSamples().get(2).getPermittedActions()).hasSize(2); // read/edit
 
@@ -1313,7 +1313,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     // compare with sample as seen by the owner
     ApiSample sampleAsSeenByTestUser =
         sampleApiMgr.getApiSampleById(createdSample.getId(), testUser);
-    assertThat(sampleAsSeenByTestUser.getPermittedActions()).hasSize(3);
+    assertThat(sampleAsSeenByTestUser.getPermittedActions()).hasSize(4);
     assertNotNull(sampleAsSeenByTestUser.getFields());
     assertNotNull(sampleAsSeenByTestUser.getExtraFields());
     assertNotNull(sampleAsSeenByTestUser.getSubSamples());
