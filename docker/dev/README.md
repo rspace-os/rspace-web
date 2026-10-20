@@ -476,9 +476,9 @@ is the quick lookup.
   same time they briefly contend on the shared Maven cache while it warms. Boot
   one first, or just retry — it is harmless.
 - **Memory**: the backend defaults to `-Xmx2g` (`MAVEN_OPTS` in `.env`), and
-  MariaDB uses a 1 GB InnoDB buffer pool instead of the 2 GB configured in
-  `rspace-docker` to reduce local memory use. Vite uses a large Node heap; give
-  Docker Desktop a generous memory limit.
+  MariaDB uses a smaller InnoDB buffer pool than `rspace-docker` for local use
+  (see `db/db-config.cnf`). Vite uses a large Node heap; give Docker Desktop a
+  generous memory limit.
 - **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
   `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
 - **Session cookies**: each instance names its session cookie

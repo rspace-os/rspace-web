@@ -30,6 +30,7 @@ volumes:
 ```
 
 You can get the db-config.cnf file from here - https://github.com/rspace-os/rspace-docker/blob/main/configs/db-config.cnf
+Its `datadir` must match the `/media/mysql` volume target above, or database files will not persist when the container is recreated.
 
 Place all these files in your home dir, inside a folder called "rspace-db". Once inside that folder, you can run the container commands:
 - Start container: docker compose up -d 
