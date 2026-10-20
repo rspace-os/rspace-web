@@ -173,6 +173,7 @@ jobs:
           SET GLOBAL character_set_server = 'utf8mb4';
           SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
           SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          SET GLOBAL innodb_snapshot_isolation = 0;
           GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
           FLUSH PRIVILEGES;
           SQL
