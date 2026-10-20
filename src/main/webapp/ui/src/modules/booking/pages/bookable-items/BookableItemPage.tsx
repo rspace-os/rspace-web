@@ -23,6 +23,7 @@ import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { isPermanentClientError } from "@/modules/common/queries/queryRetry";
 import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
+import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -358,11 +359,17 @@ function LoadedBookableItemPage({
   globalId,
   tab,
   token,
+  readError,
+  retrying,
+  onRetry,
 }: {
   configuration: BookingConfiguration;
   globalId: string;
   tab: BookableItemTab;
   token: string;
+  readError: boolean;
+  retrying: boolean;
+  onRetry: () => void;
 }) {
   const { t } = useTranslation("booking");
   const { t: commonT } = useTranslation("common");
@@ -557,6 +564,18 @@ function LoadedBookableItemPage({
             !next.search.edit)
         }
       />
+      {readError ? (
+        <Alert variant="destructive">
+          <AlertDescription>
+            {t("bookableItemDetails.backgroundError")}
+            <div className="mt-4">
+              <Button type="button" variant="outline" disabled={retrying} aria-busy={retrying} onClick={onRetry}>
+                {commonT("actions.retry")}
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      ) : null}
       <div className="@container">
         <div className={itemColumnsClassName}>
           <Tabs.Root
@@ -865,7 +884,17 @@ function Details({ globalId, tab }: { globalId: string; tab: BookableItemTab }) 
     );
   }
 
-  return <LoadedBookableItemPage configuration={configuration.data} globalId={globalId} tab={tab} token={token} />;
+  return (
+    <LoadedBookableItemPage
+      configuration={configuration.data}
+      globalId={globalId}
+      tab={tab}
+      token={token}
+      readError={configuration.isError}
+      retrying={configuration.isFetching}
+      onRetry={() => void configuration.refetch()}
+    />
+  );
 }
 
 export default function BookableItemPage() {

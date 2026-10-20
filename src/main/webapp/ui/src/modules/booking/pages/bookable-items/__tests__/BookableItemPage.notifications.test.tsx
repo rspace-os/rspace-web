@@ -3,6 +3,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, renderPage, setupPage } from "./bookableItemPageTestUtils";
@@ -52,7 +53,7 @@ describe("BookableItemPage", () => {
     { status: 429, failure: "rate limiting" },
     { status: 503, failure: "a server failure" },
     { status: null, failure: "a network failure" },
-  ])("keeps a dirty draft after $failure during a background refresh", async ({ status }) => {
+  ])("keeps a dirty draft through $failure and a successful retry during a background refresh", async ({ status }) => {
     const user = userEvent.setup();
     let saved: unknown;
     server.use(
@@ -79,6 +80,15 @@ describe("BookableItemPage", () => {
     expect(screen.getByRole("spinbutton", { name: "booking:bookableItemDetails.fields.maximumDuration" })).toHaveValue(
       60,
     );
+    const notice = await screen.findByRole("alert");
+    expect(notice).toHaveTextContent("booking:bookableItemDetails.backgroundError");
+    await expectAccessible(notice);
+    server.use(http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([configuration], 2))));
+    await user.click(within(notice).getByRole("button", { name: "common:actions.retry" }));
+
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    expect(maximum).toBeInTheDocument();
+    expect(maximum).toHaveValue(60);
     await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
     await waitFor(() => expect(saved).toMatchObject({ maxBookingDurationMinutes: 60 }));
   });
