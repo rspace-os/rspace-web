@@ -476,6 +476,8 @@ describe("Calendar page", () => {
   });
 
   test("creates a booking through the targetless compact form and restores trigger focus", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
     window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
     render(<CalendarPageStory />);
     const trigger = page.getByRole("button", { name: "New Booking" });
@@ -571,6 +573,8 @@ describe("Calendar page", () => {
   });
 
   test("preserves a compact draft across recoverable server conflicts", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
     let code = "errors.api.v2.booking.overlap";
     worker.use(
       http.post("/api/v2/bookings", () =>

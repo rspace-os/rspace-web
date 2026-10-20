@@ -10,7 +10,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { type ReactNode, Suspense } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import { currentWallClock } from "@/modules/booking/domain/bookingTime";
@@ -64,6 +64,10 @@ function renderForm(node: ReactNode) {
 }
 
 describe("BookingForm", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+  });
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -474,7 +478,7 @@ describe("BookingForm", () => {
     expect(submit).not.toHaveBeenCalled();
   });
 
-  it("warns about a past booking without blocking submission", async () => {
+  it("blocks an already-started booking even when its end is in the future", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-17T12:00:00Z"));
     const user = userEvent.setup();
@@ -510,16 +514,103 @@ describe("BookingForm", () => {
     await waitFor(() =>
       expect(stateChanged).toHaveBeenLastCalledWith(expect.objectContaining({ window: expect.anything() })),
     );
-    expect(await screen.findByRole("status")).toHaveTextContent("booking:bookings.warnings.past");
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookings.warnings.past");
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
+    const startDate = within(screen.getByRole("group", { name: "booking:bookings.form.start" })).getByLabelText(
+      "booking:bookings.form.date",
+    );
+    expect(startDate).toHaveFocus();
+    expect(startDate).toHaveAttribute("aria-invalid", "true");
+    expect(startDate).toHaveAccessibleDescription("booking:bookings.warnings.past");
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("blocks a booking that starts exactly now", async () => {
+    const submit = await submitBookingWithStartTime("12:00");
+
+    expect(screen.getByRole("alert")).toHaveTextContent("booking:bookings.warnings.past");
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("leaves an end-only edit of an already-started booking to the server's state transition check", async () => {
+    vi.setSystemTime(new Date("2026-10-25T02:00:00Z"));
+    const user = userEvent.setup();
+    const submit = vi.fn(async () => undefined);
+    renderForm(
+      <BookingForm
+        mode="edit"
+        displayTimezone="UTC"
+        booking={editableBooking}
+        configuration={target}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+    const end = await screen.findByRole("group", { name: "booking:bookings.form.end" });
+    const time = within(end).getByLabelText("booking:bookings.form.time");
+    await user.clear(time);
+    await user.type(time, "03:30");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+
+    expect(screen.queryByText("booking:bookings.warnings.past")).not.toBeInTheDocument();
     expect(submit).toHaveBeenCalledOnce();
   });
 
-  it("warns when a booking starts exactly now without blocking submission", async () => {
-    const submit = await submitBookingWithStartTime("12:00");
-
-    expect(screen.getByRole("status")).toHaveTextContent("booking:bookings.warnings.past");
+  it("rechecks the clock when submitting a previously future start", async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn(async () => undefined);
+    server.use(http.get("/api/v2/booking-catalogue", () => HttpResponse.json(cataloguePage([]))));
+    renderForm(
+      <BookingForm
+        mode="add"
+        displayTimezone="UTC"
+        eventKind="BOOKING"
+        initialTarget={target}
+        initialWindow={{ startDate: "2026-08-17", startTime: "12:00", endDate: "2026-08-17", endTime: "13:00" }}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+    const button = await screen.findByRole("button", { name: "booking:bookings.form.submit" });
+    await user.click(button);
     expect(submit).toHaveBeenCalledOnce();
+    vi.setSystemTime(new Date("2026-08-17T12:00:00Z"));
+
+    await user.click(button);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("booking:bookings.warnings.past");
+    expect(submit).toHaveBeenCalledOnce();
+  });
+
+  it("blocks moving a future booking's interval into the past", async () => {
+    vi.setSystemTime(new Date("2026-10-25T01:00:00Z"));
+    const user = userEvent.setup();
+    const submit = vi.fn(async () => undefined);
+    renderForm(
+      <BookingForm
+        mode="edit"
+        displayTimezone="UTC"
+        booking={editableBooking}
+        configuration={target}
+        token="token"
+        pending={false}
+        onSubmit={submit}
+      />,
+    );
+    const start = await screen.findByRole("group", { name: "booking:bookings.form.start" });
+    const time = within(start).getByLabelText("booking:bookings.form.time");
+    await user.clear(time);
+    await user.type(time, "00:30");
+    await user.click(screen.getByRole("button", { name: "booking:bookings.form.save" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("booking:bookings.warnings.past");
+    const startDate = within(start).getByLabelText("booking:bookings.form.date");
+    expect(startDate).toHaveFocus();
+    expect(startDate).toHaveAttribute("aria-invalid", "true");
+    expect(time).toHaveAccessibleDescription("booking:bookings.warnings.past");
+    expect(submit).not.toHaveBeenCalled();
   });
 
   it("does not warn when a booking starts strictly in the future", async () => {

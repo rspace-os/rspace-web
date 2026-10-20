@@ -9,7 +9,7 @@ import type { BookableItemOption } from "@/modules/booking/creation/bookableItem
 import { bookingCreationDraftFromHistoryState } from "@/modules/booking/creation/bookingCreationDraft";
 import {
   bookingCreationProblemKey,
-  isBookingCreationOutcomeUncertain,
+  isBookingOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
@@ -141,7 +141,7 @@ function AddBookingContent() {
   const updatePageState = useCallback(
     (state: BookingFormState) => {
       setSelectedTarget(state.target);
-      if (!mutation.isError || isBookingCreationOutcomeUncertain(mutation.error)) return;
+      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
       resetMutation();
     },
     [mutation.error, mutation.isError, resetMutation],
@@ -180,10 +180,8 @@ function AddBookingContent() {
               token={token}
               pending={mutation.isPending}
               error={mutation.error ? t(bookingCreationProblemKey(mutation.error)) : undefined}
-              outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
-              submissionBlocked={
-                isBookingOverlapError(mutation.error) || isBookingCreationOutcomeUncertain(mutation.error)
-              }
+              outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
+              submissionBlocked={isBookingOverlapError(mutation.error) || isBookingOutcomeUncertain(mutation.error)}
               showRulesSummary={false}
               onStateChange={updatePageState}
               onSubmit={submit}
