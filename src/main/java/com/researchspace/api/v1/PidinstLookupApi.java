@@ -16,7 +16,7 @@ public interface PidinstLookupApi {
   /**
    * Free text, or a DOI / Handle (bare or as a resolver address) for a direct lookup, across the
    * registries named in {@code providers} ({@code PIDINST_DATACITE}, {@code PIDINST_B2INST}, one or
-   * both, comma-separated or repeated). One merged page of 50, newest update first; {@code
+   * both, comma-separated or repeated). One merged page of up to 50, newest update first; {@code
    * pageNumber} is 0-based and defaults to 0. 422 for a short query or no usable registry.
    */
   @GetMapping("/search")
