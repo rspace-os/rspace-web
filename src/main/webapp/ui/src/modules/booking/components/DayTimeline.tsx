@@ -112,17 +112,30 @@ function period(range: DayTimelineRange, date: string, timezone: string) {
   return `${start}–${end}`;
 }
 
-function positionEvents(events: ReadonlyArray<DayTimelineEvent>, dayMinutes: number): Array<PositionedEvent> {
+function positionEvents(
+  events: ReadonlyArray<DayTimelineEvent>,
+  dayMinutes: number,
+  positions?: ReadonlyMap<string, DayTimelineRange>,
+): Array<PositionedEvent> {
   const laneEnds: Array<number> = [];
   return events
-    .filter((event) => event.endMinute > 0 && event.startMinute < dayMinutes && event.endMinute > event.startMinute)
-    .toSorted(
-      (left, right) =>
-        left.startMinute - right.startMinute || left.endMinute - right.endMinute || left.id.localeCompare(right.id),
-    )
+    .filter((event) => {
+      const range = positions?.get(event.id) ?? event;
+      return range.endMinute > 0 && range.startMinute < dayMinutes && range.endMinute > range.startMinute;
+    })
+    .toSorted((leftEvent, rightEvent) => {
+      const left = positions?.get(leftEvent.id) ?? leftEvent;
+      const right = positions?.get(rightEvent.id) ?? rightEvent;
+      return (
+        left.startMinute - right.startMinute ||
+        left.endMinute - right.endMinute ||
+        leftEvent.id.localeCompare(rightEvent.id)
+      );
+    })
     .map((event) => {
-      const startMinute = Math.max(0, event.startMinute);
-      const endMinute = Math.min(dayMinutes, event.endMinute);
+      const range = positions?.get(event.id) ?? event;
+      const startMinute = Math.max(0, range.startMinute);
+      const endMinute = Math.min(dayMinutes, range.endMinute);
       const visualEndMinute = Math.min(dayMinutes, Math.max(endMinute, startMinute + MINIMUM_VISUAL_DURATION));
       const availableLane = laneEnds.findIndex((laneEnd) => laneEnd <= startMinute);
       const lane = availableLane === -1 ? laneEnds.length : availableLane;
@@ -542,6 +555,7 @@ export function DayTimeline({
   date,
   timezone,
   events,
+  eventPositions,
   startWindow: wallStartWindow,
   endWindow: wallEndWindow,
   nowMinute,
@@ -564,6 +578,8 @@ export function DayTimeline({
   date: string;
   timezone: string;
   events: ReadonlyArray<DayTimelineEvent>;
+  /** Keep open cards positioned during reconciliation while displaying their live event times. */
+  eventPositions?: ReadonlyMap<string, DayTimelineRange>;
   startWindow: number;
   endWindow: number;
   nowMinute?: number;
@@ -614,7 +630,7 @@ export function DayTimeline({
       ),
     [date, timezone, dayMinutes],
   );
-  const positionedEvents = positionEvents(events, dayMinutes);
+  const positionedEvents = positionEvents(events, dayMinutes, eventPositions);
   const laneCount = Math.max(1, ...positionedEvents.map(({ lane }) => lane + 1));
   const density = peakHourlyDensity(positionedEvents, dayMinutes);
   const densityHourWidth =
@@ -675,8 +691,8 @@ export function DayTimeline({
     const box = canvas.getBoundingClientRect();
     return snapMinute(((clientX - box.left) / box.width) * dayMinutes);
   };
-  const freeCanvas = (target: EventTarget | null) =>
-    target instanceof HTMLElement && !target.closest("article, button, a");
+  const freeCanvas = (target: EventTarget | null, canvas: HTMLElement) =>
+    target instanceof HTMLElement && canvas.contains(target) && !target.closest("article, button, a");
 
   return (
     <section
@@ -747,7 +763,7 @@ export function DayTimeline({
             data-hour-width={densityHourWidth}
             data-creation-disabled={creationDisabled || undefined}
             onPointerDown={(event) => {
-              if (!onRangeSelect || creationDisabled || !freeCanvas(event.target)) return;
+              if (!onRangeSelect || creationDisabled || !freeCanvas(event.target, event.currentTarget)) return;
               const from = Math.min(dayMinutes - snapIncrementMinutes, minuteAt(event.clientX, event.currentTarget));
               if (event.nativeEvent.isTrusted) event.currentTarget.setPointerCapture(event.pointerId);
               setDragRange({ from, to: from + snapIncrementMinutes });

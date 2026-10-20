@@ -1166,6 +1166,7 @@ export default interface Resources {
         "outcomeUncertainGuidance": "Check your bookings before starting another booking to avoid creating a duplicate.",
         "overlap": "This period overlaps another booking.",
         "targetUnavailable": "This bookable item is unavailable.",
+        "window": "Enter a start in the future and an end after the start.",
         "windowRequired": "Enter a valid start and end."
       },
       "form": {
@@ -1212,7 +1213,7 @@ export default interface Resources {
       "loadingConfiguration": "Loading bookable item settings.",
       "maintenanceLabel": "Maintenance blockout",
       "warnings": {
-        "past": "A booking must start in the future."
+        "past": "Choose a start time in the future."
       }
     },
     "calendar": {

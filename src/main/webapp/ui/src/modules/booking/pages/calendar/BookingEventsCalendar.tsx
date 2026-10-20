@@ -14,7 +14,7 @@ import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTim
 import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingForm, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { bookingProblemKey } from "@/modules/booking/creation/useCreateBooking";
+import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
 import {
   ApiV2ProblemError,
   type BookingListDocument,
@@ -157,10 +157,28 @@ function occursOn(event: BookingListDocument, date: string, timezone: string): b
   return Date.parse(event.start) < Date.parse(bounds.end) && Date.parse(event.end) > Date.parse(bounds.start);
 }
 
-function eventsOn(events: readonly BookingListDocument[], date: string, timezone: string) {
+function eventsOn(
+  events: readonly BookingListDocument[],
+  date: string,
+  timezone: string,
+  editors?: ReadonlyMap<number, BookingListDocument>,
+) {
   return events
-    .filter((event) => occursOn(event, date, timezone))
+    .filter((event) => occursOn(editors?.get(event.id) ?? event, date, timezone))
     .toSorted((left, right) => left.start.localeCompare(right.start));
+}
+
+function timelineEditorPositions(
+  editors: ReadonlyMap<number, BookingListDocument> | undefined,
+  date: string,
+  timezone: string,
+) {
+  return new Map(
+    [...(editors?.values() ?? [])].map((event) => [
+      String(event.id),
+      sliceAcrossZonedDay(event.start, event.end, date, timezone),
+    ]),
+  );
 }
 
 function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
@@ -260,8 +278,16 @@ function isEditableBooking(event: BookingListDocument): event is BookingListDocu
   return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
 }
 
+const BookingEditorsContext = React.createContext<
+  | {
+      setEditors: React.Dispatch<React.SetStateAction<Map<string, BookingListDocument>>>;
+      positions: ReadonlyMap<number, BookingListDocument>;
+    }
+  | undefined
+>(undefined);
+
 function InlineBookingEditor({
-  event,
+  event: initialEvent,
   timezone,
   token,
   onClose,
@@ -273,6 +299,20 @@ function InlineBookingEditor({
 }) {
   const { t } = useTranslation(["booking", "common"]);
   const queryClient = useQueryClient();
+  const [event, setEvent] = React.useState(initialEvent);
+  const [formEvent, setFormEvent] = React.useState(initialEvent);
+  const anchorEvent = React.useRef(initialEvent).current;
+  const editorId = React.useId();
+  const setEditors = React.useContext(BookingEditorsContext)?.setEditors;
+  React.useEffect(() => {
+    setEditors?.((current) => new Map(current).set(editorId, anchorEvent));
+    return () =>
+      setEditors?.((current) => {
+        const next = new Map(current);
+        next.delete(editorId);
+        return next;
+      });
+  }, [editorId, anchorEvent, setEditors]);
   const configuration = useBookableItemConfiguration(event.target.globalId, token);
   const mutation = useMutation({
     mutationFn: (submission: BookingFormSubmission) => {
@@ -291,11 +331,12 @@ function InlineBookingEditor({
     },
     onError: async (error) => {
       if (
-        error instanceof ApiV2ProblemError &&
-        (error.status === 412 ||
-          error.code === "errors.api.v2.booking.concurrentModification" ||
-          error.code === "errors.api.v2.forbidden" ||
-          error.code === "errors.api.v2.booking.state.transition")
+        isBookingOutcomeUncertain(error) ||
+        (error instanceof ApiV2ProblemError &&
+          (error.status === 412 ||
+            error.code === "errors.api.v2.booking.concurrentModification" ||
+            error.code === "errors.api.v2.forbidden" ||
+            error.code === "errors.api.v2.booking.state.transition"))
       ) {
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
       }
@@ -305,6 +346,10 @@ function InlineBookingEditor({
     },
   });
   const mutationHasError = React.useRef(false);
+  if (event !== initialEvent && !mutation.isPending) {
+    setEvent(initialEvent);
+    if (!isBookingOutcomeUncertain(mutation.error)) setFormEvent(initialEvent);
+  }
   mutationHasError.current = mutation.isError;
   const resetMutation = mutation.reset;
   const clearMutationErrorOnChange = React.useCallback(() => {
@@ -342,15 +387,23 @@ function InlineBookingEditor({
   return (
     <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
       <BookingForm
-        key={event.version}
+        key={formEvent.version}
         mode="edit"
         density="compact"
         displayTimezone={timezone}
-        booking={event}
+        booking={formEvent}
         configuration={configuration.data}
         token={token}
         pending={mutation.isPending}
-        error={mutation.error ? t(bookingProblemKey(mutation.error)) : undefined}
+        error={
+          mutation.error
+            ? t(
+                isBookingOutcomeUncertain(mutation.error)
+                  ? "bookings.errors.outcomeUncertain"
+                  : bookingProblemKey(mutation.error),
+              )
+            : undefined
+        }
         submissionBlocked={isBookingOverlapError(mutation.error)}
         onStateChange={clearMutationErrorOnChange}
         onCancel={() => {
@@ -540,6 +593,7 @@ function TimeGrid({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = calendarDates(date, view);
   const month = firstOfMonth(date).slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
@@ -551,7 +605,10 @@ function TimeGrid({
             <DayTimeline
               date={date}
               timezone={timezone}
-              events={eventsOn(events, date, timezone).map((event) => toTimelineEvent(event, date, timezone))}
+              events={eventsOn(events, date, timezone, editorPositions).map((event) =>
+                toTimelineEvent(event, date, timezone),
+              )}
+              eventPositions={timelineEditorPositions(editorPositions, date, timezone)}
               startWindow={availabilityStartMinute}
               endWindow={availabilityEndMinute}
               showZoomControls={false}
@@ -588,7 +645,7 @@ function TimeGrid({
                   {isLoading ? (
                     <Skeleton aria-hidden="true" className="h-20 w-full" />
                   ) : (
-                    eventsOn(events, day, timezone).map((event) => (
+                    eventsOn(events, day, timezone, editorPositions).map((event) => (
                       <EventCard
                         key={`${day}-${event.id}`}
                         event={event}
@@ -680,12 +737,13 @@ function ResourceSchedule({
     centerMinute: 13 * 60,
   });
   const timelineScrollSync = useDayTimelineScrollSync();
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = React.useMemo(() => periodDates(date, view), [date, view]);
   const eventsByResourceAndDate = React.useMemo(() => {
     const index = new Map<string, BookingListDocument[]>();
     for (const event of events) {
       for (const day of dates) {
-        if (!occursOn(event, day, timezone)) continue;
+        if (!occursOn(editorPositions?.get(event.id) ?? event, day, timezone)) continue;
         const key = `${event.target.globalId}|${day}`;
         const rows = index.get(key) ?? [];
         rows.push(event);
@@ -694,7 +752,7 @@ function ResourceSchedule({
     }
     for (const rows of index.values()) rows.sort((left, right) => left.start.localeCompare(right.start));
     return index;
-  }, [dates, events, timezone]);
+  }, [dates, events, timezone, editorPositions]);
   const calendarRef = useScrollToToday(date, view, today);
   const resourceRows = React.useMemo(
     () =>
@@ -757,6 +815,7 @@ function ResourceSchedule({
                         date={date}
                         timezone={timezone}
                         events={resourceEvents.map((event) => toTimelineEvent(event, date, timezone))}
+                        eventPositions={timelineEditorPositions(editorPositions, date, timezone)}
                         startWindow={availabilityStartMinute}
                         endWindow={availabilityEndMinute}
                         showZoomControls={false}
@@ -855,6 +914,7 @@ function Agenda({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = periodDates(date, view);
   const dateRailRef = useScrollToToday(date, view, today);
   return (
@@ -901,7 +961,7 @@ function Agenda({
             </div>
           ) : (
             dates.flatMap((day) => {
-              const dayEvents = eventsOn(events, day, timezone);
+              const dayEvents = eventsOn(events, day, timezone, editorPositions);
               if (dayEvents.length === 0) return [];
               return [
                 <section key={day} className="space-y-2">
@@ -979,10 +1039,23 @@ export function BookingEventsCalendar({
   const { t } = useTranslation("booking");
   const todayValue = todayInTimeZone(timezone);
   const [mineOnly, setMineOnly] = React.useState(false);
-  const mine = events.filter((event) => event.requesterId === currentUserId);
+  const [editors, setEditors] = React.useState(() => new Map<string, BookingListDocument>());
+  // Pin open cards by booking id so reconciliation can show new times without unmounting their drafts.
+  const editorContext = React.useMemo(
+    () => ({ setEditors, positions: new Map([...editors.values()].map((event) => [event.id, event])) }),
+    [editors],
+  );
+  const displayedEvents = React.useMemo(() => {
+    const byId = new Map(events.map((event) => [event.id, event]));
+    for (const event of editors.values()) {
+      if (!byId.has(event.id)) byId.set(event.id, event);
+    }
+    return [...byId.values()];
+  }, [editors, events]);
+  const mine = displayedEvents.filter((event) => event.requesterId === currentUserId);
   const table = useTableList({
     config: bookingEventListConfig,
-    dataSource: { type: "client", rows: mineOnly ? mine : events },
+    dataSource: { type: "client", rows: mineOnly ? mine : displayedEvents },
     features: { sorting: false, pagination: false, columns: false },
     queryString: false,
   });
@@ -1037,7 +1110,7 @@ export function BookingEventsCalendar({
           }}
           renderRowsWhenEmpty
           renderRows={(filteredEvents) => (
-            <>
+            <BookingEditorsContext.Provider value={editorContext}>
               {layout === "time-grid" && (
                 <TimeGrid
                   date={date}
@@ -1108,7 +1181,7 @@ export function BookingEventsCalendar({
                   isLoading={isLoading}
                 />
               )}
-            </>
+            </BookingEditorsContext.Provider>
           )}
         />
       )}

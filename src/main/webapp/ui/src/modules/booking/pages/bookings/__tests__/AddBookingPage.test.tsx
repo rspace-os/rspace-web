@@ -11,7 +11,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { Suspense } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { currentUser as currentUserFixture } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
@@ -22,6 +22,12 @@ import { bookingFormSearch } from "@/modules/booking/pages/bookingFormSearch";
 import AddBookingPage from "@/modules/booking/pages/bookings/AddBookingPage";
 import type { CurrentUser } from "@/modules/common/queries/currentUser";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
+});
+afterEach(() => vi.useRealTimers());
 
 const currentUser: CurrentUser = {
   ...currentUserFixture,
@@ -277,16 +283,16 @@ describe("AddBookingPage", () => {
     expect(screen.queryByRole("radio", { name: "booking:bookings.form.typeBlockout" })).not.toBeInTheDocument();
   });
 
-  it("maps a server-side maximum-duration rejection to localized text", async () => {
+  it.each([
+    ["errors.api.v2.booking.maximumDuration", "booking:bookings.errors.maximumDuration"],
+    ["errors.api.v2.booking.window", "booking:bookings.errors.window"],
+  ])("maps a server-side %s rejection to accurate localized text", async (code, message) => {
     const user = userEvent.setup();
     server.use(
       oauthTokenHandler(true),
       http.get("/api/v2/booking-catalogue", () => HttpResponse.json(page([catalogueOption]))),
       http.post("/api/v2/bookings", () =>
-        HttpResponse.json(
-          { status: 400, code: "errors.api.v2.booking.maximumDuration", detail: "private server detail" },
-          { status: 400 },
-        ),
+        HttpResponse.json({ status: 400, code, detail: "private server detail" }, { status: 400 }),
       ),
     );
     renderPage();
@@ -294,7 +300,7 @@ describe("AddBookingPage", () => {
 
     await user.click(screen.getByRole("button", { name: "booking:bookings.form.submit" }));
 
-    expect(await screen.findByText("booking:bookings.errors.maximumDuration")).toBeVisible();
+    expect(await screen.findByText(message)).toBeVisible();
     expect(screen.queryByText("private server detail")).not.toBeInTheDocument();
   });
 });
