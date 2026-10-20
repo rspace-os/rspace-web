@@ -8,7 +8,7 @@ import type { BookingCreationDraft } from "@/modules/booking/creation/bookingCre
 import { type BookingCreationContext, useBookingCreationStore } from "@/modules/booking/creation/bookingCreationStore";
 import {
   bookingCreationProblemKey,
-  isBookingCreationOutcomeUncertain,
+  isBookingOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
 import { resolveBookingWindow } from "@/modules/booking/creation/ZonedBookingWindowFields";
@@ -180,7 +180,7 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
   const updateFormState = React.useCallback(
     (state: BookingFormState) => {
       setFormState(state);
-      if (!mutation.isError || isBookingCreationOutcomeUncertain(mutation.error)) return;
+      if (!mutation.isError || isBookingOutcomeUncertain(mutation.error)) return;
       resetMutation();
     },
     [mutation.error, mutation.isError, resetMutation],
@@ -262,10 +262,8 @@ function ActiveBookingCreationDialog({ creation }: { creation: BookingCreationCo
             token={token}
             pending={mutation.isPending}
             error={mutation.error ? t(bookingCreationProblemKey(mutation.error)) : undefined}
-            outcomeUncertain={isBookingCreationOutcomeUncertain(mutation.error)}
-            submissionBlocked={
-              isBookingOverlapError(mutation.error) || isBookingCreationOutcomeUncertain(mutation.error)
-            }
+            outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
+            submissionBlocked={isBookingOverlapError(mutation.error) || isBookingOutcomeUncertain(mutation.error)}
             onCancel={requestClose}
             onMoreOptions={maintenance ? undefined : openMoreOptions}
             onStateChange={updateFormState}
