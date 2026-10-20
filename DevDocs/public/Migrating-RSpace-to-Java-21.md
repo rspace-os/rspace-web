@@ -25,8 +25,9 @@ Tomcat reads its JVM settings from `/etc/default/tomcat10`. Take a backup of tha
     sudo systemctl start tomcat10
     sudo systemctl status tomcat10
 
-Once RSpace is up, confirm the Java version Tomcat is using:
+Once RSpace is up, confirm the Java version of the running Tomcat service by using its process's executable:
 
-    sudo bash /usr/share/tomcat10/bin/version.sh
+    tomcat_pid=$(systemctl show tomcat10 --property=MainPID --value)
+    sudo "/proc/$tomcat_pid/exe" -version
 
-It should report JVM version 21. If you encounter any issues you can email support@researchspace.com for support.
+It should report Java version 21. Tomcat's `version.sh` starts a separate JVM, so its output does not establish which JVM the service is running. If you encounter any issues you can email support@researchspace.com for support.
