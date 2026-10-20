@@ -51,7 +51,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
         assertThrows(
             ConstraintViolationException.class,
             () -> formMgr.createFieldForm(invalidChoice, formId, user));
-    assertThat(exception1.getMessage()).contains("choice options is a required field");
+    assertThat(exception1.getMessage()).contains("Choice options are required.");
 
     DateFieldDTO<DateFieldForm> invalidDate = DateFieldDTOValidatorTest.createValid();
     invalidDate.setDateFormat("");
@@ -59,7 +59,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
         assertThrows(
             ConstraintViolationException.class,
             () -> formMgr.createFieldForm(invalidDate, formId, user));
-    assertThat(exception2.getMessage()).contains("format is a required field");
+    assertThat(exception2.getMessage()).contains("Date format is required.");
 
     RadioFieldDTO<RadioFieldForm> invalidRadio = RadioFieldDTOValidatorTest.createValid();
     invalidRadio.setRadioValues("   ");
@@ -67,7 +67,7 @@ public class FormManagerIT extends RealTransactionSpringTestBase {
         assertThrows(
             ConstraintViolationException.class,
             () -> formMgr.createFieldForm(invalidRadio, formId, user));
-    assertThat(exception3.getMessage()).contains("radio options is a required field");
+    assertThat(exception3.getMessage()).contains("Radio options are required.");
 
     TextFieldDTO<TextFieldForm> invalidText = TextFieldDTOValidatorTest.createValid();
     invalidText.setName(randomAlphabetic(MAX_NAME_LENGTH + 1));

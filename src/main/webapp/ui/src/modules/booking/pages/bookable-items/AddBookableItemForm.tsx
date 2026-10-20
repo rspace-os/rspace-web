@@ -1,0 +1,271 @@
+import { Form, isDirty, useField, useForm } from "@formisch/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import * as v from "valibot";
+import {
+  type BookingSettings,
+  SchedulingSettingsFields,
+  schedulingSettingsFieldNames,
+} from "@/modules/booking/configuration/schedulingSettings";
+import { bookingApiV2JsonHeaders } from "@/modules/booking/domain/apiV2";
+import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
+import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
+import { RenderFields } from "@/modules/common/collection-form/RenderFields";
+import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
+import { databaseId } from "@/modules/common/relationship-picker/relationshipOptionQueries";
+import type { RelationshipSource } from "@/modules/common/relationship-picker/relationshipSources";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { Separator } from "@/modules/common/ui/separator";
+import { Heading } from "@/modules/common/ui/typography";
+import {
+  type BookingConfigurationInput,
+  BookingConfigurationInputSchema,
+  bookingConfigurationFields,
+  invalidateBookingCatalogueQueries,
+} from "./bookingConfiguration";
+import { BookingTargetSchema, MINIMUM_TARGET_QUERY_LENGTH, searchBookingTargets } from "./bookingConfigurationTargets";
+
+const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
+const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
+
+function pick<T, K extends keyof T>(source: T, keys: readonly K[]): Pick<T, K> {
+  return Object.fromEntries(keys.map((key) => [key, source[key]])) as Pick<T, K>;
+}
+
+// The JVM institution zone may be an alias (e.g. Etc/UTC) missing from Intl's canonical list.
+function withInstitutionTimeZone(institutionTimezone: string) {
+  return detailFields.map((field) =>
+    field.name === "timezone" && field.type === "select"
+      ? { ...field, options: bookingTimeZoneOptions(institutionTimezone) }
+      : field,
+  );
+}
+
+const CreatedBookingConfigurationSchema = v.object({
+  id: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  target: v.optional(v.object({ globalId: v.string() })),
+});
+
+async function createBookingConfiguration(input: BookingConfigurationInput, token: string) {
+  const response = await fetch("/api/v2/booking-configurations", {
+    method: "POST",
+    headers: bookingApiV2JsonHeaders(token),
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) throw await parseApiV2Problem(response);
+  try {
+    return parseOrThrow(CreatedBookingConfigurationSchema, await response.json());
+  } catch {
+    return undefined;
+  }
+}
+
+type TargetSelection = { type: "empty" } | { type: "instrument"; id: number } | { type: "unsupported" };
+
+const bookingConfigurationTargetSource: RelationshipSource = {
+  id: "booking-configuration-targets",
+  globalIdPrefix: "IN",
+  search: (term, token, signal) =>
+    term.trim().length > 0 && term.trim().length < MINIMUM_TARGET_QUERY_LENGTH
+      ? Promise.resolve([])
+      : searchBookingTargets(term, token, signal),
+  resolve: async (value, token, signal) => {
+    const targets = await searchBookingTargets(value, token, signal);
+    return targets.find((target) => target.globalId.toUpperCase() === value.toUpperCase()) ?? null;
+  },
+  ownsValue: (value) => /^IN\d+$/i.test(value.trim()),
+  toOption: (document, context) => {
+    const instrument = parseOrThrow(BookingTargetSchema, document);
+    return {
+      value: instrument.globalId,
+      label: instrument.name,
+      content: (
+        <InventoryItem name={instrument.name} globalId={instrument.globalId} compact={context.compact} size="xs" />
+      ),
+    };
+  },
+};
+
+function targetSelection(input: unknown): TargetSelection {
+  if (
+    input === undefined ||
+    input === null ||
+    input === "" ||
+    (typeof input === "object" &&
+      (Object.keys(input).length === 0 ||
+        ("value" in input && (input.value === undefined || input.value === null || input.value === ""))))
+  ) {
+    return { type: "empty" };
+  }
+  if (typeof input !== "object" || !("relationTo" in input) || !("value" in input)) return { type: "unsupported" };
+  return input.relationTo === "booking-instruments" && typeof input.value === "number"
+    ? { type: "instrument", id: input.value }
+    : { type: "unsupported" };
+}
+
+export function AddBookableItemForm({
+  defaults,
+  token,
+  initialTargetId,
+  initialTargetName,
+}: {
+  defaults: BookingSettings;
+  token: string;
+  initialTargetId?: number;
+  initialTargetName?: string;
+}) {
+  const { t } = useTranslation("booking");
+  const queryClient = useQueryClient();
+  const notices = useBookingNotices();
+  const navigate = useNavigate({ from: "/booking/bookable-items/add/" });
+  const form = useForm({
+    schema: BookingConfigurationInputSchema,
+    initialInput: {
+      ...(initialTargetId === undefined
+        ? {}
+        : { target: { relationTo: "booking-instruments", value: initialTargetId } }),
+      enabled: true,
+      timezone: defaults.institutionTimezone,
+      ...pick(defaults, schedulingSettingsFieldNames),
+    },
+  });
+  const fields = useMemo(() => withInstitutionTimeZone(defaults.institutionTimezone), [defaults.institutionTimezone]);
+  const targetField = useField(form, { path: ["target"] });
+  const [selectedTargetName, setSelectedTargetName] = useState(initialTargetName);
+  const target = targetSelection(targetField.input);
+  const selectedTargetId = target.type === "instrument" ? target.id : undefined;
+  const createMutation = useMutation({
+    mutationFn: (input: BookingConfigurationInput) => createBookingConfiguration(input, token),
+    onSuccess: async (created, input) => {
+      const globalId = created?.target?.globalId ?? `IN${input.target.value}`;
+      notices.notify("bookable-items", {
+        id: `bookable-item-${globalId}`,
+        tone: "success",
+        message: t("bookableItems.feedback.added", {
+          item: selectedTargetName ?? globalId,
+        }),
+        actions: (
+          <>
+            <Link
+              to="/booking/bookable-items/$globalId/{-$tab}"
+              params={{ globalId, tab: undefined }}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              {t("bookableItems.feedback.viewDetails")}
+            </Link>
+            {input.enabled ? (
+              <Link
+                to="/booking/calendar"
+                search={{ target: globalId }}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                {t("bookableItems.feedback.viewCalendar")}
+              </Link>
+            ) : null}
+          </>
+        ),
+      });
+      // The new configuration is readable, and its instrument is no longer an eligible target.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        invalidateBookingCatalogueQueries(queryClient),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
+      ]);
+      await navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
+    },
+    onError: async (error) => {
+      if (error instanceof ApiV2ProblemError && error.code === TARGET_CONFLICT) {
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations", "availability"] });
+      }
+    },
+  });
+  const failedForSelectedTarget = createMutation.variables?.target.value === selectedTargetId;
+  const conflict =
+    createMutation.error instanceof ApiV2ProblemError &&
+    createMutation.error.code === TARGET_CONFLICT &&
+    failedForSelectedTarget
+      ? createMutation.error
+      : null;
+  const canComplete = target.type === "instrument" && conflict === null;
+  const createFailed = createMutation.isError && failedForSelectedTarget && conflict === null;
+
+  return (
+    <main className="p-4 sm:p-8">
+      <DirtyNavigationGuard dirty={isDirty(form) && !createMutation.isSuccess} />
+      <Heading level={3} as="h1" className="mb-5">
+        {t("bookableItems.addTitle")}
+      </Heading>
+      <Separator className="mb-8 h-px bg-gray-300" />
+      <Form of={form} className="max-w-2xl space-y-8" onSubmit={(input) => createMutation.mutateAsync(input)}>
+        <div className="space-y-3">
+          <label htmlFor="booking-configuration-target-search" className="font-medium">
+            {t("bookableItems.targetSearch.label")}
+          </label>
+          <RelationshipPicker
+            source={bookingConfigurationTargetSource}
+            value={selectedTargetId === undefined ? "" : `IN${selectedTargetId}`}
+            onChange={(globalId) => {
+              const id = databaseId(bookingConfigurationTargetSource, globalId);
+              targetField.onChange(
+                id === null
+                  ? { relationTo: undefined, value: undefined }
+                  : { relationTo: "booking-instruments", value: id },
+              );
+            }}
+            onOptionChange={(option) => setSelectedTargetName(option?.label)}
+            disabled={createMutation.isPending}
+            id="booking-configuration-target-search"
+            name="target"
+            required
+            ariaLabel={t("bookableItems.targetSearch.label")}
+            className="w-full rounded-sm"
+            browseWhenEmpty
+            browseEmptyMessage={t("bookableItems.targetSearch.noEligible")}
+            minimumSearchLength={MINIMUM_TARGET_QUERY_LENGTH}
+          />
+        </div>
+        {target.type === "unsupported" ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t("bookableItems.availability.instrumentRequired")}
+          </p>
+        ) : target.type === "instrument" && conflict !== null ? (
+          <p role="alert" className="text-sm text-destructive">
+            {t("bookableItems.availability.alreadyConfigured")}{" "}
+            <Link
+              to="/booking/bookable-items/$globalId/{-$tab}"
+              params={{ globalId: `IN${target.id}`, tab: undefined }}
+              className="underline"
+            >
+              {t("bookableItems.availability.viewExisting")}
+            </Link>
+          </p>
+        ) : null}
+        {canComplete ? (
+          <>
+            <RenderFields fields={fields} form={form} disabled={createMutation.isPending} />
+            <SchedulingSettingsFields form={form} disabled={createMutation.isPending} />
+            {createFailed ? (
+              <p role="alert" className="text-sm text-destructive">
+                {t("bookableItems.addError")}
+              </p>
+            ) : null}
+            <Button
+              type="submit"
+              className="rounded-sm"
+              disabled={createMutation.isPending}
+              aria-busy={createMutation.isPending}
+            >
+              {t("bookableItems.actions.submit")}
+            </Button>
+          </>
+        ) : null}
+      </Form>
+    </main>
+  );
+}

@@ -1,7 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import RsSet from "@/util/set";
 import TagsCombobox from "../TagsCombobox";
 import { makeTags, userTagsHandler } from "./mocks/userTagsMocks";

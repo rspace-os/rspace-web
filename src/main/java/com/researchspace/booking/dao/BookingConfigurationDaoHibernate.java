@@ -1,0 +1,231 @@
+package com.researchspace.booking.dao;
+
+import com.blazebit.persistence.CriteriaBuilderFactory;
+import com.researchspace.dao.GenericDaoHibernate;
+import com.researchspace.dao.InstrumentDao;
+import com.researchspace.dao.query.CollectionQueryExecutor;
+import com.researchspace.model.User;
+import com.researchspace.model.booking.BookableTargetReference;
+import com.researchspace.model.booking.BookableTargetType;
+import com.researchspace.model.booking.BookingConfiguration;
+import com.researchspace.model.booking.BookingConfigurationState;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.RelationshipReadAccess;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.resourceaccess.ResourceAccess;
+import jakarta.persistence.LockModeType;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import org.hibernate.SessionFactory;
+import org.hibernate.StaleObjectStateException;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Repository;
+
+@Repository("bookingConfigurationDao")
+public class BookingConfigurationDaoHibernate
+    extends GenericDaoHibernate<BookingConfiguration, Long> implements BookingConfigurationDao {
+
+  private final CriteriaBuilderFactory criteriaBuilderFactory;
+  private final CollectionQueryExecutor<BookingConfiguration> collectionQuery;
+  private final BookingItemQuery itemQuery;
+  private final InstrumentDao instruments;
+  private final BookingCalendarPermissionGateDao permissionGate;
+
+  public BookingConfigurationDaoHibernate(
+      SessionFactory sessionFactory,
+      CriteriaBuilderFactory criteriaBuilderFactory,
+      BookingItemQuery itemQuery,
+      InstrumentDao instruments,
+      BookingCalendarPermissionGateDao permissionGate,
+      @Qualifier(
+              com.researchspace.booking.config.BookingResourceAccessConfiguration
+                  .BOOKING_CONFIGURATION_DESCRIPTION)
+          CollectionDescription<BookingConfiguration> description) {
+    super(BookingConfiguration.class, sessionFactory);
+    this.criteriaBuilderFactory = criteriaBuilderFactory;
+    this.itemQuery = itemQuery;
+    this.instruments = instruments;
+    this.permissionGate = permissionGate;
+    collectionQuery =
+        new CollectionQueryExecutor<>(
+            BookingConfiguration.class, description, "bookingConfiguration");
+  }
+
+  @Override
+  public ResourcePage<BookingConfiguration> getResources(
+      ResourceRequest request, RelationshipReadAccess targetAccess) {
+    return getCalendarResources(request, targetAccess, null);
+  }
+
+  @Override
+  public ResourcePage<BookingConfiguration> getCalendarResources(
+      ResourceRequest request,
+      RelationshipReadAccess targetAccess,
+      com.researchspace.dao.query.RsqlCollectionQuery.Predicate restriction) {
+    return collectionQuery.page(
+        criteriaBuilderFactory, getSession(), request, restriction, targetAccess);
+  }
+
+  @Override
+  public long countResources(ResourceRequest request, RelationshipReadAccess targetAccess) {
+    return collectionQuery.count(criteriaBuilderFactory, getSession(), request, null, targetAccess);
+  }
+
+  @Override
+  public List<BookingConfiguration> getResources(
+      ResourceRequest request, int limit, RelationshipReadAccess targetAccess) {
+    return collectionQuery.listById(
+        criteriaBuilderFactory, getSession(), request, limit, targetAccess);
+  }
+
+  @Override
+  public Optional<BookingConfiguration> findByTarget(BookableTargetReference target) {
+    return byTarget(target, false, false);
+  }
+
+  @Override
+  public Optional<BookingConfiguration> lockActiveByTarget(BookableTargetReference target) {
+    permissionGate.lockShared();
+    lockCurrentTarget(target);
+    return byTarget(target, true, true).map(this::refreshSchedulingState);
+  }
+
+  @Override
+  public Optional<BookingConfiguration> lockByTarget(BookableTargetReference target) {
+    permissionGate.lockShared();
+    lockTarget(target);
+    return byTarget(target, false, true);
+  }
+
+  private Optional<BookingConfiguration> byTarget(
+      BookableTargetReference target, boolean activeOnly, boolean lock) {
+    String hql = "from BookingConfiguration where target.type = :type and target.id = :id";
+    if (activeOnly) {
+      hql += " and state = :state";
+    }
+    var query =
+        getSession()
+            .createQuery(hql, BookingConfiguration.class)
+            .setParameter("type", target.type())
+            .setParameter("id", target.id());
+    if (activeOnly) {
+      query.setParameter("state", BookingConfigurationState.ACTIVE);
+    }
+    if (lock) {
+      query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+    }
+    return query.uniqueResultOptional();
+  }
+
+  @Override
+  public Optional<BookingConfiguration> lockById(Long id) {
+    permissionGate.lockShared();
+    getSafeNull(id).ifPresent(configuration -> lockTarget(configuration.getTarget()));
+    return getSession()
+        .createQuery("from BookingConfiguration where id = :id", BookingConfiguration.class)
+        .setParameter("id", id)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional();
+  }
+
+  @Override
+  public Optional<BookingConfiguration> lockActiveById(Long id) {
+    permissionGate.lockShared();
+    getSafeNull(id).ifPresent(configuration -> lockCurrentTarget(configuration.getTarget()));
+    return getSession()
+        .createQuery(
+            "from BookingConfiguration where id = :id and state = :state",
+            BookingConfiguration.class)
+        .setParameter("id", id)
+        .setParameter("state", BookingConfigurationState.ACTIVE)
+        .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+        .uniqueResultOptional()
+        .map(this::refreshSchedulingState);
+  }
+
+  private void lockTarget(BookableTargetReference target) {
+    if (target != null && target.type() == BookableTargetType.INSTRUMENT) {
+      instruments.lockById(target.id());
+    }
+  }
+
+  /** Locks the target and rejects permission facts changed after this transaction's snapshot. */
+  private void lockCurrentTarget(BookableTargetReference target) {
+    lockTarget(target);
+    if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
+      return;
+    }
+    // MariaDB before 11.6 lets a locking read return a row changed after the transaction's
+    // snapshot, so compare the snapshot and current permission columns like later releases do.
+    String permissionColumns =
+        "select owner_id, sharingMode, acl, deleted from InstrumentEntity where id = :id";
+    List<?> snapshot =
+        getSession()
+            .createNativeQuery(permissionColumns, Object[].class)
+            .setParameter("id", target.id())
+            .getResultList();
+    List<?> current =
+        getSession()
+            .createNativeQuery(permissionColumns + " for update", Object[].class)
+            .setParameter("id", target.id())
+            .getResultList();
+    if (!Arrays.deepEquals(snapshot.toArray(), current.toArray())) {
+      throw new StaleObjectStateException("InstrumentEntity", target.id());
+    }
+  }
+
+  private BookingConfiguration refreshSchedulingState(BookingConfiguration configuration) {
+    // A locking query can return entities already cached by the edit's initial readable lookup.
+    getSession().refresh(configuration, LockModeType.PESSIMISTIC_WRITE);
+    return configuration;
+  }
+
+  @Override
+  public List<BookingConfiguration> lockResources(
+      ResourceRequest request, int limit, RelationshipReadAccess relationshipAccess) {
+    permissionGate.lockShared();
+    return collectionQuery.listByIdForUpdate(
+        criteriaBuilderFactory, getSession(), request, limit, relationshipAccess);
+  }
+
+  @Override
+  public BookingConfiguration saveAndFlush(BookingConfiguration configuration) {
+    BookingConfiguration saved = save(configuration);
+    getSession().flush();
+    return saved;
+  }
+
+  @Override
+  public void removeConfigurationAndAccess(BookingConfiguration configuration) {
+    ResourceAccess access = configuration.getResourceAccess();
+    getSession().remove(configuration);
+    getSession().flush();
+    if (access != null) {
+      getSession().remove(access);
+      getSession().flush();
+    }
+  }
+
+  @Override
+  public Set<Long> findBookableInstrumentIds(User caller, Set<String> readableRoleKeys) {
+    if (readableRoleKeys.isEmpty()) return Set.of();
+    var query =
+        criteriaBuilderFactory
+            .create(getSession(), Long.class)
+            .from(BookingConfiguration.class, "bookingConfiguration")
+            .select("bookingConfiguration.target.id")
+            .distinct()
+            .where("bookingConfiguration.state")
+            .eq(BookingConfigurationState.ACTIVE)
+            .where("bookingConfiguration.enabled")
+            .eq(true);
+    var restriction = itemQuery.restriction(caller, false, false, "bookingConfiguration.target");
+    if (restriction != null) {
+      restriction.applyTo(query);
+    }
+    return Set.copyOf(query.getResultList());
+  }
+}

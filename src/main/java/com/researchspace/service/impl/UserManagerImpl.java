@@ -5,6 +5,7 @@ import static java.lang.String.format;
 import com.researchspace.CacheNames;
 import com.researchspace.Constants;
 import com.researchspace.analytics.service.AnalyticsManager;
+import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -20,6 +21,10 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.collection.FilterExpression;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.UserRoleView;
 import com.researchspace.model.events.UserAccountEvent;
@@ -43,6 +48,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.crypto.RandomNumberGenerator;
 import org.apache.shiro.crypto.SecureRandomNumberGenerator;
 import org.apache.shiro.lang.util.ByteSource;
@@ -80,6 +86,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   private @Autowired IVerificationPasswordValidator verificationPasswordValidator;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   /** {@inheritDoc} */
   public User getUser(String userId) {
@@ -93,6 +100,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
 
   @Override
   public User saveUser(User toChange) {
+    calendarRevocations.affectUser(toChange.getId());
     encryptPasswordIfRequired(toChange);
     try {
       return doSave(toChange);
@@ -101,6 +109,12 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       log.error(msg);
       throw new IllegalStateException(msg);
     }
+  }
+
+  @Override
+  public User save(User user) {
+    calendarRevocations.affectUser(user.getId());
+    return super.save(user);
   }
 
   @Override
@@ -657,5 +671,43 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       }
     }
     return subject;
+  }
+
+  @Override
+  public ResourcePage<User> getUsers(ResourceRequest request, User actor) {
+    return userDao.getUsers(authorizeUserResourceRead(request, actor));
+  }
+
+  @Override
+  public long countUsers(ResourceRequest request, User actor) {
+    return userDao.countUsers(authorizeUserResourceRead(request, actor));
+  }
+
+  @Override
+  public Optional<User> getUserResource(Long id, User actor) {
+    requireActor(actor);
+    if (!actor.hasSysadminRole() && !id.equals(actor.getId())) {
+      return Optional.empty();
+    }
+    return userDao.getSafeNull(id);
+  }
+
+  private ResourceRequest authorizeUserResourceRead(ResourceRequest request, User actor) {
+    requireActor(actor);
+    if (actor.hasSysadminRole()) {
+      return request;
+    }
+    FilterExpression self =
+        new FilterExpression.Comparison("id", Operator.EQUAL, List.of(actor.getId()), false);
+    FilterExpression filter =
+        request.filter() == null ? self : new FilterExpression.And(List.of(self, request.filter()));
+    return new ResourceRequest(
+        filter, request.sort(), request.page(), request.fieldSelections(), request.includes());
+  }
+
+  private static void requireActor(User actor) {
+    if (actor == null) {
+      throw new AuthorizationException("User resource read refused");
+    }
   }
 }

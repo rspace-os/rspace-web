@@ -1,0 +1,567 @@
+package com.researchspace.api.v2.resource;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.dao.query.RsqlCollectionQuery;
+import com.researchspace.dao.query.RsqlFieldPredicateCompilerRegistry;
+import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
+import com.researchspace.model.User;
+import com.researchspace.model.collection.AccessContext;
+import com.researchspace.model.collection.AccessContext.Operation;
+import com.researchspace.model.collection.ApiV2ResourceDefinition;
+import com.researchspace.model.collection.ApiV2ResourceField;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
+import com.researchspace.model.collection.CollectionFieldTypeRegistry;
+import com.researchspace.model.collection.CollectionFieldTypes;
+import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
+import com.researchspace.model.collection.CollectionMutationLimits;
+import com.researchspace.model.collection.DocumentValidationException;
+import com.researchspace.model.collection.DocumentValidationException.Reason;
+import com.researchspace.model.collection.DocumentValidationException.Violation;
+import com.researchspace.model.collection.Field;
+import com.researchspace.model.collection.FieldComparisonStrategy;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.Relationship;
+import com.researchspace.model.collection.RelationshipTarget;
+import com.researchspace.model.collection.ResourceReference;
+import com.researchspace.model.collection.RsqlFilterParser;
+import com.researchspace.model.collection.Sort;
+import com.researchspace.model.collection.SplitReferenceBinding;
+import com.researchspace.model.collection.WriteOperation;
+import com.researchspace.service.CollectionMutationException;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
+import org.junit.jupiter.api.Test;
+
+class ApiV2DocumentParserTest {
+
+  private final ObjectMapper mapper = new ObjectMapper();
+
+  @Test
+  void delegatesDocumentDecodingAndValidatesTheDecodedValueOnce() throws Exception {
+    AtomicInteger validations = new AtomicInteger();
+    FieldComparisonStrategy strategy = new FieldComparisonStrategy("upper-text");
+    CollectionFieldType<String> type =
+        new CollectionFieldType<>() {
+          @Override
+          public Class<String> javaType() {
+            return String.class;
+          }
+
+          @Override
+          public InputKind inputKind() {
+            return InputKind.STRING;
+          }
+
+          @Override
+          public String parse(String value) {
+            return value.toUpperCase(java.util.Locale.ROOT);
+          }
+
+          @Override
+          public String parseDocument(JsonNode value, WriteOperation operation) {
+            assertEquals(WriteOperation.UPDATE, operation);
+            return value.textValue().toUpperCase(java.util.Locale.ROOT);
+          }
+
+          @Override
+          public Object serialize(String value) {
+            return value;
+          }
+
+          @Override
+          public void validate(String value) {
+            assertEquals("DECODED", value);
+            validations.incrementAndGet();
+          }
+
+          @Override
+          public Set<Operator> operators() {
+            return Set.of(Operator.EQUAL);
+          }
+
+          @Override
+          public FieldComparisonStrategy comparisonStrategy() {
+            return strategy;
+          }
+        };
+    CollectionFieldTypeRegistry types =
+        new CollectionFieldTypeRegistry(
+            List.of(
+                new CollectionFieldTypeRegistry.Registration<>(
+                    Long.class, ignored -> CollectionFieldTypes.longNumber()),
+                new CollectionFieldTypeRegistry.Registration<>(String.class, ignored -> type)));
+    CollectionDescription<RegistryDocument> description =
+        CollectionDescription.fromApiV2Resource(
+            RegistryResource.class,
+            RegistryDocument.class,
+            List.of(),
+            List.of(new Sort("id", true)),
+            types);
+    ParsedDocument result =
+        ApiV2DocumentParser.parse(
+            mapper.readTree("{\"name\":\"decoded\"}"),
+            description,
+            WriteOperation.UPDATE,
+            "error",
+            writeContext(Operation.UPDATE));
+    assertEquals("DECODED", result.values().get("name"));
+    assertEquals(1, validations.get());
+    List<RsqlFieldPredicateCompilerRegistry.Registration> registrations =
+        new ArrayList<>(RsqlFieldPredicateCompilerRegistry.builtIns().registrations());
+    registrations.add(
+        new RsqlFieldPredicateCompilerRegistry.Registration(
+            strategy,
+            (comparison, path, context) ->
+                "UPPER(" + path + ") = :" + context.add(comparison.values().get(0))));
+    RsqlCollectionQuery.Predicate predicate =
+        new RsqlCollectionQuery(
+                description, "doc", new RsqlFieldPredicateCompilerRegistry(registrations))
+            .translate(new RsqlFilterParser(description).parse("name==decoded"));
+    assertEquals("UPPER(doc.name) = :rsql0", predicate.expression());
+    assertEquals(Map.of("rsql0", "DECODED"), predicate.parameters());
+    assertEquals(1, validations.get());
+  }
+
+  @ApiV2ResourceDefinition(
+      name = "registryDocuments",
+      entity = RegistryDocument.class,
+      id = "id",
+      auditFields = false)
+  private record RegistryResource(@ApiV2ResourceField Long id, @ApiV2ResourceField String name) {}
+
+  public static final class RegistryDocument {
+    public Long getId() {
+      return 1L;
+    }
+
+    public String getName() {
+      return "decoded";
+    }
+
+    public void setName(String name) {}
+  }
+
+  @Test
+  void preservesPresenceAndExplicitNullMessage() throws Exception {
+    ParsedDocument patch =
+        parseMaintenanceUpdate(
+            mapper.readTree(
+                """
+                {
+                  "startDate": "2026-08-01T10:00:00Z",
+                  "stopUserLoginDate": "2026-08-01T09:45:00Z",
+                  "message": null
+                }
+                """));
+
+    assertTrue(patch.values().containsKey("startDate"));
+    assertEquals(Date.from(Instant.parse("2026-08-01T10:00:00Z")), patch.values().get("startDate"));
+    assertFalse(patch.values().containsKey("endDate"));
+    assertTrue(patch.values().containsKey("stopUserLoginDate"));
+    assertTrue(patch.values().containsKey("message"));
+    assertNull(patch.values().get("message"));
+  }
+
+  @Test
+  void rejectsEmptyUnknownAndNullDateFields() throws Exception {
+    assertThrows(
+        DocumentValidationException.class, () -> parseMaintenanceUpdate(mapper.readTree("{}")));
+    assertThrows(
+        DocumentValidationException.class,
+        () -> parseMaintenanceUpdate(mapper.readTree("{\"id\":42}")));
+    assertThrows(
+        DocumentValidationException.class,
+        () -> parseMaintenanceUpdate(mapper.readTree("{\"endDate\":null}")));
+  }
+
+  @Test
+  void rejectsNonTextualUnparsableAndOversizedValues() throws Exception {
+    assertThrows(
+        DocumentValidationException.class,
+        () -> parseMaintenanceUpdate(mapper.readTree("{\"startDate\":42}")));
+    assertThrows(
+        DocumentValidationException.class,
+        () -> parseMaintenanceUpdate(mapper.readTree("{\"startDate\":\"not-a-date\"}")));
+
+    String oversized = "x".repeat(User.DEFAULT_MAXFIELD_LEN + 1);
+    assertThrows(
+        DocumentValidationException.class,
+        () -> parseMaintenanceUpdate(mapper.readTree("{\"message\":\"" + oversized + "\"}")));
+  }
+
+  @Test
+  void enforcesCreateRequirementsAndSuppliesFixedFieldDefaults() throws Exception {
+    CollectionDescription<TestDocument> description =
+        new CollectionDescription<>(
+            "testDocuments",
+            TestDocument.class,
+            List.of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), TestDocument::id),
+                Field.writable(
+                        "name",
+                        "name",
+                        CollectionFieldTypes.text(10),
+                        TestDocument::name,
+                        TestDocument::setName)
+                    .required(),
+                Field.writable(
+                        "label",
+                        "label",
+                        CollectionFieldTypes.text(10),
+                        TestDocument::label,
+                        TestDocument::setLabel)
+                    .defaultValue("default"),
+                Field.writable(
+                    "active",
+                    "active",
+                    CollectionFieldTypes.bool(),
+                    TestDocument::active,
+                    TestDocument::setActive)),
+            "id",
+            List.of(new Sort("id", true)));
+
+    ParsedDocument document =
+        ApiV2DocumentParser.parse(
+            mapper.readTree("{\"name\":\"document\",\"active\":true}"),
+            description,
+            WriteOperation.CREATE,
+            "error",
+            writeContext(Operation.CREATE));
+
+    assertEquals(Map.of("name", "document", "label", "default", "active", true), document.values());
+    assertEquals(
+        Map.of("name", "renamed"),
+        ApiV2DocumentParser.parse(
+                mapper.readTree("{\"name\":\"renamed\"}"),
+                description,
+                WriteOperation.UPDATE,
+                "error",
+                writeContext(Operation.UPDATE))
+            .values(),
+        "defaults apply only on create");
+    assertThrows(
+        DocumentValidationException.class,
+        () ->
+            ApiV2DocumentParser.parse(
+                mapper.readTree("{}"),
+                description,
+                WriteOperation.CREATE,
+                "error",
+                writeContext(Operation.CREATE)));
+    assertThrows(
+        DocumentValidationException.class,
+        () ->
+            ApiV2DocumentParser.parse(
+                mapper.readTree("{\"name\":42}"),
+                description,
+                WriteOperation.CREATE,
+                "error",
+                writeContext(Operation.CREATE)));
+    DocumentValidationException multipleFailures =
+        assertThrows(
+            DocumentValidationException.class,
+            () ->
+                ApiV2DocumentParser.parse(
+                    mapper.readTree("{\"name\":42,\"unknown\":true}"),
+                    description,
+                    WriteOperation.CREATE,
+                    "error",
+                    writeContext(Operation.CREATE)));
+    assertEquals(
+        List.of(
+            new Violation("name", Reason.WRONG_TYPE),
+            new Violation("unknown", Reason.UNKNOWN_FIELD)),
+        multipleFailures.getViolations());
+  }
+
+  @Test
+  void reportsWriteConstraintViolationsAsInvalidValues() throws Exception {
+    CollectionDescription<Scored> description =
+        new CollectionDescription<>(
+            "scored",
+            Scored.class,
+            List.of(
+                Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), Scored::id),
+                Field.writable(
+                    "code",
+                    "code",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.text(),
+                        new Constraints(null, null, 2, Pattern.compile("^[A-Z]"), null)),
+                    Scored::code,
+                    (scored, value) -> {}),
+                Field.writable(
+                    "kind",
+                    "kind",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.text(),
+                        new Constraints(null, null, null, null, List.of("A1", "B2"))),
+                    Scored::kind,
+                    (scored, value) -> {}),
+                Field.writable(
+                    "score",
+                    "score",
+                    CollectionFieldTypes.constrained(
+                        CollectionFieldTypes.integer(),
+                        new Constraints(BigDecimal.ONE, BigDecimal.valueOf(7), null, null, null)),
+                    Scored::score,
+                    (scored, value) -> {})),
+            "id",
+            List.of(new Sort("id", true)));
+
+    for (String invalid :
+        List.of(
+            "{\"score\":0}",
+            "{\"score\":8}",
+            "{\"code\":\"A\"}",
+            "{\"code\":\"ab\"}",
+            "{\"kind\":\"C3\"}")) {
+      DocumentValidationException failure =
+          assertThrows(
+              DocumentValidationException.class,
+              () ->
+                  ApiV2DocumentParser.parse(
+                      mapper.readTree(invalid),
+                      description,
+                      WriteOperation.UPDATE,
+                      "error",
+                      writeContext(Operation.UPDATE)),
+              invalid);
+      assertEquals(Reason.INVALID_VALUE, failure.getViolations().get(0).reason(), invalid);
+    }
+    assertEquals(
+        Map.of("code", "AB", "kind", "A1", "score", 7),
+        ApiV2DocumentParser.parse(
+                mapper.readTree("{\"code\":\"AB\",\"kind\":\"A1\",\"score\":7}"),
+                description,
+                WriteOperation.UPDATE,
+                "error",
+                writeContext(Operation.UPDATE))
+            .values());
+    assertDoesNotThrow(
+        () -> new RsqlFilterParser(description).parse("score==0;code==ab;kind==C3"),
+        "where literals are not checked against write constraints");
+  }
+
+  @Test
+  void parsesNonEmptyBulkCreateEnvelopeAndReportsTheDocumentIndex() throws Exception {
+    List<ParsedDocument> documents =
+        ApiV2DocumentParser.parseMany(
+            mapper.readTree(
+                """
+                {"docs":[
+                  {"startDate":"2026-08-01T10:00:00Z","endDate":"2026-08-01T11:00:00Z"},
+                  {"startDate":"2026-08-02T10:00:00Z","endDate":"2026-08-02T11:00:00Z"}
+                ]}
+                """),
+            ApiV2MaintenanceResource.DESCRIPTION,
+            "error",
+            writeContext(Operation.CREATE));
+
+    assertEquals(2, documents.size());
+    assertEquals(WriteOperation.CREATE, documents.get(0).operation());
+
+    DocumentValidationException invalidDocument =
+        assertThrows(
+            DocumentValidationException.class,
+            () ->
+                ApiV2DocumentParser.parseMany(
+                    mapper.readTree(
+                        """
+                        {"docs":[
+                          {"startDate":"2026-08-01T10:00:00Z","endDate":"2026-08-01T11:00:00Z"},
+                          {"startDate":42}
+                        ]}
+                        """),
+                    ApiV2MaintenanceResource.DESCRIPTION,
+                    "error",
+                    writeContext(Operation.CREATE)));
+    assertEquals(
+        List.of(
+            new Violation("docs[1].startDate", Reason.WRONG_TYPE),
+            new Violation("docs[1].endDate", Reason.REQUIRED)),
+        invalidDocument.getViolations());
+
+    for (String invalid :
+        List.of("{}", "{\"docs\":[]}", "{\"docs\":{}}", "{\"docs\":[],\"extra\":true}")) {
+      DocumentValidationException exception =
+          assertThrows(
+              DocumentValidationException.class,
+              () ->
+                  ApiV2DocumentParser.parseMany(
+                      mapper.readTree(invalid),
+                      ApiV2MaintenanceResource.DESCRIPTION,
+                      "error",
+                      writeContext(Operation.CREATE)));
+      assertEquals(
+          List.of(new Violation("docs", Reason.INVALID_DOCUMENT)), exception.getViolations());
+    }
+  }
+
+  @Test
+  void rejectsOversizedBulkCreateBeforeParsingIndividualDocuments() throws Exception {
+    var docs = mapper.createArrayNode();
+    for (int i = 0; i <= CollectionMutationLimits.MAX_BULK_CREATE_ROWS; i++) {
+      docs.addObject();
+    }
+    var body = mapper.createObjectNode().set("docs", docs);
+
+    CollectionMutationException exception =
+        assertThrows(
+            CollectionMutationException.class,
+            () ->
+                ApiV2DocumentParser.parseMany(
+                    body,
+                    ApiV2MaintenanceResource.DESCRIPTION,
+                    "error",
+                    writeContext(Operation.CREATE)));
+
+    assertEquals(CollectionMutationException.Reason.BULK_LIMIT, exception.getReason());
+  }
+
+  @Test
+  void parsesRelationshipObjectsAndUpdateGlobalIdToTheSameReference() throws Exception {
+    CollectionDescription<RelatedDocument> description = relatedDescription();
+
+    ParsedDocument created =
+        ApiV2DocumentParser.parse(
+            mapper.readTree("{\"target\":{\"relationTo\":\"instruments\",\"value\":9}}"),
+            description,
+            WriteOperation.CREATE,
+            "error",
+            writeContext(Operation.CREATE));
+    ParsedDocument updated =
+        ApiV2DocumentParser.parse(
+            mapper.readTree(
+                "{\"target\":{\"relationTo\":\"instruments\",\"value\":9,\"globalId\":\"IN9\"}}"),
+            description,
+            WriteOperation.UPDATE,
+            "error",
+            writeContext(Operation.UPDATE));
+    ParsedDocument globalIdOnly =
+        ApiV2DocumentParser.parse(
+            mapper.readTree("{\"target\":\"IN9\"}"),
+            description,
+            WriteOperation.UPDATE,
+            "error",
+            writeContext(Operation.UPDATE));
+
+    assertEquals(new ResourceReference<>("INSTRUMENT", 9L), created.values().get("target"));
+    assertEquals(created.values().get("target"), updated.values().get("target"));
+    assertEquals(created.values().get("target"), globalIdOnly.values().get("target"));
+  }
+
+  @Test
+  void rejectsIncompleteNullAndCreateGlobalIdRelationshipInputs() throws Exception {
+    CollectionDescription<RelatedDocument> description = relatedDescription();
+
+    for (String body :
+        List.of(
+            "{\"target\":{\"relationTo\":\"instruments\"}}",
+            "{\"target\":{\"relationTo\":\"instruments\",\"value\":9,\"extra\":true}}",
+            "{\"target\":{\"relationTo\":\"instruments\",\"value\":9,\"globalId\":\"IN10\"}}",
+            "{\"target\":null}",
+            "{\"target\":\"IN9\"}")) {
+      assertThrows(
+          DocumentValidationException.class,
+          () ->
+              ApiV2DocumentParser.parse(
+                  mapper.readTree(body),
+                  description,
+                  WriteOperation.CREATE,
+                  "error",
+                  writeContext(Operation.CREATE)));
+    }
+  }
+
+  private static ParsedDocument parseMaintenanceUpdate(JsonNode body) {
+    return ApiV2DocumentParser.parse(
+        body,
+        ApiV2MaintenanceResource.DESCRIPTION,
+        WriteOperation.UPDATE,
+        "errors.api.v2.maintenance.patch",
+        writeContext(Operation.UPDATE));
+  }
+
+  private static final class TestDocument {
+
+    private String name;
+    private String label;
+    private Boolean active;
+
+    private Long id() {
+      return 1L;
+    }
+
+    private String name() {
+      return name;
+    }
+
+    private void setName(String name) {
+      this.name = name;
+    }
+
+    private String label() {
+      return label;
+    }
+
+    private void setLabel(String label) {
+      this.label = label;
+    }
+
+    private Boolean active() {
+      return active;
+    }
+
+    private void setActive(Boolean active) {
+      this.active = active;
+    }
+  }
+
+  private record Scored(Long id, String code, String kind, Integer score) {}
+
+  private record RelatedDocument(Long id, ResourceReference<String, Long> target) {}
+
+  private record Instrument(Long id) {}
+
+  private static CollectionDescription<RelatedDocument> relatedDescription() {
+    return new CollectionDescription<>(
+        "relatedDocuments",
+        RelatedDocument.class,
+        List.of(
+            Field.readOnly("id", "id", CollectionFieldTypes.longNumber(), RelatedDocument::id),
+            Relationship.polymorphicToOne(
+                    "target",
+                    CollectionFieldTypes.longNumber(),
+                    List.of(
+                        new RelationshipTarget<>(
+                            "instruments", "INSTRUMENT", "IN", Instrument.class)),
+                    new SplitReferenceBinding<>(RelatedDocument::target, "targetType", "targetId"))
+                .required()
+                .acceptGlobalIdOn(WriteOperation.UPDATE)),
+        "id",
+        List.of(new Sort("id", true)));
+  }
+
+  /** A context that imposes no field-level write restriction. */
+  private static AccessContext writeContext(Operation operation) {
+    return new AccessContext(null, operation, "widgets");
+  }
+}

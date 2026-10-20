@@ -1,10 +1,10 @@
-import { createDynamicUser } from "../createDynamicUser";
+import { createDynamicUser as createSharedDynamicUser } from "../createDynamicUser";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
 import { DYNAMIC_USER_PASSWORD, uniqueName } from "../testData";
 import { test } from "./flows";
-import { loginInNewContext, performLogin } from "./flows/sessions/userSessions";
+import { performLogin, loginInNewContext as sessionLoginInNewContext } from "./flows/sessions/userSessions";
 
-type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
+export type CreatableRole = "ROLE_USER" | "ROLE_PI" | "ROLE_ADMIN";
 
 type DynamicUserFixtures = {
   flowCreateUser: (
@@ -18,7 +18,7 @@ export const DYNAMIC_APP_USER_LAST_NAME = "DynamicUser";
 
 export const dynamicUserTest = test.extend<DynamicUserFixtures>({
   appUser: async ({ clientSysadmin }, use) => {
-    const { username, apiKey } = await createDynamicUser(
+    const { username, apiKey } = await createSharedDynamicUser(
       clientSysadmin,
       "ROLE_PI",
       "e2eDynUser",
@@ -27,7 +27,7 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     await use({ username, password: DYNAMIC_USER_PASSWORD, apiKey, roles: ["ROLE_PI", "ROLE_USER"] });
   },
   storageState: async ({ appUser, browser, browserContextOptions }, use) => {
-    const { context, page, close } = await loginInNewContext(
+    const { context, page, close } = await sessionLoginInNewContext(
       browser,
       browserContextOptions,
       appUser.username,
@@ -48,15 +48,15 @@ export const dynamicUserTest = test.extend<DynamicUserFixtures>({
     const closers: Array<() => Promise<void>> = [];
     try {
       await use(async (role, namePrefix = "e2eDynUser2") => {
-        const { username, apiKey } = await createDynamicUser(clientSysadmin, role, namePrefix);
-        const { page, close } = await loginInNewContext(
+        const user = await createSharedDynamicUser(clientSysadmin, role, namePrefix);
+        const { page, close } = await sessionLoginInNewContext(
           browser,
           browserContextOptions,
-          username,
+          user.username,
           DYNAMIC_USER_PASSWORD,
         );
         closers.push(close);
-        return { username, apiKey, workspace: new WorkspacePage(page) };
+        return { username: user.username, apiKey: user.apiKey, workspace: new WorkspacePage(page) };
       });
     } finally {
       const results = await Promise.allSettled(closers.map((close) => close()));
