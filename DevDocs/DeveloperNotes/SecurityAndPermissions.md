@@ -118,6 +118,20 @@ a resource, we should be checking for permissions, even if this is
 configured at the URL path level. If permission check returns false,
 it's generally OK to throw an `AuthorisationException`.
 
+#### System-property feature switches
+
+A feature a sysadmin can switch off through a system property (for
+example `self_service_labgroups` or `allow_project_groups`) is enforced on
+the server, in the controller that performs the action, with
+`SystemPropertyPermissionManager.isPropertyAllowed(user, SystemPropertyName.X)`.
+The user-aware overload applies the settings hierarchy: a sysadmin `DENIED`
+is absolute; otherwise any of the user's communities (those of their Lab
+Groups, plus any they administer) can switch the feature off with `DENIED`
+or `DENIED_BY_DEFAULT`, and under a sysadmin `DENIED_BY_DEFAULT` one that
+sets `ALLOWED` switches it on. Hiding the menu entry in the UI is a courtesy, not enforcement: the
+request can still be sent directly. Refuse with an `AuthorizationException`
+so the attempt reaches the security log (RSDEV-1345).
+
 #### Refreshing permissions
 
 Some permissions are dynamic. For example, sharing a record with a user

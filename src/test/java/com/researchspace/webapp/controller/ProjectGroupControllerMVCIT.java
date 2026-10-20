@@ -2,10 +2,12 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -16,12 +18,16 @@ import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.Group;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.CreateCloudGroup;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.raid.UserRaid;
 import com.researchspace.service.RaIDServiceManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.webapp.integrations.raid.RaIDReferenceDTO;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import org.apache.shiro.authz.AuthorizationException;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,10 +47,13 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
   private User pi;
   private ObjectMapper objectMapper = new ObjectMapper();
   private CreateCloudGroup projectGroupCreationObj;
+  private String previousSetting;
 
   @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
+    previousSetting = sysPropMgr.findByName(SystemPropertyName.ALLOW_PROJECT_GROUPS).getValue();
+    setProjectGroups(HierarchicalPermission.ALLOWED);
     this.pi = createAndSaveUser("pi" + getRandomName(10), Constants.PI_ROLE);
     initUser(this.pi);
     logoutAndLoginAs(pi);
@@ -54,6 +63,13 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
     projectGroupCreationObj.setSessionUser(pi);
     projectGroupCreationObj.setRaid(new RaIDReferenceDTO(RAID_SERVER_ALIAS, RAID_IDENTIFIER));
     projectGroupCreationObj.setPiEmail(pi.getEmail());
+  }
+
+  @AfterEach
+  public void restoreSetting() {
+    if (previousSetting != null) {
+      sysPropMgr.save(SystemPropertyName.ALLOW_PROJECT_GROUPS, previousSetting, getSysAdminUser());
+    }
   }
 
   @Test
@@ -116,6 +132,53 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
     assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(newProjectGroupId));
     assertThrows(
         ObjectRetrievalFailureException.class, () -> raIDServiceManager.getUserRaid(raidId));
+  }
+
+  @Test
+  public void formIsRefusedWhileDenied() throws Exception {
+    setProjectGroups(HierarchicalPermission.DENIED);
+    MvcResult result = mockMvc.perform(get("/projectGroup/newGroupForm")).andReturn();
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
+  }
+
+  @Test
+  public void creationIsRefusedWhileDenied() throws Exception {
+    setProjectGroups(HierarchicalPermission.DENIED);
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/projectGroup/createProjectGroup")
+                    .content(JacksonUtil.toJson(projectGroupCreationObj))
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andReturn();
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
+    assertTrue(
+        grpMgr.listGroupsForOwner(pi).stream()
+            .noneMatch(g -> "ProjectGroupWithRaid".equals(g.getDisplayName())));
+  }
+
+  @Test
+  public void deletionIsRefusedWhileDenied() throws Exception {
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/projectGroup/createProjectGroup")
+                    .content(JacksonUtil.toJson(projectGroupCreationObj))
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andReturn();
+    Long groupId = extractProjectGroupId(created);
+
+    setProjectGroups(HierarchicalPermission.DENIED);
+    MvcResult denied = mockMvc.perform(post("/projectGroup/deleteGroup/" + groupId)).andReturn();
+    assertInstanceOf(AuthorizationException.class, denied.getResolvedException());
+    assertNotNull(grpMgr.getGroup(groupId));
+
+    setProjectGroups(HierarchicalPermission.ALLOWED);
+    grpMgr.removeGroup(groupId, pi);
+  }
+
+  private void setProjectGroups(HierarchicalPermission value) {
+    sysPropMgr.save(SystemPropertyName.ALLOW_PROJECT_GROUPS, value, getSysAdminUser());
   }
 
   @NotNull

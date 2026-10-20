@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Group;
@@ -23,6 +24,8 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.cloud.CloudGroupManager;
 import com.researchspace.service.cloud.CloudNotificationManager;
@@ -32,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,6 +43,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.ui.ExtendedModelMap;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
@@ -63,7 +68,22 @@ public class SelfServiceLabGroupControllerTest {
   @Mock private IPermissionUtils permissionUtils;
   @Mock private ApplicationEventPublisher publisher;
   @Mock private MessageSourceUtils messages;
+  @Mock private SystemPropertyPermissionManager systemPropertyPermissionManager;
   private Long newLabGroupID = 10L;
+
+  @BeforeEach
+  public void allowSelfServiceLabGroups() {
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
+    when(systemPropertyPermissionManager.isPropertyAllowed(
+            piUser, SystemPropertyName.SELF_SERVICE_LABGROUPS))
+        .thenReturn(true);
+  }
+
+  private void denySelfServiceLabGroups() {
+    when(systemPropertyPermissionManager.isPropertyAllowed(
+            piUser, SystemPropertyName.SELF_SERVICE_LABGROUPS))
+        .thenReturn(false);
+  }
 
   private void stubValidGroupCreation() {
     when(createCloudGroup.getEmails()).thenReturn(new String[] {""});
@@ -203,5 +223,29 @@ public class SelfServiceLabGroupControllerTest {
     when(newLabGroup.getOwner()).thenReturn(invitedUser1);
     // Note that the redirect is actually handled by JS code.
     assertThrows(AuthorizationException.class, () -> controller.removeGroup(groupID));
+  }
+
+  @Test
+  public void shouldRefuseFormWhenSelfServiceLabGroupsDenied() {
+    denySelfServiceLabGroups();
+    assertThrows(
+        AuthorizationException.class,
+        () -> controller.selfServiceLabGroupForm(new ExtendedModelMap()));
+  }
+
+  @Test
+  public void shouldRefuseCreationWhenSelfServiceLabGroupsDenied() {
+    denySelfServiceLabGroups();
+    assertThrows(
+        AuthorizationException.class,
+        () -> controller.createSelfServiceLabGroup(createCloudGroup, bindingResult, request));
+    verifyNoInteractions(validator, cloudGroupManager, groupManager);
+  }
+
+  @Test
+  public void shouldRefuseDeletionWhenSelfServiceLabGroupsDenied() {
+    denySelfServiceLabGroups();
+    assertThrows(AuthorizationException.class, () -> controller.removeGroup(1L));
+    verifyNoInteractions(groupManager);
   }
 }
