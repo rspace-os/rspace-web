@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import org.hibernate.proxy.HibernateProxy;
 
 /** Builds the standard date fields and user relationships inferred from audit properties. */
 final class AuditResourceMembers {
+
+  private static final Method USER_ID_READER = BeanPropertyAccess.reader(User.class, "id");
 
   private AuditResourceMembers() {}
 
@@ -68,7 +69,7 @@ final class AuditResourceMembers {
                 CollectionFieldTypes.longNumber(),
                 User.class,
                 userReader,
-                AuditResourceMembers::auditUserId,
+                user -> Long.class.cast(BeanPropertyAccess.readId(user, USER_ID_READER)),
                 source.property() + ".id")
             .allowNull()
             .documented(
@@ -76,14 +77,6 @@ final class AuditResourceMembers {
                     name.equals("createdBy")
                         ? "User who created the resource."
                         : "User who last updated the resource.")));
-  }
-
-  /** Reads a proxy ID without initializing it after the manager transaction closes. */
-  private static Long auditUserId(User user) {
-    if (user instanceof HibernateProxy proxy) {
-      return (Long) proxy.getHibernateLazyInitializer().getIdentifier();
-    }
-    return user.getId();
   }
 
   private static OpenApiSchemaDocumentation auditDocumentation(String description) {
