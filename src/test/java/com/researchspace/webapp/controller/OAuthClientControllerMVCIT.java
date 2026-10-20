@@ -4,8 +4,10 @@ import static com.researchspace.webapp.controller.MvcTestUtils.parseOAuthTokenRe
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,7 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
+import com.researchspace.api.v1.controller.OAuthClientController;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
+import com.researchspace.auth.PasswordGrantGuessLimiter;
 import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
 import com.researchspace.model.User;
 import com.researchspace.model.frontend.OAuthAppInfo;
@@ -25,23 +29,49 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.bean.override.BeanOverrideTestExecutionListener;
-import org.springframework.test.context.bean.override.mockito.MockitoResetTestExecutionListener;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
-@TestExecutionListeners(
-    value = {BeanOverrideTestExecutionListener.class, MockitoResetTestExecutionListener.class},
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 public class OAuthClientControllerMVCIT extends MVCTestBase {
   private static final String CLIENT_ERROR = "OAuth token could not be created.";
   private static final String INVALID_CREDENTIALS = "Invalid user credentials.";
 
   @Autowired private OAuthAppManager oAuthAppManager;
-  @MockitoSpyBean private IReauthenticator reauthenticator;
-  @MockitoSpyBean private UsernamePasswordCredentialsMatcher credentialsMatcher;
+  @Autowired private OAuthClientController oAuthClientController;
+  @Autowired private PasswordGrantGuessLimiter guessLimiter;
+
+  private Object controllerTarget;
+  private Object originalReauthenticator;
+  private Object originalCredentialsMatcher;
+  private IReauthenticator reauthenticator;
+  private UsernamePasswordCredentialsMatcher credentialsMatcher;
+
+  /**
+   * Spies are swapped into the shared beans by hand rather than with {@code @MockitoSpyBean}. A
+   * bean override would give this class its own Spring context, which stays cached for the rest of
+   * the test run and adds to the test JVM's heap use. The originals are restored after each test so
+   * the spies cannot leak into other classes that share the context.
+   */
+  @BeforeEach
+  public void installSpies() {
+    controllerTarget = AopTestUtils.getUltimateTargetObject(oAuthClientController);
+    originalReauthenticator = ReflectionTestUtils.getField(controllerTarget, "reauthenticator");
+    reauthenticator = mock(IReauthenticator.class, delegatesTo(originalReauthenticator));
+    ReflectionTestUtils.setField(controllerTarget, "reauthenticator", reauthenticator);
+
+    originalCredentialsMatcher = ReflectionTestUtils.getField(guessLimiter, "credentialsMatcher");
+    credentialsMatcher =
+        mock(UsernamePasswordCredentialsMatcher.class, delegatesTo(originalCredentialsMatcher));
+    ReflectionTestUtils.setField(guessLimiter, "credentialsMatcher", credentialsMatcher);
+  }
+
+  @AfterEach
+  public void restoreOriginals() {
+    ReflectionTestUtils.setField(controllerTarget, "reauthenticator", originalReauthenticator);
+    ReflectionTestUtils.setField(guessLimiter, "credentialsMatcher", originalCredentialsMatcher);
+  }
 
   /**
    * OAuth starts disabled on a fresh database, so each test enables it first. Some tests disable it
