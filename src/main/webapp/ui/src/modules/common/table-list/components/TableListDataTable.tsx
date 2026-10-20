@@ -325,6 +325,8 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
             enableSorting: false,
             meta: {
               labelKey: column.id,
+              // The id is not a catalogue key: "actions" would resolve to the tableList.actions object.
+              label: typeof column.label === "string" ? column.label : column.id,
               cardLabel: column.label,
               card: column.card,
             },
