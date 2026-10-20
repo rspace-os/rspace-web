@@ -696,28 +696,6 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void ownershipControlDecidesWhoMayChangeAccessPermissions() {
-    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
-    User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
-    initialiseContentWithEmptyContent(pi, groupmate);
-    Group group = createGroup("group-" + getRandomName(5), pi);
-    addUsersToGroup(pi, group, testUser, groupmate);
-
-    ApiSampleWithFullSubSamples created = createBasicSampleForUser(testUser);
-    SampleEntity sample = sampleApiMgr.getSampleById(created.getId(), testUser);
-
-    assertTrue(invPermissionUtils.canUserChangeAccessPermissions(sample, testUser));
-    assertTrue(invPermissionUtils.canUserChangeAccessPermissions(sample, pi));
-    assertFalse(invPermissionUtils.canUserChangeAccessPermissions(sample, groupmate));
-
-    IllegalArgumentException iae =
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> invPermissionUtils.assertUserCanChangeAccessPermissions(sample, groupmate));
-    assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
-  }
-
-  @Test
   public void groupmateCannotChangeSampleAccessPermissionsButPiCan() {
     User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
     User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
