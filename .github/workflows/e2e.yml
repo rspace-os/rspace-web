@@ -206,6 +206,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
+            # Keep in sync with E2E_MOCK_ARGS in docker/dev/entrypoint-app.sh.
             INTEGRATION_ARGS=(
               "-Dpubchem.base.url=http://localhost:$E2E_MOCK_PORT"
               "-Dfieldmark.api.url=http://localhost:$E2E_MOCK_PORT"
