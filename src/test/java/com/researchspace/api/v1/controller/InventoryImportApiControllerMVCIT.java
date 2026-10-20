@@ -1763,10 +1763,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, selfLinkResult.getStatus());
     assertEquals(0, selfLinkResult.getSuccessCount());
     assertEquals(1, selfLinkResult.getErrorCount());
-    // the API reports the raw message key; the frontend i18n catalogue renders it
     assertApiErrorContainsMessage(
         selfLinkResult.getResults().get(0).getError(),
-        "errors.inventory.field.link.selfLinkForbidden");
+        "An item cannot link to itself: 'SA" + predictedSelfId + "'");
     assertEquals(
         samplesBefore,
         sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits().intValue(),

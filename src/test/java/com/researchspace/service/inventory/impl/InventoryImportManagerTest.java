@@ -1314,7 +1314,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
             InventoryImportException.class,
             () -> importMgr.importContainers(importResult, csvProcessingResult));
     assertEquals(
-        "errors.inventory.move.targetLocation.requiredForGridOrImageContainer", iie.getMessage());
+        "When moving to image/grid type container request has to specify target location",
+        iie.getMessage());
 
     // verify error on saving to container belonging to unrelated user
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("apiImport"));
@@ -1338,7 +1339,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         assertThrows(
             InventoryImportException.class,
             () -> importMgr.importContainers(importResult2, csvProcessingResult2));
-    assertEquals("errors.inventory.move.targetContainer.unavailable", iie.getMessage());
+    assertEquals(
+        "Cannot locate target container from provided target container and location details",
+        iie.getMessage());
   }
 
   @Test

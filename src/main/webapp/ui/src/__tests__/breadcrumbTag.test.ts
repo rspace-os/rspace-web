@@ -33,6 +33,7 @@ describe("breadcrumb JSP tag", () => {
     ];
     const addedElements: Array<{ tagId: unknown; elementId: unknown; displayName: unknown }> = [];
     const refreshedTags: Array<unknown> = [];
+    let breadcrumbDataRemoved = false;
     const document = {};
 
     const jquery = (value: unknown) => {
@@ -53,6 +54,9 @@ describe("breadcrumb JSP tag", () => {
                     });
                   },
                 };
+              },
+              remove: () => {
+                breadcrumbDataRemoved = true;
               },
             };
           },
@@ -83,9 +87,10 @@ describe("breadcrumb JSP tag", () => {
     };
 
     const markup = readFileSync(resolve(__dirname, "../../../WEB-INF/tags/breadcrumb.tag"), "utf8");
-    const scriptMatch = /<script>([\s\S]*?)<\/script>/.exec(markup);
-    const script = scriptMatch?.[1];
-    if (script === undefined) throw new Error("breadcrumb tag script was not found");
+    const scriptStart = markup.indexOf("<script>");
+    const scriptEnd = markup.indexOf("</script>", scriptStart);
+    if (scriptStart === -1 || scriptEnd === -1) throw new Error("breadcrumb tag script was not found");
+    const script = markup.slice(scriptStart + "<script>".length, scriptEnd);
 
     runInNewContext(script.replaceAll(`\${breadcrumbTagId}`, "test"), {
       $: jquery,
@@ -107,5 +112,6 @@ describe("breadcrumb JSP tag", () => {
       { tagId: "test", elementId: "43", displayName: "Research &lt;Lab&gt; &amp; Team" },
     ]);
     expect(refreshedTags).toEqual(["test"]);
+    expect(breadcrumbDataRemoved).toBe(true);
   });
 });
