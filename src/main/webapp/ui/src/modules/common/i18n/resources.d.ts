@@ -857,6 +857,7 @@ export default interface Resources {
           "tooWide": "Choose a period of no more than 183 days."
         }
       },
+      "backgroundError": "Couldn't refresh this item. You can retry without losing your unsaved changes.",
       "cancelEdit": "Cancel",
       "disabled": "Disabled",
       "edit": "Edit configuration",
