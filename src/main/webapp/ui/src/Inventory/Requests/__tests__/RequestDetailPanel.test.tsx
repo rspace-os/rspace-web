@@ -1455,6 +1455,34 @@ describe("RequestDetailPanel", () => {
       ).toBeInTheDocument();
     });
 
+    it("names a deleted requester's username, not an empty string, in the other-requests-rejected bullet", async () => {
+      const user = userEvent.setup();
+      server.use(
+        http.get(SAMPLE_REQUESTS_URL, ({ request }) => {
+          apiQuery("sampleRequests", new URL(request.url).searchParams);
+          return HttpResponse.json({
+            requests: [{ id: 202, requester: { id: null, username: "old-requester", firstName: "", lastName: "" } }],
+          });
+        }),
+      );
+      // cimode rendering (see src/__tests__/setup.ts) shows only the bare translation key, never
+      // the interpolated copy - this spies on the real t() call to check the username was passed
+      // through userDisplayName, rather than the naive `${firstName} ${lastName}` this guards
+      // against (which would silently render as a blank name for a deleted requester).
+      const tSpy = vi.spyOn(i18n, "t");
+      const dialog = await openTransferDialog(user);
+
+      await waitFor(() => expect(apiQuery).toHaveBeenCalled());
+      expect(tSpy).toHaveBeenCalledWith(
+        "inventory:requestsManagement.userDeleted",
+        expect.objectContaining({ username: "old-requester" }),
+      );
+      expect(
+        within(dialog).getByText("inventory:requestsManagement.detail.transferDialog.bullets.otherRequestsRejected"),
+      ).toBeInTheDocument();
+      tSpy.mockRestore();
+    });
+
     it("omits the other-requests-rejected bullet once other active requests have resolved to none", async () => {
       const user = userEvent.setup();
       const dialog = await openTransferDialog(user);

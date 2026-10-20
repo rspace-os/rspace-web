@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import ApiService from "@/common/InvApiService";
 import type { ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
-import type { ApiSampleRequestListItem, RequestsFilter, StatusFilter } from "./RequestsList";
+import { type ApiSampleRequestListItem, type RequestsFilter, type StatusFilter, userDisplayName } from "./RequestsList";
 
 const ACTIVE_STATUSES = "PENDING,APPROVED";
 const PAST_STATUSES = "REJECTED,FULFILLED,CANCELLED";
@@ -99,6 +100,7 @@ export type OtherActiveSampleRequest = { id: number; status: string; requesterNa
  * including that request incorrectly appearing in its own "will be rejected" list.
  */
 export function useOtherActiveSampleRequestsQuery(sampleId: number | null, excludeRequestId: number) {
+  const { t } = useTranslation(["inventory", "common"]);
   return useQuery({
     queryKey: sampleRequestsQueryKeys.otherActiveForSample(sampleId ?? -1, excludeRequestId),
     queryFn: () => {
@@ -108,7 +110,11 @@ export function useOtherActiveSampleRequestsQuery(sampleId: number | null, exclu
         pageSize: "100",
       });
       return ApiService.query<{
-        requests: Array<{ id: number; status: string; requester: { firstName: string; lastName: string } }>;
+        requests: Array<{
+          id: number;
+          status: string;
+          requester: { id: number | null; username: string; firstName: string; lastName: string };
+        }>;
       }>("sampleRequests", params).then(
         ({ data }): Array<OtherActiveSampleRequest> =>
           data.requests
@@ -116,7 +122,7 @@ export function useOtherActiveSampleRequestsQuery(sampleId: number | null, exclu
             .map((r) => ({
               id: r.id,
               status: r.status,
-              requesterName: `${r.requester.firstName} ${r.requester.lastName}`,
+              requesterName: userDisplayName(r.requester, t),
             })),
       );
     },

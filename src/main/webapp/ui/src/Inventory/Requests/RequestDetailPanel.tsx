@@ -409,7 +409,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
               message: t("requestsManagement.detail.transferSuccessMessage", {
                 id: request.id,
                 sampleName: transferredSampleName,
-                requester: `${request.requester.firstName} ${request.requester.lastName}`,
+                requester: requesterFullName,
               }),
             }),
           );
@@ -461,7 +461,8 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // unavailable, skipChooseMethodDialog means every route through this button already ends in a
   // direct transfer of the whole sample (all of its subsamples), so no particular one needs to be
   // selected first.
-  const prepareSampleEnabled = isActionableState && (skipChooseMethodDialog || selectedSubsampleId !== null);
+  const prepareSampleEnabled =
+    isActionableState && (skipChooseMethodDialog || selectedSubsampleId !== null) && !isProcessingAction;
   const rejectColors = { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" };
   const approveColors = { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" };
   const approvedDisabledColors = { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" };
@@ -484,7 +485,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             ? t("requestsManagement.detail.preparationHint.approvedNoSelection")
             : t("requestsManagement.detail.preparationHint.approvedSelected", {
                 subsample: selectedSubsampleName,
-                requester: `${request.requester.firstName} ${request.requester.lastName}`,
+                requester: requesterFullName,
               })
         : null;
   // Named for which other active requests exist, so the warning can say specifically "Pending"
