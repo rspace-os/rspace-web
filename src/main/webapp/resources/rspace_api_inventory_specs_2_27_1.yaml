@@ -4897,7 +4897,10 @@ components:
           $ref: "#/components/schemas/User"
         permittedActions:
           type: array
-          description: List of actions that current user can perform with the item
+          description: >-
+            List of actions that current user can perform with the item.
+            CHANGE_REQUESTABLE is given on samples only, to a user who may change
+            `requestable`: one who may both edit and transfer the sample.
           items:
             type: string
             enum:
@@ -4905,6 +4908,7 @@ components:
               - LIMITED_READ
               - UPDATE
               - CHANGE_OWNER
+              - CHANGE_REQUESTABLE
         sharingMode:
           type: string
           description: The sharing mode of the inventory item
@@ -5604,7 +5608,10 @@ components:
           $ref: "#/components/schemas/User"
         permittedActions:
           type: array
-          description: List of actions that current user can perform with the item
+          description: >-
+            List of actions that current user can perform with the item.
+            CHANGE_REQUESTABLE is given on samples only, to a user who may change
+            `requestable`: one who may both edit and transfer the sample.
           items:
             type: string
             enum:
@@ -5612,6 +5619,7 @@ components:
               - LIMITED_READ
               - UPDATE
               - CHANGE_OWNER
+              - CHANGE_REQUESTABLE
         sharingMode:
           type: string
           description: The sharing mode of the inventory item

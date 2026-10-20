@@ -34,7 +34,8 @@ export class SearchableResultsTable {
 
   async open(name: string, options: { exact?: boolean } = {}): Promise<void> {
     const row = await this.findRow(name, options);
-    await row.getByRole("cell", { name, exact: options.exact }).click();
+    // Always exact: the selection cell's accessible name, "Select <name>", also contains the name.
+    await row.getByRole("cell", { name, exact: true }).click();
   }
 
   async select(name: string): Promise<void> {

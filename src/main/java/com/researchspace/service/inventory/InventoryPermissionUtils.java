@@ -310,6 +310,16 @@ public class InventoryPermissionUtils {
   }
 
   /**
+   * Whether the user may change a sample's requestable flag: they must be able to both edit and
+   * transfer it, so a PI cannot change it on a member's sample shared with no one.
+   */
+  public boolean canUserChangeRequestable(InventoryRecord record, User user) {
+    return record.isSample()
+        && canUserEditInventoryRecord(record, user)
+        && canUserTransferInventoryRecord(record, user);
+  }
+
+  /**
    * The owner, or a PI or Lab Admin of the owner's group. Nobody may transfer a locked
    * (default/system) instrument template.
    */
@@ -351,6 +361,9 @@ public class InventoryPermissionUtils {
             || user.hasSysadminRole())) {
       // FIXME community admin should also have TRANSFER permission
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
+    }
+    if (canUserChangeRequestable(invRec, user)) {
+      apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_REQUESTABLE);
     }
   }
 

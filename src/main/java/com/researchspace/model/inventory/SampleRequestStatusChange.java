@@ -74,8 +74,10 @@ public class SampleRequestStatusChange implements Serializable {
   }
 
   /**
-   * The requester for the PENDING entry and for a cancellation, otherwise the sample owner. Kept
-   * for display, including after that user's deletion; {@link #getCreatedById()} identifies them.
+   * The requester for the PENDING entry and for a cancellation; for a change caused by a transfer,
+   * whoever made it (the owner, or a PI or Lab Admin of their group); otherwise the sample owner.
+   * Kept for display, including after that user's deletion; {@link #getCreatedById()} identifies
+   * them.
    */
   @Column(nullable = false, length = User.MAX_UNAME_LENGTH)
   public String getCreatedByUsername() {

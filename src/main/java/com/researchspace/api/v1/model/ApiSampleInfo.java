@@ -51,7 +51,6 @@ import org.springframework.web.util.UriComponentsBuilder;
   "templateVersion",
   "template",
   "requestable",
-  "canSetRequestable",
   "revisionId",
   "version",
   "historicalVersion",
@@ -79,18 +78,6 @@ public class ApiSampleInfo extends ApiInventoryRecordInfo {
 
   @JsonProperty("requestable")
   private Boolean requestable;
-
-  /**
-   * Whether the current user is permitted to change {@link #requestable} - computed server-side
-   * (see InventoryApiManagerImpl.setOtherFieldsForOutgoingApiInventoryRecord) from the exact same
-   * check SampleApiManagerImpl.assertRequestableChangeAllowed itself enforces
-   * (InventoryPermissionUtils.canUserTransferInventoryRecord: the owner, or a PI/Lab Admin of the
-   * owner's group - deliberately not every other group member with mere edit access, and not a
-   * sysadmin's admin-override CHANGE_OWNER permission either). Read-only: a client-supplied value
-   * is ignored, the same way permittedActions is.
-   */
-  @JsonProperty(value = "canSetRequestable", access = Access.READ_ONLY)
-  private Boolean canSetRequestable;
 
   @JsonProperty("subSampleAlias")
   private ApiSubSampleAlias subSampleAlias;
