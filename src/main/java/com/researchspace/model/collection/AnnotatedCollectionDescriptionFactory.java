@@ -9,14 +9,17 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import org.springframework.beans.BeanUtils;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 
 /** Maps an annotated API record and its entity bean properties to a collection description. */
 final class AnnotatedCollectionDescriptionFactory {
@@ -39,7 +42,10 @@ final class AnnotatedCollectionDescriptionFactory {
       throw new IllegalArgumentException(
           "Resource definition entity must be " + entityType.getName());
     }
-    Map<String, PropertyDescriptor> properties = BeanPropertyAccess.properties(entityType);
+    Map<String, PropertyDescriptor> properties = new LinkedHashMap<>();
+    for (PropertyDescriptor property : BeanUtils.getPropertyDescriptors(entityType)) {
+      properties.put(property.getName(), property);
+    }
     List<ResourceMember<T>> fields = new ArrayList<>();
     for (RecordComponent component : resourceType.getRecordComponents()) {
       fields.add(
@@ -187,13 +193,14 @@ final class AnnotatedCollectionDescriptionFactory {
         definition.idProperty().isBlank() ? property + ".id" : definition.idProperty();
     String kindProperty =
         definition.kindProperty().isBlank() ? property + ".kind" : definition.kindProperty();
-    Method propertyReader = BeanPropertyAccess.reader(entityType, property);
+    Method propertyReader = ResourcePropertyReaders.reader(entityType, property);
     Class<?> relatedType = propertyReader.getReturnType();
     Method idReader =
-        BeanPropertyAccess.reader(relatedType, accessorName(property, idProperty, "id"));
+        ResourcePropertyReaders.reader(relatedType, accessorName(property, idProperty, "id"));
     Method kindReader =
         polymorphic
-            ? BeanPropertyAccess.reader(relatedType, accessorName(property, kindProperty, "kind"))
+            ? ResourcePropertyReaders.reader(
+                relatedType, accessorName(property, kindProperty, "kind"))
             : null;
     Class<?> kindType = kindReader == null ? String.class : kindReader.getReturnType();
     if (polymorphic && kindType != String.class && !kindType.isEnum()) {
@@ -219,14 +226,14 @@ final class AnnotatedCollectionDescriptionFactory {
 
     Function<T, ResourceReference<Object, Object>> readReference =
         entity -> {
-          Object related = BeanPropertyAccess.invoke(propertyReader, entity);
+          Object related = ReflectionUtils.invokeMethod(propertyReader, entity);
           if (related == null) {
             return null;
           }
-          Object id = BeanPropertyAccess.readId(related, idReader);
+          Object id = ResourcePropertyReaders.readId(related, idReader);
           Object kind =
               polymorphic
-                  ? BeanPropertyAccess.invoke(kindReader, related)
+                  ? ReflectionUtils.invokeMethod(kindReader, related)
                   : targets.get(0).storedKind();
           return new ResourceReference<>(kind, id);
         };
@@ -327,7 +334,8 @@ final class AnnotatedCollectionDescriptionFactory {
       PropertyDescriptor descriptor,
       CollectionFieldType<V> type,
       String idField) {
-    Function<T, V> read = entity -> type.javaType().cast(BeanPropertyAccess.invoke(reader, entity));
+    Function<T, V> read =
+        entity -> type.javaType().cast(ReflectionUtils.invokeMethod(reader, entity));
     Method writer = descriptor.getWriteMethod();
     boolean createWritable =
         !component.getName().equals(idField)
@@ -342,7 +350,8 @@ final class AnnotatedCollectionDescriptionFactory {
       field = Field.readOnly(component.getName(), property, type, read);
     } else {
       requireCompatibleType(component, writer.getParameterTypes()[0], "writer");
-      BiConsumer<T, V> write = (entity, value) -> BeanPropertyAccess.invoke(writer, entity, value);
+      BiConsumer<T, V> write =
+          (entity, value) -> ReflectionUtils.invokeMethod(writer, entity, value);
       field = Field.writable(component.getName(), property, type, read, write);
       if (createWritable && !updateWritable) {
         field = field.writeOnlyOn(WriteOperation.CREATE);
