@@ -23,9 +23,9 @@ export class AppsPage {
       await btn.click();
       await this.toasts.byVariant("success", "Update successful.").first().waitFor({ state: "visible" });
       await this.toasts.dismissAll();
-    } else {
-      await dialog.getByRole("button", { name: "Close" }).click();
     }
+    // the dialog stays open across the toggle; the card moves section once it is closed
+    await dialog.getByRole("button", { name: "Close" }).click();
     await dialog.waitFor({ state: "detached" });
   }
 

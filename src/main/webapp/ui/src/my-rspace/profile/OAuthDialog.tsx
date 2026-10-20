@@ -13,9 +13,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React, { useContext, useRef } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import SecretField from "@/components/Inputs/SecretField";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../theme";
@@ -31,10 +32,6 @@ export default function OAuthDialog(props: any) {
   const [created, setCreated] = React.useState(false);
   const [clientId, setClientId] = React.useState("");
   const [unhashedClientSecret, setUnhashedClientSecret] = React.useState("");
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  const clientIdRef = useRef<any>(null);
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  const clientSecretRef = useRef<any>(null);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -117,22 +114,12 @@ export default function OAuthDialog(props: any) {
     return true;
   };
 
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  const copyToClipboard = (_e: any, id: number) => {
-    if (id === 1) {
-      clientIdRef.current.select();
-    } else {
-      clientSecretRef.current.select();
-    }
-
+  // copies the value itself: browsers will not copy a selection out of a password input
+  const copyToClipboard = async (value: string) => {
     try {
-      const successful = document.execCommand("copy");
-      if (successful) {
-        addAlert(mkAlert({ message: t("profile.oauth.dialog.copySuccess"), variant: "notice", duration: 3000 }));
-      } else {
-        addAlert(mkAlert({ message: t("profile.oauth.dialog.copyError"), variant: "warning", duration: 5000 }));
-      }
-    } catch (_err) {
+      await navigator.clipboard.writeText(value);
+      addAlert(mkAlert({ message: t("profile.oauth.dialog.copySuccess"), variant: "notice", duration: 3000 }));
+    } catch {
       addAlert(mkAlert({ message: t("profile.oauth.dialog.copyError"), variant: "warning", duration: 5000 }));
     }
   };
@@ -182,7 +169,6 @@ export default function OAuthDialog(props: any) {
               <Grid container>
                 <Grid size={12}>
                   <TextField
-                    inputRef={clientIdRef}
                     label={t("profile.oauth.table.clientId")}
                     variant="filled"
                     value={clientId}
@@ -192,24 +178,21 @@ export default function OAuthDialog(props: any) {
                     }}
                   />
                   <Tooltip title={t("profile.oauth.dialog.copy")} enterDelay={100}>
-                    <IconButton color="inherit" onClick={(e) => copyToClipboard(e, 1)}>
+                    <IconButton color="inherit" onClick={() => void copyToClipboard(clientId)}>
                       <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
                   </Tooltip>
                 </Grid>
                 <Grid sx={{ marginTop: "10px" }} size={12}>
-                  <TextField
-                    inputRef={clientSecretRef}
+                  <SecretField
+                    readOnly
                     label={t("profile.oauth.dialog.clientSecret")}
                     variant="filled"
                     value={unhashedClientSecret}
                     sx={{ marginRight: "10px", width: "calc(100% - 55px)" }}
-                    slotProps={{
-                      htmlInput: { "aria-label": t("profile.oauth.dialog.clientSecret") },
-                    }}
                   />
                   <Tooltip title={t("profile.oauth.dialog.copy")} enterDelay={100}>
-                    <IconButton color="inherit" onClick={(e) => copyToClipboard(e, 2)}>
+                    <IconButton color="inherit" onClick={() => void copyToClipboard(unhashedClientSecret)}>
                       <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
                   </Tooltip>

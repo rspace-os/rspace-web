@@ -249,8 +249,10 @@ resolved during design. This file is a glossary only — no implementation detai
   PID, in order to import one. A lookup is anonymous and independent of any PIDINST provider: it
   is offered whether or not one is configured, and goes to the public registry of each registry
   the user has ticked, DataCite, B2INST or both. Hits from both form one list ordered by the
-  registry's update time, newest first, fifty to a page, each hit naming its registry; hits
-  updated at the same moment keep the registry's own order. A lookup needs at least four
+  registry's update time, newest first, up to fifty to a page, each hit naming its registry;
+  hits updated at the same moment keep the registry's own order, and a hit without an update
+  time stays beside its registry neighbours. A page is a fixed slice of that list, so a hidden
+  hit on it leaves the page short and every other page as it is. A lookup needs at least four
   characters, so a query shorter than that is refused rather than answered with most of a
   registry. How free text matches depends on the registry: a B2INST lookup matches a *substring*,
   ignoring case, so part of a name finds the record that carries it however it was typed, while a
@@ -261,6 +263,14 @@ resolved during design. This file is a glossary only — no implementation detai
   DataCite and a Handle at B2INST, and yields nothing from the other.
   _Avoid_: PIDINST search, DOI search, federated search (the registries are asked side by side,
   not through a middle service), provider search
+
+- **Hidden hit** — a registry result that a PID lookup does not show because RSpace cannot
+  import it: a record that is not public, is not an instrument record, or has no PID. It is
+  left out of its page, not of the list: it still counts in its registry's own total and still
+  holds its place, so the page it belongs to shows fewer than fifty hits and no other page
+  changes (RSDEV-1556).
+  _Avoid_: dropped hit, filtered record, skipped hit (a *skipped entry* is a related identifier
+  the import could not link)
 
 - **Already-linked marker** — the note on a PID lookup hit saying that an Instrument in this
   RSpace already links its PID. Every user sees it, so refusing to import the hit always has
@@ -285,10 +295,10 @@ resolved during design. This file is a glossary only — no implementation detai
   is this RSpace's own page for an item the importing user can see becomes a real link,
   with the field's own relation (IsDocumentedBy for Measurement technique, IsCalibratedBy
   for Calibration, since the registry's IsDescribedBy is a constant that says nothing) and
-  pinned to the same version the address names, if it names one; a trashed item the user
-  can still see is linked and shows as deleted, as by hand, except a trashed notebook, which
-  cannot be linked by hand either. Every other such entry is a skipped entry. Nothing about
-  a skipped entry is stored on the instrument (RSDEV-1528).
+  pinned to the same version the address names, if it names one and the item has it; a
+  trashed item the user can still see is linked and shows as deleted, as by hand, except a
+  trashed notebook, which cannot be linked by hand either. Every other such entry is a
+  skipped entry. Nothing about a skipped entry is stored on the instrument (RSDEV-1528).
   _Avoid_: PIDINST import (the PID is imported, the instrument is created), instrument
   lookup (that is the search that precedes it), sync, instrument CSV import (that is the
   CSV import path)
@@ -311,8 +321,9 @@ resolved during design. This file is a glossary only — no implementation detai
   RSpace, or, when the address has no host or is on this RSpace's own host, as not the
   address of an item in this RSpace; or it points at this RSpace but the item is not
   available to the importing user, which is the one wording for an item they cannot see, an
-  item that does not exist and a kind of item links cannot name, so an import never reveals
-  whether an item exists (the principle of ADR 0002). A server whose
+  item that does not exist, a kind of item links cannot name and a version the item does not
+  have, so an import never reveals whether an item, or a version of it, exists (the principle
+  of ADR 0002). A server whose
   address has changed since it registered the PID is not recognised as this one; its own
   entries are skipped as another server's.
   _Avoid_: dropped entry, lost link, failed link, unresolved identifier
@@ -504,3 +515,15 @@ resolved during design. This file is a glossary only — no implementation detai
   the parent container its row names, or else in a new "imported items" container on the Bench,
   and every imported item keeps everything its row gave it.
   _Avoid_: bulk upload, Instrument import (that is the PID registry path)
+
+- **Existing-template import** — a CSV import of Samples or Instruments that creates every
+  item from a template the user picks, instead of a new template suggested from the file.
+  Every column not converted to an item property must match one of the template's custom
+  fields, by position, name and type.
+  _Avoid_: template match (that is the check, not the import)
+
+- **Blank column** — a CSV column with no value in any row. In an existing-template import
+  it fits a custom field of any type but attachment and leaves that field empty on every item
+  (a link field keeps the template's default link, if it has one), unless the field is
+  mandatory, which refuses it.
+  _Avoid_: empty column, unused column

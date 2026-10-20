@@ -5,6 +5,7 @@ import { setup, toBeAccessible } from "@sa11y/vitest";
 import * as jestDomMatchers from "@testing-library/jest-dom/matchers";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, expect } from "vitest";
+import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
@@ -25,6 +26,8 @@ await i18n.loadNamespaces([
 // Component tests assert the translation identifier, not the English copy.
 i18n.options.appendNamespaceToCIMode = true;
 await i18n.changeLanguage("cimode");
+// modules/common/i18n/index.ts keeps i18next-icu's silent default; this bites only suites that call setupRealAppI18n.
+i18n.services.i18nFormat.options.parseErrorHandler = throwOnIcuFormatError;
 
 function createStorageMock() {
   const storage = new Map<string, string>();

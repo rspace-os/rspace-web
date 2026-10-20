@@ -278,6 +278,7 @@
     "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
     "permissions": "n09nmg4ax7-permissions",
     "pidinstIdentifiers": "oahocdfqyg-pidinst-identifiers",
+    "pidinstImport": "dtzsvyhh44-search-and-import-pidinst-instruments-into-your-inventory",
     "protocolsio": "nid9q64pas-protocols-io-integration",
     "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
     "publicationOfDocuments": "lqxsej13hv-publication-of-documents",
@@ -334,6 +335,14 @@
     },
     "referenceField": {
       "notYetSupported": "Not yet supported."
+    },
+    "secretField": {
+      "clear": "Clear {label}",
+      "defaultName": "secret",
+      "hide": "Hide {label}",
+      "show": "Show {label}",
+      "unchanged": "(unchanged)",
+      "undoClear": "Undo clear {label}"
     },
     "selectedFileInfo": {
       "invalidFile": "Invalid file.",

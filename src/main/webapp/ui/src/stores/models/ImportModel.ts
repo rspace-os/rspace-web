@@ -145,6 +145,7 @@ export class ColumnFieldMap {
   isNameUnique: (columnFieldMap: ColumnFieldMap) => boolean;
   recordType: ImportRecordType;
   columnsWithoutBlankValue: Array<ColumnName>;
+  blankColumns: Array<ColumnName>;
 
   constructor({
     selected,
@@ -158,6 +159,7 @@ export class ColumnFieldMap {
     isNameUnique,
     recordType,
     columnsWithoutBlankValue,
+    blankColumns,
   }: {
     selected: boolean;
     columnName: ColumnName;
@@ -170,6 +172,7 @@ export class ColumnFieldMap {
     isNameUnique: (columnFieldMap: ColumnFieldMap) => boolean;
     recordType: ImportRecordType;
     columnsWithoutBlankValue: Array<ColumnName>;
+    blankColumns: Array<ColumnName>;
   }) {
     makeObservable(this, {
       selected: observable,
@@ -203,6 +206,7 @@ export class ColumnFieldMap {
     this.isNameUnique = isNameUnique;
     this.quantityUnitId = quantityUnitId;
     this.columnsWithoutBlankValue = columnsWithoutBlankValue;
+    this.blankColumns = blankColumns;
   }
 
   toggleSelected(value: boolean = !this.selected) {
@@ -253,6 +257,15 @@ export class ColumnFieldMap {
       return this.columnsWithoutBlankValue.includes(this.columnName) && this.typeIsCompatibleWithField(field);
     }
     return this.typeIsCompatibleWithField(field);
+  }
+
+  // a column with no value in any row writes nothing, so it fits a template field of any type but attachment:
+  // an item created from the template keeps the template field's file (and a link field its default link)
+  acceptsTemplateFieldType(fieldType: FieldType): boolean {
+    return (
+      (fieldType !== FieldTypes.attachment && this.blankColumns.includes(this.columnName)) ||
+      this.allValidTypes.includes(fieldType)
+    );
   }
 
   get validFieldName(): boolean {
@@ -762,6 +775,7 @@ export default class Import {
         const { data } = await ApiService.post<{
           columnNames: Array<string>;
           columnsWithoutBlankValue: Array<string>;
+          blankColumns: Array<string>;
           fieldNameForColumnName?: Record<string, string>;
           templateInfo?: TemplateAttrs;
           quantityUnitForColumn?: { [column: string]: number };
@@ -800,6 +814,7 @@ export default class Import {
                 fieldChangeCallback: fieldChangeHandler,
                 isNameUnique: (c) => this.isNameUnique(c),
                 columnsWithoutBlankValue: data.columnsWithoutBlankValue,
+                blankColumns: data.blankColumns,
               });
 
               // after creation: auto-select conversion in suitable cases
@@ -842,6 +857,7 @@ export default class Import {
                   fieldChangeCallback: fieldChangeHandler,
                   isNameUnique: (c) => this.isNameUnique(c),
                   columnsWithoutBlankValue: data.columnsWithoutBlankValue,
+                  blankColumns: data.blankColumns,
                 });
 
                 // after creation: auto-select conversion in suitable cases
@@ -874,6 +890,7 @@ export default class Import {
                 fieldChangeCallback: fieldChangeHandler,
                 isNameUnique: (c) => this.isNameUnique(c),
                 columnsWithoutBlankValue: data.columnsWithoutBlankValue,
+                blankColumns: data.blankColumns,
               });
               const fieldsByRecordType = newFieldMap.fieldsByRecordType;
               if (newFieldMap.isCompatibleWithField(fieldsByRecordType[nameToMatch(columnName)])) {
@@ -1269,8 +1286,8 @@ export default class Import {
     }
 
     const notMatchingByType = new Set(
-      zipWith(customFields, template.fields, ({ allValidTypes, columnName }, { type: fieldType }) =>
-        allValidTypes.includes(apiStringToFieldType(fieldType.toLowerCase())) ? null : columnName,
+      zipWith(customFields, template.fields, (mapping, { type: fieldType }) =>
+        mapping.acceptsTemplateFieldType(apiStringToFieldType(fieldType.toLowerCase())) ? null : mapping.columnName,
       ),
     );
     notMatchingByType.delete(null);
@@ -1342,8 +1359,8 @@ export default class Import {
     }
 
     const notMatchingByType = new Set(
-      zipWith(customFields, template.fields, ({ allValidTypes, columnName }, { type: fieldType }) =>
-        allValidTypes.includes(apiStringToFieldType(fieldType.toLowerCase())) ? null : columnName,
+      zipWith(customFields, template.fields, (mapping, { type: fieldType }) =>
+        mapping.acceptsTemplateFieldType(apiStringToFieldType(fieldType.toLowerCase())) ? null : mapping.columnName,
       ),
     );
     notMatchingByType.delete(null);

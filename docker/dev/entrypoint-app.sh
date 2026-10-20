@@ -92,6 +92,7 @@ fi
 # Optional third-party integration mocks (rspace-dev up --e2e). The mock
 # server runs beside Vite in the network namespace shared by both containers,
 # so localhost is intentionally correct here.
+# Keep this list in sync with the mock block in .github/workflows/e2e.yml.
 E2E_MOCK_ARGS=()
 if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
   E2E_MOCK_URL="http://localhost:${E2E_MOCK_PORT:-9099}"
@@ -118,6 +119,7 @@ if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
     "-Ddcd.base.url=${E2E_MOCK_URL}/dcd"
     "-Ddcd.client.id=mock-client"
     "-Ddcd.client.secret=mock-secret"
+    "-Degnyte.client.id=mock-client"
     "-Downcloud.url=${E2E_MOCK_URL}/owncloud"
     "-Downcloud.client.id=mock-client"
     "-Downcloud.secret=mock-secret"
@@ -134,13 +136,16 @@ if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
     "-Dgithub.oauth.authorize.url=${E2E_MOCK_URL}/github/oauth/authorize"
     "-Dgithub.oauth.access.token.url=${E2E_MOCK_URL}/github/oauth/token"
     "-Dgithub.api.base.url=${E2E_MOCK_URL}/github-api"
+    "-Dorcid.oauth.authorize.url=${E2E_MOCK_URL}/orcid/oauth/authorize"
     "-Dorcid.oauth.token.url=${E2E_MOCK_URL}/orcid/oauth/token"
     "-Dslack.client.id=mock-client"
     "-Dslack.secret=mock-secret"
-    "-Dslack.verification.token=mock-verification-token"
+    "-Dslack.signing.secret=mock-signing-secret"
     "-Dslack.oauth.authorize.url=${E2E_MOCK_URL}/slack/oauth/authorize"
     "-Dslack.api.base.url=${E2E_MOCK_URL}/slack-api"
     "-Dror.api.url=${E2E_MOCK_URL}/ror"
+    "-Dpidinst.lookup.datacite.url=${E2E_MOCK_URL}"
+    "-Dpidinst.lookup.b2inst.url=${E2E_MOCK_URL}"
     "-Dnetfilestores.s3.global.credentials.accessKey=rspacetest"
     "-Dnetfilestores.s3.global.credentials.secretKey=rspacetestsecret"
   )

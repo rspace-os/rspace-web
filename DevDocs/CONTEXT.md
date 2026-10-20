@@ -23,6 +23,36 @@ these causes, and the state is indistinguishable from "record does not exist"
 so that existence is never disclosed (see ADR-0002).
 _Avoid_: Item unshared, unshared, hidden
 
+**Pinned link**:
+A link that names one version of its target rather than the target as it is
+now: "Pinned to v3" on the card, a `v3` suffix on the Global ID in an exported
+CSV cell, in a registered address and in an API payload. Saved only when the
+target has that version, and that is checked after the viewer's right to read
+the target, so an unreadable target never has its versions looked at
+(ADR-0002). A link with no pin follows the latest version. Notebooks have no
+versions, so a link to a notebook cannot be pinned.
+_Avoid_: versioned link, locked link, frozen link
+
+**Dangling link**:
+A CSV-imported link whose target the importer could not read when the file was
+imported: stored anyway, so one unreachable target does not fail the whole
+file, and shown as No access until the target is shared with the viewer. Its
+pin is left unchecked, because checking it would reveal whether the item, or
+that version of it, exists.
+_Avoid_: broken link, orphan link, lenient link
+
+**Version not found (pill)**:
+A pinned link whose target the viewer can read but which names a version the
+target does not have. Only readable targets surface it; No access wins
+otherwise. Reachable only through links saved before the pin was checked on
+save, dangling links (stored unchecked because the importer could not fully
+read the target), or targets whose version history was purged later: the link
+editor, the API, the CSV import and the instrument import all refuse to save one
+for a target the writer can read. Open stays for Inventory items and Gallery
+files, whose pinned version views explain the missing version, and is removed
+for an ELN document, whose version route is only an error page.
+_Avoid_: broken pin, stale pin, invalid version, missing revision
+
 **Allowed relationship types**:
 The whitelist a template's Link field declares, naming which DataCite relation
 types items created from that template may use. An empty whitelist means all of
@@ -49,9 +79,11 @@ _Avoid_: inherited, synced, propagated, applied
 
 **Open (link card action)**:
 Navigates to the link target. Offered only when following it lands somewhere
-useful: removed for deleted or inaccessible ELN targets (their routes produce
-error pages), kept for deleted Inventory targets (the trash viewer works) and
-for all readable targets.
+useful: removed for deleted or inaccessible ELN targets and for an ELN document
+whose pinned version is not found (their routes produce error pages), kept for
+deleted Inventory targets (the trash viewer works), for an Inventory item or
+Gallery file whose pinned version is not found (its view says so) and for all
+readable targets.
 _Avoid_: view, go to
 
 ## Related inventory items (Gallery info panel)

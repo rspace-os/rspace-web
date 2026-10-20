@@ -212,7 +212,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
                 instrumentField.setSelectedOptions(Arrays.asList(value));
               } else if (ApiFieldType.LINK.equals(instrumentField.getType())) {
                 if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
-                  instrumentField.setLink(linkParser.parse(value));
+                  instrumentField.setLink(linkParser.parse(value, user));
                 }
               } else {
                 instrumentField.setContent(value);

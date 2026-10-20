@@ -1,4 +1,4 @@
-package com.researchspace.webapp.controller;
+package com.researchspace.service;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,9 +7,10 @@ import java.lang.annotation.Target;
 
 /**
  * Annotate a service-level method with this annotation if automated logging with {@link
- * ServiceLoggerAspct} should be limited for annotated method.
+ * com.researchspace.webapp.controller.ServiceLoggerAspct} should be limited for annotated method.
  *
- * <p>The class follows convention of {@link IgnoreInLoggingInterceptor}.
+ * <p>The class follows convention of {@link
+ * com.researchspace.webapp.controller.IgnoreInLoggingInterceptor}.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

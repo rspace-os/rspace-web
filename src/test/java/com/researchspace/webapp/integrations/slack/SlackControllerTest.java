@@ -2,7 +2,6 @@ package com.researchspace.webapp.integrations.slack;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
@@ -17,19 +16,25 @@ import java.util.*;
 import org.joda.time.DateTimeZone;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 public class SlackControllerTest {
 
-  private SlackController slackController = new SlackController();
+  @Mock private UserAppConfigManager userAppCfgMgr;
 
-  private UserAppConfigManager userAppCfgMgr = mock(UserAppConfigManager.class);
+  @Spy private Clock clock = Clock.fixed(Instant.parse("2017-12-28T01:23:45Z"), ZoneId.of("UTC"));
+
+  @InjectMocks private SlackController slackController;
+
   MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @BeforeEach
   public void setUp() throws Exception {
-    slackController.setVerificationToken("dummyToken");
-    slackController.setUserAppCfgMgr(userAppCfgMgr);
-    slackController.setClock(Clock.fixed(Instant.parse("2017-12-28T01:23:45Z"), ZoneId.of("UTC")));
     slackController.setMessageSource(messages);
   }
 
@@ -39,7 +44,7 @@ public class SlackControllerTest {
     List<User> noUsers = new ArrayList<>();
     when(userAppCfgMgr.findByAppConfigValue(any(), any())).thenReturn(noUsers);
 
-    Map<String, String> params = getParamsWithGoodToken();
+    Map<String, String> params = new HashMap<>();
     params.put("text", "");
     SlackMessage noTimePeriodResponse = slackController.saveConversation(params);
     assertEquals(
@@ -128,11 +133,5 @@ public class SlackControllerTest {
         Instant.parse("2017-10-12T00:00:00Z").toEpochMilli(), timePeriod.getFromTimestampMillis());
     assertEquals(
         Instant.parse("2017-12-23T14:00:00Z").toEpochMilli(), timePeriod.getToTimestampMillis());
-  }
-
-  private Map<String, String> getParamsWithGoodToken() {
-    Map<String, String> params = new HashMap<>();
-    params.put("token", "dummyToken");
-    return params;
   }
 }
