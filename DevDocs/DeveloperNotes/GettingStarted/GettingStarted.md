@@ -68,6 +68,8 @@ path to your java installation.
 
 **NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>. The default is 17. Surefire forks the toolchain JDK, not the Maven JVM, so to run the tests on Java 21 you need the 21 toolchain entry above and `-Djava-version=21`; setting only `JAVA_HOME` runs them on 17.
 
+CI runs on Java 17 for pull requests and pushes to `main`. The nightly coverage and real-services e2e workflows run on Java 21. To run a branch on 21 by hand, start the "Lint and Test" or "e2e (mocked)" workflow from the Actions tab and pick Java 21. For "Lint and Test", also tick the jobs you want, such as the fast or full Java tests.
+
 ### Enable git hooks (recommended)
 
 Git pre-commit hooks are managed by [lefthook](https://lefthook.dev). Enable
