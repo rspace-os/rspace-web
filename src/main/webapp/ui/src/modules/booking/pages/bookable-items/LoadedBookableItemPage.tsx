@@ -1,19 +1,14 @@
 import { Tabs } from "@base-ui/react/tabs";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
 import { PencilIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
-import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { ResourceAccessEditor } from "@/modules/common/resource-access/ResourceAccessEditor";
-import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 import {
   AlertDialog,
@@ -34,46 +29,18 @@ import { BookableItemConfigurationForm } from "./BookableItemConfigurationForm";
 import { BookableItemFactsAside } from "./BookableItemFactsAside";
 import { BookableItemRulesReadOut } from "./BookableItemRulesReadOut";
 import { BookableItemSpotlightHeader } from "./BookableItemSpotlightHeader";
-import {
-  BookingConfigurationActionsMenu,
-  type BookingConfigurationLifecycleAction,
-} from "./BookingConfigurationActionsMenu";
+import { BookingConfigurationActionsMenu } from "./BookingConfigurationActionsMenu";
 import { BookingEventList } from "./BookingEventList";
-import { calendarSubscriptionQueryKey } from "./bookableItemCalendarSubscription";
 import { lifecycleErrorKey } from "./bookableItemLifecycleHelpers";
-import {
-  archiveBookingConfiguration,
-  BOOKING_CONFIGURATION_READ_FIELDS,
-  type BookingConfiguration,
-  type BookingConfigurationUpdateInput,
-  permanentlyDeleteBookingConfiguration,
-  restoreBookingConfiguration,
-} from "./bookingConfiguration";
+import type { BookingConfiguration } from "./bookingConfiguration";
 import { bookingResourceAccessAdapter } from "./bookingResourceAccess";
 import { CalendarSubscriptionPopover } from "./CalendarSubscriptionPopover";
+import { type BookableItemTab, useLoadedBookableItemPageActions } from "./useLoadedBookableItemPageActions";
 
-export type BookableItemTab = "bookings" | "details" | "audit" | "access";
+export type { BookableItemTab } from "./useLoadedBookableItemPageActions";
 
 export function bookableItemTab(tab: string | undefined): BookableItemTab {
   return tab === "details" || tab === "audit" || tab === "access" ? tab : "bookings";
-}
-
-async function updateBookingConfiguration(
-  id: number,
-  version: number,
-  input: BookingConfigurationUpdateInput,
-  token: string,
-): Promise<void> {
-  const search = new URLSearchParams({
-    depth: "1",
-    "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
-  });
-  const response = await fetch(`/api/v2/booking-configurations/${id}?${search}`, {
-    method: "PATCH",
-    headers: apiV2JsonHeaders(token, { "If-Match": `"${version}"` }),
-    body: JSON.stringify(input),
-  });
-  if (!response.ok) throw await parseApiV2Problem(response);
 }
 
 function PageTab({ value, disabled, children }: { value: BookableItemTab; disabled: boolean; children: ReactNode }) {
@@ -109,173 +76,41 @@ export function LoadedBookableItemPage({
   const { t: commonT } = useTranslation("common");
   const { data: currentUser } = useCurrentUserQuery();
   const preferences = useBookingDisplayPreferences();
-  const { edit = false } = useSearch({ from: "/booking/bookable-items/$globalId/{-$tab}/" });
-  const navigate = useNavigate({ from: "/booking/bookable-items/$globalId/{-$tab}/" });
-  const queryClient = useQueryClient();
+  const {
+    navigate,
+    saveAnnouncement,
+    staleEdit,
+    archiveOpen,
+    setArchiveOpen,
+    permanentDeleteOpen,
+    setPermanentDeleteOpen,
+    permanentDeleteConfirmation,
+    setPermanentDeleteConfirmation,
+    leaveOpen,
+    setLeaveOpen,
+    editButtonRef,
+    saveButtonRef,
+    actionsButtonRef,
+    canEdit,
+    active,
+    editing,
+    setEdit,
+    setTab,
+    updateMutation,
+    archiveMutation,
+    restoreMutation,
+    permanentDeleteMutation,
+    leaveMutation,
+    cancelEdit,
+    handleLifecycleAction,
+  } = useLoadedBookableItemPageActions({ configuration, globalId, tab, token });
   const [cutoff] = useState(() => new Date().toISOString());
-  const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
-  const [staleEdit, setStaleEdit] = useState(false);
-  const [archiveOpen, setArchiveOpen] = useState(false);
-  const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
-  const [permanentDeleteConfirmation, setPermanentDeleteConfirmation] = useState("");
-  const [leaveOpen, setLeaveOpen] = useState(false);
   const formId = `bookable-item-details-${useId()}`;
   const permanentConfirmationId = `${formId}-permanent-delete-confirmation`;
-  const editButtonRef = useRef<HTMLButtonElement>(null);
-  const saveButtonRef = useRef<HTMLButtonElement>(null);
-  const actionsButtonRef = useRef<HTMLButtonElement>(null);
-  const wasEditing = useRef(false);
   const target = configuration.target;
-  const canEdit = configuration.capabilities.canEditConfiguration;
-  const active = configuration.state === "ACTIVE";
-  const editing = active && canEdit && edit;
   const directSysadmin = currentUser.hasSysAdminRole && !currentUser.session.operatedAs;
-  const setEdit = (next: boolean) =>
-    void navigate({
-      search: next ? { edit: true } : {},
-      replace: true,
-    });
-
-  const setTab = (next: BookableItemTab) =>
-    void navigate({
-      to: "/booking/bookable-items/$globalId/{-$tab}",
-      params: { globalId, tab: next === "bookings" ? undefined : next },
-      search: edit ? { edit: true } : {},
-      replace: true,
-      resetScroll: false,
-    });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ input, version }: { input: BookingConfigurationUpdateInput; version: number }) =>
-      updateBookingConfiguration(configuration.id, version, input, token),
-    onMutate: () => setSaveAnnouncement(null),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      setSaveAnnouncement("saved");
-      setStaleEdit(false);
-      setEdit(false);
-    },
-    onError: async (error) => {
-      if (error instanceof ApiV2ProblemError && error.status === 412) {
-        setStaleEdit(true);
-        await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
-        });
-      }
-    },
-  });
-  const archiveMutation = useMutation({
-    mutationFn: () => archiveBookingConfiguration(configuration.id, configuration.configurationVersion, token),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
-        queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
-      ]);
-      setArchiveOpen(false);
-      setSaveAnnouncement("archived");
-    },
-    onError: async (error) => {
-      if (error instanceof ApiV2ProblemError && error.status === 412) {
-        await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
-        });
-      }
-    },
-  });
-  const restoreMutation = useMutation({
-    mutationFn: () => restoreBookingConfiguration(configuration.id, configuration.configurationVersion, token),
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
-        queryClient.invalidateQueries({ queryKey: calendarSubscriptionQueryKey(configuration.id) }),
-      ]);
-      setSaveAnnouncement("restored");
-    },
-    onError: async (error) => {
-      if (error instanceof ApiV2ProblemError && error.status === 412) {
-        await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
-        });
-      }
-    },
-  });
-  const permanentDeleteMutation = useMutation({
-    mutationFn: () =>
-      permanentlyDeleteBookingConfiguration(configuration.id, configuration.configurationVersion, token),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      setPermanentDeleteOpen(false);
-      void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
-    },
-    onError: async (error) => {
-      if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {
-        await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
-        });
-      }
-    },
-  });
-  const leaveMutation = useMutation({
-    mutationFn: () => leaveResource("booking-configurations", configuration.id, token),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
-      void navigate({ to: "/booking", ignoreBlocker: true });
-    },
-  });
-
-  useEffect(() => {
-    if (wasEditing.current && !editing) editButtonRef.current?.focus();
-    wasEditing.current = editing;
-  }, [editing]);
-
-  useEffect(() => {
-    if (updateMutation.isError && !updateMutation.isPending) saveButtonRef.current?.focus();
-  }, [updateMutation.isError, updateMutation.isPending]);
-
-  useEffect(() => {
-    // onSuccess runs before the mutation clears pending and re-enables this button.
-    if (
-      archiveMutation.isPending ||
-      restoreMutation.isPending ||
-      (!archiveMutation.isSuccess && !restoreMutation.isSuccess)
-    ) {
-      return;
-    }
-    const frame = requestAnimationFrame(() => actionsButtonRef.current?.focus());
-    return () => cancelAnimationFrame(frame);
-  }, [archiveMutation.isPending, archiveMutation.isSuccess, restoreMutation.isPending, restoreMutation.isSuccess]);
-
-  useEffect(() => {
-    if (!active && edit) setEdit(false);
-  }, [active, edit]);
-
-  useEffect(() => {
-    if (
-      (tab === "audit" && !configuration.capabilities.canViewAudit) ||
-      (tab === "access" && !configuration.capabilities.canViewAccess)
-    ) {
-      setTab("bookings");
-    }
-  }, [configuration.capabilities.canViewAccess, configuration.capabilities.canViewAudit, tab]);
 
   if (target === null) return null;
-
-  const cancelEdit = () => {
-    setSaveAnnouncement(null);
-    setStaleEdit(false);
-    setEdit(false);
-  };
-
-  const handleLifecycleAction = (action: BookingConfigurationLifecycleAction) => {
-    if (action === "archive") setArchiveOpen(true);
-    if (action === "restore") restoreMutation.mutate();
-    if (action === "permanent-delete") {
-      setPermanentDeleteConfirmation("");
-      setPermanentDeleteOpen(true);
-    }
-  };
 
   return (
     <main className={detailPageClassName}>
