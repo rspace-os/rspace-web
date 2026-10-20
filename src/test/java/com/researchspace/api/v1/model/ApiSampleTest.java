@@ -73,7 +73,7 @@ public class ApiSampleTest extends SpringTransactionalTest {
     sampleWithJustGlobalViewProperties.setGlobalId(apiSample.getGlobalId());
     sampleWithJustGlobalViewProperties.setType(apiSample.getType());
     sampleWithJustGlobalViewProperties.setName(apiSample.getName());
-    sampleWithJustGlobalViewProperties.setOwner(apiSample.getOwner());
+    sampleWithJustGlobalViewProperties.setOwner(apiSample.getOwner().publicDataCopy());
     sampleWithJustGlobalViewProperties.setPermittedActions(apiSample.getPermittedActions());
     sampleWithJustGlobalViewProperties.setLinks(apiSample.getLinks());
     // requestable survives even the public view, so a user with no read access still knows
