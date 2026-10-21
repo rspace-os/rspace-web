@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -206,8 +207,7 @@ class ApiV2CrudControllerTest {
         .andExpect(status().isNotAcceptable());
   }
 
-  @Test
-  void runtimeFieldResponsesCannotBeStored() throws Exception {
+  private MockMvc withRuntimeFields(RuntimeFieldCatalogPage page) {
     ApiV2ResourceSpec<ScheduledMaintenance, Long> withRuntimeFields =
         new ApiV2ResourceSpec<>(
             maintenance.description(),
@@ -219,15 +219,17 @@ class ApiV2CrudControllerTest {
             maintenance.operationDocumentation(),
             maintenance.errorMappings(),
             maintenance.mutationLimits(),
-            List.of(new EmptyRuntimeFields()));
-    MockMvc runtimeMvc =
-        MockMvcBuilders.standaloneSetup(
-                new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(withRuntimeFields))))
-            .setControllerAdvice(problemAdvice())
-            .setValidator(validator)
-            .build();
+            List.of(new StubRuntimeFields(page)));
+    return MockMvcBuilders.standaloneSetup(
+            new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(withRuntimeFields))))
+        .setControllerAdvice(problemAdvice())
+        .setValidator(validator)
+        .build();
+  }
 
-    runtimeMvc
+  @Test
+  void runtimeFieldResponsesCannotBeStored() throws Exception {
+    withRuntimeFields(RuntimeFieldCatalogPage.empty())
         .perform(get(ENDPOINT + "/fields/customFields"))
         .andExpect(status().isOk())
         .andExpect(
@@ -237,7 +239,68 @@ class ApiV2CrudControllerTest {
                     allOf(containsString("no-store"), containsString("private"))));
   }
 
-  private static final class EmptyRuntimeFields
+  @Test
+  void runtimeFieldCatalogKeepsItsJsonShape() throws Exception {
+    RuntimeFieldDefinition choice =
+        new RuntimeFieldDefinition(
+            "SF1",
+            "customFields.SF1",
+            "Hazard class",
+            RuntimeFieldValueType.CHOICE,
+            "IT9",
+            "Template",
+            List.of("BSL-1", "BSL-2"));
+    RuntimeFieldDefinition number =
+        new RuntimeFieldDefinition(
+            "SF2",
+            "customFields.SF2",
+            "Voltage",
+            RuntimeFieldValueType.NUMBER,
+            "IT9",
+            "Template",
+            null);
+    String choiceJson =
+        """
+        {"id":"SF1","selector":"customFields.SF1","label":"Hazard class","type":"choice",
+         "jsonType":"array","operators":["=contains=","=exists=","=in="],
+         "supportsWildcards":false,"columnSelectable":true,"sortable":false,
+         "source":{"id":"IT9","label":"Template"},"options":["BSL-1","BSL-2"]}\
+        """;
+    String numberJson =
+        """
+        {"id":"SF2","selector":"customFields.SF2","label":"Voltage","type":"number",
+         "jsonType":"number",
+         "operators":["!=","==","=exists=","=ge=","=gt=","=in=","=le=","=lt=","=out="],
+         "supportsWildcards":false,"columnSelectable":true,"sortable":false,
+         "source":{"id":"IT9","label":"Template"},"options":[]}\
+        """;
+
+    assertCatalogBody(
+        new RuntimeFieldCatalogPage(List.of(choice, number), 7L, false),
+        "{\"fields\":["
+            + choiceJson
+            + ","
+            + numberJson
+            + "],\"hasMore\":false,\"totalFields\":7,\"page\":1,\"limit\":2}");
+    // An unknown total is omitted rather than sent as null.
+    assertCatalogBody(
+        new RuntimeFieldCatalogPage(List.of(choice), null, true),
+        "{\"fields\":[" + choiceJson + "],\"hasMore\":true,\"page\":1,\"limit\":2}");
+  }
+
+  private void assertCatalogBody(RuntimeFieldCatalogPage page, String expected) throws Exception {
+    String body =
+        withRuntimeFields(page)
+            .perform(get(ENDPOINT + "/fields/customFields").param("limit", "2"))
+            .andExpect(status().isOk())
+            .andReturn()
+            .getResponse()
+            .getContentAsString();
+    ObjectMapper json = new ObjectMapper();
+    assertEquals(json.readTree(expected), json.readTree(body));
+  }
+
+  private record StubRuntimeFields(RuntimeFieldCatalogPage page)
       implements RuntimeCollectionFields<ScheduledMaintenance> {
 
     @Override
@@ -247,7 +310,7 @@ class ApiV2CrudControllerTest {
 
     @Override
     public RuntimeFieldCatalogPage discover(User actor, RuntimeFieldCatalogQuery query) {
-      return RuntimeFieldCatalogPage.empty();
+      return page;
     }
 
     @Override
