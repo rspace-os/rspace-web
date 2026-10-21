@@ -510,8 +510,10 @@ The stack reproduces the documented local workflow, just containerized:
 
 The conversion sidecar installs its outbound firewall during entrypoint setup,
 then starts Java as UID/GID 10001 with all capabilities removed. Keep its
-`cap_add` setup permissions and seccomp profile together when copying the service
-configuration. Recreate the pair together when changing its network addresses;
+`cap_add` setup permissions, seccomp profile, and AppArmor profile together when
+copying the service configuration. On a Linux host with AppArmor, `up` loads
+`docker/conversion-sidecar/apparmor/rspace-conversion-sidecar` with `sudo` if it is
+not loaded yet. Recreate the pair together when changing its network addresses;
 the sidecar pins its paired Gotenberg address at startup. See
 [Document conversion](../../DevDocs/DeveloperNotes/DocumentConversion.md) for the
 allowlist, deadline, and restart-cleanup behavior.

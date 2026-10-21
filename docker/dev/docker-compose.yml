@@ -253,6 +253,10 @@ services:
     security_opt:
       - no-new-privileges:true
       - seccomp:../conversion-sidecar/seccomp-bubblewrap.json
+      # Docker's default AppArmor profile denies the mounts bubblewrap needs. AppArmor
+      # hosts must load this profile first (rspace-dev up does); hosts without
+      # AppArmor ignore it. See DevDocs/DeveloperNotes/DocumentConversion.md.
+      - apparmor:rspace-conversion-sidecar
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/health/ready"]
       interval: 5s

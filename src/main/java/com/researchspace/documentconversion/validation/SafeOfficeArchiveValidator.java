@@ -32,6 +32,12 @@ public final class SafeOfficeArchiveValidator {
   private static final long MAX_XML_BYTES = 10L * 1024 * 1024;
   private static final int MAX_XML_DEPTH = 100;
   private static final long MAX_COMPRESSION_RATIO = 100;
+  // Match POI's 100 KiB grace size for small, highly compressible Office entries.
+  private static final long MIN_COMPRESSION_RATIO_BYTES = 100L * 1024;
+
+  /** Packages whose embedded objects are rejected; spreadsheets and slides embed chart data. */
+  private static final Set<String> TEXT_DOCUMENTS = Set.of("docx", "odt");
+
   private static final Set<String> NESTED_ARCHIVES =
       Set.of(".7z", ".bz2", ".gz", ".jar", ".rar", ".tar", ".tgz", ".xz", ".zip");
   private static final Set<String> ALLOWED_EXTERNAL_RELATIONSHIP_TYPES =
@@ -52,7 +58,7 @@ public final class SafeOfficeArchiveValidator {
   private static void validate(Path archive, String extension) throws IOException {
     try (ZipFile zip = ZipFile.builder().setPath(archive).get()) {
       List<ZipArchiveEntry> entries = physicalEntries(zip);
-      validateEntries(zip, entries);
+      validateEntries(zip, entries, TEXT_DOCUMENTS.contains(extension));
       if ("docx".equals(extension)) {
         validateDocxStructure(zip);
       } else if ("odt".equals(extension) || "ott".equals(extension)) {
@@ -74,8 +80,8 @@ public final class SafeOfficeArchiveValidator {
     return entries;
   }
 
-  private static void validateEntries(ZipFile zip, List<ZipArchiveEntry> entries)
-      throws IOException {
+  private static void validateEntries(
+      ZipFile zip, List<ZipArchiveEntry> entries, boolean textDocument) throws IOException {
     Set<String> names = new HashSet<>();
     long expandedTotal = 0;
     for (ZipArchiveEntry entry : entries) {
@@ -93,14 +99,14 @@ public final class SafeOfficeArchiveValidator {
       if ((!entry.isDirectory() && NESTED_ARCHIVES.stream().anyMatch(lower::endsWith))
           || lower.endsWith("vbaproject.bin")
           || lower.endsWith("/objectpool")
-          || lower.contains("/embeddings/")) {
+          || (textDocument && lower.contains("/embeddings/"))) {
         throw invalid();
       }
       long expanded = count(zip.getInputStream(entry), MAX_ENTRY_BYTES);
       expandedTotal += expanded;
       long compressed = entry.getCompressedSize();
       if (expandedTotal > MAX_EXPANDED_BYTES
-          || (expanded > 0
+          || (expanded > MIN_COMPRESSION_RATIO_BYTES
               && (compressed <= 0 || expanded / Math.max(1, compressed) > MAX_COMPRESSION_RATIO))) {
         throw tooLarge();
       }

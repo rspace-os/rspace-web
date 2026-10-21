@@ -27,6 +27,7 @@ public final class JodConverterClient extends AbstractDocumentConversionService
   private static final Logger LOG = LoggerFactory.getLogger(JodConverterClient.class);
 
   private static final Set<String> WORD_INPUTS = Set.of("doc", "docx", "odt", "ott", "rtf", "txt");
+  private static final Set<String> PACKAGED_WORD_INPUTS = Set.of("docx", "odt", "ott");
   private static final MediaType DOCX =
       MediaType.parseMediaType(
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
@@ -68,13 +69,16 @@ public final class JodConverterClient extends AbstractDocumentConversionService
       input = new File(URI.create(convertible.getFileUri()));
       String inputExtension =
           FilenameUtils.getExtension(convertible.getName()).toLowerCase(Locale.ROOT);
-      if (Set.of("docx", "odt", "ott").contains(inputExtension)) {
+      if (PACKAGED_WORD_INPUTS.contains(inputExtension)) {
         SafeOfficeArchiveValidator.validateInput(input.toPath(), inputExtension);
       }
     } catch (Exception e) {
       LOG.warn("Word conversion input validation failed", e);
       deleteEmptyOutput(output);
-      return new ConversionResult(DocumentConversionError.INPUT_INVALID.code());
+      return new ConversionResult(
+          DocumentConversionError.fromCode(e.getMessage())
+              .orElse(DocumentConversionError.INPUT_INVALID)
+              .code());
     }
     boolean toHtml = "html".equalsIgnoreCase(outputExtension);
     return client.postFile(

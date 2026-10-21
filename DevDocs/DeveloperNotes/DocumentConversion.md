@@ -98,17 +98,32 @@ RSpace client, the controller resolves the code's `errors.documentConversion.*` 
 request locale.
 
 The container runtime must permit the user namespaces and mount system calls that bubblewrap uses.
-The development Compose service uses a restricted profile that permits namespace isolation. The
-profile denies high-risk kernel operations. The Java process also has no capabilities after entrypoint setup. Tini runs as
-the container subreaper so that completed bubblewrap helpers cannot accumulate against the PID
-limit.
+The development Compose service uses a restricted seccomp profile that permits namespace isolation.
+The profile denies high-risk kernel operations. Docker's default AppArmor profile denies those
+mounts, so on AppArmor hosts the sidecar runs under `docker/conversion-sidecar/apparmor/rspace-
+conversion-sidecar` instead: Docker's default rules with `deny mount` replaced by `userns`, `mount`,
+`remount`, `umount`, and `pivot_root`. The `userns` rule also satisfies Ubuntu's
+`kernel.apparmor_restrict_unprivileged_userns`, so that setting stays enabled. Load the profile on
+each Docker host with `sudo apparmor_parser -r -W docker/conversion-sidecar/apparmor/rspace-
+conversion-sidecar` and start the container with `--security-opt apparmor=rspace-conversion-
+sidecar`; it needs AppArmor 4 (Ubuntu 24.04 or later). `rspace-dev up` and CI load it automatically,
+and hosts without AppArmor ignore the option. If the profile is missing, Docker refuses to start the
+container; if bubblewrap is still blocked, `/health/ready` stays at `503`. The Java process also has
+no capabilities after entrypoint setup. Tini runs as the container subreaper so that completed
+bubblewrap helpers cannot accumulate against the PID limit.
 
 ## Input and output boundaries
 
 The sidecar rejects unexpected multipart fields, query parameters, caller-supplied Gotenberg
 controls, unsupported extensions, and oversized files. Before Word import, it also rejects unsafe
 DOCX, ODT, and OTT packages, including nested archives, macro artifacts, and external OOXML
-relationships. It caps archive entries, expanded bytes, response bytes, and conversion time.
+relationships. Every other ZIP-based input (XLSX, PPTX, ODS, ODP) gets the same entry-count,
+expansion, and compression-ratio limits; embedded chart workbooks are allowed there. The per-entry
+compression-ratio limit applies only to entries that expand beyond 100 KiB. It caps archive entries,
+expanded bytes, response bytes, and conversion time. RSpace applies the same archive checks before
+sending a file, and rejects PDFs with more than 2,000,000 structural objects (dictionaries, arrays,
+and streams; scalar values are not counted) or 10,000 pages, both converted previews and uploaded
+PDFs before thumbnail rendering.
 Temporary request directories are removed after a response, a disconnect, or a conversion failure.
 For PDF conversions, the sidecar generates a correlation ID and sends it to Gotenberg as
 `Gotenberg-Trace`. This keeps the tracing seam without accepting caller-supplied Gotenberg headers.
@@ -140,23 +155,30 @@ RSPACE_BASE_URL=http://localhost:<app-port> E2E_BROWSER=conversion pnpm run test
 The container entrypoint resolves its paired `gotenberg` address and installs IPv4
 and IPv6 output rules before starting Java. Only established response traffic,
 loopback health probes, and new TCP connections to that address on port 3000 are
-allowed. DNS is disabled after the fixed peer is written to a private JVM hosts file in `/tmp`.
+allowed. After the fixed peer is written to a private JVM hosts file in `/tmp`, DNS traffic is
+dropped ahead of the established-traffic rule, so the startup lookup's flow cannot be reused.
 Recreate the sidecar whenever its paired Gotenberg address changes.
 
 The entrypoint needs `NET_ADMIN`, `SETUID`, `SETGID`, and `SETPCAP` during setup.
 It then changes to UID/GID 10001 and removes all permitted, inheritable, ambient,
 and bounding capabilities before launching Java. Failure to install either
 firewall or drop privileges prevents startup. Keep the root filesystem read-only
-and use the supplied seccomp profile. CI uses this same profile and probes
-`/health/ready`; an unconfined container is not an acceptance environment.
+and use the supplied seccomp profile. CI applies the same container restrictions and resource limits
+as the development Compose file and probes `/health/ready`; a container without the seccomp
+profile is not an acceptance environment.
 
-Each conversion has one wall-clock deadline across worker startup, conversion,
-and output transfer. Expiry interrupts Word conversion or closes the active PDF
-HTTP client, returns `504` with `conversion.timeout`, and removes partial output.
-LibreOffice is stopped before its request directory is removed. Startup removes
-abandoned `request-*` and `pdf-*` directories plus owned upload/IPC temporary
-files before accepting requests. The work directory must belong to one sidecar
-container; it must not be shared between running sidecars.
+Each conversion first takes a capacity slot, then runs under one wall-clock deadline across archive
+validation, worker startup, conversion, and response transfer. Expiry interrupts Word conversion or
+closes the active PDF HTTP client, returns `504` with `conversion.timeout`, and removes partial
+output. For Word conversion it also force-kills that request's LibreOffice process tree, and keeps
+killing any restart until the LibreOffice manager has stopped. The slot is released only after those
+processes exit, even if cleanup fails, so a hung LibreOffice cannot push the sidecar past its
+concurrency limit. Responses declare `Content-Length`. A failure while streaming closes the
+connection without an error body, so a client sees a body shorter than that length; a failure before
+streaming starts returns an error response without the converted file's length. A failed upload copy
+is deleted. Startup removes abandoned `request-*` and `pdf-*` directories plus owned upload/IPC
+temporary files before accepting requests. The work directory must belong to one sidecar container;
+it must not be shared between running sidecars.
 
 Aggregate readiness requires both dependencies and available capacity in both
 roles. A saturated role makes aggregate readiness return `503` until a slot is

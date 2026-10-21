@@ -74,6 +74,9 @@ jobs:
               - '.github/workflows/**'
             sidecar:
               - 'docker/conversion-sidecar/**'
+              # Compiled into the sidecar (pom.xml, Dockerfile) and read by its tests.
+              - 'src/main/java/com/researchspace/documentconversion/validation/**'
+              - 'src/test/resources/TestResources/**'
               - 'docker/dev/docker-compose.yml'
               - '.github/workflows/**'
 

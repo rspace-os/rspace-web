@@ -68,15 +68,7 @@ public class MSWordImporter implements ExternalFileImporter {
                     null)
                 .iterator()
                 .next();
-        try {
-          new DataUriExtractor().extract(html.toPath(), converted.tempFolder().toPath());
-        } catch (IOException e) {
-          LOG.warn("Imported Word HTML contained invalid embedded image data", e);
-          throw new DocumentConversionException(
-              DocumentConversionError.fromCode(e.getMessage())
-                  .orElse(DocumentConversionError.INPUT_INVALID),
-              e);
-        }
+        extractImages(html, converted.tempFolder());
         HTMLContentProvider htmlProvider = new HTMLContentProvider(converted.tempFolder(), html);
         // create default image folder if one not already specified
         if (htmlProvider.hasImages() && imageFolder == null) {
@@ -110,21 +102,41 @@ public class MSWordImporter implements ExternalFileImporter {
   public BaseRecord replace(InputStream wordFile, User user, Long toReplaceID, String originalName)
       throws IOException, DocumentAlreadyEditedException {
     TempConverterData converted = doConversion(wordFile, originalName);
-    if (converted.result.isSuccessful()) {
-      File html =
-          FileUtils.listFiles(
-                  converted.tempFolder,
-                  FileFilterUtils.and(suffixFileFilter("html"), FileFilterUtils.fileFileFilter()),
-                  null)
-              .iterator()
-              .next();
-      return creator.replace(
-          toReplaceID,
-          new HTMLContentProvider(converted.tempFolder, html),
-          converted.origDocName,
-          user);
-    } else {
-      throw new IllegalStateException(converted.result.getErrorMsg());
+    try {
+      if (converted.result().isSuccessful()) {
+        File html =
+            FileUtils.listFiles(
+                    converted.tempFolder(),
+                    FileFilterUtils.and(suffixFileFilter("html"), FileFilterUtils.fileFileFilter()),
+                    null)
+                .iterator()
+                .next();
+        extractImages(html, converted.tempFolder());
+        return creator.replace(
+            toReplaceID,
+            new HTMLContentProvider(converted.tempFolder(), html),
+            converted.origDocName(),
+            user);
+      } else {
+        throw new DocumentConversionException(
+            DocumentConversionError.fromCode(converted.result().getErrorMsg())
+                .orElse(DocumentConversionError.FAILED));
+      }
+    } finally {
+      FileUtils.deleteQuietly(converted.tempInput());
+      FileUtils.deleteQuietly(converted.tempFolder());
+    }
+  }
+
+  private void extractImages(File html, File tempFolder) throws IOException {
+    try {
+      new DataUriExtractor().extract(html.toPath(), tempFolder.toPath());
+    } catch (IOException e) {
+      LOG.warn("Imported Word HTML contained invalid embedded image data", e);
+      throw new DocumentConversionException(
+          DocumentConversionError.fromCode(e.getMessage())
+              .orElse(DocumentConversionError.INPUT_INVALID),
+          e);
     }
   }
 

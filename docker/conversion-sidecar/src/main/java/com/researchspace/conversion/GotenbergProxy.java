@@ -67,9 +67,9 @@ class GotenbergProxy {
     }
   }
 
-  ConvertedFile convert(Path uploadedFile, String extension, String correlationId) {
-    try (var deadline = new ConversionDeadline(properties.conversionTimeout());
-        var requestClient = httpClient()) {
+  ConvertedFile convert(
+      Path uploadedFile, String extension, String correlationId, ConversionDeadline deadline) {
+    try (var requestClient = httpClient()) {
       deadline.abortOnTimeout(
           () -> requestClient.close(org.apache.hc.core5.io.CloseMode.IMMEDIATE));
       try {

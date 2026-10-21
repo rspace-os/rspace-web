@@ -24,18 +24,20 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ConnectionRequestTimeoutException;
 import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.util.LinkedMultiValueMap;
@@ -65,6 +67,7 @@ public final class ConversionSidecarHttpClient {
     void validate(Path output) throws IOException;
   }
 
+  private final ThreadLocal<InFlightRequest> inFlightRequest = new ThreadLocal<>();
   private final RestClient client;
   private final long maxInputBytes;
   private final long maxOutputBytes;
@@ -113,11 +116,20 @@ public final class ConversionSidecarHttpClient {
             .disableRedirectHandling()
             .disableContentCompression()
             .build();
+    var requestFactory =
+        new HttpComponentsClientHttpRequestFactory(apacheClient) {
+          @Override
+          protected ClassicHttpRequest createHttpUriRequest(HttpMethod method, URI uri) {
+            ClassicHttpRequest request = super.createHttpUriRequest(method, uri);
+            InFlightRequest inFlight = inFlightRequest.get();
+            if (inFlight != null && request instanceof HttpUriRequestBase abortable) {
+              inFlight.register(abortable);
+            }
+            return request;
+          }
+        };
     this.client =
-        configured(
-                RestClient.builder()
-                    .baseUrl(origin.toString())
-                    .requestFactory(new HttpComponentsClientHttpRequestFactory(apacheClient)))
+        configured(RestClient.builder().baseUrl(origin.toString()).requestFactory(requestFactory))
             .build();
     this.maxInputBytes = maxInputBytes;
     this.maxOutputBytes = maxOutputBytes;
@@ -161,12 +173,12 @@ public final class ConversionSidecarHttpClient {
               : DocumentConversionError.INPUT_INVALID.code());
     }
     Path partial = output.toPath().resolveSibling(output.getName() + ".partial");
-    AtomicBoolean abandoned = new AtomicBoolean();
+    InFlightRequest inFlight = new InFlightRequest();
     Future<ConversionResult> request =
         REQUEST_EXECUTOR.submit(
             () ->
                 performPostFile(
-                    route, partName, input, output, expectedType, validator, partial, abandoned));
+                    route, partName, input, output, expectedType, validator, partial, inFlight));
     try {
       ConversionResult result = request.get(conversionTimeout.toMillis(), TimeUnit.MILLISECONDS);
       if (!result.isSuccessful()) {
@@ -174,17 +186,13 @@ public final class ConversionSidecarHttpClient {
       }
       return result;
     } catch (TimeoutException e) {
-      synchronized (abandoned) {
-        abandoned.set(true);
-      }
+      inFlight.abort();
       request.cancel(true);
       FileUtils.deleteQuietly(output);
       LOG.warn("Conversion sidecar request to {} exceeded its wall-clock timeout", route, e);
       return new ConversionResult(DocumentConversionError.TIMEOUT.code());
     } catch (InterruptedException e) {
-      synchronized (abandoned) {
-        abandoned.set(true);
-      }
+      inFlight.abort();
       request.cancel(true);
       Thread.currentThread().interrupt();
       FileUtils.deleteQuietly(output);
@@ -208,9 +216,10 @@ public final class ConversionSidecarHttpClient {
       MediaType expectedType,
       OutputValidator validator,
       Path partial,
-      AtomicBoolean abandoned) {
+      InFlightRequest inFlight) {
     var body = new LinkedMultiValueMap<String, Object>();
     body.add(partName, new FileSystemResource(input));
+    inFlightRequest.set(inFlight);
     try {
       return client
           .post()
@@ -236,8 +245,8 @@ public final class ConversionSidecarHttpClient {
                   copyBounded(inputStream, partial, maxOutputBytes);
                 }
                 validator.validate(partial);
-                synchronized (abandoned) {
-                  if (abandoned.get() || Thread.currentThread().isInterrupted()) {
+                synchronized (inFlight) {
+                  if (inFlight.abandoned || Thread.currentThread().isInterrupted()) {
                     throw new IOException(DocumentConversionError.TIMEOUT.code());
                   }
                   Files.move(
@@ -251,8 +260,28 @@ public final class ConversionSidecarHttpClient {
     } catch (Exception e) {
       throw new DocumentConversionRequestException(e);
     } finally {
-      if (abandoned.get()) {
+      inFlightRequest.remove();
+      if (inFlight.abandoned) {
         FileUtils.deleteQuietly(partial.toFile());
+      }
+    }
+  }
+
+  private static final class InFlightRequest {
+    private volatile boolean abandoned;
+    private HttpUriRequestBase request;
+
+    synchronized void register(HttpUriRequestBase request) {
+      this.request = request;
+      if (abandoned) {
+        request.cancel();
+      }
+    }
+
+    synchronized void abort() {
+      abandoned = true;
+      if (request != null) {
+        request.cancel();
       }
     }
   }

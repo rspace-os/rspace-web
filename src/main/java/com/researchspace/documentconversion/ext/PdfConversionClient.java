@@ -29,6 +29,8 @@ public final class PdfConversionClient extends AbstractDocumentConversionService
       Set.of(
           "csv", "doc", "docx", "md", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp", "rtf",
           "txt");
+  private static final Set<String> PACKAGED_PDF_INPUTS =
+      Set.of("docx", "odt", "xlsx", "pptx", "ods", "odp");
   private static final MediaType PDF = MediaType.APPLICATION_PDF;
   private final ConversionSidecarHttpClient client;
 
@@ -69,13 +71,16 @@ public final class PdfConversionClient extends AbstractDocumentConversionService
         SafePdfValidator.validate(output.toPath());
         return new ConversionResult(output, PDF.toString());
       }
-      if (Set.of("docx", "odt").contains(inputExtension)) {
+      if (PACKAGED_PDF_INPUTS.contains(inputExtension)) {
         SafeOfficeArchiveValidator.validateInput(input.toPath(), inputExtension);
       }
     } catch (Exception e) {
       LOG.warn("PDF conversion input validation failed", e);
       FileUtils.deleteQuietly(output);
-      return new ConversionResult(DocumentConversionError.INPUT_INVALID.code());
+      return new ConversionResult(
+          DocumentConversionError.fromCode(e.getMessage())
+              .orElse(DocumentConversionError.INPUT_INVALID)
+              .code());
     }
     return client.postFile(
         "/forms/libreoffice/convert", "files", input, output, PDF, SafePdfValidator::validate);

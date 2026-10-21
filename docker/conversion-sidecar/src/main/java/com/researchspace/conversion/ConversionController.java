@@ -38,18 +38,22 @@ final class ConversionController {
           "txt");
   private static final Set<String> WORD_INPUTS = Set.of("doc", "docx", "odt", "ott", "rtf", "txt");
   private static final Set<String> PACKAGED_WORD_INPUTS = Set.of("docx", "odt", "ott");
-  private static final Set<String> PACKAGED_PDF_INPUTS = Set.of("docx", "odt");
+  private static final Set<String> PACKAGED_PDF_INPUTS =
+      Set.of("docx", "odt", "xlsx", "pptx", "ods", "odp");
 
+  private final ConverterProperties properties;
   private final ArchiveValidator archiveValidator;
   private final OfficeConversionRunner officeRunner;
   private final GotenbergProxy gotenbergProxy;
   private final OfficeConversionLimiter limiter;
 
   ConversionController(
+      ConverterProperties properties,
       ArchiveValidator archiveValidator,
       OfficeConversionRunner officeRunner,
       GotenbergProxy gotenbergProxy,
       OfficeConversionLimiter limiter) {
+    this.properties = properties;
     this.archiveValidator = archiveValidator;
     this.officeRunner = officeRunner;
     this.gotenbergProxy = gotenbergProxy;
@@ -69,16 +73,7 @@ final class ConversionController {
     if (!WORD_INPUTS.contains(extension)) {
       unsupported();
     }
-    return stream(
-        withUpload(
-            file,
-            upload -> {
-              if (PACKAGED_WORD_INPUTS.contains(extension)) {
-                archiveValidator.validate(upload, extension);
-              }
-              return officeRunner.convert(upload, extension, "html");
-            }),
-        "output.html");
+    return convert(file, extension, "html", false, PACKAGED_WORD_INPUTS.contains(extension));
   }
 
   @PostMapping(path = "/v1/convert/docx", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -88,8 +83,7 @@ final class ConversionController {
     if (!Set.of("html", "htm").contains(extension)) {
       unsupported();
     }
-    return stream(
-        withUpload(file, upload -> officeRunner.convert(upload, extension, "docx")), "output.docx");
+    return convert(file, extension, "docx", false, false);
   }
 
   @PostMapping(path = "/forms/libreoffice/convert", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -100,25 +94,54 @@ final class ConversionController {
     if (!PDF_INPUTS.contains(extension)) {
       unsupported();
     }
-    return stream(
-        withUpload(
-            file,
-            upload -> {
-              if (PACKAGED_PDF_INPUTS.contains(extension)) {
-                archiveValidator.validate(upload, extension);
-              }
-              OfficeConversionLimiter.Permit permit = limiter.acquirePdf();
-              try {
-                return gotenbergProxy
-                    .convert(upload, extension, UUID.randomUUID().toString())
-                    .withCloseAction(permit::close);
-              } catch (RuntimeException e) {
-                permit.close();
-                LOG.warn("PDF conversion failed after capacity was acquired", e);
-                throw e;
-              }
-            }),
-        "output.pdf");
+    return convert(file, extension, "pdf", true, PACKAGED_PDF_INPUTS.contains(extension));
+  }
+
+  private ResponseEntity<StreamingResponseBody> convert(
+      MultipartFile file, String extension, String target, boolean pdf, boolean packaged) {
+    OfficeConversionLimiter.Permit permit = pdf ? limiter.acquirePdf() : limiter.acquireWord();
+    ConversionDeadline deadline = new ConversionDeadline(properties.conversionTimeout());
+    try {
+      ConvertedFile result =
+          withUpload(
+                  file,
+                  upload -> {
+                    if (packaged) {
+                      archiveValidator.validate(upload, extension);
+                    }
+                    deadline.check();
+                    return pdf
+                        ? gotenbergProxy.convert(
+                            upload, extension, UUID.randomUUID().toString(), deadline)
+                        : officeRunner.convert(upload, extension, target, deadline);
+                  })
+              .withDeadline(deadline)
+              .withCloseAction(
+                  () -> {
+                    deadline.close();
+                    deadline.releaseAfterCleanup(permit::close);
+                  });
+      try {
+        deadline.handoff(() -> closeExpired(result));
+        return stream(result, "output." + target);
+      } catch (RuntimeException e) {
+        closeExpired(result);
+        throw e;
+      }
+    } catch (RuntimeException e) {
+      deadline.close();
+      deadline.releaseAfterCleanup(permit::close);
+      LOG.warn("Conversion failed after capacity was acquired", e);
+      throw e;
+    }
+  }
+
+  private void closeExpired(ConvertedFile result) {
+    try {
+      result.close();
+    } catch (IOException e) {
+      LOG.warn("Could not remove an expired conversion result", e);
+    }
   }
 
   private MultipartFile requireOnlyFile(MultipartHttpServletRequest request, String name) {
@@ -152,11 +175,19 @@ final class ConversionController {
   }
 
   private Path transfer(MultipartFile file) {
+    Path upload = null;
     try {
-      Path upload = Files.createTempFile("conversion-upload-", ".part");
+      upload = Files.createTempFile("conversion-upload-", ".part");
       file.transferTo(upload);
       return upload;
-    } catch (IOException e) {
+    } catch (IOException | RuntimeException e) {
+      if (upload != null) {
+        try {
+          Files.deleteIfExists(upload);
+        } catch (IOException cleanupFailure) {
+          LOG.warn("Could not remove a partial conversion upload", cleanupFailure);
+        }
+      }
       LOG.error("Could not store the conversion upload", e);
       throw new ConversionException(
           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -182,12 +213,23 @@ final class ConversionController {
   private ResponseEntity<StreamingResponseBody> stream(ConvertedFile converted, String filename) {
     StreamingResponseBody body =
         output -> {
-          try (converted;
-              var input = Files.newInputStream(converted.file())) {
-            input.transferTo(output);
+          try (converted) {
+            converted.transferTo(output);
           }
         };
+    long contentLength;
+    try {
+      contentLength = Files.size(converted.file());
+    } catch (IOException e) {
+      LOG.warn("Could not read the converted response size", e);
+      throw new ConversionException(
+          HttpStatus.BAD_GATEWAY,
+          ConversionError.OUTPUT_INVALID,
+          "The converted file is missing",
+          e);
+    }
     return ResponseEntity.ok()
+        .contentLength(contentLength)
         .cacheControl(CacheControl.noStore())
         .contentType(MediaType.parseMediaType(converted.contentType()))
         .header(

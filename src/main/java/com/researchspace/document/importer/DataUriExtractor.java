@@ -4,6 +4,7 @@ import com.researchspace.documentconversion.ext.DocumentConversionError;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +42,8 @@ final class DataUriExtractor {
   private static final long MAX_PIXELS = 50_000_000;
   private static final Pattern DATA_URI =
       Pattern.compile("^data:image/(?:png|jpeg|gif);base64,([A-Za-z0-9+/]+={0,2})$");
+  private static final Pattern ENCODED_SEPARATOR =
+      Pattern.compile("%(?:2f|5c)", Pattern.CASE_INSENSITIVE);
   private static final Set<String> IMAGE_MEDIA_TYPES =
       Set.of("image/png", "image/jpeg", "image/gif");
   private static final PolicyFactory HTML_POLICY = createPolicy();
@@ -55,6 +58,14 @@ final class DataUriExtractor {
     try {
       extractImages(document, outputDirectory, extractedFiles);
       Document sanitized = Jsoup.parse(HTML_POLICY.sanitize(document.body().html()));
+      for (Element image : sanitized.select("img")) {
+        String source = localImageSource(image.attr("src"), outputDirectory);
+        if (source == null) {
+          image.remove();
+        } else {
+          image.attr("src", source);
+        }
+      }
       Files.writeString(htmlFile, sanitized.outerHtml(), StandardCharsets.UTF_8);
     } catch (IOException | RuntimeException e) {
       LOG.warn("Converted Word HTML failed validation", e);
@@ -76,7 +87,6 @@ final class DataUriExtractor {
     for (Element image : document.select("img")) {
       String source = image.attr("src");
       if (!source.startsWith("data:")) {
-        image.remove();
         continue;
       }
       if (++imageCount > MAX_IMAGES) {
@@ -106,6 +116,43 @@ final class DataUriExtractor {
       }
       image.clearAttributes();
       image.attr("src", output.getFileName().toString());
+    }
+  }
+
+  private String localImageSource(String source, Path outputDirectory) {
+    if (ENCODED_SEPARATOR.matcher(source).find()) {
+      return null;
+    }
+    try {
+      String decoded = decodeSource(source);
+      if (decoded.isBlank() || decoded.contains(":") || decoded.contains("\\")) {
+        return null;
+      }
+      Path relative = Path.of(decoded);
+      if (relative.isAbsolute()) {
+        return null;
+      }
+      for (Path segment : relative) {
+        if ("..".equals(segment.toString())) {
+          return null;
+        }
+      }
+      Path folder = outputDirectory.toRealPath();
+      Path image = folder.resolve(relative).toRealPath();
+      return image.startsWith(folder) && Files.isRegularFile(image) ? decoded : null;
+    } catch (IOException | IllegalArgumentException e) {
+      LOG.warn("Could not resolve a relative Word import image", e);
+      return null;
+    }
+  }
+
+  /** A source that is not valid percent-encoding, such as {@code 100%.png}, is a literal name. */
+  private static String decodeSource(String source) {
+    try {
+      // URLDecoder uses form semantics, but a plus in an image URL is a literal filename character.
+      return URLDecoder.decode(source.replace("+", "%2B"), StandardCharsets.UTF_8);
+    } catch (IllegalArgumentException e) {
+      return source;
     }
   }
 

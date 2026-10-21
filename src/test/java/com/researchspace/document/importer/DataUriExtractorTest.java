@@ -8,8 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
+import org.jsoup.Jsoup;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class DataUriExtractorTest {
 
@@ -40,6 +44,93 @@ class DataUriExtractorTest {
     try (var files = Files.list(directory)) {
       assertEquals(1, files.filter(path -> path.toString().endsWith(".png")).count());
     }
+  }
+
+  @Test
+  void keepsRelativeAsposeImageAndRemovesPathsOutsideOutputFolder() throws Exception {
+    Path output = Files.createDirectory(directory.resolve("converted"));
+    Path local = output.resolve("PowerPasteTesting_RSpace.001.png");
+    byte[] png = Base64.getDecoder().decode(ONE_PIXEL_PNG);
+    Files.write(local, png);
+    Path outside = Files.write(directory.resolve("outside.png"), png);
+    Files.createSymbolicLink(output.resolve("escape.png"), outside);
+    Path html = output.resolve("input.html");
+    Files.writeString(
+        html,
+        "<html><body><img src='PowerPasteTesting_RSpace.001.png'>"
+            + "<img src='../outside.png'><img src='"
+            + local
+            + "'>"
+            + "<img src='http://example.test/a.png'><img src='"
+            + outside.toUri()
+            + "'>"
+            + "<img src='escape.png'></body></html>");
+
+    new DataUriExtractor().extract(html, output);
+
+    var images = Jsoup.parse(Files.readString(html)).select("img");
+    assertEquals(1, images.size());
+    assertEquals(local.getFileName().toString(), images.first().attr("src"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"My Doc (1).png", "Résumé + figure.png", "My%20Doc%20%281%29.png"})
+  void resolvesSanitizedRelativeImageNames(String source) throws Exception {
+    String fileName = source.startsWith("My") ? "My Doc (1).png" : "Résumé + figure.png";
+    byte[] png = Base64.getDecoder().decode(ONE_PIXEL_PNG);
+    Files.write(directory.resolve(fileName), png);
+    Path html = directory.resolve("input.html");
+    Files.writeString(html, "<html><body><img src='" + source + "'></body></html>");
+
+    new DataUriExtractor().extract(html, directory);
+
+    var images = Jsoup.parse(Files.readString(html)).select("img");
+    assertEquals(1, images.size());
+    Path image = directory.resolve(images.first().attr("src"));
+    assertEquals(fileName, image.getFileName().toString());
+    try (var input = Files.newInputStream(image)) {
+      assertEquals(png.length, input.readAllBytes().length);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "%2e%2e/outside.png",
+        "..%2Foutside.png",
+        "%2e%2e%5coutside.png",
+        "nested%2fimage.png",
+        "nested%5Cimage.png",
+        "nested/%2e%2e/image.png"
+      })
+  void removesEncodedTraversalAndSeparators(String source) throws Exception {
+    Path output = Files.createDirectory(directory.resolve("converted"));
+    byte[] png = Base64.getDecoder().decode(ONE_PIXEL_PNG);
+    Files.write(directory.resolve("outside.png"), png);
+    Files.write(output.resolve("image.png"), png);
+    Path literalSource = output.resolve(source);
+    Files.createDirectories(literalSource.getParent());
+    Files.write(literalSource, png);
+    Files.write(Files.createDirectories(output.resolve("nested")).resolve("image.png"), png);
+    Path html = output.resolve("input.html");
+    Files.writeString(html, "<html><body><img src='" + source + "'></body></html>");
+
+    new DataUriExtractor().extract(html, output);
+
+    assertTrue(Jsoup.parse(Files.readString(html)).select("img").isEmpty());
+  }
+
+  @Test
+  void keepsImageNamedWithLiteralPercent() throws Exception {
+    Files.write(directory.resolve("100%.png"), Base64.getDecoder().decode(ONE_PIXEL_PNG));
+    Path html = directory.resolve("input.html");
+    Files.writeString(html, "<html><body><img src='100%.png'></body></html>");
+
+    new DataUriExtractor().extract(html, directory);
+
+    var images = Jsoup.parse(Files.readString(html)).select("img");
+    assertEquals(1, images.size());
+    assertEquals("100%.png", images.first().attr("src"));
   }
 
   @Test

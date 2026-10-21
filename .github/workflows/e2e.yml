@@ -191,8 +191,15 @@ jobs:
         if: matrix.project == 'conversion'
         run: |
           set -euo pipefail
+          # Docker's default AppArmor profile denies bubblewrap's mounts, and Ubuntu 24.04 allows
+          # unprivileged user namespaces only under a profile that grants them.
+          sudo apparmor_parser -r -W docker/conversion-sidecar/apparmor/rspace-conversion-sidecar
           docker network create --internal conversion-e2e
+          # Same restrictions as docker/dev/docker-compose.yml.
           docker run -d --name gotenberg --network conversion-e2e \
+            --read-only --cap-drop ALL --security-opt no-new-privileges=true \
+            --tmpfs /tmp:size=768m,mode=1777,nodev,nosuid,noexec \
+            --cpus 2 --memory 2g --pids-limit 256 --ulimit nofile=1024:2048 \
             gotenberg/gotenberg@sha256:67097317623a503ba2a6a7e9ae8db6929a1f7e1bbd88077bacf2d325fbdab923 \
             gotenberg --api-timeout=180s --api-body-limit=200MB \
             --api-disable-download-from=true --chromium-disable-routes=true \
@@ -200,14 +207,23 @@ jobs:
             --libreoffice-deny-private-ips=true --libreoffice-deny-public-ips=true \
             --webhook-disable=true
           docker build -f docker/conversion-sidecar/Dockerfile -t rspace-conversion-sidecar:e2e .
-          docker run -d --name conversion-sidecar --network conversion-e2e \
+          # Docker publishes no ports for a container attached only to an internal network,
+          # so the sidecar joins a normal network for RSpace and the internal one for Gotenberg.
+          # Its entrypoint firewall still blocks all other egress.
+          docker network create conversion-e2e-rspace
+          docker create --name conversion-sidecar --network conversion-e2e-rspace \
             -p 127.0.0.1:8081:8080 --read-only --cap-drop ALL \
             --cap-add NET_ADMIN --cap-add SETUID --cap-add SETGID --cap-add SETPCAP \
             --security-opt no-new-privileges=true \
             --security-opt seccomp=docker/conversion-sidecar/seccomp-bubblewrap.json \
-            --tmpfs /tmp:size=768m,mode=1777 \
-            --tmpfs /work:size=768m,mode=0700,uid=10001,gid=10001 \
+            --security-opt apparmor=rspace-conversion-sidecar \
+            --tmpfs /tmp:size=768m,mode=1777,nodev,nosuid,noexec \
+            --tmpfs /work:size=768m,mode=0700,uid=10001,gid=10001,nodev,nosuid,noexec \
+            --cpus 2 --memory 2g --pids-limit 256 --ulimit nofile=1024:2048 \
             rspace-conversion-sidecar:e2e
+          docker network connect conversion-e2e conversion-sidecar
+          docker start conversion-sidecar
+          echo "conversion-sidecar AppArmor profile: $(docker inspect -f '{{.AppArmorProfile}}' conversion-sidecar)"
           for i in $(seq 1 60); do
             if curl --fail --silent http://localhost:8081/health/ready > /dev/null; then
               exit 0
@@ -430,6 +446,10 @@ jobs:
         if: failure()
         run: |
           echo "=== Jetty stdout (last 100 lines) ===" && tail -100 /tmp/jetty.log || true
+          if [ "${{ matrix.project }}" = "conversion" ]; then
+            echo "=== conversion-sidecar ===" && docker logs conversion-sidecar || true
+            echo "=== gotenberg ===" && docker logs --tail 200 gotenberg || true
+          fi
 
       - name: Upload Jetty log on failure
         if: failure()

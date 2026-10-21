@@ -48,9 +48,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
-import org.springframework.core.env.Environment;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -62,6 +62,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Activate using property -Dspring.profiles.active=run
  */
 @Configuration
+@Import(ConversionSidecarClientFactory.Settings.class)
 @Profile("run")
 @EnableAsync
 @EnableScheduling
@@ -70,7 +71,7 @@ public class TestAppConfig extends BaseConfig {
   @Value("${conversion.url:}")
   private String conversionUrl;
 
-  @Autowired private Environment environment;
+  @Autowired private ConversionSidecarClientFactory.Settings conversionSettings;
 
   @Bean(name = "postUserCreate")
   public IPostUserCreationSetUp postUserCreationSetup() {
@@ -220,7 +221,7 @@ public class TestAppConfig extends BaseConfig {
       delegates.add(dummyDocumentConversionService());
     } else {
       ConversionSidecarClientFactory.Clients clients =
-          ConversionSidecarClientFactory.create(environment);
+          ConversionSidecarClientFactory.create(conversionUrl, conversionSettings);
       PdfConversionClient pdfClient = clients.pdf();
       delegates.add(
           new PdfThenPngConverter(pdfClient, baseDocConverterConfig.pdfToImageConverter()));
