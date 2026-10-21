@@ -21,14 +21,15 @@ function PopoverContent({
   collisionBoundary,
   collisionPadding,
   sticky,
+  portalContainer,
   ...props
 }: PopoverPrimitive.Popup.Props &
   Pick<
     PopoverPrimitive.Positioner.Props,
     "align" | "anchor" | "collisionBoundary" | "collisionPadding" | "side" | "sideOffset" | "sticky"
-  >) {
+  > & { portalContainer?: HTMLElement | null }) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={portalContainer}>
       <PopoverPrimitive.Positioner
         align={align}
         anchor={anchor}
