@@ -2,7 +2,6 @@ package com.researchspace.model.inventory.field;
 
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
-import com.researchspace.model.field.LocalizedIllegalStateException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -96,8 +95,7 @@ public class InventoryChoiceField extends InventoryEntityField {
     if (currentChoiceDefId != null && !currentChoiceDefId.equals(templateChoiceDef.getId())) {
       ErrorList validationResult = templateChoiceDef.validate(getData());
       if (validationResult.hasErrorMessages()) {
-        throw new LocalizedIllegalStateException(
-            "validation.inventoryField.invalidForLatestTemplate", getName(), getData());
+        throw new FieldValueInvalidForLatestTemplateException(getName(), getData());
       }
       // switch to latest radio def
       setChoiceDef(templateChoiceDef);
