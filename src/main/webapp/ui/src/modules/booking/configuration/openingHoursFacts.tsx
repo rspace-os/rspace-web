@@ -55,6 +55,7 @@ export function weeklyOpeningHours(
 export function openingHoursFacts(
   schedule: { openingHours: readonly OpeningHoursEntry[] },
   t: TFunction<"booking">,
+  timeLocale = bookingDateTimeLocale(),
 ): Array<[string, ReactNode]> {
   const locale = i18n.language === "cimode" ? "en-US" : i18n.language;
   return [
@@ -71,7 +72,7 @@ export function openingHoursFacts(
                   isOpenAllDay(hours) ? (
                     t("settings.openingHours.openAllDay")
                   ) : (
-                    formatOpeningRange(hours)
+                    formatOpeningRange(hours, timeLocale)
                   )
                 ) : (
                   <span className="text-muted-foreground">{t("bookableItemDetails.openingHours.closed")}</span>
