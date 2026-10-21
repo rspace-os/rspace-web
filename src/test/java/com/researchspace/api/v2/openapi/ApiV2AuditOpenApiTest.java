@@ -2,6 +2,7 @@ package com.researchspace.api.v2.openapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
@@ -22,7 +23,7 @@ import org.mockito.Mockito;
 class ApiV2AuditOpenApiTest {
 
   @Test
-  void documentsSearchOnPagedAndCountAuditRoutes() {
+  void documentsAuditListWithSearchAndSnapshot() {
     ApiV2ResourceSpec<User, Long> spec =
         new ApiV2ResourceSpec<>(
             ApiV2UserResource.DESCRIPTION,
@@ -34,56 +35,50 @@ class ApiV2AuditOpenApiTest {
         new ApiV2OpenApiGenerator(new ApiV2ResourceCatalog(List.of(spec)), "Test API", "2.0.0")
             .generate();
 
-    for (String path : List.of("/api/v2/users/{id}/audit", "/api/v2/users/{id}/audit/count")) {
-      Operation operation = document.getPaths().get(path).getGet();
-      Parameter search =
-          operation.getParameters().stream()
-              .filter(parameter -> "search".equals(parameter.getName()))
-              .findFirst()
-              .orElse(null);
+    Operation operation = document.getPaths().get("/api/v2/users/{id}/audit").getGet();
+    Parameter search =
+        operation.getParameters().stream()
+            .filter(parameter -> "search".equals(parameter.getName()))
+            .findFirst()
+            .orElse(null);
 
-      assertNotNull(search);
-      assertEquals("query", search.getIn());
-      assertEquals(Set.of("string"), search.getSchema().getTypes());
-      assertEquals(Integer.valueOf(255), search.getSchema().getMaxLength());
-      assertEquals(
-          List.of(Set.of("apiKey"), Set.of("bearerAuth")),
-          operation.getSecurity().stream().map(Map::keySet).toList());
-      assertEquals(
-          Map.of(
-              "description",
-              "Authenticated callers who can read the resource.",
-              "denialReasonCodes",
-              List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)),
-          operation.getExtensions().get("x-rspace-access"));
-      assertEquals(
-          path.endsWith("/count")
-              ? List.of("id", "dateFrom", "dateTo", "search", "actions")
-              : List.of(
-                  "id",
-                  "dateFrom",
-                  "dateTo",
-                  "search",
-                  "actions",
-                  "snapshotDate",
-                  "snapshotFingerprint",
-                  "page",
-                  "limit"),
-          operation.getParameters().stream().map(Parameter::getName).toList());
-      if (!path.endsWith("/count")) {
-        Parameter limit =
-            operation.getParameters().stream()
-                .filter(parameter -> "limit".equals(parameter.getName()))
-                .findFirst()
-                .orElseThrow();
-        assertEquals("Maximum events per page.", limit.getDescription());
-        assertEquals(1, ((Number) limit.getSchema().getMinimum()).intValue());
-        assertEquals(
-            CollectionQueryLimits.MAX_PAGE_SIZE,
-            ((Number) limit.getSchema().getMaximum()).intValue());
-        assertEquals(20, ((Number) limit.getSchema().getDefault()).intValue());
-      }
-    }
+    assertNotNull(search);
+    assertEquals("query", search.getIn());
+    assertEquals(Set.of("string"), search.getSchema().getTypes());
+    assertEquals(Integer.valueOf(255), search.getSchema().getMaxLength());
+    assertEquals(
+        List.of(Set.of("apiKey"), Set.of("bearerAuth")),
+        operation.getSecurity().stream().map(Map::keySet).toList());
+    assertEquals(
+        Map.of(
+            "description",
+            "Authenticated callers who can read the resource.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)),
+        operation.getExtensions().get("x-rspace-access"));
+    assertEquals(
+        List.of(
+            "id",
+            "dateFrom",
+            "dateTo",
+            "search",
+            "actions",
+            "snapshotDate",
+            "snapshotFingerprint",
+            "page",
+            "limit"),
+        operation.getParameters().stream().map(Parameter::getName).toList());
+    Parameter limit =
+        operation.getParameters().stream()
+            .filter(parameter -> "limit".equals(parameter.getName()))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("Maximum events per page.", limit.getDescription());
+    assertEquals(1, ((Number) limit.getSchema().getMinimum()).intValue());
+    assertEquals(
+        CollectionQueryLimits.MAX_PAGE_SIZE, ((Number) limit.getSchema().getMaximum()).intValue());
+    assertEquals(20, ((Number) limit.getSchema().getDefault()).intValue());
+    assertNull(document.getPaths().get("/api/v2/users/{id}/audit/count"));
 
     Parameter documentLimit =
         document.getPaths().get("/api/v2/users").getGet().getParameters().stream()
