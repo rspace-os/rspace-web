@@ -61,6 +61,17 @@ Item creation copies the full institution schedule into its draft. Item edits su
 configuration, while a failed or stale save keeps the current draft and its closed-day history.
 Item details show every weekday independently, including closed days, in the scheduling timezone.
 
+## Booking window reconciliation
+
+The frontend checks
+the clock again on submission and maps the server's window error to both rules.
+After an uncertain create or edit response, the frontend invalidates booking queries
+because the write may have committed. Edit forms retain their drafts during
+reconciliation. The calendar editor keeps its base version until reconciliation
+finishes, then uses the refreshed version for the next save without replacing the draft.
+A precondition or concurrent-modification rejection keeps the calendar
+draft and saves it against the refreshed version, unless the user discards it.
+
 Authenticated Booking clients use `apiV2Headers` and `apiV2JsonHeaders` from
 `modules/common/api/apiV2Headers.ts`. They preserve supplied headers and set Bearer
 authorization and `X-Requested-With`; the JSON variant also sets `Content-Type`.
