@@ -3,7 +3,9 @@ package com.researchspace.webapp.controller;
 import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.service.MessageSourceUtils;
@@ -60,6 +62,16 @@ final class BookingAuditDetails {
           entry("removedAssignments", "removedAssignments"),
           entry("deletedAt", "deletedAt"));
 
+  // Recorded enum values, worded with the phrases the booking UI already uses.
+  private static final Map<Object, String> DISPLAY_VALUES =
+      Map.of(
+          "CONFIRMED", "booking:bookings.details.confirmed",
+          "CANCELLED", "booking:bookings.details.cancelled",
+          "ACTIVE", "booking:bookableItems.states.active",
+          "ARCHIVED", "booking:bookableItemDetails.archived",
+          "BOOKING", "booking:bookings.form.typeBooking",
+          "MAINTENANCE", "booking:calendar.feed.maintenance");
+
   private BookingAuditDetails() {}
 
   static boolean isBookingEvent(HistoricData event, Map<String, Object> data) {
@@ -73,7 +85,7 @@ final class BookingAuditDetails {
     for (AuditTrailSearchResult result : results) {
       Map<String, Object> data = payload(result.getEvent());
       if (isBookingEvent(result.getEvent(), data)) {
-        result.getEvent().setDetails(format(data, messages, locale));
+        result.getEvent().setDetails(format(data, messages, locale, true));
       }
     }
   }
@@ -86,6 +98,15 @@ final class BookingAuditDetails {
 
   /** The recorded snapshot except its identifier, or an empty string when there is nothing else. */
   static String format(Map<String, Object> data, MessageSourceUtils messages, Locale locale) {
+    return format(data, messages, locale, false);
+  }
+
+  /**
+   * As {@link #format(Map, MessageSourceUtils, Locale)}; {@code forDisplay} also words known
+   * states, event kinds and booleans. The CSV keeps the raw values as its stable format.
+   */
+  static String format(
+      Map<String, Object> data, MessageSourceUtils messages, Locale locale, boolean forDisplay) {
     Stream<String> known =
         LABELS.stream()
             .filter(label -> data.containsKey(label.getKey()))
@@ -93,7 +114,12 @@ final class BookingAuditDetails {
                 label ->
                     messages.getMessageForLocale(LABEL_PREFIX + label.getValue(), locale)
                         + ": "
-                        + value(label.getKey(), data.get(label.getKey()), locale));
+                        + value(
+                            label.getKey(),
+                            data.get(label.getKey()),
+                            locale,
+                            messages,
+                            forDisplay));
     Stream<String> other =
         data.keySet().stream()
             .filter(
@@ -101,7 +127,7 @@ final class BookingAuditDetails {
                     !"id".equals(key)
                         && LABELS.stream().noneMatch(label -> label.getKey().equals(key)))
             .sorted()
-            .map(key -> key + ": " + value(key, data.get(key), locale));
+            .map(key -> key + ": " + value(key, data.get(key), locale, messages, forDisplay));
     return Stream.concat(known, other).collect(joining("; "));
   }
 
@@ -110,9 +136,19 @@ final class BookingAuditDetails {
     return Stream.of(details, recorded).filter(StringUtils::isNotBlank).collect(joining("; "));
   }
 
-  private static String value(String key, Object value, Locale locale) {
+  private static String value(
+      String key, Object value, Locale locale, MessageSourceUtils messages, boolean forDisplay) {
     if (value == null) {
       return "—";
+    }
+    if (forDisplay && value instanceof Boolean flag) {
+      return messages.getMessageForLocale(
+          flag ? "common:actions.yes" : "common:actions.no", locale);
+    }
+    if (forDisplay
+        && ("state".equals(key) || "kind".equals(key))
+        && DISPLAY_VALUES.containsKey(value)) {
+      return messages.getMessageForLocale(DISPLAY_VALUES.get(value), locale);
     }
     if (("start".equals(key) || "end".equals(key)) && value instanceof Number epochMillis) {
       return Instant.ofEpochMilli(epochMillis.longValue()).toString();
@@ -145,7 +181,10 @@ final class BookingAuditDetails {
     if ("openDays".equals(key)
         && value instanceof List<?> days
         && days.stream().allMatch(BookingAuditDetails::isWeekday)) {
-      return days.stream().map(day -> weekday(day, locale)).collect(joining(", "));
+      return ListFormatUtils.formatList(
+          days.stream().map(day -> weekday(day, locale)).toList(),
+          locale,
+          ListFormatter.Type.UNITS);
     }
     return value instanceof Map || value instanceof List
         ? JacksonUtil.toJson(value)
