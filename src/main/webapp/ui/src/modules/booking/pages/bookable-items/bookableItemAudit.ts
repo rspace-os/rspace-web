@@ -215,7 +215,8 @@ function openingValue(key: string, value: unknown, locale: string): string | und
         exceptions.output
           .toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)
           .map(
-            (exception) => `${formatIsoWeekday(exception.dayOfWeek, "long", locale)} ${formatOpeningRange(exception)}`,
+            (exception) =>
+              `${formatIsoWeekday(exception.dayOfWeek, "long", locale)} ${formatOpeningRange(exception, locale)}`,
           ),
         locale,
         { type: "unit" },
