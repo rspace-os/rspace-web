@@ -92,6 +92,12 @@ final class RsqlRuntimeFieldCompiler {
     // Keep target and delegated-source readability outside the value-row negation so an
     // unreadable target or source cannot satisfy a missing-value filter.
     String readable = relationships.compileReadableRelationship(relationship, state);
+    if (field.readResource() != null) {
+      readable +=
+          " AND "
+              + relationships.compileReadableRuntimeSource(
+                  relationship, field.readResource(), state);
+    }
     String parentIdPath = alias + "." + relationship.binding().idProperty();
     return "("
         + readable
