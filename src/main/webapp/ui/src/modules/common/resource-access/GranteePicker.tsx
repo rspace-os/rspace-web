@@ -44,9 +44,8 @@ export function GranteePicker({
 }) {
   const { t, i18n } = useTranslation("common");
   const inputId = useId();
-  const [query, setQuery] = useState("");
-  // Remounts the combobox after each pick, which clears the input without a controlled value.
-  const [pickCount, setPickCount] = useState(0);
+  const [input, setInput] = useState("");
+  const query = input.trim();
 
   const directory = useQuery({
     queryKey: ["api-v2", resource, resourceId, "access-grantees", token, query],
@@ -61,18 +60,19 @@ export function GranteePicker({
     <div className="space-y-1">
       <Label htmlFor={inputId}>{t("resourceAccess.addUserOrGroup")}</Label>
       <Combobox<ResourceGranteeDirectoryEntry>
-        key={pickCount}
         items={results}
         // The server already ranked and filtered; re-filtering locally would hide matches.
         filter={null}
         disabled={disabled}
         itemToStringLabel={(entry) => entry.name}
-        onInputValueChange={(value) => setQuery(value.trim())}
+        // Never holds a selection: a pick is handed to the editor and the input cleared for the next search.
+        value={null}
+        inputValue={input}
+        onInputValueChange={setInput}
         onValueChange={(entry) => {
           if (!entry) return;
           onPick(entry);
-          setQuery("");
-          setPickCount((count) => count + 1);
+          setInput("");
         }}
       >
         <ComboboxInput
