@@ -67,6 +67,25 @@ type Props = {
   readOnly?: boolean;
 };
 
+/**
+ * The draft and the saved document it started from, kept together so a dirty draft stays paired
+ * with its version. `recovery` follows a stale save: fetching the latest document, that fetch
+ * failing, then any conflicts waiting for a choice.
+ */
+type Editing = {
+  base?: ResourceAccessDocument;
+  draft: readonly ResourceAccessAssignment[];
+  conflicts: readonly AccessMergeConflict[];
+  recovery: "none" | "refreshing" | "failed" | "resolving";
+};
+
+const startedFrom = (document: ResourceAccessDocument): Editing => ({
+  base: document,
+  draft: document.assignments,
+  conflicts: [],
+  recovery: "none",
+});
+
 function sameDraft(left: readonly ResourceAccessAssignment[], right: readonly ResourceAccessAssignment[]) {
   const rightByKey = new Map(right.map((assignment) => [assignment.grantee.key, assignment.role]));
   return (
@@ -89,43 +108,43 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
     queryKey,
     queryFn: ({ signal }) => fetchResourceAccess(resource, resourceId, token, signal),
   });
-  const [base, setBase] = useState<ResourceAccessDocument>();
-  const [draft, setDraft] = useState<readonly ResourceAccessAssignment[]>([]);
-  const [conflicts, setConflicts] = useState<readonly AccessMergeConflict[]>([]);
-  const [recoveringConflict, setRecoveringConflict] = useState(false);
-  const [conflictRefreshError, setConflictRefreshError] = useState(false);
+  const [editing, setEditing] = useState<Editing>({ draft: [], conflicts: [], recovery: "none" });
+  const { base, draft, conflicts, recovery } = editing;
+  const updateDraft = (change: (current: readonly ResourceAccessAssignment[]) => readonly ResourceAccessAssignment[]) =>
+    setEditing((current) => ({ ...current, draft: change(current.draft) }));
   const [assignmentSearch, setAssignmentSearch] = useState("");
   const [announcement, setAnnouncement] = useState("");
   const [leaveOpen, setLeaveOpen] = useState(false);
   const statusRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    if (access.data && access.data !== base && !recoveringConflict && (!base || sameDraft(draft, base.assignments))) {
-      setBase(access.data);
-      setDraft(access.data.assignments);
+    if (access.data && access.data !== base && recovery === "none" && (!base || sameDraft(draft, base.assignments))) {
+      setEditing(startedFrom(access.data));
     }
-  }, [access.data, base, draft, recoveringConflict]);
+  }, [access.data, base, draft, recovery]);
 
   const dirty = !readOnly && base ? !sameDraft(draft, base.assignments) : false;
   const ownerCount = draft.filter(({ role }) => role === adapter.ownerRole).length;
   const ownerLabel = adapter.roles.find(({ key }) => key === adapter.ownerRole)?.label ?? adapter.ownerRole;
 
   const refreshAfterConflict = async (original = base?.assignments ?? [], local = draft) => {
-    setRecoveringConflict(true);
-    setConflictRefreshError(false);
+    setEditing((current) => ({ ...current, recovery: "refreshing" }));
     const latest = await access.refetch();
     if (latest.isSuccess && latest.data) {
       const merged = mergeAccessDraft(original, local, latest.data.assignments);
-      setBase(latest.data);
-      setDraft(merged.draft);
-      setConflicts(merged.conflicts);
+      setEditing({
+        base: latest.data,
+        draft: merged.draft,
+        conflicts: merged.conflicts,
+        recovery: merged.conflicts.length > 0 ? "resolving" : "none",
+      });
       setAnnouncement(
         merged.conflicts.length > 0
           ? t("resourceAccess.conflictCount", { count: merged.conflicts.length })
           : t("resourceAccess.conflictMerged"),
       );
     } else {
-      setConflictRefreshError(true);
+      setEditing((current) => ({ ...current, recovery: "failed" }));
       setAnnouncement(t("resourceAccess.conflictRefreshError"));
     }
   };
@@ -141,10 +160,7 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
       ),
     onSuccess: (document) => {
       queryClient.setQueryData(queryKey, document);
-      setBase(document);
-      setDraft(document.assignments);
-      setConflicts([]);
-      setRecoveringConflict(false);
+      setEditing(startedFrom(document));
       setAnnouncement(t("resourceAccess.saved"));
       requestAnimationFrame(() => statusRef.current?.focus());
     },
@@ -190,7 +206,7 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
       ({ key, allowedGranteeKinds }) => key === roleKey && allowedGranteeKinds.includes(grantee.kind),
     );
     if (!role) return;
-    setDraft((current) => [
+    updateDraft((current) => [
       ...current,
       { grantee: { ...grantee, available: true, effectiveRole: null, roleSources: [] }, role: role.key },
     ]);
@@ -269,11 +285,17 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
 
   const resolveConflict = (item: AccessMergeConflict, choice: "local" | "latest") => {
     const assignment = choice === "local" ? item.local : item.latest;
-    setDraft((current) => {
-      const without = current.filter(({ grantee }) => grantee.key !== item.key);
-      return assignment ? [...without, assignment] : without;
+    setEditing((current) => {
+      const without = current.draft.filter(({ grantee }) => grantee.key !== item.key);
+      const remaining = current.conflicts.filter(({ key }) => key !== item.key);
+      return {
+        ...current,
+        draft: assignment ? [...without, assignment] : without,
+        conflicts: remaining,
+        // Resolving the last conflict ends recovery, so later refetches are adopted again.
+        recovery: remaining.length > 0 ? "resolving" : "none",
+      };
     });
-    setConflicts((current) => current.filter(({ key }) => key !== item.key));
   };
 
   const roleMenuFor = (row: AccessRow) => {
@@ -287,7 +309,7 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
         // A row staged for removal keeps its role visible but frozen until it is restored.
         disabled={row.status === "removed" || !row.assignment.grantee.available}
         lockReason={manageBlockedReason(row)}
-        onChange={(role) => setDraft((current) => draftWithRole(current, row.key, role))}
+        onChange={(role) => updateDraft((current) => draftWithRole(current, row.key, role))}
       />
     );
   };
@@ -298,8 +320,8 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
         row={row}
         leaveLabel={adapter.leaveLabel}
         blockedReason={actionBlockedReason(row)}
-        onRemove={() => setDraft((current) => draftWithout(current, row.key))}
-        onRestore={() => setDraft((current) => draftWithRestored(saved.assignments, current, row.assignment))}
+        onRemove={() => updateDraft((current) => draftWithout(current, row.key))}
+        onRestore={() => updateDraft((current) => draftWithRestored(saved.assignments, current, row.assignment))}
         onLeave={() => setLeaveOpen(true)}
       />
     );
@@ -382,12 +404,12 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
           </Alert>
         ) : null}
 
-        {recoveringConflict && (access.isFetching || conflictRefreshError || conflicts.length > 0) ? (
+        {recovery !== "none" ? (
           <Alert variant="destructive" className="rounded-sm">
             <AlertTitle>{t("resourceAccess.conflictTitle")}</AlertTitle>
             <AlertDescription className="space-y-2">
-              {access.isFetching ? <p role="status">{t("resourceAccess.refreshingLatest")}</p> : null}
-              {conflictRefreshError ? (
+              {recovery === "refreshing" ? <p role="status">{t("resourceAccess.refreshingLatest")}</p> : null}
+              {recovery === "failed" ? (
                 <Button type="button" variant="outline" onClick={() => void refreshAfterConflict()}>
                   {t("resourceAccess.retryLatest")}
                 </Button>
@@ -424,11 +446,7 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
               className="rounded-sm"
               disabled={!dirty || save.isPending}
               onClick={() => {
-                setBase(access.data);
-                setDraft(access.data.assignments);
-                setConflicts([]);
-                setRecoveringConflict(false);
-                setConflictRefreshError(false);
+                setEditing(startedFrom(access.data));
                 setAnnouncement(t("resourceAccess.cancelled"));
               }}
             >
@@ -438,7 +456,7 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
               type="button"
               className="rounded-sm"
               aria-busy={save.isPending}
-              disabled={!dirty || save.isPending || invariantBroken || conflicts.length > 0 || conflictRefreshError}
+              disabled={!dirty || save.isPending || invariantBroken || recovery !== "none"}
               onClick={() => save.mutate()}
             >
               {t("resourceAccess.saveChanges")}

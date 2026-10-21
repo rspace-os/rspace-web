@@ -538,4 +538,48 @@ describe("ResourceAccessEditor", () => {
       ],
     });
   });
+
+  it("adopts later refreshes once the last conflict is resolved", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const imaging = (role: string) => ({
+      grantee: {
+        kind: "GROUP",
+        id: 41,
+        key: "group:41",
+        name: "Imaging group",
+        detail: "imaging",
+        available: true,
+        effectiveRole: role,
+        roleSources: [],
+      },
+      role,
+    });
+    let current = document(3);
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(current)),
+      http.get("/api/v2/test-collections/9/access/grantees", () =>
+        HttpResponse.json([{ kind: "GROUP", id: 41, key: "group:41", name: "Imaging group", detail: "imaging" }]),
+      ),
+      http.put("/api/v2/test-collections/9/access", () => new HttpResponse(null, { status: 412 })),
+    );
+    render(
+      <QueryClientProvider client={client}>
+        <ResourceAccessEditor resource="test-collections" resourceId={9} token="token" adapter={adapter} />
+      </QueryClientProvider>,
+    );
+    const user = userEvent.setup();
+    await screen.findByRole("table");
+    await user.type(screen.getByLabelText("common:resourceAccess.addUserOrGroup"), "im");
+    await user.click(
+      await screen.findByRole("option", { name: "Imaging groupcommon:resourceAccess.kind.groupimaging" }),
+    );
+    current = document(4, [owner, imaging("READER")]);
+    await user.click(screen.getByRole("button", { name: "common:resourceAccess.saveChanges" }));
+
+    await user.click(await screen.findByRole("button", { name: "common:resourceAccess.useLatest" }));
+    current = document(5, [owner, imaging("READER"), reader(13)]);
+    await act(() => client.refetchQueries({ queryKey: ["api-v2", "test-collections", 9, "access"] }));
+
+    expect(await table().findByText("Reader 13")).toBeInTheDocument();
+  });
 });
