@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -115,6 +116,11 @@ public final class CollectionFieldTypes {
 
   public static CollectionFieldType<String> text() {
     return text(Integer.MAX_VALUE);
+  }
+
+  /** A non-sortable text field with explicit filter operators and wildcard support. */
+  public static CollectionFieldType<String> text(Set<Operator> operators, boolean wildcards) {
+    return new TextFieldType(operators, wildcards);
   }
 
   /**
