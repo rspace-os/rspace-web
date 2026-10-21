@@ -1,14 +1,19 @@
 package com.researchspace.api.v1.auth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
+import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.service.UserApiKeyManager;
+import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
+import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
 import org.junit.jupiter.api.AfterEach;
@@ -76,6 +81,35 @@ public class ApiKeyAuthenticatorTest {
 
     assertTrue(statelessScopeActive);
     assertFalse(StatelessApiLogin.isInProgress());
+  }
+
+  @Test
+  public void apiKeyWithMatchingBrowserSessionStillUsesStatelessLogin() {
+    User enabled = TestFactory.createAnyUser("any");
+    Session session = Mockito.mock(Session.class);
+    Mockito.lenient().when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(enabled);
+    Subject subject =
+        Mockito.mock(
+            Subject.class,
+            invocation ->
+                switch (invocation.getMethod().getName()) {
+                  case "getPrincipal" -> enabled.getUsername();
+                  case "getSession" -> session;
+                  case "login" -> {
+                    loginOK = true;
+                    statelessScopeActive = StatelessApiLogin.isInProgress();
+                    yield null;
+                  }
+                  default -> Mockito.RETURNS_DEFAULTS.answer(invocation);
+                });
+    ThreadContext.bind(subject);
+    setUpExpectations(enabled);
+
+    assertSame(enabled, shiroAPIKeyAuthoriser.authenticate(mockRequest));
+
+    assertTrue(loginOK);
+    assertTrue(statelessScopeActive);
+    assertEquals(UserAuthenticationMethod.API_KEY, enabled.getAuthenticatedBy());
   }
 
   @Test
