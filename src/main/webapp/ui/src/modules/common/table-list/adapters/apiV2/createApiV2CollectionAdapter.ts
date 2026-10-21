@@ -11,6 +11,7 @@ import {
   isFilterOperatorCompatible,
   resolveCollectionConfig,
 } from "@/modules/common/collection/resolveCollectionConfig";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import type { CollectionPage, CollectionQueryState } from "../../tableListState";
@@ -55,6 +56,8 @@ export type ApiV2CollectionDefinition<TDocument> = {
   metadata: ApiV2CollectionMetadata<TDocument>;
   runtimeFields?: readonly RuntimeFieldCatalogForNamespace[];
   translate?: (key: string, values?: Record<string, unknown>) => string;
+  /** Formats multi-value cells as a list in this language. */
+  language?: string;
 };
 
 export type RuntimeFieldCatalogForNamespace = {
@@ -103,6 +106,7 @@ export function createApiV2CollectionAdapter<TDocument>({
   metadata,
   runtimeFields = [],
   translate = (key) => key,
+  language,
 }: ApiV2CollectionDefinition<TDocument>): ApiV2CollectionAdapter<TDocument> {
   const allowedFields = new Set(metadata.fields);
   for (const field of sourceConfig.fields) {
@@ -120,7 +124,7 @@ export function createApiV2CollectionAdapter<TDocument>({
     sourceConfig.fields.filter((field) => field.type === "relationship").map((field) => [String(field.name), field]),
   );
   const derived = derivedTargetFields(sourceConfig, metadata, translate);
-  const runtime = derivedRuntimeFields(metadata, runtimeFields, relationshipLabels(sourceConfig, translate));
+  const runtime = derivedRuntimeFields(metadata, runtimeFields, relationshipLabels(sourceConfig, translate), language);
   const relationshipFields = new Set(derived.map(({ field }) => field.name));
   const runtimeSelectors = new Map(
     runtime.map(({ field, operators, supportsWildcards }) => [field.name, { operators, supportsWildcards }] as const),
@@ -313,6 +317,7 @@ function derivedRuntimeFields<TDocument>(
   metadata: ApiV2CollectionMetadata<TDocument>,
   catalog: readonly RuntimeFieldCatalogForNamespace[],
   viaLabels: ReadonlyMap<string, string>,
+  language: string | undefined,
 ): {
   field: FieldConfig<TDocument>;
   operators: readonly FilterOperator[];
@@ -344,7 +349,7 @@ function derivedRuntimeFields<TDocument>(
         list: namespace.columnSelectable
           ? {
               description: definition.source.label,
-              renderCell: ({ row }: { row: TDocument }) => runtimeValue(row, responseField, definition.id),
+              renderCell: ({ row }: { row: TDocument }) => runtimeValue(row, responseField, definition.id, language),
             }
           : (false as const),
         form: false as const,
@@ -369,12 +374,20 @@ function derivedRuntimeFields<TDocument>(
   );
 }
 
-function runtimeValue<TDocument>(row: TDocument, responseField: FieldName<TDocument>, id: string): string {
+// Several values of one field, not a sentence: "a, b, c" rather than "a, b, and c".
+const VALUE_LIST: Intl.ListFormatOptions = { type: "unit", style: "short" };
+
+function runtimeValue<TDocument>(
+  row: TDocument,
+  responseField: FieldName<TDocument>,
+  id: string,
+  language: string | undefined,
+): string {
   const values = row[responseField];
   if (typeof values !== "object" || values === null || Array.isArray(values)) return "";
   const value = (values as Record<string, unknown>)[id];
   if (value === null || value === undefined) return "";
-  return Array.isArray(value) ? value.join(", ") : String(value);
+  return Array.isArray(value) ? formatList(value, language, VALUE_LIST) : String(value);
 }
 
 // Restore expanded display keys stripped by the page schema.

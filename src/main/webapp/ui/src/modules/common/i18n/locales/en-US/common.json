@@ -952,7 +952,7 @@
       "title": "No records found"
     },
     "error": {
-      "customFieldColumnLimit": "A table can show at most {{limit}} custom field columns.",
+      "customFieldColumnLimit": "A table can show at most {limit} custom field columns.",
       "description": "The records could not be loaded.",
       "title": "Something went wrong"
     },
