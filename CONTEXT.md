@@ -604,6 +604,22 @@ resolved during design. This file is a glossary only — no implementation detai
   this check.
   _Avoid_: enabled (that is the user's own per-app toggle)
 
+## Platform configuration
+
+See [Feature flags](DevDocs/DeveloperNotes/FeatureFlags.md) for behavior and the [manifest generator](scripts/generate-feature-flags.mjs) for generated artifacts.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Feature Flag | An internal boolean control for rollout, kill switches or temporary changes. |
+| 2. | Feature Flag Definition | The identity and default state declared for one flag. |
+| 3. | Feature Flag Manifest | The checked-in JSONC source of Feature Flag Definitions. |
+| 4. | Feature Flag Baseline | The instance-wide value used when a user has no override. |
+| 5. | User Feature Flag Override | A stored per-user value replacing the baseline for that user. |
+| 6. | Feature Flag Override Permission | The capability to set one's own Feature Flag overrides. |
+| 7. | Feature Flag Resource | The caller-specific REST API v2 representation of a flag. |
+| 8. | Retired Feature Flag | A flag removed from the manifest. |
+| 9. | Expired Feature Flag | A flag past its declared expiry date. |
+
 ## Resource role permissions
 
 See [Security and permissions](DevDocs/DeveloperNotes/SecurityAndPermissions.md#resource-role-permissions) for role semantics.
