@@ -44,6 +44,7 @@ import com.researchspace.model.collection.ResourceRegistry;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldBinding;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
+import com.researchspace.model.collection.RuntimeFieldContext;
 import com.researchspace.model.collection.RuntimeFieldDefinition;
 import com.researchspace.model.collection.RuntimeFieldSelection;
 import com.researchspace.model.collection.RuntimeFieldValueType;
@@ -185,7 +186,8 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             ApiV2ResourceRequestParser.filtered(
                 "target==IN" + config.getTarget().id() + ";privacy==busy",
                 events.description(),
-                catalog.registry()));
+                catalog.registry(),
+                RuntimeFieldContext.empty()));
   }
 
   @Test
@@ -229,7 +231,8 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
       BookingConfiguration config, User caller, String eventWhere, String text) {
     var events = catalog.find("bookings").orElseThrow();
     ResourceRequest eventRequest =
-        ApiV2ResourceRequestParser.filtered(eventWhere, events.description(), catalog.registry());
+        ApiV2ResourceRequestParser.filtered(
+            eventWhere, events.description(), catalog.registry(), RuntimeFieldContext.empty());
     ResourceRequest request =
         ResourceRequest.unpaged(
             new FilterExpression.Comparison("id", Operator.EQUAL, List.of(config.getId()), false));
@@ -328,7 +331,10 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             .toList());
     var identity =
         ApiV2ResourceRequestParser.filtered(
-            "target==IN" + privateItem.getId(), registration.description(), catalog.registry());
+            "target==IN" + privateItem.getId(),
+            registration.description(),
+            catalog.registry(),
+            RuntimeFieldContext.empty());
     assertEquals(0, bookingConfigurationDao.countResources(identity, access));
     assertEquals(List.of(), bookingConfigurationDao.getResources(identity, access).resources());
   }
