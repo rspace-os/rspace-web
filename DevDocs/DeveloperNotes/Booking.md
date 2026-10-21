@@ -133,3 +133,11 @@ return 404, as do the feature-specific directory and catalogue reads.
 The bounded `booking-configuration-targets` and `booking-settings/access-grantees`
 lookups return `{docs: [...]}` without paging metadata. Catalogue lists retain
 `docs` and their existing paging members.
+
+## Scheduling timezone writes
+
+The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
+GET responses as the item's scheduling timezone, but create, patch, and bulk requests that include
+it receive the collection framework's normal `400 Bad Request` response. Public creates assign the
+JVM-backed institution timezone. This is an immediate breaking change; internal Java manager
+commands retain their timezone fields for fixtures and other trusted scheduling workflows.

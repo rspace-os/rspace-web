@@ -72,6 +72,9 @@ These routes use concrete controllers:
 | `POST /api/v2/oauth/tokens` | Browser session | A non-cached, session-bound UI OAuth token that retains actor and subject during run-as. |
 | `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
 | `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
+| `GET /api/v2/users/me/booking-preferences` | Authenticated; Booking enabled | The subject's explicit Booking display preference, or the current global defaults. |
+| `PUT /api/v2/users/me/booking-preferences` | Authenticated; Booking enabled | Replaces the subject's complete Booking display preference. |
+| `DELETE /api/v2/users/me/booking-preferences` | Authenticated; Booking enabled | Removes the subject's override so global Booking defaults apply. |
 
 Use concrete controllers for these and similar non-CRUD routes. Do not add resource specs for them.
 
