@@ -351,14 +351,13 @@ Set `exposedOperations` in `ApiV2ResourceSpec` to choose HTTP routes and OpenAPI
 access checks, including for anonymous callers. For read-only collections, expose `LIST`, `COUNT`,
 and `READ` and use a read-only access policy.
 
-### Default audit routes
+### Default audit route
 
-Each registered resource also has these routes:
+Each registered resource also has this route:
 
 | Method and route | Result |
 | --- | --- |
 | `GET /api/v2/widgets/{id}/audit` | A page of audit events for one readable resource. |
-| `GET /api/v2/widgets/{id}/audit/count` | The number of matching audit events. |
 
 The caller must authenticate with an API key or OAuth bearer token and have resource read access.
 The audit handler applies its normal subject visibility rules.
@@ -366,8 +365,9 @@ The audit handler applies its normal subject visibility rules.
 The list route accepts `page`, `limit`, `dateFrom`, `dateTo`, repeated `actions`, and an optional
 `snapshotDate`/`snapshotFingerprint` pair. Pagination is one-based. The first page omits the pair;
 the response selects the latest completed UTC day permitted by `dateTo` and returns both values.
-Every later page sends both values unchanged. The count route accepts only the date and action
-filters.
+Every later page sends both values unchanged. The response's `totalDocs` is the number of matching
+events for that snapshot. To request a minimal page when only the total is needed, use
+`GET /api/v2/widgets/{id}/audit?limit=1` and read `totalDocs`.
 
 A search covers at most 183 days. Wider windows return `400` and
 `errors.api.v2.audit.range.tooWide` to avoid truncated results that look complete. Page longer
