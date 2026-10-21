@@ -69,12 +69,31 @@ function AuditTimestamp({ value }: { value: string }) {
   );
 }
 
+/**
+ * Delegated changes are recorded as "subject=<username>", and a permanent delete also as
+ * "permanent=true". Show the subject in words and drop the marker the action already states; any
+ * other text, such as older free-form descriptions, passes through unchanged.
+ */
+function readableDescription(
+  description: string | null | undefined,
+  onBehalfOf: (name: string) => string,
+): string | null {
+  if (description === null || description === undefined) return null;
+  const parts = description.split(";").map((part) => part.trim());
+  const subject = parts.find((part) => part.startsWith("subject="))?.slice("subject=".length);
+  const rest = parts.filter((part) => part !== "permanent=true" && !part.startsWith("subject="));
+  return [...rest, ...(subject ? [onBehalfOf(subject)] : [])].join("; ") || null;
+}
+
 export function AuditEventItem({ row }: { row: AuditRow }) {
   const { t } = useTranslation(["booking", "common"]);
   const [open, setOpen] = useState(false);
+  const description = readableDescription(row.description, (name) =>
+    t("booking:bookableItemDetails.audit.onBehalfOf", { name }),
+  );
   return (
     <li>
-      <article aria-label={row.description ?? row.action} className="overflow-hidden rounded-sm border bg-card">
+      <article aria-label={description ?? row.action} className="overflow-hidden rounded-sm border bg-card">
         <Collapsible open={open} onOpenChange={setOpen}>
           <div className="space-y-3 p-4">
             <div className="flex items-start justify-between gap-3">
@@ -93,9 +112,7 @@ export function AuditEventItem({ row }: { row: AuditRow }) {
             </div>
             <div>
               <Badge variant="outline">{row.action}</Badge>
-              {row.description === null || row.description === undefined ? null : (
-                <p className="mt-2 text-muted-foreground">{row.description}</p>
-              )}
+              {description === null ? null : <p className="mt-2 text-muted-foreground">{description}</p>}
             </div>
             <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-4 text-sm">
               <div className="flex min-w-0 items-center gap-2">

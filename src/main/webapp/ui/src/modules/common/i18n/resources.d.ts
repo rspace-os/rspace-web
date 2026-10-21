@@ -910,6 +910,7 @@ export default interface Resources {
         "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
         "next": "Next",
         "nextPage": "Next, page {page, number}",
+        "onBehalfOf": "On behalf of {name}",
         "page": "Page {page, number} of {totalPages, number}",
         "pagination": "Audit event pages",
         "period": "Period",
