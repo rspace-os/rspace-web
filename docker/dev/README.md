@@ -507,3 +507,11 @@ The stack reproduces the documented local workflow, just containerized:
   MariaDB 10.11. Set `DB_IMAGE=mariadb:10.11` in `docker/dev/.env` before the
   first `up` to run the dev stack against that version. Use a separate worktree
   for each version; do not reuse a database volume across MariaDB major versions.
+
+The conversion sidecar installs its outbound firewall during entrypoint setup,
+then starts Java as UID/GID 10001 with all capabilities removed. Keep its
+`cap_add` setup permissions and seccomp profile together when copying the service
+configuration. Recreate the pair together when changing its network addresses;
+the sidecar pins its paired Gotenberg address at startup. See
+[Document conversion](../../DevDocs/DeveloperNotes/DocumentConversion.md) for the
+allowlist, deadline, and restart-cleanup behavior.

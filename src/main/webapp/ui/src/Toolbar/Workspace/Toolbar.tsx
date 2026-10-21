@@ -291,10 +291,7 @@ class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
           containerType: "inline-size",
         }}
       >
-        <CreateMenu
-          pioEnabled={this.state.pioEnabled}
-          conversionEnabled={this.state.conversionEnabled}
-        />
+        <CreateMenu pioEnabled={this.state.pioEnabled} conversionEnabled={this.state.conversionEnabled} />
         {!this.state.hideIcons && (
           <Box component="span" sx={{ display: "flex" }}>
             <SocialActions onCreateRequest={this.props.eventHandlers.onCreateRequest} />

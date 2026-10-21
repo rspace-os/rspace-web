@@ -83,10 +83,7 @@ class NotebookToolbar extends React.Component<NotebookToolbarProps, NotebookTool
             }}
           ></Box>
           {this.state.canCreateRecord && (
-            <CreateMenu
-              pioEnabled={this.state.pioEnabled}
-              conversionEnabled={this.state.conversionEnabled}
-            />
+            <CreateMenu pioEnabled={this.state.pioEnabled} conversionEnabled={this.state.conversionEnabled} />
           )}
           <Tooltip title={i18n.t("common:actions.edit")} enterDelay={300}>
             <IconButton data-test-id="notebooktoolbar-edit" color="inherit" id="editEntry">
