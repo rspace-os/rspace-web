@@ -578,3 +578,63 @@ mvn test -Dtest=MyResourceTest,MyResourceOperationsTest -Dfast=true
 A DAO test extends `SpringTransactionalTest`. See
 [Creating transactions](Transactions.md#creating-transactions) for service transaction declarations
 and advice naming rules.
+
+### Write an HTTP test for a REST API v2 route
+
+Annotate the class with `@ApiV2WebIntegrationTest`, name it `*MVCIT.java`, and take fixtures from
+`ApiV2Fixture`:
+
+```java
+@ApiV2WebIntegrationTest
+class WidgetContractMVCIT {
+
+  @Autowired private WebApplicationContext context;
+
+  private ApiV2Fixture fixture;
+  private MockMvc mockMvc;
+
+  @BeforeEach
+  void setUp() {
+    fixture = ApiV2Fixture.in(context);
+    mockMvc = fixture.mockMvc();
+  }
+
+  @AfterEach
+  void tearDown() {
+    fixture.cleanUp();
+  }
+}
+```
+
+Use `@ApiV2WebIntegrationTest` with `ApiV2Fixture` for API v2 integration tests. `MVCTestBase`
+extends the JUnit Jupiter `RealTransactionSpringTestBase` and supports MVC tests, but lacks the
+API v2 fixture's authenticated `MockMvc` and disposable rows. The fixture
+creates system-administrator and ordinary-user credentials and installs the production servlet
+filters.
+
+Follow these harness rules:
+
+| # | Requirement |
+| --- | --- |
+| 1. | **Work commits.** The annotation omits `TransactionalTestExecutionListener`, so nothing rolls back. Create rows through `ApiV2Fixture` and it removes them in `cleanUp()`, checking the delete status to catch broken delete routes rather than silently orphaning data. |
+| 2. | **Collections are shared.** Another test's rows are in the same table. Never assert a raw `totalDocs` against a whole collection. Tag rows with `fixture.marker()` and scope every query to it, for example `?where=message==<marker>`. |
+
+Build the `MockMvc` yourself only for a test that must not have the fixture's filters, such as one
+asserting what happens without `LocaleFilter`.
+
+## Checklist
+
+| # | Requirement |
+| --- | --- |
+| 1. | [ ] The resource name and public fields are stable. |
+| 2. | [ ] The ID is read-only and is the last default sort field. |
+| 3. | [ ] Resource and field access fail closed. |
+| 4. | [ ] The exposed operations match the HTTP contract. |
+| 5. | [ ] The operations class calls a manager and does not call a DAO. |
+| 6. | [ ] The manager controls domain authorization, validation, transactions, and bulk rules. |
+| 7. | [ ] All user-facing errors are in message catalogs. |
+| 8. | [ ] Each public concrete controller contributes an `ApiV2EndpointSpec`. |
+| 9. | [ ] Each relationship verifies target read access. |
+| 10. | [ ] Each relationship target is registered. |
+| 11. | [ ] OpenAPI shows examples and resource-specific errors. |
+| 12. | [ ] Focused resource, operations, manager, DAO, controller, and OpenAPI tests pass. |
