@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
+import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -33,6 +35,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class MSWordImporter implements ExternalFileImporter {
 
   private static final Logger LOG = LoggerFactory.getLogger(MSWordImporter.class);
+  // Temporary names come from these constants, never from the uploaded file name. The suffix
+  // tells the converter the input format; anything else is reported as unsupported.
+  private static final String TEMP_PREFIX = "word-import-";
+  private static final Map<String, String> TEMP_SUFFIXES =
+      Map.of(
+          "doc", ".doc", "docx", ".docx", "odt", ".odt", "ott", ".ott", "rtf", ".rtf", "txt",
+          ".txt");
+  private static final String UNSUPPORTED_SUFFIX = ".unsupported";
 
   public void setFolderMgr(FolderManager folderMgr) {
     this.folderMgr = folderMgr;
@@ -144,12 +154,13 @@ public class MSWordImporter implements ExternalFileImporter {
       throws IOException {
     final String origDocName = FilenameUtils.getBaseName(originalName);
     Path secureTempDir = IoUtils.createOrGetSecureTempDirectory();
-    File tempFolder = Files.createTempDirectory(secureTempDir, origDocName).toFile();
+    File tempFolder = Files.createTempDirectory(secureTempDir, TEMP_PREFIX).toFile();
     File tempFile = null;
     try {
-      tempFile =
-          File.createTempFile(
-              "origDocName", "." + getExtension(originalName), secureTempDir.toFile());
+      String suffix =
+          TEMP_SUFFIXES.getOrDefault(
+              getExtension(originalName).toLowerCase(Locale.ROOT), UNSUPPORTED_SUFFIX);
+      tempFile = File.createTempFile(TEMP_PREFIX, suffix, secureTempDir.toFile());
       ConversionResult result = convert(wordFile, tempFile, tempFolder);
       return new TempConverterData(tempFolder, tempFile, origDocName, result);
     } catch (IOException | RuntimeException e) {
