@@ -120,6 +120,32 @@ export const experimentConfig = {
 
 The adapter replaces field capabilities with the generated API rules. The table cannot offer an unsupported sort or filter.
 
+### Declared object arrays
+
+Use `type: "array"` with a non-empty `fields` list of named child fields. Child fields reuse
+scalar metadata such as `required`, `nullable`, `readOnly`, `defaultValue` and
+`writeConstraints`. Embedded `type: "object"` and array children declare their own fields,
+so custom editors receive the complete recursive definition. Configuration resolution
+rejects duplicate names, cycles, missing children and embedded relationships.
+
+Arrays and embedded objects cannot be filtered or sorted. Set `form: false` for a dedicated
+editor outside `RenderFields`, or provide `form.component` for a custom editor that receives
+`form`, `disabled`, `fieldConfig` and the control's `id`, `describedBy` and `invalid` state.
+The shared field wrapper handles labels, errors and visibility conditions; read-only fields
+disable their custom editor. Embedded children use their parent editor and cannot
+declare query capabilities. There is no generic row editor. Relationship fields
+retain their existing `hasMany` behavior; scalar multiplicity remains deferred.
+
+The API v2 metadata reader follows the list response's `docs.items` reference to its Read
+component. Each declared array or object property publishes recursive backend `FieldSchema[]`
+directly in `x-rspace-fields`. The adapter uses these children for the configured field,
+including child types, titles, required/nullable/read-only flags, defaults and write constraints.
+The extension remains on the property when `items` uses a named reference, as `roleSources`
+does. The reader does not derive children from that reference or from a resource's name.
+Configured array/object fields must have this extension when using generated metadata;
+handwritten metadata can retain the configured child definitions. Invalid or empty recursive
+definitions fail before rendering. Array row bounds come from `minItems` and `maxItems`.
+
 ### Fields of a relationship target
 
 A collection config declares a relationship once. If an experiment schema uses an `owner`
@@ -270,6 +296,39 @@ the corresponding cache entry. Presentation changes reuse the current query when
 effective field projection.
 
 The hook passes an `AbortSignal` to the fetcher. TanStack Query can cancel an obsolete request.
+
+## Reuse collection fields in forms
+
+Use `RenderFields` when a create or edit page uses the same collection field configuration. Pass
+the resolved fields and a Formisch form store.
+
+```tsx
+const fields = resolveCollectionConfig(experimentConfig).fields;
+const form = useForm({ schema: ExperimentInputSchema, initialInput });
+
+<Form of={form} onSubmit={saveExperiment}>
+  <RenderFields fields={fields} form={form} />
+</Form>
+```
+
+Set `form: false` for a field that the form must omit. A field form configuration can set its
+description, widget, width, or display condition. `RenderFields` also supports row and section
+layout entries.
+
+A relationship field uses `relationshipSources` when its target has a registered remote source.
+Otherwise, pass static choices through `relationshipOptions`. Pass
+`relationshipOptionAvailability` when another record can make an option unavailable.
+
+With `hasMany`, both static and remote relationship fields keep an array of IDs in the form.
+The remote picker converts that array to and from its global-ID selection string.
+
+Custom controls must forward change events and the Formisch field
+[focus and blur props](https://formisch.dev/react/api/useField/)
+so touched state and the configured validation mode work.
+
+The [form renderer](../../src/main/webapp/ui/src/modules/common/collection-form/RenderFields.tsx)
+and [form types](../../src/main/webapp/ui/src/modules/common/collection-form/RenderFields.types.ts)
+define the supported layout and control contracts.
 
 ## Related guides
 
