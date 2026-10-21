@@ -13,6 +13,7 @@ import com.researchspace.model.field.LocalizedIOException;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.model.field.LocalizedNullPointerException;
+import com.researchspace.model.inventory.field.FieldValueInvalidForLatestTemplateException;
 import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
@@ -223,6 +224,22 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             resolvedMessage,
             ex.getErrorCode(),
             resolvedMessage);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 422
+  @ExceptionHandler({FieldValueInvalidForLatestTemplateException.class})
+  public ResponseEntity<Object> handleFieldValueInvalidForLatestTemplate(
+      final FieldValueInvalidForLatestTemplateException ex, final WebRequest request) {
+    log.warn("rejected update to latest template: {}", ex.getMessage());
+    String message =
+        messages.getMessage(FieldValueInvalidForLatestTemplateException.ERROR_CODE, ex.getArgs());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.UNPROCESSABLE_ENTITY,
+            ApiErrorCodes.ILLEGAL_ARGUMENT.getCode(),
+            message,
+            message);
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
