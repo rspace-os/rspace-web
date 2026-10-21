@@ -938,6 +938,9 @@ export default interface Resources {
       "switchSection": "Switch section",
       "userIdentity": "{fullName} ({username})"
     },
+    "collectionForm": {
+      "fieldHelp": "About {label}"
+    },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
     },
