@@ -153,3 +153,10 @@ bindings and trusted constraints while owning its paging, sorting and DTO projec
 The `target` picker names `booking-instruments`, uses `globalId` identity and the `IN` prefix.
 The shared picker metadata, traversal limits and runtime catalog allowlist rules are documented
 in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-reached-through-a-relationship).
+
+## Audit formatting
+
+Audit snapshots store `openingHours`. My RSpace's audit response and CSV export use the same
+formatter for weekday/time rows. Historical `openingStart`, `openingEnd`, `openDays` and
+`openingExceptions` remain readable; unknown or deleted schedules keep their historical values.
+The formatter does not rewrite recorded snapshot JSON.
