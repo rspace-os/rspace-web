@@ -210,6 +210,8 @@ export function TableListToolbar<TDocument>({
             }
             aria-controls="table-list-control-panel"
             aria-expanded={activePanel === "filters"}
+            // Lets rows that remove a filter (such as a filter chip) hand focus back to this control.
+            data-table-list-filters
             variant={activePanel === "filters" || filterCount > 0 ? "secondary" : "outline"}
             onClick={() => onPanelChange("filters")}
           >
