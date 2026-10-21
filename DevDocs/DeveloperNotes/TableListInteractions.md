@@ -76,6 +76,9 @@ const mutation = useMutation({
 return <TableList {...table.tableProps} alertsRef={alertsRef} />;
 ```
 
+For results that cross Booking routes or appear on detail pages, see
+[Booking frontend](./BookingFrontend.md). The page delivers table results through `alertsRef`.
+
 ## Add controlled row selection
 
 Pass `selection` when a page supplies bulk actions. The selected IDs stay in the page component,
@@ -206,8 +209,6 @@ Date-time controls display local calendar time and apply an
 instant, preserving seconds and milliseconds. Client date-time comparisons use the same instant
 before and after a saved view restores Date operands.
 
-`TableList` can read the old `filters` parameter. It writes `q` and `where` after the next filter change.
-
 The table also stores filters, sorting, and visible fields in
 `rspace.tableList.<tableId>.view`. The browser profile owns this storage. Pagination and column
 widths are not stored.
@@ -215,7 +216,7 @@ widths are not stored.
 A customised column selection records the configured `defaultColumns` at save time.
 When a later release adds a default column, loading the view inserts it after the preceding default
 instead of hiding it behind the old selection. A default the user removed after seeing it stays
-hidden. Views saved before this record existed gain every missing default once.
+hidden. A saved column selection must include this defaults record.
 
 The collection slug is the default `tableId`. Set a stable, unique ID when independent views use
 the same collection configuration.
@@ -308,7 +309,6 @@ The source's batch limit must not exceed its endpoint's page or argument limits.
 Instrument restoration uses the collection's typed-ID `in` filter and sparse display
 fields. Deduplicate canonical values before chunking. Query keys include the source,
 caller scope, token, and selected values; never share cached options across callers.
-Keep the older optional `resolve` for callers that have not migrated to batch restore.
 
 A saved predicate stays present while restoration loads, fails, or cannot find its
 value. Restoring a label must never remove part of a filter. The `equals` and

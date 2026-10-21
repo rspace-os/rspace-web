@@ -261,11 +261,16 @@ export function ExperimentTable() {
 }
 ```
 
-The cache separates collection endpoints and literal bearer tokens. When authorization comes from
-headers or a token getter, pass `request.authScope` as a stable user or tenant identity and change it
-when that identity changes. `keepPreviousData` retains rows only within the same endpoint and
+The cache separates collection endpoints and stable caller identities. The adapter reads the
+app-shell current-user cache, including the operated-as identity, without adding a profile request.
+For standalone clients, headers or token getters, pass `request.authScope` as a stable user or tenant
+identity and change it when that identity changes. Tokens remain in fetchers and do not enter keys. `keepPreviousData` retains rows only within the same endpoint and
 authorization scope. Request validation runs inside the query so an invalid filter leaves the table's
 error state and reset controls available.
+
+`apiV2ListOptions` builds row keys under `["rspace.api.v2.<resource>", "list", scope,
+endpoint, parameters]`, so invalidating a resource root also refreshes its table rows.
+The shared helpers own OpenAPI and runtime-field keys; consumers use their factories.
 
 The hook loads `/api/v2/openapi.json` through the shared query cache and reads the resource fields,
 filters, sort rules, and limits. It creates REST API v2 query parameters, sends the collection request
@@ -315,6 +320,11 @@ const form = useForm({ schema: ExperimentInputSchema, initialInput });
 Set `form: false` for a field that the form must omit. A field form configuration can set its
 description, widget, width, or display condition. `RenderFields` also supports row and section
 layout entries.
+
+In WebKit only, the shared `Input` hides native time text for empty, controlled time fields
+while unfocused, so Safari's stand-in current time cannot look like a selected time. Other
+engines keep their `--:--` hint. Focus restores the native editor, and a half-typed time
+(`validity.badInput`) stays visible after blur. See the `DesignSystem/Input` time stories.
 
 A relationship field uses `relationshipSources` when its target has a registered remote source.
 Otherwise, pass static choices through `relationshipOptions`. Pass
