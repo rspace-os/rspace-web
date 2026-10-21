@@ -177,21 +177,14 @@ if [ "${RSPACE_OTEL:-false}" = "true" ]; then
   export OTEL_EXPORTER_OTLP_PROTOCOL="${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}"
   export OTEL_TRACES_EXPORTER="${OTEL_TRACES_EXPORTER:-otlp}"
   export OTEL_METRICS_EXPORTER="${OTEL_METRICS_EXPORTER:-otlp}"
-  export OTEL_LOGS_EXPORTER="${OTEL_LOGS_EXPORTER:-otlp}"
+  export OTEL_LOGS_EXPORTER="${OTEL_LOGS_EXPORTER:-none}"
   export OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE="${OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE:-delta}"
   export OTEL_INSTRUMENTATION_HIBERNATE_ENABLED="${OTEL_INSTRUMENTATION_HIBERNATE_ENABLED:-false}"
-  OTEL_EXTENSION_JARS=""
-  for ext_jar in /opt/otel/opentelemetry-span-stacktrace.jar /opt/otel/opentelemetry-inferred-spans.jar; do
-    [ -f "${ext_jar}" ] && OTEL_EXTENSION_JARS="${OTEL_EXTENSION_JARS:+${OTEL_EXTENSION_JARS},}${ext_jar}"
-  done
-  if [ -n "${OTEL_EXTENSION_JARS}" ]; then
-    export OTEL_JAVAAGENT_EXTENSIONS="${OTEL_JAVAAGENT_EXTENSIONS:-${OTEL_EXTENSION_JARS}}"
-  fi
+  # JVM arguments in MAVEN_OPTS can carry secrets (e.g. pyrat.server.config).
+  export OTEL_RESOURCE_DISABLED_KEYS="${OTEL_RESOURCE_DISABLED_KEYS:-process.command_args,process.command_line}"
   if [ -f /opt/otel/opentelemetry-span-stacktrace.jar ]; then
+    export OTEL_JAVAAGENT_EXTENSIONS="${OTEL_JAVAAGENT_EXTENSIONS:-/opt/otel/opentelemetry-span-stacktrace.jar}"
     export OTEL_JAVA_EXPERIMENTAL_SPAN_STACKTRACE_MIN_DURATION="${OTEL_JAVA_EXPERIMENTAL_SPAN_STACKTRACE_MIN_DURATION:-5ms}"
-  fi
-  if [ -f /opt/otel/opentelemetry-inferred-spans.jar ]; then
-    export OTEL_INFERRED_SPANS_ENABLED="${OTEL_INFERRED_SPANS_ENABLED:-true}"
   fi
   OTEL_JETTY_ARGS+=(
     "-Drs.otel.web.enabled=true"

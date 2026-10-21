@@ -173,6 +173,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${picreateGroupOnSignup.enabled}")
   private String picreateGroupOnSignupEnabled;
 
+  @Value("${slow.request.time:5000}")
+  private Integer slowRequestTimeThreshold;
+
   @Value("${aspose.cacheConverted}")
   private String asposeCacheConverted;
 
@@ -769,6 +772,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public void setPicreateGroupOnSignupEnabled(Boolean enabled) {
     picreateGroupOnSignupEnabled = enabled.toString();
+  }
+
+  @Override
+  public Integer getSlowLogThreshold() {
+    return slowRequestTimeThreshold;
   }
 
   @Override

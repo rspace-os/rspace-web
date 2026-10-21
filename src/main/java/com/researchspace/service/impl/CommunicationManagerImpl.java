@@ -33,7 +33,6 @@ import com.researchspace.service.IMessageAndNotificationTracker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.NotificationPostCommitExecutor;
-import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -511,7 +510,6 @@ public class CommunicationManagerImpl implements CommunicationManager {
     return commDao.deleteReadNotificationsOlderThanDate(olderThan);
   }
 
-  @WithSpan("CommunicationManager.deleteReadNotifications")
   public int deleteReadNotifications() {
     final int amount = 14;
     Date twoWeeksAgo = new Date(Instant.now().minus(amount, ChronoUnit.DAYS).toEpochMilli());

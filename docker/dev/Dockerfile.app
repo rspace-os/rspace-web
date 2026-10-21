@@ -32,9 +32,8 @@ RUN set -eux; \
     # flag or cannot run.
     /opt/jbr/bin/java -XX:+AllowEnhancedClassRedefinition -version
 
-# Keep the agents out of the application pom. This standalone pom copies the
-# individual agents and builds inferred-spans as an uber jar because the OTel
-# agent loads each extension in an isolated classloader.
+# Keep the agents out of the application pom. This standalone pom downloads the
+# pinned agent jars.
 COPY java-dependencies.pom.xml /tmp/java-dependencies.pom.xml
 RUN set -eux; \
     mvn --batch-mode --no-transfer-progress \
@@ -42,9 +41,7 @@ RUN set -eux; \
     mkdir -p /opt/hotswap /opt/otel; \
     cp /tmp/target/docker-libs/hotswap-agent.jar /opt/hotswap/; \
     cp /tmp/target/docker-libs/opentelemetry-*.jar /opt/otel/; \
-    rm -rf /tmp/target /tmp/java-dependencies.pom.xml; \
-    # Verify a required runtime dependency is present.
-    jar tf /opt/otel/opentelemetry-inferred-spans.jar | grep -q "WeakConcurrentMap.class"
+    rm -rf /tmp/target /tmp/java-dependencies.pom.xml
 
 # Make JBR the JVM that Maven (and therefore jetty:run) runs on.
 ENV JAVA_HOME=/opt/jbr

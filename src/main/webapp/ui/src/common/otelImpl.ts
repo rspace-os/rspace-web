@@ -1,13 +1,12 @@
 // Keep this behind the dynamic import in ./otel so disabled telemetry loads no SDK code.
 
-import { context, createContextKey, metrics, type Span } from "@opentelemetry/api";
+import { type Attributes, context, createContextKey, metrics, type Span } from "@opentelemetry/api";
 import { ZoneContextManager } from "@opentelemetry/context-zone";
 import { AggregationTemporalityPreference, OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { DocumentLoadInstrumentation } from "@opentelemetry/instrumentation-document-load";
 import { FetchInstrumentation } from "@opentelemetry/instrumentation-fetch";
-import { UserInteractionInstrumentation } from "@opentelemetry/instrumentation-user-interaction";
 import { XMLHttpRequestInstrumentation } from "@opentelemetry/instrumentation-xml-http-request";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { MeterProvider, PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
@@ -29,6 +28,29 @@ const UI_TRACE_CONTEXT = createContextKey("rspace.ui.trace-context");
 
 let uiPage: string | undefined;
 
+export const MALFORMED_URL_SENTINEL = "about:invalid";
+
+export function sanitizeUrl(value: string): string {
+  try {
+    const url = new URL(value, window.location.origin);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return MALFORMED_URL_SENTINEL;
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return MALFORMED_URL_SENTINEL;
+  }
+}
+
+type SpanWithAttributes = Span & { attributes?: Attributes };
+
+export function sanitizeSpanUrlAttributes(span: Span, fallbackUrl?: string): void {
+  const attributes = (span as SpanWithAttributes).attributes;
+  const rawUrl = attributes?.["url.full"] ?? attributes?.["http.url"] ?? fallbackUrl;
+  if (typeof rawUrl !== "string") return;
+  const sanitizedUrl = sanitizeUrl(rawUrl);
+  if (attributes?.["url.full"] !== undefined) span.setAttribute("url.full", sanitizedUrl);
+  if (attributes?.["http.url"] !== undefined) span.setAttribute("http.url", sanitizedUrl);
+}
+
 export function setUiPage(page: string): void {
   uiPage = page;
 }
@@ -44,6 +66,15 @@ function annotateRequestSpan(span: Span): void {
   if (traceContext?.reactIsland) {
     span.setAttribute("rspace.react.island", traceContext.reactIsland);
   }
+}
+
+function sanitizeAndAnnotateRequestSpan(span: Span): void {
+  sanitizeSpanUrlAttributes(span);
+  annotateRequestSpan(span);
+}
+
+export function webVitalAttributes(): Attributes {
+  return uiPage ? { "rspace.ui.page": uiPage } : {};
 }
 
 export function startOtel(config: OtelWebConfig): void {
@@ -79,16 +110,22 @@ export function startOtel(config: OtelWebConfig): void {
     tracerProvider,
     meterProvider,
     instrumentations: [
-      new DocumentLoadInstrumentation(),
+      new DocumentLoadInstrumentation({
+        applyCustomAttributesOnSpan: {
+          documentLoad: (span) => sanitizeSpanUrlAttributes(span, window.location.href),
+          documentFetch: (span) => sanitizeSpanUrlAttributes(span, window.location.href),
+          resourceFetch: (span, resource) => sanitizeSpanUrlAttributes(span, resource.name),
+        },
+      }),
       new FetchInstrumentation({
         ignoreUrls: [OTLP_EXPORT_URLS],
-        requestHook: annotateRequestSpan,
+        requestHook: sanitizeAndAnnotateRequestSpan,
+        applyCustomAttributesOnSpan: (span) => sanitizeSpanUrlAttributes(span),
       }),
       new XMLHttpRequestInstrumentation({
         ignoreUrls: [OTLP_EXPORT_URLS],
-        applyCustomAttributesOnSpan: annotateRequestSpan,
+        applyCustomAttributesOnSpan: sanitizeAndAnnotateRequestSpan,
       }),
-      new UserInteractionInstrumentation(),
     ],
   });
 
@@ -121,7 +158,7 @@ function reportWebVitals(meterProvider: MeterProvider): void {
   const record = (metric: Metric) => {
     histograms[metric.name as keyof typeof histograms]?.record(metric.value, {
       "web_vital.rating": metric.rating,
-      "page.path": window.location.pathname,
+      ...webVitalAttributes(),
     });
   };
   onLCP(record);

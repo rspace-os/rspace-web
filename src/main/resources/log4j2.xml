@@ -58,6 +58,17 @@
       <DefaultRolloverStrategy max="100000"/>
     </RollingFile>
 
+    <RollingFile name="SlowRequestsLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}SlowRequests.txt" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}SlowRequests.txt.%i">
+      <PatternLayout>
+        <Pattern>%d{DATE} - %m%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <SizeBasedTriggeringPolicy size="${RSRequest.log.maxFileSize}"/>
+      </Policies>
+      <!--      keep 100_000 files so that logs aren't removed by default-->
+      <DefaultRolloverStrategy max="100000"/>
+    </RollingFile>
+
     <RollingFile name="FailedEmailLogAppender" fileName="${sys:loggingDirectory:-.}${sys:file.separator}${RSfailedEmails.log.file}" filePattern="${sys:loggingDirectory:-.}${sys:file.separator}${RSfailedEmails.log.file}.%i">
       <PatternLayout>
         <Pattern>%d{DATE} - %m%n</Pattern>
@@ -124,6 +135,11 @@
       <AppenderRef ref="FailedEmailLogAppender"/>
     </Logger>
 
+    <Logger name="com.researchspace.webapp.controller.PerformanceLoggingInterceptor" level="INFO">
+      <AppenderRef ref="SlowRequestsLogAppender"/>
+    </Logger>
+
+
     <!-- all appenders need to be registered here so that they can get the root logging
      folder set in at application startup -->
     <Logger name="com.researchspace.service.impl.LoggingInitializer" level="INFO">
@@ -131,6 +147,7 @@
       <AppenderRef ref="SecurityEventLogAppender"/>
       <AppenderRef ref="auditTrailLogger"/>
       <AppenderRef ref="FailedEmailLogAppender"/>
+      <AppenderRef ref="SlowRequestsLogAppender"/>
       <AppenderRef ref="ROOT_LOGGER"/>
     </Logger>
 
