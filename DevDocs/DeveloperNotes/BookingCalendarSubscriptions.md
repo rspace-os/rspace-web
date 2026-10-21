@@ -1,20 +1,37 @@
 # Booking calendar subscriptions
 
+A calendar link is created once and kept until its owner rotates or disconnects it.
+The owner can always read it again because every subscription row stores its raw
+token (`rawToken` is `NOT NULL`), and GET returns the current URL.
+
 Item subscriptions (`/api/v2/booking-configurations/{id}/calendar-subscription`)
-and user subscriptions (`/api/v2/users/me/booking-calendar-subscription`) return
-an `ETag` on GET and POST. Clients must send the last received ETag as `If-Match`
-when creating or rotating a subscription. Missing preconditions return 428;
-stale preconditions return 409. On conflict, reload the status before retrying
-or using its current URL. This prevents duplicate requests from invalidating a
-URL that another request just returned successfully.
+and user subscriptions (`/api/v2/users/me/booking-calendar-subscription`) share
+one contract:
 
-Item writes compare the credential fingerprint while holding the configuration
-lock; user writes compare the version while holding the user lock. Token storage
-and explicit revocation behavior are unchanged.
+- `GET` returns the status, the current URL and an `ETag`.
+- `POST` only creates. It needs no precondition and is safe to repeat: it returns
+  `201` with a new URL when none exists, or `200` with the existing URL
+  unchanged. Duplicate or concurrent creates cannot fail or invalidate
+  a URL another request just returned.
+- `POST …/rotate` is the only way to replace a URL. It requires the last
+  received ETag as `If-Match`: missing preconditions return 428, and a stale
+  ETag or a missing subscription returns 409. On conflict, reload the status and
+  show its current URL.
+- `DELETE` revokes the link.
 
-Item create and rotate read current inherited Inventory permissions in
-`BookingCalendarCreationTransaction` at `READ_COMMITTED`. For the permission gate,
-writer registration and mixed source-transaction requirements, see
+For proxy-modified ETags and client preconditions, see
+[Conditional requests](RestApiV2QueriesAndAccess.md#conditional-requests).
+
+`GET /api/v2/users/me/bookable-item-calendar-subscriptions` lists the caller's
+item links, with URLs, for active items they can still read. The Booking
+preferences page shows only the user-wide link; item links are managed from
+each bookable item's page.
+
+Ordinary create and rotate use `BookingCalendarCreationTransaction` at `READ_COMMITTED`.
+Item writes compare the credential fingerprint under the configuration lock; user writes
+compare the version under the user lock. A create waiting on either lock sees the first
+committed link and returns it. Item writes authorize current inherited Inventory access.
+The permission gate, lock order and mixed source-transaction rules are in
 [Booking permissions](BookingPermissions.md).
 
 Calendar feed responses use `Cache-Control: private, no-store`,
@@ -29,7 +46,7 @@ inside the changing transaction. Revoked item links are deleted, so restoring
 access requires a new subscription. Group/community changes revalidate existing
 item subscriptions in batches per subscriber because they can also change
 access through an item's owner. This work grows with the number of item
-subscriptions; keep it outside ordinary feed reads.
+subscriptions, so keep it outside ordinary feed reads.
 
 A user's own bookings remain readable after losing item access. Personal feeds
 use "Unknown item" for these events and omit item details and links. Item feeds
