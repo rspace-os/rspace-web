@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { openingHoursFacts } from "@/modules/booking/configuration/openingHoursFacts";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { CardContent } from "@/modules/common/ui/card";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
@@ -13,7 +14,7 @@ export function BookingItemInformationContent({
   item: BookableItemOption;
   displayTimezone: string;
 }) {
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
   const facts: Array<[string, ReactNode]> = [
     ...openingHoursFacts(item, t),
     [
@@ -41,7 +42,7 @@ export function BookingItemInformationContent({
   if (item.bufferAfterMinutes > 0) {
     buffer.push(t("bookings.itemInformation.bufferAfter", { count: item.bufferAfterMinutes }));
   }
-  if (buffer.length > 0) facts.push([t("bookings.itemInformation.buffer"), buffer.join(", ")]);
+  if (buffer.length > 0) facts.push([t("bookings.itemInformation.buffer"), formatList(buffer, i18n.resolvedLanguage)]);
 
   return (
     <>
