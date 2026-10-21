@@ -71,11 +71,9 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   private static final String USERS_IN_COMMUNITY_Q =
       " from User u inner join u.userGroups ug inner join ug.group g  inner join g.communities c "
           + " where c.id=:id ";
-  private static final String ALL_FIELDS_TERM = "allFieldsTerm";
   private static final String SEARCH_ALL_FIELDS_CLAUSE =
       " and (u.email like :allFieldsTerm or u.firstName like :allFieldsTerm"
           + " or u.lastName like :allFieldsTerm or u.username like :allFieldsTerm)";
-  private static final String EXCLUDED_SIGNUP_SOURCE = "excludedSignupSource";
   private static final String ORDER_BY_QUERY_FORMAT = " order by u.%s %s";
   private static final String ENABLED = "enabled";
   private static final String EMAIL = "email";
@@ -265,7 +263,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
     }
     if (sc.isWithoutBackdoorSysadmins()) {
       clauses.add("and u.signupSource != :excludedSignupSource");
-      params.put(EXCLUDED_SIGNUP_SOURCE, SignupSource.SSO_BACKDOOR);
+      params.put("excludedSignupSource", SignupSource.SSO_BACKDOOR);
     }
     return StringUtils.join(clauses, " ");
   }
@@ -279,7 +277,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
         String term = entry.getValue().toString();
         if (term != null && !term.equalsIgnoreCase("null")) {
           clauses.add(SEARCH_ALL_FIELDS_CLAUSE);
-          params.put(ALL_FIELDS_TERM, "%" + term + "%");
+          params.put("allFieldsTerm", "%" + term + "%");
         }
       }
 
