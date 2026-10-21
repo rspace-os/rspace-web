@@ -600,3 +600,22 @@ See [Booking](DevDocs/DeveloperNotes/Booking.md) for domain, scheduling and life
 | 31. | Booking privacy | The visibility of event details to callers reading a Booking calendar. |
 | 32. | Half-open booking interval | A time interval including its start and excluding its end. |
 | 33. | Booking cancellation | The transition of a booking to the Cancelled state. |
+
+## Booking calendar presentation
+
+See [Booking frontend](DevDocs/DeveloperNotes/BookingFrontend.md) for display timezones and rendering behavior.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Day timeline | A horizontal view of one day in the display timezone. |
+| 2. | Wall-clock day | The interval between consecutive local midnights. |
+| 3. | Event | A time-bounded booking or blockout shown on a resource's calendar. |
+| 4. | Event kind | Whether an event is a booking or a blockout. |
+| 5. | Booking event | A reservation displayed in a calendar. |
+| 6. | Blockout event | A non-booking event marking a resource unavailable. |
+| 7. | Event lane | A horizontal track keeping overlapping timeline events visible. |
+| 8. | Calendar card | The visual representation of an event in a calendar. |
+| 9. | Expanded calendar card | A calendar-card state exposing additional event details. |
+| 10. | Availability window | The interval over which resource availability is summarized. |
+| 11. | Availability bar | A visual summary of availability within a window. |
+| 12. | Availability state | Whether a section is available, booked, blocked out or both booked and blocked out. |
