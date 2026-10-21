@@ -9,7 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v1.controller.UnitsApiController;
 import com.researchspace.core.util.JacksonUtil;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +26,24 @@ import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
 
 public class RSUnitDefsTest {
+
+  /** The frontend hardcodes the unit list; it must match what GET /api/v1/units returns. */
+  @Test
+  public void frontendUnitTableMatchesApi() throws IOException {
+    List<Map<String, Object>> frontend =
+        new ObjectMapper()
+            .readValue(
+                Path.of("src/main/webapp/ui/src/stores/definitions/units.json").toFile(),
+                new TypeReference<>() {});
+    List<Map<String, Object>> api =
+        UnitsApiController.SORTED_UNITS.stream()
+            .map(
+                u ->
+                    Map.<String, Object>of(
+                        "id", u.getId(), "label", u.getLabel(), "category", u.getCategory()))
+            .toList();
+    assertEquals(api, frontend);
+  }
 
   @Test
   public void RSUnitDefs() {
