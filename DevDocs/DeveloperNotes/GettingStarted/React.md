@@ -1,102 +1,93 @@
 # Getting started as a React developer
 
-In general, we use [TypeScript](https://www.typescriptlang.org/) and
-[Biome](https://biomejs.dev/) to make development less error prone and more
-convenient. Biome is a single fast tool that both formats and lints the frontend,
-replacing the previous ESLint + Prettier setup.
+RSpace uses [TypeScript](https://www.typescriptlang.org/) for type checking and
+[Biome](https://biomejs.dev/) for frontend formatting and linting. Run frontend commands from the
+repository root; the scripts enter `src/main/webapp/ui`.
 
-## Do
-- Type new and modified code with TypeScript. Run `pnpm run tsc` to type-check
-  the whole project (`tsc --noEmit`).
-- If your editor does not format with Biome on save, run `pnpm run lint:fix` on
-  modified files before committing.
-- When you add a new npm package that ships its own types, no extra step is
-  needed; otherwise install the community types, e.g. `pnpm add -D @types/<package-name>`.
+| # | Check | Command or convention |
+| --- | --- | --- |
+| 1. | Type checking | Type new and modified code with TypeScript. Run `pnpm tsc` for the whole frontend. |
+| 2. | Formatting and linting | Run `pnpm lint` to check and `pnpm lint:fix` to apply fixes. Biome covers JavaScript, TypeScript, JSX/TSX, JSON, and CSS, but does not format Markdown. |
+| 3. | CI | `pnpm lint:ci` rejects Biome info, warning, and error diagnostics. Type checking runs separately. |
+| 4. | Package types | Prefer the types shipped by a dependency. When it has none, add the corresponding `@types` package if available. |
 
-## Notes
-- Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
-- Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
-  in CI and in the pre-commit hook, and any Biome info/warning/error fails the
-  check (`pnpm run lint:ci`).
+## Editor setup
 
-## Editor set up
+### VS Code
 
-### VSCode
-1. Make sure you have the latest version of VS Code.
-2. Install the Biome plugin `biomejs.biome`. VSCode will then automatically
-   format code on save. You can also trigger formatting manually:
-   - Windows `Shift + Alt + F`
-   - Mac `Shift + Option + F`
-   - Ubuntu `Ctrl + Shift + I`
+Install the Biome extension `biomejs.biome`. The workspace `.vscode/settings.json` selects Biome
+as the formatter and enables fix-all and organize-imports on save. Manual formatting shortcuts are:
 
-   The workspace `.vscode/settings.json` already sets Biome as the default
-   formatter and enables fix-all / organize-imports on save.
+| # | Platform | Shortcut |
+| --- | --- | --- |
+| 1. | Windows | `Shift + Alt + F` |
+| 2. | macOS | `Shift + Option + F` |
+| 3. | Ubuntu | `Ctrl + Shift + I` |
 
-#### VSCode __recommendations__
-- Additional plugins:
-  1. npm - `eg2.vscode-npm-script`
-  1. npm-intellisense - `christian-kohler.npm-intellisense`
-- Replace VSCode with VSCodium. VSCodium is a drop-in replacement for VSCode
-  without Microsoft telemetry and tracking.
+The optional `eg2.vscode-npm-script` and `christian-kohler.npm-intellisense` extensions help with
+package scripts and imports. VSCodium is an alternative editor without Microsoft's telemetry.
 
-### WebStorm / Intellij
-- WebStorm/IntelliJ provide decent TypeScript inspections out of the box.
-- Install the Biome plugin from `File > Settings/Preferences > Plugins`, then
-  enable "Run Biome on save" (or trigger the "Reformat with Biome" action) so
-  formatting and safe lint fixes are applied automatically.
+### WebStorm / IntelliJ
+
+Use the built-in TypeScript inspections. Install the Biome plugin through
+`File > Settings/Preferences > Plugins`, then enable "Run Biome on save" or use
+"Reformat with Biome".
 
 ### Other editors
-Biome ships a language server. If your editor does not have a dedicated Biome
-plugin, point its Language Server Protocol integration at `biome lsp-proxy`, or
-run `pnpm run lint` / `pnpm run lint:fix` from the command line.
 
+Connect the editor's Language Server Protocol support to `biome lsp-proxy`, or run
+`pnpm lint` and `pnpm lint:fix` in a terminal.
 
-## General Notes
+## Shared app shell
 
-Some notes on things to watch out for with using React in this codebase.
+`src/main/webapp/newApp/index.jsp` supplies the servlet context through `#app`'s escaped
+`data-context-path` attribute. The production router in
+`src/main/webapp/ui/src/modules/common/app/router.tsx` uses it as the basepath. Routes and generated
+navigation URLs retain the deployment prefix; the empty servlet context uses `/`.
 
+Both app-shell and legacy help actions use `showLighthouse()`. It opens the widget when its methods
+are ready, or opens the documentation website when the external widget is unavailable. Keep help
+actions available while it loads.
 
-### Lazy loading components
+## Application routes
 
-React has a mechanism for lazily loading sections of the UI, so that only users
-who use a part of the UI incur the costs of downloading the code that makes
-that part of the UI work. This is implemented using the `lazy` function and the
-`Suspense` component. This technique is used a few times in the codebase,
-especially where some feature is implemented using a library such as editing
-images or visualising data on a map.
+Production routes live under `src/main/webapp/ui/src/routes/`. Keep page components, search
+validators, reusable helpers, tests, and stories in their feature modules. Route files contain route
+declarations and private route-specific helpers. The root `__root.tsx` owns AppShell, root metadata,
+scripts, and the root not-found page.
 
-One thing to note about this technique, however, is that if ANY other part of
-the codebase imports the lazily loaded code in the usual manner then it causes
-the bundler to entirely ignore the lazy loading. This does make some sense as if
-the code has already been loaded in the main bundle then there is no need to
-dynamically loaded the same code again but it does mean that it is very easy to
-inadvertently break some lazy loading through spooky action at a distance.
+RSpace requires directories for URL segments and the default `index.tsx` and `route.tsx` filenames.
+Only the route-directory root may contain `__root.tsx`. `pnpm lint:routes` runs `@ls-lint/ls-lint`
+and a scoped Biome filename check; both `pnpm lint` and `pnpm lint:ci` include it. Flat dotted route
+filenames, dotted directories, `page.tsx`, `layout.tsx`, and helper files in this directory fail the
+check. Biome also rejects dotted source filenames beyond ls-lint's extension-depth coverage.
 
-Let's say we have a component called BigInfrequentlyUsedFeature that is lazy loaded
-```
-  const LazyBigInfrequentlyUsedFeature = lazy(() => import("./BigInfrequentlyUsedFeature"));
-```
-This will dynamically create a new JS bundle in ../../../src/main/webapp/ui/dist
-that will be fetched only once `LazyBigInfrequentlyUsedFeature` is rendered.
-However, if some other code imports BigInfrequentlyUsedFeature in the usual
-manner then it will be included in the main bundle and the new bundle will not
-be generated. In other words, if a component is EVER imported lazily then it
-MUST ALWAYS be imported lazily (either directly or indirectly). This is a
-problem as it may not always be immediately obvious if a given component (or any
-component that it relies all the way down the component tree) is being lazily
-loaded somewhere else in the codebase.
+After adding, moving, or renaming a route, run `pnpm serve` or `pnpm build` from the repository root.
+The Vite router plugin generates `src/main/webapp/ui/src/routeTree.gen.ts` and updates route
+declarations. Review and commit both with the route change. Do not edit the generated tree by hand;
+Biome excludes it. CI rebuilds the frontend and fails if the committed tree or declarations drift.
+The committed output lets standalone `pnpm tsc`, unit tests, Browser Mode, and Storybook run without
+a generator watcher.
 
-If that wasn't bad enough, the component itself doesn't even have to be
-imported; if ANYTHING is imported in the usual manner from the same module as
-the lazily loaded component then it will invalidate the lazily loading. Let's
-say that the module `BigInfrequentlyUsedFeature`, in addition to the default
-export of the `BigInfrequentlyUsedFeature` component itself, also exports as
-constant `SOME_CONSTANT`. If `SOME_CONSTANT` is imported ANYWHERE by code in the
-main bundle then the lazily loading will not work.
+RSpace's application Vite configuration enables automatic route splitting and places the router
+plugin before React. Keep feature components outside route files so route declarations stay small.
+Use `pnpm build:stats` to inspect bundle changes when changing shared imports. Unit tests disable the
+router plugin; Browser Mode and Storybook use separate configurations without route generation or
+splitting. All consume the committed route declarations.
 
-All of this is to say, that whilst lazy loading components is a powerful
-feature, and something we ought to use more to keep the bundle sizes small, it
-is also a feature that doens't have any guardrails. Which components are lazily
-loaded must be carefully evaluated to minimise the risk that the additional
-complexity in the code results in no change to page load performance simply
-because the lazy loading is just not happening.
+Use the official [file-based routing guide](https://tanstack.com/router/latest/docs/framework/react/routing/file-based-routing)
+for route trees, nesting, index routes, and parameter syntax. Consult
+[type safety](https://tanstack.com/router/latest/docs/framework/react/guide/type-safety) for typed route
+hooks and navigation, and [automatic code splitting](https://tanstack.com/router/latest/docs/framework/react/guide/automatic-code-splitting)
+for eager and lazy route behavior.
+
+## Shared frontend helpers
+
+The [frontend README](../../../src/main/webapp/ui/README.md#shared-frontend-helpers) lists reusable
+layout, query, API-header, and test helpers. `renderInRouter` in
+`src/main/webapp/ui/src/__tests__/helpers/renderInRouter.tsx` renders a supplied route tree with a
+memory router and returns the render result plus router. Reuse it for isolated route-aware tests.
+
+For non-route components, keep heavy optional features behind their existing lazy imports and
+inspect `pnpm build:stats` after changing shared imports. See React's
+[`lazy` reference](https://react.dev/reference/react/lazy) for the framework API.
