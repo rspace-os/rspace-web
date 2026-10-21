@@ -48,6 +48,7 @@ public final class ApiV2ResourceCatalog {
             });
     resources = Map.copyOf(registrations);
     relationshipTargets = Map.copyOf(targetOnly);
+    targetSpecs.forEach(this::validateRuntimeSource);
   }
 
   public ResourceRegistry registry() {
@@ -70,8 +71,46 @@ public final class ApiV2ResourceCatalog {
     return List.copyOf(registry.resources());
   }
 
-  private List<RuntimeCollectionFields<?>> runtimeFieldsOf(String resourceName) {
-    return find(resourceName).map(ApiV2ResourceRegistration::providers).orElseGet(List::of);
+  /** Providers for either a routable resource or a target that delegates runtime fields. */
+  public List<RuntimeCollectionFields<?>> runtimeFieldsOf(String resourceName) {
+    String source = runtimeFieldSourceOf(resourceName);
+    List<RuntimeCollectionFields<?>> providers =
+        find(source).map(ApiV2ResourceRegistration::providers).orElseGet(List::of);
+    if (source.equals(resourceName)) {
+      return providers;
+    }
+    return providers.stream()
+        .<RuntimeCollectionFields<?>>map(provider -> new DelegatedRuntimeFields<>(provider, source))
+        .toList();
+  }
+
+  /** Routable owner of the runtime field discovery endpoints. */
+  public String runtimeFieldSourceOf(String resourceName) {
+    ApiV2RelationshipTargetSpec<?, ?> target = relationshipTargets.get(resourceName);
+    return target == null || target.runtimeFieldSourceResource() == null
+        ? resourceName
+        : target.runtimeFieldSourceResource();
+  }
+
+  private void validateRuntimeSource(ApiV2RelationshipTargetSpec<?, ?> target) {
+    String sourceName = target.runtimeFieldSourceResource();
+    if (sourceName == null) {
+      return;
+    }
+    ApiV2ResourceRegistration<?, ?> source =
+        find(sourceName)
+            .orElseThrow(
+                () -> new IllegalArgumentException("Unknown runtime field source " + sourceName));
+    CollectionDescription<?> sourceDescription = source.description();
+    CollectionDescription<?> targetDescription = target.description();
+    var sourceId = sourceDescription.requireField(sourceDescription.idField());
+    var targetId = targetDescription.requireField(targetDescription.idField());
+    if (!sourceDescription.entityType().equals(targetDescription.entityType())
+        || !sourceId.type().javaType().equals(target.idType())
+        || !sourceId.type().javaType().equals(targetId.type().javaType())
+        || !sourceId.property().equals(targetId.property())) {
+      throw new IllegalArgumentException("Incompatible runtime field source " + sourceName);
+    }
   }
 
   private static <T, ID> ApiV2ResourceRegistration<T, ID> bind(

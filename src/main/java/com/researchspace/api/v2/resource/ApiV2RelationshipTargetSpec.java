@@ -18,13 +18,21 @@ import java.util.stream.Collectors;
 public record ApiV2RelationshipTargetSpec<T, ID>(
     CollectionDescription<T> description,
     Class<ID> idType,
-    BiFunction<Set<ID>, User, Map<ID, T>> findReadableByIds)
+    BiFunction<Set<ID>, User, Map<ID, T>> findReadableByIds,
+    String runtimeFieldSourceResource)
     implements ApiV2ReadableResourceTarget {
 
   public ApiV2RelationshipTargetSpec {
     Objects.requireNonNull(description, "Resource description");
     Objects.requireNonNull(idType, "ID type");
     Objects.requireNonNull(findReadableByIds, "Readable resource batch lookup");
+  }
+
+  public ApiV2RelationshipTargetSpec(
+      CollectionDescription<T> description,
+      Class<ID> idType,
+      BiFunction<Set<ID>, User, Map<ID, T>> findReadableByIds) {
+    this(description, idType, findReadableByIds, null);
   }
 
   @Override
