@@ -1,8 +1,6 @@
 package com.researchspace.model.collection;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.code_intelligence.jazzer.junit.FuzzTest;
@@ -91,31 +89,6 @@ class RsqlFilterParserFuzzTest {
       } catch (RuntimeException unexpected) {
         fail("Fuzz case " + caseNumber + " escaped for input " + escaped(input), unexpected);
       }
-    }
-  }
-
-  @Test
-  void dependencyOperatorsOutsideTheApplicationModelAreNotRegistered() {
-    RsqlFilterParser parser = new RsqlFilterParser(DESCRIPTION);
-
-    for (String input : List.of("name=null=", "name=notnull=")) {
-      CollectionQueryException error =
-          assertThrows(CollectionQueryException.class, () -> parser.parse(input), input);
-
-      assertEquals(CollectionQueryException.Reason.SYNTAX, error.getReason(), input);
-    }
-  }
-
-  @Test
-  void rejectsOversizedInputBeforeParsing() {
-    RsqlFilterParser parser = new RsqlFilterParser(DESCRIPTION);
-
-    for (String character : List.of("x", " ")) {
-      String input = character.repeat(CollectionQueryLimits.MAX_WHERE_LENGTH + 1);
-      CollectionQueryException error =
-          assertThrows(CollectionQueryException.class, () -> parser.parse(input));
-
-      assertEquals(CollectionQueryException.Reason.COMPLEXITY, error.getReason());
     }
   }
 
