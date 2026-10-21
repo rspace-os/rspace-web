@@ -11,7 +11,9 @@ import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.RecordSharingACL;
 import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.record.IActiveUserStrategy;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -117,6 +119,9 @@ public abstract class InventoryRecord {
         .collect(Collectors.joining(","));
   }
 
+  /** Cap enforced on an inventory record's description; the column is 2050, see ADR 0012. */
+  public static final int DESCRIPTION_LENGTH = 2000;
+
   static final Set<String> RESERVED_FIELD_NAMES =
       Set.of("name", "description", "tags", "preview image", "attachments");
 
@@ -176,6 +181,7 @@ public abstract class InventoryRecord {
   }
 
   @Embedded
+  @AttributeOverride(name = "description", column = @Column(name = "description", length = 2050))
   public EditInfo getEditInfo() {
     return editInfo;
   }

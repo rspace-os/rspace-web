@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -60,5 +61,20 @@ public class SampleDaoTest extends SpringTransactionalTest {
 
     sampleApiMgr.markSampleAsDeleted(created.getId(), false, user);
     assertFalse(sampleDao.entityNameExistsForUser(name, user));
+  }
+
+  @Test
+  public void storesADescriptionAtTheCap() {
+    User user = createAndSaveRandomUser();
+    Container workbench = containerDao.getWorkbenchForUser(user);
+    Sample sample = recordFactory.createSample("long description sample", user);
+    sample.getSubSamples().get(0).moveToNewParent(workbench);
+    String description = "é".repeat(InventoryRecord.DESCRIPTION_LENGTH);
+    sample.setDescription(description);
+    Long id = sampleDao.persistNewSample(sample).getId();
+    flushDatabaseState();
+    sessionFactory.getCurrentSession().clear();
+
+    assertEquals(description, sampleDao.get(id).getDescription());
   }
 }

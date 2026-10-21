@@ -89,6 +89,15 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
       sx={{
         maxWidth: 500,
         /*
+         * The card opens in a tooltip, which closes when the page scrolls, so a
+         * long description must scroll inside the card instead. Half the
+         * viewport would not fit beside a badge in the middle of the screen
+         * once the badge and the tooltip's margin are counted; 40vh does.
+         */
+        maxHeight: "40vh",
+        display: "flex",
+        flexDirection: "column",
+        /*
          * This stops the text content of the card from becoming selected when
          * the user taps and holds on the display to open the info popup on
          * touchscreens. It has the unfortunate side effect of making it

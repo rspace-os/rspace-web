@@ -18,6 +18,7 @@ import com.researchspace.datacite.model.DataCiteDoi;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryDateField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.inventory.field.InventoryLinkField;
@@ -298,7 +299,7 @@ class PidinstRecordMapperTest {
   void overlongValuesAreCutToWhatRSpaceStoresAndBadUrlsAndDatesAreDropped() throws Exception {
     ApiPidinstRecord record = PidinstRecordMapper.fromB2inst(b2instRecord());
     record.setName("N".repeat(300));
-    record.setDescription("D".repeat(300));
+    record.setDescription("D".repeat(3000));
     record.setLandingPage("lab.example.org/no-scheme");
     record.setCommissioned(PidinstRecordMapper.isoDate("September 2011"));
 
@@ -306,7 +307,7 @@ class PidinstRecordMapperTest {
         PidinstRecordMapper.toApiInstrument(record, defaultTemplate(), Map.of());
 
     assertEquals(255, instrument.getName().length());
-    assertEquals(250, instrument.getDescription().length());
+    assertEquals(InventoryRecord.DESCRIPTION_LENGTH, instrument.getDescription().length());
     assertTrue(instrument.getDescription().endsWith("…"));
     assertNull(PidinstRecordMapper.resolvableUrl("lab.example.org/no-scheme"));
     assertNull(record.getCommissioned());
