@@ -1457,7 +1457,10 @@ export default interface Resources {
       "openOptions": "Show matching records",
       "openRecord": "Open record {globalId}",
       "remove": "Remove {item}",
-      "search": "Search by name or global ID"
+      "restoreFailed": "Could not restore this saved selection. Try again.",
+      "search": "Search by name or global ID",
+      "searchTooShort": "Type at least {count, plural, one {# character} other {# characters}} to search.",
+      "unavailable": "{value} (unavailable)"
     },
     "search": {
       "clearTooltip": "Clear search",
@@ -1716,7 +1719,7 @@ export default interface Resources {
         "title": "No records found"
       },
       "error": {
-        "customFieldColumnLimit": "A table can show at most {{limit}} custom field columns.",
+        "customFieldColumnLimit": "A table can show at most {limit} custom field columns.",
         "description": "The records could not be loaded.",
         "title": "Something went wrong"
       },
@@ -1744,6 +1747,11 @@ export default interface Resources {
         "customFields": "Custom fields",
         "extraFields": "Extra fields",
         "relationshipFields": "Related record fields"
+      },
+      "fields": {
+        "createdBy": "Created by",
+        "location": "Location",
+        "updatedBy": "Updated by"
       },
       "filters": {
         "alsoShowAsColumn": "Show as column",
@@ -1773,8 +1781,7 @@ export default interface Resources {
           "customPlaceholder": "Type a value and press Enter",
           "empty": "No matching values found",
           "enterValue": "Enter a value",
-          "remove": "Remove {value}",
-          "selectPlaceholder": "Select values"
+          "remove": "Remove {value}"
         },
         "noneApplied": "Filters, none applied",
         "openRecord": "Open {globalId}",
@@ -1821,11 +1828,18 @@ export default interface Resources {
         "where": "Where"
       },
       "loading": "Loading records",
+      "offline": "You are offline. Results may be out of date. Pending requests will resume when you reconnect.",
       "page": "Page {page} of {pages}",
       "refreshing": "Refreshing records",
       "results": "{first}–{last} of {total} records",
       "rows": "Rows",
       "rowsPerPage": "Rows per page",
+      "savedView": {
+        "invalid": "The saved view contains an invalid or unavailable field. Reset the view to continue.",
+        "loadFailed": "The saved view could not be loaded. Retry to keep its filters.",
+        "reset": "Reset saved view",
+        "retry": "Retry"
+      },
       "search": {
         "clear": "Clear search",
         "label": "Search {collection}",
@@ -1846,6 +1860,18 @@ export default interface Resources {
         "direction": "Direction for {column}",
         "empty": "Select a column header to add a sort rule.",
         "title": "Sort priority"
+      },
+      "targetFields": {
+        "createdAt": "Created at",
+        "deleted": "Deleted",
+        "email": "Email",
+        "firstName": "First name",
+        "globalId": "Global ID",
+        "id": "ID",
+        "lastName": "Last name",
+        "name": "Name",
+        "updatedAt": "Updated at",
+        "username": "Username"
       },
       "toolbar": {
         "columns": "Columns",

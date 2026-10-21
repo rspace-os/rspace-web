@@ -65,6 +65,8 @@ export function useTableList<TDocument extends Record<string, unknown>>({
 }: UseTableListOptions<TDocument>): UseTableListResult<TDocument> {
   const [state, setState] = useState(() => initialQueryState(config, initialState));
   const remote = dataSource.type === "remote" ? dataSource : null;
+  const canFetch =
+    remote !== null && (typeof remote.enabled === "function" ? remote.enabled(state) : remote.enabled !== false);
   const queryKey = remote
     ? typeof remote.queryKey === "function"
       ? remote.queryKey(state)
@@ -76,7 +78,7 @@ export function useTableList<TDocument extends Record<string, unknown>>({
       if (!remote) throw new Error("A client data source does not fetch data");
       return remote.fetch(state, { signal });
     },
-    enabled: remote !== null,
+    enabled: canFetch,
     meta: remote
       ? { ...navigationProgressQueryMeta, ...(remote.dataScope === undefined ? {} : { dataScope: remote.dataScope }) }
       : undefined,
@@ -102,8 +104,8 @@ export function useTableList<TDocument extends Record<string, unknown>>({
     [],
   );
 
-  const rows = dataSource.type === "client" ? dataSource.rows : (query.data?.rows ?? []);
-  const rowCount = dataSource.type === "client" ? dataSource.rows.length : (query.data?.rowCount ?? 0);
+  const rows = dataSource.type === "client" ? dataSource.rows : canFetch ? (query.data?.rows ?? []) : [];
+  const rowCount = dataSource.type === "client" ? dataSource.rows.length : canFetch ? (query.data?.rowCount ?? 0) : 0;
   const enabled = (feature: keyof FeatureSelection) => selectedFeatures?.[feature] !== false;
   const tableFeatures: TableListFeatures<TDocument> = {
     filtering: enabled("filtering") ? { value: state.filters, onChange: setFilters } : false,
@@ -125,17 +127,20 @@ export function useTableList<TDocument extends Record<string, unknown>>({
       getRowId: getRowId ?? ((row) => String(row[config.idField])),
       features: tableFeatures,
       clientSide: dataSource.type === "client",
-      status: query.isError
-        ? "error"
-        : query.isPending && remote
+      status:
+        remote && !canFetch
           ? "loading"
-          : query.isFetching
-            ? "refreshing"
-            : "idle",
+          : query.isError
+            ? "error"
+            : query.isPending && remote
+              ? "loading"
+              : query.isFetching
+                ? "refreshing"
+                : "idle",
       error: query.error,
       queryString,
       reserveEmptyRows,
     },
-    refetch: remote ? async () => query.refetch() : async () => undefined,
+    refetch: canFetch ? async () => query.refetch() : async () => undefined,
   };
 }

@@ -14,7 +14,8 @@ async function openFilterRow() {
     screen,
     field: screen.getByRole("combobox", { name: "Field for filter 1" }),
     operator: screen.getByRole("combobox", { name: "Operator for filter 1" }),
-    value: screen.getByRole("combobox", { name: "Value for filter 1" }),
+    // A target's scalar field takes a plain typed value; only identity fields use a record picker.
+    value: screen.getByRole("textbox", { name: "Value for filter 1" }),
     apply: screen.getByRole("button", { name: "Apply filters" }),
     lastQuery: screen.getByTestId("last-query"),
   };
