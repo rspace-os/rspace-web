@@ -232,6 +232,20 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
+  void snapshotReadUsesPersistedBaselineInsteadOfRuntimeCache() {
+    initialiseRuntime(Map.of(FLAG, true), false);
+    when(featureFlagDao.getBaselineValues()).thenReturn(Map.of(FLAG, false));
+    assertTrue(featureFlagManager.isFeatureFlagEnabled(FLAG, (User) null));
+    assertFalse(featureFlagManager.isFeatureFlagEnabledInSnapshot(FLAG, null));
+  }
+
+  @Test
+  void snapshotReadPreservesForcedDeploymentValue() {
+    initialiseRuntime(Map.of(FLAG, false), true);
+    assertTrue(featureFlagManager.isFeatureFlagEnabledInSnapshot(FLAG, null));
+  }
+
+  @Test
   void isFeatureFlagEnabledDoesNotLoadUserOverridesForForcedFlag() {
     initialiseRuntime(Map.of(FLAG, false), true);
     User user = user("user", 14L);
