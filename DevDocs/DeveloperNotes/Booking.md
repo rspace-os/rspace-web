@@ -158,3 +158,22 @@ in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-r
 
 See [Booking audit events](Logging.md#booking-audit-events) for snapshot rendering and historical
 schedule handling.
+
+## Scheduling error payloads
+
+Some scheduling problems add RFC 9457 extension members. Each is present only on the codes that document it:
+
+| Code | Status | Extension members |
+| --- | --- | --- |
+| `errors.api.v2.booking.overlap` | 409 | `conflict` |
+| `errors.api.v2.booking.buffer` | 409 | `conflict`, `bufferBeforeMinutes`, `bufferAfterMinutes` |
+| `errors.api.v2.booking.maximumDuration` | 400 | `maximumDurationMinutes` |
+
+`conflict` is `{"id": 59, "kind": "BOOKING", "start": "2026-09-28T08:00:00Z", "end":
+"2026-09-28T10:00:00Z"}`: the first event that blocks the requested interval, as UTC instants.
+`kind` is `BOOKING` or `MAINTENANCE`. It never contains a purpose, requester, or other private
+field, and the server does not format its times into `detail`. The server checks the requested
+interval first; only when that is free does it check the interval widened by the item's buffers,
+so `buffer` means that moving the booking slightly would resolve the conflict. Both checks apply to
+create, time-changing edits, and maintenance. Double booking permits booking-on-booking
+overlap; maintenance still conflicts with every booking and maintenance event.
