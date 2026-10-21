@@ -1,8 +1,8 @@
 import Decimal from "decimal.js";
 import type { Quantity } from "@/stores/definitions/HasQuantity";
+import type { UnitCategory } from "@/stores/definitions/Units";
 import { CELSIUS, categoryOfUnit, toCommonUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
-import type { UnitCategory } from "@/stores/stores/UnitStore";
 import type { InventoryKey, InventoryOperation, OperationInput } from "./operations";
 import type { OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 import { UNSET_UNIT } from "./types";

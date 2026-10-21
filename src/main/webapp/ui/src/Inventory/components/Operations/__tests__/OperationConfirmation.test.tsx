@@ -25,7 +25,7 @@ beforeAll(async () => {
 // assertions match on the key, which still tells us which branch rendered. Values not passed through
 // t() (the sample name, a picked template name, a document name) render as their raw string.
 vi.mock("@/stores/use-stores", () => ({
-  default: () => ({ unitStore: { getUnit: () => ({ label: "ml" }) } }),
+  default: () => ({}),
 }));
 
 const operation = {

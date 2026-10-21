@@ -3,15 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import UnitSelect from "../UnitSelect";
 
 vi.mock("@/stores/use-stores", () => ({
-  default: () => ({
-    unitStore: {
-      unitsOfCategory: () => [
-        { id: 3, label: "ml" },
-        { id: 4, label: "l" },
-      ],
-      getUnit: (id: number) => (id === 3 ? { id: 3, label: "ml" } : id === 4 ? { id: 4, label: "l" } : null),
-    },
-  }),
+  default: () => ({}),
 }));
 
 describe("UnitSelect", () => {

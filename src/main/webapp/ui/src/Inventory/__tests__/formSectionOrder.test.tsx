@@ -85,14 +85,6 @@ vi.mock("../../stores/stores/getRootStore", () => ({
     uiStore: {
       addAlert: () => {},
     },
-    unitStore: {
-      getUnit: () => ({
-        id: 1,
-        label: "items",
-        category: "dimensionless",
-        description: "",
-      }),
-    },
   }),
 }));
 vi.mock("../../components/Ketcher/KetcherDialog", () => ({
@@ -138,15 +130,6 @@ function makeRootStore({ activeResult, batchEditingRecords }: MakeRootStoreArgs)
         },
         batchEditableInstance: { loading: false, submittable: IsValid() },
       },
-    },
-    unitStore: {
-      getUnit: () => ({
-        id: 1,
-        label: "items",
-        category: "dimensionless",
-        description: "",
-      }),
-      unitsOfCategory: () => [],
     },
   });
 }

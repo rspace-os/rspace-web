@@ -12,11 +12,7 @@ import ExportDialog, { type ExportType } from "../ExportDialog";
 // break import cycles
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
 vi.mock("../../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 describe("Export Tests", () => {
   let openDialog = true; // if false, then dialog is null

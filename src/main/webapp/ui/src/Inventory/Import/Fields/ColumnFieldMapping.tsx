@@ -13,6 +13,7 @@ import type React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import TransRichText from "@/modules/common/i18n/TransRichText";
+import { getUnit } from "../../../stores/definitions/Units";
 import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import type { ImportRecordType } from "../../../stores/stores/ImportStore";
 import useStores from "../../../stores/use-stores";
@@ -63,7 +64,7 @@ type MappingArgs = {
 
 function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { importStore, unitStore } = useStores();
+  const { importStore } = useStores();
 
   const importData = importStore.importData;
   if (!importData) return null;
@@ -80,7 +81,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
 
   const matchExistingTemplate = importData.importMatchesExistingTemplate;
   const matchExistingInstrumentTemplate = importData.importInstrumentMatchesExistingTemplate;
-  const unitLabel = unitStore.getUnit(importData.templateInfo?.defaultUnitId || 3)?.label ?? "ml";
+  const unitLabel = getUnit(importData.templateInfo?.defaultUnitId || 3)?.label;
 
   const alertsBeforeTable: ReadonlyArray<AlertSpec> = [
     {

@@ -11,9 +11,6 @@ const mockRootStore = {
   peopleStore: {
     currentUser: null,
   },
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
 };
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));

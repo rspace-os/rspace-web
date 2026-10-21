@@ -9,9 +9,7 @@ vi.mock("@/common/InvApiService", () => ({ default: {} }));
 // cut the RootStore -> SearchStore -> TemplateModel module cycle, which is not
 // exercised by this list-level test
 vi.mock("@/stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: { getUnit: () => ({ label: "ml" }) },
-  }),
+  default: () => ({}),
 }));
 vi.mock("../../Link/LinkTargetBrowser", () => ({ default: () => null }));
 vi.mock("../../Link/ElnRecordPicker", () => ({ default: () => null }));

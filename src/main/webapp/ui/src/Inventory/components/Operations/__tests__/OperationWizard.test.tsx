@@ -87,12 +87,6 @@ vi.mock("@/stores/stores/getRootStore", () => ({
     authStore: { isSynchronizing: false },
     searchStore: { search: { performSearch, fetcher }, getTemplate },
     uiStore: { addAlert },
-    unitStore: {
-      getUnit: (id: number) => ({
-        label: id === 7 ? "g" : "ml",
-        category: id === 7 ? "mass" : "volume",
-      }),
-    },
   }),
 }));
 vi.mock("@/util/alerts", () => ({ showToastWhilstPending: (_msg: string, p: Promise<unknown>) => p }));

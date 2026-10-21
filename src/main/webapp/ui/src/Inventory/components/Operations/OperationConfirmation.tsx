@@ -13,7 +13,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import DescriptionList from "@/components/DescriptionList";
-import useStores from "@/stores/use-stores";
+import { getUnit } from "@/stores/definitions/Units";
 import { withUniqueFieldNames } from "./buildOperationRequest";
 import type { DocumentationSelection } from "./DocumentationStep";
 import { type ConfirmSummaryField, type InventoryOperation, resolveProcessName, usesAmountModes } from "./operations";
@@ -52,10 +52,9 @@ function OperationConfirmation({
   const { t } = useTranslation("inventory");
   const theme = useTheme();
   const rememberHelpId = React.useId();
-  const { unitStore } = useStores();
   const resolveLabel = resolveLabelFrom(t);
   const { effect } = operation;
-  const unitLabel = (unitId: number): string => unitStore.getUnit(unitId)?.label ?? "";
+  const unitLabel = (unitId: number): string => getUnit(unitId)?.label ?? "";
 
   const count = effect.countFrom ? Number(values[effect.countFrom]) : 0;
   const each = effect.eachAmountFrom ? (values[effect.eachAmountFrom] as OperationQuantity | undefined) : undefined;

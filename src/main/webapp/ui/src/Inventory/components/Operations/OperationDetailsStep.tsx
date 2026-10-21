@@ -115,12 +115,8 @@ function RawNumericField({
 }
 
 /**
- * The unit categories a subsample's amount may be expressed in. Derived from the quantity's unit
- * id through the static unit table rather than read off SubSampleModel.quantityCategory, because
- * that getter resolves the unit through the MobX unit store and THROWS when the store holds no
- * entry for the id. The store seeds itself from localStorage, so it is empty until GET /units has
- * resolved once and every id misses in that window. An unknown category yields an empty list,
- * which offers no unit rather than crashing the step.
+ * The unit categories a subsample's amount may be expressed in. A unit an operation cannot take an
+ * amount of (unset, molarity, concentration) yields an empty list, which offers no unit.
  */
 const categoriesOfSubSample = (subSample: SubSampleModel): Array<string> => {
   const category = categoryOfUnit(getUnitId(subSample.quantity));

@@ -8,7 +8,7 @@ import contextActions from "../ContextActions";
 // The action components are only constructed here, never rendered; the models they carry read the
 // root store for units, so a minimal stand-in is enough.
 vi.mock("@/stores/stores/getRootStore", () => ({
-  default: () => ({ unitStore: { getUnit: () => ({ label: "ml" }) } }),
+  default: () => ({}),
 }));
 
 function processIsOffered(

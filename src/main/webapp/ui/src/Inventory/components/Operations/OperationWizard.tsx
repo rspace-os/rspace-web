@@ -18,13 +18,13 @@ import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import useUiPreference from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
+import type { UnitCategory } from "@/stores/definitions/Units";
 import { CELSIUS, categoryOfUnit } from "@/stores/definitions/Units";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import type TemplateModel from "@/stores/models/TemplateModel";
 import getRootStore from "@/stores/stores/getRootStore";
-import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { showToastWhilstPending } from "@/util/alerts";
 import { getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
@@ -172,10 +172,8 @@ function OperationWizard({
   const resolveLabel = resolveLabelFrom(t);
   const describeOperationError = useDescribeOperationError();
   const origin = representativeOrigin(origins);
-  // Derived via categoryOfUnit rather than SubSampleModel.quantityCategory: that getter throws when
-  // the (localStorage-backed) unit store has no entry for the id, which is every id before GET
-  // /units first resolves, crashing the wizard before it renders. categoryOfUnit needs no store and
-  // returns null instead for an unset or unrecognised unit.
+  // categoryOfUnit rather than SubSampleModel.quantityCategory: it returns null, not a molarity or
+  // concentration category, for a unit an operation cannot take an amount of.
   const categoryOf = (subSample: SubSampleModel): UnitCategory | null => categoryOfUnit(getUnitId(subSample.quantity));
   const originCategory = categoryOf(origin);
   // An undeterminable category is not a match: it must leave Pool disabled rather than enable it

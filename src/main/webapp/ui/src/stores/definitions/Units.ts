@@ -1,7 +1,7 @@
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 import { match } from "../../util/Util";
-import type { UnitCategory } from "../stores/UnitStore";
+import unitsJson from "./units.json";
 
 /**
  * @module
@@ -10,6 +10,29 @@ import type { UnitCategory } from "../stores/UnitStore";
  *       for modelling quantities of those units, and functions for converting
  *       between them.
  */
+
+export type UnitCategory = "dimensionless" | "volume" | "mass" | "temperature" | "molarity" | "concentration";
+
+export type Unit = {
+  id: number;
+  label: string;
+  category: UnitCategory;
+};
+
+/**
+ * Every unit RSpace supports, in the order GET /api/v1/units returns them
+ * (category, then size). The backend `RSUnitDef` enum is the source of truth;
+ * `RSUnitDefsTest` fails if this file drifts from it.
+ */
+const UNITS = unitsJson as ReadonlyArray<Unit>;
+
+export const getUnit = (id: number): Unit | undefined => UNITS.find((u) => u.id === id);
+
+/**
+ * The units of the given categories, smallest first within each category.
+ */
+export const unitsOfCategory = (categories: ReadonlyArray<string>): Array<Unit> =>
+  UNITS.filter((u) => categories.includes(u.category));
 
 /**
  * First, enums for different categories of units of measure, and objects that model

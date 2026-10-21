@@ -1,5 +1,6 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import i18n from "@/modules/common/i18n";
+import type { UnitCategory } from "@/stores/definitions/Units";
 import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
@@ -10,9 +11,8 @@ import { mkAlert } from "../contexts/Alert";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { InventoryRecord } from "../definitions/InventoryRecord";
 import type { ExportOptions } from "../definitions/Search";
-import { fromCommonUnit, toCommonUnit } from "../definitions/Units";
+import { fromCommonUnit, getUnit, toCommonUnit } from "../definitions/Units";
 import getRootStore from "../stores/getRootStore";
-import type { UnitCategory } from "../stores/UnitStore";
 import ContainerModel, { type ContainerAttrs } from "./ContainerModel";
 import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
 import MemoisedFactory from "./Factory/MemoisedFactory";
@@ -222,9 +222,7 @@ export class Material {
 
   quantityUnitLabel(unitId: number | null): string {
     if (!unitId) return "?";
-    const unitStore = getRootStore().unitStore;
-    const unit = unitStore.getUnit(unitId);
-    return unit?.label ?? "-";
+    return getUnit(unitId)?.label ?? "-";
   }
 
   get usedQuantityLabel(): string {

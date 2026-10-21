@@ -4,10 +4,6 @@ import { makeMockTemplate } from "../TemplateModel/mocking";
 import { makeMockSample, sampleAttrs } from "./mocking";
 
 const mockRootStore = {
-  unitStore: {
-    assertValidUnitId: () => {},
-    getUnit: () => ({ label: "ml" }),
-  },
   uiStore: {
     addAlert: () => {},
     setPageNavigationConfirmation: () => {},

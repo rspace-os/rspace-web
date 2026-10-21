@@ -18,11 +18,7 @@ vi.mock("../../../common/InvApiService", () => ({
   default: {},
 }));
 vi.mock("../../../stores/stores/getRootStore", () => ({
-  default: () => ({
-    unitStore: {
-      getUnit: () => ({ label: "ml" }),
-    },
-  }),
+  default: () => ({}),
 }));
 
 describe("HistoricalVersionAlert rich i18n", () => {

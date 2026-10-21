@@ -18,17 +18,19 @@ import useStores from "./stores/use-stores";
 const queryClient = new QueryClient();
 
 function App(): React.ReactNode {
-  const { authStore, peopleStore, unitStore } = useStores();
+  const { authStore, peopleStore } = useStores();
   const [loadingDone, setLoadingDone] = useState(false);
 
   useEffect(() => {
+    // ponytail: clears the cache of the old runtime-fetched unit list; delete after a release or two
+    localStorage.removeItem("units");
     void (async () => {
       await authStore.synchronizeWithSessionStorage();
       if (!authStore.isAuthenticated) {
         setLoadingDone(true);
       } else {
         const currentUser = await peopleStore.fetchCurrentUser();
-        await Promise.all([unitStore.fetchUnits(), authStore.fetchPidinstEnabled()]);
+        await authStore.fetchPidinstEnabled();
         setLoadingDone(true);
         if (currentUser) {
           await currentUser.getBench();
