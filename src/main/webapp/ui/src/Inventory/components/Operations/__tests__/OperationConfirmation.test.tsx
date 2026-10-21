@@ -351,8 +351,8 @@ describe("OperationConfirmation in English", () => {
       },
       english: true,
     });
-    expect(screen.getByText("Vial A: 1 ml")).toBeInTheDocument();
-    expect(screen.getByText("Vial B: 2.5 ml")).toBeInTheDocument();
+    expect(screen.getByText("Vial A: 1 mL")).toBeInTheDocument();
+    expect(screen.getByText("Vial B: 2.5 mL")).toBeInTheDocument();
   });
 });
 

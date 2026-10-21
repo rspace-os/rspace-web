@@ -27,20 +27,23 @@ import tech.units.indriya.unit.Units;
 
 public class RSUnitDefsTest {
 
-  /** The frontend hardcodes the unit list; it must match what GET /api/v1/units returns. */
+  /**
+   * The frontend hardcodes the unit list; its ids, categories and order must match what GET
+   * /api/v1/units returns. Labels are the frontend's own, so they are not compared.
+   */
   @Test
   public void frontendUnitTableMatchesApi() throws IOException {
     List<Map<String, Object>> frontend =
         new ObjectMapper()
-            .readValue(
-                Path.of("src/main/webapp/ui/src/stores/definitions/units.json").toFile(),
-                new TypeReference<>() {});
+                .readValue(
+                    Path.of("src/main/webapp/ui/src/stores/definitions/units.json").toFile(),
+                    new TypeReference<List<Map<String, Object>>>() {})
+                .stream()
+                .map(u -> Map.of("id", u.get("id"), "category", u.get("category")))
+                .toList();
     List<Map<String, Object>> api =
         UnitsApiController.SORTED_UNITS.stream()
-            .map(
-                u ->
-                    Map.<String, Object>of(
-                        "id", u.getId(), "label", u.getLabel(), "category", u.getCategory()))
+            .map(u -> Map.<String, Object>of("id", u.getId(), "category", u.getCategory()))
             .toList();
     assertEquals(api, frontend);
   }

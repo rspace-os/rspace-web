@@ -21,8 +21,9 @@ export type Unit = {
 
 /**
  * Every unit RSpace supports, in the order GET /api/v1/units returns them
- * (category, then size). The backend `RSUnitDef` enum is the source of truth;
- * `RSUnitDefsTest` fails if this file drifts from it.
+ * (category, then size). The backend `RSUnitDef` enum is the source of truth
+ * for ids and categories, and `RSUnitDefsTest` fails if units.json drifts from
+ * it. Labels are the frontend's own SI symbols, not the API's labels.
  */
 const UNITS = unitsJson as ReadonlyArray<Unit>;
 
