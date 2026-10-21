@@ -88,6 +88,10 @@ public final class ApiV2ResourceRegistration<T, ID> implements ApiV2ReadableReso
     this.description = spec.description();
     this.registry = Objects.requireNonNull(registry, "Resource registry");
     this.operations = spec.operations();
+    if (operations.deleteRequiresIfMatch() && operations.ifMatchRequiredCode().isEmpty()) {
+      throw new IllegalStateException(
+          "Versioned DELETE on " + description.resourceName() + " requires an If-Match error code");
+    }
     this.relationshipResolver =
         Objects.requireNonNull(relationshipResolver, "Relationship resolver");
     if (registry.requireResource(description.resourceName()) != description) {
