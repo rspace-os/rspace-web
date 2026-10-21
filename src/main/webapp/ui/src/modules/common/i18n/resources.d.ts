@@ -811,6 +811,7 @@ export default interface Resources {
       "invite": "Invite",
       "logOut": "Log Out",
       "login": "Login",
+      "moreActions": "More actions",
       "move": "Move",
       "next": "Next",
       "no": "No",
