@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -91,6 +92,23 @@ public class MSWordExporterTest {
         .thenReturn(doc);
     assertEquals(doc, wordImporter.create(fis, any, targetFolder, null, inputFile.getName()));
     fis.close();
+  }
+
+  @Test
+  void temporaryInputNameIgnoresTheUploadedPath() throws IOException {
+    ArgumentCaptor<Convertible> input = ArgumentCaptor.forClass(Convertible.class);
+    when(docConverter.convert(input.capture(), eq("html"), any(File.class)))
+        .thenReturn(new ConversionResult("error message"));
+
+    try (FileInputStream fis = new FileInputStream(inputFile)) {
+      assertThrows(
+          IllegalStateException.class,
+          () -> wordImporter.create(fis, any, targetFolder, null, "../../evil.DOCX"));
+    }
+
+    File tempInput = new File(URI.create(input.getValue().getFileUri()));
+    assertTrue(tempInput.getName().startsWith("word-import-"));
+    assertTrue(tempInput.getName().endsWith(".docx"));
   }
 
   @Test
