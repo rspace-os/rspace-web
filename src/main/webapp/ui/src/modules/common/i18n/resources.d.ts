@@ -944,6 +944,9 @@ export default interface Resources {
       "weekNumber": "Week {week, number}",
       "weekNumberHeader": "Week Number"
     },
+    "collectionForm": {
+      "fieldHelp": "About {label}"
+    },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
     },
