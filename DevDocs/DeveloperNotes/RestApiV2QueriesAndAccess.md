@@ -20,6 +20,8 @@ A global ID in a relationship filter or write is a prefix and an unversioned ID.
 negative, as seeded and baseline rows are (for example `US-3`). A versioned ID such as `IN12v2` is
 rejected.
 
+For booking domain rules and API examples, see [Booking](Booking.md).
+
 ### Inventory container read constraints
 
 `InventoryContainerReadConstraint` is a trusted constraint, not caller filter syntax.
