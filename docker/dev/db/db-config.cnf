@@ -1,15 +1,22 @@
 # MariaDB tuning for local RSpace development.
 #
-# Mounted read-only at /etc/mysql/conf.d/rspace.cnf. Mirrors the relevant
-# settings from production rspace-docker (utf8mb4 + strict sql-mode) so local
-# behaviour matches deployments, with dev-appropriate limits.
+# Mounted read-only at /etc/mysql/conf.d/rspace.cnf. Mirrors the database
+# settings from rspace-docker/configs/db-config.cnf, except the InnoDB buffer
+# pool is 1 GB here instead of 2 GB to reduce local memory use. Container-specific
+# socket, bind address and data directory settings stay with the dev stack.
 [mariadbd]
 character-set-client-handshake = FALSE
 character-set-server           = utf8mb4
 collation-server               = utf8mb4_unicode_ci
 sql-mode = STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
-max_allowed_packet             = 1G
-max_connections                = 1000
+max_allowed_packet             = 128M
+innodb_buffer_pool_size        = 1G
+tmp_table_size                 = 256M
+max_heap_table_size            = 256M
+# MariaDB 11.8 defaults this to ON, adding write/write conflict detection under
+# REPEATABLE READ. Keep it OFF as in rspace-docker so dev transactions behave
+# like production instead of gaining new DB_RECORD_CHANGED rollbacks.
+innodb_snapshot_isolation      = 0
 # Containers talk over a Docker network; skip reverse-DNS for faster, simpler
 # host matching (the dev user is granted on '%').
 skip-name-resolve

@@ -46,7 +46,7 @@ public class RadioFieldForm extends FieldForm {
         + "]";
   }
 
-  @NotBlank(message = "radio options {errors.required.field}")
+  @NotBlank(message = "{validation.errors.radioOptionsRequired}")
   public String getRadioOption() {
     return radioOption;
   }

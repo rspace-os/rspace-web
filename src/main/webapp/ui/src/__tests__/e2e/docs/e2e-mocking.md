@@ -110,8 +110,10 @@ fixture change is always intentional and reviewable in a diff.
    import { myHandlers } from "../../modules/<feature>/__tests__/mock.ts";
    const handlers = [healthHandler, ...pubchemHandlers, ...myHandlers];
    ```
-4. Override the integration's base URL in the CI `jetty:run-war` command
-   (and in the local runbook below) so the JVM points at `http://localhost:9099`.
+4. Override the integration's base URL so the JVM points at the mock server:
+   in the CI `jetty:run-war` command (the mock block of `.github/workflows/e2e.yml`),
+   in `E2E_MOCK_ARGS` in `docker/dev/entrypoint-app.sh` (same order, for
+   `rspace-dev up --e2e`), and in the local runbook below.
 
 ## Mocked integrations
 
