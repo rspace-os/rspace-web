@@ -72,9 +72,9 @@ function StepperPanelHeader_({
   const theme = useTheme();
 
   useEffect(() => {
-    if (allBtn) {
-      setTimeout(() => setAllBtn(false), 5000);
-    }
+    if (!allBtn) return;
+    const timeout = setTimeout(() => setAllBtn(false), 5000);
+    return () => clearTimeout(timeout);
   }, [allBtn]);
 
   return (
