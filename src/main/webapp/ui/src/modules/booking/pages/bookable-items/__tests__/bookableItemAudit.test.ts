@@ -45,7 +45,7 @@ it.each([
   { openingHours: '[{"dayOfWeek":2,"start":"10:00","end":"24:00"},{"dayOfWeek":1,"start":"09:00","end":"17:00"}]' },
 ])("formats independent hours in weekday order from an audit snapshot", ({ openingHours }) => {
   expect(recordedValues({ openingHours }, "en-US")).toEqual([
-    ["openingHours", "Monday 09:00–17:00, Tuesday 10:00–00:00"],
+    ["openingHours", "Monday 09:00 AM–05:00 PM, Tuesday 10:00 AM–12:00 AM"],
   ]);
 });
 

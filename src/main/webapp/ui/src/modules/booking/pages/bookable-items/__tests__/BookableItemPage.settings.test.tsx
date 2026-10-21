@@ -135,8 +135,8 @@ describe("BookableItemPage", () => {
       renderPage();
       await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
       const panel = screen.getByRole("tabpanel");
-      expect(within(panel).getByText("10:00–16:00")).toBeVisible();
-      expect(within(panel).getAllByText("08:00–17:30")).toHaveLength(5);
+      expect(within(panel).getByText("10:00 AM–04:00 PM")).toBeVisible();
+      expect(within(panel).getAllByText("08:00 AM–05:30 PM")).toHaveLength(5);
       expect(within(panel).getByText("Sunday").nextElementSibling).toHaveTextContent(
         "booking:bookableItemDetails.openingHours.closed",
       );

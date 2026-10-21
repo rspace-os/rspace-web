@@ -113,7 +113,7 @@ describe("BookableItemAuditLog", () => {
     expect(within(item).getByText("booking:bookableItemDetails.audit.values.enabled")).toBeVisible();
     expect(
       within(item).getByText("booking:bookableItemDetails.audit.values.openingHours").nextElementSibling,
-    ).toHaveTextContent("Saturday 10:00\u201316:00");
+    ).toHaveTextContent("Saturday 10:00 AM\u201304:00 PM");
     await expectAccessible(container);
   });
 
