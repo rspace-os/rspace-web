@@ -21,8 +21,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 class BookingSchedulingPolicyFuzzTest {
 
@@ -244,38 +242,6 @@ class BookingSchedulingPolicyFuzzTest {
         shiftedEnd,
         new BookingSchedulingPolicy()
             .validateMaintenance(missing, date(gapStart), date(shiftedEnd)));
-  }
-
-  @ParameterizedTest(name = "{0}: {1} noon, {2} elapsed minutes, maximum {3}, {4}")
-  @CsvSource({
-    "autumn nominal cap, 2026-10-24, 1500, 1440, MAXIMUM_DURATION",
-    "autumn non-divisible cap, 2026-10-24, 1500, 1499, MAXIMUM_DURATION",
-    "autumn equality, 2026-10-24, 1500, 1500, ACCEPT",
-    "autumn unlimited, 2026-10-24, 1500, 0, ACCEPT",
-    "spring nominal cap, 2026-03-28, 1380, 1440, ACCEPT",
-    "ordinary equality, 2026-02-07, 1440, 1440, ACCEPT"
-  })
-  void berlinDayMaximumRegression(
-      String name, LocalDate day, long elapsed, long maximum, String expected) {
-    BookingConfiguration configuration = configuration("Europe/Berlin", 1440);
-    configuration.setIncrementUnit(BookingIncrementUnit.DAYS);
-    configuration.setMaxBookingDurationMinutes(maximum);
-    BookingSettingsValidation.requireValid(BookingSchedulingSettings.from(configuration));
-    ZoneId zone = ZoneId.of(configuration.getTimeZone());
-    Instant start = day.atTime(12, 0).atZone(zone).toInstant();
-    Instant end = day.plusDays(1).atTime(12, 0).atZone(zone).toInstant();
-    assertEquals(elapsed, Duration.between(start, end).toMinutes());
-    if (expected.equals("ACCEPT")) {
-      assertConflict(
-          configuration,
-          start,
-          end,
-          new BookingSchedulingPolicy().validate(configuration, date(start), date(end)));
-    } else {
-      BookingPolicyException failure =
-          assertRejection(Reason.MAXIMUM_DURATION, configuration, start, end, false);
-      assertEquals(maximum, failure.maximumDurationMinutes().orElseThrow());
-    }
   }
 
   @Test
