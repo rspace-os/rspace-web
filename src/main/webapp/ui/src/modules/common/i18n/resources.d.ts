@@ -6614,7 +6614,7 @@ export default interface Resources {
         "invalidData": "{0}",
         "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
         "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
-        "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+        "invalidForLatestTemplate": "Field ''{0}'' has the value ''{1}'', which the latest template no longer allows. Change the value before updating to the latest template.",
         "invalidIgsn": "Invalid IGSN format: [{0}]",
         "invalidNumber": "Invalid number: {0}",
         "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
