@@ -125,6 +125,12 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     }
     T protectedEntity =
         resource.find(id).orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
+    if (resource.isInherited(protectedEntity)) {
+      ResolvedResourceAccess resolved = resource.resolveInherited(protectedEntity, subject);
+      requireRead(resolved);
+      requireCapability(resolved, resource.viewAccessCapability());
+      return resource.inheritedDocument(protectedEntity, subject, resolved).asInherited();
+    }
     ResourceAccess access = resource.access(protectedEntity);
     ResolvedResourceAccess resolved = resolver.resolve(access, subject);
     requireRead(resolved);

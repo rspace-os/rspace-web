@@ -128,6 +128,7 @@ class ResourceAccessManagerTest {
     ResourceAccessDocument document = manager.replace(resource, command, owner, owner);
 
     assertEquals(7L, document.version());
+    assertFalse(document.inherited());
     verify(gateway, never()).flush();
   }
 
@@ -507,6 +508,58 @@ class ResourceAccessManagerTest {
     assertEquals(before, roles(access));
     verify(gateway, never()).flush();
     verify(events, never()).publishEvent(any(Object.class));
+  }
+
+  @Test
+  void inheritedAccessReturnsDerivedDocumentWithoutLoadingAnAcl() {
+    ResolvedResourceAccess inherited =
+        new ResolvedResourceAccess(
+            Optional.of(ResourceAccessTestScheme.OWNER),
+            Set.of(
+                ResourceRoleScheme.READ_RESOURCE_CAPABILITY,
+                ResourceAccessTestScheme.MANAGE_ASSIGNMENTS,
+                ResourceAccessTestScheme.MANAGE_OWNERS),
+            List.of(ResourceRoleSource.implicit(ResourceAccessTestScheme.OWNER)));
+    ResourceAccessCallerDocument caller =
+        new ResourceAccessCallerDocument(
+            inherited.effectiveRole(),
+            inherited.roleSources(),
+            new ResourceAccessCallerCapabilities(true, true, false),
+            "user:" + owner.getId());
+    when(resource.isInherited(protectedEntity)).thenReturn(true);
+    when(resource.resolveInherited(protectedEntity, owner)).thenReturn(inherited);
+    when(resource.inheritedDocument(protectedEntity, owner, inherited))
+        .thenReturn(new ResourceAccessDocument("test-resources", 0L, List.of(), caller));
+
+    ResourceAccessDocument document = manager.get(resource, 9L, owner);
+
+    assertTrue(document.inherited());
+    assertEquals(Optional.of(ResourceAccessTestScheme.OWNER), document.caller().effectiveRole());
+    verify(resource, never()).access(protectedEntity);
+    verify(gateway, never()).assignedUserGroupIds(any());
+  }
+
+  @Test
+  void inheritedDirectoryChecksTheDerivedPolicyWithoutLoadingAnAcl() {
+    ResolvedResourceAccess inherited =
+        new ResolvedResourceAccess(
+            Optional.of(ResourceAccessTestScheme.OWNER),
+            Set.of(
+                ResourceRoleScheme.READ_RESOURCE_CAPABILITY,
+                ResourceAccessTestScheme.MANAGE_ASSIGNMENTS),
+            List.of());
+    when(resource.isInherited(protectedEntity)).thenReturn(true);
+    when(resource.resolveInherited(protectedEntity, owner)).thenReturn(inherited);
+    ResourceGranteeDirectoryEntry entry = directoryEntry(other);
+    when(directory.search("us", 20, owner)).thenReturn(List.of(entry));
+
+    List<ResourceGranteeDirectoryEntry> result =
+        new ResourceAccessDirectoryManagerImpl(directory, manager)
+            .searchForResource(resource, 9L, "us", 20, owner);
+
+    assertEquals(List.of(entry), result);
+    verify(resource).resolveInherited(protectedEntity, owner);
+    verify(resource, never()).access(protectedEntity);
   }
 
   @Test
