@@ -7,6 +7,7 @@ import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
+import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
@@ -23,7 +24,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -100,7 +100,7 @@ public class ApiV2CrudController {
    * cache can serve one user's field names to another.
    */
   @GetMapping("/{resource}/fields/{namespace}")
-  public ResponseEntity<Map<String, Object>> runtimeFields(
+  public ResponseEntity<ApiV2RuntimeFieldCatalog> runtimeFields(
       @PathVariable String resource,
       @PathVariable String namespace,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
@@ -114,14 +114,13 @@ public class ApiV2CrudController {
     RuntimeFieldCatalogQuery query = catalogQuery(search, ids, page, limit);
     RuntimeFieldCatalogPage catalog =
         registration.runtimeFieldCatalog(subject(caller), namespace, query);
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("fields", catalog.fields().stream().map(ApiV2CrudController::catalogEntry).toList());
-    body.put("hasMore", catalog.hasMore());
-    if (catalog.total() != null) {
-      body.put("totalFields", catalog.total());
-    }
-    body.put("page", query.page());
-    body.put("limit", query.limit());
+    ApiV2RuntimeFieldCatalog body =
+        new ApiV2RuntimeFieldCatalog(
+            catalog.fields().stream().map(ApiV2CrudController::catalogEntry).toList(),
+            catalog.hasMore(),
+            catalog.total(),
+            query.page(),
+            query.limit());
     return ResponseEntity.ok().cacheControl(CacheControl.noStore().cachePrivate()).body(body);
   }
 
@@ -156,25 +155,19 @@ public class ApiV2CrudController {
     }
   }
 
-  private static Map<String, Object> catalogEntry(RuntimeFieldDefinition definition) {
-    Map<String, Object> entry = new LinkedHashMap<>();
-    entry.put("id", definition.id());
-    entry.put("selector", definition.selector());
-    entry.put("label", definition.label());
-    entry.put("type", definition.type().name().toLowerCase(Locale.ROOT));
-    entry.put("jsonType", definition.type().jsonType());
-    entry.put(
-        "operators",
-        definition.operators().stream()
-            .map(ApiV2OpenApiGenerator::operatorToken)
-            .sorted()
-            .toList());
-    entry.put("supportsWildcards", definition.supportsWildcards());
-    entry.put("columnSelectable", definition.columnSelectable());
-    entry.put("sortable", false);
-    entry.put("source", Map.of("id", definition.sourceId(), "label", definition.sourceLabel()));
-    entry.put("options", definition.options());
-    return entry;
+  private static ApiV2RuntimeFieldCatalog.Entry catalogEntry(RuntimeFieldDefinition definition) {
+    return new ApiV2RuntimeFieldCatalog.Entry(
+        definition.id(),
+        definition.selector(),
+        definition.label(),
+        definition.type().name().toLowerCase(Locale.ROOT),
+        definition.type().jsonType(),
+        definition.operators().stream().map(ApiV2OpenApiGenerator::operatorToken).sorted().toList(),
+        definition.supportsWildcards(),
+        definition.columnSelectable(),
+        false,
+        new ApiV2RuntimeFieldCatalog.Source(definition.sourceId(), definition.sourceLabel()),
+        definition.options());
   }
 
   @GetMapping("/{resource}/count")
@@ -287,14 +280,9 @@ public class ApiV2CrudController {
         requireResource(resource, ResourceOperation.DELETE);
     Long expectedVersion =
         registration.deleteRequiresIfMatch()
+            // Registration guarantees a versioned delete has an If-Match error code.
             ? ApiV2ConditionalRequest.parseVersion(
-                ifMatch,
-                registration
-                    .ifMatchRequiredCode()
-                    .orElseThrow(
-                        () ->
-                            new IllegalStateException(
-                                "Versioned DELETE requires an If-Match error code")))
+                ifMatch, registration.ifMatchRequiredCode().orElseThrow())
             : null;
     ResourceDeleteResult<Map<String, Object>> result =
         registration.delete(id, new ResourceDeleteOptions(expectedVersion, permanent), caller);
