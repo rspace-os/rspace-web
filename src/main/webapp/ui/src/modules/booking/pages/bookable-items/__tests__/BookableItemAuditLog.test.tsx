@@ -117,13 +117,13 @@ describe("BookableItemAuditLog", () => {
     ).toHaveTextContent("Monday, Saturday");
     expect(
       within(item).getByText("booking:bookableItemDetails.audit.values.openingExceptions").nextElementSibling,
-    ).toHaveTextContent("Saturday 10:00\u201316:00");
+    ).toHaveTextContent("Saturday 10:00 AM\u201304:00 PM");
     expect(
       within(item).getByText("booking:bookableItemDetails.audit.values.openDays").nextElementSibling,
     ).toHaveTextContent("Monday, Saturday");
     expect(
       within(item).getByText("booking:bookableItemDetails.audit.values.openingExceptions").nextElementSibling,
-    ).toHaveTextContent("Saturday 10:00\u201316:00");
+    ).toHaveTextContent("Saturday 10:00 AM\u201304:00 PM");
     await expectAccessible(container);
   });
 
