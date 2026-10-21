@@ -218,6 +218,7 @@ describe("ResourceAccessEditor", () => {
     expect(screen.queryByRole("option", { name: /Ada Owner/ })).not.toBeInTheDocument();
     await user.click(imagingGroup);
 
+    expect(search).toHaveValue("");
     expect(row("Imaging group").getByRole("button", { name: "common:resourceAccess.roleFor" })).toHaveTextContent(
       "Contributor",
     );
