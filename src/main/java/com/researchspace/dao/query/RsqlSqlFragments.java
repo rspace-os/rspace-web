@@ -62,6 +62,15 @@ public final class RsqlSqlFragments {
                 Collectors.joining(" AND "), expression -> "(" + expression + ")"));
   }
 
+  /**
+   * Compares {@code path} by its exact UTF-8 bytes, so collation cannot fold case or accents. The
+   * bound value must be {@link com.researchspace.core.util.Utf8Hex#encode}. {@code LOWER} only
+   * normalises the hex digits.
+   */
+  public static String exactTextIdentity(String path) {
+    return "LOWER(FUNCTION('HEX', " + path + "))";
+  }
+
   public static String like(String path, String parameter, boolean negated) {
     return "LOWER("
         + path

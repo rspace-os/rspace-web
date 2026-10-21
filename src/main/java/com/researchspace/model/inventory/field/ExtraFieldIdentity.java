@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.core.util.Utf8Hex;
 import com.researchspace.model.collection.RuntimeFieldValueType;
 import com.researchspace.model.field.FieldType;
 import java.nio.ByteBuffer;
@@ -121,7 +122,7 @@ public final class ExtraFieldIdentity {
 
   /** The lowercase UTF-8 hex form used when matching a name in SQL without collation folding. */
   public static String encodeName(String name) {
-    return HexFormat.of().formatHex(name.getBytes(StandardCharsets.UTF_8));
+    return Utf8Hex.encode(name);
   }
 
   public static Definition decode(String id) {

@@ -7,6 +7,7 @@ import com.researchspace.dao.query.LikeEscaper;
 import com.researchspace.dao.query.LookAheadPagination;
 import com.researchspace.dao.query.LookAheadPagination.Result;
 import com.researchspace.dao.query.RsqlCollectionQuery;
+import com.researchspace.dao.query.RsqlSqlFragments;
 import com.researchspace.model.collection.QueryConstraint;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.field.ExtraField;
@@ -43,7 +44,7 @@ public class ExtraFieldDaoHibernateImpl implements ExtraFieldDao {
   private static final String FIELD_ALIAS = "extraField";
   private static final String PARENT_ALIAS = "extraFieldParent";
   private static final String NAME = FIELD_ALIAS + ".editInfo.name";
-  private static final String NAME_IDENTITY = "LOWER(FUNCTION('HEX', " + NAME + "))";
+  private static final String NAME_IDENTITY = RsqlSqlFragments.exactTextIdentity(NAME);
   private static final String VALUE = FIELD_ALIAS + ".editInfo.description";
 
   private final CriteriaBuilderFactory criteriaBuilderFactory;

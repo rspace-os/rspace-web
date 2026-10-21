@@ -1,5 +1,6 @@
 package com.researchspace.dao.query;
 
+import com.researchspace.core.util.Utf8Hex;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionQueryException;
 import com.researchspace.model.collection.FilterExpression;
@@ -7,9 +8,7 @@ import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.Relationship;
 import com.researchspace.model.collection.ResolvedRuntimeField;
 import com.researchspace.model.collection.RuntimeFieldBinding;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
 
 /** Correlates runtime values and enforces presence semantics independently of value comparison. */
@@ -63,8 +62,8 @@ final class RsqlRuntimeFieldCompiler {
               Object matchValue = value;
               if (value instanceof String text) {
                 conjuncts.add(path + " = :" + state.add(text));
-                path = "LOWER(FUNCTION('HEX', " + path + "))";
-                matchValue = HexFormat.of().formatHex(text.getBytes(StandardCharsets.UTF_8));
+                path = RsqlSqlFragments.exactTextIdentity(path);
+                matchValue = Utf8Hex.encode(text);
               }
               conjuncts.add(path + " = :" + state.add(matchValue));
             });
