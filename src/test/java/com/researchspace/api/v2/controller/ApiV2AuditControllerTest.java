@@ -3,7 +3,6 @@ package com.researchspace.api.v2.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -71,7 +70,7 @@ class ApiV2AuditControllerTest {
   }
 
   @Test
-  void exposesPagedAndCountAuditRoutes() throws Exception {
+  void exposesAuditPageWithMatchingTotal() throws Exception {
     HistoricData event =
         new HistoricData(
             AuditDomain.USER,
@@ -86,39 +85,34 @@ class ApiV2AuditControllerTest {
     mockMvc
         .perform(
             get("/api/v2/users/7/audit")
+                .param("limit", "1")
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
         .andExpect(status().isOk())
+        .andExpect(jsonPath("$.docs.length()").value(1))
         .andExpect(jsonPath("$.docs[0].action").value("WRITE"))
         .andExpect(jsonPath("$.totalDocs").value(4))
-        .andExpect(jsonPath("$.limit").value(20));
+        .andExpect(jsonPath("$.limit").value(1));
+  }
 
+  @Test
+  void auditCountRouteIsNotFound() throws Exception {
     mockMvc
         .perform(
             get("/api/v2/users/7/audit/count")
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.totalDocs").value(4));
+        .andExpect(status().isNotFound());
   }
 
   @Test
-  void bindsSearchForPagedAndCountRoutes() throws Exception {
+  void bindsSearchForAuditRoute() throws Exception {
     mockMvc
         .perform(
             get("/api/v2/users/7/audit")
                 .param("search", "PagedMarker")
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
         .andExpect(status().isOk());
-    mockMvc
-        .perform(
-            get("/api/v2/users/7/audit/count")
-                .param("search", "CountMarker")
-                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, ApiV2Caller.direct(actor)))
-        .andExpect(status().isOk());
-
     ArgumentCaptor<Request> request = ArgumentCaptor.forClass(Request.class);
-    verify(strictSearch, times(2)).search(request.capture());
-    assertEquals(
-        List.of("pagedmarker", "countmarker"),
-        request.getAllValues().stream().map(Request::search).toList());
+    verify(strictSearch).search(request.capture());
+    assertEquals("pagedmarker", request.getValue().search());
   }
 }
