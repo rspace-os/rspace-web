@@ -316,42 +316,38 @@ test("a public document 401 clears its token and reloads without issuing a new o
   expect(assign).not.toHaveBeenCalled();
 });
 
-test.each(["/api/v1/userDetails/whoami", "/api/v1/userDetails/whoami/"])(
-  "a 401 from whoami at %s skips the redundant identity probe",
-  async (url) => {
-    const { reload } = stubLocation();
-    const staleToken = jwt("same-user", 1);
-    const freshToken = jwt("same-user", 2);
-    saveStoredToken(staleToken);
-    const whoamiAuthorizations: string[] = [];
-    let tokenRequests = 0;
-    server.use(
-      http.get(/\/api\/v1\/userDetails\/whoami\/?$/, ({ request }) => {
-        const authorization = request.headers.get("Authorization") ?? "";
-        whoamiAuthorizations.push(authorization);
-        return HttpResponse.json(authorization === `Bearer ${staleToken}` ? {} : { username: "current-user" }, {
-          status: authorization === `Bearer ${staleToken}` ? 401 : 200,
-        });
-      }),
-      http.get("/userform/ajax/inventoryOauthToken", () => {
-        tokenRequests++;
-        return HttpResponse.json({ data: freshToken });
-      }),
-    );
+test.each(
+  clients.flatMap((client) =>
+    ["/api/v1/userDetails/whoami", "/api/v1/userDetails/whoami/"].map((url) => [client, url] as const),
+  ),
+)("%s 401 from whoami at %s skips the redundant identity probe", async (client, url) => {
+  const request = makeRequest(client);
+  const { reload } = stubLocation();
+  const staleToken = jwt("same-user", 1);
+  const freshToken = jwt("same-user", 2);
+  saveStoredToken(staleToken);
+  const whoamiAuthorizations: string[] = [];
+  let tokenRequests = 0;
+  server.use(
+    http.get(/\/api\/v1\/userDetails\/whoami\/?$/, ({ request }) => {
+      const authorization = request.headers.get("Authorization") ?? "";
+      whoamiAuthorizations.push(authorization);
+      return HttpResponse.json(authorization === `Bearer ${staleToken}` ? {} : { username: "current-user" }, {
+        status: authorization === `Bearer ${staleToken}` ? 401 : 200,
+      });
+    }),
+    http.get("/userform/ajax/inventoryOauthToken", () => {
+      tokenRequests++;
+      return HttpResponse.json({ data: freshToken });
+    }),
+  );
 
-    expect(
-      (
-        await fetchWithUiToken(url, {
-          headers: { Authorization: `Bearer ${staleToken}` },
-        })
-      ).status,
-    ).toBe(200);
+  expect(await request(url, staleToken)).toBe(200);
 
-    expect(whoamiAuthorizations).toEqual([`Bearer ${staleToken}`, `Bearer ${freshToken}`, `Bearer ${freshToken}`]);
-    expect(tokenRequests).toBe(1);
-    expect(reload).not.toHaveBeenCalled();
-  },
-);
+  expect(whoamiAuthorizations).toEqual([`Bearer ${staleToken}`, `Bearer ${freshToken}`, `Bearer ${freshToken}`]);
+  expect(tokenRequests).toBe(1);
+  expect(reload).not.toHaveBeenCalled();
+});
 
 test.each([
   ["fetch", "same-origin non-API", "/public/unauthorized"],
