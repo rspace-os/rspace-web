@@ -61,7 +61,6 @@ import HelpDocs from "../Help/HelpDocs";
 import HelpLinkIcon from "../HelpLinkIcon";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 import VisuallyHiddenHeading from "../VisuallyHiddenHeading";
-import AboutRSpaceDialog from "./AboutRSpaceDialog";
 import type SidebarToggle from "./SidebarToggle";
 import useUiNavigationData, { type UiNavigationData } from "./useUiNavigationData";
 
@@ -359,7 +358,6 @@ function GalleryAppBar({
     setAppMenuAnchorEl(null);
   }
   const [accountMenuAnchorEl, setAccountMenuAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [aboutDialogOpen, setAboutDialogOpen] = React.useState(false);
   const leftClipId = React.useId();
   const rightClipId = React.useId();
   const fetchedCurrentUser = useWhoAmI();
@@ -858,10 +856,9 @@ function GalleryAppBar({
                   title={t("appBar.aboutRSpace")}
                   avatar={<InfoIcon />}
                   compact
-                  onClick={() => {
-                    setAccountMenuAnchorEl(null);
-                    setAboutDialogOpen(true);
-                  }}
+                  onClick={() => setAccountMenuAnchorEl(null)}
+                  component="a"
+                  href="/about"
                 />
                 {FetchingData.getSuccessValue(uiNavigationData)
                   .map(({ operatedAs }) => operatedAs)
@@ -935,7 +932,6 @@ function GalleryAppBar({
                   ))
                   .orElse(null)}
               </Menu>
-              <AboutRSpaceDialog open={aboutDialogOpen} onClose={() => setAboutDialogOpen(false)} />
             </Box>
           </>
         )}

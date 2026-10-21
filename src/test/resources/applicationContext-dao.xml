@@ -51,4 +51,10 @@
     	</property>
     </bean>
 
+    <!--
+      This test context overrides Hibernate settings. Import the same shared Blaze configuration as
+      the production DAO context so collection DAO queries receive the CriteriaBuilderFactory.
+    -->
+    <import resource="classpath:applicationContext-blaze.xml" />
+
 </beans>

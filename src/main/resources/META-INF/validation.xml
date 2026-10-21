@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<validation-config xmlns="https://jakarta.ee/xml/ns/validation/configuration" version="3.0">
+  <message-interpolator>com.researchspace.service.JsonValidationMessageInterpolator</message-interpolator>
+</validation-config>

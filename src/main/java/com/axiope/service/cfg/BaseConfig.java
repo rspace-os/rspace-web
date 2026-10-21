@@ -83,6 +83,7 @@ import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentHTMLPreviewHandler;
 import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.FolderDeletionOrderPolicy;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IAsyncArchiveDepositor;
@@ -186,6 +187,7 @@ import com.researchspace.service.impl.ExportImportImpl;
 import com.researchspace.service.impl.ExportUtils;
 import com.researchspace.service.impl.ExternalMessageHandlerImpl;
 import com.researchspace.service.impl.ExternalOauthUserSignupPolicy;
+import com.researchspace.service.impl.FeatureFlagInitialisor;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.service.impl.FileStoreRootDetector;
 import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
@@ -274,7 +276,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
-import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
@@ -545,6 +546,11 @@ public abstract class BaseConfig {
   @Bean
   public IApplicationInitialisor integrationsHandlerInitialisor() {
     return new IntegrationsHandlerInitialisor();
+  }
+
+  @Bean
+  public IApplicationInitialisor featureFlagInitialisor(FeatureFlagManager featureFlagManager) {
+    return new FeatureFlagInitialisor(featureFlagManager);
   }
 
   @Bean
@@ -1118,14 +1124,8 @@ public abstract class BaseConfig {
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
     LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-    // Inventory constraint messages are ported to the JSON catalogues, the generic templates
-    // stay in ValidationMessages.properties, so chain both. Templates are left unformatted for
-    // the validator to interpolate {max} and ${validatedValue}.
-    ReloadableResourceBundleMessageSource fallback = new ReloadableResourceBundleMessageSource();
-    fallback.setBasename("classpath:ValidationMessages");
-    JsonMessageSource constraintMessages = new JsonMessageSource();
-    constraintMessages.setParentMessageSource(fallback);
-    validator.setValidationMessageSource(constraintMessages);
+    // Return raw JSON templates for Hibernate to interpolate constraint attributes and values.
+    validator.setValidationMessageSource(new JsonMessageSource());
     return validator;
   }
 

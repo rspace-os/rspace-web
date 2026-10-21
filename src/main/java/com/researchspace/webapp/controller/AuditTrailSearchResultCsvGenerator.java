@@ -87,14 +87,27 @@ public class AuditTrailSearchResultCsvGenerator {
         String id = "n/a";
         String name = "n/a";
         String desc = "n/a";
-        if (auditEntry.getData() != null
-            && auditEntry.getData().getData() != null
-            && auditEntry.getData().getData().getData() != null) {
-          Map<String, Object> data = auditEntry.getData().getData().getData();
+        Map<String, Object> data = Map.of();
+        boolean hasData =
+            auditEntry.getData() != null
+                && auditEntry.getData().getData() != null
+                && auditEntry.getData().getData().getData() != null;
+        if (hasData) {
+          data = auditEntry.getData().getData().getData();
           id = data.getOrDefault("id", "n/a").toString();
           name = data.getOrDefault("name", "n/a").toString();
+        }
+        boolean bookingEvent = BookingAuditDetails.isBookingEvent(auditEntry.getEvent(), data);
+        if (hasData) {
           String desc2 = auditEntry.getData().getDescription();
-          if (!StringUtils.isBlank(desc2)) {
+          if (bookingEvent) {
+            name = StringUtils.defaultIfBlank(BookingAuditDetails.displayName(data), name);
+            desc =
+                StringUtils.defaultIfBlank(
+                    BookingAuditDetails.combine(
+                        BookingAuditDetails.format(data, messages, CSV_LOCALE), desc2),
+                    desc);
+          } else if (!StringUtils.isBlank(desc2)) {
             desc = desc2;
           } else {
             desc = generateDescription(auditEntry, data);
@@ -105,8 +118,8 @@ public class AuditTrailSearchResultCsvGenerator {
             new AuditTrailCSVConverterInput(
                 convertDateToISOFormat(auditEntry.getTimestamp(), TimeZone.getDefault()) + "",
                 auditEntry.getEvent().getSubject(),
-                auditEntry.getEvent().getAction().toString(),
-                auditEntry.getEvent().getDomain().toString(),
+                getDisplayAction(auditEntry, data, bookingEvent),
+                getDisplayType(auditEntry, bookingEvent),
                 id,
                 name,
                 desc);
@@ -116,6 +129,24 @@ public class AuditTrailSearchResultCsvGenerator {
       beanWriter.flush();
     }
     return createCsvEntityResponse(swStringWriter.toString());
+  }
+
+  private String getDisplayType(AuditTrailSearchResult auditEntry, boolean bookingEvent) {
+    if (bookingEvent) {
+      return messages.getMessageForLocale("export.audit.csv.bookingType", CSV_LOCALE);
+    }
+    return auditEntry.getEvent().getDomain().toString();
+  }
+
+  private String getDisplayAction(
+      AuditTrailSearchResult auditEntry, Map<String, Object> data, boolean bookingEvent) {
+    return BookingAuditDetails.displayAction(
+        auditEntry.getEvent().getAction(),
+        auditEntry.getEvent().getDescription(),
+        data,
+        bookingEvent,
+        messages,
+        CSV_LOCALE);
   }
 
   private String generateDescription(AuditTrailSearchResult auditEntry, Map<String, Object> data) {

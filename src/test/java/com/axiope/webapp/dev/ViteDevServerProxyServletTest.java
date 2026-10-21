@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -128,6 +130,34 @@ public class ViteDevServerProxyServletTest {
         URI.create(
             "http://127.0.0.1:5173/ui/dist/node_modules/.vite/deps/"
                 + "@mui_icons-material_CheckCircleOutline.js?v=cac0f517"),
+        upstreamUri.get());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"{-$tab}", "%7B-$tab%7D"})
+  public void forwardsOptionalRouteModulePathsWithoutDoubleEncoding(String tabSegment)
+      throws Exception {
+    AtomicReference<URI> upstreamUri = new AtomicReference<>();
+    when(request.getRequestURI())
+        .thenReturn(
+            "/ui/dist/src/routes/booking/bookable-items/$globalId/" + tabSegment + "/index.tsx");
+    when(request.getQueryString()).thenReturn("v=route%20split&label=%7Btab%7D");
+    when(upstreamResponse.headers())
+        .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
+    when(client.send(
+            any(HttpRequest.class), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any()))
+        .thenAnswer(
+            invocation -> {
+              upstreamUri.set(invocation.getArgument(0, HttpRequest.class).uri());
+              return upstreamResponse;
+            });
+
+    servlet.service(request, response);
+
+    assertEquals(
+        URI.create(
+            "http://127.0.0.1:5173/ui/dist/src/routes/booking/bookable-items/"
+                + "$globalId/%7B-$tab%7D/index.tsx?v=route%20split&label=%7Btab%7D"),
         upstreamUri.get());
   }
 

@@ -1,0 +1,213 @@
+import { Form, isDirty, reset, useForm } from "@formisch/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { BellIcon, CheckIcon, SaveIcon, XIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import {
+  type BookingNotificationSubscription,
+  bookingNotificationSubscriptionsQueryKey,
+  fetchBookingNotificationSubscription,
+  replaceBookingNotificationSubscription,
+} from "@/modules/booking/domain/bookingNotificationSubscriptions";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { Button } from "@/modules/common/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/modules/common/ui/card";
+import { Skeleton } from "@/modules/common/ui/skeleton";
+import {
+  BookingNotificationChoiceFields,
+  BookingNotificationChoiceSchema,
+  bookingNotificationChoice,
+} from "../preferences/BookingNotificationChoiceFields";
+import { bookingConfigurationTargetQueryKey } from "./bookingConfiguration";
+
+function ItemNotificationEditor({
+  configurationId,
+  globalId,
+  token,
+  subjectId,
+  subscription,
+  feedback,
+  setFeedback,
+}: {
+  configurationId: number;
+  globalId: string;
+  token: string;
+  subjectId: number;
+  subscription: BookingNotificationSubscription;
+  feedback: "saved" | "conflict" | "saveError" | null;
+  setFeedback: (value: "saved" | "conflict" | "saveError" | null) => void;
+}) {
+  const { t } = useTranslation("booking");
+  const queryClient = useQueryClient();
+  const queryKey = bookingNotificationSubscriptionsQueryKey.item(subjectId, configurationId);
+  const form = useForm({
+    schema: BookingNotificationChoiceSchema,
+    initialInput: bookingNotificationChoice(subscription.enabled),
+  });
+  const dirty = isDirty(form);
+  useEffect(() => {
+    if (!dirty) reset(form, { initialInput: bookingNotificationChoice(subscription.enabled) });
+  }, [dirty, form, subscription.enabled]);
+  const mutation = useMutation({
+    mutationFn: ({ enabled, version }: { enabled: boolean; version: number }) =>
+      replaceBookingNotificationSubscription(configurationId, enabled, version, token),
+    onSuccess: async (saved) => {
+      queryClient.setQueryData(queryKey, saved);
+      await queryClient.invalidateQueries({ queryKey: bookingNotificationSubscriptionsQueryKey.all(subjectId) });
+      reset(form, { initialInput: bookingNotificationChoice(saved.enabled) });
+      setFeedback("saved");
+    },
+    onError: async (error) => {
+      if (error instanceof ApiV2ProblemError && error.status === 409) {
+        setFeedback("conflict");
+        await queryClient.invalidateQueries({ queryKey });
+        return;
+      }
+      if (error instanceof ApiV2ProblemError && (error.status === 403 || error.status === 404)) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey }),
+          queryClient.invalidateQueries({ queryKey: bookingConfigurationTargetQueryKey(globalId) }),
+        ]);
+      }
+      setFeedback("saveError");
+    },
+  });
+  const saved = feedback === "saved" && !dirty;
+
+  return (
+    <Card size="sm" aria-labelledby="item-notification-subscription-heading">
+      <CardHeader>
+        <CardTitle id="item-notification-subscription-heading" className="flex items-center gap-2">
+          <BellIcon aria-hidden="true" className="size-4" />
+          {t("notificationSubscriptions.item.title")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Form
+          of={form}
+          className="space-y-3"
+          onChange={() => {
+            if (feedback === "saved") setFeedback(null);
+          }}
+          onSubmit={(input) => {
+            setFeedback(null);
+            mutation.mutate({ enabled: input.choice === "ON", version: subscription.version });
+          }}
+        >
+          <BookingNotificationChoiceFields
+            form={form}
+            labelKey="notificationSubscriptions.item.label"
+            disabled={mutation.isPending}
+          />
+          {feedback === "conflict" ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("notificationSubscriptions.item.conflict")}
+            </p>
+          ) : feedback === "saveError" ? (
+            <p role="alert" className="text-sm text-destructive">
+              {t("notificationSubscriptions.item.saveError")}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
+              aria-busy={mutation.isPending}
+              className={
+                saved
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-100 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                  : undefined
+              }
+            >
+              {saved ? <CheckIcon aria-hidden="true" /> : <SaveIcon aria-hidden="true" />}
+              {t(saved ? "preferences.actions.saved" : "preferences.actions.save")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={mutation.isPending || !dirty}
+              onClick={() => {
+                reset(form, { initialInput: bookingNotificationChoice(subscription.enabled) });
+                setFeedback(null);
+              }}
+            >
+              <XIcon aria-hidden="true" />
+              {t("bookableItemDetails.cancelEdit")}
+            </Button>
+          </div>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function BookableItemNotificationSubscription({
+  configurationId,
+  globalId,
+  subjectId,
+}: {
+  configurationId: number;
+  globalId: string;
+  subjectId: number;
+}) {
+  const { t } = useTranslation("booking");
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const [feedback, setFeedback] = useState<"saved" | "conflict" | "saveError" | null>(null);
+  const queryKey = bookingNotificationSubscriptionsQueryKey.item(subjectId, configurationId);
+  const subscription = useQuery({
+    queryKey,
+    queryFn: ({ signal }) => fetchBookingNotificationSubscription(configurationId, token, signal),
+  });
+  const notificationCardHeader = () => (
+    <CardHeader>
+      <CardTitle>{t("notificationSubscriptions.item.title")}</CardTitle>
+    </CardHeader>
+  );
+
+  if (subscription.isPending) {
+    return (
+      <Card size="sm" aria-busy="true">
+        {notificationCardHeader()}
+        <CardContent>
+          <Skeleton className="h-24 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+  if (subscription.isError) {
+    return (
+      <Card size="sm">
+        {notificationCardHeader()}
+        <CardContent className="space-y-3">
+          <p role="alert" className="text-sm text-destructive">
+            {t("notificationSubscriptions.item.loadError")}
+          </p>
+          <Button type="button" size="sm" variant="outline" onClick={() => void subscription.refetch()}>
+            {t("notificationSubscriptions.item.retry")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      <ItemNotificationEditor
+        subjectId={subjectId}
+        configurationId={configurationId}
+        globalId={globalId}
+        token={token}
+        subscription={subscription.data}
+        feedback={feedback}
+        setFeedback={setFeedback}
+      />
+    </div>
+  );
+}

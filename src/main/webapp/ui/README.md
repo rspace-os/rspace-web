@@ -107,6 +107,9 @@ set `dev.storybook.preview.enabled=true` in the local/dev instance's
 `deployment.properties` to expose it on a local/dev instance. Leave it disabled
 on deployed production instances because the route is unauthenticated.
 
+Shared design-system stories live beside their components in `src/modules/common/ui`
+as `*.stories.tsx`. The booking surface uses the same design system.
+
 ## Testing Strategy
 
 ### Testing Frameworks
@@ -209,6 +212,7 @@ For detailed information about specific areas
 
 ### Topics
 - Accessibility: See [../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md](../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md)
+- Table List adapters and collection forms: See [../../../../DevDocs/DeveloperNotes/TableListAdapters.md](../../../../DevDocs/DeveloperNotes/TableListAdapters.md)
 - Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md)
 - Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md)
 - Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md)

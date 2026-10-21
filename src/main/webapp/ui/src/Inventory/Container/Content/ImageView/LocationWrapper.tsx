@@ -35,13 +35,16 @@ function LocationWrapper({ children, parentRect, location }: LocationWrapperArgs
     }
   }, [parentRect]);
 
+  // Read the position here, not in the sx callback, so this observer re-renders when the effect above sets it.
+  const { x: left, y: top } = location;
+
   return (
     <Box
       component="div"
       sx={(theme) => ({
         position: "absolute",
-        left: location.x,
-        top: location.y,
+        left,
+        top,
         borderRadius: 5,
         display: "flex",
         alignItems: "center",

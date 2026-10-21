@@ -77,7 +77,7 @@
       "communityPrompt": "Enter a Community to audit",
       "dateRangePrompt": "Date range to audit",
       "from": "from",
-      "globalIdPrompt": "Enter a global ID of a document, notebook, or Inventory item, e.g. SD12345",
+      "globalIdPrompt": "Enter a global ID or booking resource ID to audit, e.g. SD12345, bookings:123, booking-configurations:456, or booking-settings:1",
       "labGroupPrompt": "Enter a LabGroup to audit",
       "to": "to",
       "usersPrompt": "Enter a user or users to audit"
@@ -283,13 +283,16 @@
       }
     },
     "message": {
+      "bookingCancelled": "A booking on an instrument I subscribe to is cancelled",
+      "bookingCreated": "A booking is created on an instrument I subscribe to",
       "delivery": {
         "label": "Preferred delivery method"
       },
       "notify": {
         "label": "Notify me when"
       },
-      "title": "Messaging and Notification Preferences"
+      "title": "Messaging and Notification Preferences",
+      "bookingAutoSubscribe": "Automatically subscribe to booking notifications for new instruments I own"
     },
     "messageSettingsChanged": {
       "confirmation": "Message preferences updated"

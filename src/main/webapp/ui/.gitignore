@@ -12,5 +12,11 @@ node_modules/
 /stats.html
 /stats.json
 
+# TanStack Router generator temporary files
+/.tanstack/
+
 # Vitest browser-mode JUnit output (CI)
 /browser-junit-*.xml
+
+# Storybook build output
+/storybook-static

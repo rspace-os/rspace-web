@@ -66,6 +66,7 @@
         "linkTargetVersionNotFound": "Link target ''{0}'' has no version {1}.",
         "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
         "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
+        "numberInvalid": "''{0}'' is not a valid number or exceeds the supported precision and range.",
         "notFound": "No inventory entity field with id: {0}",
         "validation": "{0}"
       },

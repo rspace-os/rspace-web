@@ -111,6 +111,18 @@ When you see Jetty report the app has started, open the URL printed by
 `rspace-dev up` (e.g. `http://localhost:8080`). Log in with `user1a` /
 `user1234`, or `sysadmin1` / `sysWisc23!`.
 
+The Docker stack enables Booking. On first deployment, `deployment.test.fb.instance=true` seeds
+`user1a` with a bulk set of 500 instruments and 1,003 events across the next full Monday-to-Sunday
+week, alongside smaller bookable-item examples. This startup fixture defaults to disabled; set the
+property in `deployment.properties` to opt in. It also works with the `prod` profile on AWS
+feature-branch instances. Restarts preserve existing fixtures and do not log in using default fixture
+passwords. Examples cover read-only access, timezones, weekday hours, and booking edge cases.
+
+A separate `dev-test` Liquibase seed adds nine instruments, eight configured items, and 50 events.
+Its follow-up changeset adds schedule edge cases only while the seed defaults remain unchanged. See
+[Booking database seeding](../../DevDocs/DeveloperNotes/BookingDatabaseSeeding.md) for fixture names,
+edge cases, and seed behavior.
+
 Subsequent `up`s reuse the existing database and are much faster.
 
 To run the Playwright suite against local third-party integration mocks, enable
