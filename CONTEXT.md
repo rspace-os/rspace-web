@@ -634,7 +634,7 @@ See [Security and permissions](DevDocs/DeveloperNotes/SecurityAndPermissions.md#
 
 ## Booking
 
-See [Booking](DevDocs/DeveloperNotes/Booking.md) for domain, scheduling and lifecycle contracts.
+See [Booking](DevDocs/DeveloperNotes/Booking.md) for domain, scheduling and lifecycle contracts. See [Booking permissions](DevDocs/DeveloperNotes/BookingPermissions.md) for inherited access and run-as behavior.
 
 | # | Term | Definition |
 |---|---|---|
@@ -645,33 +645,26 @@ See [Booking](DevDocs/DeveloperNotes/Booking.md) for domain, scheduling and life
 | 5. | Archive a booking configuration | Move a configuration to Archived while retaining its data. |
 | 6. | Restore a booking configuration | Move an Archived configuration back to Active. |
 | 7. | Permanently delete a booking configuration | Remove a configuration's live data while retaining audit history. |
-| 8. | Booking access assignment | A direct Booking role grant for a configuration. |
-| 9. | Effective Booking role | The highest Booking role resolved for a user on a configuration. |
-| 10. | Booking Owner | The highest Booking role. |
-| 11. | Booking Manager | The Booking administration role immediately below Owner. |
-| 12. | Booker | The Booking role for creating bookings and managing one's own bookings. |
-| 13. | Viewer | The Booking role for reading configuration and calendar details. |
-| 14. | Explicit-owner invariant | The requirement for a protected configuration to retain a persisted Owner assignment. |
-| 15. | Unavailable Booking role holder | A role holder whose live user or group state grants no effective access. |
-| 16. | All users audience | The dynamic audience of user accounts on the RSpace instance. |
-| 17. | Default shared with | The instance-wide setting supplying initial Booking access grants. |
-| 18. | Leave a booking configuration | Remove one's direct Booking access assignment. |
-| 19. | Own-booking access after role loss | Read-only access to one's retained bookings after losing a Booking role. |
-| 20. | Booking ownership transfer | The Booking access change accompanying a target Instrument ownership transfer. |
-| 21. | Booking access directory | The resource-scoped users and groups selectable for role assignment. |
-| 22. | Booking access | Permission to use a Booking configuration and its events. |
-| 23. | System administrator Booking access | Implicit Booking Owner access for a system administrator acting as themselves. |
-| 24. | Booking identity boundary | The separation between the represented subject and the original audit actor. |
-| 25. | Booking defaults | Instance-wide scheduling values copied into a new configuration. |
-| 26. | Scheduling policy | The per-configuration rules for valid booking times. |
-| 27. | Opening interval | A daily wall-clock period when a booking may occur in the configuration's timezone. |
-| 28. | Booking buffer | Unavailable time immediately before or after a confirmed booking. |
-| 29. | Maximum booking duration | The per-configuration elapsed-time limit for one booking. |
-| 30. | Double-booking | Allowing confirmed booking intervals on the same item to overlap. |
-| 31. | Time-slot booking | One persisted reservation for one Booking configuration. |
-| 32. | Booking privacy | The visibility of event details to callers reading a Booking calendar. |
-| 33. | Half-open booking interval | A time interval including its start and excluding its end. |
-| 34. | Booking cancellation | The transition of a booking to the Cancelled state. |
+| 8. | Booking access assignment | A legacy direct role row retained for migration and audit. |
+| 9. | Effective Booking role | The role derived from the user's current permission on the target Inventory item. |
+| 10. | Booking Owner | The owner role derived from ownership of the target Inventory item. |
+| 11. | Booker | The Booking role derived from Inventory edit permission. |
+| 12. | Viewer | The Booking role derived from full Inventory read permission. |
+| 13. | Own-booking access after role loss | Read-only access to one's retained bookings after losing target-item access. |
+| 14. | Booking ownership transfer | The change in Booking Owner access following target Instrument ownership. |
+| 15. | Booking access | Permissions derived from current access to the target Inventory item. |
+| 16. | System administrator Booking access | Implicit Booking Owner access for a system administrator acting as themselves. |
+| 17. | Booking identity boundary | The separation between the represented subject and the original audit actor. |
+| 18. | Booking defaults | Instance-wide scheduling values copied into a new configuration. |
+| 19. | Scheduling policy | The per-configuration rules for valid booking times. |
+| 20. | Opening interval | A daily wall-clock period when a booking may occur in the configuration's timezone. |
+| 21. | Booking buffer | Unavailable time immediately before or after a confirmed booking. |
+| 22. | Maximum booking duration | The per-configuration elapsed-time limit for one booking. |
+| 23. | Double-booking | Allowing confirmed booking intervals on the same item to overlap. |
+| 24. | Time-slot booking | One persisted reservation for one Booking configuration. |
+| 25. | Booking privacy | The visibility of event details to callers reading a Booking calendar. |
+| 26. | Half-open booking interval | A time interval including its start and excluding its end. |
+| 27. | Booking cancellation | The transition of a booking to the Cancelled state. |
 
 ## Booking calendar presentation
 
