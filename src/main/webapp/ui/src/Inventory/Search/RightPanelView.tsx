@@ -80,7 +80,7 @@ BorderContainer.displayName = "BorderContainer";
 
 function RightPanelView(): ReactNode {
   const { t } = useTranslation("inventory");
-  const { searchStore, uiStore } = useStores();
+  const { searchStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const mainContentRef = useLandmark("Details Panel");
 
@@ -89,7 +89,6 @@ function RightPanelView(): ReactNode {
       if (!searchStore.activeResult && searchStore.search.filteredResults.length && !isSingleColumnLayout) {
         try {
           await searchStore.search.setActiveResult();
-          uiStore.setVisiblePanel("right");
         } catch (e) {
           if (e instanceof UserCancelledAction) return;
           throw e;
