@@ -690,3 +690,12 @@ See [Booking frontend](DevDocs/DeveloperNotes/BookingFrontend.md) for display ti
 | 10. | Availability window | The interval over which resource availability is summarized. |
 | 11. | Availability bar | A visual summary of availability within a window. |
 | 12. | Availability state | Whether a section is available, booked, blocked out or both booked and blocked out. |
+
+## Booking availability filters
+
+See [Booking availability](DevDocs/DeveloperNotes/BookingFrontend.md) for filter behavior.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Available now | The current-availability quick filter for items free at the current instant. |
+| 2. | Free later today | The current-availability quick filter for items with free time later in today's preferred display interval. |
