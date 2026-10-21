@@ -687,7 +687,7 @@ See [Booking frontend](DevDocs/DeveloperNotes/BookingFrontend.md) for display ti
 
 ## Booking availability filters
 
-See [Booking availability](DevDocs/DeveloperNotes/BookingFrontend.md) for filter behavior.
+See [Booking availability](DevDocs/DeveloperNotes/Booking.md) for filter behavior.
 
 | # | Term | Definition |
 |---|---|---|
