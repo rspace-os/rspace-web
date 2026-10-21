@@ -116,6 +116,7 @@ public final class ApiV2OpenApiGenerator {
         .routableResources()
         .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
 
+    schemas.replaceAll((name, schema) -> withNullableReferenceProperties(schema));
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("schemas", schemas);
     components.put("responses", standardResponses());
@@ -752,5 +753,13 @@ public final class ApiV2OpenApiGenerator {
       throw new IllegalArgumentException(label + " must not be blank");
     }
     return value;
+  }
+
+  private static Object withNullableReferenceProperties(Object schema) {
+    return ApiV2OpenApiResourceDocumentBuilder.withNullableReferenceProperties(schema);
+  }
+
+  static boolean isNullableReference(Object property) {
+    return ApiV2OpenApiResourceDocumentBuilder.isNullableReference(property);
   }
 }
