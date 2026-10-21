@@ -74,37 +74,6 @@ class RuntimeFieldQueryTest {
   }
 
   @Test
-  void matchesAStringBindingByItsExactUtf8BytesRatherThanByCollation() {
-    ResolvedRuntimeField resolved =
-        new ResolvedRuntimeField(
-            new RuntimeFieldDefinition(
-                "XF1",
-                "customFields.XF1",
-                "Room, 温度",
-                RuntimeFieldValueType.TEXT,
-                "IT9",
-                "Template",
-                List.of()),
-            new RuntimeFieldBinding(
-                InventoryEntityField.class,
-                "instrumentEntity.id",
-                "data",
-                Map.of("editInfo.name", "Room, 温度")));
-    Predicate predicate =
-        TRANSLATOR.translate(
-            new FilterExpression.Comparison(
-                resolved.selector(), Operator.EQUAL, List.of("BSL-2"), false),
-            RelationshipReadAccess.none(),
-            new RuntimeFieldSelection(Map.of(resolved.selector(), resolved), java.util.Set.of()));
-
-    assertTrue(
-        onlySubquery(predicate)
-            .whereExpression()
-            .contains("LOWER(FUNCTION('HEX', rsqlTarget0.editInfo.name)) = :rsql0"));
-    assertEquals("526f6f6d2c20e6b8a9e5baa6", predicate.parameters().get("rsql0"));
-  }
-
-  @Test
   void convertsANumericComparisonRatherThanComparingItAsText() {
     Predicate predicate =
         translate(

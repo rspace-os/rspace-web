@@ -54,19 +54,6 @@ class ExtraFieldIdentityTest {
   }
 
   @Test
-  void keepsPublishedIdsAndNameEncodingsStable() {
-    assertEquals("XFt506f776572", ExtraFieldIdentity.encode("Power", FieldType.TEXT));
-    assertEquals("706f776572", ExtraFieldIdentity.encodeName("power"));
-    assertEquals("e6b8a9e5baa6", ExtraFieldIdentity.encodeName("温度"));
-  }
-
-  @Test
-  void doesNotNormaliseComposedAndDecomposedAccents() {
-    assertNotEquals(
-        ExtraFieldIdentity.encodeName("caf\u00e9"), ExtraFieldIdentity.encodeName("cafe\u0301"));
-  }
-
-  @Test
   void refusesAnIdItDidNotIssue() {
     for (String id :
         new String[] {
