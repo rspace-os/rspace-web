@@ -590,7 +590,7 @@ jobs:
       fail-fast: false
       matrix:
         java-version: ["${{ inputs.java_version || '17' }}"]
-        mariadb-version: ['10.11', '12.3']
+        mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -631,6 +631,7 @@ jobs:
           SET GLOBAL character_set_server = 'utf8mb4';
           SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
           SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          SET GLOBAL innodb_snapshot_isolation = 0;
           GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
           -- scratch database for the HibernateTest-based model tests, which
           -- manage their own schema and skip when it is not available
@@ -686,7 +687,7 @@ jobs:
       fail-fast: false
       matrix:
         java-version: ["${{ inputs.java_version || '17' }}"]
-        mariadb-version: ['10.11', '12.3']
+        mariadb-version: ['10.11', '11.8']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
@@ -727,6 +728,7 @@ jobs:
           SET GLOBAL character_set_server = 'utf8mb4';
           SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
           SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          SET GLOBAL innodb_snapshot_isolation = 0;
           GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
           FLUSH PRIVILEGES;
           SQL
@@ -781,7 +783,7 @@ jobs:
       inputs.full_java_tests
     services:
       db:
-        image: mariadb:12.3
+        image: mariadb:11.8
         env:
           MARIADB_ROOT_PASSWORD: rspacedbpwd
           MARIADB_DATABASE: rspace
@@ -819,6 +821,7 @@ jobs:
           SET GLOBAL character_set_server = 'utf8mb4';
           SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
           SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          SET GLOBAL innodb_snapshot_isolation = 0;
           GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
           FLUSH PRIVILEGES;
           SQL

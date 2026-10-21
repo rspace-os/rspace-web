@@ -122,10 +122,11 @@ the stack's E2E mode instead:
 
 This starts the mock server in the frontend/backend shared network namespace
 and points integrations including PubChem, Fieldmark, Zenodo, Galaxy, PyRAT,
-OMERO, and ROR at it. The mock port is unique per worktree and published on host loopback, so the Java backend
-and host Playwright process both use `http://localhost:<mock-port>`. The choice
-persists in `docker/dev/.env`; use `up --no-e2e` to return to real integration
-endpoints.
+OMERO, ROR, and the PIDINST registry lookups (DataCite and B2INST) at it. The
+mock port is unique per worktree and published on host loopback, so the Java
+backend and host Playwright process both use `http://localhost:<mock-port>`.
+The choice persists in `docker/dev/.env`; use `up --no-e2e` to return to real
+integration endpoints.
 
 E2E mode also supplies the local MinIO credentials. To run the filestore tests, start
 their containers on this worktree's Docker network using the
@@ -475,8 +476,10 @@ is the quick lookup.
 - **First concurrent boots**: if you `up` two brand-new worktrees at the exact
   same time they briefly contend on the shared Maven cache while it warms. Boot
   one first, or just retry — it is harmless.
-- **Memory**: the backend defaults to `-Xmx2g` (`MAVEN_OPTS` in `.env`). Vite
-  uses a large Node heap; give Docker Desktop a generous memory limit.
+- **Memory**: the backend defaults to `-Xmx2g` (`MAVEN_OPTS` in `.env`), and
+  MariaDB uses a smaller InnoDB buffer pool than `rspace-docker` for local use
+  (see `db/db-config.cnf`). Vite uses a large Node heap; give Docker Desktop a
+  generous memory limit.
 - **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
   `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
 - **Session cookies**: each instance names its session cookie
@@ -496,4 +499,8 @@ The stack reproduces the documented local workflow, just containerized:
   network namespace, so "localhost" reaches Vite; this is also why Vite accepts
   the proxied requests (its host check trusts localhost) without a config change;
 - frontend: `pnpm run serve` (from the repo root, where the deps live);
-- database: MariaDB configured like production (`utf8mb4`, strict `sql-mode`).
+- database: MariaDB 11.8 by default, configured with the database settings from
+  `rspace-docker` except for the smaller InnoDB buffer pool. CI also tests
+  MariaDB 10.11. Set `DB_IMAGE=mariadb:10.11` in `docker/dev/.env` before the
+  first `up` to run the dev stack against that version. Use a separate worktree
+  for each version; do not reuse a database volume across MariaDB major versions.

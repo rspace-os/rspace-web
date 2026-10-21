@@ -1,6 +1,7 @@
 import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
+import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import i18n from "@/modules/common/i18n";
 import { galleryAppShellHandlers } from "./mocks/galleryMocks";
 import { oauthTokenHandler } from "./mocks/oauthTokenMocks";
@@ -30,6 +31,8 @@ await i18n.loadNamespaces([
   "system",
   "workspace",
 ]);
+// Browser Mode asserts real copy, so a missing value must fail, not render the placeholder.
+i18n.services.i18nFormat.options.parseErrorHandler = throwOnIcuFormatError;
 
 /*
  * Each test file has its own JavaScript handler state. The browser service
