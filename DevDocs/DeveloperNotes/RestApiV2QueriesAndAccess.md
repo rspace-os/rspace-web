@@ -416,8 +416,9 @@ persistence adapter must not choose this policy.
 To support relationships without top-level CRUD routes, register an
 `ApiV2RelationshipTargetSpec<T, ID>` bean. Its batch lookup receives a set of IDs
 and returns a map containing only entities that the effective subject can read. A target-only
-resource exposes relationship resolution without top-level collection routes. Its access policy must not return a row
-constraint. The batch lookup must enforce row visibility.
+resource exposes relationship resolution without top-level collection routes. The batch lookup must enforce row visibility. Its description retains any matching read-policy
+row constraint so correlated relationship predicates can enforce the same visibility in SQL.
+The loader's authorized map and the query constraint must describe the same readable rows.
 
 A target-only spec can supply a `runtimeFieldSourceResource` naming a routable resource with
 the same entity and ID mapping. This delegates runtime-field discovery and resolution without
