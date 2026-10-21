@@ -13,6 +13,9 @@ export type UiTraceContext = {
 
 type RunWithUiTraceContext = <T>(traceContext: UiTraceContext, callback: () => T) => T;
 
+// ponytail: fixed cap; a slower SDK load misses the first page requests instead of blocking render.
+export const MAX_TELEMETRY_WAIT_MS = 2_000;
+
 let initialisation: Promise<void> | null = null;
 let runWithUiTraceContextImpl: RunWithUiTraceContext | undefined;
 let setUiPage: ((page: string) => void) | undefined;
@@ -85,8 +88,9 @@ export function onPageLoadWithOtel(
   if (!pageStarter) throw new TypeError("startPage is required");
   const telemetryReady = initOtel();
   window.addEventListener("load", () => {
-    void telemetryReady.then(() => {
-      if (traceContext) setUiPage?.(traceContext.page);
+    if (traceContext) void telemetryReady.then(() => setUiPage?.(traceContext.page));
+    const maxWait = new Promise<void>((resolve) => setTimeout(resolve, MAX_TELEMETRY_WAIT_MS));
+    void Promise.race([telemetryReady, maxWait]).then(() => {
       if (traceContext && runWithUiTraceContextImpl) {
         runWithUiTraceContextImpl(traceContext, pageStarter);
       } else {

@@ -39,8 +39,8 @@ and points backend integrations at them. Pass the printed mock port as
 
 `--observability` enables backend and browser telemetry and starts the
 Collector, APM Server, Elasticsearch, and Kibana (four resource-heavy
-containers). It persists in `.env`. Open `/app/apm` on the Kibana URL printed
-by `ps`; see `docker/dev/README.md`.
+containers). It persists in `.env` until `up --no-observability`. Open
+`/app/apm` on the Kibana URL printed by `ps`; see `docker/dev/README.md`.
 
 ## Enable chemistry
 

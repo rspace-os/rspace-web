@@ -12,34 +12,18 @@
   <groupId>com.researchspace.dev</groupId>
   <artifactId>docker-java-dependencies</artifactId>
   <version>1.0.0</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
 
   <properties>
     <hotswap-agent.version>2.0.3</hotswap-agent.version>
     <hotswap-agent.sha256>4ef49724b7d8523536d2e2a7310f827f4db9f4fed3489224e05d7bf87f0594f9</hotswap-agent.sha256>
-    <!-- Keep aligned with the OpenTelemetry API and annotations in the application pom. -->
     <otel-agent.version>2.29.0</otel-agent.version>
     <otel-contrib.version>1.58.0-alpha</otel-contrib.version>
     <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <maven-dependency-plugin.version>3.11.0</maven-dependency-plugin.version>
-    <maven-jar-plugin.version>3.5.0</maven-jar-plugin.version>
-    <maven-shade-plugin.version>3.6.2</maven-shade-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-  <!--
-    The inferred-spans extension is the only project dependency because it and
-    all of its runtime dependencies must be merged into one extension jar.
-    The other agents are copied as individual artifacts below.
-  -->
-  <dependencies>
-    <dependency>
-      <groupId>io.opentelemetry.contrib</groupId>
-      <artifactId>opentelemetry-inferred-spans</artifactId>
-      <version>${otel-contrib.version}</version>
-      <scope>runtime</scope>
-    </dependency>
-  </dependencies>
 
   <build>
     <plugins>
@@ -79,11 +63,6 @@
         </executions>
       </plugin>
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>${maven-jar-plugin.version}</version>
-      </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -112,37 +91,6 @@
                   <destFileName>opentelemetry-span-stacktrace.jar</destFileName>
                 </artifactItem>
               </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>${maven-shade-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>assemble-inferred-spans-extension</id>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <outputFile>${project.build.directory}/docker-libs/opentelemetry-inferred-spans.jar</outputFile>
-              <createDependencyReducedPom>false</createDependencyReducedPom>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>module-info.class</exclude>
-                    <exclude>META-INF/versions/**</exclude>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
             </configuration>
           </execution>
         </executions>

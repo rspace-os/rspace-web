@@ -12,7 +12,7 @@
 #
 # Commands:
 #   up [--fresh] [--chemistry|--no-chemistry] [--e2e|--no-e2e] [--mailpit|--no-mailpit]
-#      [--observability]
+#      [--observability|--no-observability]
 #                  Build images (if needed) and start db + app + frontend + Apache.
 #                  First boot (or --fresh) recreates the DB schema + sample data.
 #                  --chemistry also starts the optional chemistry microservice
@@ -24,7 +24,8 @@
 #                  --mailpit starts the optional Mailpit SMTP catcher and points
 #                  the app's outbound mail at it (email.enabled=true); the choice
 #                  persists in .env until --no-mailpit.
-#                  --observability starts OpenTelemetry and Elastic APM/ELK.
+#                  --observability starts OpenTelemetry and Elastic APM/ELK; the
+#                  choice persists in .env until --no-observability.
 #   down           Stop and remove the containers (keeps the database + caches).
 #   reload         Recompile and hot-redeploy the whole webapp (rebuilds the
 #                  Spring context) in the same JVM — applies any Java/JSP/config
@@ -164,7 +165,6 @@ ensure_observability_ports() {
   ensure_env_port KIBANA_PORT "$((5601 + offset))"
   ensure_env_port ES_PORT "$((9200 + offset))"
   ensure_env_port OTLP_GRPC_PORT "$((4317 + offset))"
-  ensure_env_port OTLP_HTTP_PORT "$((4318 + offset))"
 }
 
 observability_enabled() {
@@ -256,7 +256,7 @@ EOF
     APM UI         http://localhost:$(env_get KIBANA_PORT)/app/apm
     Kibana         http://localhost:$(env_get KIBANA_PORT)
     Elasticsearch  http://localhost:$(env_get ES_PORT)
-    Collector      OTLP gRPC 127.0.0.1:$(env_get OTLP_GRPC_PORT) · OTLP HTTP 127.0.0.1:$(env_get OTLP_HTTP_PORT)
+    Collector      backend OTLP gRPC 127.0.0.1:$(env_get OTLP_GRPC_PORT) · browser OTLP via Apache only
 EOF
   else
     cat <<EOF
@@ -280,13 +280,6 @@ ensure_shared_volumes() {
 cmd_up() {
   ensure_env
   ensure_shared_volumes
-  # Backfill DEBUG_PORT for .env files created before debug support was added.
-  if ! grep -q '^DEBUG_PORT=' "${ENV_FILE}" 2>/dev/null; then
-    local dbg
-    dbg="$(free_port_from "$((5005 + $(path_offset)))")"
-    printf 'DEBUG_PORT=%s\n' "${dbg}" >> "${ENV_FILE}"
-    echo "rspace-dev: allocated debug port ${dbg}" >&2
-  fi
   ensure_observability_ports
   local fresh="false" arg
   for arg in "$@"; do
@@ -313,7 +306,15 @@ cmd_up() {
       --observability)
                       env_set RSPACE_OBSERVABILITY true
                       echo "rspace-dev: observability enabled (OTel collector + Elasticsearch + Kibana)" >&2 ;;
-      *) die "unknown flag for up: '${arg}' (supported: --fresh, --chemistry, --no-chemistry, --e2e, --no-e2e, --mailpit, --no-mailpit, --observability)" ;;
+      --no-observability)
+                      env_set RSPACE_OBSERVABILITY false
+                      # A profile-disabled service is invisible to later compose
+                      # commands, so stop leftover containers explicitly.
+                      for svc in otel-collector apm-server elasticsearch kibana; do
+                        docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-${svc}" >/dev/null 2>&1 || true
+                      done
+                      echo "rspace-dev: observability disabled (persisted in .env)" >&2 ;;
+      *) die "unknown flag for up: '${arg}' (supported: --fresh, --chemistry, --no-chemistry, --e2e, --no-e2e, --mailpit, --no-mailpit, --observability, --no-observability)" ;;
     esac
   done
 
@@ -429,6 +430,4 @@ main() {
   esac
 }
 
-if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-  main "$@"
-fi
+main "$@"

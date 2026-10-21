@@ -474,18 +474,39 @@ This enables backend and browser telemetry and starts four optional containers:
 `./docker/dev/rspace-dev ps` to find Kibana, then open `/app/apm`.
 
 Apache is the normal ingress for the dev stack. It sends `/otlp/v1/traces` and
-`/otlp/v1/metrics` directly to the Collector and sends other requests to
-RSpace. The public app URL and port do not change.
+`/otlp/v1/metrics` to the Collector's browser-only receiver and sends other
+requests to RSpace. Browser and backend telemetry use separate receivers,
+processors, and pipelines; browser input cannot enter the backend or log
+pipelines. Browser service identity is forced to `rspace-frontend` in the
+Collector. The public app URL and port do not change.
 
 The first boot downloads the Elastic APM integration and may take a few
 minutes. It requires internet access.
 
-The setting persists as `RSPACE_OBSERVABILITY=true` in `.env`. Set it to
-`false` and run `up` again to disable telemetry. `down` and `nuke` remove the
-optional containers; `nuke` also deletes their data.
+The setting persists as `RSPACE_OBSERVABILITY=true` in `.env` until
+`up --no-observability`, which also stops the four observability containers
+and keeps their data. `down` and `nuke` remove the optional containers; `nuke`
+also deletes their data.
 
-Collector ports are bound to loopback for host-run backends. Production must
-keep the Collector private and rate-limit `/otlp/` at the edge.
+Only the trusted backend gRPC receiver is bound to loopback for host-run
+backends. Browser HTTP ingestion remains container-only and is exposed through
+Apache with method/content-type checks, stripped credentials, and a 512 KiB
+body limit. Those checks do not authenticate clients: production must keep the
+Collector private and enforce both request-size and sustained/burst rate limits
+for `/otlp/` at the reverse proxy or WAF.
+
+Application log export defaults to off. Set `OTEL_LOGS_EXPORTER=otlp` only
+after auditing/redacting logs and defining storage access and retention.
+Slow-request logging works independently of the agent. The Collector strips
+query strings from backend span URLs, and the agent omits JVM command-line
+arguments from its resource attributes.
+
+Do not put credentials in URLs. Browser URL attributes are sanitized before
+export and identity-normalized again by the Collector, but all browser
+telemetry remains untrusted. Production telemetry stores also require access
+controls, retention limits, and an incident-response path. Rotate affected
+GitHub tokens if an earlier vulnerable build was deployed with browser
+telemetry enabled.
 
 See
 [`DevDocs/DeveloperNotes/Observability.md`](/DevDocs/DeveloperNotes/Observability.md)

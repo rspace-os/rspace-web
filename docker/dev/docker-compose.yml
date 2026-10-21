@@ -113,6 +113,8 @@ services:
       OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: ${OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE:-delta}
       # Hibernate spans mostly duplicate JDBC spans.
       OTEL_INSTRUMENTATION_HIBERNATE_ENABLED: ${OTEL_INSTRUMENTATION_HIBERNATE_ENABLED:-false}
+      # Logs can contain sensitive data and require an explicit operator opt-in.
+      OTEL_LOGS_EXPORTER: ${OTEL_LOGS_EXPORTER:-none}
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
@@ -228,10 +230,10 @@ services:
     depends_on:
       apm-server:
         condition: service_started
-    # Loopback ports also support a host-run backend.
+    # The backend gRPC port supports a host-run backend. Browser HTTP ingestion
+    # stays container-only on 4319 and is reachable only through Apache.
     ports:
       - "127.0.0.1:${OTLP_GRPC_PORT:-4317}:4317"
-      - "127.0.0.1:${OTLP_HTTP_PORT:-4318}:4318"
     restart: unless-stopped
 
   apm-server:
@@ -280,7 +282,7 @@ services:
       ELASTICSEARCH_HOSTS: http://elasticsearch:9200
       TELEMETRY_ENABLED: "false"
       # Required by the standalone APM Server. First boot needs internet access.
-      XPACK_FLEET_PACKAGES: '[{"name":"apm","version":"latest"}]'
+      XPACK_FLEET_PACKAGES: '[{"name":"apm","version":"9.3.5-preview-1779430085"}]'
     depends_on:
       elasticsearch:
         condition: service_healthy

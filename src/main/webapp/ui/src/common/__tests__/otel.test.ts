@@ -79,4 +79,28 @@ describe("browser telemetry bootstrap", () => {
     releaseTelemetry?.();
     await vi.waitFor(() => expect(startPage).toHaveBeenCalledOnce());
   });
+
+  it("starts the page without telemetry when telemetry startup stalls", async () => {
+    vi.useFakeTimers();
+    try {
+      startOtel.mockReturnValue(new Promise<void>(() => {}));
+      const meta = document.createElement("meta");
+      meta.name = "rs-otel-web";
+      meta.content = "true";
+      meta.dataset.traceSamplingRatio = "1";
+      document.head.append(meta);
+      const { MAX_TELEMETRY_WAIT_MS, onPageLoadWithOtel } = await import("@/common/otel");
+      const startPage = vi.fn();
+
+      onPageLoadWithOtel({ page: "apps" }, startPage);
+      window.dispatchEvent(new Event("load"));
+      await vi.advanceTimersByTimeAsync(MAX_TELEMETRY_WAIT_MS - 1);
+      expect(startPage).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(startPage).toHaveBeenCalledOnce();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

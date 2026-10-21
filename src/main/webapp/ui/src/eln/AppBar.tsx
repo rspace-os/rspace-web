@@ -17,7 +17,7 @@ import ErrorBoundary from "../components/ErrorBoundary";
 const queryClient = new QueryClient();
 
 const traceContext: UiTraceContext = {
-  page: window.location.pathname.split("/")[1] || "home",
+  page: currentPageKey(),
   reactIsland: "app-bar",
 };
 
