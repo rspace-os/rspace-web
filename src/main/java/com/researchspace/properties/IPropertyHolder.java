@@ -224,6 +224,8 @@ public interface IPropertyHolder extends Versionable {
    */
   boolean isPicreateGroupOnSignupEnabled();
 
+  Integer getSlowLogThreshold();
+
   boolean isAsposeCachingEnabled();
 
   boolean isMsOfficeEnabled();
