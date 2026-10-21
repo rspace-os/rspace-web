@@ -420,7 +420,10 @@ class ApiV2RuntimeFieldParserTest {
         CollectionQueryException.class,
         () ->
             ApiV2ResourceRequestParser.bulk(
-                "customFields.SF1==BSL-2", ApiV2InstrumentResource.DESCRIPTION, REGISTRY));
+                "customFields.SF1==BSL-2",
+                ApiV2InstrumentResource.DESCRIPTION,
+                REGISTRY,
+                RuntimeFieldContext.empty()));
   }
 
   @Test
