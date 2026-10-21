@@ -208,7 +208,7 @@ public class ApiV2ControllerAdvice {
 
   @ExceptionHandler(BookingConfigurationLifecycleException.class)
   public ResponseEntity<ApiV2Problem> handleBookingConfigurationLifecycle() {
-    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.lifecycleConflict");
+    return problem(HttpStatus.CONFLICT, BookingConfigurationLifecycleException.MESSAGE_KEY);
   }
 
   @ExceptionHandler(StaleBookingSettingsException.class)
