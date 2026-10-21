@@ -54,13 +54,15 @@ function relationshipGlobalId(value: unknown, prefix: string): string {
 function RelationshipOptionsContent({
   anchor,
   emptyMessage,
+  label,
 }: {
   anchor?: ReturnType<typeof useComboboxAnchor>;
   emptyMessage: string;
+  label: string;
 }) {
   return (
     <ComboboxContent anchor={anchor}>
-      <ComboboxList>
+      <ComboboxList aria-label={label}>
         {(option: RelationshipOption) => (
           <ComboboxItem key={option.value} value={option}>
             {option.content ?? option.label}
@@ -178,7 +180,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
           onFocus={fieldApi.props.onFocus}
           onBlur={fieldApi.props.onBlur}
         />
-        <RelationshipOptionsContent emptyMessage={t("collectionForm.relationship.empty")} />
+        <RelationshipOptionsContent label={label} emptyMessage={t("collectionForm.relationship.empty")} />
       </Combobox>
     );
   }
@@ -222,7 +224,7 @@ function RelationshipFieldControl<TDocument extends Record<string, unknown>>({
           onBlur={fieldApi.props.onBlur}
         />
       </ComboboxChips>
-      <RelationshipOptionsContent anchor={anchor} emptyMessage={t("collectionForm.relationship.empty")} />
+      <RelationshipOptionsContent anchor={anchor} label={label} emptyMessage={t("collectionForm.relationship.empty")} />
     </Combobox>
   );
 }
