@@ -50,16 +50,18 @@ async function recoverSession(authorization: string, identityRejected: boolean):
   const tokenResponse = await fetch("/userform/ajax/inventoryOauthToken", {
     headers: { "X-Requested-With": "XMLHttpRequest" },
   });
-  if (
-    tokenResponse.status === 401 ||
-    tokenResponse.status === 403 ||
-    tokenResponse.headers.get("Content-Type")?.includes("text/html")
-  ) {
+  if (tokenResponse.status === 401 || tokenResponse.status === 403) {
     clearStoredToken();
     globalThis.location.assign("/login");
     return;
   }
   if (!tokenResponse.ok) return;
+  // A successful HTML response is the login page reached by a redirect; error pages are not.
+  if (tokenResponse.headers.get("Content-Type")?.includes("text/html")) {
+    clearStoredToken();
+    globalThis.location.assign("/login");
+    return;
+  }
   const { data: token } = (await tokenResponse.json()) as { data?: unknown };
   if (typeof token !== "string" || !token) {
     clearStoredToken();

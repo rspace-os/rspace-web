@@ -453,7 +453,13 @@ test.each([
   expect(getStoredToken()).toBeNull();
 });
 
-test("a transient token issuance failure allows a later recovery retry", async () => {
+test.each([
+  ["JSON 500", () => HttpResponse.json({}, { status: 500 })],
+  [
+    "HTML 502",
+    () => new HttpResponse("<html>Bad Gateway</html>", { status: 502, headers: { "Content-Type": "text/html" } }),
+  ],
+])("a transient token issuance failure (%s) allows a later recovery retry", async (_label, failure) => {
   const { assign, reload } = stubLocation();
   const staleToken = jwt("same-user", 1);
   const freshToken = jwt("same-user", 2);
@@ -470,7 +476,7 @@ test("a transient token issuance failure allows a later recovery retry", async (
     ),
     http.get("/userform/ajax/inventoryOauthToken", () => {
       tokenRequests++;
-      return tokenRequests === 1 ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json({ data: freshToken });
+      return tokenRequests === 1 ? failure() : HttpResponse.json({ data: freshToken });
     }),
   );
 
