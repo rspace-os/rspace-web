@@ -53,7 +53,7 @@ export function GranteePicker({
     enabled: query.length >= MINIMUM_QUERY,
   });
 
-  // The audience is never offered here: it is added by its own action, not searched for.
+  // The audience is a permanent row whose role grants or denies access; it is never added here.
   const results = (directory.data ?? []).filter((entry) => entry.kind !== "AUDIENCE" && !assignedKeys.has(entry.key));
 
   return (
