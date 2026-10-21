@@ -12,10 +12,18 @@ import com.researchspace.model.collection.CollectionFieldTypes.Constraints;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 class CollectionFieldTypesTest {
+
+  @Test
+  void configurableTextRetainsIdentityParsing() {
+    CollectionFieldType<String> type = CollectionFieldTypes.text(Set.of(Operator.EQUAL), false);
+    org.junit.jupiter.api.Assertions.assertNull(type.parse(null));
+    org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> type.validate(null));
+  }
 
   @Test
   void constrainedTextKeepsItsQueryBehaviour() {
