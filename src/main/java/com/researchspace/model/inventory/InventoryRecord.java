@@ -119,7 +119,7 @@ public abstract class InventoryRecord {
         .collect(Collectors.joining(","));
   }
 
-  /** Cap enforced on an inventory record's description; the column is 2050, see ADR 0012. */
+  /** Cap on an inventory record's description, in validation and in the column; see ADR 0012. */
   public static final int DESCRIPTION_LENGTH = 2000;
 
   static final Set<String> RESERVED_FIELD_NAMES =
@@ -181,7 +181,9 @@ public abstract class InventoryRecord {
   }
 
   @Embedded
-  @AttributeOverride(name = "description", column = @Column(name = "description", length = 2050))
+  @AttributeOverride(
+      name = "description",
+      column = @Column(name = "description", length = DESCRIPTION_LENGTH))
   public EditInfo getEditInfo() {
     return editInfo;
   }

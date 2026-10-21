@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -12,6 +13,7 @@ import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.SpringTransactionalTest;
+import org.hibernate.exception.DataException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -76,5 +78,17 @@ public class SampleDaoTest extends SpringTransactionalTest {
     sessionFactory.getCurrentSession().clear();
 
     assertEquals(description, sampleDao.get(id).getDescription());
+  }
+
+  @Test
+  public void refusesADescriptionOverTheCapAtTheColumn() {
+    User user = createAndSaveRandomUser();
+    Container workbench = containerDao.getWorkbenchForUser(user);
+    Sample sample = recordFactory.createSample("too long description sample", user);
+    sample.getSubSamples().get(0).moveToNewParent(workbench);
+    sample.setDescription("é".repeat(InventoryRecord.DESCRIPTION_LENGTH + 1));
+    sampleDao.persistNewSample(sample);
+
+    assertThrows(DataException.class, this::flushDatabaseState);
   }
 }

@@ -29,10 +29,12 @@ Decided with Nico on 2026-10-21.
    InstrumentEntity with their `_AUD` twins, through one Liquibase changeset with
    `context="run"`. ExtraField keeps 250 until its own ticket; BaseRecord and RSForm belong to
    RSDEV-818.
-3. **The column is `varchar(2050)`, the enforced limit is 2000.** The 50 characters are headroom
-   so a value that passes validation can never hit the column, whatever the counting of
-   markup or surrogate pairs does at the edge. Validation, not the column, is the limit users
-   see.
+3. **The column is `varchar(2000)`, the same number validation enforces** (amended with Nico on
+   2026-10-21; first decided as a 2050 column). Java and JavaScript count UTF-16 code units,
+   never fewer than the characters MariaDB counts in a `utf8mb4` varchar, so anything that
+   passes validation fits. A write path that skips validation now fails at the database
+   instead of storing more than users are promised. The override reads the column length from
+   `InventoryRecord.DESCRIPTION_LENGTH`, so the two cannot drift.
 4. **Only the info card scrolls.** View mode already renders the whole description and wraps;
    the editor already grows to 500px and then scrolls. The info card behind a record's badge
    opens in a tooltip, which closes when the page scrolls, so at 2000 characters its end was
@@ -58,5 +60,6 @@ Decided with Nico on 2026-10-21.
   caps captions at 250. Rejected.
 - **A separate description column for inventory.** Full decoupling, but a data migration for
   five tables to gain nothing the override does not already give. Rejected.
-- **Column 2000 exactly.** One number everywhere, but no margin between what validation
-  accepts and what the column stores. Rejected in favour of 2050.
+- **Column 2050, validated limit 2000.** Headroom in case counting markup or surrogate pairs
+  ever disagreed at the edge, but they cannot (decision 3), and it let a write path without
+  validation store up to 50 characters past the cap. Chosen first, then replaced by 2000.
