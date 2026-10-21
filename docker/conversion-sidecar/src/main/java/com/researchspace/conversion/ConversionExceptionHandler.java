@@ -1,5 +1,6 @@
 package com.researchspace.conversion;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -23,7 +24,10 @@ final class ConversionExceptionHandler {
   private static final Logger LOG = LoggerFactory.getLogger(ConversionExceptionHandler.class);
 
   @ExceptionHandler(ConversionException.class)
-  ResponseEntity<ProblemDetail> handle(ConversionException exception) {
+  ResponseEntity<ProblemDetail> handle(
+      ConversionException exception, HttpServletResponse servletResponse)
+      throws ConversionException {
+    rethrowIfCommitted(exception, servletResponse);
     return response(exception.status(), exception.error());
   }
 
@@ -53,10 +57,29 @@ final class ConversionExceptionHandler {
   }
 
   @ExceptionHandler(Exception.class)
-  ResponseEntity<ProblemDetail> handleUnexpected(Exception exception) {
+  ResponseEntity<ProblemDetail> handleUnexpected(
+      Exception exception, HttpServletResponse servletResponse) throws Exception {
+    if (servletResponse.isCommitted()) {
+      LOG.warn("Conversion response aborted after it was committed", exception);
+    }
+    rethrowIfCommitted(exception, servletResponse);
     String requestId = UUID.randomUUID().toString();
     LOG.error("Unexpected conversion failure [{}]", requestId, exception);
     return response(HttpStatus.INTERNAL_SERVER_ERROR, ConversionError.FAILED, requestId);
+  }
+
+  /**
+   * A failure while streaming a converted file must not append an error body to it: rethrowing
+   * leaves the exception unresolved, so the container closes the connection and the client sees a
+   * body shorter than its {@code Content-Length}. Before commit, drop the converted file's length
+   * so the error body is not framed by it.
+   */
+  private static <E extends Exception> void rethrowIfCommitted(
+      E exception, HttpServletResponse servletResponse) throws E {
+    if (servletResponse.isCommitted()) {
+      throw exception;
+    }
+    servletResponse.setContentLengthLong(-1);
   }
 
   private ResponseEntity<ProblemDetail> response(HttpStatus status, ConversionError error) {

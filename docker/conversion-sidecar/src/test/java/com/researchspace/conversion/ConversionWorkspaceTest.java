@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,7 +21,7 @@ class ConversionWorkspaceTest {
         directory.resolve("OSL_PIPE_10001_rspace-broken"), directory.resolve("missing"));
     ConversionWorkspace.clean(directory, "request-", "pdf-", "OSL_PIPE_10001_rspace-");
     try (var files = Files.list(directory)) {
-      assertEquals(java.util.List.of(unrelated), files.toList());
+      assertEquals(List.of(unrelated), files.toList());
     }
     assertEquals("unrelated", Files.readString(unrelated));
   }

@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
@@ -36,6 +37,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * ApplicationContext for the entire application.
  */
 @Configuration
+@Import(ConversionSidecarClientFactory.Settings.class)
 @Profile({"prod", "prod-test"})
 @EnableAsync
 public class DocConverterProdConfig {
@@ -63,6 +65,8 @@ public class DocConverterProdConfig {
 
   @Value("${conversion.url:}")
   private String conversionUrl;
+
+  @Autowired private ConversionSidecarClientFactory.Settings conversionSettings;
 
   @Value("${conversion.use.dummy.converter:${aspose.use.dummy.converter:false}}")
   private boolean useDummyConverter;
@@ -142,7 +146,8 @@ public class DocConverterProdConfig {
     if (useDummyConverter) {
       delegates.add(dummyOrNullService());
     } else if (!StringUtils.isBlank(conversionUrl)) {
-      ConversionSidecarClientFactory.Clients clients = ConversionSidecarClientFactory.create(env);
+      ConversionSidecarClientFactory.Clients clients =
+          ConversionSidecarClientFactory.create(conversionUrl, conversionSettings);
       PdfConversionClient pdfClient = clients.pdf();
       delegates.add(new PdfThenPngConverter(pdfClient, baseCfg.pdfToImageConverter()));
       delegates.add(pdfClient);
