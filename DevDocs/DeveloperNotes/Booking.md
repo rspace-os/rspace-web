@@ -309,6 +309,50 @@ resubmitting with a newer version.
 
 Maintenance cancellation stores and audits the reason but sends no notification.
 
+## Typed scheduling increments
+
+The time increment is stored as `slotGranularityMinutes` plus `incrementUnit`
+(`MINUTES`, `HOURS` or `DAYS`) and `alignToIncrement`. The unit is persisted, so 24 hours
+and 1 day stay distinct after a save. All arithmetic uses a typed rule. The
+frontend's `domain/bookingIncrement.ts` and `BookingSchedulingSettings` on the server
+implement the same contract, pinned by the shared vectors in
+`src/test/resources/booking/incrementScenarios.json`, which both the JUnit and Vitest
+suites read.
+
+- Minutes and hours are elapsed time. A booking's elapsed length must be a positive whole
+  multiple of the increment, so a 90-minute booking across the spring change still lasts
+  90 minutes.
+- Days are calendar days in the item's timezone and must be whole numbers;
+  `slotGranularityMinutes` holds the day count times 1440 as a nominal value only. A Day
+  booking ends at its starting local time, a whole number of increments of local
+  dates later. Noon to noon may last 23, 24 or 25 hours. If that local time does
+  not exist on the end date, the booking is rejected with
+  `errors.api.v2.booking.dayEndMissing` instead of being moved through the gap. Day
+  increments require every weekday to be open from 00:00 to 24:00.
+- With "Start on clock intervals" on, the start's local minute of day must also be a
+  multiple of the increment, counted from midnight in the item's timezone
+  (`errors.api.v2.booking.alignment`). The end only follows the duration rule, so a
+  17-minute aligned booking from 23:48 ends at 00:05. Earlier versions required both
+  endpoints on the grid; this is the only semantic change for existing aligned items.
+- Alignment is effective only below 1440 minutes and never for Days. The stored flag is
+  not rewritten, so returning to a shorter increment restores the user's choice.
+
+The fallback for new configurations is 15 minutes, aligned. Maintenance is exempt from
+the increment and alignment, as it is from opening hours and the maximum duration.
+
+Settings validation checks the structure of the weekly schedule. An unaligned increment
+must fit one continuous opening period; touching periods merge across midnight and
+across Sunday into Monday. An aligned increment also needs a grid start inside such a
+period with room for a whole increment, so a 60-minute aligned increment cannot fit
+09:15 to 10:15. Bookings must still fit their dates' opening periods.
+
+The maximum booking duration is always elapsed minutes. For minutes and hours it is 0
+or a whole multiple of the increment. For Days it is 0 or at least the nominal increment
+(`days × 1440`) with no divisibility check, because a calendar day across the autumn
+change lasts 25 hours; a 1440-minute maximum therefore rejects that booking, and 1500
+accepts it. The absolute cap is 527,040 elapsed minutes (8,784 hours), which some
+366-calendar-day intervals exceed.
+
 ## Catalogue search
 
 Booking catalogue text search matches instrument names, descriptions, readable immediate-parent
