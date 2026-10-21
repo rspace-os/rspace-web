@@ -88,7 +88,7 @@ export function useApiV2TableList<
   CollectionRow<TDocument, TId | TTitle>
 > {
   type Row = CollectionRow<TDocument, TId | TTitle>;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const metadataQuery = useSuspenseQuery({
     queryKey: ["api-v2", "openapi", resourceName],
@@ -182,8 +182,9 @@ export function useApiV2TableList<
         metadata,
         runtimeFields,
         translate: (key, values) => String(t(key as never, values as never)),
+        language: i18n.resolvedLanguage,
       }),
-    [config, documentSchema, metadata, runtimeFields, t],
+    [config, documentSchema, metadata, runtimeFields, t, i18n.resolvedLanguage],
   );
   const fetchCollection = useMemo(() => createApiV2CollectionFetcher(adapter, request), [adapter, request]);
   const result = useTableList<Row>({
