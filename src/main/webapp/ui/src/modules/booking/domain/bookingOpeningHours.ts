@@ -1,6 +1,6 @@
 import { Temporal } from "@js-temporal/polyfill";
 import * as v from "valibot";
-import { bookingLocale } from "@/modules/booking/domain/bookingTime";
+import { bookingDateTimeLocale, bookingLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
 
 /** ISO 8601 weekdays, matching Java's DayOfWeek numbering. */
 export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
@@ -58,8 +58,9 @@ export function formatIsoWeekday(
 }
 
 /** A scheduling-zone opening range as `HH:mm–HH:mm`, printing a closing midnight as `00:00`. */
-export function formatOpeningRange({ start, end }: OpeningInterval): string {
-  return `${start}\u2013${end === "24:00" ? "00:00" : end}`;
+/** Each end in the locale's clock; a 24:00 end reads as midnight. */
+export function formatOpeningRange({ start, end }: OpeningInterval, locale = bookingDateTimeLocale()): string {
+  return `${formatWallClockTime(start, locale)}\u2013${formatWallClockTime(end, locale)}`;
 }
 
 /** A 24:00 end closes at the next midnight and follows any valid start. */

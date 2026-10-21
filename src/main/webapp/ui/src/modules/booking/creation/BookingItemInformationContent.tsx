@@ -61,7 +61,7 @@ function WeeklyOpeningHours({
   displayTimezone: string;
   itemDays?: { timezone: string; days: WeekdayOpening[] };
 }) {
-  const { t } = useTranslation("booking");
+  const { t, i18n } = useTranslation("booking");
   const everyDay = (week: WeekdayOpening[]) => {
     const [first] = week;
     return first?.hours && week.every((day) => day.hours === first.hours) ? first.hours : null;
@@ -100,7 +100,11 @@ function WeeklyOpeningHours({
           itemDays
             ? itemHours
               ? itemHours
-              : itemDays.days.map(({ dayOfWeek, hours: dayHours }) => dayLine(dayOfWeek, dayHours)).join("; ")
+              : formatList(
+                  itemDays.days.map(({ dayOfWeek, hours: dayHours }) => dayLine(dayOfWeek, dayHours)),
+                  i18n.resolvedLanguage,
+                  { type: "unit", style: "short" },
+                )
             : null,
         )}
       </ul>
