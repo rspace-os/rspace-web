@@ -6,6 +6,7 @@ import { expectAccessible } from "@/__tests__/accessibility";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { queryKeys } from "@/modules/common/hooks/auth";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
+import { TableListFilters } from "../../components/filters/TableListFilters";
 import { TableList } from "../../TableList";
 import { config, emptyFilters, records } from "../fixtures/tableListFixtures";
 import { chooseFilterField, chooseFilterOperator, chooseFilterValue } from "./chooseFilterField";
@@ -36,6 +37,61 @@ const statusRecords: readonly StatusRecord[] = [
 ];
 
 describe("TableList filters", () => {
+  it("groups related fields and their custom-field picker and defaults new selections to equals", async () => {
+    const user = userEvent.setup();
+    const relatedConfig = {
+      ...config,
+      fields: config.fields.map((field) =>
+        field.name === "owner"
+          ? {
+              ...field,
+              label: "Bookable item → Name",
+              origin: {
+                kind: "relationshipTarget" as const,
+                viaLabel: "Bookable item",
+                groupLabelKey: "tableList.fieldGroups.relationshipFields",
+              },
+            }
+          : field,
+      ),
+      runtimeSources: [
+        {
+          namespace: "target.extraFields",
+          viaLabel: "Bookable item",
+          catalog: "/api/v2/instruments/fields/extraFields",
+          maximumLimit: 200,
+          filterable: true,
+          columnSelectable: false,
+        },
+      ],
+    };
+    const onApply = vi.fn();
+    render(
+      <TableListFilters
+        config={relatedConfig}
+        expression={{ kind: "comparison", field: "owner", operator: "contains", value: "Microscope" }}
+        onApply={onApply}
+        onSelectRuntimeField={vi.fn()}
+        onClose={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("combobox", { name: "common:tableList.filters.operator" })).toHaveValue(
+      "common:tableList.filters.operators.contains",
+    );
+    await user.click(screen.getByRole("combobox", { name: "common:tableList.filters.field" }));
+    const group = screen.getByRole("group", { name: "Bookable item" });
+    expect(within(group).getByRole("option", { name: "Bookable item → Name" })).toBeVisible();
+    expect(within(group).getByRole("option", { name: "common:tableList.filters.customField.option" })).toBeVisible();
+    await user.click(within(group).getByRole("option", { name: "Bookable item → Name" }));
+    expect(screen.getByRole("combobox", { name: "common:tableList.filters.operator" })).toHaveValue(
+      "common:tableList.filters.operators.equals",
+    );
+    await chooseFilterField(user, "common:tableList.examples.fields.title");
+    expect(screen.getByRole("combobox", { name: "common:tableList.filters.operator" })).toHaveValue(
+      "common:tableList.filters.operators.contains",
+    );
+  });
+
   it("returns the complete loaded definition when reusing a runtime field", async () => {
     const user = userEvent.setup();
     const onSelectRuntimeField = vi.fn();
@@ -273,6 +329,7 @@ describe("TableList filters", () => {
     await chooseFilterField(user, "common:tableList.examples.fields.status");
     await chooseFilterOperator(user, "common:tableList.filters.operators.notIn");
     const values = screen.getByRole("combobox", { name: "common:tableList.filters.value" });
+    expect(values).toHaveAttribute("placeholder", "");
     await user.click(values);
     await user.click(await screen.findByRole("option", { name: "Draft" }));
     await user.click(values);
@@ -286,7 +343,7 @@ describe("TableList filters", () => {
     });
   });
 
-  it("selects an equals value from a field's constant options", async () => {
+  it("defaults select fields to equals for single-value filtering", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
@@ -307,7 +364,6 @@ describe("TableList filters", () => {
     await user.click(screen.getByRole("button", { name: "common:tableList.filters.noneApplied" }));
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
     await chooseFilterField(user, "common:tableList.examples.fields.status");
-    await chooseFilterOperator(user, "common:tableList.filters.operators.equals");
     await chooseFilterValue(user, "Draft");
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.applyFilters" }));
 

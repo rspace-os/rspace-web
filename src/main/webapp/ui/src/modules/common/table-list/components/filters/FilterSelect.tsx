@@ -15,6 +15,7 @@ import {
 export type FilterSelectOption = {
   value: string;
   label: string;
+  selectedLabel?: string;
   groupLabelKey: string | null;
 };
 
@@ -62,6 +63,7 @@ export function FilterSelect({
       open={open}
       onOpenChange={setOpen}
       value={selected}
+      itemToStringLabel={(option: FilterSelectOption) => option.selectedLabel ?? option.label}
       onValueChange={(option: FilterSelectOption | null) => {
         if (option) onChange(option.value);
       }}

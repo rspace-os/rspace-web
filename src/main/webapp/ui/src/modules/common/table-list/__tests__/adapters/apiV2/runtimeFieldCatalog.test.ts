@@ -6,7 +6,7 @@ import {
 } from "../../../adapters/apiV2/runtimeFieldCatalog";
 
 const namespace = {
-  catalog: "/api/v2/instruments/custom-fields",
+  catalog: "/api/v2/instruments/fields/customFields",
   catalogMaximumIds: 50,
 };
 
@@ -83,6 +83,38 @@ describe("fetchRuntimeFieldCatalog", () => {
     );
   });
 
+  it.each([
+    "https://example.invalid/api/v2/instruments/fields/customFields",
+    "/api/v2/records/fields/customFields",
+    "/api/v2/instruments/fields/customFields?next=/api/v2/records",
+  ])("rejects an unapproved catalog URL before making a request: %s", async (catalog) => {
+    let requests = 0;
+    const stub: typeof globalThis.fetch = async () => {
+      requests += 1;
+      return new Response("{}", { status: 200 });
+    };
+
+    await expect(fetchRuntimeFieldCatalog({ catalog }, { fetch: stub })).rejects.toThrow(
+      "Unsupported runtime field catalog route",
+    );
+    expect(requests).toBe(0);
+  });
+
+  it("rejects catalog redirects", async () => {
+    let redirect: RequestRedirect | undefined;
+    const stub: typeof globalThis.fetch = async (_input, init) => {
+      redirect = init?.redirect;
+      return new Response(JSON.stringify({ fields: [], hasMore: false, page: 1, limit: 50 }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    };
+
+    await fetchRuntimeFieldCatalog(namespace, { fetch: stub });
+
+    expect(redirect).toBe("error");
+  });
+
   it("hydrates saved definitions in batches within the published ID limit", async () => {
     const requested: string[][] = [];
     const stub: typeof globalThis.fetch = async (input) => {
@@ -125,7 +157,7 @@ describe("catalog request shape", () => {
 
     await fetchRuntimeFieldCatalog(namespace, { fetch: stub, search: "hazard", page: 2, limit: 200 });
 
-    expect(urls[0]).toBe("/api/v2/instruments/custom-fields?search=hazard&page=2&limit=200");
+    expect(urls[0]).toBe("/api/v2/instruments/fields/customFields?search=hazard&page=2&limit=200");
   });
 
   it("hydrates specific IDs instead of searching, for a saved view", async () => {
@@ -133,6 +165,6 @@ describe("catalog request shape", () => {
 
     await fetchRuntimeFieldCatalog(namespace, { fetch: stub, ids: ["SF104", "SF108"], search: "ignored" });
 
-    expect(urls[0]).toBe("/api/v2/instruments/custom-fields?ids=SF104%2CSF108");
+    expect(urls[0]).toBe("/api/v2/instruments/fields/customFields?ids=SF104%2CSF108");
   });
 });

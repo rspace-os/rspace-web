@@ -9,56 +9,30 @@ import { MultiSelect } from "@/modules/common/ui/multi-select";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { FilterSelect } from "./FilterSelect";
 import { type FilterValue, listValue, scalarValue } from "./filterValue";
-import { SuggestedValueInput } from "./SuggestedValueInput";
-import { useTargetScalarValues } from "./useTargetScalarValues";
 
-function targetFieldSource<TDocument>(
-  name: string,
-  fields: readonly ResolvedFieldConfig<TDocument>[],
-): RelationshipSource | null {
-  const dot = name.indexOf(".");
-  if (dot <= 0) return null;
-  const owner = fields.find((candidate) => candidate.name === name.slice(0, dot));
-  if (owner?.type !== "relationship") return null;
-  const field = fields.find((candidate) => candidate.name === name);
-  if (field?.origin?.kind === "runtimeField") return null;
-  return relationshipSources[owner.relationTo] ?? null;
-}
-
-function TargetScalarValue({
-  source,
-  ariaLabel,
-  value,
-  onChange,
-  idLinkLabel,
-}: {
-  source: RelationshipSource;
-  ariaLabel: string;
-  value: string;
-  onChange: (value: string) => void;
-  idLinkLabel: (globalId: string) => string;
-}) {
-  return (
-    <SuggestedValueInput
-      ariaLabel={ariaLabel}
-      value={value}
-      onChange={onChange}
-      minimumLength={2}
-      useSuggestions={(term, open) => useTargetScalarValues({ source, term, enabled: open, idLinkLabel })}
-    />
-  );
+function identitySourceFor<TDocument>(
+  field: ResolvedFieldConfig<TDocument>,
+  sources: Readonly<Record<string, RelationshipSource>>,
+): RelationshipSource | undefined {
+  if (field.filterPicker) {
+    const source = sources[field.filterPicker.resource];
+    return source?.globalIdPrefix === field.filterPicker.globalIdPrefix ? source : undefined;
+  }
+  return field.type === "relationship" ? sources[field.relationTo] : undefined;
 }
 
 export function FilterValueInput<TDocument>({
   field,
-  fields,
+  sources,
+  authScope,
   operator,
   value,
   number,
   onChange,
 }: {
   field: ResolvedFieldConfig<TDocument>;
-  fields: readonly ResolvedFieldConfig<TDocument>[];
+  sources?: Readonly<Record<string, RelationshipSource>>;
+  authScope?: string | number;
   operator: FilterOperator;
   value: FilterValue;
   number: number;
@@ -67,7 +41,8 @@ export function FilterValueInput<TDocument>({
   const { t } = useTranslation("common");
   const ariaLabel = t("tableList.filters.value", { number });
   const multiple = operator === "in" || operator === "notIn";
-  const targetSource = targetFieldSource(field.name, fields);
+  const availableSources = { ...relationshipSources, ...sources };
+  const identitySource = identitySourceFor(field, availableSources);
   const selectLabels = {
     placeholder: t("tableList.filters.placeholders.value"),
     noMatch: t("tableList.filters.valueSearch.noMatch"),
@@ -75,11 +50,12 @@ export function FilterValueInput<TDocument>({
     trigger: t("tableList.filters.valueSearch.trigger"),
   };
 
-  if (operator !== "exists" && field.type === "relationship" && relationshipSources[field.relationTo]) {
+  if (operator !== "exists" && identitySource) {
     return (
       <Suspense fallback={<Skeleton className="h-8 rounded-sm" />}>
         <RelationshipPicker
-          source={relationshipSources[field.relationTo]}
+          sources={[identitySource]}
+          authScope={authScope}
           ariaLabel={ariaLabel}
           className="rounded-sm"
           compact
@@ -107,11 +83,7 @@ export function FilterValueInput<TDocument>({
         onValueChange={onChange}
         allowCustomValues={!select}
         ariaLabel={ariaLabel}
-        placeholder={
-          select
-            ? t("tableList.filters.multiSelect.selectPlaceholder")
-            : t("tableList.filters.multiSelect.customPlaceholder")
-        }
+        placeholder={select ? "" : t("tableList.filters.multiSelect.customPlaceholder")}
         emptyMessage={select ? t("tableList.filters.multiSelect.empty") : t("tableList.filters.multiSelect.enterValue")}
         removeLabel={(item) => t("tableList.filters.multiSelect.remove", { value: item })}
         className="min-h-8 rounded-sm py-1 text-xs"
@@ -119,7 +91,7 @@ export function FilterValueInput<TDocument>({
     );
   }
 
-  if (operator === "equals" && field.type === "select") {
+  if (operator !== "exists" && field.type === "select") {
     return (
       <FilterSelect
         ariaLabel={ariaLabel}
@@ -157,25 +129,21 @@ export function FilterValueInput<TDocument>({
     );
   }
 
-  if (targetSource) {
-    return (
-      <Suspense fallback={<Skeleton className="h-8 rounded-sm" />}>
-        <TargetScalarValue
-          source={targetSource}
-          ariaLabel={ariaLabel}
-          value={scalarValue(value)}
-          onChange={onChange}
-          idLinkLabel={(globalId) => t("tableList.filters.openRecord", { globalId })}
-        />
-      </Suspense>
-    );
-  }
-
   return (
     <Input
       aria-label={ariaLabel}
       className="h-8 rounded-sm text-xs"
-      type={field.type === "number" ? "number" : field.type === "dateTime" ? "datetime-local" : "text"}
+      type={
+        field.type === "number"
+          ? "number"
+          : field.origin?.runtimeValueType === "date"
+            ? "date"
+            : field.origin?.runtimeValueType === "time"
+              ? "time"
+              : field.type === "dateTime"
+                ? "datetime-local"
+                : "text"
+      }
       step={field.type === "dateTime" ? "any" : undefined}
       placeholder={t(
         operator === "matches" ? "tableList.filters.placeholders.pattern" : "tableList.filters.placeholders.value",
