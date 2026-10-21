@@ -409,10 +409,11 @@ test.each(clients)("%s keeps a valid token on a permission-denied 401", async (c
   const validToken = jwt("same-user", 1);
   saveStoredToken(validToken);
   let tokenRequests = 0;
+  const whoamiAuthorizations: string[] = [];
   server.use(
     http.get("/api/v1/test-read", () => HttpResponse.json({}, { status: 401 })),
     http.get("/api/v1/userDetails/whoami", ({ request }) => {
-      expect(request.headers.get("Authorization")).toBe(`Bearer ${validToken}`);
+      whoamiAuthorizations.push(request.headers.get("Authorization") ?? "");
       return HttpResponse.json({ username: "current-user" });
     }),
     http.get("/userform/ajax/inventoryOauthToken", () => {
@@ -423,6 +424,7 @@ test.each(clients)("%s keeps a valid token on a permission-denied 401", async (c
 
   expect(await request("/api/v1/test-read", validToken)).toBe(401);
 
+  expect(whoamiAuthorizations).toEqual([`Bearer ${validToken}`]);
   expect(tokenRequests).toBe(0);
   expect(getStoredToken()).toBe(validToken);
   expect(reload).not.toHaveBeenCalled();
