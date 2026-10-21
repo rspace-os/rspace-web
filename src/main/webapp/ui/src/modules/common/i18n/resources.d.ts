@@ -5980,8 +5980,10 @@ export default interface Resources {
         "archiveTypeRequired": "archiveType is a required field.",
         "authorsCollectionRange": "Authors must contain between {min} and {max} entries.",
         "authorsRequired": "Authors are required.",
+        "choiceOptionsRequired": "Choice options are required.",
         "contactsCollectionRange": "Contacts must contain between {min} and {max} entries.",
         "contactsRequired": "Contacts are required.",
+        "dateFormatRequired": "Date format is required.",
         "descriptionRequired": "Description is a required field.",
         "descriptionStringMax": "Description \"${validatedValue}\" must be less than {max} characters.",
         "emailRequired": "Email is a required field.",
@@ -5995,10 +5997,14 @@ export default interface Resources {
         "licenseNameStringRange": "License name \"${validatedValue}\" must be between {min} and {max} characters.",
         "licenseUrlRequired": "License URL is a required field.",
         "licenseUrlStringMax": "License URL \"${validatedValue}\" must be less than {max} characters.",
+        "maintenanceEndDateRequired": "End date is required.",
+        "maintenanceMessageStringMax": "Message must be no longer than {max} characters.",
+        "maintenanceStartDateRequired": "Start date is required.",
         "maxLinkLevelRequired": "maxLinkLevel is a required field.",
         "nameRange": "Name \"${validatedValue}\" must be between {min} and {max} characters.",
         "nameRequired": "Name is a required field.",
         "pdfNameRequired": "PDF name is a required field.",
+        "radioOptionsRequired": "Radio options are required.",
         "subjectRequired": "Subject is a required field.",
         "subjectStringMax": "Subject \"${validatedValue}\" must be less than {max} characters.",
         "titleRequired": "Title is a required field.",
@@ -6017,11 +6023,6 @@ export default interface Resources {
         "numberAboveMaximum": "Data [{0}] greater than maximum [{1}]",
         "numberBelowMinimum": "Data [{0}] smaller than minimum [{1}]",
         "tooManyDecimalPlaces": "Data [{0}] has too many decimal places (should be [{1}] )."
-      },
-      "fieldForm": {
-        "choiceOptionsRequired": "Choice options are required.",
-        "dateFormatRequired": "Date format is required.",
-        "radioOptionsRequired": "Radio options are required."
       },
       "form": {
         "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
@@ -6080,11 +6081,6 @@ export default interface Resources {
         "unitIdInvalid": "invalid ID for unit",
         "unitUnrecognized": "Could not parse quantity because unit [{0}] is not recognized",
         "unsupportedUnitType": "Unsupported unit type: {0}"
-      },
-      "scheduledMaintenance": {
-        "endDateRequired": "End date is required.",
-        "messageStringMax": "Message must be no more than {max} characters.",
-        "startDateRequired": "Start date is required."
       },
       "settings": {
         "invalidBoolean": "[{0}] is not a boolean value",

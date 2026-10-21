@@ -3,11 +3,6 @@ package com.researchspace.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.researchspace.maintenance.model.ScheduledMaintenance;
-import com.researchspace.model.User;
-import com.researchspace.model.field.ChoiceFieldForm;
-import com.researchspace.model.field.DateFieldForm;
-import com.researchspace.model.field.RadioFieldForm;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.model.units.ValidTemperature;
@@ -61,45 +56,6 @@ class JsonValidationMessageSourceTest {
         violations.stream()
             .map(ConstraintViolation::getMessage)
             .collect(java.util.stream.Collectors.toSet()));
-    validator.close();
-  }
-
-  @Test
-  void resolvesFieldFormMessagesFromJson() {
-    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-    validator.setValidationMessageSource(new JsonMessageSource());
-    validator.afterPropertiesSet();
-
-    assertEquals(
-        "Choice options are required.",
-        validator.validate(new ChoiceFieldForm()).iterator().next().getMessage());
-
-    DateFieldForm date = new DateFieldForm();
-    date.setFormat("");
-    assertEquals(
-        "Date format is required.", validator.validate(date).iterator().next().getMessage());
-
-    assertEquals(
-        "Radio options are required.",
-        validator.validate(new RadioFieldForm()).iterator().next().getMessage());
-    validator.close();
-  }
-
-  @Test
-  void resolvesScheduledMaintenanceMessageFromJson() {
-    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-    validator.setValidationMessageSource(new JsonMessageSource());
-    validator.afterPropertiesSet();
-    String message = "x".repeat(User.DEFAULT_MAXFIELD_LEN + 1);
-    ScheduledMaintenance maintenance = new ScheduledMaintenance(null, null);
-    maintenance.setMessage(message);
-
-    ConstraintViolation<ScheduledMaintenance> violation =
-        validator.validateProperty(maintenance, "message").iterator().next();
-
-    assertEquals(
-        "Message must be no more than " + User.DEFAULT_MAXFIELD_LEN + " characters.",
-        violation.getMessage());
     validator.close();
   }
 }

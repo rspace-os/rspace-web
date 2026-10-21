@@ -308,11 +308,6 @@
       "fromAfterTo": "From must be earlier than to",
       "invalidFormat": "could not parse [{0}]. Argument must match one or both of {1}, or {2}"
     },
-    "fieldForm": {
-      "choiceOptionsRequired": "Choice options are required.",
-      "dateFormatRequired": "Date format is required.",
-      "radioOptionsRequired": "Radio options are required."
-    },
     "imageData": {
       "invalidEncoding": "Image string doesn't seem to be base64-encoded",
       "required": "Expected base64 web image string but was null or empty.",
@@ -391,11 +386,6 @@
       "textTooLong": "Text value is {0} characters long; the maximum is {1}",
       "valueTooLong": "Value is {0} characters long; the maximum is {1}"
     },
-    "scheduledMaintenance": {
-      "endDateRequired": "End date is required.",
-      "messageStringMax": "Message must be no more than {max} characters.",
-      "startDateRequired": "Start date is required."
-    },
     "errors": {
       "allVersionsRequired": "allVersions is a required field.",
       "archiveTypeInvalid": "archiveType must be one of xml, html or eln.",
@@ -404,6 +394,8 @@
       "authorsRequired": "Authors are required.",
       "contactsCollectionRange": "Contacts must contain between {min} and {max} entries.",
       "contactsRequired": "Contacts are required.",
+      "choiceOptionsRequired": "Choice options are required.",
+      "dateFormatRequired": "Date format is required.",
       "descriptionRequired": "Description is a required field.",
       "descriptionStringMax": "Description \"${validatedValue}\" must be less than {max} characters.",
       "emailRequired": "Email is a required field.",
@@ -417,10 +409,14 @@
       "licenseNameStringRange": "License name \"${validatedValue}\" must be between {min} and {max} characters.",
       "licenseUrlRequired": "License URL is a required field.",
       "licenseUrlStringMax": "License URL \"${validatedValue}\" must be less than {max} characters.",
+      "maintenanceEndDateRequired": "End date is required.",
+      "maintenanceStartDateRequired": "Start date is required.",
+      "maintenanceMessageStringMax": "Message must be no longer than {max} characters.",
       "maxLinkLevelRequired": "maxLinkLevel is a required field.",
       "nameRequired": "Name is a required field.",
       "nameRange": "Name \"${validatedValue}\" must be between {min} and {max} characters.",
       "pdfNameRequired": "PDF name is a required field.",
+      "radioOptionsRequired": "Radio options are required.",
       "subjectRequired": "Subject is a required field.",
       "subjectStringMax": "Subject \"${validatedValue}\" must be less than {max} characters.",
       "titleRequired": "Title is a required field.",

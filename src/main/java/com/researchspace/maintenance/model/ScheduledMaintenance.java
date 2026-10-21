@@ -73,7 +73,7 @@ public class ScheduledMaintenance {
   @Column(nullable = false)
   @Temporal(TemporalType.TIMESTAMP)
   @DateTimeFormat(iso = ISO.DATE_TIME)
-  @NotNull(message = "{validation.scheduledMaintenance.startDateRequired}")
+  @NotNull(message = "{validation.errors.maintenanceStartDateRequired}")
   public Date getStartDate() {
     if (startDate == null) {
       return null;
@@ -101,7 +101,7 @@ public class ScheduledMaintenance {
   @Column(nullable = false)
   @Temporal(TemporalType.TIMESTAMP)
   @DateTimeFormat(iso = ISO.DATE_TIME)
-  @NotNull(message = "{validation.scheduledMaintenance.endDateRequired}")
+  @NotNull(message = "{validation.errors.maintenanceEndDateRequired}")
   public Date getEndDate() {
     if (endDate == null) {
       return null;
@@ -143,7 +143,7 @@ public class ScheduledMaintenance {
   @Size(
       min = 0,
       max = User.DEFAULT_MAXFIELD_LEN,
-      message = "{validation.scheduledMaintenance.messageStringMax}")
+      message = "{validation.errors.maintenanceMessageStringMax}")
   public String getMessage() {
     return message;
   }

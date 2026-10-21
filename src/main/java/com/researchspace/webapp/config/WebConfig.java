@@ -60,10 +60,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
   @Value("${dev.storybook.preview.enabled:false}")
   private String storybookPreviewEnabled;
 
-  /**
-   * Without this, {@code mvcValidator()} builds its own validator and does not resolve messages
-   * from the JSON catalogues.
-   */
+  /** Share the JSON-backed validator so MVC resolves application constraint messages. */
   @Override
   protected Validator getValidator() {
     return jsonBackedValidator;

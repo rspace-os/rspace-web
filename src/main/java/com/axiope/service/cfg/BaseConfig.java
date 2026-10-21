@@ -1117,6 +1117,7 @@ public abstract class BaseConfig {
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
     LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    // Return raw JSON templates for Hibernate to interpolate constraint attributes and values.
     validator.setValidationMessageSource(new JsonMessageSource());
     return validator;
   }
