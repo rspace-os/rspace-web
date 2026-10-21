@@ -12,7 +12,7 @@ suite under `src/main/webapp/ui/src/tinyMCE/stoichiometry/__tests__/`.
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { SomeStory } from "./Component.story";
 import { ComponentPage } from "./pageObjects/ComponentPage";
@@ -96,12 +96,19 @@ document/page divs, the TinyMCE contenteditable iframe body.
 
 ## Gotcha catalogue
 
-- **MSW worker lifecycle.** Handlers are file-local; the service-worker
-  registration is origin-global in every engine. Skip `worker.stop()` in
-  teardown; it only closes the current client and the context cleans up. Keep
-  files serial so Firefox's renewal never overlaps another file. A spec that
-  also imports `browserSetup.ts` starts the worker twice in one iframe;
-  `browserSetup.ts` silences that one MSW warning.
+### MSW worker lifecycle
+
+Vitest's default isolation gives each test file a fresh iframe and a separate client from
+`browserMocks.ts`; the service-worker registration is origin-global in every engine. `browserSetup.ts`
+awaits `worker.start()` before tests and resets handlers, storage, and CDP media. Specs import
+`browserMocks`, never `browserSetup`, so setup lifecycle hooks are registered only by `setupFiles`.
+Do not call `worker.stop()` in teardown: it closes only the current client, and the context cleans up.
+A synthetic `beforeunload` also triggers MSW shutdown, so restart the client in that test's teardown.
+
+Keep `fileParallelism: false` so Firefox renewal never overlaps another file, keep setup files in list
+order, and keep `retry: 2`. The `browserLifecycle` regression runs first in every engine and is
+unretried. Playwright contexts use `locale: "en-US"` so number formatting matches English assertions
+regardless of the host OS locale.
 - **Firefox registration renewal.** Firefox can give a new Vitest iframe an
   active controller that still bypasses MSW, so `browserWorkerRegistration.ts`
   (a no-op elsewhere) unregisters the old worker first and the new one
