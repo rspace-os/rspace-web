@@ -41,7 +41,7 @@ public class ChoiceFieldForm extends FieldForm {
   }
 
   @Column(length = 1000)
-  @NotBlank(message = "choice options {errors.required.field}")
+  @NotBlank(message = "{validation.errors.choiceOptionsRequired}")
   public String getChoiceOptions() {
     return choiceOptions;
   }

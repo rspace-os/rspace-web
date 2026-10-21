@@ -60,11 +60,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
   @Value("${dev.storybook.preview.enabled:false}")
   private String storybookPreviewEnabled;
 
-  /**
-   * Without this, {@code mvcValidator()} builds its own validator, whose interpolator reads only
-   * {@code ValidationMessages.properties}, and every {@code {some.key}} message reaches the user
-   * with the braces intact.
-   */
+  /** Share the JSON-backed validator so MVC resolves application constraint messages. */
   @Override
   protected Validator getValidator() {
     return jsonBackedValidator;
