@@ -22,6 +22,7 @@ const adapter: ResourceAccessAdapter = {
       allowedGranteeKinds: ["USER", "GROUP"],
     },
     { key: "READER", label: "Reader", allowedGranteeKinds: ["USER", "GROUP", "AUDIENCE"] },
+    { key: "NO_ACCESS", label: "No access", allowedGranteeKinds: ["AUDIENCE"] },
   ],
 };
 
@@ -52,6 +53,35 @@ const second = {
   },
   role: "STEWARD",
 };
+
+const allUsers = {
+  grantee: {
+    kind: "AUDIENCE",
+    id: "all-users",
+    key: "audience:all-users",
+    name: "All users",
+    available: true,
+    effectiveRole: "READER",
+    roleSources: [],
+  },
+  role: "READER",
+};
+
+function reader(id: number) {
+  return {
+    grantee: {
+      kind: "USER",
+      id,
+      key: `user:${id}`,
+      name: `Reader ${id}`,
+      detail: `reader${id}`,
+      available: true,
+      effectiveRole: "READER",
+      roleSources: [],
+    },
+    role: "READER",
+  };
+}
 
 function document(version = 3, assignments: unknown[] = [owner], callerKey: string | null = "user:11") {
   return {
@@ -438,6 +468,72 @@ describe("ResourceAccessEditor", () => {
       assignments: [
         { granteeKey: "user:11", role: "STEWARD" },
         { granteeKey: "group:41", role: "CONTRIBUTOR" },
+      ],
+    });
+  });
+
+  it("keeps All users as a permanent row with audience roles, outside the named-assignment limit", async () => {
+    const readers = Array.from({ length: 98 }, (_, index) => reader(100 + index));
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () =>
+        HttpResponse.json(document(3, [owner, allUsers, ...readers])),
+      ),
+      http.get("/api/v2/test-collections/9/access/grantees", () => HttpResponse.json([])),
+    );
+    const user = userEvent.setup();
+    editor();
+    await screen.findByRole("table");
+
+    // 99 named assignments: the audience row does not use up the 100th slot.
+    expect(screen.getByLabelText("common:resourceAccess.addUserOrGroup")).toBeEnabled();
+    expect(row("All users").queryByRole("button", { name: "common:resourceAccess.removeNamed" })).toBeNull();
+    expect(row("All users").queryByRole("button", { name: "common:resourceAccess.leaveSelf" })).toBeNull();
+
+    await user.click(row("All users").getByRole("button", { name: "common:resourceAccess.roleFor" }));
+    const options = await screen.findAllByRole("menuitem");
+    expect(options.map((option) => option.textContent)).toEqual(["Reader", "No access"]);
+  });
+
+  it("stages an All users role change until Save, reverts it on Cancel, and keeps it through a stale save", async () => {
+    const requests: Request[] = [];
+    let current = document(3, [owner, allUsers]);
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () => HttpResponse.json(current)),
+      http.put("/api/v2/test-collections/9/access", ({ request }) => {
+        requests.push(request.clone());
+        return requests.length === 1 ? new HttpResponse(null, { status: 412 }) : HttpResponse.json(current);
+      }),
+    );
+    const user = userEvent.setup();
+    editor();
+    await screen.findByRole("table");
+    const roleOf = () => row("All users").getByRole("button", { name: "common:resourceAccess.roleFor" });
+    const denyAllUsers = async () => {
+      await user.click(roleOf());
+      await user.click(await screen.findByRole("menuitem", { name: "No access" }));
+    };
+
+    await denyAllUsers();
+    expect(roleOf()).toHaveTextContent("No access");
+    expect(requests).toHaveLength(0);
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
+    expect(roleOf()).toHaveTextContent("Reader");
+
+    await denyAllUsers();
+    current = document(4, [owner, allUsers, reader(13)]);
+    const save = screen.getByRole("button", { name: "common:resourceAccess.saveChanges" });
+    await user.click(save);
+    await screen.findByText("common:resourceAccess.conflictMerged");
+    expect(roleOf()).toHaveTextContent("No access");
+    await user.click(save);
+
+    await waitFor(() => expect(requests).toHaveLength(2));
+    expect(requests[1].headers.get("If-Match")).toBe('"4"');
+    await expect(requests[1].json()).resolves.toEqual({
+      assignments: [
+        { granteeKey: "user:11", role: "STEWARD" },
+        { granteeKey: "audience:all-users", role: "NO_ACCESS" },
+        { granteeKey: "user:13", role: "READER" },
       ],
     });
   });
