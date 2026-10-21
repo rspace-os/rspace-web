@@ -9,7 +9,7 @@ The [Vite config](./vite.config.ts) defines multiple entry points for these
 different application parts -- see the `bundleEntries` object for the complete
 list of bundles and their purposes.
 
-The root [package.json](../../../package.json) defines the dependencies and
+The root [package.json](../../../../package.json) defines the dependencies and
 scripts for development, testing, and building the application.
 
 ## Architecture
@@ -18,7 +18,6 @@ The codebase has evolved over time, and as such contains a mix of architectural
 patterns. Many of the older pages are still based on JSPs with jQuery, with much
 of their JavaScript code in [../scripts](../scripts), with the exception of the
 React islands which can be found in [src/CreateGroup](./src/CreateGroup),
-[src/Gallery](./src/Gallery) (this is the old Gallery),
 [src/my-rspace](./src/my-rspace), [src/system-groups](./src/system-groups),
 [src/system-ror](./src/system-ror), and [src/Toolbar](./src/Toolbar).
 [src/tinyMCE](./src/tinyMCE) contains TinyMCE plugins, written in React, that
@@ -31,22 +30,36 @@ fully React and TypeScript and also live in this directory. They can be found in
 [src/eln-inventory-integration](./src/eln-inventory-integration).
 
 Other important directories include:
-- [dist](./dist): The output directory for built files.
-- [\_\_tests\_\_](./__tests__): Helper and setup functions for Jest.
-- [src/assets](./src/assets): Static assets such as images and branding.
-- [src/components](./src/components): Reusable React components used across the
-  application.
-- [src/hooks](./src/hooks): Custom React hooks for shared logic, in particular
-  wrappers for calling our API.
-- [src/stores](./src/stores): State management code, including type definitions,
-  model classes, React Contexts, and global stores. For more information, see
-  the `src/stores/*/README.md` files.
-- [src/util](./src/util): Utility functions used across the application.
+
+| # | Guidance |
+| --- | --- |
+| 1. | `dist/`: The gitignored output directory for built files. |
+| 2. | [src/__tests__](./src/__tests__): Shared test helpers and setup. |
+| 3. | [src/assets](./src/assets): Static assets such as images and branding. |
+| 4. | [src/components](./src/components): Reusable React components used across the application. |
+| 5. | [src/hooks](./src/hooks): Custom React hooks for shared logic, in particular wrappers for calling our API. |
+| 6. | [src/stores](./src/stores): State management code, including type definitions, model classes, React Contexts, and global stores. For more information, see the `src/stores/*/README.md` files. |
+| 7. | [src/util](./src/util): Utility functions used across the application. |
 
 Some of the older React code still uses legacy patterns such as class components
 and MobX stores, while newer code uses functional components with hooks and React
 Context for state management. New code should avoid using MobX stores, and
 instead use React Context and custom hooks for state management.
+
+## Shared frontend helpers
+
+Paths in this table are relative to `src/`. Keep shared helpers in these locations rather than
+copying them into feature modules.
+
+| # | Path | Contract |
+| --- | --- | --- |
+| 1. | `modules/common/ui/tooltip-icon-link.tsx` | `TooltipIconLink` composes an icon link with a labelled tooltip. |
+| 2. | `modules/common/hooks/useAlignedMinute.ts` | `useAlignedMinute` returns epoch milliseconds aligned to minute boundaries, with an optional clock for tests. |
+| 3. | `modules/common/queries/queryRetry.ts` | `httpStatusOf`, `isPermanentClientError`, and `retryUnlessClientError` handle retry policy. Permanent 4xx responses stop retries, except 408 and 429; other failures retry while the failure count is below three. |
+| 4. | `modules/common/api/apiV2Headers.ts` | `apiV2Headers` and `apiV2JsonHeaders` build authenticated API v2 headers, preserving other initial headers and setting JSON content type in the latter. |
+
+The UI helpers use the existing generated `modules/common/utils/cn-tables.ts`. The root
+`postinstall` runs `pnpm cn:build` to generate it from the shared stylesheet.
 
 ## Building the code
 
@@ -59,11 +72,9 @@ for changes to the React code and recompiles it as necessary. This is much
 faster and provides a better development experience, with shorter feedback loops
 and source maps for easier debugging.
 
-The frontend build now uses Vite by default. `pnpm run build` and
-`pnpm run serve` both target the Vite configuration in `vite.config.ts`,
-emitting the main browser bundles into `dist`. Production builds use hashed
-filenames, while the development watch build keeps stable filenames to reduce
-stale-asset issues during JSP-driven development.
+The frontend uses Vite. `pnpm build` emits hashed production assets into `dist/`.
+`pnpm serve` starts the development server with hot module replacement; it does not write a
+production bundle to `dist/`. Both use `vite.config.ts`.
 
 Server-rendered pages use the server-side `rst:bundle` tag, which caches and
 reads `dist/.vite/manifest.json` to render the required
@@ -107,109 +118,49 @@ set `dev.storybook.preview.enabled=true` in the local/dev instance's
 `deployment.properties` to expose it on a local/dev instance. Leave it disabled
 on deployed production instances because the route is unauthenticated.
 
-## Testing Strategy
+## Testing strategy
 
-### Testing Frameworks
+Run frontend checks from the repository root.
 
-#### Component Tests (Playwright)
-Most new React tests (since mid-2025) have been written using Playwright's
-component testing capabilities. This allows for more realistic testing of React
-components than jest as the tests are run in an actual browser. Whilst slower to
-run than Jest unit tests, they provide better confidence that components work as
-expected, in particular when it comes to accessibility. The config for Playwright
-can be found in the [playwright-ct.config.ts](./playwright-ct.config.ts) file.
+| # | Runner | Location and command |
+| --- | --- | --- |
+| 1. | Vitest with jsdom | Unit tests use `*.test.tsx` or the corresponding JS/TS suffixes. [vite.config.ts](./vite.config.ts) owns the setup. Run `pnpm test <file>`. |
+| 2. | Vitest Browser Mode | Real-browser component tests use `*.spec.tsx`, with colocated stories and page objects. [vitest.browser.config.ts](./vitest.browser.config.ts) runs Chromium, Firefox, and WebKit through Playwright. Run `pnpm test-browser <file>`. |
+| 3. | Playwright end-to-end tests | Use `*.e2e.ts` for browser flows and `*.api.spec.ts` for HTTP tests. See the [E2E README](./src/__tests__/e2e/README.md) for fixture, environment, and execution details. |
+| 4. | Storybook | `pnpm storybook:test` runs the stories in Chromium. |
 
-Many of the tests have been written using a BDD-style approach, allowing for
-the test code to closely align with the feature specification and user stories.
-The test code can be found alongside the component code in files with a
-`.spec.tsx` suffix. Many of the tests also use a `.story.tsx` file to define
-different setups for the componenent as Playwright has restrictions on what
-can be done in the test file itself. These story files can also act as a form of
-documentation for the component, showing different ways it can be used.
+Use Testing Library for component rendering and semantic queries. Shared MSW setup supplies default
+handlers; register scenario handlers through the worker or server for the relevant runner. Keep
+property-based tests focused on logic that benefits from generated inputs. The repository's
+`react-testing-library` and `rspace-browser-tests` playbooks cover test-authoring conventions.
 
-#### Unit Tests (Vitest)
-Much of the rest of the React codebase is tested using Vitest unit tests. These
-tests are generally faster to run than Playwright component tests, but can be
-less realistic as they often require more mocking and stubbing of dependencies.
-The most compelling reason to avoid relying only on unit tests, however, is simply how
-frustrating it is to assert properties about a UI that you cannot see. The
-config for Vitest can be found in the [Vite config](./vite.config.ts).
-
-The test files can be found in `__tests__` directories alongside the code under test.
-This directory usually contains either a file for each file under test in the
-parent directory, or else a directory for each file inside of which there will
-be a file for each class, module, function, or other construct that can be
-tested in isolation.
-
-#### End-to-End Tests (Cypress)
-End-to-end tests for the entire RSpace application, including both frontend and
-backend, are written using a mixture of Cypress, Selenium, and Playwright and
-live in separate repositories.
-
-### Testing Libraries
-
-There are also a few testing libraries that we use.
-
-#### Testing Library
-Testing library provides a uniform API for querying the DOM in both Jest and
-Playwright tests. It encourages testing the application in a way that is closer
-to how a user would interact with it, rather than testing implementation details.
-
-#### Axios Mock Adapter
-This library is used to mock Axios requests in Jest tests. It allows us to
-define expected requests and responses, making it easier to test components that
-make HTTP requests. In playwright, this is handled by the built-in
-`router.route` API.
-
-#### Fast Check
-Fast Check is a property-based testing library that allows us to define
-properties that should hold true for our code, and then generates test cases to
-verify those properties. This can help to catch edge cases that may not be
-covered by traditional unit tests. It is very handy when testing business logic
-in utility functions and model classes, where there are lots of edge cases to
-consider. It can be made to work with React components in both Jest and
-Playwright, but this is quite difficult to set up and due to performance
-constraints usually means that only a few generated values can be asserted for
-each property, limiting the usefulness of the approach. It is definitely worth
-considering when a component is particularly complex, but if the logic can be
-extracted out and tested separately then that is probably wiser than spending
-the time to set it up for components.
-
-#### jest-axe
-Unlike Playwright which has AxeBuilder built-in for asserting accessiblity, Jest
-requires that we import jest-axe separately. They both perform much the same
-job, but Playwright is a slightly better tool as it can catch more issues given
-that it actually runs in the browser.
-
-### Jenkins
-We have four steps in the Jenkins pipeline for running frontend tests:
-- Jest Tests (feature branch)
-- Jest Tests (main branch)
-- Playwright Component Tests (feature branch)
-- Playwright Component Tests (main branch)
-
-The main branch steps run all the tests when the build is running against the
-`main` branch. The feature branch steps run only the tests that have been
-changed since `main`, substantially speeding up the development feedback loop.
+The [CI workflow](../../../../.github/workflows/lint-and-test.yml) defines test jobs, browser-engine
+selection, linting, and TypeScript checks. Refer to it for the commands run on pull requests.
 
 ## Further Documentation
 
 For detailed information about specific areas
 
 ### Directories
-- Type definitions: See [src/stores/definitions/README.md](src/stores/definitions/README.md)
-- Model classes: See [src/stores/models/README.md](src/stores/models/README.md)
-- React Contexts: See [src/stores/contexts/README.md](src/stores/contexts/README.md)
-- Global state management: See [src/stores/stores/README.md](src/stores/stores/README.md)
-- Custom Hooks: See [src/hooks/README.md](src/hooks/README.md)
-- Gallery: See [src/eln/gallery/README.md](src/eln/gallery/README.md)
-- Apps Page: See [src/eln/apps/README.md](src/eln/apps/README.md)
-- Public Pages: See [src/components/PublicPages/README.md](src/components/PublicPages/README.md)
-- Inventory Context Menu: See [src/Inventory/components/ContextMenu/README.md](src/Inventory/components/ContextMenu/README.md)
+
+| # | Guidance |
+| --- | --- |
+| 1. | Type definitions: See [src/stores/definitions/README.md](src/stores/definitions/README.md) |
+| 2. | Model classes: See [src/stores/models/README.md](src/stores/models/README.md) |
+| 3. | React Contexts: See [src/stores/contexts/README.md](src/stores/contexts/README.md) |
+| 4. | Global state management: See [src/stores/stores/README.md](src/stores/stores/README.md) |
+| 5. | Custom Hooks: See [src/hooks/README.md](src/hooks/README.md) |
+| 6. | Gallery: See [src/eln/gallery/README.md](src/eln/gallery/README.md) |
+| 7. | Apps Page: See [src/eln/apps/README.md](src/eln/apps/README.md) |
+| 8. | Public Pages: See [src/components/PublicPages/README.md](src/components/PublicPages/README.md) |
+| 9. | Inventory Context Menu: See [src/Inventory/components/ContextMenu/README.md](src/Inventory/components/ContextMenu/README.md) |
 
 ### Topics
-- Accessibility: See [../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md](../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md)
-- Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md)
-- Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md)
-- Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md)
-- Odd things to watch out for with Material UI: See [./QuirksOfMaterialUi.md](./QuirksOfMaterialUi.md)
+
+| # | Guidance |
+| --- | --- |
+| 1. | Accessibility: See [../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md](../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md) |
+| 2. | Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md) |
+| 3. | Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md) |
+| 4. | Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md) |
+| 5. | Odd things to watch out for with Material UI: See [./QuirksOfMaterialUi.md](./QuirksOfMaterialUi.md) |
