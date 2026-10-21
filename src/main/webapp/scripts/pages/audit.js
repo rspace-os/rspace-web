@@ -177,6 +177,12 @@ function _convertAuditTrailResults (xhr){
      	result.timestamp = new Date(result.timestamp).toISOString();
 		result.event.displayAction = _getAuditDisplayAction(result.event);
 		result.event.resourceHref = _getAuditResourceHref(result.event);
+		result.event.displayDomain = result.event.domain === "BOOKING"
+			? RS.msg("legacyjs.audit.bookingActivityArea")
+			: result.event.domain;
+		if (result.event.domain === "BOOKING") {
+			result.event.description = _readableBookingDescription(result.event.description);
+		}
 		// Keep the raw description available for displayAction above.
 		if (result.event.details) {
 			result.event.description = result.event.description
@@ -219,6 +225,28 @@ function _convertAuditTrailResults (xhr){
      		result.event.description = desc; 
      	}
      }
+}
+
+// Delegated booking changes record "subject=<username>"; a permanent delete also records
+// "permanent=true", which the display action already states. Other text passes through.
+function _readableBookingDescription(description) {
+	if (!description) {
+		return description;
+	}
+	var subject = null;
+	var parts = description.split(";").map(function (part) {
+		return part.trim();
+	}).filter(function (part) {
+		if (part.indexOf("subject=") === 0) {
+			subject = part.slice("subject=".length);
+			return false;
+		}
+		return part !== "permanent=true" && part !== "";
+	});
+	if (subject) {
+		parts.push(RS.msg("legacyjs.audit.onBehalfOf", subject));
+	}
+	return parts.join("; ");
 }
 
 function _getAuditDisplayAction(event) {

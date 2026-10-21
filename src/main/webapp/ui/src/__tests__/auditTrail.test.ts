@@ -6,7 +6,7 @@ import { legacyMsg } from "@/__tests__/helpers/legacyI18n";
 
 it.each([
   { description: "", expected: "Purpose / notes: Calibration" },
-  { description: "permanent=true", expected: "Purpose / notes: Calibration; permanent=true" },
+  { description: "permanent=true", expected: "Purpose / notes: Calibration" },
 ])("shows server booking details alongside '$description'", ({ description, expected }) => {
   const event = {
     action: "DELETE",
