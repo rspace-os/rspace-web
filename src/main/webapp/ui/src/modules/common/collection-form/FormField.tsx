@@ -3,6 +3,7 @@ import { type ReactNode, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldConditionContext, ResolvedFieldConfig } from "@/modules/common/collection/config";
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/modules/common/ui/field";
+import { FieldHelpTooltip } from "@/modules/common/ui/field-help-tooltip";
 import { formData } from "./formData";
 import type { ControlProps, FieldLayout, RelationshipOptions } from "./RenderFields.types";
 import { RESPONSIVE_INLINE_FIELD_ROW_CLASS_NAME } from "./responsiveFieldLayout";
@@ -45,12 +46,18 @@ export function FormField<
     return null;
   }
 
-  const descriptionId = formConfig?.descriptionKey ? `${id}-description` : undefined;
+  const description =
+    formConfig?.description ?? (formConfig?.descriptionKey ? t(formConfig.descriptionKey as never) : undefined);
+  const descriptionId = description ? `${id}-description` : undefined;
   const errors = fieldApi.errors?.map((message) => ({ message })) ?? [];
   const invalid = errors.length > 0;
   const errorId = invalid ? `${id}-error` : undefined;
   const describedBy = [descriptionId, errorId].filter(Boolean).join(" ") || undefined;
-  const label = t(fieldConfig.labelKey as never);
+  const label = fieldConfig.label ?? t(fieldConfig.labelKey as never);
+  const checkboxHelp =
+    fieldConfig.type === "boolean" && description ? (
+      <FieldHelpTooltip label={label}>{description}</FieldHelpTooltip>
+    ) : null;
   const labelBody = (
     <>
       {label}
@@ -70,8 +77,10 @@ export function FormField<
   });
   const details = (
     <>
-      {formConfig?.descriptionKey ? (
-        <FieldDescription id={descriptionId}>{t(formConfig.descriptionKey as never)}</FieldDescription>
+      {description ? (
+        <FieldDescription id={descriptionId} className={checkboxHelp ? "sr-only" : undefined}>
+          {description}
+        </FieldDescription>
       ) : null}
       <FieldError id={errorId} errors={errors} />
     </>
@@ -91,9 +100,12 @@ export function FormField<
             the label box to that same 36 px at the top of the row, so a tall control (a textarea)
             aligns the label with its first line rather than its middle. Stacked, the label sits
             directly above its control and needs no line box of its own. */}
-        <FieldLabel htmlFor={id} className="@md:min-h-9 @md:items-center @md:self-start">
-          {labelBody}
-        </FieldLabel>
+        <div className="flex min-w-0 items-center gap-1 @md:self-start">
+          <FieldLabel htmlFor={id} className="@md:min-h-9 @md:items-center @md:self-start">
+            {labelBody}
+          </FieldLabel>
+          {checkboxHelp}
+        </div>
         {/* min-h-9 matches an input's height, so a short control (a switch) keeps
             the row the same height as the read-out row it replaces. */}
         <FieldContent className="min-h-9 justify-center">
@@ -108,7 +120,10 @@ export function FormField<
     <Field orientation="horizontal" data-disabled={disabled || fieldConfig.readOnly} data-invalid={invalid}>
       {control}
       <FieldContent>
-        <FieldLabel htmlFor={id}>{label}</FieldLabel>
+        <div className="flex min-w-0 items-center gap-1">
+          <FieldLabel htmlFor={id}>{label}</FieldLabel>
+          {checkboxHelp}
+        </div>
         {details}
       </FieldContent>
     </Field>
