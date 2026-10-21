@@ -1504,6 +1504,8 @@ export default interface Resources {
       "conflictRefreshError": "The latest access could not be loaded. Try again before reviewing your draft.",
       "conflictTitle": "Access changed",
       "directRole": "Direct role",
+      "inherited": "Permissions are inherited from the Inventory item",
+      "inheritedOpenInventory": "Open Inventory permissions",
       "keepMine": "Keep mine",
       "kind": {
         "group": "Group",
