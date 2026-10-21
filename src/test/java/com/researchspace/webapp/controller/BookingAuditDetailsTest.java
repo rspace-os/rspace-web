@@ -84,7 +84,7 @@ class BookingAuditDetailsTest {
 
     BookingAuditDetails.addTo(List.of(booking, record), messages, Locale.US);
 
-    assertEquals("Status: ACTIVE", booking.getEvent().getDetails());
+    assertEquals("Status: Active", booking.getEvent().getDetails());
     assertNull(record.getEvent().getDetails());
   }
 
