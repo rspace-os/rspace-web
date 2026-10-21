@@ -25,6 +25,7 @@ import { memo, type ReactNode, useCallback, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName } from "@/modules/common/collection/collectionConfig";
 import { fieldLabel } from "@/modules/common/collection/collectionConfig";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { Button } from "@/modules/common/ui/button";
 import { Checkbox } from "@/modules/common/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
@@ -76,10 +77,15 @@ const tableListFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 });
 
-function displayValue(value: unknown): string {
+function displayValue(value: unknown, language: string | undefined): string {
   if (value === null || value === undefined) return "";
   if (value instanceof Date) return value.toLocaleString();
-  if (Array.isArray(value)) return value.map(displayValue).join(", ");
+  if (Array.isArray(value))
+    return formatList(
+      value.map((item) => displayValue(item, language)),
+      language,
+      { type: "unit", style: "short" },
+    );
   if (typeof value === "object") {
     if ("name" in value && typeof value.name === "string") return value.name;
     if ("title" in value && typeof value.title === "string") return value.title;
@@ -187,7 +193,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               const listConfig = field.list || undefined;
               const content = listConfig?.renderCell
                 ? listConfig.renderCell({ config, field, row: row.original, value })
-                : displayValue(value);
+                : displayValue(value, i18n.resolvedLanguage);
               if (field.name === config.useAsTitle && onRowOpen) {
                 return (
                   <button
@@ -394,7 +400,11 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
 
       return {
         id: row.id,
-        title: titleCell ? <FlexRender cell={titleCell} /> : displayValue(row.original[config.useAsTitle]),
+        title: titleCell ? (
+          <FlexRender cell={titleCell} />
+        ) : (
+          displayValue(row.original[config.useAsTitle], i18n.resolvedLanguage)
+        ),
         fields,
         selection: renderRowSelection(row.id, row.original),
         actions:
