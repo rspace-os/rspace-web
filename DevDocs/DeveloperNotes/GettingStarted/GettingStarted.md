@@ -416,3 +416,4 @@ Developer docs on specific subjects are as follows:
 |[AddingANewMessageType.md](../AddingANewMessageType.md)    | How to add a new message type. |
 |[SecureConnectionConfig.md](../SecureConnectionConfig.md)  | How to set up Jetty to use HTTPS. |
 |[SecurityAndPermissions.md](../SecurityAndPermissions.md)  | How permissions and roles work. |
+|[FeatureFlags.md](../FeatureFlags.md)                      | Feature-flag evaluation, storage, API access, and frontend controls. |
