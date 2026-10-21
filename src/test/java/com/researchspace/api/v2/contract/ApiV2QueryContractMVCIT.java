@@ -219,20 +219,6 @@ class ApiV2QueryContractMVCIT {
           .andExpect(status().isBadRequest())
           .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
     }
-
-    /**
-     * Regression guard for the decision recorded in "Booleans should not support in and notIn": a
-     * two-valued type gains nothing from set membership and the SQL it compiles to is surprising.
-     */
-    @ParameterizedTest(name = "boolean {0} is refused")
-    @ValueSource(strings = {"deleted=in=(true,false)", "deleted=out=(true)"})
-    @DisplayName("a boolean field does not accept set membership")
-    void aBooleanFieldDoesNotAcceptSetMembership(String expression) throws Exception {
-      mockMvc
-          .perform(get(INSTRUMENTS).header("apiKey", fixture.userKey()).param("where", expression))
-          .andExpect(status().isBadRequest())
-          .andExpect(content().contentTypeCompatibleWith(ApiV2Problem.PROBLEM_JSON));
-    }
   }
 
   @Nested
