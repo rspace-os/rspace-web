@@ -15,14 +15,13 @@ const adapter: ResourceAccessAdapter = {
   allUsersLabel: "All people",
   leaveLabel: "Leave collection",
   roles: [
-    { key: "STEWARD", label: "Steward", description: "Full control", allowedGranteeKinds: ["USER", "GROUP"] },
+    { key: "STEWARD", label: "Steward", allowedGranteeKinds: ["USER", "GROUP"] },
     {
       key: "CONTRIBUTOR",
       label: "Contributor",
-      description: "Can contribute",
       allowedGranteeKinds: ["USER", "GROUP"],
     },
-    { key: "READER", label: "Reader", description: "Can read", allowedGranteeKinds: ["USER", "GROUP", "AUDIENCE"] },
+    { key: "READER", label: "Reader", allowedGranteeKinds: ["USER", "GROUP", "AUDIENCE"] },
   ],
 };
 
