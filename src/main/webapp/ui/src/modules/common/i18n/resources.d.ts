@@ -1699,6 +1699,13 @@ export default interface Resources {
         "resizeColumn": "Resize column",
         "sortBy": "Sort by {column}"
       },
+      "alerts": {
+        "dismiss": "Dismiss",
+        "label": "Recent changes",
+        "undo": "Undo",
+        "undoFailed": "This change could not be undone.",
+        "undoing": "Undoing…"
+      },
       "cardView": "{collection} cards",
       "columns": {
         "customised": "Columns, {count} of {total} shown",
