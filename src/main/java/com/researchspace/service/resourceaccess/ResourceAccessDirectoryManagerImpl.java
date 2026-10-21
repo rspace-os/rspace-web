@@ -1,7 +1,6 @@
 package com.researchspace.service.resourceaccess;
 
 import com.researchspace.model.User;
-import com.researchspace.model.resourceaccess.ResourceAccess;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.stereotype.Service;
@@ -32,8 +31,10 @@ public class ResourceAccessDirectoryManagerImpl implements ResourceAccessDirecto
             .find(id)
             .orElseThrow(
                 () -> new ResourceAccessException(ResourceAccessException.Reason.NOT_FOUND));
-    ResourceAccess aggregate = resource.access(protectedEntity);
-    ResolvedResourceAccess access = accessManager.resolve(aggregate, subject);
+    ResolvedResourceAccess access =
+        resource.isInherited(protectedEntity)
+            ? resource.resolveInherited(protectedEntity, subject)
+            : accessManager.resolve(resource.access(protectedEntity), subject);
     if (!access.hasCapability(ResourceRoleScheme.READ_RESOURCE_CAPABILITY)) {
       throw new ResourceAccessException(ResourceAccessException.Reason.NOT_FOUND);
     }
