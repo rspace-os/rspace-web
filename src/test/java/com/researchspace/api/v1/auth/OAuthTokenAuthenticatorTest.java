@@ -59,11 +59,9 @@ class OAuthTokenAuthenticatorTest {
   @Test
   void matchingUiTokenReturnsFreshTargetUser() {
     User targetUser = TestFactory.createAnyUser("matching");
-    User sessionUser = TestFactory.createAnyUser("matching");
     givenTokenFor(targetUser, OAuthTokenType.UI_TOKEN);
-    when(subject.getPrincipal()).thenReturn(sessionUser.getUsername());
+    when(subject.getPrincipal()).thenReturn(targetUser.getUsername());
     when(subject.getSession(false)).thenReturn(session);
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(sessionUser);
 
     assertSame(targetUser, authenticator.authenticate(request));
     verify(subject, never()).login(any());
@@ -76,7 +74,20 @@ class OAuthTokenAuthenticatorTest {
     givenTokenFor(targetUser, OAuthTokenType.UI_TOKEN);
     when(subject.getPrincipal()).thenReturn(targetUser.getUsername());
     when(subject.getSession(false)).thenReturn(session);
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(cachedSessionUser);
+    Mockito.lenient()
+        .when(session.getAttribute(SessionAttributeUtils.USER))
+        .thenReturn(cachedSessionUser);
+
+    assertSame(targetUser, authenticator.authenticate(request));
+    verify(subject, never()).login(any());
+  }
+
+  @Test
+  void uiTokenMatchesPrincipalThatDiffersOnlyInCase() {
+    User targetUser = TestFactory.createAnyUser("jsmith");
+    givenTokenFor(targetUser, OAuthTokenType.UI_TOKEN);
+    when(subject.getPrincipal()).thenReturn("JSmith");
+    when(subject.getSession(false)).thenReturn(session);
 
     assertSame(targetUser, authenticator.authenticate(request));
     verify(subject, never()).login(any());
@@ -89,7 +100,6 @@ class OAuthTokenAuthenticatorTest {
     givenTokenFor(tokenUser, OAuthTokenType.UI_TOKEN);
     when(subject.getPrincipal()).thenReturn(sessionUser.getUsername());
     when(subject.getSession(false)).thenReturn(session);
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(sessionUser);
 
     ApiAuthenticationException exception =
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
@@ -105,7 +115,9 @@ class OAuthTokenAuthenticatorTest {
     givenTokenFor(cachedSessionUser, OAuthTokenType.UI_TOKEN);
     when(subject.getPrincipal()).thenReturn(runAsUser.getUsername());
     when(subject.getSession(false)).thenReturn(session);
-    when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(cachedSessionUser);
+    Mockito.lenient()
+        .when(session.getAttribute(SessionAttributeUtils.USER))
+        .thenReturn(cachedSessionUser);
 
     ApiAuthenticationException exception =
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));

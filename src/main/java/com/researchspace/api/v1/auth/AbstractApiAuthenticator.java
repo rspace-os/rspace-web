@@ -6,7 +6,6 @@ import com.researchspace.auth.ApiKeyAuthenticationToken;
 import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
-import com.researchspace.session.SessionAttributeUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Optional;
 import java.util.function.Function;
@@ -70,10 +69,11 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
         throw invalidUiToken();
       }
 
-      User sessionUser = (User) session.getAttribute(SessionAttributeUtils.USER);
-      // The Shiro principal reflects the run-as user; the cached session user may still be the
-      // original user.
-      if (sessionUser == null || !targetUser.getUsername().equals(principal)) {
+      // Compare with the Shiro principal, not the cached session user: the principal follows
+      // Operate As. Usernames are unique ignoring case, and LDAP principals keep the directory's
+      // casing, which can differ from the stored username.
+      if (!(principal instanceof String username)
+          || !targetUser.getUsername().equalsIgnoreCase(username)) {
         throw invalidUiToken();
       }
 
