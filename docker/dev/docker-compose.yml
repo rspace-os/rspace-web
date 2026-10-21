@@ -248,6 +248,8 @@ services:
         hard: 2048
     read_only: true
     cap_drop: ["ALL"]
+    # Entrypoint installs the egress policy, then drops every capability and UID 0.
+    cap_add: ["NET_ADMIN", "SETUID", "SETGID", "SETPCAP"]
     security_opt:
       - no-new-privileges:true
       - seccomp:../conversion-sidecar/seccomp-bubblewrap.json

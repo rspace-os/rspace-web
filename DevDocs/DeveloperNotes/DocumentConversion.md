@@ -99,7 +99,7 @@ request locale.
 
 The container runtime must permit the user namespaces and mount system calls that bubblewrap uses.
 The development Compose service uses a restricted profile that permits namespace isolation. The
-profile denies high-risk kernel operations. The container also has no capabilities. Tini runs as
+profile denies high-risk kernel operations. The Java process also has no capabilities after entrypoint setup. Tini runs as
 the container subreaper so that completed bubblewrap helpers cannot accumulate against the PID
 limit.
 
@@ -134,3 +134,30 @@ Run the browser test from the repository root after `./docker/dev/rspace-dev up 
 RSPACE_BASE_URL=http://localhost:<app-port> E2E_BROWSER=conversion pnpm run test-e2e \
   src/eln/gallery/__tests__/documentConversion.conversion.e2e.ts --reporter=list
 ```
+
+## Isolation, deadlines, and restart cleanup
+
+The container entrypoint resolves its paired `gotenberg` address and installs IPv4
+and IPv6 output rules before starting Java. Only established response traffic,
+loopback health probes, and new TCP connections to that address on port 3000 are
+allowed. DNS is disabled after the fixed peer is written to a private JVM hosts file in `/tmp`.
+Recreate the sidecar whenever its paired Gotenberg address changes.
+
+The entrypoint needs `NET_ADMIN`, `SETUID`, `SETGID`, and `SETPCAP` during setup.
+It then changes to UID/GID 10001 and removes all permitted, inheritable, ambient,
+and bounding capabilities before launching Java. Failure to install either
+firewall or drop privileges prevents startup. Keep the root filesystem read-only
+and use the supplied seccomp profile. CI uses this same profile and probes
+`/health/ready`; an unconfined container is not an acceptance environment.
+
+Each conversion has one wall-clock deadline across worker startup, conversion,
+and output transfer. Expiry interrupts Word conversion or closes the active PDF
+HTTP client, returns `504` with `conversion.timeout`, and removes partial output.
+LibreOffice is stopped before its request directory is removed. Startup removes
+abandoned `request-*` and `pdf-*` directories plus owned upload/IPC temporary
+files before accepting requests. The work directory must belong to one sidecar
+container; it must not be shared between running sidecars.
+
+Aggregate readiness requires both dependencies and available capacity in both
+roles. A saturated role makes aggregate readiness return `503` until a slot is
+released. Individual role readiness endpoints remain available.

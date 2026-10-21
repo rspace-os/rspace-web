@@ -24,26 +24,31 @@ class GotenbergProxy {
 
   GotenbergProxy(ConverterProperties properties) {
     this.properties = properties;
+    this.client = client(httpClient());
+  }
+
+  private org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpClient() {
     RequestConfig requestConfig =
         RequestConfig.custom()
             .setConnectionRequestTimeout(Timeout.of(properties.connectionRequestTimeout()))
             .setConnectTimeout(Timeout.of(properties.connectTimeout()))
             .setResponseTimeout(Timeout.of(properties.responseTimeout()))
             .build();
-    var apacheClient =
-        HttpClients.custom()
-            .setDefaultRequestConfig(requestConfig)
-            .disableAutomaticRetries()
-            .disableCookieManagement()
-            .disableRedirectHandling()
-            .disableContentCompression()
-            .build();
-    this.client =
-        RestClient.builder()
-            .baseUrl("http://gotenberg:3000")
-            .requestFactory(new HttpComponentsClientHttpRequestFactory(apacheClient))
-            .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "identity")
-            .build();
+    return HttpClients.custom()
+        .setDefaultRequestConfig(requestConfig)
+        .disableAutomaticRetries()
+        .disableCookieManagement()
+        .disableRedirectHandling()
+        .disableContentCompression()
+        .build();
+  }
+
+  RestClient client(org.apache.hc.client5.http.impl.classic.CloseableHttpClient apacheClient) {
+    return RestClient.builder()
+        .baseUrl("http://gotenberg:3000")
+        .requestFactory(new HttpComponentsClientHttpRequestFactory(apacheClient))
+        .defaultHeader(HttpHeaders.ACCEPT_ENCODING, "identity")
+        .build();
   }
 
   boolean isReady() {
@@ -63,6 +68,42 @@ class GotenbergProxy {
   }
 
   ConvertedFile convert(Path uploadedFile, String extension, String correlationId) {
+    try (var deadline = new ConversionDeadline(properties.conversionTimeout());
+        var requestClient = httpClient()) {
+      deadline.abortOnTimeout(
+          () -> requestClient.close(org.apache.hc.core5.io.CloseMode.IMMEDIATE));
+      try {
+        ConvertedFile result =
+            convertBeforeDeadline(uploadedFile, extension, correlationId, client(requestClient));
+        try {
+          deadline.check();
+          return result;
+        } catch (RuntimeException e) {
+          result.close();
+          throw e;
+        }
+      } catch (Exception e) {
+        deadline.check();
+        if (e instanceof ConversionException conversion) {
+          throw conversion;
+        }
+        throw new ConversionException(
+            HttpStatus.BAD_GATEWAY,
+            ConversionError.SERVICE_UNAVAILABLE,
+            "The PDF converter is unavailable",
+            e);
+      }
+    } catch (IOException e) {
+      throw new ConversionException(
+          HttpStatus.BAD_GATEWAY,
+          ConversionError.SERVICE_UNAVAILABLE,
+          "Could not close the PDF request",
+          e);
+    }
+  }
+
+  private ConvertedFile convertBeforeDeadline(
+      Path uploadedFile, String extension, String correlationId, RestClient requestClient) {
     Path directory = null;
     boolean completed = false;
     try {
@@ -76,7 +117,7 @@ class GotenbergProxy {
       Files.move(uploadedFile, input, StandardCopyOption.REPLACE_EXISTING);
       var body = new LinkedMultiValueMap<String, Object>();
       body.add("files", new FileSystemResource(input));
-      client
+      requestClient
           .post()
           .uri("/forms/libreoffice/convert")
           .contentType(MediaType.MULTIPART_FORM_DATA)

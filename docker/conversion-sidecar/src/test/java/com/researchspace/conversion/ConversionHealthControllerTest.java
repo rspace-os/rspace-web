@@ -30,6 +30,20 @@ class ConversionHealthControllerTest {
   }
 
   @Test
+  void overallReadinessRequiresCapacityInBothRoles() throws Exception {
+    when(sandbox.isReady()).thenReturn(true);
+    when(gotenberg.isReady()).thenReturn(true);
+    when(limiter.hasWordCapacity()).thenReturn(true);
+    when(limiter.hasPdfCapacity()).thenReturn(false);
+    mvc.perform(get("/health/ready")).andExpect(status().isServiceUnavailable());
+    when(limiter.hasPdfCapacity()).thenReturn(true);
+    when(limiter.hasWordCapacity()).thenReturn(false);
+    mvc.perform(get("/health/ready")).andExpect(status().isServiceUnavailable());
+    when(limiter.hasWordCapacity()).thenReturn(true);
+    mvc.perform(get("/health/ready")).andExpect(status().isOk());
+  }
+
+  @Test
   void roleReadinessIncludesCapacity() throws Exception {
     when(sandbox.isReady()).thenReturn(true);
     when(limiter.hasWordCapacity()).thenReturn(true);

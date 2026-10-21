@@ -20,6 +20,8 @@ RUN apt-get update \
       bubblewrap \
       curl \
       tini \
+      iptables \
+      util-linux \
       libreoffice-core-nogui \
       libreoffice-writer-nogui \
       libreoffice-calc-nogui \
@@ -36,10 +38,10 @@ RUN apt-get update \
       fonts-noto-cjk \
       fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --create-home --uid 10001 converter \
+    && groupadd --gid 10001 converter \
+    && useradd --system --create-home --uid 10001 --gid 10001 converter \
     && install -d -o converter -g converter -m 0700 /work /work/rspace-conversion
 COPY --from=build /repo/docker/conversion-sidecar/target/conversion-sidecar-1.0.0-SNAPSHOT.jar /opt/conversion-sidecar.jar
-USER 10001:10001
+COPY --chmod=755 docker/conversion-sidecar/entrypoint.sh /usr/local/bin/conversion-entrypoint
 EXPOSE 8080
-ENTRYPOINT ["/usr/bin/tini", "-s", "--"]
-CMD ["java", "-jar", "/opt/conversion-sidecar.jar"]
+ENTRYPOINT ["/usr/local/bin/conversion-entrypoint"]

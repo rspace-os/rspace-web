@@ -49,7 +49,26 @@ class OfficeConversionRunner {
 
   private ConvertedFile convertWithinLimit(
       Path uploadedFile, String inputExtension, String outputExtension) {
+    try (var deadline = new ConversionDeadline(properties.conversionTimeout())) {
+      ConvertedFile result =
+          convertBeforeDeadline(uploadedFile, inputExtension, outputExtension, deadline);
+      try {
+        deadline.check();
+        return result;
+      } catch (RuntimeException e) {
+        deleteQuietly(result.requestDirectory());
+        throw e;
+      }
+    }
+  }
+
+  private ConvertedFile convertBeforeDeadline(
+      Path uploadedFile,
+      String inputExtension,
+      String outputExtension,
+      ConversionDeadline deadline) {
     Path requestDirectory = createRequestDirectory();
+    boolean completed = false;
     Path input = requestDirectory.resolve("input." + inputExtension);
     Path output = requestDirectory.resolve("output." + outputExtension);
     LocalOfficeManager manager = null;
@@ -68,10 +87,13 @@ class OfficeConversionRunner {
               .pipeNames(pipeName)
               .runAsArgs(sandbox.commandPrefix(requestDirectory).toArray(String[]::new))
               .startFailFast(true)
+              .processTimeout(properties.conversionTimeout().toMillis())
               .taskQueueTimeout(properties.conversionTimeout().toMillis())
               .taskExecutionTimeout(properties.conversionTimeout().toMillis())
               .build();
+      deadline.check();
       manager.start();
+      deadline.check();
       var builder =
           LocalConverter.builder()
               .officeManager(manager)
@@ -96,6 +118,7 @@ class OfficeConversionRunner {
       } else {
         converter.convert(input.toFile()).to(output.toFile()).execute();
       }
+      deadline.check();
       if (!Files.isRegularFile(output)) {
         throw new ConversionException(
             HttpStatus.BAD_GATEWAY,
@@ -108,6 +131,7 @@ class OfficeConversionRunner {
             ConversionError.OUTPUT_TOO_LARGE,
             "The converted file exceeds the output limit");
       }
+      completed = true;
       return new ConvertedFile(
           requestDirectory,
           output,
@@ -115,11 +139,11 @@ class OfficeConversionRunner {
               ? "text/html; charset=UTF-8"
               : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     } catch (ConversionException e) {
-      deleteQuietly(requestDirectory);
+      deadline.check();
       LOG.warn("LibreOffice conversion was rejected", e);
       throw e;
     } catch (IOException e) {
-      deleteQuietly(requestDirectory);
+      deadline.check();
       LOG.error("LibreOffice conversion failed while accessing request storage", e);
       throw new ConversionException(
           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -127,7 +151,7 @@ class OfficeConversionRunner {
           "The conversion could not be completed",
           e);
     } catch (OfficeException e) {
-      deleteQuietly(requestDirectory);
+      deadline.check();
       LOG.warn("LibreOffice rejected the conversion", e);
       throw new ConversionException(
           HttpStatus.UNPROCESSABLE_ENTITY,
@@ -135,7 +159,7 @@ class OfficeConversionRunner {
           "LibreOffice could not convert the document",
           e);
     } catch (RuntimeException e) {
-      deleteQuietly(requestDirectory);
+      deadline.check();
       LOG.error("LibreOffice conversion failed unexpectedly", e);
       throw new ConversionException(
           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -143,8 +167,13 @@ class OfficeConversionRunner {
           "The conversion could not be completed",
           e);
     } finally {
+      // Cancellation must not interrupt the process shutdown and request cleanup.
+      deadline.close();
       OfficeUtils.stopQuietly(manager);
       deletePipeAlias(pipeAlias);
+      if (!completed) {
+        deleteQuietly(requestDirectory);
+      }
     }
   }
 

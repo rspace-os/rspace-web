@@ -29,7 +29,7 @@ record ConvertedFile(Path requestDirectory, Path file, String contentType, Runna
   @Override
   public void close() throws IOException {
     try {
-      if (Files.exists(requestDirectory)) {
+      if (Files.exists(requestDirectory, java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
         try (var paths = Files.walk(requestDirectory)) {
           for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
             Files.deleteIfExists(path);

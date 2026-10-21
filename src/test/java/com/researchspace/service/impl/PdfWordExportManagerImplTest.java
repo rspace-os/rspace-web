@@ -55,6 +55,49 @@ public class PdfWordExportManagerImplTest {
   public void tearDown() throws Exception {}
 
   @Test
+  public void conversionFailureIsLocalizedBeforeReachingExportNotifications() throws Exception {
+    var records = Mockito.mock(com.researchspace.service.RecordManager.class);
+    var html = Mockito.mock(com.researchspace.export.pdf.HTMLStringGenerator.class);
+    var processor = Mockito.mock(com.researchspace.export.pdf.ExportProcessor.class);
+    var locales = Mockito.mock(com.researchspace.service.UserLocaleService.class);
+    var messages = Mockito.mock(MessageSourceUtils.class);
+    ReflectionTestUtils.setField(pdfExporter, "recordManager", records);
+    ReflectionTestUtils.setField(pdfExporter, "htmlStringGenerator", html);
+    ReflectionTestUtils.setField(pdfExporter, "exportProcessors", java.util.List.of(processor));
+    ReflectionTestUtils.setField(pdfExporter, "userLocaleService", locales);
+    ReflectionTestUtils.setField(pdfExporter, "messageSource", messages);
+    StructuredDocument doc = TestFactory.createAnySD();
+    doc.setId(42L);
+    config.setExportFormat("WORD");
+    Mockito.when(records.getRecordWithFields(42L, anyUser)).thenReturn(doc);
+    Mockito.when(permissions.isPermitted(doc, PermissionType.READ, anyUser)).thenReturn(true);
+    Mockito.when(processor.supportsFormat(ExportFormat.WORD)).thenReturn(true);
+    Mockito.when(locales.getLocaleFor(anyUser)).thenReturn(java.util.Locale.FRENCH);
+    Mockito.when(
+            messages.getMessageForLocale(
+                "errors.documentConversion.timeout", java.util.Locale.FRENCH))
+        .thenReturn("Conversion trop longue");
+    Mockito.doThrow(
+            new com.researchspace.documentconversion.ext.DocumentConversionException(
+                com.researchspace.documentconversion.ext.DocumentConversionError.TIMEOUT))
+        .when(processor)
+        .makeExport(Mockito.any(), Mockito.any(), Mockito.eq(doc), Mockito.eq(config));
+    assertEquals(
+        "Conversion trop longue",
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.researchspace.service.archive.export.ExportFailureException.class,
+                () ->
+                    pdfExporter.doExportForSigning(
+                        anyUser,
+                        new Long[] {42L},
+                        new String[] {doc.getName()},
+                        new String[] {"NORMAL"},
+                        config,
+                        anyUser))
+            .getMessage());
+  }
+
+  @Test
   public void GetIdExtractorForFolderIgnoresExamples_RSPAC_1411() {
     Folder examples = recordFactory.createSystemCreatedFolder(Folder.EXPORTS_FOLDER_NAME, anyUser);
     config.setExportScope(ExportScope.USER);
