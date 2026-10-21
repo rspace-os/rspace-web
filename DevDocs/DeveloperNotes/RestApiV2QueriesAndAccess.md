@@ -242,6 +242,18 @@ capability and Owner-health read fields they support. Use the trusted
 `ResourceRoleMembershipConstraint` for collection selection; resolve page capability fields in
 batches. A missing or unreadable protected resource returns the same `404`.
 
+Access routes are enabled by the resource's `ResourceAccessSpec`:
+
+| Method and suffix | Contract |
+| --- | --- |
+| `GET .../{id}/access` | Reads the access document and its `ETag`; requires the resource's view-access capability. |
+| `PUT .../{id}/access` | Atomically replaces all direct assignments using matching `If-Match`; requires assignment-management capability. A stale version returns `412`. |
+| `DELETE .../{id}/access/me` | Removes the caller's direct assignment subject to service-layer leave rules. |
+| `GET .../{id}/access/grantees` | Searches assignable principals within the resource's assignment-management capability. |
+
+Only opted-in resources expose these routes; ordinary collections return `404`. Access documents
+are private and must not be cached. OpenAPI includes the routes only for registered access support.
+
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
 `AccessDocumentation` stating its authentication rule and denial codes.
@@ -374,6 +386,46 @@ that observes a relationship, including its stored ID or a target field, compile
 correlated `EXISTS` query. Thus an unfiltered count performs no target-access query, while a target
 filter cannot be used to enumerate hidden references.
 
+Every `CollectionDao` query receives an explicit `RelationshipReadAccess`. The generic collection
+manager uses the complete `ResourceRegistry` by default. It evaluates each observed target's read
+policy for the effective subject, caching decisions for the query and skipping unrelated targets.
+
+A new manager that extends `AbstractCollectionManager` must pass an
+`ObjectProvider<ResourceRegistry>` to the superclass:
+
+```java
+protected WidgetManager(
+    WidgetDao dao,
+    ObjectProvider<ResourceRegistry> resourceRegistry) {
+  super(dao, ApiV2WidgetResource.DESCRIPTION, resourceRegistry);
+}
+```
+
+The provider avoids a construction cycle while the resource catalog starts. The registry discovers
+each one-hop public scalar target filter from the declared relationship. A standard manager needs
+no override when a new relationship is added.
+
+For a new standard relationship, permissions resolve in this order:
+
+| # | Requirement |
+| --- | --- |
+| 1. | At startup, the registry validates the target resource, entity type, ID type, and query fields. |
+| 2. | The HTTP boundary checks access to the source relationship and each target field. |
+| 3. | The manager evaluates the target collection read policy for the effective subject. |
+| 4. | The DAO adds that target row constraint to the correlated `EXISTS` query. |
+| 5. | The renderer independently checks target access before it returns a relationship value. |
+
+Declarations and the registry handle relationship permissions for new standard collections; no
+collection-specific target map is needed.
+
+A custom manager that does not extend `AbstractCollectionManager` must pass
+`RelationshipReadAccess.forActor(registry, subject)` to its DAO. Mutation filters reuse the read
+policy by default. `RelationshipReadAccess.none()` remains a fail-closed option for a lower-level
+query that has no registry.
+
+A manager can supply `unrestricted()` only after a domain-specific authorization check. A
+persistence adapter must not choose this policy.
+
 Relationship targets are registered collections. Their own read policy governs scalar fields,
 reference filters and runtime fields, including negative and missing-value comparisons.
 
@@ -499,3 +551,35 @@ without loading service or database dependencies.
 
 The public OpenAPI endpoint uses the same problem format for invalid supplied credentials and
 exceeded request limits.
+
+## Test the resource
+
+Add focused tests for these areas:
+
+| # | Requirement |
+| --- | --- |
+| 1. | Resource metadata, fields, sort, access, schema, and relationships. |
+| 2. | Conversion from API documents to manager commands. |
+| 3. | Manager authorization, validation, transactions, and bulk rules. |
+| 4. | DAO filters, access constraints, sort, pagination, and counts. |
+| 5. | Spring catalog registration. |
+| 6. | HTTP payloads, responses, status codes, fields, filters, and writes. |
+| 7. | OpenAPI paths, schemas, examples, access data, and errors. |
+
+See these examples:
+
+| # | Requirement |
+| --- | --- |
+| 1. | `ApiV2MaintenanceResourceTest` |
+| 2. | `MaintenanceResourceOperations` |
+| 3. | `ApiV2ResourceErrorMappingTest` |
+| 4. | `ApiV2DeclaredArrayOpenApiTest` |
+
+Run focused unit tests:
+
+```bash
+mvn test -Dtest=MyResourceTest,MyResourceOperationsTest -Dfast=true
+```
+
+A DAO test extends `SpringTransactionalTest`. See [Transactions](Transactions.md) for service
+transaction declarations and advice naming rules.
