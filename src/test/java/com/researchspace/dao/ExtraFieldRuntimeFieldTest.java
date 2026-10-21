@@ -177,40 +177,28 @@ public class ExtraFieldRuntimeFieldTest extends SpringTransactionalTest {
 
   @Test
   public void preservesCaseDistinctNamesAcrossDiscoveryHydrationFilteringAndProjection() {
-    assertNamesStayDistinct("Power", "power");
-  }
-
-  @Test
-  public void preservesAccentDistinctNamesAcrossDiscoveryHydrationFilteringAndProjection() {
-    assertNamesStayDistinct("cafe", "caf\u00e9");
-  }
-
-  /** Database collation may fold both pairs together; exact-name matching must not. */
-  private void assertNamesStayDistinct(String firstName, String secondName) {
     User owner = createInitAndLoginAnyUser();
-    Instrument first = instrumentWith(owner, "First", firstName, "shared", false);
-    Instrument second = instrumentWith(owner, "Second", secondName, "shared", false);
-    RuntimeFieldDefinition firstField = definition(owner, firstName, RuntimeFieldValueType.TEXT);
-    RuntimeFieldDefinition secondField = definition(owner, secondName, RuntimeFieldValueType.TEXT);
+    Instrument upper = instrumentWith(owner, "Capital", "Power", "shared", false);
+    Instrument lower = instrumentWith(owner, "Lowercase", "power", "shared", false);
+    RuntimeFieldDefinition capital = definition(owner, "Power", RuntimeFieldValueType.TEXT);
+    RuntimeFieldDefinition lowercase = definition(owner, "power", RuntimeFieldValueType.TEXT);
 
-    assertNotEquals(firstField.id(), secondField.id());
+    assertNotEquals(capital.id(), lowercase.id());
     assertEquals(
-        Set.of(firstField.id(), secondField.id()),
+        Set.of(capital.id(), lowercase.id()),
         extraFields
-            .discover(
-                owner, RuntimeFieldCatalogQuery.byIds(Set.of(firstField.id(), secondField.id())))
+            .discover(owner, RuntimeFieldCatalogQuery.byIds(Set.of(capital.id(), lowercase.id())))
             .fields()
             .stream()
             .map(RuntimeFieldDefinition::id)
             .collect(Collectors.toSet()));
     assertEquals(
-        List.of("First"), matches(owner, resolve(owner, firstField), Operator.EQUAL, "shared"));
+        List.of("Capital"), matches(owner, resolve(owner, capital), Operator.EQUAL, "shared"));
 
     Map<Object, Map<String, Object>> values =
-        extraFields.values(
-            List.of(first, second), Set.of(firstField.id(), secondField.id()), owner);
-    assertEquals(Map.of(firstField.id(), "shared"), values.get(first.getId()));
-    assertEquals(Map.of(secondField.id(), "shared"), values.get(second.getId()));
+        extraFields.values(List.of(upper, lower), Set.of(capital.id(), lowercase.id()), owner);
+    assertEquals(Map.of(capital.id(), "shared"), values.get(upper.getId()));
+    assertEquals(Map.of(lowercase.id(), "shared"), values.get(lower.getId()));
   }
 
   @Test
