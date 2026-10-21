@@ -86,6 +86,19 @@ directly at the route gives a new account a broken image.
 `/api/v2/config` returns a public allowlist of deployment properties, never a reflection of all
 properties, credentials, or secret paths. It is a concrete route, not a registered collection.
 
+### Maintenance collection
+
+The `maintenances` collection exposes stored `ScheduledMaintenance` fields and standard read and
+mutation operations. An anonymous caller can read only a non-deleted row whose end is in the future.
+System administrators can read all rows and run writes. `MaintenanceManager` owns domain validation
+and authorization. Clients format the stored ISO-8601 dates themselves.
+
+Maintenance creation accepts `startDate`, `endDate`, optional `stopUserLoginDate`, and `message`.
+The manager validates the complete resulting window after a patch, including unchanged fields.
+
+The computed `canUserLoginNow` field is neither filterable nor sortable. It is evaluated at request
+time and must not be reused from a cached maintenance document.
+
 ## Add a resource
 
 A resource has these parts:
@@ -157,27 +170,116 @@ The ID field makes the sort result stable.
 
 ### 2. Add the operations class and the resource spec
 
-Implement `ResourceOperations<Widget, Long>` with `find`, `count`, and `findById`, delegating to the
-domain manager. Register the adapter as a Spring bean below `com.researchspace`:
-
 ```java
-@Bean
-ApiV2ResourceSpec<Widget, Long> widgetApiV2Resource() {
-  return new ApiV2ResourceSpec<>(
-      ApiV2WidgetResource.DESCRIPTION,
-      this,
-      Long::valueOf,
-      "errors.api.v2.widget.create",
-      "errors.api.v2.widget.update",
-      EnumSet.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ),
-      Map.of());
+package com.researchspace.widgets.api.v2;
+
+import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
+import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
+import com.researchspace.api.v2.resource.ResourceOperations;
+import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.model.User;
+import com.researchspace.model.collection.ParsedDocument;
+import com.researchspace.model.collection.ResourcePage;
+import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.widgets.model.ApiV2WidgetResource;
+import com.researchspace.widgets.model.Widget;
+import com.researchspace.widgets.service.WidgetManager;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+
+@Configuration(proxyBeanMethods = false)
+public class WidgetResourceOperations implements ResourceOperations<Widget, Long> {
+
+  private final WidgetManager manager;
+
+  public WidgetResourceOperations(WidgetManager manager) {
+    this.manager = manager;
+  }
+
+  @Bean
+  ApiV2ResourceSpec<Widget, Long> widgetApiV2Resource() {
+    return new ApiV2ResourceSpec<>(
+        ApiV2WidgetResource.DESCRIPTION,
+        this,
+        Long::valueOf,
+        "errors.api.v2.widget.create",
+        "errors.api.v2.widget.update",
+        Map.of(
+            ResourceOperation.CREATE,
+            List.of(
+                ApiV2ErrorMapping.of(
+                    WidgetNameConflictException.class,
+                    HttpStatus.CONFLICT,
+                    "errors.api.v2.widget.name.conflict",
+                    "A widget with this name already exists."))));
+  }
+
+  @Override
+  public ResourcePage<Widget> find(ResourceRequest request, User subject) {
+    return manager.getWidgets(request, subject);
+  }
+
+  @Override
+  public long count(ResourceRequest request, User subject) {
+    return manager.countWidgets(request, subject);
+  }
+
+  @Override
+  public Optional<Widget> findById(Long id, User subject) {
+    return manager.getWidget(id, subject);
+  }
+
+  @Override
+  public Widget create(ParsedDocument document, ApiV2Caller caller) {
+    return manager.createWidget(WidgetCreate.from(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public List<Widget> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
+    return manager.createResources(
+        documents.stream().map(WidgetInput::from).map(WidgetInput::toWidget).toList(),
+        caller.subject(),
+        caller.actor());
+  }
+
+  @Override
+  public Optional<Widget> update(Long id, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateWidget(
+        id, WidgetPatch.from(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public List<Widget> updateMany(
+      ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
+    return manager.updateWidgets(
+        request, WidgetPatch.from(document), caller.subject(), caller.actor());
+  }
+
+  @Override
+  public Optional<Widget> delete(Long id, ApiV2Caller caller) {
+    return manager.removeWidget(id, caller.subject(), caller.actor());
+  }
+
+  @Override
+  public List<Widget> deleteMany(ResourceRequest request, ApiV2Caller caller) {
+    return manager.removeWidgets(request, caller.subject(), caller.actor());
+  }
 }
 ```
 
-Pair this read-only registration with `AccessPolicy.readOnly(...)` in the description. The ID parser
-converts one URL segment to the ID type and must reject invalid IDs. At startup,
-`ApiV2ResourceCatalog` discovers resource-spec beans and rejects invalid definitions; no central
-registry entry is needed. Add operation-specific error mappings when an operation needs them.
+Spring finds each `ApiV2ResourceSpec` bean below `com.researchspace`. Do not add a central registry
+entry. At startup, `ApiV2ResourceCatalog` validates all definitions and fails if any is invalid.
+
+The ID parser converts one URL segment to the ID type and must reject invalid IDs.
+
+The parser uses the create and update message keys for invalid request bodies. Put REST API v2
+messages in the applicable `server.*.json` catalog below
+`src/main/webapp/ui/src/modules/common/i18n/locales/`.
 
 ### 3. Keep domain work in the manager
 
@@ -198,6 +300,38 @@ controller, manager and DAO boundary.
 
 Do not pass raw `where`, `sort`, or field-selection text to a manager. The common request parser
 validates this text against the public resource definition.
+
+### 4. Use the REST API v2 collection standard in application code
+
+Use REST API v2 collection types throughout HTTP code, managers, scheduled jobs, event handlers,
+and other services.
+
+A conventional mutable collection manager must implement `CollectionManager<T, ID>`. Extend
+`AbstractCollectionManager<T, ID>` when its persistence rules fit the default implementation. Use
+`ResourceRequest` for selection, `ResourcePage` for paged results, and `ParsedDocument` for a
+validated update. This common contract removes resource-specific paging, filtering, and bulk CRUD
+code.
+
+Keep domain authorization, validation, transactions, audit events, and lifecycle effects in the
+manager. Override the default manager hooks for these rules. Do not copy the standard collection
+pipeline into a resource-specific service.
+
+Every read receives the caller. Caller-independent collections can ignore it; caller-specific
+calculations must use the supplied user, never a browser session or implicit security context.
+Managers must apply the resource read policy and row constraint before returning data, including
+outside the HTTP registration pipeline.
+
+For a REST API v2 request, the user supplied to a read is the effective subject. A write receives
+an `ApiV2Caller`, which contains the effective subject and the originating actor. The manager must
+authorize the subject. An audit event must use the actor and retain the subject when they differ.
+Record the subject alongside the actor when they differ.
+
+Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
+adapter applies the standard filter, sort, page, and count rules to a resource snapshot.
+
+Use an escape hatch only for domain actions the standard operations cannot express, such as a
+command changing several aggregate types or a non-CRUD action. Keep normal collection routes on
+the standard contract. Document each escape hatch's reason near its public interface.
 
 ## Add a read-only collection
 
@@ -242,18 +376,136 @@ so matched rows can disappear from the page and total.
 Follow [Creating transactions](Transactions.md#creating-transactions): `InstrumentResourceOperations`
 delegates to the transaction-advised `InstrumentEntityApiManager`.
 
+## Reuse the operations layer
+
+The generic REST controller uses an `ApiV2ResourceRegistration`. The registration performs API
+access checks, parses JSON, resolves relationships, and renders the response. It then calls the
+resource operations class.
+
+Other Java code can inject the concrete operations class when it already has REST API v2 types
+such as `ResourceRequest` or `ParsedDocument`.
+
+```java
+@Service
+public final class WidgetReportService {
+
+  private final WidgetResourceOperations widgetOperations;
+
+  public WidgetReportService(WidgetResourceOperations widgetOperations) {
+    this.widgetOperations = widgetOperations;
+  }
+
+  public ResourcePage<Widget> findWidgets(ResourceRequest request, User subject) {
+    return widgetOperations.find(request, subject);
+  }
+}
+```
+
+Inject the concrete class, since many beans implement `ResourceOperations<?, ?>` and interface
+injection is ambiguous.
+
+Code can also inject its `ApiV2ResourceSpec` bean and call `operations()`. Use a qualifier when more
+than one resource spec is in the injection context.
+
+```java
+private final ApiV2ResourceSpec<Widget, Long> widgetSpec;
+
+public WidgetReportService(
+    @Qualifier("widgetApiV2Resource") ApiV2ResourceSpec<Widget, Long> spec) {
+  this.widgetSpec = spec;
+}
+
+public ResourcePage<Widget> findWidgets(ResourceRequest request, User subject) {
+  return widgetSpec.operations().find(request, subject);
+}
+```
+
+Direct calls to `ResourceOperations` skip the registration layer and these tasks:
+
+| # | Requirement |
+| --- | --- |
+| 1. | Caller authentication. |
+| 2. | `AccessPolicy` checks. |
+| 3. | Field access checks. |
+| 4. | JSON parsing and validation. |
+| 5. | Relationship reference resolution. |
+| 6. | Sparse field and expanded relationship rendering. |
+| 7. | HTTP operation exposure checks. |
+
+Do not use direct operations calls to bypass REST registration. The caller
+must supply a validated `ResourceRequest`. For a write, the caller must supply a validated
+`ParsedDocument` with resolved relationships and an `ApiV2Caller`. Construct
+`ApiV2Caller.direct(user)` only when there is no delegated identity. The caller must also perform
+the required access checks.
+
+Most services must call the concrete standard collection manager instead of the operations class. This shared boundary for
+collection commands keeps transaction, authorization, validation, and audit behavior consistent
+across REST, scheduled jobs, event handlers, and other services.
+
+Use the operations class in these cases:
+
+| # | Requirement |
+| --- | --- |
+| 1. | The caller works with REST API v2 request types. |
+| 2. | The caller needs the same conversion from `ParsedDocument` to a domain command. |
+| 3. | The caller has already completed the REST API v2 access and validation steps. |
+
+Use the standard collection manager in these cases:
+
+| # | Requirement |
+| --- | --- |
+| 1. | The caller already has an entity or another validated domain value. |
+| 2. | The caller performs a write outside the REST request pipeline. |
+| 3. | The caller needs domain authorization, transactions, lifecycle actions, or audit events. |
+
+Do not call `ApiV2ResourceRegistration` from a manager or DAO: calling this HTTP boundary from a
+lower layer reverses the dependency direction.
+
+If many non-HTTP callers need the same document conversion, move that conversion to a small command
+factory. Call the factory from the operations class and from the other callers. Keep the standard
+collection types at the manager boundary. Do not move HTTP parsing or response rendering into a
+manager.
+
 ## Standard routes
+
+The default resource spec exposes these operations:
 
 | Operation | Method and route | Operations method |
 | --- | --- | --- |
 | `LIST` | `GET /api/v2/widgets` | `find` |
 | `COUNT` | `GET /api/v2/widgets/count` | `count` |
 | `READ` | `GET /api/v2/widgets/{id}` | `findById` |
-| Runtime fields | `GET /api/v2/widgets/fields/{namespace}` | Registered runtime provider |
+| `CREATE` | `POST /api/v2/widgets` | `create` |
+| `BULK_CREATE` | `POST /api/v2/widgets/bulk` | `createMany` |
+| `UPDATE` | `PATCH /api/v2/widgets/{id}` | `update` |
+| `BULK_UPDATE` | `PATCH /api/v2/widgets?where=...` | `updateMany` |
+| `DELETE` | `DELETE /api/v2/widgets/{id}` | `delete` |
+| `BULK_DELETE` | `DELETE /api/v2/widgets?where=...` | `deleteMany` |
 
-Limit `exposedOperations` to the operations the collection implements. An unexposed operation
-returns `405` with an `Allow` header before the access policy runs. Exposure and access are
-independent controls. Mutation routes are not exposed by the read controller.
+Use the full `ApiV2ResourceSpec` constructor to expose fewer operations:
+
+```java
+return new ApiV2ResourceSpec<>(
+    ApiV2WidgetResource.DESCRIPTION,
+    this,
+    Long::valueOf,
+    "errors.api.v2.widget.create",
+    "errors.api.v2.widget.update",
+    EnumSet.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ),
+    Map.of());
+```
+
+Operation exposure and access are different controls:
+
+| # | Requirement |
+| --- | --- |
+| 1. | `exposedOperations` controls whether a route exists and appears in OpenAPI. |
+| 2. | `AccessPolicy` controls who can use an exposed route. |
+
+An unexposed operation returns `405` with an `Allow` header listing supported methods. This check
+precedes the access policy, so an unexposed write returns `405` even for anonymous callers.
+
+For a read-only HTTP contract, omit all write operations. Also use a read-only access policy.
 
 ## Resource configuration
 
@@ -494,6 +746,71 @@ These per-field wire rules do not replace manager enforcement of domain rules.
 
 ## Request and response payloads
 
+### Create
+
+Send a flat resource document. Do not use a JSON:API `data` envelope.
+
+```http
+POST /api/v2/widgets
+Content-Type: application/json
+
+{
+  "name": "Centrifuge rotor",
+  "enabled": true
+}
+```
+
+Before calling the operations class, the parser rejects:
+
+| # | Requirement |
+| --- | --- |
+| 1. | An unknown field. |
+| 2. | A read-only field. |
+| 3. | A missing required field. |
+| 4. | An invalid scalar value, or an invalid declared object or array child. |
+| 5. | A relationship with an invalid form. |
+
+### Bulk create
+
+Put one or more create documents in `docs`.
+
+```http
+POST /api/v2/widgets/bulk
+Content-Type: application/json
+
+{
+  "docs": [
+    { "name": "Centrifuge rotor", "enabled": true },
+    { "name": "Microscope stage", "enabled": false }
+  ]
+}
+```
+
+The request object must contain only a non-empty `docs` array. The endpoint validates and resolves
+all documents before it calls the manager. The manager must process one batch in one transaction.
+The result order must match the input order.
+
+A validation error identifies the array position, such as `docs[1].name`, and prevents creation
+of the entire batch. A successful request returns status `201` and the standard
+bulk result.
+
+### Patch
+
+An omitted field does not change. An explicit `null` is valid only for a nullable field or
+relationship.
+
+```http
+PATCH /api/v2/widgets/42
+Content-Type: application/json
+
+{
+  "enabled": false
+}
+```
+
+Use `document.values().containsKey("field")` when a command must distinguish an omitted field from
+an explicit `null`.
+
 ### List
 
 ```http
@@ -534,6 +851,22 @@ A count response contains the number of matches:
   "totalDocs": 12
 }
 ```
+
+A successful bulk operation returns the affected documents:
+
+```json
+{
+  "docs": [{ "id": 42, "name": "Centrifuge rotor", "enabled": false }]
+}
+```
+
+Bulk operations are atomic. One invalid document fails the whole batch with a problem body naming
+the array position, such as `docs[1].name`. There is no per-document error list.
+
+A bulk update or delete request must contain a `where` filter. Declare create and update/delete
+batch limits in the resource spec's `CollectionMutationLimits`, and enforce the same limits in the
+resource manager. Document these rules in the OpenAPI operation. Do not use one limit for all
+resource types.
 
 ## JSON request binding
 
