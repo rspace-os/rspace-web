@@ -1,4 +1,4 @@
-import type { ResourceAccessAssignment, ResourceAccessDocument } from "./schemas";
+import type { ResourceAccessAssignment } from "./schemas";
 
 /** How a row differs from the saved access document. */
 export type AccessRowStatus = "unchanged" | "added" | "changed" | "removed";
@@ -15,7 +15,6 @@ export type AccessRow = {
 
 export type AccessMergeConflict = {
   key: string;
-  base: ResourceAccessAssignment | null;
   local: ResourceAccessAssignment | null;
   latest: ResourceAccessAssignment | null;
 };
@@ -47,7 +46,7 @@ export function mergeAccessDraft(
     if (sameAssignment(mine, before)) chosen = theirs;
     else if (sameAssignment(theirs, before) || sameAssignment(mine, theirs)) chosen = mine;
     else {
-      conflicts.push({ key, base: before, local: mine, latest: theirs });
+      conflicts.push({ key, local: mine, latest: theirs });
       chosen = mine;
     }
     if (chosen) draft.push(chosen);
@@ -126,8 +125,4 @@ export function draftWithRestored(
     }),
     ...draft.filter((assignment) => !savedKeys.has(assignment.grantee.key)),
   ];
-}
-
-export function callerKeyOf(document: ResourceAccessDocument): string | null {
-  return document.caller.granteeKey ?? null;
 }

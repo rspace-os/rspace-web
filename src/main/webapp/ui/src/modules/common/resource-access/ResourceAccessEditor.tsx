@@ -24,7 +24,6 @@ import {
   type AccessMergeConflict,
   type AccessRow,
   buildAccessRows,
-  callerKeyOf,
   draftWithout,
   draftWithRestored,
   draftWithRole,
@@ -47,7 +46,6 @@ import type {
 export type ResourceAccessRole = {
   key: string;
   label: string;
-  description: string;
   allowedGranteeKinds: readonly GranteeKind[];
 };
 
@@ -217,7 +215,7 @@ function ResourceAccessEditorSession({ resource, resourceId, token, adapter, onL
   if (!access.data) return <p role="alert">{t("resourceAccess.loadError")}</p>;
 
   const saved = { ...access.data, assignments: base?.assignments ?? access.data.assignments };
-  const rows = buildAccessRows(saved.assignments, draft, callerKeyOf(saved), i18n.resolvedLanguage);
+  const rows = buildAccessRows(saved.assignments, draft, saved.caller.granteeKey, i18n.resolvedLanguage);
   const normalizedSearch = assignmentSearch.trim().toLocaleLowerCase(i18n.resolvedLanguage);
   const visibleRows = normalizedSearch
     ? rows.filter(({ assignment }) =>
