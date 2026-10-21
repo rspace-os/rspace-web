@@ -44,6 +44,7 @@
         "tooManyRequests": "Too many requests. Please try again later.",
         "resourceAccess": {
           "forbidden": "You do not have permission to manage access to this resource.",
+          "inheritedReadOnly": "Access to this resource is inherited and cannot be changed here.",
           "ownerRequired": "At least one direct Owner must remain.",
           "stale": "Access changed after this page was loaded. Review the latest access before saving again.",
           "invalidGrantee": "The selected user or group is no longer available.",
