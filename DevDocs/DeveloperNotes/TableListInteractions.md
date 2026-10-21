@@ -287,6 +287,10 @@ fields retain their `relationTo` lookup. An unregistered source retains typed in
 Register sources in `src/modules/common/relationship-picker/sources.tsx`,
 or provide a collection's `relationshipSources` override keyed by resource name.
 
+A source that answers an empty term with a useful first page sets `browsable: true`. The filter
+value picker then lists choices on opening, without typing. Leave the flag unset for a source
+that needs a term, such as a grantee directory.
+
 See the [RelationshipSource type](../../src/main/webapp/ui/src/modules/common/relationship-picker/sources.tsx)
 for source operations and their signatures. Keep option content noninteractive inside the listbox;
 show global IDs as plain text so choosing an option cannot navigate away from an unsaved selection.
