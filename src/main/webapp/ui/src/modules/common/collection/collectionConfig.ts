@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactElement, ReactNode } from "react";
+import type { RelationshipSource } from "@/modules/common/relationship-picker/relationshipSources";
 
 export type FieldName<TDocument> = Extract<keyof TDocument, string>;
 
@@ -125,6 +126,14 @@ export type FieldOrigin = {
   stableId?: string;
   namespace?: string;
   viaLabel?: string;
+  runtimeValueType?: "text" | "number" | "date" | "time" | "radio" | "choice";
+};
+
+/** Optional API identity picker; resource selects an application-owned source, never a URL. */
+export type RelationshipFilterPicker = {
+  resource: string;
+  identity: "globalId";
+  globalIdPrefix: string;
 };
 
 type BaseFieldConfig<
@@ -139,6 +148,7 @@ type BaseFieldConfig<
   readOnly?: boolean;
   capabilities?: FieldCapabilities;
   origin?: FieldOrigin;
+  filterPicker?: RelationshipFilterPicker;
   list?: false | FieldListConfig<TDocument>;
   form?: false | TFormConfig;
 };
@@ -201,6 +211,7 @@ export type CollectionConfig<
     pluralKey: string;
     descriptionKey?: string;
   };
+  relationshipSources?: Readonly<Record<string, RelationshipSource>>;
   runtimeNamespaces?: readonly string[];
   fields: readonly FieldConfig<TDocument>[];
 };

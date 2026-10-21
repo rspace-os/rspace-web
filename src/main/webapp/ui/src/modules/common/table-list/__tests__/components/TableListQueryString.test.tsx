@@ -10,7 +10,9 @@ import { TableList } from "../../TableList";
 import type { FilterState, TableListQueryStringOptions } from "../../tableListState";
 import { config, emptyFilters, records, type TestRecord } from "../fixtures/tableListFixtures";
 
-function persistedView(overrides: Partial<Record<"search" | "where" | "columns" | "sort", string | null>>) {
+function persistedView(
+  overrides: Partial<Record<"search" | "where" | "columns" | "defaults" | "sort", string | null>>,
+) {
   return JSON.stringify({ v: 1, search: null, where: null, columns: null, sort: null, ...overrides });
 }
 
@@ -211,6 +213,7 @@ describe("TableList query string sharing", () => {
         search: "Ada",
         where: "owner==Ada",
         columns: JSON.stringify({ fields: ["title", "score"] }),
+        defaults: JSON.stringify({ fields: config.defaultColumns }),
         sort: "title",
       }),
     );
