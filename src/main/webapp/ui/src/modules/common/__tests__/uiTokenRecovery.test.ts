@@ -197,6 +197,23 @@ test.each(clients)("%s does not roll back to an older stored token", async (clie
   expect(getStoredToken()).toBe(olderStoredToken);
 });
 
+test.each(clients)("%s does not upgrade a captured token to a newer token for another identity", async (client) => {
+  const request = makeRequest(client);
+  const callerToken = jwt("old-user", 1);
+  saveStoredToken(jwt("new-user", 2));
+  const authorizations: string[] = [];
+  server.use(
+    http.get("/api/v1/test-read", ({ request }) => {
+      authorizations.push(request.headers.get("Authorization") ?? "");
+      return HttpResponse.json({});
+    }),
+  );
+
+  expect(await request("/api/v1/test-read", callerToken)).toBe(200);
+
+  expect(authorizations).toEqual([`Bearer ${callerToken}`]);
+});
+
 test.each(clients)("%s does not replay a request after recovering a different identity", async (client) => {
   const request = makeRequest(client);
   const { reload } = stubLocation();
