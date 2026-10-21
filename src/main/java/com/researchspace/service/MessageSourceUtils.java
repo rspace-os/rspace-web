@@ -46,6 +46,19 @@ public class MessageSourceUtils {
     return exception.getMessage();
   }
 
+  /**
+   * Resolves the first coded exception in the cause chain, for exceptions that arrive wrapped.
+   * Falls back to the top-level message when nothing in the chain is coded.
+   */
+  public String getExceptionChainMessage(Throwable exception) {
+    for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+      if (cause instanceof LocalizedException || cause instanceof MessageSourceResolvable) {
+        return getExceptionMessage(cause);
+      }
+    }
+    return exception.getMessage();
+  }
+
   public String getMessage(String key, Object[] args) {
     return messages.getMessage(key, args);
   }

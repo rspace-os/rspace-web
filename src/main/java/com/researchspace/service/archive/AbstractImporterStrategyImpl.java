@@ -162,7 +162,8 @@ abstract class AbstractImporterStrategyImpl {
       } catch (Exception e) {
         String errMsg =
             messages.getMessage(
-                "archiveImport.errors.itemFailed", new Object[] {ref.getName(), e.getMessage()});
+                "archiveImport.errors.itemFailed",
+                new Object[] {ref.getName(), messages.getExceptionChainMessage(e)});
         report.getErrorList().addErrorMsg(errMsg);
         log.error(errMsg, e);
       } finally {

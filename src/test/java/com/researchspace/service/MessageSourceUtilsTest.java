@@ -46,6 +46,19 @@ class MessageSourceUtilsTest {
   }
 
   @Test
+  void resolvesFirstCodedExceptionInCauseChain() {
+    Exception wrapped =
+        new RuntimeException(
+            "outer",
+            new IllegalStateException(
+                new LocalizedIllegalArgumentException("errors.required", "Name")));
+    assertEquals("Name is a required field.", messages.getExceptionChainMessage(wrapped));
+    assertEquals(
+        "plain",
+        messages.getExceptionChainMessage(new RuntimeException("plain", new Exception("inner"))));
+  }
+
+  @Test
   void formatAppliesListArgsAgainstExplicitLocale() {
     assertEquals(
         "Name is a required field.", messages.format("errors.required", List.of("Name"), enUS));
