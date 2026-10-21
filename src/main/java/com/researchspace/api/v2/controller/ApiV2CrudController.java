@@ -18,6 +18,7 @@ import com.researchspace.model.collection.RuntimeFieldDefinition;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
@@ -27,8 +28,6 @@ import java.util.stream.Collectors;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindException;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
@@ -66,12 +65,10 @@ public class ApiV2CrudController {
       @PathVariable String resource,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @Valid @ModelAttribute ApiV2CollectionQuery query,
-      BindingResult queryErrors,
-      @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets,
-      BindingResult fieldsetErrors)
-      throws BindException {
-    throwBindExceptionIfErrors(queryErrors);
-    throwBindExceptionIfErrors(fieldsetErrors);
+      @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets) {
+    // Without a BindingResult parameter Spring throws the bind errors itself, query before
+    // fieldsets, and ApiV2ControllerAdvice renders them.
+    User user = subject(caller);
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.LIST);
     ResourceRequest request =
@@ -80,8 +77,8 @@ public class ApiV2CrudController {
             fieldsets,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller)));
-    return registration.list(request, subject(caller));
+            registration.runtimeFieldContext(user));
+    return registration.list(request, user);
   }
 
   /**
@@ -99,7 +96,7 @@ public class ApiV2CrudController {
       @RequestParam(required = false) String search,
       @RequestParam(required = false) String ids,
       @RequestParam(defaultValue = "1") int page,
-      @RequestParam(required = false) Integer limit) {
+      @RequestParam(defaultValue = "" + RuntimeFieldCatalogQuery.DEFAULT_LIMIT) int limit) {
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.LIST);
     requireNamespace(registration, namespace);
@@ -125,27 +122,24 @@ public class ApiV2CrudController {
   }
 
   private static RuntimeFieldCatalogQuery catalogQuery(
-      String search, String ids, int page, Integer limit) {
-    Set<String> requested = new LinkedHashSet<>();
-    if (ids != null && !ids.isBlank()) {
-      for (String id : ids.split(",", -1)) {
-        String trimmed = id.trim();
-        if (!trimmed.isEmpty()) {
-          requested.add(trimmed);
-        }
-      }
-    }
+      String search, String ids, int page, int limit) {
+    Set<String> requested =
+        ids == null
+            ? Set.of()
+            : Arrays.stream(ids.split(",", -1))
+                .map(String::trim)
+                .filter(id -> !id.isEmpty())
+                .collect(Collectors.toSet());
     if (requested.size() > RuntimeFieldCatalogQuery.MAX_IDS) {
       throw new ApiV2BadRequestException(
           "errors.api.v2.runtimeFields.ids.limit", RuntimeFieldCatalogQuery.MAX_IDS);
     }
-    int size = limit == null ? RuntimeFieldCatalogQuery.DEFAULT_LIMIT : limit;
-    if (size < 1 || size > RuntimeFieldCatalogQuery.MAX_LIMIT) {
+    if (limit < 1 || limit > RuntimeFieldCatalogQuery.MAX_LIMIT) {
       throw new ApiV2BadRequestException(
           "errors.api.v2.runtimeFields.query.invalid", RuntimeFieldCatalogQuery.MAX_LIMIT);
     }
     try {
-      return new RuntimeFieldCatalogQuery(search, requested, page, size);
+      return new RuntimeFieldCatalogQuery(search, requested, page, limit);
     } catch (IllegalArgumentException ex) {
       throw new ApiV2BadRequestException("errors.api.v2.runtimeFields.page.invalid");
     }
@@ -190,6 +184,7 @@ public class ApiV2CrudController {
       @PathVariable String resource,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @RequestParam(required = false) String where) {
+    User user = subject(caller);
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.COUNT);
     return registration.count(
@@ -197,8 +192,8 @@ public class ApiV2CrudController {
             where,
             registration.description(),
             registration.registry(),
-            registration.runtimeFieldContext(subject(caller))),
-        subject(caller));
+            registration.runtimeFieldContext(user)),
+        user);
   }
 
   @GetMapping("/{resource}/{id}")
@@ -207,10 +202,8 @@ public class ApiV2CrudController {
       @PathVariable String id,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
       @RequestParam(defaultValue = "0") int depth,
-      @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets,
-      BindingResult fieldsetErrors)
-      throws BindException {
-    throwBindExceptionIfErrors(fieldsetErrors);
+      @ModelAttribute("fieldsets") ApiV2FieldsetQuery fieldsets) {
+    User user = subject(caller);
     ApiV2ResourceRegistration<?, ?> registration =
         requireResource(resource, ResourceOperation.READ);
     Map<String, Object> document =
@@ -221,15 +214,11 @@ public class ApiV2CrudController {
                 fieldsets,
                 registration.description(),
                 registration.registry(),
-                registration.runtimeFieldContext(subject(caller))),
-            subject(caller));
+                registration.runtimeFieldContext(user)),
+            user);
     ResponseEntity.BodyBuilder response = ResponseEntity.ok();
     registration.documentEtag(document).ifPresent(response::eTag);
     return response.body(document);
-  }
-
-  private ApiV2ResourceRegistration<?, ?> requireResource(String name) {
-    return resources.find(name).orElseThrow(NotFoundException::new);
   }
 
   /**
@@ -241,7 +230,8 @@ public class ApiV2CrudController {
    */
   private ApiV2ResourceRegistration<?, ?> requireResource(
       String name, ResourceOperation operation) {
-    ApiV2ResourceRegistration<?, ?> registration = requireResource(name);
+    ApiV2ResourceRegistration<?, ?> registration =
+        resources.find(name).orElseThrow(NotFoundException::new);
     if (!registration.supports(operation)) {
       throw new ApiV2MethodNotAllowedException(allowedMethods(registration));
     }
@@ -254,12 +244,6 @@ public class ApiV2CrudController {
         .map(ResourceOperation::httpMethod)
         .map(HttpMethod::valueOf)
         .collect(Collectors.toCollection(LinkedHashSet::new));
-  }
-
-  private static void throwBindExceptionIfErrors(BindingResult errors) throws BindException {
-    if (errors != null && errors.hasErrors()) {
-      throw new BindException(errors);
-    }
   }
 
   private static User subject(ApiV2Caller caller) {
