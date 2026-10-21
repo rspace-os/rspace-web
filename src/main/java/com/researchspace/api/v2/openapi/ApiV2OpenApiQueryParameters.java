@@ -62,21 +62,14 @@ final class ApiV2OpenApiQueryParameters {
         continue;
       }
       String targetName = relationship.targets().get(0).resourceName();
-      ApiV2ResourceRegistration<?, ?> target = catalog.find(targetName).orElse(null);
-      if (target == null) {
-        continue;
-      }
-      for (String targetNamespace : target.runtimeNamespaces()) {
+      for (RuntimeCollectionFields<?> provider : catalog.runtimeFieldsOf(targetName)) {
+        String targetNamespace = provider.namespace();
         String namespace = relationship.name() + "." + targetNamespace;
-        boolean projectable =
-            target
-                .runtimeFields(targetNamespace)
-                .map(RuntimeCollectionFields::projectsThroughRelationship)
-                .orElse(false);
+        boolean projectable = provider.projectsThroughRelationship();
         namespaces.add(
             runtimeNamespace(
                 namespace,
-                catalogUrl(targetName, targetNamespace),
+                catalogUrl(catalog.runtimeFieldSourceOf(targetName), targetNamespace),
                 relationship.name(),
                 targetName,
                 projectable));
@@ -295,6 +288,10 @@ final class ApiV2OpenApiQueryParameters {
         if (title != null && !title.isBlank()) {
           definition.put("title", title);
         }
+        String viaTitle = relationship.openApi().title();
+        if (viaTitle != null && !viaTitle.isBlank()) {
+          definition.put("viaTitle", viaTitle);
+        }
         published.put(relationship.name() + "." + candidate.name(), definition);
       }
     }
@@ -379,6 +376,8 @@ final class ApiV2OpenApiQueryParameters {
                   .filter(title -> title != null && !title.isBlank())
                   .findFirst()
                   .ifPresent(title -> definition.put("title", title));
+              relationshipPicker(resource, filter.selector())
+                  .ifPresent(picker -> definition.put("picker", picker));
               selectors.put(filter.selector(), definition);
             });
     // A filterable target field keeps the definition the query parser accepts.
@@ -401,6 +400,29 @@ final class ApiV2OpenApiQueryParameters {
         CollectionQueryLimits.MAX_ARGUMENTS,
         "selectors",
         selectors);
+  }
+
+  private static Optional<Map<String, Object>> relationshipPicker(
+      ResourceSchema resource, String selector) {
+    return resource.relationships().stream()
+        .filter(relationship -> relationship.name().equals(selector))
+        .filter(relationship -> relationship.targetResources().size() == 1)
+        .findFirst()
+        .flatMap(
+            relationship -> {
+              String target = relationship.targetResources().get(0);
+              String globalIdPrefix = relationship.globalIdPrefixesByTarget().get(target);
+              return globalIdPrefix == null
+                  ? Optional.empty()
+                  : Optional.of(
+                      ordered(
+                          "resource",
+                          target,
+                          "identity",
+                          "globalId",
+                          "globalIdPrefix",
+                          globalIdPrefix));
+            });
   }
 
   private static Map<String, Object> filterSchema(
