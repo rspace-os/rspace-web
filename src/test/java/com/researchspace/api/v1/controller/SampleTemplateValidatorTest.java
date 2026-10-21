@@ -176,8 +176,6 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
         .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode()));
   }
 
-  // --- helpers --------------------------------------------------------------------------
-
   @Test
   public void putRejectsADescriptionOverTheCap() {
     ApiSampleTemplate put = newValidPut();
@@ -186,6 +184,8 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
     assertEquals(1, e.getErrorCount());
     assertFieldNameIs(e, "description");
   }
+
+  // --- helpers --------------------------------------------------------------------------
 
   private ApiSampleTemplatePost newValidPost() {
     ApiSampleTemplatePost post = new ApiSampleTemplatePost();

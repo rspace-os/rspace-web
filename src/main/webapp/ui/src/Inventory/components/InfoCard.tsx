@@ -1,5 +1,6 @@
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalLinkAlt";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
@@ -88,12 +89,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
       }}
       sx={{
         maxWidth: 500,
-        /*
-         * The card opens in a tooltip, which closes when the page scrolls, so a
-         * long description must scroll inside the card instead. Half the
-         * viewport would not fit beside a badge in the middle of the screen
-         * once the badge and the tooltip's margin are counted; 40vh does.
-         */
+        // The tooltip closes when the page scrolls, so the card scrolls instead; see ADR 0012.
         maxHeight: "40vh",
         display: "flex",
         flexDirection: "column",
@@ -108,10 +104,12 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
         userSelect: "none",
       }}
     >
-      <CardHeader title={record.name} subheader={record.cardTypeLabel} sx={{ paddingBottom: "4px" }} />
-      <CardContent sx={{ overflowY: "auto" }}>
-        <RecordDetails record={record} hideName />
-      </CardContent>
+      <Box sx={{ overflowY: "auto" }}>
+        <CardHeader title={record.name} subheader={record.cardTypeLabel} sx={{ paddingBottom: "4px" }} />
+        <CardContent>
+          <RecordDetails record={record} hideName />
+        </CardContent>
+      </Box>
       {record instanceof InventoryBaseRecord && (
         <CardActions sx={{ justifyContent: "flex-end" }}>
           {moveStore.isMoving ? (

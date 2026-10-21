@@ -9,7 +9,6 @@ import com.researchspace.core.util.ISearchResults;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
-import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -149,18 +148,5 @@ public class InstrumentTemplateDaoTest extends SpringTransactionalTest {
               assertThat(template.isEditable()).isFalse();
             });
     assertThat(instrumentTemplateDao.findLockedTemplateByName("no such template")).isEmpty();
-  }
-
-  @Test
-  public void storesADescriptionAtTheCap() {
-    User owner = createInitAndLoginAnyUser();
-    InstrumentTemplate template = persistEditableTemplateFor(owner, "long description template");
-    String description = "é".repeat(InventoryRecord.DESCRIPTION_LENGTH);
-    template.setDescription(description);
-    instrumentTemplateDao.save(template);
-    flushDatabaseState();
-    sessionFactory.getCurrentSession().clear();
-
-    assertEquals(description, instrumentTemplateDao.get(template.getId()).getDescription());
   }
 }

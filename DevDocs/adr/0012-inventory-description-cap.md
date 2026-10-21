@@ -38,9 +38,9 @@ Decided with Nico on 2026-10-21.
 4. **Only the info card scrolls.** View mode already renders the whole description and wraps;
    the editor already grows to 500px and then scrolls. The info card behind a record's badge
    opens in a tooltip, which closes when the page scrolls, so at 2000 characters its end was
-   unreachable; the card is capped at 40% of the viewport height and its content scrolls,
-   keeping the Open button in view. Half the viewport does not fit beside a badge in the
-   middle of the screen.
+   unreachable; the card is capped at 40% of the viewport height and its name and details
+   scroll together, keeping the Open button in view however long the name. Half the viewport
+   does not fit beside a badge in the middle of the screen.
 
 ## Consequences
 

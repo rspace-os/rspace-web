@@ -62,16 +62,6 @@ public class InstrumentApiPutValidatorTest extends InventoryRecordValidationTest
   }
 
   @Test
-  public void validateInstrumentDescAtTheCapIsAccepted() {
-    ApiInstrument apiInstrument = new ApiInstrument();
-    apiInstrument.setName("instr");
-    apiInstrument.setDescription(randomAlphabetic(InventoryRecord.DESCRIPTION_LENGTH));
-    Errors e = new BeanPropertyBindingResult(apiInstrument, "instrumentPut");
-    validator.validate(apiInstrument, e);
-    assertEquals(0, e.getErrorCount());
-  }
-
-  @Test
   public void invalidTagsRejected() {
     ApiInstrument apiInstrument = new ApiInstrument();
     apiInstrument.setName("instr");

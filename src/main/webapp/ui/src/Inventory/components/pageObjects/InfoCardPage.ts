@@ -24,4 +24,8 @@ export class InfoCardPage {
   async open(): Promise<void> {
     await userEvent.hover(this.badge);
   }
+
+  async scrollToEnd(): Promise<void> {
+    await userEvent.wheel(this.card, { delta: { y: 500 }, times: 10 });
+  }
 }
