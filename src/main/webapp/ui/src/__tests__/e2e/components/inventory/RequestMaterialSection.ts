@@ -17,6 +17,32 @@ export class RequestMaterialSection {
     this.cancelButton = this.root.getByRole("button", { name: "Cancel", exact: true });
   }
 
+  /**
+   * Opens the request dialog and confirms "Send Request" stays disabled until the note field
+   * actually has text (whitespace-only included), then closes the dialog without sending -
+   * leaving the sample in its original, not-yet-requested state for whatever the caller does next.
+   */
+  async assertSendRequestDisabledUntilTextEntered(): Promise<void> {
+    await this.requestButton.click();
+    const dialog = this.page.getByRole("dialog");
+    const noteField = this.page.getByLabel("Describe your request");
+    await expect(noteField).toBeFocused();
+    const sendButton = dialog.getByRole("button", { name: "Send Request", exact: true });
+    await expect(sendButton).toBeDisabled();
+
+    await noteField.fill("   ");
+    await expect(sendButton).toBeDisabled();
+
+    await noteField.fill("Enough text to enable the button.");
+    await expect(sendButton).toBeEnabled();
+
+    await noteField.clear();
+    await expect(sendButton).toBeDisabled();
+
+    await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+    await this.requestButton.waitFor({ state: "visible" });
+  }
+
   /** Opens the request dialog, submits it with the given note, and returns the created request's id. */
   async sendRequest(note: string): Promise<number> {
     await this.requestButton.click();

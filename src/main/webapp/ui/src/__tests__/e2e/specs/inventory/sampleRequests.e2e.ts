@@ -263,6 +263,10 @@ test.describe("Inventory Sample Requests", { tag: [tags.INVENTORY] }, () => {
       await test.step("And Bob finds Sample X via the Requestable Samples search and requests it", async () => {
         const session = await newSession(browser, browserContextOptions, bob);
         await findRequestableSample(session.page, session.inventoryPage, alice.sample.name);
+
+        await test.step("And the Send Request button stays disabled until Bob enters a note", () =>
+          session.inventoryPage.detailsPanel.requestMaterial().assertSendRequestDisabledUntilTextEntered());
+
         const id = await session.inventoryPage.detailsPanel.requestMaterial().sendRequest(reasonText);
         await session.close();
         return id;
