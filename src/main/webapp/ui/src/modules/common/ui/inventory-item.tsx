@@ -1,5 +1,6 @@
 import { ExternalLinkIcon, MapPinIcon, MicroscopeIcon } from "lucide-react";
 import type * as React from "react";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/modules/common/ui/badge";
 import { Item, ItemContent, ItemMedia, ItemTitle } from "@/modules/common/ui/item";
 import { cn } from "@/modules/common/utils/cn";
@@ -17,10 +18,13 @@ function GlobalIdBadge({
   label?: string;
   link?: React.ReactElement;
 }) {
+  const { t } = useTranslation("common");
+  // Explains the bare identifier on hover; a link keeps its own accessible name.
+  const title = t("values.inventoryGlobalId");
   // biome-ignore lint/a11y/useAnchorContent: Badge supplies the Global ID as the render target's child.
   const render = link ?? (href ? <a href={href} aria-label={label ?? globalId} /> : undefined);
   return (
-    <Badge variant="outline" className="font-mono" render={render}>
+    <Badge variant="outline" className="font-mono" title={title} render={render}>
       {href && !link ? <ExternalLinkIcon aria-hidden="true" /> : null}
       {globalId}
     </Badge>
@@ -69,6 +73,8 @@ function InventoryItem({
   idLinkLabel,
   idPlacement = "description",
   compact = false,
+  compactIdPlacement = "inline",
+  nameTitle,
   locationPlacement = "inline",
   className,
   children,
@@ -78,6 +84,8 @@ function InventoryItem({
   /** Semantic element used for the record name. */
   nameAs?: "span" | "h1";
   nameClassName?: string;
+  /** Full name shown on hover, for layouts where the name may be truncated. */
+  nameTitle?: string;
   globalId: string;
   href?: string;
   /** Router-aware link element for SPA destinations. */
@@ -92,13 +100,19 @@ function InventoryItem({
   locationPlacement?: "inline" | "below";
   /**
    * Single-line layout: the name and the global ID share the title row and the
-   * second line is dropped, so `children` and `idPlacement` are ignored.
+   * second line is dropped, so `children` and `idPlacement` are ignored. See
+   * `compactIdPlacement` to move the global ID under the name instead.
    */
   compact?: boolean;
+  /**
+   * Where the compact layout puts the global ID. "below" gives the name the full title row, so
+   * a narrow column truncates the name last instead of first.
+   */
+  compactIdPlacement?: "inline" | "below";
   children?: React.ReactNode;
 }) {
   const badge = <GlobalIdBadge globalId={globalId} href={href} label={idLinkLabel} link={idLink} />;
-  const idInTitle = compact || idPlacement === "title";
+  const idInTitle = compact ? compactIdPlacement === "inline" : idPlacement === "title";
 
   return (
     <Item data-inventory-item className={className} {...props}>
@@ -109,7 +123,9 @@ function InventoryItem({
       </ItemMedia>
       <ItemContent>
         <ItemTitle>
-          <Name className={cn("min-w-0 truncate", nameClassName)}>{name}</Name>
+          <Name className={cn("min-w-0 truncate", nameClassName)} title={nameTitle}>
+            {name}
+          </Name>
           {idInTitle ? badge : null}
         </ItemTitle>
         {/*
@@ -117,7 +133,11 @@ function InventoryItem({
           carries a badge plus arbitrary caller content. The muted typography is
           reused from ItemDescription so the two placements stay visually identical.
         */}
-        {compact ? null : (
+        {compact ? (
+          idInTitle ? null : (
+            badge
+          )
+        ) : (
           <div
             data-slot="item-description"
             className={cn(
