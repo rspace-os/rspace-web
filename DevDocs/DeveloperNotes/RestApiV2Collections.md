@@ -351,6 +351,49 @@ Set `exposedOperations` in `ApiV2ResourceSpec` to choose HTTP routes and OpenAPI
 access checks, including for anonymous callers. For read-only collections, expose `LIST`, `COUNT`,
 and `READ` and use a read-only access policy.
 
+### Default audit routes
+
+Each registered resource also has these routes:
+
+| Method and route | Result |
+| --- | --- |
+| `GET /api/v2/widgets/{id}/audit` | A page of audit events for one readable resource. |
+| `GET /api/v2/widgets/{id}/audit/count` | The number of matching audit events. |
+
+The caller must authenticate with an API key or OAuth bearer token and have resource read access.
+The audit handler applies its normal subject visibility rules.
+
+The list route accepts `page`, `limit`, `dateFrom`, `dateTo`, repeated `actions`, and an optional
+`snapshotDate`/`snapshotFingerprint` pair. Pagination is one-based. The first page omits the pair;
+the response selects the latest completed UTC day permitted by `dateTo` and returns both values.
+Every later page sends both values unchanged. The count route accepts only the date and action
+filters.
+
+A search covers at most 183 days. Wider windows return `400` and
+`errors.api.v2.audit.range.tooWide` to avoid truncated results that look complete. Page longer
+periods one window at a time. With no dates, the server uses the last 183 days.
+`dateFrom` after `dateTo` is `400`.
+
+The list is a daily bounded-consistency snapshot over the exact half-open interval from `dateFrom`
+through midnight after `snapshotDate` in UTC. The server filters unreadable payload fields, assigns
+each event a deterministic `eventId`, sorts the complete result, fingerprints it, and only then
+slices the requested page. Exact duplicate events remain separate rows. Neither hash is a signature
+or evidence that the source log has not been changed.
+
+If the bounded result changes between pages, the server returns `409` and the client must restart
+from page one. A malformed, unreadable, or unstable eligible audit file returns `503`; the server
+does not return a partial page. A result above `api.v2.audit.resultCeiling` returns `400` and the
+client must choose a narrower date range. The default is 1,000.
+
+The framework reads `@AuditTrailData` and the single `@AuditTrailIdentifier` method from the entity.
+A resource without this metadata returns an empty audit result. Use a stable identifier that is
+unique across audit domains. An entity in the `UNKNOWN` audit domain must include the resource name
+in its audit identifier.
+
+The response contains only audit properties with matching readable REST API v2 fields or
+relationships. Excluding the audit identifier and audit-only properties prevents field-access
+bypasses.
+
 ## Resource configuration
 
 ### `@ApiV2ResourceDefinition`
