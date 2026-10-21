@@ -67,3 +67,5 @@ to the UI; server authorization remains authoritative on every request.
 
 Creation and lifecycle rules are in [Booking](Booking.md#configuration-lifecycle);
 maintenance exemptions are in [Scheduling](Booking.md#scheduling).
+
+Cancellation and restoration are in [Booking cancellation reasons](Booking.md#booking-cancellation-reasons).
