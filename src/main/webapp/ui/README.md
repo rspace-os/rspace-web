@@ -167,7 +167,8 @@ For detailed information about specific areas
 | # | Guidance |
 | --- | --- |
 | 1. | Accessibility: See [../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md](../../../../DevDocs/DeveloperNotes/GettingStarted/Accessibility.md) |
-| 2. | Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md) |
-| 3. | Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md) |
-| 4. | Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md) |
-| 5. | Odd things to watch out for with Material UI: See [./QuirksOfMaterialUi.md](./QuirksOfMaterialUi.md) |
+| 2. | Table List: See [API v2 adapters](../../../../DevDocs/DeveloperNotes/TableListAdapters.md), [interactions and filters](../../../../DevDocs/DeveloperNotes/TableListInteractions.md), and [Table List data sources](../../../../DevDocs/DeveloperNotes/TableListDataSources.md). |
+| 3. | Link Navigation in Inventory: See [src/Inventory/NavigationInInventory.md](src/Inventory/NavigationInInventory.md) |
+| 4. | Adding Form Fields in Inventory: See [src/Inventory/AddingNewFormFields.md](src/Inventory/AddingNewFormFields.md) |
+| 5. | Adding new integrations to the Apps page: See [src/eln/apps/AddingANewIntegration.md](src/eln/apps/AddingANewIntegration.md) |
+| 6. | Odd things to watch out for with Material UI: See [./QuirksOfMaterialUi.md](./QuirksOfMaterialUi.md) |
