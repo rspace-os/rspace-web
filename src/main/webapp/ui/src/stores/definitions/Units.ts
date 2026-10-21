@@ -313,7 +313,7 @@ export type Temperature = {
 /**
  * Absolute zero in degrees Celsius.
  */
-export const ABSOLUTE_ZERO = -273;
+export const ABSOLUTE_ZERO = -273.15;
 
 /**
  * The boiling point of nitrogen in degrees Celsius. Useful in defining
@@ -335,6 +335,16 @@ export function temperatureFromTo(from: TemperatureScale, to: TemperatureScale, 
 }
 
 /**
+ * Whether a temperature is colder than absolute zero. Unlike `temperatureFromTo`
+ * this does not round, so -273.1 °C is allowed, matching the backend.
+ */
+export function isBelowAbsoluteZero(value: number, unitId: TemperatureScale): boolean {
+  if (unitId === KELVIN) return value < 0;
+  const celsius = unitId === FAHRENHEIT ? (value - 32) / 1.8 : value;
+  return celsius < ABSOLUTE_ZERO;
+}
+
+/**
  * If a non-null value is passed, then it is check to be not NaN and not less
  * than absolute zero.
  */
@@ -345,7 +355,7 @@ export const validateTemperature = (temp: Temperature | null): Result<null> =>
       .flatMapDiscarding((t) => Parsers.isNotNaN(t.numericValue))
       .mapError(() => new Error("Temperature is invalid"))
       .flatMap((t) =>
-        t.numericValue >= temperatureFromTo(CELSIUS, t.unitId, ABSOLUTE_ZERO)
+        !isBelowAbsoluteZero(t.numericValue, t.unitId)
           ? Result.Ok(null)
           : Result.Error([new Error("Temperature is less than absolute zero")]),
       ),
