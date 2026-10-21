@@ -151,23 +151,16 @@ public class ApiV2ControllerAdvice {
           request.getMethod(),
           ex.reason());
     }
-    return switch (ex.reason()) {
-      case NOT_FOUND -> problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
-      case FORBIDDEN -> problem(HttpStatus.FORBIDDEN, "errors.api.v2.resourceAccess.forbidden");
-      case OWNER_REQUIRED ->
-          problem(HttpStatus.CONFLICT, "errors.api.v2.resourceAccess.ownerRequired");
-      case STALE -> problem(HttpStatus.PRECONDITION_FAILED, "errors.api.v2.resourceAccess.stale");
-      case INVALID_GRANTEE ->
-          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.invalidGrantee");
-      case INVALID_ROLE ->
-          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.invalidRole");
-      case DUPLICATE_GRANTEE ->
-          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.duplicateGrantee");
-      case ASSIGNMENT_LIMIT ->
-          problem(HttpStatus.BAD_REQUEST, "errors.api.v2.resourceAccess.assignmentLimit");
-      case SELF_REMOVAL_REQUIRES_LEAVE ->
-          problem(HttpStatus.CONFLICT, "errors.api.v2.resourceAccess.selfRemovalRequiresLeave");
-    };
+    HttpStatus status =
+        switch (ex.reason()) {
+          case NOT_FOUND -> HttpStatus.NOT_FOUND;
+          case FORBIDDEN -> HttpStatus.FORBIDDEN;
+          case OWNER_REQUIRED, SELF_REMOVAL_REQUIRES_LEAVE -> HttpStatus.CONFLICT;
+          case STALE -> HttpStatus.PRECONDITION_FAILED;
+          case INVALID_GRANTEE, INVALID_ROLE, DUPLICATE_GRANTEE, ASSIGNMENT_LIMIT ->
+              HttpStatus.BAD_REQUEST;
+        };
+    return problem(status, ex.reason().messageKey());
   }
 
   @ExceptionHandler(DocumentValidationException.class)
