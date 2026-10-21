@@ -1011,6 +1011,7 @@
     "sendMessage": "Send a message"
   },
   "values": {
+    "inventoryGlobalId": "Inventory global ID",
     "none": "None",
     "noValue": "No Value",
     "unknown": "Unknown",
