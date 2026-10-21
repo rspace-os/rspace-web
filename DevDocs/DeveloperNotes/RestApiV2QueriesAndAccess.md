@@ -138,6 +138,48 @@ whose meaning depends on the destination.
 The API publishes only scalar fields from one relationship hop. It does not publish a target's own
 relationships because the query language compiles one hop and depth 1 expands one target level.
 
+### Relationship filter picker metadata
+
+A single-target relationship with a declared global-ID prefix publishes an optional
+`picker` on its root selector in `x-rspace-filter`. For example, a `calibrations` resource can declare a single-target `instrument`
+relationship to `instruments` with the existing `IN` prefix. The generated selector includes:
+
+```json
+"picker": {"resource": "instruments", "identity": "globalId", "globalIdPrefix": "IN"}
+```
+
+Public target fields such as `instrument.name` appear in `x-rspace-relationship-fields`.
+The shared instruments source supplies its picker through the application registry.
+
+The client uses `resource` to select an application-owned source. Metadata never
+supplies a search URL. A new collection opts in through its declared relationship
+and existing target prefix, without a collection-specific query compiler. Register
+its source in the client registry if users need search and selection controls.
+Unprefixed and multi-target relationships omit the picker descriptor and retain
+their existing typed identity and compatible target-property selectors.
+`target.value`, `target.relationTo`, and the exact `createdBy.value==me` spelling
+remain compatible. Older clients can ignore `picker`.
+
+Target-property and runtime traversal remain one hop. Runtime traversal requires
+one target; existing multi-target identity and common scalar queries remain valid.
+A missing or inaccessible identity matches `exists=false` but never a negative
+identity comparison. A runtime predicate through a relationship always requires a
+readable target, including `exists=false`; that operator then means the readable
+target has no nonempty value. Page and count queries share these predicates.
+Request copies made during access checks or projection narrowing must preserve
+`ResourceRequest.runtime()`, which contains the resolved runtime selectors needed
+by the query compiler.
+
+Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. The browser
+allows only registered resource/namespace pairs and refuses redirects before sending
+authenticated catalog requests. A target-only alias may delegate to its registered runtime-field catalog resource. Do not infer the
+catalog resource from `viaResource`. Adding a runtime provider also requires adding
+its approved route to the client catalog allowlist.
+
+The 50-comparison budget covers direct, relationship, and runtime
+predicates together. Argument, nesting, LIKE, catalog-ID, page-size, and projection
+limits continue to apply independently; adding picker metadata does not raise them.
+
 ### Scalar read documents
 
 Instrument list and single reads use `ResourceOperations.usesReadDocuments()` and
