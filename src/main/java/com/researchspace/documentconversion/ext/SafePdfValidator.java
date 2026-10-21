@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.Set;
 import org.apache.pdfbox.Loader;
@@ -21,6 +23,8 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 public final class SafePdfValidator {
 
   private static final int MAX_PAGES = 10_000;
+  // Allow 200 containers per permitted page, above the ~72/page in the tagged exampleDoc.pdf.
+  private static final int MAX_STRUCTURAL_CONTAINERS = MAX_PAGES * 200;
   private static final float MAX_PAGE_DIMENSION_POINTS = 14_400;
   private static final Set<String> UNSAFE_ACTIONS =
       Set.of("GoToE", "GoToR", "ImportData", "JavaScript", "Launch", "SubmitForm");
@@ -48,8 +52,7 @@ public final class SafePdfValidator {
       validatePageBox(page.getMediaBox());
       validatePageBox(page.getCropBox());
     }
-    Set<COSBase> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-    validateCosTree(document.getDocumentCatalog().getCOSObject(), visited);
+    validateCosTree(document.getDocumentCatalog().getCOSObject());
   }
 
   private static void validatePageBox(PDRectangle box) throws IOException {
@@ -64,39 +67,55 @@ public final class SafePdfValidator {
     }
   }
 
-  private static void validateCosTree(COSBase value, Set<COSBase> visited) throws IOException {
-    if (value == null) {
-      return;
-    }
-    if (value instanceof COSObject object) {
-      validateCosTree(object.getObject(), visited);
-      return;
-    }
-    if (!visited.add(value)) {
-      return;
-    }
-    if (value instanceof COSDictionary dictionary) {
-      String action = dictionary.getNameAsString(COSName.S);
-      String type = dictionary.getNameAsString(COSName.TYPE);
-      if ((action != null && UNSAFE_ACTIONS.contains(action))
-          || "EmbeddedFile".equals(type)
-          || dictionary.containsKey(COSName.getPDFName("EmbeddedFiles"))
-          || dictionary.containsKey(COSName.getPDFName("JavaScript"))
-          || dictionary.containsKey(COSName.getPDFName("EF"))
-          || dictionary.containsKey(COSName.AA)) {
-        throw invalid();
-      }
-      for (COSName key : dictionary.keySet()) {
-        if (COSName.OPEN_ACTION.equals(key)
-            && dictionary.getDictionaryObject(key) instanceof COSDictionary) {
+  private static void validateCosTree(COSBase root) throws IOException {
+    Set<COSBase> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+    Deque<COSBase> pending = new ArrayDeque<>();
+    enqueue(root, pending, visited);
+    while (!pending.isEmpty()) {
+      COSBase value = pending.removeLast();
+      if (value instanceof COSDictionary dictionary) {
+        String action = dictionary.getNameAsString(COSName.S);
+        String type = dictionary.getNameAsString(COSName.TYPE);
+        if ((action != null && UNSAFE_ACTIONS.contains(action))
+            || "EmbeddedFile".equals(type)
+            || dictionary.containsKey(COSName.getPDFName("EmbeddedFiles"))
+            || dictionary.containsKey(COSName.getPDFName("JavaScript"))
+            || dictionary.containsKey(COSName.getPDFName("EF"))
+            || dictionary.containsKey(COSName.AA)) {
           throw invalid();
         }
-        validateCosTree(dictionary.getDictionaryObject(key), visited);
+        for (COSName key : dictionary.keySet()) {
+          if (COSName.OPEN_ACTION.equals(key)
+              && dictionary.getDictionaryObject(key) instanceof COSDictionary) {
+            throw invalid();
+          }
+          enqueue(dictionary.getItem(key), pending, visited);
+        }
+      } else if (value instanceof COSArray array) {
+        for (COSBase item : array) {
+          enqueue(item, pending, visited);
+        }
       }
-    } else if (value instanceof COSArray array) {
-      for (COSBase item : array) {
-        validateCosTree(item, visited);
+    }
+  }
+
+  private static void enqueue(COSBase value, Deque<COSBase> pending, Set<COSBase> visited)
+      throws IOException {
+    Set<COSBase> indirectObjects = null;
+    while (value instanceof COSObject object) {
+      if (indirectObjects == null) {
+        indirectObjects = Collections.newSetFromMap(new IdentityHashMap<>());
       }
+      if (!indirectObjects.add(value)) {
+        return;
+      }
+      value = object.getObject();
+    }
+    if ((value instanceof COSDictionary || value instanceof COSArray) && visited.add(value)) {
+      if (visited.size() > MAX_STRUCTURAL_CONTAINERS) {
+        throw new IOException(DocumentConversionError.INPUT_INVALID.code());
+      }
+      pending.addLast(value);
     }
   }
 

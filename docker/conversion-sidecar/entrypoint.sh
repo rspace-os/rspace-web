@@ -10,11 +10,18 @@ printf '%s gotenberg\n' "$peer" >> /tmp/conversion-hosts
 
 iptables -P OUTPUT DROP
 iptables -F OUTPUT
+# Ahead of the conntrack rule: the startup lookup's UDP flow would otherwise stay
+# reusable as ESTABLISHED. 127.0.0.11 is Docker's embedded resolver (post-DNAT).
+iptables -A OUTPUT -d 127.0.0.11/32 -j DROP
+iptables -A OUTPUT -p udp --dport 53 -j DROP
+iptables -A OUTPUT -p tcp --dport 53 -j DROP
 iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 iptables -A OUTPUT -d 127.0.0.1/32 -j ACCEPT
 iptables -A OUTPUT -d "$peer/32" -p tcp --dport 3000 -j ACCEPT
 ip6tables -P OUTPUT DROP
 ip6tables -F OUTPUT
+ip6tables -A OUTPUT -p udp --dport 53 -j DROP
+ip6tables -A OUTPUT -p tcp --dport 53 -j DROP
 ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
 ip6tables -A OUTPUT -d ::1/128 -j ACCEPT
 

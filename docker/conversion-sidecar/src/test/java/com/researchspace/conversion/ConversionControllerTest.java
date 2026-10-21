@@ -2,10 +2,13 @@ package com.researchspace.conversion;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -13,17 +16,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(ConversionController.class)
+@Import(ConversionControllerTest.PropertiesConfiguration.class)
 class ConversionControllerTest {
 
   @Autowired private MockMvc mvc;
@@ -33,11 +43,33 @@ class ConversionControllerTest {
   @MockitoBean private OfficeConversionLimiter limiter;
   @TempDir Path directory;
 
+  @TestConfiguration
+  static class PropertiesConfiguration {
+    @Bean
+    ConverterProperties converterProperties() {
+      var timeout = Duration.ofSeconds(10);
+      return new ConverterProperties(
+          Path.of("/tmp"),
+          Path.of("/tmp"),
+          timeout,
+          timeout,
+          timeout,
+          timeout,
+          1,
+          1000000,
+          Path.of("/usr/bin/true"));
+    }
+  }
+
+  @BeforeEach
+  void configureRequestLifecycle() {
+    when(limiter.acquireWord())
+        .thenAnswer(invocation -> new OfficeConversionLimiter.Permit(() -> {}));
+  }
+
   @Test
   void capabilitiesDeclareBothRequiredRoles() throws Exception {
-    mvc.perform(
-            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(
-                "/v1/capabilities"))
+    mvc.perform(get("/v1/capabilities"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.protocol").value("rspace-conversion-sidecar"))
         .andExpect(jsonPath("$.roles[0]").value("pdf"))
@@ -46,15 +78,17 @@ class ConversionControllerTest {
 
   @Test
   void wordImportUsesMvcMultipartBindingAndStreamsOutput() throws Exception {
-    when(officeRunner.convert(any(), eq("doc"), eq("html")))
+    when(officeRunner.convert(any(), eq("doc"), eq("html"), any()))
         .thenReturn(output("output.html", "text/html; charset=UTF-8", "output"));
 
-    mvc.perform(multipart("/v1/convert/html").file(file("file", "legacy.doc")))
+    var conversion =
+        mvc.perform(multipart("/v1/convert/html").file(file("file", "legacy.doc"))).andReturn();
+    mvc.perform(asyncDispatch(conversion))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", "text/html;charset=UTF-8"));
 
     verify(archiveValidator, never()).validate(any(), any());
-    verify(officeRunner).convert(any(), eq("doc"), eq("html"));
+    verify(officeRunner).convert(any(), eq("doc"), eq("html"), any());
   }
 
   @Test
@@ -66,7 +100,7 @@ class ConversionControllerTest {
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value(ConversionError.INPUT_INVALID.code()));
 
-    verify(gotenbergProxy, never()).convert(any(), any(), any());
+    verify(gotenbergProxy, never()).convert(any(), any(), any(), any());
   }
 
   @Test
@@ -75,16 +109,18 @@ class ConversionControllerTest {
     OfficeConversionLimiter.Permit permit =
         new OfficeConversionLimiter.Permit(() -> released.set(true));
     when(limiter.acquirePdf()).thenReturn(permit);
-    when(gotenbergProxy.convert(any(), eq("docx"), any()))
+    when(gotenbergProxy.convert(any(), eq("docx"), any(), any()))
         .thenReturn(output("output.pdf", MediaType.APPLICATION_PDF_VALUE, "%PDF-output"));
 
-    mvc.perform(multipart("/forms/libreoffice/convert").file(file("files", "document.docx")))
+    var conversion =
+        mvc.perform(multipart("/forms/libreoffice/convert").file(file("files", "document.docx")))
+            .andReturn();
+    mvc.perform(asyncDispatch(conversion))
         .andExpect(status().isOk())
         .andExpect(header().string("Content-Type", MediaType.APPLICATION_PDF_VALUE));
 
     verify(archiveValidator).validate(any(), eq("docx"));
-    verify(gotenbergProxy)
-        .convert(any(), eq("docx"), org.mockito.ArgumentMatchers.argThat(this::isUuid));
+    verify(gotenbergProxy).convert(any(), eq("docx"), argThat(this::isUuid), any());
     assertTrue(released.get());
   }
 
@@ -112,7 +148,7 @@ class ConversionControllerTest {
 
   private boolean isUuid(String value) {
     try {
-      java.util.UUID.fromString(value);
+      UUID.fromString(value);
       return true;
     } catch (IllegalArgumentException e) {
       return false;
