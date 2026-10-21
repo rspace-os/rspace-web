@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,8 +74,7 @@ public class ExportUtils implements IExportUtils {
     }
     ConvertibleFile convertibleFile = new ConvertibleFile(exportedFile);
     File secureTmpDir = IoUtils.createOrGetSecureTempDirectory().toFile();
-    File outFile =
-        File.createTempFile(FilenameUtils.getBaseName(exportFileName), ".png", secureTmpDir);
+    File outFile = File.createTempFile("export-thumbnail-", ".png", secureTmpDir);
     return docConverter.convert(convertibleFile, "png", outFile);
   }
 
