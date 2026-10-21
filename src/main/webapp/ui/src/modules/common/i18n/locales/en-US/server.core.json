@@ -169,6 +169,7 @@
             "transition": "The requested booking state transition is not permitted."
           },
           "concurrentModification": "The event changed while it was being edited.",
+          "ifMatchRequired": "The current booking version is required.",
           "create": "The booking is invalid.",
           "patch": "The booking patch is invalid.",
           "granularity": "Start and end must align with this bookable item's slot granularity.",
