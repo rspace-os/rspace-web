@@ -30,7 +30,11 @@ final class ConversionHealthController {
 
   @GetMapping("/ready")
   ResponseEntity<Map<String, String>> ready() {
-    return response(sandbox.isReady() && gotenberg.isReady());
+    return response(
+        sandbox.isReady()
+            && gotenberg.isReady()
+            && limiter.hasWordCapacity()
+            && limiter.hasPdfCapacity());
   }
 
   @GetMapping("/ready/word")

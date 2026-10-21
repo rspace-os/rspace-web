@@ -207,8 +207,12 @@ public class MSWordProcessorTest {
             null,
             null);
 
-    assertThrows(
-        IOException.class, () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg));
+    assertEquals(
+        DocumentConversionError.INPUT_INVALID,
+        assertThrows(
+                DocumentConversionException.class,
+                () -> mswordExporter.makeExport(outfile, input, rspaceDoc, cfg))
+            .error());
     verify(imageRetriever, never())
         .getImageBytesFromImgSrc(Mockito.anyString(), any(ExportToFileConfig.class));
     verify(converter, never()).convert(any(Convertible.class), eq("docx"), eq(outfile));

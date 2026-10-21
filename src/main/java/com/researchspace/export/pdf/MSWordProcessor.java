@@ -191,7 +191,7 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
   private void inlineImageSources(ExportToFileConfig exportConfig, Elements images)
       throws IOException {
     if (images.size() > MAX_INLINE_IMAGES) {
-      throw new IOException("Word export contains too many images");
+      throw new DocumentConversionException(DocumentConversionError.INPUT_TOO_LARGE);
     }
     long totalBytes = 0;
     Tika tika = new Tika();
@@ -201,15 +201,15 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
       validateInternalImageSource(source);
       byte[] imgData = imageHelper.getImageBytesFromImgSrc(source, exportConfig);
       if (imgData == null || imgData.length == 0 || imgData.length > MAX_INLINE_IMAGE_BYTES) {
-        throw new IOException("Word export image exceeds the permitted size");
+        throw new DocumentConversionException(DocumentConversionError.INPUT_TOO_LARGE);
       }
       totalBytes += imgData.length;
       if (totalBytes > MAX_TOTAL_INLINE_IMAGE_BYTES) {
-        throw new IOException("Word export images exceed the permitted total size");
+        throw new DocumentConversionException(DocumentConversionError.INPUT_TOO_LARGE);
       }
       String mediaType = tika.detect(imgData).toLowerCase(Locale.ROOT);
       if (!INLINE_IMAGE_TYPES.contains(mediaType)) {
-        throw new IOException("Word export image has an unsupported media type");
+        throw new DocumentConversionException(DocumentConversionError.UNSUPPORTED);
       }
       img.attr(
           "src", "data:" + mediaType + ";base64," + Base64.getEncoder().encodeToString(imgData));
@@ -221,7 +221,7 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
         || source.isBlank()
         || source.startsWith("//")
         || source.indexOf('\\') >= 0) {
-      throw new IOException("Word export contains an invalid image source");
+      throw new DocumentConversionException(DocumentConversionError.INPUT_INVALID);
     }
     try {
       URI uri = URI.create(source);
@@ -230,10 +230,10 @@ public class MSWordProcessor extends AbstractExportProcessor implements ExportPr
           || uri.getAuthority() != null
           || path == null
           || java.nio.file.Path.of(path).normalize().startsWith("..")) {
-        throw new IOException("Word export contains an external image source");
+        throw new DocumentConversionException(DocumentConversionError.INPUT_INVALID);
       }
     } catch (IllegalArgumentException e) {
-      throw new IOException("Word export contains an invalid image source", e);
+      throw new DocumentConversionException(DocumentConversionError.INPUT_INVALID, e);
     }
   }
 }

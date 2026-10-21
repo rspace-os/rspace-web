@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import axios from "@/common/axios";
+import axios, { isAxiosError } from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
@@ -81,9 +81,15 @@ export function CallableDocumentPreview({ children }: { children: React.ReactNod
   const openConvertedFile = React.useCallback(
     async ({ documentId, fileExtension, revisionId = null, publicView = false }: DocumentPreviewDetails) => {
       const revisionUrlSuffix = revisionId != null ? `&revision=${revisionId}` : "";
-      const { data } = await axios.get<unknown>(
-        `/Streamfile/ajax/convert/${documentId}?outputFormat=pdf${revisionUrlSuffix}`,
-      );
+      let data: unknown;
+      try {
+        ({ data } = await axios.get<unknown>(
+          `/Streamfile/ajax/convert/${documentId}?outputFormat=pdf${revisionUrlSuffix}`,
+        ));
+      } catch (error) {
+        if (!isAxiosError(error) || !error.response) throw error;
+        data = error.response.data;
+      }
       const fileName = Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
         .flatMap(Parsers.getValueWithKey("data"))
