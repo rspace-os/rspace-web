@@ -1,5 +1,6 @@
 import { MoreHorizontal } from "lucide-react";
 import type * as React from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/common/ui/button";
 import { Menu, MenuContent, MenuItem, MenuTrigger } from "@/modules/common/ui/menu";
 import { cn } from "@/modules/common/utils/cn";
@@ -81,6 +82,7 @@ const HIDE_MORE_AT = [
  * actions, the common cases, there is no redundancy at all.
  */
 export function ActionBar({ actions, className }: { actions: readonly ActionBarAction[]; className?: string }) {
+  const { t } = useTranslation("common");
   const capped = actions.slice(0, MAXIMUM_ACTIONS);
   const cancel = capped.find((action) => action.style === "cancel");
   const rest = capped.filter((action) => action !== cancel);
@@ -117,7 +119,7 @@ export function ActionBar({ actions, className }: { actions: readonly ActionBarA
           <Menu>
             <MenuTrigger
               data-slot="action-bar-more"
-              aria-label="More actions"
+              aria-label={t("actions.moreActions")}
               className={cn(MORE_CLASS, HIDE_MORE_AT[ordered.length])}
             >
               <MoreHorizontal className="size-4" aria-hidden="true" />
