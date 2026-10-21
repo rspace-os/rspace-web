@@ -5449,12 +5449,19 @@ export default interface Resources {
         }
       },
       "errors": {
+        "cannotUpdateThisWay": "This App cannot be updated this way",
+        "configPropertiesWrongApp": "Configuration properties do not belong to the requested app",
+        "configSetWrongApp": "Options {0} do not belong to {1}",
+        "deleteConfigSetNotPermitted": "Not permitted to delete this AppConfig set",
         "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
         "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
+        "newConfigMissingCredential": "A new configuration must include its credential",
+        "newConfigSetMissingSecret": "A new config set has no stored secret to keep",
         "noneValid": "There were no valid Apps: {0}",
         "notFoundByName": "No app with name [{0}]",
         "notFoundByProperty": "App could not be identified for property {0}",
-        "requestSupport": "There is a problem with your request, please contact support."
+        "requestSupport": "There is a problem with your request, please contact support.",
+        "updateConfigSetNotPermitted": "Not permitted to update this AppConfig set"
       },
       "fieldmark": {
         "errors": {
@@ -5468,6 +5475,7 @@ export default interface Resources {
       "github": {
         "errors": {
           "getFolderContents": "Error while getting GitHub folder contents",
+          "oauthConnectionRequired": "GitHub OAuth connection is required",
           "parseTreeRequest": "Error while parsing the request"
         }
       },
@@ -5518,6 +5526,8 @@ export default interface Resources {
       },
       "slack": {
         "errors": {
+          "channelOnlyLabelEditable": "Only a Slack channel's label can be changed",
+          "channelsAddedByConnecting": "Slack channels are added by connecting to Slack",
           "missingResponseField": "The Slack response is missing required field {0}",
           "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
           "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
@@ -9367,6 +9377,10 @@ export default interface Resources {
       "settings": {
         "additionalPropertiesInfo": "Some settings can only be adjusted by IT staff with with access to the server environment, for more information about additional settings see: {0}",
         "additionalPropertiesLink": "Additional Server Properties / Settings",
+        "errors": {
+          "communityWriteRequired": "Cannot change settings without community write permission",
+          "globalRequiresSysadmin": "Only a sysadmin can change a global system setting"
+        },
         "header": {
           "info": "Click on a setting name for additional description, or on a setting value to start editing."
         },
