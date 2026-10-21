@@ -21,6 +21,7 @@ import com.researchspace.model.collection.RuntimeFieldSelection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -93,7 +94,6 @@ public final class ApiV2ResourceRequestParser {
       CollectionDescription<?> description,
       ResourceRegistry registry,
       RuntimeFieldContext runtimeFields) {
-    // Length is enforced by filter(); calling validateWhere here too would just repeat it.
     RuntimeFieldResolution runtime = new RuntimeFieldResolution(runtimeFields);
     FilterExpression filter = filter(where, description, registry, runtime);
     return ResourceRequest.unpaged(filter, runtime.selection());
@@ -191,7 +191,7 @@ public final class ApiV2ResourceRequestParser {
       ResourceRegistry registry,
       RuntimeFieldResolution runtime) {
     validateWhere(where);
-    RsqlFilterParser parser = new RsqlFilterParser(description, registry, runtime.context());
+    RsqlFilterParser parser = new RsqlFilterParser(description, registry, runtime.context);
     FilterExpression filter = parser.parse(where);
     parser.resolvedRuntimeFields().forEach(runtime::filtered);
     parser.runtimeRelationships().forEach(runtime::reachedThrough);
@@ -213,10 +213,6 @@ public final class ApiV2ResourceRequestParser {
       this.context = context;
     }
 
-    private RuntimeFieldContext context() {
-      return context;
-    }
-
     private void filtered(String selector, ResolvedRuntimeField field) {
       selectors.putIfAbsent(selector, field);
     }
@@ -226,9 +222,6 @@ public final class ApiV2ResourceRequestParser {
     }
 
     private void project(List<String> requested) {
-      if (requested.isEmpty()) {
-        return;
-      }
       requested.forEach(
           selector ->
               reserveProjection(
@@ -253,9 +246,6 @@ public final class ApiV2ResourceRequestParser {
     }
 
     private void projectThroughRelationship(List<HoppedProjection> requested) {
-      if (requested.isEmpty()) {
-        return;
-      }
       for (HoppedProjection hopped : requested) {
         reserveProjection(hopped.selector(), hopped.namespace());
         selectors.putIfAbsent(hopped.selector(), hopped.field());
@@ -314,13 +304,9 @@ public final class ApiV2ResourceRequestParser {
         .forEach(
             (resourceName, values) ->
                 addFieldSelection(resourceName, values, registry, excluded, false, null));
-    included.keySet().stream()
-        .filter(excluded::containsKey)
-        .findAny()
-        .ifPresent(
-            ignored -> {
-              throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
-            });
+    if (!Collections.disjoint(included.keySet(), excluded.keySet())) {
+      throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
+    }
     Map<String, FieldSelection> selections = new LinkedHashMap<>(included);
     selections.putAll(excluded);
     return ResourceFieldSelections.forRoot(root.resourceName(), selections);
@@ -365,6 +351,7 @@ public final class ApiV2ResourceRequestParser {
     Set<String> seen = new LinkedHashSet<>();
     List<String> runtimeSelectors = new ArrayList<>();
     List<HoppedProjection> hoppedSelectors = new ArrayList<>();
+    RuntimeFieldContext context = runtime == null ? null : runtime.context;
     for (String token : value.split(",", -1)) {
       String field = token.trim();
       if (field.isEmpty()) {
@@ -373,7 +360,6 @@ public final class ApiV2ResourceRequestParser {
       if (!seen.add(field)) {
         throw new CollectionQueryException(CollectionQueryException.Reason.VALUE);
       }
-      RuntimeFieldContext context = runtime == null ? null : runtime.context();
       if (context != null && context.isBareNamespace(field)) {
         throw new CollectionQueryException(CollectionQueryException.Reason.FIELD);
       }
@@ -394,7 +380,8 @@ public final class ApiV2ResourceRequestParser {
       runtime.project(runtimeSelectors);
       runtime.projectThroughRelationship(hoppedSelectors);
     }
-    if (fields.isEmpty() && !seen.isEmpty()) {
+    // A non-empty value always yields a token, and each token either threw or was seen.
+    if (fields.isEmpty()) {
       fields.add(description.idField());
     }
     return Set.copyOf(fields);
@@ -433,10 +420,8 @@ public final class ApiV2ResourceRequestParser {
    * measures the still-encoded value, and percent-encoding only ever lengthens a string, so
    * anything a decoded {@code @Size} check would reject has already been rejected. Keeping one
    * decoded enforcement point also keeps count and bulk endpoints, which take {@code where} as a
-   * bare request parameter rather than binding this class, under the same rule.
-   *
-   * <p>Every parse path reaches this method through {@link #filter}, so {@code filtered} and {@code
-   * bulk} must not repeat it.
+   * bare request parameter rather than binding this class, under the same rule. {@link
+   * #validateRawWhere} describes how the two enforcement layers relate.
    */
   private static void validateWhere(String where) {
     if (where != null && where.length() > CollectionQueryLimits.MAX_WHERE_LENGTH) {
