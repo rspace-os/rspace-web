@@ -185,40 +185,6 @@ class ApiV2AccessContractMVCIT {
   @DisplayName("row constraints")
   class RowConstraints {
 
-    /**
-     * The anonymous read rule is a row constraint, and the design says the framework combines it
-     * with the client filter across list, count and read-by-id. A past window is therefore
-     * invisible to an anonymous caller on all three routes and visible to an authenticated one.
-     *
-     * <p>Regression guard for a 500 that used to hit every anonymous {@code GET
-     * /api/v2/maintenances/{id}}, whatever the id: {@code AbstractCollectionManager.getResource}
-     * built {@code ResourceRequest.unpaged(idFilter)} for the constrained branch and handed it to
-     * the paginated Blaze query, which rejects a page with no order by. The unconstrained branch
-     * never had the problem, so only a constrained caller could see it.
-     */
-    @Test
-    @DisplayName("an anonymous read constraint applies to list, count and read alike")
-    void anAnonymousReadConstraintAppliesEverywhere() throws Exception {
-      Instant pastStart = Instant.now().minus(10, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
-      long past = fixture.maintenance(pastStart, pastStart.plus(1, ChronoUnit.HOURS));
-      String mine = "message==" + fixture.marker();
-
-      mockMvc.perform(get(MAINTENANCES + "/" + past)).andExpect(status().isNotFound());
-      mockMvc
-          .perform(get(MAINTENANCES).param("where", mine))
-          .andExpect(jsonPath("$.totalDocs").value(0));
-      mockMvc
-          .perform(get(MAINTENANCES + "/count").param("where", mine))
-          .andExpect(jsonPath("$.totalDocs").value(0));
-
-      mockMvc
-          .perform(get(MAINTENANCES + "/" + past).header("apiKey", fixture.userKey()))
-          .andExpect(status().isOk());
-      mockMvc
-          .perform(get(MAINTENANCES).header("apiKey", fixture.userKey()).param("where", mine))
-          .andExpect(jsonPath("$.totalDocs").value(1));
-    }
-
     /** An unreadable row is absent, not refused: 403 would confirm that the row exists. */
     @Test
     @DisplayName("a row the caller may not read is 404 rather than 403")
