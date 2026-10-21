@@ -1,4 +1,4 @@
-RSpace runs on Java 17 or Java 21. Moving to Java 21 is optional today and will become required in a later release; we will announce that in advance. This page covers a self-hosted install on Ubuntu with the distribution `tomcat10` package. If you run RSpace with [rspace-docker](https://github.com/rspace-os/rspace-docker), the image manages the JDK for you and there is nothing to do here.
+Java 17 remains the recommended version. RSpace also runs on Java 21, and Java 21 will become required in a later release, which we will announce in advance. This page covers a self-hosted install on Ubuntu with the distribution `tomcat10` package. If you run RSpace with [rspace-docker](https://github.com/rspace-os/rspace-docker), the image manages the JDK for you and there is nothing to do here.
 
 Before starting, gracefully stop the Tomcat service. RSpace will be unavailable while you perform the steps below.
 
@@ -14,18 +14,18 @@ On Ubuntu 24.04 this is the default Java and may already be installed.
 
 Tomcat reads its JVM settings from `/etc/default/tomcat10`. Take a backup of that file, then open it in a text editor.
 
-1. Replace `JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64` with `JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64`. If `JAVA_HOME` is not set in that file, add the latter line. With `JAVA_HOME` set, Tomcat uses that JDK and skips its own search for one.
-
-2. None of the flags we recommend in `JAVA_OPTS` or `CATALINA_OPTS` were removed between Java 17 and Java 21, so most installs need no further edits. Flags that other tooling may have added and that Java 21 rejects include the biased-locking family (`-XX:+UseBiasedLocking`, `-XX:BiasedLockingStartupDelay=...`). If Tomcat fails to start, `sudo systemctl status tomcat10` names the unrecognised flag; remove it and try again.
+Replace `JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64` with `JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64`. If `JAVA_HOME` is not set in that file, add the latter line.
 
 **Start Tomcat and verify**
 
     sudo systemctl start tomcat10
     sudo systemctl status tomcat10
 
+If Tomcat fails to start, the status output names any JVM flag Java 21 rejects (for example `-XX:+UseBiasedLocking`); remove it from `/etc/default/tomcat10` and start again.
+
 Once RSpace is up, confirm the Java version of the running Tomcat service by using its process's executable:
 
     tomcat_pid=$(systemctl show tomcat10 --property=MainPID --value)
     sudo "/proc/$tomcat_pid/exe" -version
 
-It should report Java version 21. Tomcat's `version.sh` starts a separate JVM, so its output does not establish which JVM the service is running. If you encounter any issues you can email support@researchspace.com for support.
+It should report Java version 21. (Don't use Tomcat's `version.sh`; it starts a separate JVM.) If you encounter any issues you can email support@researchspace.com for support.
