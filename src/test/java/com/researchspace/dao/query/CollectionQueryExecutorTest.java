@@ -63,7 +63,7 @@ class CollectionQueryExecutorTest {
   void pagesWithTranslatedFiltersAndMappedSortProperties() {
     Widget third = new Widget(3L, "Grace");
     Widget fourth = new Widget(4L, "Linus");
-    stubPage(query, 2, 2, 5, third, fourth);
+    PaginatedCriteriaBuilder<Widget> paginated = stubPage(query, 2, 2, 5, third, fourth);
 
     ResourcePage<Widget> result =
         executor.page(
@@ -82,19 +82,21 @@ class CollectionQueryExecutorTest {
     verify(query).setParameter("rsql0", "Ada");
     verify(query).orderBy("item.name", false);
     verify(query).page(2, 2);
+    verify(paginated).withInlineCountQuery(false);
   }
 
   @Test
   void countsThroughAPagedQueryOrderedByTheMappedIdProperty() {
-    stubPage(query, 0, 1, 7);
+    PaginatedCriteriaBuilder<Widget> paginated = stubPage(query, 0, 1, 7);
 
     assertEquals(7L, executor.count(factory, session, request(null, List.of(), 1, 20)));
     verify(query).orderByAsc("item.entityId");
+    verify(paginated).withInlineCountQuery(false);
   }
 
   @Test
   void returnsAnEmptyPageWithAnAccurateTotalWhenTheOffsetExceedsBlazesIntegerLimit() {
-    stubPage(query, 0, 1, 7);
+    PaginatedCriteriaBuilder<Widget> paginated = stubPage(query, 0, 1, 7);
 
     ResourcePage<Widget> result =
         executor.page(factory, session, request(null, List.of(), Integer.MAX_VALUE, 2));
@@ -102,6 +104,7 @@ class CollectionQueryExecutorTest {
     assertEquals(List.of(), result.resources());
     assertEquals(7L, result.total());
     verify(query).orderByAsc("item.entityId");
+    verify(paginated).withInlineCountQuery(false);
   }
 
   @Test
@@ -148,7 +151,7 @@ class CollectionQueryExecutorTest {
   @Test
   void scalarPageUsesTheMappedIdForOverflowCounts() {
     CriteriaBuilder<WidgetRow> projection = scalarQuery();
-    stubPage(projection, 0, 1, 7);
+    PaginatedCriteriaBuilder<WidgetRow> paginated = stubPage(projection, 0, 1, 7);
 
     ResourcePage<WidgetRow> result =
         executor.projectedPage(
@@ -163,6 +166,7 @@ class CollectionQueryExecutorTest {
     assertEquals(List.of(), result.resources());
     assertEquals(7L, result.total());
     verify(projection).orderByAsc("item.entityId");
+    verify(paginated).withInlineCountQuery(false);
   }
 
   @Test
@@ -193,14 +197,16 @@ class CollectionQueryExecutorTest {
     verify(query, never()).setParameter("rsql0", "Grace");
   }
 
-  private static <T> void stubPage(
+  private static <T> PaginatedCriteriaBuilder<T> stubPage(
       CriteriaBuilder<T> builder, int first, int max, long total, Object... rows) {
     PaginatedCriteriaBuilder<T> paginated = erasedMock(PaginatedCriteriaBuilder.class);
     PagedList<T> page = erasedMock(PagedList.class);
     when(builder.page(first, max)).thenReturn(paginated);
+    when(paginated.withInlineCountQuery(false)).thenReturn(paginated);
     when(paginated.getResultList()).thenReturn(page);
     when(page.getTotalSize()).thenReturn(total);
     when(page.toArray()).thenReturn(rows);
+    return paginated;
   }
 
   private CriteriaBuilder<WidgetRow> scalarQuery() {
@@ -229,7 +235,7 @@ class CollectionQueryExecutorTest {
     SubqueryBuilder<?> innerBuilder = erasedMock(SubqueryBuilder.class);
     SubqueryInitiator<?> innerSubquery = erasedMock(SubqueryInitiator.class);
     MultipleSubqueryInitiator<?> innerInitiator = erasedMock(MultipleSubqueryInitiator.class);
-    stubPage(query, 0, 1, 1);
+    PaginatedCriteriaBuilder<Widget> paginated = stubPage(query, 0, 1, 1);
 
     doReturn(outerInitiator).when(query).whereExpressionSubqueries("EXISTS outerSub");
     doReturn(outerSubquery).when(outerInitiator).with("outerSub");
@@ -254,6 +260,7 @@ class CollectionQueryExecutorTest {
     verify(outerBuilder, never()).whereExpression("EXISTS innerSub");
     verify(innerBuilder).whereExpression("inner.entityId = outer.entityId");
     verify(query).setParameter("nestedParam", 7L);
+    verify(paginated).withInlineCountQuery(false);
   }
 
   private static ResourceRequest request(
