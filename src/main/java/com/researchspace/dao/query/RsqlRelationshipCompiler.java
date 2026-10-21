@@ -166,6 +166,18 @@ final class RsqlRelationshipCompiler {
         : "(" + String.join(" OR ", readableTargets) + ")";
   }
 
+  /** A safe target reference does not grant access to its delegated runtime field source. */
+  String compileReadableRuntimeSource(
+      Relationship<?> relationship, String resourceName, RsqlCompilationState state) {
+    CollectionDescription<?> source = state.targets.description(resourceName);
+    AccessResult access = state.targets.result(resourceName);
+    if (source == null || access.isDenied()) {
+      return "(" + RsqlCollectionQuery.FALSE_EXPRESSION + ")";
+    }
+    return readableTargetExists(
+        relationship, relationship.targets().get(0), source, access, state, null);
+  }
+
   private String readableTargetExists(
       Relationship<?> relationship,
       RelationshipTarget<?> target,
