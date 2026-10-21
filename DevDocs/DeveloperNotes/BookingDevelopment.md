@@ -7,26 +7,22 @@ for changesets, contexts and fresh/upgrade validation. Add new changesets rather
 than editing an applied changeset.
 
 The [master changelog](../../src/main/resources/sqlUpdates/liquibase-master.xml)
-includes the Booking schema in dependency order. Booking tables precede the
-related resource-access and state changesets. Keep new includes after their
-dependencies. `recurring-changeLog.xml` runs after the application changesets and
-`customUpdates-changeLog.xml` is always the final include.
+creates each Booking table and its Envers history once, in dependency order, with
+its final settings, display, lifecycle and event columns. `openingHours` stores
+independent weekday intervals directly. Increment units default to `MINUTES` and
+alignment to `true`; the singleton starts with a fifteen-minute increment.
 
-The additive
-[`changeLog-booking-independent-hours.xml`](../../src/main/resources/sqlUpdates/changeLog-booking-independent-hours.xml)
-runs after both legacy Booking seed includes and before the recurring and custom
-updates. It stores each previously open weekday's effective interval in
-`openingHours`, using that row's weekday override or shared times. Weekdays absent
-from the old `openDays` stay closed. The legacy columns remain. The migration
-removes obsolete live NOT NULL constraints so unmapped inserts succeed.
+The resource-access tables precede Booking configuration creation. The separate
+[`changeLog-booking-drop-resource-access.xml`](../../src/main/resources/sqlUpdates/changeLog-booking-drop-resource-access.xml)
+removes the configuration ACL column after Booking adopts inherited Inventory
+access. `recurring-changeLog.xml` follows the application changesets, and
+`customUpdates-changeLog.xml` remains the final include.
 
-Each audit revision uses its own old values. A revision with shared times but no
-weekday data expands to seven days. A revision without times or a deletion
-revision leaves `openingHours` null. Historical audit snapshot JSON is unchanged.
-
-Deploy application nodes and API clients together. After cutover, the old
-schedule columns remain for history but are no longer synchronized. Older
-application nodes cannot safely write schedules to the upgraded database.
+Two changesets explicitly mark pre-stack schema changes. The custom-field index
+changelog drops the redundant `InventoryEntityField.templateField_id` index after
+its composite replacement exists. The notification changelog expands
+`Notification.notificationMessage` to `TEXT` for complete cancellation messages.
+The nullable ScheduledMaintenance cutoff remains beside the API mutation work.
 
 ## Static development seed
 
@@ -36,7 +32,8 @@ They use reserved IDs and bypass Envers, so they create no audit revisions. See 
 [edge-case changelog](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed-edge-cases.xml)
 for execution guards, and their [original SQL](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
 and [edge-case SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql) for fixture values.
-The legacy `ResourceAccess` and role rows in the static SQL seed do not grant current Booking access.
+The seed creates no independent Booking ACLs. It includes one-day increments and
+unaligned fifteen-minute starts, and skips occupied fixture IDs.
 
 ## Service-created development fixtures
 
@@ -119,3 +116,15 @@ Permanent user deletion removes live Booking rows through
 [`UserDeletionDaoHibernate.table2UserIdColumn`](../../src/main/java/com/researchspace/dao/hibernate/UserDeletionDaoHibernate.java),
 keyed by `TimeSlotBooking.requester_id`. Keep that cleanup mapping aligned if the
 requester column or table changes. Booking audit history is retained.
+
+## Rebuilding development databases
+
+The Booking stack has not been deployed. Its changelogs create the final schema
+without historical checksums, increment-schema detection or shared-hours
+backfills. Rebuild development databases from the baseline after updating this
+stack; do not reuse a database with the earlier Booking changesets applied.
+
+The original seed creates its fifteen-minute, one-day and unaligned examples in
+one guarded operation. It skips databases with existing configurations or
+occupied fixture IDs. The edge-case seed runs only while its seven items retain
+their initial schedule, increment, alignment and configuration version.
