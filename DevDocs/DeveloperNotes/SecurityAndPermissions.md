@@ -215,6 +215,8 @@ domain-neutral names. This keeps resource-specific role names and conditions out
 all existing rows and their previous permission semantics before its schema or registration is
 enabled.
 
+For REST registration, see [Resource-role protected collections](RestApiV2QueriesAndAccess.md#resource-role-protected-collections).
+
 ## Logging security errors
 
 Security events and exceptions should be logged by a security logger
