@@ -139,3 +139,10 @@ lookups return `{docs: [...]}` without paging metadata. Catalogue lists retain
 Configuration audit history requires the current target type and ID in each audit payload.
 Rows for another target, or rows without a target, are excluded before applying limits
 and caching results.
+## Scheduling timezone writes
+
+The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
+GET responses as the item's scheduling timezone, but create, patch, and bulk requests that include
+it receive the collection framework's normal `400 Bad Request` response. Public creates assign the
+JVM-backed institution timezone. This is an immediate breaking change; internal Java manager
+commands retain their timezone fields for fixtures and other trusted scheduling workflows.
