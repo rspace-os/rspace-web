@@ -20,13 +20,8 @@ versioned JSON document stored under `BOOKING_DISPLAY_PREFERENCES` in the existi
 validation, fallback, and preference access. Blank, corrupt, or unsupported stored documents fall
 back to the current global values.
 
-The current-subject REST API is:
-
-```text
-GET    /api/v2/users/me/booking-preferences
-PUT    /api/v2/users/me/booking-preferences
-DELETE /api/v2/users/me/booking-preferences
-```
+For current-subject preference routes, see
+[Current concrete routes](RestApiV2Collections.md#current-concrete-routes).
 
 PUT is a complete replacement, not a patch. DELETE removes the logical override. During run-as,
 the subject owns the preference and the actor remains available for audit context.
