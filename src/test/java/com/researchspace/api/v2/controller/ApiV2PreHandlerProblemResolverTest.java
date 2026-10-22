@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.researchspace.api.v2.json.ApiV2JsonBody;
+import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import java.util.Locale;
@@ -16,9 +18,16 @@ import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -145,6 +154,82 @@ class ApiV2PreHandlerProblemResolverTest {
             request, response, null, new HttpRequestMethodNotSupportedException("PUT")));
 
     assertEquals(405, response.getStatus());
+  }
+
+  @Test
+  void limitsApiV2BodyDepthAndStringLengthBeforeTheControllerRuns() throws Exception {
+    MockMvc mvc = bodyMvc();
+    String atLimit = "[".repeat(100) + "0" + "]".repeat(100);
+    assertEquals(200, postBody(mvc, "/api/v2/test-body", atLimit).getStatus());
+    for (String body :
+        List.of("[" + atLimit + "]", "\"" + "x".repeat(2 * 1024 * 1024 + 1) + "\"")) {
+      MockHttpServletResponse response = postBody(mvc, "/api/v2/test-body", body);
+      assertEquals(400, response.getStatus());
+      assertEquals(
+          "errors.api.v2.invalidRequest",
+          objectMapper.readTree(response.getContentAsString()).path("code").asText(),
+          response.getContentAsString());
+    }
+  }
+
+  @Test
+  void leavesOrdinaryJsonNodeBindingAndCollectionDecimalsUnchanged() throws Exception {
+    MockMvc mvc = bodyMvc();
+    String nested = "[".repeat(101) + "0" + "]".repeat(101);
+    assertEquals(200, postBody(mvc, "/api/v2/test-tree", nested).getStatus());
+    assertEquals("15", postBody(mvc, "/api/v2/test-body", "15.0").getContentAsString());
+  }
+
+  @Test
+  void preservesExplicitNullTreesWhileRejectingAnEmptyHttpBody() throws Exception {
+    MockMvc mvc = bodyMvc();
+    MockHttpServletResponse explicitNull = postBody(mvc, "/api/v2/test-body", "null");
+    assertEquals(200, explicitNull.getStatus());
+    assertEquals("null", explicitNull.getContentAsString());
+
+    MockHttpServletResponse empty = postBody(mvc, "/api/v2/test-body", "");
+    assertEquals(400, empty.getStatus());
+    assertEquals(
+        "errors.api.v2.invalidRequest",
+        objectMapper.readTree(empty.getContentAsString()).path("code").asText());
+  }
+
+  private MockMvc bodyMvc() {
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage("errors.api.v2.invalidRequest", Locale.ENGLISH, "Invalid request");
+    MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+    converter
+        .getObjectMapper()
+        .enable(com.fasterxml.jackson.databind.DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS);
+    ApiV2JsonMappers.register(converter);
+    return MockMvcBuilders.standaloneSetup(new BodyController())
+        .setMessageConverters(converter)
+        .setControllerAdvice(new ApiV2ControllerAdvice(new MessageSourceUtils(source)))
+        .build();
+  }
+
+  private static MockHttpServletResponse postBody(MockMvc mvc, String path, String body)
+      throws Exception {
+    return mvc.perform(
+            MockMvcRequestBuilders.post(path)
+                .locale(Locale.ENGLISH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+        .andReturn()
+        .getResponse();
+  }
+
+  @RestController
+  static class BodyController {
+    @PostMapping("/api/v2/test-body")
+    JsonNode body(@RequestBody ApiV2JsonBody body) {
+      return body.node();
+    }
+
+    @PostMapping("/api/v2/test-tree")
+    JsonNode tree(@RequestBody JsonNode body) {
+      return body;
+    }
   }
 
   private static MockHttpServletRequest request(String method, String uri) {

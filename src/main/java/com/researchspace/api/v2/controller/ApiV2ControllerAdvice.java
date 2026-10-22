@@ -1,8 +1,10 @@
 package com.researchspace.api.v2.controller;
 
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v2.auth.ApiV2AuthenticationException;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.throttling.ThrottlingException;
@@ -15,6 +17,7 @@ import com.researchspace.service.resourceaccess.ResourceAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +31,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.ErrorResponse;
@@ -36,7 +40,12 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 /**
  * Renders v2 controller errors as RFC 9457 {@link ApiV2Problem} bodies.
@@ -84,13 +93,37 @@ public class ApiV2ControllerAdvice {
     return interpolatedMessage != null ? interpolatedMessage : messages.getMessage(error);
   }
 
-  @ExceptionHandler({
-    TypeMismatchException.class,
-    HttpMessageNotReadableException.class,
-    ConstraintViolationException.class
-  })
+  @ExceptionHandler({TypeMismatchException.class, ConstraintViolationException.class})
   public ResponseEntity<ApiV2Problem> handleInvalidRequest() {
     return problem(HttpStatus.BAD_REQUEST, "errors.api.v2.invalidRequest");
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiV2Problem> handleUnreadable(
+      HttpMessageNotReadableException ex, HttpServletRequest request) {
+    Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+    if (handler instanceof HandlerMethod method
+        && Arrays.stream(method.getMethodParameters())
+            .anyMatch(
+                parameter ->
+                    parameter.hasParameterAnnotation(RequestBody.class)
+                        && isStrictBody(request, parameter.getParameterType()))) {
+      for (Throwable cause = ex.getCause(); cause != null; cause = cause.getCause()) {
+        if (cause instanceof MismatchedInputException mismatch) {
+          return handleDocumentValidation(ApiV2JsonMappers.validationException(mismatch));
+        }
+      }
+    }
+    return handleInvalidRequest();
+  }
+
+  private static boolean isStrictBody(HttpServletRequest request, Class<?> type) {
+    var context = RequestContextUtils.findWebApplicationContext(request);
+    return context != null
+        && context.getBean(RequestMappingHandlerAdapter.class).getMessageConverters().stream()
+            .filter(MappingJackson2HttpMessageConverter.class::isInstance)
+            .map(MappingJackson2HttpMessageConverter.class::cast)
+            .anyMatch(converter -> ApiV2JsonMappers.isStrictBody(converter, type));
   }
 
   @ExceptionHandler(ApiV2AuthenticationException.class)

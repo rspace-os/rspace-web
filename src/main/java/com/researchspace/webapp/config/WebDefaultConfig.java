@@ -34,14 +34,18 @@ public class WebDefaultConfig {
 
   @Bean
   ObjectMapper objectMapper() {
-    StreamReadConstraints constraints =
-        StreamReadConstraints.builder()
-            .maxDocumentLength(MAX_JSON_DOCUMENT_LENGTH)
-            .maxStringLength(MAX_JSON_STRING_LENGTH)
-            .maxTokenCount(MAX_JSON_TOKEN_COUNT)
-            .maxNestingDepth(MAX_JSON_NESTING_DEPTH)
-            .build();
-    return new ObjectMapper(JsonFactory.builder().streamReadConstraints(constraints).build());
+    return new ObjectMapper(
+        JsonFactory.builder().streamReadConstraints(streamReadConstraints()).build());
+  }
+
+  /** Shared bounds for stack-owned API v2 JSON bodies. */
+  public static StreamReadConstraints streamReadConstraints() {
+    return StreamReadConstraints.builder()
+        .maxDocumentLength(MAX_JSON_DOCUMENT_LENGTH)
+        .maxStringLength(MAX_JSON_STRING_LENGTH)
+        .maxTokenCount(MAX_JSON_TOKEN_COUNT)
+        .maxNestingDepth(MAX_JSON_NESTING_DEPTH)
+        .build();
   }
 
   @Bean
