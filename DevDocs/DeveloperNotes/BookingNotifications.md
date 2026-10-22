@@ -101,14 +101,10 @@ and resume when access returns. An explicit OFF is never reset by ordinary shari
 Former owners with saved ON choices continue receiving updates if they retain read access.
 This also applies to existing saved rows at rollout; no reader subscriptions are backfilled.
 
-Subscription writes recheck committed access after acquiring the existing instrument locks.
-Unsubscribe-all can still disable dormant rows. Notifications and targets persist in the
-booking transaction; a rollback produces no emails or live count updates.
-
-The triggering transaction saves notification rows. `CommunicationManagerImpl`
-defers broadcast and live notification counts until commit, preventing delivery on
-rollback. The callback uses `NotificationPostCommitExecutor` in a separate transaction
-so a failed broadcaster can persist the existing `PROCESS_FAILED` notification.
+Subscription writes recheck committed access under instrument locks; unsubscribe-all can disable
+dormant rows. Notifications and targets persist in the booking transaction; `CommunicationManagerImpl`
+broadcasts and updates live counts only after commit. `NotificationPostCommitExecutor` runs in a
+separate transaction so broadcaster failure can persist `PROCESS_FAILED`.
 
 ## Notification times
 
