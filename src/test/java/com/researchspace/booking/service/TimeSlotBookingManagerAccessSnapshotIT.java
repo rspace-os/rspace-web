@@ -1,6 +1,5 @@
 package com.researchspace.booking.service;
 
-import com.researchspace.model.inventory.Instrument;
 import static com.researchspace.booking.service.TimeSlotBookingManagerIT.sevenDaysFromNow;
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
