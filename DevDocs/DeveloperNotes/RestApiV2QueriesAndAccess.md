@@ -170,11 +170,9 @@ Request copies made during access checks or projection narrowing must preserve
 `ResourceRequest.runtime()`, which contains the resolved runtime selectors needed
 by the query compiler.
 
-Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. The browser
-allows only registered resource/namespace pairs and refuses redirects before sending
-authenticated catalog requests. A target-only alias may delegate to its registered runtime-field catalog resource. Do not infer the
-catalog resource from `viaResource`. Adding a runtime provider also requires adding
-its approved route to the client catalog allowlist.
+Runtime catalogs retain `/api/v2/{resource}/fields/{namespace}` routes. For client catalog
+allowlisting and redirect rejection, see [Relationship filters](TableListInteractions.md#relationship-filters).
+Target-only aliases may delegate catalogs; never infer the catalog resource from `viaResource`.
 
 The 50-comparison budget covers direct, relationship, and runtime
 predicates together. Argument, nesting, LIKE, catalog-ID, page-size, and projection
