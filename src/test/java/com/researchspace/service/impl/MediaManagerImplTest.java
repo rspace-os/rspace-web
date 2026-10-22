@@ -6,10 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.dao.RecordDao;
@@ -87,19 +87,15 @@ class MediaManagerImplTest {
   @Test
   void getIdsOfLinkedDocumentsThrowsForAnonymousGuestAccount() {
     // RSDEV-1329: the published-view guest can hold READ on published media via media links,
-    // but must never see which documents link a file. The happy path is stubbed leniently so the
-    // ONLY thing that can refuse is the guest check; without these stubs the "media not found"
-    // branch would throw first and the test would pass with the guest check deleted.
+    // but must never see which documents link a file. The guest check must refuse before the
+    // media file is even looked up; otherwise the "media not found" branch could be what throws,
+    // and the test would pass with the guest check deleted.
     User anonymousGuest = TestFactory.createAnyUser(RecordGroupSharing.ANONYMOUS_USER);
-    lenient().when(recordDao.getSafeNull(1L)).thenReturn(Optional.of(mediaFile));
-    lenient()
-        .when(permUtils.isRecordAccessPermitted(anonymousGuest, mediaFile, PermissionType.READ))
-        .thenReturn(true);
 
     assertThrows(
         AuthorizationException.class,
         () -> mediaManager.getIdsOfLinkedDocuments(1L, anonymousGuest));
-    verify(recordDao, never()).getInfosOfDocumentsLinkedToMediaFile(anyLong());
+    verifyNoInteractions(recordDao, permUtils);
   }
 
   @Test
@@ -217,11 +213,6 @@ class MediaManagerImplTest {
     StructuredDocument linkedDoc = TestFactory.createAnySD();
     linkedDoc.setId(5L);
     when(recordDao.getRecordsById(List.of(5L))).thenReturn(List.of(linkedDoc));
-    // the fallback would GRANT access to the linking document; the plain check refuses it. Lenient
-    // because correct production code never consults the fallback for a linking document.
-    lenient()
-        .when(permUtils.isRecordAccessPermitted(user, linkedDoc, PermissionType.READ))
-        .thenReturn(true);
     when(permUtils.isPermitted(linkedDoc, PermissionType.READ, user)).thenReturn(false);
 
     List<RecordInformation> result = mediaManager.getIdsOfLinkedDocuments(1L, user);
@@ -229,6 +220,7 @@ class MediaManagerImplTest {
     assertEquals(1, result.size());
     assertNull(result.get(0).getId());
     assertEquals(linkedDoc.getOwner().getFullName(), result.get(0).getOwnerFullName());
+    verify(permUtils, never()).isRecordAccessPermitted(user, linkedDoc, PermissionType.READ);
   }
 
   @Test

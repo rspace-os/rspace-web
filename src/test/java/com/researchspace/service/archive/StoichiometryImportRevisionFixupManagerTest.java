@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,7 +27,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -46,13 +44,6 @@ public class StoichiometryImportRevisionFixupManagerTest {
   @Mock private ImportArchiveReport report;
 
   @InjectMocks private StoichiometryImportRevisionFixupManagerImpl testee;
-
-  @BeforeEach
-  void permitEverythingByDefault() {
-    lenient()
-        .when(permissionUtils.isRecordAccessPermitted(any(), any(), eq(PermissionType.READ)))
-        .thenReturn(true);
-  }
 
   private StructuredDocument mockStructuredDocument(long id) {
     StructuredDocument doc = Mockito.mock(StructuredDocument.class);
@@ -99,6 +90,7 @@ public class StoichiometryImportRevisionFixupManagerTest {
     Set<BaseRecord> records = new HashSet<>();
     records.add(doc);
     when(report.getImportedRecords()).thenReturn(records);
+    when(permissionUtils.isRecordAccessPermitted(user, doc, PermissionType.READ)).thenReturn(true);
   }
 
   @Test
@@ -117,6 +109,8 @@ public class StoichiometryImportRevisionFixupManagerTest {
     when(report.getImportedRecords()).thenReturn(records);
     when(permissionUtils.isRecordAccessPermitted(user, refused, PermissionType.READ))
         .thenReturn(false);
+    when(permissionUtils.isRecordAccessPermitted(user, readable, PermissionType.READ))
+        .thenReturn(true);
     when(fieldManager.getFieldsByRecordId(101L, user)).thenReturn(List.of());
 
     testee.fixupStoichiometryRevisions(report, user);

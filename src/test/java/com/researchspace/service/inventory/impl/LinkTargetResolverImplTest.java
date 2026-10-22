@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -153,19 +152,22 @@ class LinkTargetResolverImplTest {
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA9999"), user));
   }
 
-  /** Stubs the ELN loader to return a record with this Global ID, readable by the user or not. */
-  private BaseRecord givenElnRecord(String globalId, boolean readable) {
+  /** Stubs the ELN loader to return a record with this Global ID. */
+  private BaseRecord givenElnRecord(String globalId) {
     GlobalIdentifier gid = new GlobalIdentifier(globalId);
     BaseRecord record = mock(BaseRecord.class);
     when(record.getOid()).thenReturn(gid);
     when(baseRecordManager.getSafeNull(gid.getDbId())).thenReturn(Optional.of(record));
-    // lenient: the prefix and trash checks come first and can short-circuit past it
-    lenient()
-        .when(
-            permissionUtils.filter(
-                argThat((List<BaseRecord> records) -> records != null && records.contains(record)),
-                eq(PermissionType.READ),
-                eq(user)))
+    return record;
+  }
+
+  /** As {@link #givenElnRecord(String)}, readable by the user or not. */
+  private BaseRecord givenElnRecord(String globalId, boolean readable) {
+    BaseRecord record = givenElnRecord(globalId);
+    when(permissionUtils.filter(
+            argThat((List<BaseRecord> records) -> records != null && records.contains(record)),
+            eq(PermissionType.READ),
+            eq(user)))
         .thenAnswer(invocation -> readable ? invocation.getArgument(0) : new ArrayList<>());
     return record;
   }
@@ -214,22 +216,23 @@ class LinkTargetResolverImplTest {
 
   @Test
   void aTrashedNotebookIsNotALinkTarget() {
-    BaseRecord notebook = givenElnRecord("NB7", true);
+    BaseRecord notebook = givenElnRecord("NB7");
     when(notebook.isFolder()).thenReturn(true);
     when(notebook.isDeleted()).thenReturn(true);
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB7"), user));
+    verify(permissionUtils, never()).filter(anyList(), eq(PermissionType.READ), eq(user));
   }
 
   /** The other two ways FolderManager.getFolder counts a folder as trashed. */
   @Test
   void aNotebookTrashedForItsOwnerOrForTheUserIsNotALinkTarget() {
     User owner = new User("owner");
-    BaseRecord trashedByOwner = givenElnRecord("NB7", true);
+    BaseRecord trashedByOwner = givenElnRecord("NB7");
     when(trashedByOwner.isFolder()).thenReturn(true);
     when(trashedByOwner.getOwner()).thenReturn(owner);
     when(trashedByOwner.isDeletedForUser(owner)).thenReturn(true);
-    BaseRecord trashedByUser = givenElnRecord("NB8", true);
+    BaseRecord trashedByUser = givenElnRecord("NB8");
     when(trashedByUser.isFolder()).thenReturn(true);
     when(trashedByUser.getOwner()).thenReturn(owner);
     when(trashedByUser.isDeletedForUser(owner)).thenReturn(false);
@@ -237,6 +240,7 @@ class LinkTargetResolverImplTest {
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB7"), user));
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NB8"), user));
+    verify(permissionUtils, never()).filter(anyList(), eq(PermissionType.READ), eq(user));
   }
 
   /** Only a folder or notebook in the trash stops being a target; a trashed document does not. */
@@ -254,9 +258,10 @@ class LinkTargetResolverImplTest {
     // the workspace loader resolves by numeric id alone, so "GL150" loads
     // whatever record has id 150 (e.g. folder FL150); only a record whose own
     // oid prefix matches the requested one may count as the link target
-    givenElnRecord("FL150", true);
+    givenElnRecord("FL150");
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("GL150"), user));
+    verify(permissionUtils, never()).filter(anyList(), eq(PermissionType.READ), eq(user));
   }
 
   @Test
@@ -383,21 +388,26 @@ class LinkTargetResolverImplTest {
 
   @Test
   void limitedReadIsNotEnoughToLinkToATarget() {
-    limitedReadOnly("SA90");
+    InventoryRecord rec = withoutFullRead("SA90");
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA90"), user));
+    verify(inventoryPermissionUtils, never()).canUserLimitedReadInventoryRecord(rec, user);
   }
 
   private InventoryRecord limitedReadOnly(String globalId) {
+    InventoryRecord rec = withoutFullRead(globalId);
+    when(inventoryPermissionUtils.canUserLimitedReadInventoryRecord(eq(rec), eq(user)))
+        .thenReturn(true);
+    return rec;
+  }
+
+  private InventoryRecord withoutFullRead(String globalId) {
     InventoryRecord rec = mock(InventoryRecord.class);
     when(rec.getOid()).thenReturn(new GlobalIdentifier(globalId));
     when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
             any(GlobalIdentifier.class)))
         .thenReturn(rec);
     when(inventoryPermissionUtils.canUserReadInventoryRecord(eq(rec), eq(user))).thenReturn(false);
-    lenient()
-        .when(inventoryPermissionUtils.canUserLimitedReadInventoryRecord(eq(rec), eq(user)))
-        .thenReturn(true);
     return rec;
   }
 }

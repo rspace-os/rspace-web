@@ -2,7 +2,8 @@ package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -55,18 +56,13 @@ class FieldManagerImplTest {
   @Test
   void getFieldsByRecordIdThrowsForAnonymousGuestAccount() {
     // RSDEV-1329: the published-view guest must never read draft (autosaved) field content.
-    // The happy path is stubbed leniently so the ONLY thing that can refuse is the guest check;
-    // without these stubs the "record not found" branch would throw first and the test would
-    // still pass with the guest check deleted.
+    // The guest check must refuse before the record is even looked up; otherwise the "record not
+    // found" branch could be what throws, and the test would pass with the guest check deleted.
     User anonymousGuest = TestFactory.createAnyUser(RecordGroupSharing.ANONYMOUS_USER);
-    lenient().when(recordDao.getSafeNull(1L)).thenReturn(Optional.of(doc));
-    lenient()
-        .when(permUtils.isRecordAccessPermitted(anonymousGuest, doc, PermissionType.READ))
-        .thenReturn(true);
 
     assertThrows(
         AuthorizationException.class, () -> fieldManager.getFieldsByRecordId(1L, anonymousGuest));
-    verifyNoInteractions(fieldDao);
+    verifyNoInteractions(fieldDao, recordDao, permUtils);
   }
 
   @Test
@@ -104,13 +100,11 @@ class FieldManagerImplTest {
     // so a READ gate would hand the owner's unsaved editing buffer to every logged-in account once
     // the document is published. Only WRITE (edit rights) may open the draft.
     when(recordDao.getSafeNull(1L)).thenReturn(Optional.of(doc));
-    lenient()
-        .when(permUtils.isRecordAccessPermitted(user, doc, PermissionType.READ))
-        .thenReturn(true);
     when(permUtils.isRecordAccessPermitted(user, doc, PermissionType.WRITE)).thenReturn(false);
 
     assertThrows(
         AuthorizationException.class, () -> fieldManager.getAutoSavedFieldsByRecordId(1L, user));
+    verify(permUtils, never()).isRecordAccessPermitted(user, doc, PermissionType.READ);
     verifyNoInteractions(fieldDao);
   }
 
@@ -128,15 +122,11 @@ class FieldManagerImplTest {
   @Test
   void getAutoSavedFieldsThrowsForAnonymousGuestAccount() {
     User anonymousGuest = TestFactory.createAnyUser(RecordGroupSharing.ANONYMOUS_USER);
-    lenient().when(recordDao.getSafeNull(1L)).thenReturn(Optional.of(doc));
-    lenient()
-        .when(permUtils.isRecordAccessPermitted(anonymousGuest, doc, PermissionType.WRITE))
-        .thenReturn(true);
 
     assertThrows(
         AuthorizationException.class,
         () -> fieldManager.getAutoSavedFieldsByRecordId(1L, anonymousGuest));
-    verifyNoInteractions(fieldDao);
+    verifyNoInteractions(fieldDao, recordDao, permUtils);
   }
 
   @Test
