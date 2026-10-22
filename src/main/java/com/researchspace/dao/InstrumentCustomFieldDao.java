@@ -75,9 +75,9 @@ public interface InstrumentCustomFieldDao {
    *
    * <p>Needed because {@link #valuesByInstrument} trusts its caller, which is right when the
    * instruments are the page the caller just read and wrong when they were reached through another
-   * collection's relationship. A linked resource names an instrument; reading the linked resource's configuration
-   * does not grant read access to that instrument, so the rule is applied
-   * here rather than assumed.
+   * collection's relationship. A linked resource names an instrument; reading the linked resource's
+   * configuration does not grant read access to that instrument, so the rule is applied here rather
+   * than assumed.
    */
   Set<Long> readableInstruments(QueryConstraint constraint, Set<Long> instrumentIds);
 }
