@@ -186,6 +186,29 @@ class ApiV2DeclaredArrayOpenApiTest {
   }
 
   @Test
+  void resourceAccessReplacementMatchesItsPublishedSchemaContract() {
+    Map<String, Object> schemas = schemas(document(description("rows"), true));
+
+    assertEquals(
+        Map.of(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("assignments"),
+            "properties",
+            Map.of(
+                "assignments",
+                Map.of(
+                    "type",
+                    "array",
+                    "items",
+                    Map.of("$ref", "#/components/schemas/ResourceAccessGrant")))),
+        schemas.get("ResourceAccessReplacement"));
+  }
+
+  @Test
   void publishesStructuredExamplesAsJsonValuesAndKeepsStringExamplesAsRawText() {
     Map<String, Object> schemas = schemas(document(description("rows"), false));
     List<Map<String, Object>> expectedExample =

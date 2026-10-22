@@ -15,6 +15,7 @@ import com.researchspace.model.collection.AccessPolicySchema;
 import com.researchspace.model.collection.CollectionFieldType;
 import com.researchspace.model.collection.FieldSchema;
 import com.researchspace.model.collection.ResourceSchema;
+import com.researchspace.service.resourceaccess.ReplaceResourceAccessRequest;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
@@ -74,17 +75,7 @@ final class ApiV2OpenApiResourceAccessDocs {
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessDocument.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceAccessGrant.class, schemas);
     ApiV2OpenApiSchemas.schemaFor(ResourceGranteeDirectoryEntry.class, schemas);
-    schemas.put(
-        "ResourceAccessReplacement",
-        ordered(
-            "type",
-            "object",
-            "additionalProperties",
-            false,
-            "required",
-            List.of("assignments"),
-            "properties",
-            ordered("assignments", ordered("type", "array", "items", ref("ResourceAccessGrant")))));
+    ApiV2OpenApiSchemas.schemaFor(ReplaceResourceAccessRequest.class, schemas);
   }
 
   static void applyRegisteredAccessFieldSchemas(
