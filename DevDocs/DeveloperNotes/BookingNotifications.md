@@ -102,14 +102,10 @@ and resume when access returns. An explicit OFF is never reset by ordinary shari
 Former owners with saved ON choices continue receiving updates if they retain read access.
 This also applies to existing saved rows at rollout; no reader subscriptions are backfilled.
 
-Subscription writes recheck committed access after acquiring the existing instrument locks.
-Unsubscribe-all can still disable dormant rows. Notifications and targets persist in the
-booking transaction; a rollback produces no emails or live count updates.
-
-The triggering transaction saves notification rows. `CommunicationManagerImpl`
-defers broadcast and live notification counts until commit, preventing delivery on
-rollback. The callback uses `NotificationPostCommitExecutor` in a separate transaction
-so a failed broadcaster can persist the existing `PROCESS_FAILED` notification.
+Subscription writes recheck committed access under instrument locks; unsubscribe-all can disable
+dormant rows. Notifications and targets persist in the booking transaction; `CommunicationManagerImpl`
+broadcasts and updates live counts only after commit. `NotificationPostCommitExecutor` runs in a
+separate transaction so broadcaster failure can persist `PROCESS_FAILED`.
 
 ## Notification times
 
@@ -135,8 +131,8 @@ Institution modes use their configured zones. With Automatic, the email clock fo
 language; an explicit H12 or H24 preference overrides that clock. The stored email message remains
 human-readable in the recipient's configured timezone.
 
-Older rows have no structured data. The dashboard reformats the final ISO interval only when both
-trailing values match the booking message shape. Existing rows remain readable without migration.
+The dashboard formats structured booking data for the recipient. If structured data is absent
+or fails to format, it logs formatting failures and displays the stored message unchanged.
 Email delivery also respects `BROADCAST_NOTIFICATIONS_BY_EMAIL`.
 
 Subjects identify the lifecycle event and instrument. Header and body use each recipient's saved zone and clock snapshot. Dashboard and notification dialog messages link to the booking and bookable item. Email links are absolute and use `server.urls.prefix`. The legacy UI preserves booking markup across repeated renders; the JSP undoes only the EL resolver's escaping, so escaped user values remain literal.

@@ -44,27 +44,14 @@ current version and the same normalized reason writes no new audit event.
 Booking audit events unwrap Hibernate proxies before leaving the transaction so
 archive-triggered cancellations retain the entity's annotated audit fields.
 
-The Description column of a booking event starts with the recorded snapshot as
-`Label: value` pairs, using the item audit history's labels (current opening-hours
-snapshots show independent weekday/time entries; older shared-hours snapshots
-show `openDays` as weekday names; a closing midnight is `00:00`; instants such as
-booking start and end or `deletedAt` appear in UTC to the second), followed by
-any logged description such as `subject=<username>`. `BookingAuditDetails` formats it on
-the server: the page receives it as `event.details` in the request locale, and
-the CSV always uses en-US. The logged `description` itself is not changed, so
-the permanent-deletion marker is still matched against the original text.
+`BookingAuditDetails.format` and `displayName` define snapshot formatting and name fallbacks;
+`scripts/pages/audit.js` defines resource links, including permanent-deletion handling. Rendering
+uses recorded snapshots without rewriting them. The logged `description` is never rewritten,
+so permanent-deletion markers still match the original text. The page uses the request locale
+and CSV uses en-US. Snapshots record the item as `target` at the time of the change, so later
+target changes do not rewrite history; older snapshots fall back to the configuration ID.
 
-Booking snapshots have no `name`, so the Name column shows a name derived from
-the snapshot without changing its format: the recorded `targetName`
-(permanent-deletion snapshots), else the target's global ID such as `IN5`, else
-a booking's `bookingConfigurationId`. Booking snapshots record their item as
-`target` at the time of the change, so later target changes do not rewrite
-history; snapshots written before that field existed fall back to the
-configuration ID. Booking-settings events stay blank (`n/a`
-in the CSV). The page receives it as `event.displayName`; the CSV writes the
-same value. The Resource column links a configuration event to its bookable
-item's page, except after a permanent deletion, when that page no longer
-exists and the ID is shown as plain text.
+Unknown or deleted schedules keep their historical values.
 
 ### Incoming requests
 
