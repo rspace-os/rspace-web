@@ -8,7 +8,6 @@ import com.researchspace.booking.service.BookingCalendarManager;
 import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.StringAppenderForTestLogging;
 import com.researchspace.model.dtos.RunAsUserCommand;
-import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.webapp.integrations.github.GitHubController;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
