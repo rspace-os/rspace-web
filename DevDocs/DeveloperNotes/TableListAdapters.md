@@ -11,34 +11,10 @@ selection.
 
 ## Design summary
 
-The module has one endpoint interface:
-
-```ts
-export type CollectionFetcher<TDocument> = (
-  state: CollectionQueryState<TDocument>,
-  context: { signal: AbortSignal },
-) => Promise<CollectionPage<TDocument>>;
-```
-
-Both REST API v2 and custom fetchers use this interface. The table does not know which it uses.
-
-The `useTableList` hook owns filters, sort rules, page values, visible fields, and remote query state.
-
-The hook returns `tableProps` for `TableList`. It also returns the state and update functions for other components.
-
-```text
-OpenAPI metadata ----> REST API v2 adapter ----> CollectionFetcher
-                                                 |
-Custom endpoint ----> custom CollectionFetcher --+
-                                                 |
-                                                 v
-                                          useTableList
-                                         /            \
-                               state and updates    tableProps
-                                      |                 |
-                                      v                 v
-                              page components       TableList
-```
+Every remote table, REST API v2 or not, loads its rows through a
+[`CollectionFetcher`](../../src/main/webapp/ui/src/modules/common/table-list/tableListState.ts).
+[`useTableList`](../../src/main/webapp/ui/src/modules/common/table-list/useTableList.ts) keeps the
+table and query state and returns `tableProps` plus functions that change that state.
 
 ## REST API v2 setup
 
@@ -273,23 +249,8 @@ a local presentation change. Filtering, sorting, and pagination still create new
 
 ### 5. Change common query behavior
 
-Use the `query` object for common TanStack Query settings.
-
-```tsx
-const table = useApiV2TableList({
-  resourceName: "experiments",
-  config: experimentConfig,
-  documentSchema: ExperimentSchema,
-  request: { token },
-  query: {
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
-    retry: 2,
-    refetchInterval: false,
-    keepPreviousData: true,
-  },
-});
-```
+Pass `query: { staleTime: 30_000, gcTime: 5 * 60_000, retry: 2, refetchInterval: false,
+keepPreviousData: true }` in the hook options.
 
 The hook keys queries by the effective API request parameters. Filter, sort, or page changes create
 the corresponding cache entry. Presentation changes reuse the current query when they do not change the

@@ -34,27 +34,15 @@ returns `{ rows, rowCount }`. The endpoint does not need the REST API v2 respons
 
 ### 1. Resolve the configuration
 
+Write the configuration as described in
+[Define one collection configuration](TableListAdapters.md#2-define-one-collection-configuration).
+Without the REST API v2 hook, resolve it yourself:
+
 ```ts
 import { resolveCollectionConfig } from
   "@/modules/common/collection/resolveCollectionConfig";
 
-const config = resolveCollectionConfig<CustomExperiment>({
-  slug: "custom-experiments",
-  idField: "id",
-  useAsTitle: "name",
-  defaultColumns: ["name", "owner"],
-  listSearchableFields: ["name"],
-  pagination: { defaultLimit: 20, limits: [20, 50] },
-  labels: {
-    singularKey: "customExperiments.labels.singular",
-    pluralKey: "customExperiments.labels.plural",
-  },
-  fields: [
-    { name: "id", type: "number", labelKey: "customExperiments.fields.id" },
-    { name: "name", type: "text", labelKey: "customExperiments.fields.name" },
-    { name: "owner", type: "text", labelKey: "customExperiments.fields.owner" },
-  ],
-});
+const config = resolveCollectionConfig(customExperimentConfig);
 ```
 
 ### 2. Write the fetcher
@@ -137,29 +125,17 @@ Use semantic queries in component tests. Do not test private adapter functions.
 
 ## Common errors
 
-### The table offers an unsupported control
-
-Check the generated OpenAPI metadata. If it is incorrect, check the backend resource schema.
-
-### A custom cell has missing data
-
-Add the missing field to the renderer `dependencies`. Confirm that the document schema accepts the sparse response.
+| # | Symptom | Guidance |
+| --- | --- | --- |
+| 1. | Unsupported control | Check the generated OpenAPI metadata and backend resource schema. |
+| 2. | Missing cell data | Check [renderer dependencies](TableListAdapters.md#3-add-custom-renderers-when-required) and the sparse-response schema. |
+| 3. | Only one server page is processed | See [Rows already in the browser](#rows-already-in-the-browser). |
+| 4. | A page component cannot change state | See [Access and update table state](TableListInteractions.md#access-and-update-table-state). |
+| 5. | Tables overwrite URL parameters | See [Browser query and storage defaults](TableListInteractions.md#browser-query-and-storage-defaults). |
 
 ### The request uses the wrong page
 
 Store a zero-based `pageIndex`. The REST API v2 adapter converts it to a one-based page.
-
-### A table processes only one server page
-
-Replace the client source with a remote source. Client mode requires the complete collection.
-
-### A page component cannot change table state
-
-Keep the result of the hook in the common React owner. Pass the required update function to the component.
-
-### Two tables overwrite the same URL parameters
-
-Give each table a unique `parameterPrefix`.
 
 ## Source files
 
