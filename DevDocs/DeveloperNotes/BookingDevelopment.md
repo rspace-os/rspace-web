@@ -74,29 +74,16 @@ date at first deployment. The bulk dataset contains 500 instruments and 1,003
 events across the next full Monday-to-Sunday week. Three events are named
 Aurora, Beacon, and Comet to test Calendar event-name search.
 
-The nine smaller booking examples listed below use the next calendar date, so
-new bookings start in the future even if the stack starts late in the day.
-Bookings that depend on an open weekday use the first open day on or after the
-fixture date, because that date floats. The smaller examples include these
-access and scheduling cases:
-
-| # | Fixture | Access or schedule to verify |
-|---|---|---|
-| 1 | Restricted-location plate reader | `user2b` owns it with owner-only sharing. As PI of `user2b`'s group, `user1a` sees it in Calendar with the Booking viewer role but can neither book it nor edit its configuration. It is closed on Wednesdays and opens only 10:00 to 14:00 Europe/Berlin on Thursdays, making closure shading visible on a read-only row. |
-| 2 | Electron microscope (America/New_York) | Closed at weekends and at noon on Fridays. |
-| 3 | Mass spectrometer (UTC) | Closed on Sundays and open all day on Wednesdays despite partial shared hours. It allows double booking and has two overlapping bookings. |
-| 4 | No-parent centrifuge | Open all day except Sundays, with a Saturday booking ending at midnight. |
-| 5 | Deleted-location sequencer | Open all day on weekdays only, with a booking from Monday to Wednesday. |
-| 6 | Auckland PCR cycler (Pacific/Auckland) | Shows day offsets and weekday differences to a European viewer. |
-| 7 | Honolulu X-ray diffractometer (Pacific/Honolulu) | Shows day offsets and weekday differences to a European viewer. |
-| 8 | Kolkata NMR spectrometer (UTC+05:30) | Uses 15-minute increments and shows day offsets and weekday differences to a European viewer. |
-| 9 | Closed-day incubator | Has a booking and a maintenance event on two weekdays closed after the events were created. |
+See the annotated fixture catalogue in
+[`BookingFixturesAppInitialiser`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java)
+for the smaller access and scheduling examples. They use the next calendar date, so new bookings
+start in the future even if the stack starts late in the day. Bookings that depend on an open
+weekday use the first open day on or after the fixture date, because that date floats.
 
 See the [fixture initializer](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java)
 and [Docker quick start](../../docker/dev/README.md#quick-start) for setup.
 
-New service-created configurations inherit current Inventory access. The legacy
-role rows in the static SQL seed do not grant current Booking access. See
+New service-created configurations inherit current Inventory access. See
 [Booking permissions](BookingPermissions.md) for authorization behavior.
 
 Keep service-created fixtures for data that depends on ownership, sharing,
