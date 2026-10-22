@@ -1,6 +1,5 @@
 package com.researchspace.booking.service;
 
-import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.target;
 import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.OVERSIZED_MUTATION_LIMIT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

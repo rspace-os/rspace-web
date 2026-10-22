@@ -1,6 +1,5 @@
 package com.researchspace.api.v2.openapi;
 
-import io.swagger.v3.oas.models.OpenAPI;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
