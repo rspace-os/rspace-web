@@ -67,6 +67,22 @@ class ApiV2BookingConfigurationResourceTest {
   private final ObjectMapper mapper = new ObjectMapper();
 
   @Test
+  void exposesImmutableBooleanCapabilitiesAndAnEmptyUnpreparedProjection() throws Exception {
+    BookingConfiguration configuration = new BookingConfiguration();
+    assertEquals(Map.of(), configuration.getCapabilities());
+
+    BookingConfigurationCapabilities capabilities =
+        mapper.readValue("{\"canEditConfiguration\":true}", BookingConfigurationCapabilities.class);
+    configuration.prepareAccessProjection("OWNER", List.of(), capabilities, null);
+
+    Map<String, Object> values = configuration.getCapabilities();
+    assertEquals(Boolean.TRUE, values.get("canEditConfiguration"));
+    assertEquals(Boolean.FALSE, values.get("canViewAccess"));
+    assertTrue(values.values().stream().allMatch(Boolean.class::isInstance));
+    assertThrows(UnsupportedOperationException.class, () -> values.put("canViewAccess", true));
+  }
+
+  @Test
   void limitsBulkMutationsForBookingConfigurations() {
     assertEquals(50, ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkCreateRows());
     assertEquals(1000, ApiV2BookingConfigurationResource.MUTATION_LIMITS.maxBulkUpdateDeleteRows());
