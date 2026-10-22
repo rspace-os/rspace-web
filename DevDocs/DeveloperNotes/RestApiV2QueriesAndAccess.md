@@ -405,18 +405,10 @@ The provider avoids a construction cycle while the resource catalog starts. The 
 each one-hop public scalar target filter from the declared relationship. A standard manager needs
 no override when a new relationship is added.
 
-For a new standard relationship, permissions resolve in this order:
-
-| # | Requirement |
-| --- | --- |
-| 1. | At startup, the registry validates the target resource, entity type, ID type, and query fields. |
-| 2. | The HTTP boundary checks access to the source relationship and each target field. |
-| 3. | The manager evaluates the target collection read policy for the effective subject. |
-| 4. | The DAO adds that target row constraint to the correlated `EXISTS` query. |
-| 5. | The renderer independently checks target access before it returns a relationship value. |
-
-Declarations and the registry handle relationship permissions for new standard collections; no
-collection-specific target map is needed.
+At startup, the registry validates the target resource, entity type, ID type, and query fields.
+The HTTP boundary checks access to the source relationship and each target field.
+The standard declaration and registry supply the permission checks; no collection-specific target
+map is needed.
 
 A custom manager that does not extend `AbstractCollectionManager` must pass
 `RelationshipReadAccess.forActor(registry, subject)` to its DAO. Mutation filters reuse the read
@@ -581,5 +573,6 @@ Run focused unit tests:
 mvn test -Dtest=MyResourceTest,MyResourceOperationsTest -Dfast=true
 ```
 
-A DAO test extends `SpringTransactionalTest`. See [Transactions](Transactions.md) for service
-transaction declarations and advice naming rules.
+A DAO test extends `SpringTransactionalTest`. See
+[Creating transactions](Transactions.md#creating-transactions) for service transaction declarations
+and advice naming rules.
