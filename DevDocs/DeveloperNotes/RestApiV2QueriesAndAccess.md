@@ -96,24 +96,10 @@ empty data publishes null through the same runtime-field codec used for populate
 
 ### Text matching on a runtime field or a relationship target
 
-A text runtime field publishes both `=contains=` and `=like=`. Both operators use the database and
-are case-insensitive.
-
-`=contains=` is an exact substring match that always runs in the database. Use it to find a
-character sequence at any position: `=contains=BSL` finds `BSL-2`,
-`XBSL-2` and `Level BSL-2 lab`, and a substring may span words.
-
-`=like=` splits the filter value on whitespace and requires every resulting word to occur as a
-substring, in any order. It has these behaviors:
-
-| # | Requirement |
-| --- | --- |
-| 1. | A word is a substring, with lower-casing. `=like=BSL` finds `BSL-2`, `XBSL-2`, and `BSL-3`. `=like=BSL-2` does not find `BSL-3`. |
-| 2. | Several words all have to be present, in any order. `=like=BSL-2 lab` and `=like=lab BSL-2` both find `Level BSL-2 lab`; `=like=BSL-2 freezer` finds nothing. |
-| 3. | A word can be a partial word, so `=like=SL-2` finds values containing that substring. |
-
-`InstrumentCustomFieldTextSearchIT` tests these behaviors. Collection queries always use the
-database path, so the result does not depend on Hibernate Search index state.
+Both operators perform case-insensitive database matching independently of Hibernate Search.
+`=contains=` matches a substring anywhere. `=like=` splits on whitespace and requires every word
+as a substring, in any order, including partial words. For example, `=like=lab BSL-2` matches
+`Level BSL-2 lab`. See `InstrumentCustomFieldTextSearchIT` for examples.
 
 ### Scalar read documents
 
@@ -291,32 +277,16 @@ response header so browser clients can make versioned updates.
 
 ### Deviations from REST API v1
 
-These differences are intentional:
-
-| Area | REST API v1 | REST API v2 |
-| --- | --- | --- |
-| Browser state | Authentication can use Shiro request state. | The stateless filter removes cookies and blocks servlet-session access. |
-| Authentication lifecycle | The interceptor logs in to Shiro and logs out after the request. | The interceptor validates credentials without changing Shiro state. |
-| UI bearer tokens | Accepts legacy UI tokens; session-bound v2 UI tokens require the matching live browser session through the v2 validator. | Requires the matching live session for a session-bound UI token. |
-| External OAuth controls | External OAuth does not apply all API availability settings. | External OAuth applies deployment, user, and OAuth availability settings. |
-| Disabled throttling | Responses contain fabricated rate-limit statistics. | Responses do not contain rate-limit statistics. |
-| Throttle keys | The bucket store retains raw credentials and has no size limit. | The bucket store retains fingerprints and keeps at most 10,000 caller keys. |
-| Concurrent requests | A caller can overspend one allowance through concurrent requests. | Bucket4j consumes every configured allowance atomically. |
+Intentional v1 differences: v2 authentication leaves Shiro state unchanged, and external OAuth
+applies deployment, user, and OAuth availability settings. Disabled throttling omits the fabricated
+rate-limit headers returned by v1. V2 uses fingerprinted, bounded bucket keys and atomic allowance
+consumption to prevent concurrent overspend. See [Stateless requests](#stateless-requests) and
+[Rate limits](#rate-limits) for the v2 behavior.
 
 ## Relationships
 
-Declare a relationship as a record component annotated with `@ApiV2ResourceRelationship`, next to
-the scalar fields; see
-[`@ApiV2ResourceRelationship`](RestApiV2Collections.md#apiv2resourcerelationship). The declaration
-specifies these items:
-
-| # | Requirement |
-| --- | --- |
-| 1. | Public name. Relationships currently expose one typed resource reference. |
-| 2. | Accepted target resource types. |
-| 3. | Entity property and the related value's ID and kind accessors. |
-| 4. | Accepted create and update forms. |
-| 5. | Required, nullable, read, and write rules. |
+For relationship declarations, see
+[`@ApiV2ResourceRelationship`](RestApiV2Collections.md#apiv2resourcerelationship).
 
 This example is a polymorphic to-one value:
 

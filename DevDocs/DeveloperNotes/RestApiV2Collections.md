@@ -192,7 +192,8 @@ The operations class converts API input to domain commands. The manager handles:
 | 6. | Limits and rules for bulk operations. |
 
 The DAO reads and writes the database, applying the typed `ResourceRequest` and returning a
-`ResourcePage`. Controllers and operations classes must not call DAOs.
+`ResourcePage`. Follow [Creating transactions](Transactions.md#creating-transactions) for the
+controller, manager and DAO boundary.
 
 Do not pass raw `where`, `sort`, or field-selection text to a manager. The common request parser
 validates this text against the public resource definition.
@@ -237,10 +238,8 @@ sorting, pagination, and totals together.
 Do not filter rows again in the operations class. Java text rules differ from database collation,
 so matched rows can disappear from the page and total.
 
-An operations class must not call a DAO. A DAO assumes an active transaction, and the REST layer has
-none, so a collection read goes through the domain manager. `InstrumentResourceOperations` calls
-`InstrumentEntityApiManager`, which is under the transaction advice for
-`*..service.inventory.*Manager`.
+Follow [Creating transactions](Transactions.md#creating-transactions): `InstrumentResourceOperations`
+delegates to the transaction-advised `InstrumentEntityApiManager`.
 
 ## Standard routes
 
