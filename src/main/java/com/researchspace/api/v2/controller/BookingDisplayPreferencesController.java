@@ -14,6 +14,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -107,7 +108,7 @@ public final class BookingDisplayPreferencesController {
     return Document.from(manager.get(caller.subject(), caller.actor()));
   }
 
-  @PutMapping
+  @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "replaceMyBookingPreferences",
       summary = "Replace Booking display preferences",
