@@ -32,12 +32,11 @@ source. The server rejects assignment, ownership and
 leave operations for inherited access. Independently managed resources keep
 their existing edit behavior.
 
-The migration permits a null `BookingConfiguration.resourceAccess_id`. New
-configurations do not populate independent grants. Legacy rows remain for
-migration/audit purposes but must never authorize Booking operations. Deploy
-all application nodes together; an old node would still use the stale grants.
-Do not roll back to independent ACL authorization without reconciling Inventory
-permission changes. Destructive cleanup of legacy rows is a later migration.
+Booking configurations inherit permissions from their current Inventory target.
+They have no independent ACL mapping or seed grants. A dedicated changelog drops
+`resourceAccess_id` from the live and audit configuration tables. Permanent
+deletion removes the configuration, its bookings and calendar subscriptions,
+while retaining Envers history.
 
 Booking writes take a shared lock on the singleton calendar permission gate
 before target, configuration and subscription locks. Permission-source writers
@@ -68,9 +67,8 @@ to the UI; server authorization remains authoritative on every request.
 
 ## Settings route access
 
-The Settings route checks the current subject's sysadmin capability before fetching its
-protected document. Client draft stability and refresh behavior are described in
-See [Booking frontend](BookingFrontend.md#settings-access-and-draft-stability).
+See [Booking frontend](BookingFrontend.md#settings-access-and-draft-stability) for the Settings
+route access check, draft stability and refresh behavior.
 
 Creation and lifecycle rules are in [Booking](Booking.md#configuration-lifecycle);
 maintenance exemptions are in [Scheduling](Booking.md#scheduling).
