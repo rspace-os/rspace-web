@@ -139,8 +139,7 @@ public class ViteDevServerProxyServletTest {
       throws Exception {
     AtomicReference<URI> upstreamUri = new AtomicReference<>();
     when(request.getRequestURI())
-        .thenReturn(
-            "/ui/dist/src/routes/items/$globalId/" + tabSegment + "/index.tsx");
+        .thenReturn("/ui/dist/src/routes/items/$globalId/" + tabSegment + "/index.tsx");
     when(request.getQueryString()).thenReturn("v=route%20split&label=%7Btab%7D");
     when(upstreamResponse.headers())
         .thenReturn(HttpHeaders.of(Collections.emptyMap(), (a, b) -> true));
