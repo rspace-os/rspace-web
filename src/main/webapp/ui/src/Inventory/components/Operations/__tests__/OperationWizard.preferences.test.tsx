@@ -5,6 +5,7 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
+import { containerAttrs } from "@/stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSubSample } from "@/stores/models/__tests__/SubSampleModel/mocking";
 import OperationWizard from "../OperationWizard";
 
@@ -118,6 +119,9 @@ vi.mock("../DocumentationStep", () => ({
     </>
   ),
 }));
+vi.mock("../PlacementStep", () => ({
+  default: ({ value }: { value: { mode: string } }) => <span data-testid="placement-mode">{value.mode}</span>,
+}));
 vi.mock("../OperationConfirmation", () => ({
   default: ({ remember, onRememberChange }: { remember?: boolean; onRememberChange?: (r: boolean) => void }) => (
     <div data-testid="confirm">
@@ -153,7 +157,8 @@ describe("OperationWizard with the real preference hook", () => {
     await user.click(nextButton()); // template -> amounts
     await user.click(nextButton()); // amounts -> documentation
     await user.click(screen.getByTestId("doc-choose"));
-    await user.click(nextButton()); // documentation -> confirm
+    await user.click(nextButton()); // documentation -> placement
+    await user.click(nextButton()); // placement -> confirm
     await user.click(screen.getByTestId("toggle-remember"));
     beforePerform();
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -170,6 +175,7 @@ describe("OperationWizard with the real preference hook", () => {
           values: { count: 1, eachAmount: { numericValue: 5, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
           template: { mode: "pick", templateId: 5, templateName: "T5" },
           documentation: { globalId: "SD1", name: "D1" },
+          placement: null,
         },
       },
       names: { derive: ["dna extraction"] },
@@ -331,6 +337,60 @@ describe("OperationWizard with the real preference hook", () => {
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.click(screen.getByTestId("pick-mill"));
     await waitFor(() => expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled());
+  });
+
+  it("lands on Location when a remembered process picked from the list keeps a grid container", async () => {
+    server.use(
+      http.get("/api/inventory/v1/containers/:id", () =>
+        HttpResponse.json(
+          containerAttrs({
+            id: 6,
+            globalId: "IC6",
+            name: "Box",
+            cType: "GRID",
+            gridLayout: { columnsNumber: 2, rowsNumber: 2, columnsLabelType: "N123", rowsLabelType: "ABC" },
+            locationsCount: 4,
+          }),
+        ),
+      ),
+    );
+    stored = {
+      INVENTORY_OPERATIONS: {
+        value: {
+          values: {
+            "derive Mill": {
+              values: {
+                count: 1,
+                eachAmount: { numericValue: 5, unitId: 3 },
+                amountTaken: { numericValue: 1, unitId: 3 },
+              },
+              template: { mode: "pick", templateId: 5, templateName: "T5" },
+              documentation: null,
+              placement: { containerId: 6, containerName: "Box" },
+            },
+          },
+          names: { derive: ["Mill"] },
+          defaults: {},
+        },
+        time: 0,
+      },
+    };
+    const user = userEvent.setup();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <UiPreferences>
+          <OperationWizard open onClose={vi.fn()} origins={[origin]} />
+        </UiPreferences>
+      </QueryClientProvider>,
+    );
+
+    await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
+    await user.click(screen.getByTestId("pick-mill"));
+    await waitFor(() => expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(/step\.placement/));
+    expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
   });
 
   it("stays on Details while a new process name that starts with a remembered one is typed", async () => {
