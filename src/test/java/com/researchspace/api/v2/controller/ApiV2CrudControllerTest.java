@@ -59,6 +59,7 @@ import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
 import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
+import com.researchspace.webapp.config.WebConfig.YamlJackson2HttpMessageConverter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -85,6 +86,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 
 class ApiV2CrudControllerTest {
@@ -111,7 +113,7 @@ class ApiV2CrudControllerTest {
         new ApiV2CrudController(new ApiV2ResourceCatalog(List.of(maintenance)));
     mockMvc =
         MockMvcBuilders.standaloneSetup(controller)
-            .setMessageConverters(bodyConverter())
+            .setMessageConverters(bodyConverter(), new YamlJackson2HttpMessageConverter())
             .setControllerAdvice(problemAdvice())
             .setValidator(validator)
             .build();
@@ -222,6 +224,33 @@ class ApiV2CrudControllerTest {
     mockMvc
         .perform(get(ENDPOINT).accept(MediaType.APPLICATION_XML))
         .andExpect(status().isNotAcceptable());
+  }
+
+  @Test
+  void rejectsYamlCrudRequestBodies() throws Exception {
+    registerPreHandlerProblems(mockMvc);
+    for (var request :
+        List.of(
+            post(ENDPOINT), post(ENDPOINT + "/bulk"), patch(ENDPOINT + "/1"), patch(ENDPOINT))) {
+      mockMvc
+          .perform(request.contentType("application/x-yaml").content("message: maintenance"))
+          .andExpect(status().isUnsupportedMediaType())
+          .andExpect(jsonPath("$.code").value("errors.api.v2.unsupportedMediaType"));
+    }
+    verifyNoInteractions(maintenanceManager);
+  }
+
+  @Test
+  void rejectsYamlAccessReplacementBodies() throws Exception {
+    AccessMvc fixture = accessMvc();
+    registerPreHandlerProblems(fixture.mockMvc());
+
+    fixture
+        .mockMvc()
+        .perform(put(ACCESS_ENDPOINT).contentType("application/x-yaml").content("assignments: []"))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.unsupportedMediaType"));
+    verify(fixture.accessManager(), never()).replace(any(), any(), any(), any());
   }
 
   @Test
@@ -779,6 +808,18 @@ class ApiV2CrudControllerTest {
         .andExpect(jsonPath("$.code").value("errors.api.v2.maintenance.patch"));
   }
 
+  private static void registerPreHandlerProblems(MockMvc mvc) {
+    // Standalone MVC omits WebConfig's resolver for errors raised before handler selection.
+    var composite =
+        mvc.getDispatcherServlet()
+            .getWebApplicationContext()
+            .getBean(HandlerExceptionResolverComposite.class);
+    var resolvers = new ArrayList<>(composite.getExceptionResolvers());
+    resolvers.add(
+        0, new ApiV2PreHandlerProblemResolver(problemAdvice(), bodyConverter().getObjectMapper()));
+    composite.setExceptionResolvers(resolvers);
+  }
+
   private static MappingJackson2HttpMessageConverter bodyConverter() {
     MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
     converter
@@ -831,7 +872,7 @@ class ApiV2CrudControllerTest {
                 new ResourceAccessController(
                     catalog, accessManager, directoryManager, adapterProvider))
             .setControllerAdvice(problemAdvice())
-            .setMessageConverters(converter)
+            .setMessageConverters(converter, new YamlJackson2HttpMessageConverter())
             .setValidator(validator)
             .build();
     return new AccessMvc(accessMockMvc, accessManager, ApiV2Caller.direct(user));
@@ -928,6 +969,8 @@ class ApiV2CrudControllerTest {
 
   private static ApiV2ControllerAdvice problemAdvice() {
     StaticMessageSource source = new StaticMessageSource();
+    source.addMessage(
+        "errors.api.v2.unsupportedMediaType", Locale.ENGLISH, "Unsupported media type.");
     source.addMessage(
         "errors.api.pagination.page.min", Locale.ENGLISH, "Page must be 1 or greater.");
     source.addMessage(
