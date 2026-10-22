@@ -10,7 +10,6 @@ import com.researchspace.auth.StatelessApiLogin;
 import com.researchspace.model.User;
 import com.researchspace.model.UserAuthenticationMethod;
 import com.researchspace.service.UserApiKeyManager;
-import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.apache.shiro.session.Session;
@@ -87,7 +86,6 @@ public class ApiKeyAuthenticatorTest {
   public void apiKeyWithMatchingBrowserSessionStillUsesStatelessLogin() {
     User enabled = TestFactory.createAnyUser("any");
     Session session = Mockito.mock(Session.class);
-    Mockito.lenient().when(session.getAttribute(SessionAttributeUtils.USER)).thenReturn(enabled);
     Subject subject =
         Mockito.mock(
             Subject.class,

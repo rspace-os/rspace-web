@@ -65,21 +65,7 @@ class OAuthTokenAuthenticatorTest {
 
     assertSame(targetUser, authenticator.authenticate(request));
     verify(subject, never()).login(any());
-  }
-
-  @Test
-  void matchingSubjectPrincipalAllowsUiTokenWhenCachedSessionUserDiffers() {
-    User targetUser = TestFactory.createAnyUser("run-as-user");
-    User cachedSessionUser = TestFactory.createAnyUser("sysadmin");
-    givenTokenFor(targetUser, OAuthTokenType.UI_TOKEN);
-    when(subject.getPrincipal()).thenReturn(targetUser.getUsername());
-    when(subject.getSession(false)).thenReturn(session);
-    Mockito.lenient()
-        .when(session.getAttribute(SessionAttributeUtils.USER))
-        .thenReturn(cachedSessionUser);
-
-    assertSame(targetUser, authenticator.authenticate(request));
-    verify(subject, never()).login(any());
+    verify(session, never()).getAttribute(SessionAttributeUtils.USER);
   }
 
   @Test
@@ -106,24 +92,7 @@ class OAuthTokenAuthenticatorTest {
 
     assertEquals("api.errors.authentication.oauthTokenInvalid", exception.getMessageKey());
     verify(subject, never()).login(any());
-  }
-
-  @Test
-  void uiTokenForCachedSessionUserIsRejectedWhenSubjectRunsAsAnotherUser() {
-    User cachedSessionUser = TestFactory.createAnyUser("sysadmin");
-    User runAsUser = TestFactory.createAnyUser("run-as-user");
-    givenTokenFor(cachedSessionUser, OAuthTokenType.UI_TOKEN);
-    when(subject.getPrincipal()).thenReturn(runAsUser.getUsername());
-    when(subject.getSession(false)).thenReturn(session);
-    Mockito.lenient()
-        .when(session.getAttribute(SessionAttributeUtils.USER))
-        .thenReturn(cachedSessionUser);
-
-    ApiAuthenticationException exception =
-        assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
-
-    assertEquals("api.errors.authentication.oauthTokenInvalid", exception.getMessageKey());
-    verify(subject, never()).login(any());
+    verify(session, never()).getAttribute(SessionAttributeUtils.USER);
   }
 
   @Test
