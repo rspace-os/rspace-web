@@ -891,6 +891,8 @@ resource types.
 
 ## JSON request binding
 
+API v2 request bodies accept `application/json` only; other content types receive HTTP 415.
+
 Stack-owned API v2 JSON bodies use mapper copies derived from the MVC converter.
 `ApiV2JsonBody` preserves the collection parser's type rules and decimal-node
 handling while limiting documents to 10 MiB, strings to 2 MiB, token counts to
