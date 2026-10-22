@@ -119,6 +119,9 @@ accepted; zero-weight and wildcard entries are ignored. When the header is missi
 no usable locale, the clock follows the app language. `LocaleFilter` replaces the request locale with
 the app language, so the dashboard reads the clock locale from `Accept-Language`. ICU applies the
 Unicode `hc` clock cycle. An explicit H12 or H24 Booking preference overrides that clock.
+`BookingNotificationMessageFormatter` receives the choice as a `BookingTimeFormat` from
+`DashboardController` or the `BookingNotificationRecipient` snapshot for email. It maps the
+explicit choices to ICU `h12` or `h23`, using `h23` so midnight is 00:00.
 
 Email has no browser region. Browser timezone mode falls back to the institution zone; Custom and
 Institution modes use their configured zones. With Automatic, the email clock follows the app
