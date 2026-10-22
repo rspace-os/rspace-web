@@ -30,34 +30,13 @@ application nodes cannot safely write schedules to the upgraded database.
 
 ## Static development seed
 
-[`changeLog-rsdev-booking-dev-seed.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed.xml)
-runs only with the `dev-test` Liquibase context. It marks itself ran when any
-Booking configuration already exists, so it populates only a fresh development
-database. Its
-[`booking-dev-seed.sql`](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
-creates nine instruments, eight Booking configurations and 50 events. One
-instrument has no configuration and one configuration permits double booking.
-
-Liquibase calculates event dates from `CURRENT_DATE` when it runs. The seed
-creates events three days before that date, on that date and seven days after it
-for `sysadmin1`, `user1a`, `user2b` and `user3c`. The instruments belong to `user1a`
-and use Inventory's `OWNER_GROUPS` sharing mode. The trusted development-only SQL
-also inserts `ResourceAccess` and `ResourceRoleAssignment` rows, including
-`BOOKER` grants for the `ALL_USERS` audience, and attributes configuration
-creation to sysadmin `-12`. IDs in the `910100001` to `910100009` range keep these
-rows separate from generated inventory data.
-
-[`changeLog-rsdev-booking-dev-seed-edge-cases.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed-edge-cases.xml),
-also `dev-test`, then turns seven configurations into scheduling edge cases and
-adds four events on closed days, across two all-day weekdays and ending at
-closing time. Its precondition requires configurations `910100002` to `910100008`
-to still carry the seed's defaults. Otherwise it marks itself ran without
-changes, preserving developers' edits. The original seed remains checksummed and
-unchanged. Both SQL seeds bypass Envers and write no audit revisions.
-
-See the [edge-case SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql)
-for the fixture values.
-
+The original and edge-case SQL seeds run only in `dev-test`, skipping existing or edited fixtures.
+They use reserved IDs and bypass Envers, so they create no audit revisions. See their
+[original changelog](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed.xml) and
+[edge-case changelog](../../src/main/resources/sqlUpdates/changeLog-rsdev-booking-dev-seed-edge-cases.xml)
+for execution guards, and their [original SQL](../../src/main/resources/sqlUpdates/booking-dev-seed.sql)
+and [edge-case SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-edge-cases.sql) for fixture values.
+The legacy `ResourceAccess` and role rows in the static SQL seed do not grant current Booking access.
 ## Service-created development fixtures
 
 [`BookingFixturesAppInitialiser`](../../src/main/java/com/researchspace/service/impl/BookingFixturesAppInitialiser.java)
