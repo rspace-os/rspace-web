@@ -11,6 +11,7 @@ public class Breadcrumb {
 
     private Long id;
     private String displayname;
+    private boolean home;
 
     private BreadcrumbElement(Long id, String displayname) {
       this.id = id;
@@ -27,6 +28,18 @@ public class Breadcrumb {
 
     public String getDisplayname() {
       return displayname;
+    }
+
+    public boolean isHome() {
+      return home;
+    }
+
+    /**
+     * Marks an explicitly generated home breadcrumb so display code can translate it without
+     * mistaking a user-named "Home" folder for the special home folder.
+     */
+    public void setHome(boolean home) {
+      this.home = home;
     }
   }
 

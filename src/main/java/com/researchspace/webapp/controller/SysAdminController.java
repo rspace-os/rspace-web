@@ -291,7 +291,8 @@ public class SysAdminController extends BaseController {
 
     } catch (Exception dae) {
       log.error("Error deleting user:", dae);
-      return getAjaxMessageResponseEntity(HttpStatus.BAD_REQUEST, dae.getMessage());
+      return getAjaxMessageResponseEntity(
+          HttpStatus.BAD_REQUEST, messages.getExceptionChainMessage(dae));
     }
   }
 

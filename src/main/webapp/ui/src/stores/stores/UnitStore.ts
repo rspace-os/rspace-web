@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import ElnApiService from "../../common/ElnApiService";
 import type { RootStore } from "./RootStore";
 
@@ -58,12 +59,17 @@ export default class UnitStore {
   }
 
   unitsOfCategory(categories: Array<string>): Array<Unit> {
-    return this.units.filter((u: Unit) => categories.includes(u.category));
+    return this.units.filter((u: Unit) => categories.includes(u.category)).map((unit) => this.displayUnit(unit));
   }
 
   getUnit(unitId: number): Unit | undefined {
-    if (this.loading || this.units.length < 1) return SAVED_UNITS.find((u: Unit) => u.id === unitId);
-    return this.units.find((u: Unit) => u.id === unitId);
+    const units = this.loading || this.units.length < 1 ? SAVED_UNITS : this.units;
+    const unit = units.find((u: Unit) => u.id === unitId);
+    return unit ? this.displayUnit(unit) : undefined;
+  }
+
+  private displayUnit(unit: Unit): Unit {
+    return unit.id === 1 && unit.category === "dimensionless" ? { ...unit, label: i18n.t("common:units.items") } : unit;
   }
 
   persistUnits(): void {

@@ -1274,7 +1274,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
   public void removeRecipientOfASampleThatFulfilledARequest() throws Exception {
     SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
 
-    // the owner splits off a new sample, fulfils the request with it, then hands it over
+    // the owner fulfils the request with a new sample, then hands it over
     logoutAndLoginAs(fixture.owner);
     ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(fixture.owner);
     ApiSampleRequestStatusPut fulfil = new ApiSampleRequestStatusPut();
@@ -1296,7 +1296,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertTrue(result.isSucceeded(), "deleting the recipient of a fulfilling sample must succeed");
     assertUserNotExist(fixture.requester);
 
-    // the fulfilled request survives against the owner's sample, no longer naming the deleted one
+    // the fulfilled request survives against the owner's sample, no longer naming the deleted
+    // fulfilling sample
     ApiSampleRequest surviving =
         sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner);
     assertEquals(SampleRequestStatus.FULFILLED, surviving.getStatus());
@@ -1410,7 +1411,10 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     return createSampleRequestBetweenTwoUsers(null);
   }
 
-  /** {@code labAdmin}, if given, is made a lab admin of the owner's group before the sample. */
+  /**
+   * {@code labAdmin}, if given, is made a lab admin of the owner's group before the sample is
+   * created.
+   */
   private SampleRequestFixture createSampleRequestBetweenTwoUsers(User labAdmin) throws Exception {
     SampleRequestFixture fixture = new SampleRequestFixture();
     fixture.owner = createAndSaveUser(getRandomAlphabeticString("srOwner"), Constants.PI_ROLE);

@@ -1,5 +1,6 @@
 package com.researchspace.service.impl;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.AbstractUserOrGroupImpl;
 import com.researchspace.model.Group;
 import com.researchspace.model.RecordGroupSharing;
@@ -25,7 +26,6 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
@@ -197,7 +197,7 @@ public class SharingHandlerImpl implements SharingHandler {
     ErrorList error = new ErrorList();
     ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result =
         this.shareRecords(shareConfig, sharer);
-    result.getExceptions().forEach(e -> error.addErrorMsg(e.getMessage()));
+    result.getExceptions().forEach(e -> error.addErrorMsg(messages.getExceptionMessage(e)));
     result.getFailures().forEach(rgs -> error.addErrorMsg(rgs.getShared().getName()));
     return new SharingResult(buildSharedIdList(result), buildPublicLinkList(result), error);
   }

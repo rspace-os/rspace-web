@@ -29,7 +29,6 @@ public class SampleRequestDaoHibernateImpl extends GenericDaoHibernate<SampleReq
 
   @Override
   public SampleRequest getForUpdate(Long id) {
-    // a query rather than get(), so pending changes are flushed before the row is locked
     return sessionFactory
         .getCurrentSession()
         .createQuery("from SampleRequest where id = :id", SampleRequest.class)

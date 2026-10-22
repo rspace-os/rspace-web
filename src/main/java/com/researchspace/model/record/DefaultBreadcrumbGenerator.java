@@ -25,7 +25,9 @@ public class DefaultBreadcrumbGenerator implements BreadcrumbGenerator {
     }
 
     if (topDisplayName != null && bc.isContainLinks()) {
-      bc.getElements().get(0).setDisplayname(topDisplayName);
+      Breadcrumb.BreadcrumbElement homeElement = bc.getElements().get(0);
+      homeElement.setDisplayname(topDisplayName);
+      homeElement.setHome(true);
     }
     return bc;
   }

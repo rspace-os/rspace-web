@@ -8,6 +8,10 @@ import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.apiutils.BindErrorList;
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedIllegalStateException;
+import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -237,6 +241,61 @@ class ApiControllerAdviceTest {
             jdbcFailure(1146), new ServletWebRequest(new MockHttpServletRequest()));
 
     assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+  }
+
+  @Test
+  void localizedModelExceptionIsResolvedAtApiBoundary() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleLocalizedIllegalStateException(
+            new LocalizedIllegalStateException(
+                "validation.inventoryField.noConnectedTemplate", "Status"),
+            null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals("Field [Status] has no connected template field", error.getMessage());
+  }
+
+  @Test
+  void localizedUnsupportedOperationKeepsNotFoundMapping() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleResourceNotFound(
+            new LocalizedUnsupportedOperationException(
+                "errors.inventory.field.attachmentUnsupported", "TEXT"),
+            null);
+
+    assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    ApiError error = (ApiError) response.getBody();
+    assertEquals("TEXT fields do not support file attachments", error.getMessage());
+  }
+
+  @Test
+  void localizedIllegalArgumentWithNestedValidationErrorsIsResolvedAtApiBoundary() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    ErrorList validationErrors = new ErrorList();
+    validationErrors.addErrorMsgCode("validation.inventoryField.optionsNotAllowed");
+
+    ResponseEntity<Object> response =
+        advice.handleLocalizedIllegalArgumentException(
+            new LocalizedIllegalArgumentException(
+                "validation.inventoryField.invalidForFieldType",
+                validationErrors,
+                "invalid",
+                "Radio"),
+            null);
+
+    assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(
+        "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
+        error.getMessage());
+    assertEquals(List.of(error.getMessage()), error.getErrors());
   }
 
   /** As Hibernate and Spring wrap a MariaDB error. */

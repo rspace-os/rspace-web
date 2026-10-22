@@ -19,7 +19,10 @@
       <td><form:label path="messageType"><spring:message code="dashboard.message.requestTypeLabel"/></form:label></td>
       <td>
           <form:select  class="msgTypes form-control" path="messageType">
-              <form:options items="${request.allMessageTypes}"  itemLabel="label"/>
+              <c:forEach items="${request.allMessageTypes}" var="messageType">
+                  <spring:message code="${messageType.labelKey}" var="messageTypeLabel"/>
+                  <form:option value="${messageType}" label="${messageTypeLabel}"/>
+              </c:forEach>
           </form:select>
       </td>
   </tr>
@@ -42,4 +45,3 @@
 
 </table>
 </form:form>
-

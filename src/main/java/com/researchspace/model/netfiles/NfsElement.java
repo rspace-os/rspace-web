@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import java.io.Serializable;
 import java.util.regex.Pattern;
 import lombok.Data;
@@ -53,9 +54,15 @@ public class NfsElement implements IFieldLinkableElement, Serializable {
     return new GlobalIdentifier(GlobalIdPrefix.NF, getId());
   }
 
+  /**
+   * Sets whether this link represents a file or directory.
+   *
+   * @param linkType {@link #LINKTYPE_FILE} or {@link #LINKTYPE_DIR}
+   * @throws IllegalArgumentException if {@code linkType} is not a supported link type
+   */
   public void setLinkType(String linkType) {
     if (!LINKTYPE_FILE.equals(linkType) && !LINKTYPE_DIR.equals(linkType)) {
-      throw new IllegalArgumentException("unexpected link type: " + linkType);
+      throw new LocalizedIllegalArgumentException("validation.netFile.linkTypeInvalid", linkType);
     }
     this.linkType = linkType;
   }

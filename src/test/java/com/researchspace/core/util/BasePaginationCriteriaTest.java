@@ -13,13 +13,26 @@ public class BasePaginationCriteriaTest {
   @Test
   public void testSetPageNumberCannotBeNegative() {
     pg = new BasicPaginationCriteria<>(Object.class);
-    assertThrows(IllegalArgumentException.class, () -> pg.setPageNumber(-1L));
+    IllegalArgumentException negativePage =
+        assertThrows(IllegalArgumentException.class, () -> pg.setPageNumber(-1L));
+    assertEquals("validation.pagination.negativePageNumber", negativePage.getMessage());
   }
 
   @Test
   public void testResultsPerPAgeCannotBeNegative() {
     pg = new BasicPaginationCriteria<>(Object.class);
-    assertThrows(IllegalArgumentException.class, () -> pg.setResultsPerPage(-2));
+    IllegalArgumentException negativeResultsPerPage =
+        assertThrows(IllegalArgumentException.class, () -> pg.setResultsPerPage(-2));
+    assertEquals(
+        "validation.pagination.negativeResultsPerPage", negativeResultsPerPage.getMessage());
+  }
+
+  @Test
+  public void testSortOrderCannotBeNull() {
+    pg = new BasicPaginationCriteria<>(Object.class);
+    IllegalArgumentException nullSortOrder =
+        assertThrows(IllegalArgumentException.class, () -> pg.setSortOrder(null));
+    assertEquals("validation.pagination.sortOrderRequired", nullSortOrder.getMessage());
   }
 
   @Test

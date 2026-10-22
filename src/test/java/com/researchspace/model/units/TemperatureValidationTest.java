@@ -3,13 +3,32 @@ package com.researchspace.model.units;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.core.testutilJU5.JakartaValidatorTestJU5;
+import com.researchspace.service.JsonMessageSource;
 import jakarta.validation.ConstraintViolation;
 import java.math.BigDecimal;
 import java.util.Set;
 import lombok.Value;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
 class TemperatureValidationTest extends JakartaValidatorTestJU5 {
+
+  private static LocalValidatorFactoryBean validatorFactory;
+
+  @BeforeAll
+  static void configureJsonValidationMessages() {
+    validatorFactory = new LocalValidatorFactoryBean();
+    validatorFactory.setValidationMessageSource(new JsonMessageSource());
+    validatorFactory.afterPropertiesSet();
+    validator = validatorFactory.getValidator();
+  }
+
+  @AfterAll
+  static void closeValidatorFactory() {
+    validatorFactory.close();
+  }
 
   @Value
   static class Measurable {
@@ -62,8 +81,7 @@ class TemperatureValidationTest extends JakartaValidatorTestJU5 {
     QuantityInfo q = new QuantityInfo();
     q.setUnitId(RSUnitDef.CELSIUS.getId());
     q.setNumericValue(null);
-    assertEquals(
-        "{errors.inventory.temperature.valueRequired}", singleMessageTemplate(new Measurable(q)));
+    assertEquals("A temperature needs a numeric value.", singleMessage(new Measurable(q)));
   }
 
   @Test
@@ -71,18 +89,18 @@ class TemperatureValidationTest extends JakartaValidatorTestJU5 {
     QuantityInfo q = new QuantityInfo();
     q.setUnitId(RSUnitDef.CELSIUS.getId());
     q.setNumericValue(new BigDecimal(-274));
-    assertEquals(DEFAULT_MESSAGE, singleMessageTemplate(new Measurable(q)));
+    assertEquals(DEFAULT_MESSAGE, singleMessage(new Measurable(q)));
     q.setUnitId(RSUnitDef.MICRO_GRAM.getId());
     q.setNumericValue(new BigDecimal(20));
-    assertEquals(DEFAULT_MESSAGE, singleMessageTemplate(new Measurable(q)));
+    assertEquals(DEFAULT_MESSAGE, singleMessage(new Measurable(q)));
   }
 
   private static final String DEFAULT_MESSAGE =
       "Invalid temperature - must be a temperature measurement greater than absolute zero";
 
-  private String singleMessageTemplate(Measurable m) {
+  private String singleMessage(Measurable m) {
     Set<ConstraintViolation<Measurable>> violations = validator.validate(m);
     assertEquals(1, violations.size());
-    return violations.iterator().next().getMessageTemplate();
+    return violations.iterator().next().getMessage();
   }
 }

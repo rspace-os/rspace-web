@@ -18,6 +18,8 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +44,8 @@ class SystemPropertyManagerImplTest {
     manager = new SystemPropertyManagerImpl();
     manager.setSystemPropertyDao(dao);
     ReflectionTestUtils.setField(manager, "permissionUtils", permissionUtils);
+    ReflectionTestUtils.setField(
+        manager, "messages", new MessageSourceUtils(new JsonMessageSource()));
     community = new Community();
     community.setId(10L);
     value =

@@ -25,10 +25,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @RequestMapping("/api/inventory/v1/sampleRequests")
 public interface SampleRequestsApi {
 
-  /**
-   * Requests involving the caller. Serves the requester's own list, the owner's pending queue, and
-   * the requests made against a single sample, depending on the search config.
-   */
+  /** Requests involving the caller, optionally filtered by role, status and sample. */
   @GetMapping
   ApiSampleRequestSearchResult getRequestsForUser(
       @Valid SampleRequestApiPaginationCriteria pgCrit,
@@ -45,8 +42,8 @@ public interface SampleRequestsApi {
   ApiSampleRequest getRequestById(Long id, User user);
 
   /**
-   * Move a request to a new status. Approve, reject and fulfil are the sample's current owner;
-   * cancel is the requester. A reason is required when rejecting and not accepted otherwise. When
+   * Move a request to a new status: approve, reject and fulfil by the sample's current owner,
+   * cancel by the requester. A reason is required when rejecting and not accepted otherwise. When
    * fulfilling, a transferredSampleGlobalId may name the sample the request was fulfilled with.
    */
   @PutMapping(value = "/{id}/status")

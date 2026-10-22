@@ -9,7 +9,6 @@ import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-/** SampleRequestSearchResults */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @JsonPropertyOrder({"totalHits", "pageNumber", "requests", "_links"})

@@ -95,8 +95,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   @Override
   public ApiSampleRequest createRequest(ApiSampleRequestPost post, User user) {
     GlobalIdentifier oid = sampleOid(post.getSampleGlobalId());
-    // share-locked as the first read, so a concurrent transfer waits for the new request and then
-    // closes it; no read permission is needed, requestable is the gate
+    // share-locked as the first read, so a concurrent transfer cannot leave the new request open;
+    // no read permission is needed, requestable is the gate
     Sample locked = sampleDao.getWithSharedLock(oid.getDbId());
     assertSampleRequestsEnabled(user);
     Sample sample = sampleNotInTrashOrThrow(locked, oid);
@@ -239,7 +239,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return applyOutgoingSampleRules(detail, request, user);
   }
 
-  /** A deleted user keeps their username in the record, with no id or name to resolve. */
+  /** A deleted user is shown by the username kept in the record, without id or name. */
   private ApiUser toApiUser(String username, Long userId) {
     return userDao
         .getSafeNull(userId)
@@ -253,8 +253,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
   }
 
   /**
-   * Runs the embedded sample through the standard outgoing-record hook, so a limited-read caller
-   * sees the same blanked sample they would get from the samples endpoints, and permittedActions is
+   * Runs the embedded sample through the standard outgoing-record hook, so a caller who cannot
+   * fully read it sees the same reduced view as from the samples endpoints, and permittedActions is
    * populated.
    */
   private <T extends ApiSampleRequestInfo> T applyOutgoingSampleRules(

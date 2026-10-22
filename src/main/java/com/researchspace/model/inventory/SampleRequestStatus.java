@@ -1,8 +1,8 @@
 package com.researchspace.model.inventory;
 
 /**
- * Lifecycle of a request for material from a sample. Persisted as a string, so values may be
- * reordered or renamed only alongside a data migration.
+ * Lifecycle of a request for material from a sample. Persisted by name, so renaming a value needs a
+ * data migration.
  */
 public enum SampleRequestStatus {
 
@@ -18,6 +18,6 @@ public enum SampleRequestStatus {
   /** Material has been produced for the requester. */
   FULFILLED,
 
-  /** Withdrawn by the requester. Deliberately distinct from REJECTED. */
+  /** Withdrawn by the requester. */
   CANCELLED
 }

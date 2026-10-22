@@ -35,7 +35,7 @@ public class SampleRequestAuditDataTest {
   }
 
   @Test
-  public void auditEntrySaysWhoAskedForWhatAndInWhichState() {
+  public void auditEntryNamesRequesterStatusAndRequestId() {
     String json = historicDataFor(auditedRequest()).getData().toJson();
 
     assertTrue(json.contains(requester.getUsername()), "requester missing from " + json);

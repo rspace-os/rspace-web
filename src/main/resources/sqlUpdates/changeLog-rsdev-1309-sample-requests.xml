@@ -4,10 +4,8 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
-    <!-- Sample requests (RSDEV-1309). -->
-
-    <changeSet id="2026-09-29a" context="run" author="mrowe-tan">
-        <comment>Add inventory.sampleRequests.available system property (RSDEV-1365)</comment>
+    <changeSet id="2026-09-29-sample-requests-available-setting" context="run" author="mrowe-tan">
+        <comment>Add inventory.sampleRequests.available system property</comment>
         <insert tableName="PropertyDescriptor">
             <column name="id" type="NUMERIC" value="NULL"/>
             <column name="defaultValue" type="STRING" value="DENIED"/>
@@ -28,8 +26,8 @@
         </insert>
     </changeSet>
 
-    <changeSet id="2026-09-29b" context="run" author="mrowe-tan">
-        <comment>Add requestable column to Sample (RSDEV-1365)</comment>
+    <changeSet id="2026-09-29-sample-requestable-column" context="run" author="mrowe-tan">
+        <comment>Add requestable column to Sample</comment>
         <!-- never null: the mapped field is a primitive boolean, and sample templates (same table,
              no such field) rely on the default -->
         <addColumn tableName="Sample">
@@ -48,8 +46,8 @@
         </addColumn>
     </changeSet>
 
-    <changeSet id="2026-09-29c" context="run" author="matthias">
-        <comment>Create SampleRequest table (RSDEV-1366)</comment>
+    <changeSet id="2026-09-29-sample-request-table" context="run" author="matthias">
+        <comment>Create SampleRequest table</comment>
         <!-- ids come from hibernate_sequences, so not autoIncrement -->
         <createTable tableName="SampleRequest">
             <column name="id" type="BIGINT">
@@ -92,8 +90,8 @@
         </createIndex>
     </changeSet>
 
-    <changeSet id="2026-09-29d" context="run" author="matthias">
-        <comment>Create SampleRequestStatusChange table (RSDEV-1368)</comment>
+    <changeSet id="2026-09-29-sample-request-status-change-table" context="run" author="matthias">
+        <comment>Create SampleRequestStatusChange table</comment>
         <!-- ids come from hibernate_sequences, so not autoIncrement -->
         <createTable tableName="SampleRequestStatusChange">
             <column name="id" type="BIGINT">
