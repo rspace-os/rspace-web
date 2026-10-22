@@ -57,7 +57,7 @@ resolved during design. This file is a glossary only — no implementation detai
   record the fact against the instrument. Only the last calibration date is
   documentation-only now: PIDINST's Date vocabulary has no home for it. The
   measurement technique and calibration links were documentation-only until
-  RSDEV-1253 mapped them to RelatedIdentifier entries with a fixed IsDescribedBy
+  they were mapped to RelatedIdentifier entries with a fixed IsDescribedBy
   relation (see ADR 0007); the relation type stored on the link itself still
   never leaves RSpace. A documentation-only field is still an ordinary
   instrument field, so users fill, edit and read it as usual.
