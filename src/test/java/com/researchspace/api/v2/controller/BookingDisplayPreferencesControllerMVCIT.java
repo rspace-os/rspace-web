@@ -7,13 +7,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -155,7 +158,7 @@ class BookingDisplayPreferencesControllerMVCIT {
             put(PATH)
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(validBody().replace("}", ",\"unknown\":true}")))
+                .content(validBodyWith(Map.of("unknown", true))))
         .andExpect(status().isBadRequest());
   }
 
@@ -199,9 +202,18 @@ class BookingDisplayPreferencesControllerMVCIT {
   }
 
   private static String validBody() {
-    return """
-    {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
-     "timezoneMode":"CUSTOM","customTimezone":"America/New_York"}
-    """;
+    return validBodyWith(Map.of());
+  }
+
+  private static String validBodyWith(Map<String, ?> extra) {
+    Map<String, Object> body =
+        new HashMap<>(
+            Map.of(
+                "availabilityWindowStart", "09:00",
+                "availabilityWindowEnd", "17:00",
+                "timezoneMode", "CUSTOM",
+                "customTimezone", "America/New_York"));
+    body.putAll(extra);
+    return JacksonUtil.toJson(body);
   }
 }
