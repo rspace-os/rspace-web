@@ -1,8 +1,5 @@
 package com.researchspace.api.v2.openapi;
 
-import com.researchspace.api.v2.controller.ApiV2Problem;
-import com.researchspace.api.v2.model.ApiV2AuditEvent;
-import com.researchspace.api.v2.model.ApiV2CountResult;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;

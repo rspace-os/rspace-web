@@ -1,7 +1,5 @@
 package com.researchspace.api.v2.openapi;
 
-import com.researchspace.booking.service.BookingConfigurationTarget;
-import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
