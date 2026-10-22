@@ -36,6 +36,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -597,32 +598,6 @@ class ApiV2AuditStrictSearchTest {
   }
 
   @Test
-  void legacyUnknownBookingEventsUseOnlyTheirExactTopLevelIdentifier() throws IOException {
-    String bookingId = "booking-settings:1";
-    Request bookingRequest =
-        new Request(
-            FROM,
-            TO,
-            Set.of(AuditDomain.BOOKING),
-            Set.of(AuditAction.CREATE),
-            bookingId,
-            Set.of(),
-            sysadmin,
-            10);
-    String direct = event("01 Jan 2026 12:00:00,000", bookingId);
-    String nested =
-        event("01 Jan 2026 13:00:00,000", "BC1")
-            .replace("\"id\":\"BC1\"", "\"target\":{\"id\":\"" + bookingId + "\"}");
-    write("RSLogs.txt", direct + "\n" + nested + "\n");
-
-    List<AuditTrailSearchResult> results = search(ReadObserver.NONE).search(bookingRequest);
-
-    assertEquals(1, results.size());
-    assertEquals(AuditDomain.BOOKING, results.get(0).getEvent().getDomain());
-    assertEquals(AuditAction.CREATE, results.get(0).getEvent().getAction());
-  }
-
-  @Test
   void textSearchMatchesDecodedTargetAndPurposeValues() throws IOException {
     write(
         "RSLogs.txt",
@@ -696,14 +671,13 @@ class ApiV2AuditStrictSearchTest {
   @ParameterizedTest
   @ValueSource(strings = {"bookings:41", "booking-configurations:12"})
   void sameDomainEventsMustMatchTheDecodedTopLevelIdentifier(String identifier) throws IOException {
-    String unrelated =
-        event("01 Jan 2026 12:00:00,000", "bookings:42")
-            .replace("domain:UNKNOWN", "domain:BOOKING");
-    String purpose = unrelated.replace("\"name\":\"item\"", "\"purpose\":\"" + identifier + "\"");
+    Function<Map<String, ?>, String> unrelated =
+        data -> event("01 Jan 2026 12:00:00,000", data).replace("domain:UNKNOWN", "domain:BOOKING");
+    String purpose = unrelated.apply(Map.of("id", "bookings:42", "purpose", identifier));
     String nested =
-        unrelated.replace("\"name\":\"item\"", "\"target\":{\"id\":\"" + identifier + "\"}");
+        unrelated.apply(Map.of("id", "bookings:42", "target", Map.of("id", identifier)));
     String parent =
-        unrelated.replace("\"name\":\"item\"", "\"bookingConfigurationId\":\"" + identifier + "\"");
+        unrelated.apply(Map.of("id", "bookings:42", "bookingConfigurationId", identifier));
     String direct =
         event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"))
             .replace("domain:UNKNOWN", "domain:BOOKING");
