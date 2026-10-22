@@ -59,12 +59,8 @@ propagation. A future multi-node deployment will need shared state.
 The `feature-flags` resource uses the standard REST API v2 collection routes.
 List responses contain feature flag resources in the `docs` array.
 
-Each resource contains `name`, `value`, `baselineValue`, `source`, and
-`canOverride`. The `overrideValue` field accepts update input but does not appear
-in a response.
-
-The source is `DEFAULT`, `DATABASE`, `USER_OVERRIDE`, or `PROPERTIES_FILE`.
-The API does not expose feature flag definition metadata.
+See [`ApiV2FeatureFlagResource`](../../src/main/java/com/researchspace/featureflags/ApiV2FeatureFlagResource.java)
+for response fields, update-only fields, and allowed sources. Definition metadata is not exposed.
 
 Anonymous callers receive baseline values. A caller with API credentials
 receives values for the effective subject. API keys and external OAuth tokens do
