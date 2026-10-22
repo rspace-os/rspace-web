@@ -68,9 +68,8 @@ to the UI; server authorization remains authoritative on every request.
 
 ## Settings route access
 
-The Settings route checks the current subject's sysadmin capability before fetching its
-protected document. Client draft stability and refresh behavior are described in
-See [Booking frontend](BookingFrontend.md#settings-access-and-draft-stability).
+See [Booking frontend](BookingFrontend.md#settings-access-and-draft-stability) for the Settings
+route access check, draft stability and refresh behavior.
 
 Creation and lifecycle rules are in [Booking](Booking.md#configuration-lifecycle);
 maintenance exemptions are in [Scheduling](Booking.md#scheduling).
