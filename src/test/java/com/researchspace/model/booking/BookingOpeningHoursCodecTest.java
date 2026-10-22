@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -79,14 +81,13 @@ class BookingOpeningHoursCodecTest {
 
   @Test
   void acceptsAllSevenWeekdaysIncludingAllDayHours() throws Exception {
-    StringBuilder json = new StringBuilder("[");
+    List<Map<String, Object>> rows = new ArrayList<>();
     for (int day = 7; day >= 1; day--) {
-      json.append("{\"dayOfWeek\":").append(day).append(",\"start\":\"00:00\",\"end\":\"24:00\"}");
-      json.append(day == 1 ? "]" : ",");
+      rows.add(Map.of("dayOfWeek", day, "start", "00:00", "end", "24:00"));
     }
 
     List<BookingOpeningHoursEntry> decoded =
-        BookingOpeningHoursCodec.openingHours(mapper.readTree(json.toString()));
+        BookingOpeningHoursCodec.openingHours(mapper.valueToTree(rows));
 
     assertEquals(7, decoded.size());
     assertEquals(1, decoded.get(0).dayOfWeek());
