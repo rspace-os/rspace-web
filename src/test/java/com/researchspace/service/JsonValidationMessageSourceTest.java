@@ -3,6 +3,9 @@ package com.researchspace.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.researchspace.model.units.QuantityInfo;
+import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.model.units.ValidTemperature;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -27,6 +30,9 @@ class JsonValidationMessageSourceTest {
 
     @Pattern(regexp = "xml|html", message = "{validation.errors.exportFormatInvalid}")
     private final String invalidFormat = "pdf";
+
+    @ValidTemperature
+    private final QuantityInfo invalidTemperature = QuantityInfo.of(-274, RSUnitDef.CELSIUS);
   }
 
   @Test
@@ -38,12 +44,13 @@ class JsonValidationMessageSourceTest {
 
     Set<ConstraintViolation<Request>> violations = validator.validate(new Request());
 
-    assertThat(violations).hasSize(5);
+    assertThat(violations).hasSize(6);
     assertEquals(
         Set.of(
             "Description \"abcdef\" must be less than 3 characters.",
             "Format must be either xml or html.",
             "Format is a required field.",
+            "Invalid temperature - must be a temperature measurement greater than absolute zero",
             "must not be null",
             "Title"),
         violations.stream()

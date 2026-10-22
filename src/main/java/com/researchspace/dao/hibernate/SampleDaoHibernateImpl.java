@@ -304,7 +304,6 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
 
   @Override
   public Sample getWithSharedLock(Long id) {
-    // a query rather than get(), so the lock is taken even if the sample is already in the session
     return sessionFactory
         .getCurrentSession()
         .createQuery("from Sample where id = :id", Sample.class)

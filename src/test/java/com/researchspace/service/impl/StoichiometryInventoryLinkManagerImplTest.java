@@ -20,6 +20,7 @@ import com.researchspace.api.v1.model.stoichiometry.StoichiometryInventoryLinkRe
 import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
@@ -314,6 +315,28 @@ public class StoichiometryInventoryLinkManagerImplTest {
     assertEquals("Molecule 2 Insufficient Stock", result.getResults().get(0).getErrorMessage());
     assertFalse(result.getResults().get(0).isSuccess());
     verify(linkDao, never()).save(any());
+  }
+
+  @Test
+  public void deductStockWithLocalizedExceptionReturnsText() {
+    StoichiometryMolecule mol = new StoichiometryMolecule();
+    mol.setStoichiometry(new Stoichiometry());
+    long stoichiometryId = 55L;
+    mol.getStoichiometry().setId(stoichiometryId);
+    StoichiometryInventoryLink link = createMoleculeAndLink(104L, 1004L, mol);
+    InventoryRecord ss = link.getInventoryRecord();
+    when(linkDao.getSafeNull(104L)).thenReturn(java.util.Optional.of(link));
+    when(moleculeManager.getDocContainingMolecule(mol)).thenReturn(owningRecord);
+    when(elnPerms.isPermitted(owningRecord, PermissionType.WRITE, user)).thenReturn(true);
+    doThrow(new LocalizedIllegalArgumentException("validation.quantity.incomparableUnits"))
+        .when(invPerms)
+        .assertUserCanEditInventoryRecord(ss, user);
+
+    StockDeductionResult result = manager.deductStock(stoichiometryId, List.of(104L), user);
+
+    assertEquals(
+        "items to sum are not commensurate - they have different unit categories",
+        result.getResults().get(0).getErrorMessage());
   }
 
   @Test

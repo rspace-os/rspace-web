@@ -18,17 +18,21 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.researchspace.core.util.RSpaceCoreTestUtils;
+import com.researchspace.model.field.LocalizedIOException;
+import ij.io.FileSaver;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import javax.imageio.ImageIO;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
@@ -37,7 +41,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 
 public class ImageUtilsTest {
 
@@ -125,14 +131,40 @@ public class ImageUtilsTest {
   @Test
   public void convertTiffToPngArgValidation() throws Exception {
     final File outFolder = getTempDirectory();
+    IllegalArgumentException nullFile =
+        assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(null, outFolder, null));
+    assertEquals("validation.imageConversion.filesRequired", nullFile.getMessage());
+
+    IllegalArgumentException unreadableFile =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> convertTiffToPng(new File(tiffFile + ".missing"), outFolder, null));
+    assertEquals("validation.imageConversion.sourceUnreadable", unreadableFile.getMessage());
+
     // is not a tiff!
     File png = new File(pngfile);
-    assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(png, outFolder, null));
+    IllegalArgumentException notTiff =
+        assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(png, outFolder, null));
+    assertEquals("validation.imageConversion.sourceNotTiff", notTiff.getMessage());
     // outfolder is not a folder
     File tiff = new File(tiffFile);
     File nonFolder = createTempFile("any", "any");
-    assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(tiff, nonFolder, null));
-    assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(null, outFolder, null));
+    IllegalArgumentException invalidDestination =
+        assertThrows(IllegalArgumentException.class, () -> convertTiffToPng(tiff, nonFolder, null));
+    assertEquals("validation.imageConversion.destinationInvalid", invalidDestination.getMessage());
+  }
+
+  @Test
+  public void convertTiffToPngReportsSaveFailure(@TempDir Path tempDirectory) throws Exception {
+    try (MockedConstruction<FileSaver> savers = mockConstruction(FileSaver.class)) {
+      LocalizedIOException conversionFailure =
+          assertThrows(
+              LocalizedIOException.class,
+              () -> convertTiffToPng(new File(tiffFile), tempDirectory.toFile(), "blocked"));
+      assertEquals("validation.imageConversion.conversionFailed", conversionFailure.getMessage());
+      verify(savers.constructed().get(0))
+          .saveAsPng(tempDirectory.resolve("blocked.png").toString());
+    }
   }
 
   @Test
@@ -302,18 +334,26 @@ public class ImageUtilsTest {
     NullPointerException nullArgNpe =
         Assertions.assertThrows(
             NullPointerException.class, () -> ImageUtils.getExtensionFromBase64DataImage(null));
-    assertEquals(
-        "Expected base64 web image string but was null or empty.", nullArgNpe.getMessage());
+    assertEquals("validation.imageData.required", nullArgNpe.getMessage());
+    IllegalArgumentException emptyArgIae =
+        Assertions.assertThrows(
+            IllegalArgumentException.class, () -> ImageUtils.getExtensionFromBase64DataImage(""));
+    assertEquals("validation.imageData.required", emptyArgIae.getMessage());
     IllegalArgumentException notBase64Iae =
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> ImageUtils.getImageBytesFromBase64DataImage("data:image/png;base64,»Þõûã"));
-    assertEquals("Image string doesn't seem to be base64-encoded", notBase64Iae.getMessage());
+    assertEquals("validation.imageData.invalidEncoding", notBase64Iae.getMessage());
     IllegalArgumentException notBase64Iae2 =
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> ImageUtils.getImageBytesFromBase64DataImage("asdf"));
-    assertEquals("Expected base64 web image string to contain a ','.", notBase64Iae2.getMessage());
+    assertEquals("validation.imageData.separatorRequired", notBase64Iae2.getMessage());
+    IllegalArgumentException emptyPayload =
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> ImageUtils.getImageBytesFromBase64DataImage("data:image/png;base64,"));
+    assertEquals("validation.imageData.invalidEncoding", emptyPayload.getMessage());
 
     byte[] imageBytes =
         Base64.decodeBase64(RSpaceCoreTestUtils.getResourceAsByteArray("Picture1.b64"));

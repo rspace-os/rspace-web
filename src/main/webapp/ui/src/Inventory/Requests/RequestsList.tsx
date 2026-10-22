@@ -13,6 +13,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import { orderBy } from "es-toolkit";
 import type { TFunction } from "i18next";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -206,17 +207,10 @@ export default function RequestsList({
     setPageNumber((page) => Math.min(page, lastPageNumber));
   }, [searchedRequests.length, pageSize]);
 
-  const sortedRequests = useMemo(() => {
-    const sorted = [...searchedRequests].sort((a, b) => {
-      const aValue = getColumnValue(a, sortBy);
-      const bValue = getColumnValue(b, sortBy);
-      if (aValue < bValue) return -1;
-      if (aValue > bValue) return 1;
-      return 0;
-    });
-    if (sortDirection === "desc") sorted.reverse();
-    return sorted;
-  }, [searchedRequests, sortBy, sortDirection]);
+  const sortedRequests = useMemo(
+    () => orderBy(searchedRequests, [(request) => getColumnValue(request, sortBy)], [sortDirection]),
+    [searchedRequests, sortBy, sortDirection],
+  );
 
   const pagedRequests = useMemo(
     () => sortedRequests.slice(pageNumber * pageSize, pageNumber * pageSize + pageSize),

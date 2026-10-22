@@ -21,72 +21,71 @@ import java.util.EnumSet;
 public enum MessageType implements PermissionsAdaptable {
 
   /** A message, with no implied request for the recipient to act. */
-  SIMPLE_MESSAGE("Basic message", false, ""),
+  SIMPLE_MESSAGE("messages.types.basic", false, null),
 
   /** A message that is sent to everyone, from an admin */
-  GLOBAL_MESSAGE("Message to all users", false, ""),
+  GLOBAL_MESSAGE("messages.types.global", false, null),
 
   /** Sender requests recipient to view a record */
   REQUEST_RECORD_REVIEW(
-      "Review document",
+      "messages.types.reviewDocument",
       new CommunicationStatus[] {
         CommunicationStatus.COMPLETED, CommunicationStatus.REJECTED, CommunicationStatus.ACCEPTED
       },
       false,
-      ""),
+      null),
 
   /** Sender asks PI to join in the creation of a collaboration group */
   REQUEST_EXTERNAL_SHARE(
-      "Create a Collaboration Group",
+      "messages.types.createCollaborationGroup",
       new CommunicationStatus[] {CommunicationStatus.COMPLETED, CommunicationStatus.REJECTED},
       true,
-      ""),
+      null),
 
   /** Sender asks user to join an existing LabGroup */
   REQUEST_JOIN_LAB_GROUP(
-      "Join LabGroup",
+      "messages.types.joinLabGroup",
       new CommunicationStatus[] {CommunicationStatus.COMPLETED, CommunicationStatus.REJECTED},
       true,
-      ""),
+      null),
 
   /**
    * Sender asks user to create a new Lab Group as new PI. This is a PublicCloud specific request
    * sent as part of RSPAC-245-use case2
    */
   REQUEST_CREATE_LAB_GROUP(
-      "Create LabGroup as PI",
+      "messages.types.createLabGroupAsPi",
       new CommunicationStatus[] {CommunicationStatus.COMPLETED, CommunicationStatus.REJECTED},
       true,
-      ""),
+      null),
 
   /** Sender asks user to agree to the sender sharing a record with user. */
   REQUEST_SHARE_RECORD(
-      "Share document",
+      "messages.types.shareDocument",
       new CommunicationStatus[] {CommunicationStatus.COMPLETED, CommunicationStatus.REJECTED},
       true,
-      ""),
+      null),
 
   /** Sender asks someone to witness to a signed-document */
   REQUEST_RECORD_WITNESS(
-      "Witness document signing",
+      "messages.types.witnessDocumentSigning",
       new CommunicationStatus[] {CommunicationStatus.REJECTED},
       true,
-      " To proceed, please follow the above link to the document. Then, click on the 'Witness'"
-          + " button."),
+      "messages.moreInfo.witnessDocumentSigning"),
 
   /** Sender asks PI to join existing collaboration group. */
   REQUEST_JOIN_EXISTING_COLLAB_GROUP(
-      "Join existing collaboration Group",
+      "messages.types.joinExistingCollaborationGroup",
       new CommunicationStatus[] {CommunicationStatus.COMPLETED, CommunicationStatus.REJECTED},
       true,
-      ""),
+      null),
 
   /** Sender asks user to join an existing Project Group. */
   REQUEST_JOIN_PROJECT_GROUP(
-      "Join Project Group",
+      "messages.types.joinProjectGroup",
       new CommunicationStatus[] {CommunicationStatus.COMPLETED, CommunicationStatus.REJECTED},
       true,
-      "");
+      null);
 
   public static final EnumSet<MessageType> SPECIAL_TYPES =
       EnumSet.of(
@@ -98,30 +97,28 @@ public enum MessageType implements PermissionsAdaptable {
 
   public static final EnumSet<MessageType> STANDARD_TYPES = EnumSet.complementOf(SPECIAL_TYPES);
 
-  private String label;
-  private boolean isYesNoMessage;
-  private String moreInfo;
+  private final String labelKey;
+  private final boolean isYesNoMessage;
+  private final String moreInfoKey;
 
-  /**
-   * Gets general information about this request
-   *
-   * @return
-   */
-  public String getMoreInfo() {
-    return moreInfo;
+  public String getMoreInfoKey() {
+    return moreInfoKey;
   }
 
   private CommunicationStatus[] validUpdateStatusesByRecipient = CommunicationStatus.values();
 
-  private MessageType(String label, boolean isYesNoMesg, String moreInfo) {
-    this.label = label;
+  MessageType(String labelKey, boolean isYesNoMesg, String moreInfoKey) {
+    this.labelKey = labelKey;
     this.isYesNoMessage = isYesNoMesg;
-    this.moreInfo = moreInfo;
+    this.moreInfoKey = moreInfoKey;
   }
 
-  private MessageType(
-      String label, CommunicationStatus[] validStatuses, boolean isYesNoMesg, String moreInfo) {
-    this(label, isYesNoMesg, moreInfo);
+  MessageType(
+      String labelKey,
+      CommunicationStatus[] validStatuses,
+      boolean isYesNoMesg,
+      String moreInfoKey) {
+    this(labelKey, isYesNoMesg, moreInfoKey);
     this.validUpdateStatusesByRecipient = validStatuses;
   }
 
@@ -154,13 +151,8 @@ public enum MessageType implements PermissionsAdaptable {
     return validUpdateStatusesByRecipient;
   }
 
-  /**
-   * User-readable representation of the enum.
-   *
-   * @return
-   */
-  public String getLabel() {
-    return label;
+  public String getLabelKey() {
+    return labelKey;
   }
 
   @Override

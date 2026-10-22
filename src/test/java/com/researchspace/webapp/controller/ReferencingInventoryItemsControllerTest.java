@@ -3,7 +3,6 @@ package com.researchspace.webapp.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,6 +12,7 @@ import com.researchspace.api.v1.model.ApiInventoryReferencingItem;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItems;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.inventory.InventoryFileApiManager;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
@@ -32,7 +33,7 @@ class ReferencingInventoryItemsControllerTest {
   @Mock private InventoryLinkManager inventoryLinkManager;
   @Mock private InventoryFileApiManager inventoryFileApiManager;
   @Mock private UserManager userManager;
-  @Mock private MessageSourceUtils messageSource;
+  @Spy private MessageSourceUtils messageSource = new MessageSourceUtils(new JsonMessageSource());
   @InjectMocks private ReferencingInventoryItemsController controller;
 
   @Test
@@ -71,14 +72,15 @@ class ReferencingInventoryItemsControllerTest {
     when(userManager.getUserByUsername("bob")).thenReturn(user);
     when(inventoryLinkManager.findReferencingItems("bad!", user))
         .thenThrow(new ApiRuntimeException("errors.inventory.field.linkTargetNotFound", "bad!"));
-    when(messageSource.getMessage(eq("errors.inventory.field.linkTargetNotFound"), any()))
-        .thenReturn("bad! does not exist, or you do not have permission to view it.");
     Principal principal = () -> "bob";
 
     ResponseEntity<?> response = controller.getReferencingInventoryItems("bad!", principal);
 
     assertEquals(404, response.getStatusCode().value());
     assertTrue(response.getBody() instanceof ErrorList);
+    assertEquals(
+        List.of("Link target 'bad!' could not be found or you do not have permission to read it."),
+        ((ErrorList) response.getBody()).getErrorMessages());
   }
 
   @Test
@@ -102,14 +104,15 @@ class ReferencingInventoryItemsControllerTest {
     User user = new User("bob");
     when(userManager.getUserByUsername("bob")).thenReturn(user);
     when(inventoryFileApiManager.findAttachingItems("bad!", user))
-        .thenThrow(new ApiRuntimeException("errors.inventory.field.link.targetNotFound", "bad!"));
-    when(messageSource.getMessage(eq("errors.inventory.field.link.targetNotFound"), any()))
-        .thenReturn("bad! does not exist, or you do not have permission to view it.");
+        .thenThrow(new ApiRuntimeException("errors.inventory.field.linkTargetNotFound", "bad!"));
     Principal principal = () -> "bob";
 
     ResponseEntity<?> response = controller.getAttachingInventoryItems("bad!", principal);
 
     assertEquals(404, response.getStatusCode().value());
     assertTrue(response.getBody() instanceof ErrorList);
+    assertEquals(
+        List.of("Link target 'bad!' could not be found or you do not have permission to read it."),
+        ((ErrorList) response.getBody()).getErrorMessages());
   }
 }

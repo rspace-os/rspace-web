@@ -2,12 +2,11 @@
 status: accepted
 ---
 
-# Sample requests: a standalone request entity with a guarded state machine (RSDEV-1309)
+# Sample requests: a standalone request entity with a guarded state machine
 
-Date: 2026-10-06. Covers the backend of RSDEV-1366 (create a request), RSDEV-1368
-(approve, reject, cancel, fulfil), RSDEV-1512 (audit trail) and the backend parts of
-RSDEV-1365 (the setting and `Sample.requestable`). The mechanics live in the code and its
-tests; this ADR records the WHY and the traps.
+Date: 2026-10-06. Covers the backend: the setting and `Sample.requestable`, creating a
+request, approving, rejecting, cancelling and fulfilling it, and the audit trail. The
+mechanics live in the code and its tests; this ADR records the WHY and the traps.
 
 ## Context
 
@@ -126,9 +125,9 @@ the same sample; there is no uniqueness rule.
 ### D8 Status history is a table, not the audit log
 
 Every state, including the initial PENDING, is a `SampleRequestStatusChange` row, so the
-details view reads the history in one query. RSpace's audit trail is written to log files,
-not a table, so it can never feed a details view. Envers was rejected: it suits records
-that change in many ways and may be restored, not a linear state history.
+details view reads the whole history from one table. RSpace's audit trail is written to log
+files, not a table, so it can never feed a details view. Envers was rejected: it suits
+records that change in many ways and may be restored, not a linear state history.
 
 ### D9 A transfer closes the open requests: fulfilled for the recipient, rejected for others
 
@@ -212,7 +211,7 @@ column already shows the requester.
   by id, since the sample can be restored.
 - Validation errors: malformed body 400, wrong global-id type or illegal transition 422,
   missing or unreadable sample 404.
-- Notifications to the owner and requester are not built (RSDEV-1353).
+- Notifications to the owner and requester are not built yet.
 
 ## Rejected alternatives
 

@@ -2,21 +2,21 @@ package com.researchspace.model;
 
 public enum GroupType {
   /** A regular lab group */
-  LAB_GROUP("Lab Group"),
+  LAB_GROUP("groups.types.labGroup"),
 
   /** A user-created and managed collaboration group. */
-  COLLABORATION_GROUP("Collaboration Group"),
+  COLLABORATION_GROUP("groups.types.collaborationGroup"),
 
   /** A user-created group that has no PI */
-  PROJECT_GROUP("Project Group");
+  PROJECT_GROUP("groups.types.projectGroup");
 
-  private final String label;
+  private final String labelKey;
 
-  GroupType(String label) {
-    this.label = label;
+  GroupType(String labelKey) {
+    this.labelKey = labelKey;
   }
 
-  public String getLabel() {
-    return label;
+  public String getLabelKey() {
+    return labelKey;
   }
 }

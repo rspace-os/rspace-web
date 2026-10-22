@@ -46,18 +46,13 @@ class InventoryEntityFieldTest {
     IllegalArgumentException iae =
         assertThrows(
             IllegalArgumentException.class, () -> field.setSelectedOptions(undefinedOption));
-    assertEquals(
-        "[[\"a\"]] is invalid for field type Choice: Some supplied values are not allowed options",
-        iae.getMessage());
+    assertEquals("validation.inventoryField.invalidForFieldType", iae.getMessage());
     // option that differs by trailing space is also invalid
     List<String> optionWithoutSpace = List.of("pi=3.14");
     iae =
         assertThrows(
             IllegalArgumentException.class, () -> field.setSelectedOptions(optionWithoutSpace));
-    assertEquals(
-        "[[\"pi=3.14\"]] is invalid for field type Choice: Some supplied values are not allowed"
-            + " options",
-        iae.getMessage());
+    assertEquals("validation.inventoryField.invalidForFieldType", iae.getMessage());
   }
 
   @ParameterizedTest
@@ -128,9 +123,7 @@ class InventoryEntityFieldTest {
     // invalid option rejected
     IllegalArgumentException iae =
         assertThrows(IllegalArgumentException.class, () -> field.setFieldData("invalid"));
-    assertEquals(
-        "[invalid] is invalid for field type Radio: Some supplied values are not allowed options",
-        iae.getMessage());
+    assertEquals("validation.inventoryField.invalidForFieldType", iae.getMessage());
   }
 
   private InventoryRadioField createRadioField() {
@@ -189,7 +182,7 @@ class InventoryEntityFieldTest {
     InventoryDateField field = new InventoryDateField("date");
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> field.setFieldData(value));
-    assertThat(exception.getMessage()).contains("is invalid for field type Date");
+    assertEquals("validation.inventoryField.invalidForFieldType", exception.getMessage());
   }
 
   @ParameterizedTest
@@ -275,7 +268,7 @@ class InventoryEntityFieldTest {
     InventoryTimeField field = new InventoryTimeField("time");
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> field.setFieldData(value));
-    assertThat(exception.getMessage()).contains("is invalid for field type Time");
+    assertEquals("validation.inventoryField.invalidForFieldType", exception.getMessage());
   }
 
   @Test
@@ -316,7 +309,7 @@ class InventoryEntityFieldTest {
     IllegalStateException ise =
         assertThrows(
             IllegalStateException.class, () -> templateField.updateToLatestTemplateDefinition());
-    assertEquals("Field [num] has no connected template field", ise.getMessage());
+    assertEquals("validation.inventoryField.noConnectedTemplate", ise.getMessage());
 
     // update template field name, then try updating the sample field
     templateField.setName("num updated");
@@ -328,9 +321,7 @@ class InventoryEntityFieldTest {
     assertFalse(field.isMandatory());
     templateField.setMandatory(true);
     ise = assertThrows(IllegalStateException.class, () -> field.updateToLatestTemplateDefinition());
-    assertEquals(
-        "Field [num updated] is empty, but is mandatory in latest template field definition",
-        ise.getMessage());
+    assertEquals("validation.inventoryField.mandatoryInLatestTemplate", ise.getMessage());
 
     // reset field to non-mandatory (throwing exception doesn't reset the state here in the test
     // code)
@@ -379,9 +370,7 @@ class InventoryEntityFieldTest {
     templateField.setRadioDef(newDefn);
     IllegalStateException ise =
         assertThrows(IllegalStateException.class, () -> field.updateToLatestTemplateDefinition());
-    assertEquals(
-        "Field [radio] value [b] is invalid according to latest template field definition",
-        ise.getMessage());
+    assertEquals("validation.inventoryField.invalidForLatestTemplate", ise.getMessage());
 
     // update sample field to value that's valid with new template
     field.setData("c");
@@ -418,10 +407,7 @@ class InventoryEntityFieldTest {
     templateField.setChoiceDef(newDefn);
     IllegalStateException ise =
         assertThrows(IllegalStateException.class, () -> field.updateToLatestTemplateDefinition());
-    assertEquals(
-        "Field [choice] value [[\"b\",\"{a}, [b:] & \\\\c/\"]] is invalid according to latest"
-            + " template field definition",
-        ise.getMessage());
+    assertEquals("validation.inventoryField.invalidForLatestTemplate", ise.getMessage());
 
     // update sample field to value that's valid with new template
     field.setFieldData("[\"c\",\"{a}, [b:] & \\\\c/\"]");

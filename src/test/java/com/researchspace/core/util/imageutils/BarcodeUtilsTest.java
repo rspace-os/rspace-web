@@ -2,7 +2,7 @@ package com.researchspace.core.util.imageutils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.zxing.WriterException;
 import java.awt.image.BufferedImage;
@@ -49,13 +49,14 @@ public class BarcodeUtilsTest {
     ImageIO.write(longContentBarcode, "png", outputfile);
     assertEquals(138, outputfile.length());
 
-    // empty content rejected
-    try {
-      BarcodeUtils.generateBarcodeImage("", null, null);
-      fail("exception expected on empty content");
-    } catch (IllegalArgumentException iae) {
-      assertEquals("Barcode text cannot be empty", iae.getMessage());
-    }
+    IllegalArgumentException emptyBarcode =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> BarcodeUtils.generateBarcodeImage("", null, null));
+    assertEquals("validation.barcode.textRequired", emptyBarcode.getMessage());
+
+    assertThrows(
+        NullPointerException.class, () -> BarcodeUtils.generateBarcodeImage(null, null, null));
   }
 
   @Test
@@ -91,13 +92,12 @@ public class BarcodeUtilsTest {
     outputfile = Files.createTempFile("longContentQR", ".png").toFile();
     ImageIO.write(longContentQR, "png", outputfile);
     assertEquals(285, outputfile.length());
-    // empty content rejected
-    try {
-      BarcodeUtils.generateQRCodeImage("", null, null);
-      fail("exception expected on empty content");
-    } catch (IllegalArgumentException iae) {
-      assertEquals("QR code text cannot be empty", iae.getMessage());
-    }
+    IllegalArgumentException emptyQrCode =
+        assertThrows(
+            IllegalArgumentException.class, () -> BarcodeUtils.generateQRCodeImage("", null, null));
+    assertEquals("validation.barcode.qrTextRequired", emptyQrCode.getMessage());
+    assertThrows(
+        NullPointerException.class, () -> BarcodeUtils.generateQRCodeImage(null, null, null));
   }
 
   @Test
@@ -136,12 +136,9 @@ public class BarcodeUtilsTest {
     // assertEquals(285, outputfile.length());
     assertEquals(292, outputfile.length());
 
-    // empty content rejected
-    try {
-      BarcodeUtils.generateQRCodeImage("", null, null);
-      fail("exception expected on empty content");
-    } catch (IllegalArgumentException iae) {
-      assertEquals("QR code text cannot be empty", iae.getMessage());
-    }
+    IllegalArgumentException emptyQrCode =
+        assertThrows(
+            IllegalArgumentException.class, () -> BarcodeUtils.generateQRCodeImage("", null, null));
+    assertEquals("validation.barcode.qrTextRequired", emptyQrCode.getMessage());
   }
 }

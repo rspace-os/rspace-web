@@ -372,14 +372,15 @@ const IgsnNavItem = observer(
   }) => {
     const { t } = useTranslation("inventory");
     const { uiStore } = useStores();
-    const { useNavigate } = React.useContext(NavigateContext);
+    const { useNavigate, useLocation } = React.useContext(NavigateContext);
     const { trackEvent } = React.useContext(AnalyticsContext);
     const navigate = useNavigate();
+    const location = useLocation();
 
     return (
       <DrawerTab
         label={t("layout.sidebar.igsnIds")}
-        selected={/identifiers\/igsn/.test(window.location.pathname)}
+        selected={/identifiers\/igsn/.test(location.pathname)}
         icon={<IgsnIcon sx={{ width: "16px", height: "16px" }} />}
         index={index}
         tabIndex={tabIndex}
@@ -407,9 +408,10 @@ const RequestsNavItem = observer(
   }) => {
     const { t } = useTranslation("inventory");
     const { uiStore } = useStores();
-    const { useNavigate } = React.useContext(NavigateContext);
+    const { useNavigate, useLocation } = React.useContext(NavigateContext);
     const { trackEvent } = React.useContext(AnalyticsContext);
     const navigate = useNavigate();
+    const location = useLocation();
     // Refetches on its own whenever a mutation elsewhere invalidates sampleRequestsQueryKeys
     // (e.g. approved/rejected from the Requests detail pane), so the badge stays in sync without
     // manual refresh-counter/event wiring.
@@ -418,7 +420,7 @@ const RequestsNavItem = observer(
     return (
       <DrawerTab
         label={t("layout.sidebar.requests")}
-        selected={/inventory\/requests/.test(window.location.pathname)}
+        selected={/inventory\/requests/.test(location.pathname)}
         icon={<FontAwesomeIcon icon={faShareFromSquare} />}
         index={index}
         tabIndex={tabIndex}

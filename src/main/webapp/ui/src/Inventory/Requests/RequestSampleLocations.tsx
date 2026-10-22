@@ -61,6 +61,28 @@ function NamedRecordChip({ globalId, name }: { globalId: string; name: string })
 }
 
 /**
+ * A subsample kept directly on a user's bench has that bench (prefix "BE") as its top parent;
+ * benches aren't a normal Inventory record type and are never shown as a chip elsewhere in the
+ * app, so exclude them from the breadcrumb.
+ */
+function SubsampleLocationBreadcrumbs({ subSample }: { subSample: ApiSubSampleInfo }): React.ReactNode {
+  const { t } = useTranslation("inventory");
+  const containers = subSample.parentContainers.filter((container) => !container.globalId.startsWith("BE"));
+  if (containers.length === 0) {
+    return <NoValue label={t("requestsManagement.detail.fields.notInContainer")} />;
+  }
+  return (
+    <Breadcrumbs aria-label={t("breadcrumbs.label")}>
+      {containers.toReversed().map((container) => (
+        <Box key={container.id}>
+          <NamedRecordChip globalId={container.globalId} name={container.name} />
+        </Box>
+      ))}
+    </Breadcrumbs>
+  );
+}
+
+/**
  * For each of a sample's subsamples, shows a chip for the subsample plus a
  * breadcrumb of the containers it is stored in, mirroring the format of the
  * "Location" field shown for Subsamples/Containers elsewhere in Inventory.
@@ -148,26 +170,7 @@ export default function RequestSampleLocations({
                 <NamedRecordChip globalId={subSample.globalId} name={subSample.name} />
               </TableCell>
               <TableCell>
-                {(() => {
-                  // A subsample kept directly on a user's bench has that bench (prefix "BE") as
-                  // its top parent; benches aren't a normal Inventory record type and are never
-                  // shown as a chip elsewhere in the app, so exclude them from the breadcrumb.
-                  const containers = subSample.parentContainers.filter(
-                    (container) => !container.globalId.startsWith("BE"),
-                  );
-                  if (containers.length === 0) {
-                    return <NoValue label={t("requestsManagement.detail.fields.notInContainer")} />;
-                  }
-                  return (
-                    <Breadcrumbs aria-label={t("breadcrumbs.label")}>
-                      {containers.toReversed().map((container) => (
-                        <Box key={container.id}>
-                          <NamedRecordChip globalId={container.globalId} name={container.name} />
-                        </Box>
-                      ))}
-                    </Breadcrumbs>
-                  );
-                })()}
+                <SubsampleLocationBreadcrumbs subSample={subSample} />
               </TableCell>
             </TableRow>
           ))}

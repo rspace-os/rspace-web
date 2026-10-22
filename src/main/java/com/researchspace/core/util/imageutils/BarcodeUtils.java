@@ -6,8 +6,9 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.oned.Code128Writer;
 import com.google.zxing.qrcode.QRCodeWriter;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedNullPointerException;
 import java.awt.image.BufferedImage;
-import org.apache.commons.lang3.Validate;
 
 public class BarcodeUtils {
 
@@ -16,7 +17,7 @@ public class BarcodeUtils {
   /** Generates one-dimentional barcode image in CODE_128 format. */
   public static BufferedImage generateBarcodeImage(
       String barcodeText, Integer width, Integer height) throws WriterException {
-    Validate.notEmpty(barcodeText, "Barcode text cannot be empty");
+    validateText(barcodeText, "validation.barcode.textRequired");
 
     int minimalWidth = width != null ? width : 0;
     int minimalHeight = height != null ? height : DEFAULT_BARCODE_HEIGHT;
@@ -31,7 +32,7 @@ public class BarcodeUtils {
   /** Generates two-dimensional QR barcode. */
   public static BufferedImage generateQRCodeImage(String barcodeText, Integer width, Integer height)
       throws WriterException {
-    Validate.notEmpty(barcodeText, "QR code text cannot be empty");
+    validateText(barcodeText, "validation.barcode.qrTextRequired");
 
     int minimalWidth = width != null ? width : DEFAULT_BARCODE_HEIGHT;
     int minimalHeight = height != null ? height : DEFAULT_BARCODE_HEIGHT;
@@ -41,5 +42,14 @@ public class BarcodeUtils {
         barcodeWriter.encode(barcodeText, BarcodeFormat.QR_CODE, minimalWidth, minimalHeight);
 
     return MatrixToImageWriter.toBufferedImage(bitMatrix);
+  }
+
+  private static void validateText(String barcodeText, String messageCode) {
+    if (barcodeText == null) {
+      throw new LocalizedNullPointerException(messageCode);
+    }
+    if (barcodeText.isEmpty()) {
+      throw new LocalizedIllegalArgumentException(messageCode);
+    }
   }
 }

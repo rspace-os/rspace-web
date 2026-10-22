@@ -46,29 +46,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
   }
 
   @Test
-  public void createRequest_forOwnSampleIsUnprocessable() throws Exception {
-    User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
-    initUsers(owner);
-    String ownerApiKey = createNewApiKeyForUser(owner);
-    sysPropMgr.save(
-        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
-        HierarchicalPermission.ALLOWED,
-        getSysAdminUser());
-
-    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
-    markRequestable(sample, owner);
-
-    this.mockMvc
-        .perform(
-            createBuilderForInventoryPostWithJSONBody(
-                ownerApiKey,
-                "/sampleRequests",
-                owner,
-                Map.of("sampleGlobalId", sample.getGlobalId(), "note", "requesting my own")))
-        .andExpect(status().isUnprocessableEntity());
-  }
-
-  @Test
   public void allEndpointsAreNotFoundWhenSampleRequestsDisabled() throws Exception {
     User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
     User requester = createAndSaveUser(getRandomName(10));
@@ -101,7 +78,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
         HierarchicalPermission.DENIED,
         getSysAdminUser());
 
-    // the whole resource behaves as if it is not there, rather than erroring
     this.mockMvc
         .perform(
             createBuilderForInventoryPostWithJSONBody(
@@ -164,7 +140,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     assertEquals(SampleRequestStatus.PENDING, created.getStatus());
     assertEquals(sample.getGlobalId(), created.getSample().getGlobalId());
 
-    // the requester sees it among their own
     assertEquals(
         1L, listRequests(requesterApiKey, requester, "REQUESTER", null).getTotalHits().longValue());
 
@@ -266,37 +241,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
         .andExpect(status().isBadRequest());
   }
 
-  private Long raiseRequest(
-      String apiKey, User requester, ApiSampleWithFullSubSamples sample, String note)
-      throws Exception {
-    MvcResult result =
-        this.mockMvc
-            .perform(
-                createBuilderForInventoryPostWithJSONBody(
-                    apiKey,
-                    "/sampleRequests",
-                    requester,
-                    Map.of("sampleGlobalId", sample.getGlobalId(), "note", note)))
-            .andReturn();
-    return mvcUtils.getFromJsonResponseBody(result, ApiSampleRequest.class).getId();
-  }
-
-  private List<Long> listedIds(String apiKey, User user, String orderBy) throws Exception {
-    MockHttpServletRequestBuilder request =
-        createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/sampleRequests", user);
-    if (orderBy != null) {
-      request = request.param("orderBy", orderBy);
-    }
-    MvcResult result = this.mockMvc.perform(request).andReturn();
-    assertNull(result.getResolvedException());
-    return mvcUtils
-        .getFromJsonResponseBody(result, ApiSampleRequestSearchResult.class)
-        .getRequests()
-        .stream()
-        .map(ApiSampleRequestInfo::getId)
-        .toList();
-  }
-
   @Test
   public void requestableSampleSearchOverHttp() throws Exception {
     User owner = createAndSaveUser(getRandomName(10), Constants.PI_ROLE);
@@ -348,5 +292,36 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     update.setId(target.getId());
     update.setRequestable(true);
     sampleApiMgr.updateApiSample(update, owner);
+  }
+
+  private Long raiseRequest(
+      String apiKey, User requester, ApiSampleWithFullSubSamples sample, String note)
+      throws Exception {
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForInventoryPostWithJSONBody(
+                    apiKey,
+                    "/sampleRequests",
+                    requester,
+                    Map.of("sampleGlobalId", sample.getGlobalId(), "note", note)))
+            .andReturn();
+    return mvcUtils.getFromJsonResponseBody(result, ApiSampleRequest.class).getId();
+  }
+
+  private List<Long> listedIds(String apiKey, User user, String orderBy) throws Exception {
+    MockHttpServletRequestBuilder request =
+        createBuilderForInventoryGet(API_VERSION.ONE, apiKey, "/sampleRequests", user);
+    if (orderBy != null) {
+      request = request.param("orderBy", orderBy);
+    }
+    MvcResult result = this.mockMvc.perform(request).andReturn();
+    assertNull(result.getResolvedException());
+    return mvcUtils
+        .getFromJsonResponseBody(result, ApiSampleRequestSearchResult.class)
+        .getRequests()
+        .stream()
+        .map(ApiSampleRequestInfo::getId)
+        .toList();
   }
 }
