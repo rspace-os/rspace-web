@@ -78,8 +78,8 @@ and API field names were ported instead.
    already show its Global ID.
    *Amended 2026-10-05 (ADR 0011):* the body is `{pid, provider}`, and the record is fetched from
    the public registry `provider` names.
-   *Amended 2026-10-21 (RSDEV-1236, ADR 0012):* the description is cut to 2000 characters, the
-   inventory description cap.
+   *Amended 2026-10-21 (ADR 0012):* the description is cut to 2000 characters, the inventory
+   description cap.
 5. **Only public records may be looked up or imported**: B2INST `accepted` (a published
    record) and DataCite `findable`. A PID that exists at the provider but is not public -
    a B2INST draft, a record submitted for community review or declined, a DataCite `draft`

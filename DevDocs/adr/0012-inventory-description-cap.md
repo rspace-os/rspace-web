@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Inventory descriptions get their own 2000-character cap (RSDEV-1236)
+# Inventory descriptions get their own 2000-character cap
 
 Decided with Nico on 2026-10-21.
 
@@ -11,8 +11,7 @@ Decided with Nico on 2026-10-21.
 1. **Override, don't raise, the shared cap.** `EditInfo.DESCRIPTION_LENGTH` (250) also caps
    tags, gallery captions, ELN descriptions and the cryomedium of the cryopreserve operation.
    Raising it would raise all of those and let a cryomedium overflow the 1000-character
-   template field value it is stored in, so inventory records override the column with
-   `InventoryRecord.DESCRIPTION_LENGTH` (2000) instead.
+   template field value it is stored in.
 2. **The column is exactly the validated cap, with no headroom.** Java and JavaScript count
    UTF-16 code units, never fewer than the characters MariaDB counts in a `utf8mb4` varchar, so
    anything that passes validation fits, and a write path that skips validation fails at the
