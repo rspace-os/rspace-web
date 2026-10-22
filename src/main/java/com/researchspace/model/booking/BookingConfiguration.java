@@ -1,5 +1,7 @@
 package com.researchspace.model.booking;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
@@ -28,12 +30,10 @@ import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import java.io.Serial;
 import java.io.Serializable;
-import java.lang.reflect.RecordComponent;
 import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
@@ -50,6 +50,7 @@ import org.hibernate.envers.RelationTargetAuditMode;
 public class BookingConfiguration implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
+  private static final ObjectMapper CAPABILITIES_MAPPER = new ObjectMapper();
 
   @Getter(onMethod_ = {@Id, @GeneratedValue(strategy = GenerationType.IDENTITY)})
   @Setter
@@ -189,15 +190,9 @@ public class BookingConfiguration implements Serializable {
     if (capabilities == null) {
       return Map.of();
     }
-    Map<String, Object> values = new LinkedHashMap<>();
-    for (RecordComponent component : BookingConfigurationCapabilities.class.getRecordComponents()) {
-      try {
-        values.put(component.getName(), component.getAccessor().invoke(capabilities));
-      } catch (ReflectiveOperationException ex) {
-        throw new IllegalStateException("Unable to read booking configuration capabilities", ex);
-      }
-    }
-    return Map.copyOf(values);
+    return Map.copyOf(
+        CAPABILITIES_MAPPER.convertValue(
+            capabilities, new TypeReference<Map<String, Object>>() {}));
   }
 
   @Transient
