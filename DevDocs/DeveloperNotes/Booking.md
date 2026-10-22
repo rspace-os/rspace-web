@@ -156,7 +156,5 @@ in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-r
 
 ## Audit formatting
 
-Audit snapshots store `openingHours`. My RSpace's audit response and CSV export use the same
-formatter for weekday/time rows. Historical `openingStart`, `openingEnd`, `openDays` and
-`openingExceptions` remain readable; unknown or deleted schedules keep their historical values.
-The formatter does not rewrite recorded snapshot JSON.
+See [Booking audit events](Logging.md#booking-audit-events) for snapshot rendering and historical
+schedule handling.
