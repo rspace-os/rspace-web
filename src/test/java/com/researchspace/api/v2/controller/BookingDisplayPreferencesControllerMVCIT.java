@@ -70,6 +70,23 @@ class BookingDisplayPreferencesControllerMVCIT {
   }
 
   @Test
+  void rejectsYamlDisplayPreferenceReplacementBodies() throws Exception {
+    mockMvc
+        .perform(
+            put(PATH)
+                .header("apiKey", fixture.userKey())
+                .contentType("application/x-yaml")
+                .content(
+                    """
+                    availabilityWindowStart: '09:00'
+                    availabilityWindowEnd: '17:00'
+                    timezoneMode: INSTITUTION
+                    """))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.unsupportedMediaType"));
+  }
+
+  @Test
   void inheritsTheCompleteGlobalDocumentForAUserWithoutAnOverride() throws Exception {
     mockMvc
         .perform(get(PATH).header("apiKey", fixture.userKey()))
