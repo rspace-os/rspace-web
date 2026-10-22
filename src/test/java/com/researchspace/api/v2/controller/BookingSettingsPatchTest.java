@@ -32,9 +32,11 @@ import com.researchspace.model.booking.BookingSchedulingSettings;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.resourceaccess.ResourceAccessDirectoryManager;
+import com.researchspace.webapp.config.WebConfig.YamlJackson2HttpMessageConverter;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +53,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.servlet.handler.HandlerExceptionResolverComposite;
 
 class BookingSettingsPatchTest {
 
@@ -79,7 +82,7 @@ class BookingSettingsPatchTest {
         MockMvcBuilders.standaloneSetup(
                 new BookingSettingsController(
                     manager, featureFlags, directoryManager, Clock.systemUTC()))
-            .setMessageConverters(converter)
+            .setMessageConverters(converter, new YamlJackson2HttpMessageConverter())
             .setControllerAdvice(new ApiV2ControllerAdvice(new MessageSourceUtils(messageSource)))
             .setValidator(validator)
             .build();
@@ -87,6 +90,29 @@ class BookingSettingsPatchTest {
     when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, user)).thenReturn(true);
     when(manager.updateDefaults(any(), any(), any(), any(), anyLong(), any(), any()))
         .thenReturn(new BookingConfigurationDefaults());
+  }
+
+  @Test
+  void rejectsYamlSettingsPatchBodies() throws Exception {
+    messageSource.addMessage(
+        "errors.api.v2.unsupportedMediaType", Locale.ENGLISH, "Unsupported media type.");
+    var composite =
+        mockMvc
+            .getDispatcherServlet()
+            .getWebApplicationContext()
+            .getBean(HandlerExceptionResolverComposite.class);
+    var resolvers = new ArrayList<>(composite.getExceptionResolvers());
+    resolvers.add(
+        0,
+        new ApiV2PreHandlerProblemResolver(
+            new ApiV2ControllerAdvice(new MessageSourceUtils(messageSource)), mapper));
+    composite.setExceptionResolvers(resolvers);
+
+    mockMvc
+        .perform(patchRequest("configurationVersion: 0").contentType("application/x-yaml"))
+        .andExpect(status().isUnsupportedMediaType())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.unsupportedMediaType"));
+    verifyNoInteractions(manager);
   }
 
   @Test
