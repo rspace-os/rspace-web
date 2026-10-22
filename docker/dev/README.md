@@ -116,11 +116,8 @@ or feature-flag API. The Docker stack does not force its value. Flags set in
 `docker/dev/feature-flags.properties` are read-only in the UI and API. See
 [Feature flags](../../DevDocs/DeveloperNotes/FeatureFlags.md) for override behavior.
 
-To opt in to startup Booking fixtures, set `deployment.test.fb.instance=true`
-before first deployment. This also supports production-profile feature-branch
-instances. Restarts preserve existing fixtures. See
-[Booking development](../../DevDocs/DeveloperNotes/BookingDevelopment.md) for the
-bulk dataset, smaller examples, static `dev-test` seed and production-profile check.
+For opt-in startup Booking fixtures and their prerequisites, follow
+[Service-created development fixtures](../../DevDocs/DeveloperNotes/BookingDevelopment.md#service-created-development-fixtures).
 
 Subsequent `up`s reuse the existing database and are much faster.
 
