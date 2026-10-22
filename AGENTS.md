@@ -102,6 +102,7 @@ Use React functional components with TypeScript. Prefer React Query for new serv
 - Use JUnit's `assertThrows` directly, keeping setup outside its executable. For exceptions already captured by MockMvc, use `assertInstanceOf` on `getResolvedException()`.
 - Use JUnit assertions for equality, booleans, nullness, identity, type, and exceptions. AssertJ is appropriate for collection, map, string-content, `Optional`, numeric-comparison, and file assertions. Do not replace named JUnit assertions with AssertJ equivalents or replace `assertThrows` with `assertThatThrownBy`.
 - Do not add direct Hamcrest assertions. Hamcrest remains as compile support for Spring's matcher-typed MockMvc signatures. Use `MVCTestBase` helpers such as `viewNameContains`, `modelAttributeContains`, `modelAttributeDoesNotContain`, and `headerContains`.
+- Keep `MockitoExtension`'s strict stubs. An unused stub means the setup is wrong; delete it or move it into the test that uses it. Do not use Mockito `lenient()`.
 </important>
 
 <important if="changing user-visible behavior">
