@@ -524,3 +524,21 @@ A count response contains the number of matches:
   "totalDocs": 12
 }
 ```
+
+## JSON request binding
+
+Stack-owned API v2 JSON bodies use mapper copies derived from the MVC converter.
+`ApiV2JsonBody` preserves the collection parser's type rules and decimal-node
+handling while limiting documents to 10 MiB, strings to 2 MiB, token counts to
+100,000 and nesting depth to 100. The shared MVC mapper and other endpoints'
+`JsonNode` bindings keep their existing configuration.
+
+Register each fixed-shape request record in the single `ApiV2JsonMappers.register`
+call in `WebConfig.extendMessageConverters` at the layer that introduces it.
+The error advice reads that converter registration to identify strict bodies.
+
+Fixed-shape request records use strict binding: unknown fields and scalar
+coercions fail, including floating-point tokens such as `15.0` for integral
+fields. Collection field codecs retain their existing numeric rules. Required
+and nullable fields on HTTP records remain governed by their validation
+annotations, so partial settings updates and validation messages are preserved.
