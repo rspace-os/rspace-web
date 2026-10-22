@@ -166,7 +166,6 @@ Pass `onReset` to `TableList` when a page owns table filters, pagination, and ex
 in one route search state. That callback replaces the default per-feature resets,
 including `filterButtons.onReset`; it must reset the complete view in one update.
 Independent state owners can omit the callback and keep the built-in reset behavior.
-Quick filters in `filterButtons.buttons` render as toolbar toggles.
 
 ## Browser query and storage defaults
 
