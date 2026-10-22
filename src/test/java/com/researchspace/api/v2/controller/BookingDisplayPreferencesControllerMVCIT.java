@@ -13,6 +13,7 @@ import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.AbstractAppInitializor;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -139,6 +140,30 @@ class BookingDisplayPreferencesControllerMVCIT {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(validBody().replace("}", ",\"unknown\":true}")))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void acceptsMissingAndNullCustomTimezoneForNonCustomModes() throws Exception {
+    for (String body :
+        List.of(
+            """
+            {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
+             "timezoneMode":"INSTITUTION"}
+            """,
+            """
+            {"availabilityWindowStart":"09:00","availabilityWindowEnd":"17:00",
+             "timezoneMode":"INSTITUTION","customTimezone":null}
+            """)) {
+      mockMvc
+          .perform(
+              put(PATH)
+                  .header("apiKey", fixture.userKey())
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(body))
+          .andExpect(status().isOk())
+          .andExpect(jsonPath("$.timezoneMode").value("INSTITUTION"))
+          .andExpect(jsonPath("$.customTimezone").isEmpty());
+    }
   }
 
   @Test
