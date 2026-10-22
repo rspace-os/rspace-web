@@ -54,7 +54,7 @@ and API field names were ported instead.
 4. Import is one shot: `POST /api/inventory/v1/instruments/importPidinst {pid}`
    re-fetches the record server-side, fills the locked default template "Instrument
    (PIDINST 1.0)" by the inverse of the PIDINST mapping (multi-valued properties joined
-   with "; ", description cut to 2000 characters (RSDEV-1236, ADR 0012), a missing DataCite Owner falls back to
+   with "; ", description cut to 250 characters, a missing DataCite Owner falls back to
    the publisher, a missing mandatory value refuses the import), creates the instrument
    and attaches the linked identifier in one transaction. A PID already linked anywhere
    in the deployment is refused with 409 naming the instrument. That check matches the
@@ -78,6 +78,8 @@ and API field names were ported instead.
    already show its Global ID.
    *Amended 2026-10-05 (ADR 0011):* the body is `{pid, provider}`, and the record is fetched from
    the public registry `provider` names.
+   *Amended 2026-10-21 (RSDEV-1236, ADR 0012):* the description is cut to 2000 characters, the
+   inventory description cap.
 5. **Only public records may be looked up or imported**: B2INST `accepted` (a published
    record) and DataCite `findable`. A PID that exists at the provider but is not public -
    a B2INST draft, a record submitted for community review or declined, a DataCite `draft`
