@@ -13,10 +13,9 @@ keyed by arbitrary resource type and ID was rejected because the database could 
 protected entity's ownership of its access data. Resource-specific tables were rejected because
 every new adopter would need another schema migration.
 
-The scheme resolves all applicable sources to one highest effective role. This requires monotonic
-capabilities: each higher role includes every lower role's capabilities. Owner is highest and
-Manager immediately below it. A persisted Owner is a structural invariant independent of implicit
-administrator access or the current availability of that Owner's identity.
+Resolving all sources to one highest effective role requires monotonic capabilities. See
+[Resource role permissions](../DeveloperNotes/SecurityAndPermissions.md#resource-role-permissions)
+for the role and ownership contracts.
 
 Identity availability remains live data. Copying availability onto assignments or updating every
 protected resource when users or groups change was rejected because it creates a second identity
