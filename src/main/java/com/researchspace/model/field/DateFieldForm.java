@@ -34,7 +34,7 @@ public class DateFieldForm extends FieldForm {
     setType(FieldType.DATE);
   }
 
-  @NotBlank(message = "date format {errors.required.field}")
+  @NotBlank(message = "{validation.errors.dateFormatRequired}")
   public String getFormat() {
     return format;
   }

@@ -249,8 +249,10 @@ resolved during design. This file is a glossary only — no implementation detai
   PID, in order to import one. A lookup is anonymous and independent of any PIDINST provider: it
   is offered whether or not one is configured, and goes to the public registry of each registry
   the user has ticked, DataCite, B2INST or both. Hits from both form one list ordered by the
-  registry's update time, newest first, fifty to a page, each hit naming its registry; hits
-  updated at the same moment keep the registry's own order. A lookup needs at least four
+  registry's update time, newest first, up to fifty to a page, each hit naming its registry;
+  hits updated at the same moment keep the registry's own order, and a hit without an update
+  time stays beside its registry neighbours. A page is a fixed slice of that list, so a hidden
+  hit on it leaves the page short and every other page as it is. A lookup needs at least four
   characters, so a query shorter than that is refused rather than answered with most of a
   registry. How free text matches depends on the registry: a B2INST lookup matches a *substring*,
   ignoring case, so part of a name finds the record that carries it however it was typed, while a
@@ -261,6 +263,14 @@ resolved during design. This file is a glossary only — no implementation detai
   DataCite and a Handle at B2INST, and yields nothing from the other.
   _Avoid_: PIDINST search, DOI search, federated search (the registries are asked side by side,
   not through a middle service), provider search
+
+- **Hidden hit** — a registry result that a PID lookup does not show because RSpace cannot
+  import it: a record that is not public, is not an instrument record, or has no PID. It is
+  left out of its page, not of the list: it still counts in its registry's own total and still
+  holds its place, so the page it belongs to shows fewer than fifty hits and no other page
+  changes (RSDEV-1556).
+  _Avoid_: dropped hit, filtered record, skipped hit (a *skipped entry* is a related identifier
+  the import could not link)
 
 - **Already-linked marker** — the note on a PID lookup hit saying that an Instrument in this
   RSpace already links its PID. Every user sees it, so refusing to import the hit always has
