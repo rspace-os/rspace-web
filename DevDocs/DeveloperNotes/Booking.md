@@ -73,9 +73,9 @@ its existing exemptions from opening hours and maximum duration. Changing the sc
 `EDIT_CONFIGURATION`. Creation and time edits validate the locked current configuration,
 serializing concurrent settings changes. Existing bookings are not moved or cancelled.
 
-Apply the additive independent-hours migration before running this application.
-Legacy columns remain for migration and historical data; application code no
-longer reads or writes them. See [booking database migrations](BookingDevelopment.md).
+Booking tables are created with `openingHours` directly. Rebuild development
+databases that used earlier stack schemas. See [booking database migrations](BookingDevelopment.md).
+Audit snapshots use the same independent `openingHours` schedule as configuration reads.
 
 Buffers before and after confirmed bookings can differ. A maximum booking duration of `0`
 disables the item limit; the absolute 527,040-minute (366-day) elapsed-time cap still applies.
@@ -352,8 +352,7 @@ suites read.
 - With "Start on clock intervals" on, the start's local minute of day must also be a
   multiple of the increment, counted from midnight in the item's timezone
   (`errors.api.v2.booking.alignment`). The end only follows the duration rule, so a
-  17-minute aligned booking from 23:48 ends at 00:05. Earlier versions required both
-  endpoints on the grid; this is the only semantic change for existing aligned items.
+  17-minute aligned booking from 23:48 ends at 00:05.
 - Alignment is effective only below 1440 minutes and never for Days. The stored flag is
   not rewritten, so returning to a shorter increment restores the user's choice.
 

@@ -7,12 +7,8 @@ Booking separates display preferences from scheduling rules:
   route-level "today", booking-form wall clocks (until the user picks another zone; see the form
   timezone below), availability domains, and the Now marker.
 - The **time format** chooses the 12- or 24-hour clock: Automatic (the default), 12-hour or
-  24-hour. Automatic preserves existing behaviour: booking pages follow the browser region, in-app
-  notifications follow the region named by the request's `Accept-Language`, and emails, which have
-  no browser, use the usual clock of the message language. An explicit 12- or 24-hour choice
-  replaces all three. `BookingNotificationMessageFormatter` receives it as a `BookingTimeFormat`
-  (from `DashboardController` and from the `BookingNotificationRecipient` snapshot for email) and
-  turns it into the ICU `hc` keyword (`h12`, or `h23` so midnight is 00:00).
+  24-hour. Automatic follows the browser region on booking pages. See
+  [Notification times](BookingNotifications.md#notification-times) for notification formatting.
 - The **scheduling timezone** remains on each `BookingConfiguration`. It controls opening-hour and
   slot-policy calculations and the timezone metadata in calendar feeds. Existing values are not
   rewritten.
@@ -81,8 +77,11 @@ its end, it matches neither filter. Loading these counts does not block the unfi
 The server classifies items and counts them under the page's Search, type and item-property
 filters, so counts describe the current item scope and no request pages through the catalogue. See
 [Booking catalogue availability quick filters](Booking.md#booking-catalogue-availability-quick-filters). Availability bars load
-the booking intervals of the rows on the page only; under a quick filter they show today. Both
-event and availability caches are scoped to the caller.
+the sourced booking intervals of the rows on the page only; under a quick filter they show today.
+Both event and availability caches are scoped to the caller.
+
+`AvailabilityBar` requires each occupied interval to carry its source and uses `timeZone` for its
+display domain. `openingWindowsOnDate` supplies every opening window that intersects a display day.
 
 Invalid preference fields are marked with `aria-invalid` and linked to their validation
 message. A reversed availability window marks its end field; midnight remains a valid end.
@@ -139,17 +138,17 @@ schedule drop the booker badge, then the second title line, so the item name and
 
 Global display defaults are stored on the audited `BookingConfigurationDefaults` singleton. The
 initial values are `08:00`–`18:00`, Browser mode, no custom timezone, and the Automatic time
-format (`timeFormat` column, added by `changeLog-booking-time-format.xml`). A user override is one
+format, created with the singleton schema. A user override is one
 versioned JSON document stored under `BOOKING_DISPLAY_PREFERENCES` in the existing
-`UserPreference` system. `timeFormat` was added to version 1 of that document; a stored document
-without it reads as Automatic, the behaviour it was saved under. `BookingDisplayPreferencesManager` owns serialization, versioning,
+`UserPreference` system. Version 1 requires the complete stored shape, including
+`timeFormat`. `BookingDisplayPreferencesManager` owns serialization, versioning,
 validation, fallback, and preference access. Blank, corrupt, or unsupported stored documents fall
 back to the current global values.
 
 For current-subject preference routes, see
 [Current concrete routes](RestApiV2Collections.md#current-concrete-routes).
 
-PUT is a complete replacement, not a patch; an omitted `timeFormat` means `AUTOMATIC`. The
+PUT is a complete replacement, not a patch, so `timeFormat` is required. The
 `timeFormat` field on this API and on `/api/v2/booking-settings` accepts exactly `AUTOMATIC`,
 `H12` or `H24`: other strings, differently cased names and JSON numbers (which Jackson would
 otherwise read as enum ordinals) receive `400 Bad Request` with `errors.api.v2.invalidRequest`.
@@ -331,37 +330,15 @@ adjustments back to the form
 and prevents submission until the matching adjustment is acknowledged. Keep
 that bridge shared when adding another form consumer.
 
-The browsed-day query uses raw confirmed bookings from `fetchDayBookings`.
-It follows `hasNextPage` and `nextPage` without requesting totals, and rejects a target
-batch exceeding ten pages or 1,000 bookings rather than displaying a partial schedule.
-Availability checks stay in the owning page and cover the entire committed
-draft, independently of the browsed date or whether the narrow-layout schedule
-sheet is open. On narrow layouts, a floating Day schedule button appears at
-the right edge while the form is in view and opens a right-side sheet. Its tab
-stays attached to the sheet's left edge as it slides in and out, and closes the
-sheet when pressed. The wide layout gives the form 65% and the sidebar 35%
-of the space remaining after the column gap. The form fills its column without
-an additional width cap, with the timeline below the item information card. Opening the
-sheet does not start a second day-schedule query. Do not use padded
-availability intervals as visual event durations.
-Both fetch paths retain the projection, authorization scope and pagination cap;
-an incomplete schedule is an error, never evidence that an instrument is free.
-
-Existing events use deterministic overlap lanes. The draft spans the event
-area, with an opaque theme-derived tint that stays unchanged during gestures.
-The presentation follows the Codex Vertical Day Timeline: a compact card with
-a centered date between previous/next buttons, timezone and instrument context,
-continuous hour lines and thin
-draft resize edges. The full zoned day remains scrollable at 56 pixels per hour;
-it is not restricted to the prototype's sample hours. Short intervals remain
-editable through the booking form's date and time fields. The item information
-card appears above the timeline on wide add and edit layouts. Event item names
-use a single-line ellipsis; hover text and event details retain the full name.
-An Event details disclosure below the grid lets users inspect very short or crowded events
-without a second calendar view. Pointer and keyboard
-adjustments share scheduling-zone slot calculations while positions
-use elapsed time in the display zone. Cancelling a gesture or losing pointer
-capture discards its preview without changing the form.
+Use `BookingDayTimelineAside`, `VerticalDayTimeline` and `VerticalDayTimelineCanvas` for responsive
+layout and event presentation. Fetch raw confirmed events with `fetchDayBookings`; draft availability
+checks cover the complete interval independently of the browsed date or sheet visibility, and opening
+the sheet reuses the existing query. Retain projection, authorization and pagination safeguards;
+incomplete reads are errors. Keep short or crowded events accessible through form fields and event
+details. Pointer and keyboard adjustments share scheduling-zone slot calculations; positions use
+elapsed time in the display zone. Cancelled gestures or lost pointer capture discard previews without
+changing the form. Do not use padded availability intervals as visual event durations.
+Reads follow `hasNextPage` and `nextPage` without totals, capped at ten pages or 1,000 raw bookings per target batch.
 
 ## Booking window reconciliation
 
@@ -409,3 +386,61 @@ Use `useBookingLocalNotices` with `BookingLocalNotices` for a detail page withou
 Each push has a fresh announcement identity; its semantic `id` still controls replacement and dismissal.
 When dismissal removes the focused control, local notices focus a neighbouring notice or the
 detail page's main landmark. Programmatic removal preserves focus elsewhere.
+
+## Query factories and invalidation
+
+Booking reads export `queryOptions` factories beside their fetchers. For example,
+`dashboardBookings.ts` exports `upcomingDashboardBookingsQuery`, and
+`bookableItemEvents.ts` exports `bookableItemEventsQuery`. Components spread the
+factory options and add presentation or availability guards. Use the factory's
+tagged `queryKey` for typed cache reads and writes. `domain/bookingKeys.ts` contains
+only resource roots and prefixes for invalidation, and imports only the generic
+API v2 roots helper. This lets factories land in the stack layer that owns the
+fetcher without importing later pages into earlier consumers. Display preferences
+retain their existing `bookingDisplayPreferencesQueryOptions` entry point.
+
+API v2 keys start with one resource string, such as `rspace.api.v2.bookings` or
+`rspace.api.v2.booking-configurations`. Table List rows share that resource root.
+Booking catalogue projections that depend on bookings remain under
+`["rspace.api.v2.bookings", "booking-catalogue"]`, while picker reads use
+`["rspace.api.v2.booking-catalogue", "picker"]`. Configuration changes refresh both
+families; booking changes refresh the booking-dependent projections.
+
+The app-shell client defaults to a 30-second stale time and
+`retryUnlessClientError`. Factory-specific stale times, retry policies and refetch
+settings take precedence. Legacy QueryClient islands retain their own defaults.
+Relevant factories retain explicit retry policies for standalone consumers too.
+
+Successful mutations declare `meta.invalidates` as an array of factory keys.
+The app-shell MutationCache awaits those invalidations before component success
+callbacks, so navigation and subsequent cache reads see refreshed data.
+`useApiV2Mutation` supplies the same behavior for standalone component clients.
+Error recovery, conditional bulk refreshes and imperative actions retain explicit
+invalidation. Calendar-link writes keep their cancellation and cache-update order.
+
+Caller-sensitive reads use the existing current-user cache without fetching another
+profile. Their identity scope is `[effectiveUserId, operatedAs ? effectiveUserId : null]`.
+The API exposes the effective subject and the operated-as flag, but no originating
+actor ID. Run-as redirects create a new app client; token refresh leaves the identity
+scope unchanged. Generic adapters also preserve a supplied stable user or tenant
+scope. Bearer tokens are fetch credentials, never query-key elements.
+
+
+## Route prefetching
+
+The app creates its router with the same QueryClient passed to QueryClientProvider.
+Booking loaders first refresh stale credentials with the shared token factory, then
+start `ensureQueryData` with the factories used by the components.
+The shared Booking layout starts display preferences. Item details preload the
+configuration for the route target; Add item starts defaults and any supplied target
+search; Settings checks the current user's sysadmin role before starting admin settings.
+Booking details validate the numeric route ID before fetching, and Add booking
+starts the enabled target lookup when the search includes a target.
+
+Loaders launch these promises without awaiting navigation and catch rejections.
+Existing Suspense fallbacks and component error boundaries keep responsibility for
+loading and failed requests. Query metadata, including navigation progress metadata,
+stays in the factories. Query owns freshness; the router's preload stale time is zero.
+Calendar and catalogue tables retain their component-driven reads because their
+keys depend on restored table state and selected resources. Dashboard and My bookings
+reads also depend on component clocks or state, so their queries remain in components.
