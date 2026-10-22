@@ -885,3 +885,10 @@ coercions fail, including floating-point tokens such as `15.0` for integral
 fields. Collection field codecs retain their existing numeric rules. Required
 and nullable fields on HTTP records remain governed by their validation
 annotations, so partial settings updates and validation messages are preserved.
+
+Access replacements validate the registered resource and `If-Match` before
+binding assignments to `ReplaceResourceAccessRequest`. Malformed fields return
+`errors.api.v2.invalidRequest` with an additive `invalidParams` list using dotted
+field names and array indices, such as `assignments[0].role`. All rows are
+validated before the named-assignment limit; `audience:all-users` does not count
+toward that limit.
