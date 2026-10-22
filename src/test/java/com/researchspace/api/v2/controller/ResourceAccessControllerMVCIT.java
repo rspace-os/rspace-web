@@ -8,9 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.testutils.ApiV2WebIntegrationTest;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
@@ -254,10 +257,10 @@ class ResourceAccessControllerMVCIT {
 
   @Test
   void rejectsAnOversizedAssignmentDocumentBeforeResolvingGrantees() throws Exception {
-    String grants =
+    List<Map<String, String>> grants =
         IntStream.range(0, ResourceAccessController.MAX_ASSIGNMENTS + 1)
-            .mapToObj(index -> "{\"granteeKey\":\"user:" + (index + 1) + "\",\"role\":\"BOOKER\"}")
-            .collect(Collectors.joining(","));
+            .mapToObj(index -> Map.of("granteeKey", "user:" + (index + 1), "role", "BOOKER"))
+            .toList();
 
     mockMvc
         .perform(
@@ -265,7 +268,7 @@ class ResourceAccessControllerMVCIT {
                 .header("apiKey", fixture.userKey())
                 .header(HttpHeaders.IF_MATCH, "\"0\"")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"assignments\":[" + grants + "]}"))
+                .content(JacksonUtil.toJson(Map.of("assignments", grants))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.resourceAccess.assignmentLimit"));
   }
