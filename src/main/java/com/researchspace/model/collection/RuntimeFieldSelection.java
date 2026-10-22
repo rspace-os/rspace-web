@@ -65,8 +65,8 @@ public record RuntimeFieldSelection(
   /**
    * The relationship a selector is reached through, or null when it is a field of this collection.
    *
-   * <p>`target.customFields.SF104` is the instrument's field, not the linked resource's, so the query
-   * has to correlate the value table to the instrument rather than to the row being listed.
+   * <p>`target.customFields.SF104` is the instrument's field, not the linked resource's, so the
+   * query has to correlate the value table to the instrument rather than to the row being listed.
    */
   public String relationshipFor(String selector) {
     return throughRelationship.get(selector);
