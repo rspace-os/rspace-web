@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.api.v2.json.ApiV2JsonBody;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.service.MessageSourceUtils;
+import jakarta.servlet.RequestDispatcher;
 import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -48,6 +50,8 @@ class ApiV2PreHandlerProblemResolverTest {
     source.addMessage(
         "errors.api.v2.methodNotAllowed", Locale.getDefault(), "Method not allowed detail");
     source.addMessage("errors.api.v2.notFound", Locale.getDefault(), "Not found detail");
+    source.addMessage(
+        "errors.api.v2.unsupportedMediaType", Locale.getDefault(), "Unsupported media type detail");
     source.addMessage("errors.api.v2.unexpected", Locale.getDefault(), "Unexpected detail");
     resolver =
         new ApiV2PreHandlerProblemResolver(
@@ -230,6 +234,39 @@ class ApiV2PreHandlerProblemResolverTest {
     JsonNode tree(@RequestBody JsonNode body) {
       return body;
     }
+  }
+
+  @Test
+  void writesProblemJsonForApiV2RequestsForwardedToTheDispatcher() throws Exception {
+    MockHttpServletRequest request = request("POST", "/app/api/v2/maintenances");
+    request.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, "/api/v2/maintenances");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    assertNotNull(
+        resolver.resolveException(
+            request,
+            response,
+            null,
+            new HttpMediaTypeNotSupportedException(
+                MediaType.parseMediaType("application/x-yaml"),
+                List.of(MediaType.APPLICATION_JSON))));
+
+    assertEquals(415, response.getStatus());
+    assertTrue(response.getContentType().startsWith("application/problem+json"));
+    assertTrue(response.getContentAsString().contains("errors.api.v2.unsupportedMediaType"));
+  }
+
+  @Test
+  void leavesForwardedNonV2RequestsToTheirOwnErrorHandling() throws Exception {
+    MockHttpServletRequest request = request("PUT", "/app/workspace/1");
+    request.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, "/workspace/1");
+
+    assertNull(
+        resolver.resolveException(
+            request,
+            new MockHttpServletResponse(),
+            null,
+            new HttpRequestMethodNotSupportedException("PUT")));
   }
 
   private static MockHttpServletRequest request(String method, String uri) {

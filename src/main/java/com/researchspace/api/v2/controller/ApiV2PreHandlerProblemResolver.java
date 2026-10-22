@@ -1,6 +1,7 @@
 package com.researchspace.api.v2.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -70,7 +71,12 @@ public class ApiV2PreHandlerProblemResolver implements HandlerExceptionResolver,
   }
 
   private static boolean isApiV2Request(HttpServletRequest request) {
-    String uri = request.getRequestURI();
+    // urlrewrite forwards /api/v2/** to the dispatcher at /app/api/v2/**, so match the path the
+    // client requested rather than the forwarded one.
+    String uri =
+        request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) instanceof String original
+            ? original
+            : request.getRequestURI();
     String contextPath = request.getContextPath();
     String path =
         contextPath != null && !contextPath.isEmpty() && uri.startsWith(contextPath)
