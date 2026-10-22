@@ -15,7 +15,6 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.booking.service.BookingCalendarRevocationCoordinator;
-import com.researchspace.booking.service.BookingConfigurationOwnershipManager;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
@@ -88,7 +87,6 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
   private @Autowired MessageSourceUtils messages;
-  private @Autowired BookingConfigurationOwnershipManager bookingOwnershipManager;
   private @Autowired BookingCalendarRevocationCoordinator calendarRevocations;
 
   @Override
@@ -574,15 +572,12 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public ApiInstrument changeApiInstrumentOwner(ApiInstrument apiInstrument, User user) {
-    return changeApiInstrumentOwner(apiInstrument, user, user, false);
+    return changeApiInstrumentOwner(apiInstrument, user, user);
   }
 
   @Override
   public ApiInstrument changeApiInstrumentOwner(
-      ApiInstrument apiInstrument,
-      User subject,
-      User actor,
-      boolean transferBookingConfigurationOwnership) {
+      ApiInstrument apiInstrument, User subject, User actor) {
     calendarRevocations.affectInstrument(apiInstrument.getId());
     Validate.notNull(apiInstrument.getOwner(), "'owner' field not present");
     Validate.notNull(apiInstrument.getOwner().getUsername(), "'owner.username' field not present");
@@ -606,10 +601,6 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
             userManager.userExists(newOwnerUsername),
             "Target user [" + newOwnerUsername + "] not found");
         User newOwner = userManager.getUserByUsername(newOwnerUsername);
-        if (transferBookingConfigurationOwnership) {
-          bookingOwnershipManager.transferInstrumentOwnership(
-              dbInstrument.getId(), originalOwner, newOwner, subject, actor);
-        }
         dbInstrument.setOwner(newOwner);
         moveItemBetweenWorkbenches(dbInstrument, originalOwner, newOwner);
         instrumentDao.save(dbInstrument);
