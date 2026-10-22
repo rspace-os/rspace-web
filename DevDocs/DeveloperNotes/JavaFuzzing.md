@@ -19,19 +19,12 @@ The parser campaign is implemented in
 
 ## Booking targets
 
-[`BookingOpeningHoursCodecFuzzTest`](../../src/test/java/com/researchspace/model/booking/BookingOpeningHoursCodecFuzzTest.java)
-covers bounded invalid input, canonical JSON, round trips, and independent weekday/time entries.
-[`BookingSchedulingPolicyFuzzTest`](../../src/test/java/com/researchspace/booking/service/BookingSchedulingPolicyFuzzTest.java)
-covers opening/closing boundaries, minute grids, elapsed maximum duration, buffers, and booking and
-maintenance conflicts across fixed UTC, Berlin, Lord Howe, and Kathmandu dates, including DST gaps
-and folds. It uses an independent boundary oracle rather than copying the policy's coverage algorithm.
-
-The `elapsedIncrements` campaign covers minute/hour increments, optional start alignment,
-elapsed-duration multiples, and item maxima. The `calendarDayIncrements` campaign covers local
-calendar-day increments, DST-varying elapsed maxima, and missing local end times. Parameterized
-regressions and [`BookingIncrementScenariosTest`](../../src/test/java/com/researchspace/booking/service/BookingIncrementScenariosTest.java)
-replay fixed boundaries during ordinary Maven tests. See the scheduling fuzz test for current
-generators and assertions rather than treating this guide as a case inventory.
+See [`BookingOpeningHoursCodecFuzzTest`](../../src/test/java/com/researchspace/model/booking/BookingOpeningHoursCodecFuzzTest.java)
+and [`BookingSchedulingPolicyFuzzTest`](../../src/test/java/com/researchspace/booking/service/BookingSchedulingPolicyFuzzTest.java)
+for current generators and assertions, including a boundary oracle written independently of the
+policy's coverage algorithm. Parameterized regressions and
+[`BookingIncrementScenariosTest`](../../src/test/java/com/researchspace/booking/service/BookingIncrementScenariosTest.java)
+replay fixed boundaries during ordinary Maven tests.
 
 Run replay together with the existing unit tests:
 
