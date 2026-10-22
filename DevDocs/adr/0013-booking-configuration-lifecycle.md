@@ -18,6 +18,3 @@ Separate archive routes, Owner-only archive permission, `enabled=false`, a paral
 delegated permanent deletion, and bulk permanent deletion were rejected. They either duplicate the
 existing lifecycle/edit contract, conflate availability with archival, or weaken the explicit
 destructive-action boundary.
-
-Archiving cancels future confirmed booking and maintenance events in the same transaction. They
-remain readable as cancelled rows, preserving their history without soft deletion.

@@ -87,10 +87,9 @@ precede the end. Schedules contain one to seven unique weekdays and return in
 weekday order. Omitted weekdays are closed. Initial defaults contain seven independent
 `00:00` to `24:00` entries. To close all days, disable bookings; an empty week is invalid.
 
-The collection declares the three row fields through `BookingOpeningHoursCodec`.
-The singleton settings PATCH and persistence converter use that same contract.
-The read-only `roleSources` array also declares its children and nested grantee,
-preserving numeric group IDs and the `ALL_USERS` audience ID.
+See [`BookingOpeningHoursCodec`](../../src/main/java/com/researchspace/model/booking/BookingOpeningHoursCodec.java)
+and [`ApiV2BookingConfigurationResource`](../../src/main/java/com/researchspace/model/booking/ApiV2BookingConfigurationResource.java)
+for schema declarations.
 
 A supplied schedule replaces the whole week. Omission on create copies the
 complete institution schedule; later defaults changes leave existing items
