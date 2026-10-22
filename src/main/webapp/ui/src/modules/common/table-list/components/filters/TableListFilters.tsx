@@ -228,6 +228,7 @@ export function TableListFilters<TDocument>({
   const runtimeSourceGroups = useMemo(() => groupRuntimeFieldSources(runtimeSources), [runtimeSources]);
   const shownColumns = useMemo(() => new Set<string>((visibleFields ?? []).map(String)), [visibleFields]);
   const offersColumns = onShowColumn !== undefined && visibleFields !== undefined;
+  // Shared parent tracks keep field, operator, value, optional-column and remove-control widths aligned across rows.
   const rowColumns = offersColumns
     ? "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_auto_2rem]"
     : "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_2rem]";

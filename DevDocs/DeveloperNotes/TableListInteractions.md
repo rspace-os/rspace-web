@@ -106,20 +106,8 @@ Remote tables (`clientSide={false}`) show an offline notice using React Query's 
 Cached rows remain visible; paused queries resume automatically when the connection returns.
 Do not add per-page browser connectivity listeners or force retries while offline.
 
-The hook returns the complete table state and focused update functions.
-
-```ts
-const {
-  state,
-  setState,
-  setFilters,
-  setSorting,
-  setPage,
-  setVisibleFields,
-  tableProps,
-  refetch,
-} = useApiV2TableList(options);
-```
+See [`UseTableListResult`](../../src/main/webapp/ui/src/modules/common/table-list/useTableList.ts)
+for the hook's state, update functions and table props.
 
 Any component in the same React owner can read these values. Pass only the required value and function to a child.
 
@@ -146,27 +134,9 @@ function ExperimentPage() {
 
 `setFilters` and `setSorting` return to page zero to prevent an empty later page after a query change.
 
-Use `setPage` to add an external page control.
-
-```tsx
-<button
-  type="button"
-  onClick={() => table.setPage({ ...table.state.page, pageIndex: 0 })}
->
-  First page
-</button>
-```
-
-Use `setVisibleFields` to implement a saved column preset.
-
-```tsx
-<button
-  type="button"
-  onClick={() => table.setVisibleFields(["title", "owner"])}
->
-  Use compact columns
-</button>
-```
+For an external first-page control, call
+`table.setPage({ ...table.state.page, pageIndex: 0 })`. For a saved column preset, call
+`table.setVisibleFields(["title", "owner"])`.
 
 Use `setState` when one action must change several state parts atomically.
 
@@ -253,14 +223,6 @@ members.
 
 Set a unique prefix when one page contains multiple tables.
 
-```tsx
-const table = useApiV2TableList({
-  table: {
-    queryString: { parameterPrefix: "active-experiments" },
-  },
-});
-```
-
 Disable query updates for a temporary or sensitive view.
 
 ```tsx
@@ -302,9 +264,6 @@ keys, so collections that reuse a namespace do not reuse another catalog's defin
 Free-text fields do not suggest stored values, including for `in` and `notIn`. Those
 operators accept user-entered chips. A select field uses only its published
 `options` values.
-
-Filter rows use one parent grid and CSS subgrid tracks. All rows therefore share the field, operator,
-value, optional-column, and remove-control widths.
 
 ## Relationship filters
 
