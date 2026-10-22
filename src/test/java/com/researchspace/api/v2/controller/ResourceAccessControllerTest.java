@@ -22,6 +22,7 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceAccessSpec;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.Role;
@@ -35,7 +36,9 @@ import com.researchspace.service.resourceaccess.ResourceAccessDocument;
 import com.researchspace.service.resourceaccess.ResourceAccessGrant;
 import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import com.researchspace.webapp.config.WebConfig.YamlJackson2HttpMessageConverter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -134,7 +137,10 @@ class ResourceAccessControllerTest {
                 .header(HttpHeaders.IF_MATCH, "\"1\"")
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, fixture.caller())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(assignmentsWithInvalidFinalRole(ResourceAccessController.MAX_ASSIGNMENTS)))
+                .content(
+                    assignmentsJson(
+                        ResourceAccessController.MAX_ASSIGNMENTS,
+                        Map.of("granteeKey", "user:bad", "role", true))))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"))
         .andExpect(
@@ -155,7 +161,10 @@ class ResourceAccessControllerTest {
                 .header(HttpHeaders.IF_MATCH, "\"1\"")
                 .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, fixture.caller())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(assignmentsJson(ResourceAccessController.MAX_ASSIGNMENTS, true)))
+                .content(
+                    assignmentsJson(
+                        ResourceAccessController.MAX_ASSIGNMENTS,
+                        Map.of("granteeKey", "audience:all-users", "role", "Viewer"))))
         .andExpect(status().isOk())
         .andExpect(header().string(HttpHeaders.ETAG, "\"1\""));
 
@@ -248,35 +257,13 @@ class ResourceAccessControllerTest {
     return mock(ProtectedResourceAccess.class);
   }
 
-  private static String assignmentsWithInvalidFinalRole(int validRows) {
-    StringBuilder json = new StringBuilder("{\"assignments\":[");
-    for (int index = 0; index < validRows; index++) {
-      if (index > 0) {
-        json.append(',');
-      }
-      json.append("{\"granteeKey\":\"user:").append(index).append("\",\"role\":\"Editor\"}");
-    }
-    if (validRows > 0) {
-      json.append(',');
-    }
-    return json.append("{\"granteeKey\":\"user:bad\",\"role\":true}]}").toString();
-  }
-
-  private static String assignmentsJson(int namedRows, boolean audience) {
-    StringBuilder json = new StringBuilder("{\"assignments\":[");
+  private static String assignmentsJson(int namedRows, Map<String, ?> finalRow) {
+    List<Object> rows = new ArrayList<>();
     for (int index = 0; index < namedRows; index++) {
-      if (index > 0) {
-        json.append(',');
-      }
-      json.append("{\"granteeKey\":\"user:").append(index).append("\",\"role\":\"Editor\"}");
+      rows.add(Map.of("granteeKey", "user:" + index, "role", "Editor"));
     }
-    if (audience) {
-      if (namedRows > 0) {
-        json.append(',');
-      }
-      json.append("{\"granteeKey\":\"audience:all-users\",\"role\":\"Viewer\"}");
-    }
-    return json.append("]}").toString();
+    rows.add(finalRow);
+    return JacksonUtil.toJson(Map.of("assignments", rows));
   }
 
   private record AccessMvc(
