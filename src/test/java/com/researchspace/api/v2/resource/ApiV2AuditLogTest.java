@@ -15,6 +15,7 @@ import com.researchspace.api.v2.controller.ApiV2AuditUnavailableException;
 import com.researchspace.api.v2.controller.ApiV2BadRequestException;
 import com.researchspace.api.v2.model.ApiV2AuditEvent;
 import com.researchspace.api.v2.model.ApiV2AuditQuery;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditData;
@@ -483,7 +484,7 @@ class ApiV2AuditLogTest {
             AuditDomain.RECORD,
             AuditAction.WRITE,
             "A User",
-            AuditData.fromJson("{\"name\":\"" + name + "\"}"),
+            AuditData.fromJson(JacksonUtil.toJson(Map.of("name", name))),
             "user1");
     return new AuditTrailSearchResult(event, timestamp.toEpochMilli());
   }
