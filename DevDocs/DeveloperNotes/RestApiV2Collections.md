@@ -917,3 +917,10 @@ resources without a scalar slice retain their counted query internally.
 rows match, `totalDocs` equals `max`, `totalIsLowerBound` is true, and `totalPages`
 is omitted. Navigation still follows the actual page. An exact total reports
 `totalIsLowerBound: false`. A list without totals omits that member too.
+
+Access replacements validate the registered resource and `If-Match` before
+binding assignments to `ReplaceResourceAccessRequest`. Malformed fields return
+`errors.api.v2.invalidRequest` with an additive `invalidParams` list using dotted
+field names and array indices, such as `assignments[0].role`. All rows are
+validated before the named-assignment limit; `audience:all-users` does not count
+toward that limit.

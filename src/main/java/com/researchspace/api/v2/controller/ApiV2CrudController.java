@@ -1,7 +1,7 @@
 package com.researchspace.api.v2.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.json.ApiV2JsonBody;
 import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
@@ -216,21 +216,23 @@ public class ApiV2CrudController {
   @PostMapping("/{resource}")
   public ResponseEntity<Map<String, Object>> create(
       @PathVariable String resource,
-      @RequestBody JsonNode body,
+      @RequestBody ApiV2JsonBody body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(requireResource(resource, ResourceOperation.CREATE).create(body, caller));
+        .body(requireResource(resource, ResourceOperation.CREATE).create(body.node(), caller));
   }
 
   @PostMapping("/{resource}/bulk")
   public ResponseEntity<ApiV2BulkResult<Map<String, Object>>> createMany(
       @PathVariable String resource,
-      @RequestBody JsonNode body,
+      @RequestBody ApiV2JsonBody body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(requireResource(resource, ResourceOperation.BULK_CREATE).createMany(body, caller));
+        .body(
+            requireResource(resource, ResourceOperation.BULK_CREATE)
+                .createMany(body.node(), caller));
   }
 
   @PatchMapping("/{resource}/{id}")
@@ -238,7 +240,7 @@ public class ApiV2CrudController {
       @PathVariable String resource,
       @PathVariable String id,
       @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
-      @RequestBody JsonNode body,
+      @RequestBody ApiV2JsonBody body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
     ApiV2ResourceRegistration<?, ?> registration =
@@ -248,7 +250,7 @@ public class ApiV2CrudController {
             .ifMatchRequiredCode()
             .map(code -> ApiV2ConditionalRequest.parseVersion(ifMatch, code))
             .orElse(null);
-    Map<String, Object> document = registration.update(id, body, expectedVersion, caller);
+    Map<String, Object> document = registration.update(id, body.node(), expectedVersion, caller);
     return okWithDocumentEtag(registration, document);
   }
 
@@ -256,7 +258,7 @@ public class ApiV2CrudController {
   public ApiV2BulkResult<Map<String, Object>> updateMany(
       @PathVariable String resource,
       @RequestParam(required = false) String where,
-      @RequestBody JsonNode body,
+      @RequestBody ApiV2JsonBody body,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
           ApiV2Caller caller) {
     ApiV2ResourceRegistration<?, ?> registration =
@@ -267,7 +269,7 @@ public class ApiV2CrudController {
             registration.description(),
             registration.registry(),
             registration.runtimeFieldContext(subject(caller))),
-        body,
+        body.node(),
         caller);
   }
 
