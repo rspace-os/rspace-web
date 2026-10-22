@@ -38,6 +38,7 @@ import java.time.ZoneId;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
@@ -309,7 +310,7 @@ public final class BookingSettingsController {
         caller.subject());
   }
 
-  @PatchMapping("/admin")
+  @PatchMapping(value = "/admin", consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "patchAdminBookingSettings",
       summary = "Patch global Booking defaults",
