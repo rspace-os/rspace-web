@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.core.util.JacksonUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
@@ -14,6 +15,7 @@ import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.junit.jupiter.api.Test;
@@ -153,7 +155,7 @@ class ApiV2StatelessRequestFilterTest {
     return encoder.encodeToString("{}".getBytes(StandardCharsets.UTF_8))
         + "."
         + encoder.encodeToString(
-            ("{\"aud\":\"" + audience + "\"}").getBytes(StandardCharsets.UTF_8))
+            JacksonUtil.toJson(Map.of("aud", audience)).getBytes(StandardCharsets.UTF_8))
         + ".signature";
   }
 }
