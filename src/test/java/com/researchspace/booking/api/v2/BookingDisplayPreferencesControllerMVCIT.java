@@ -195,7 +195,7 @@ class BookingDisplayPreferencesControllerMVCIT {
             put(PATH)
                 .header("apiKey", fixture.userKey())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(validBody().replace("}", ",\"timeFormat\":\"H24\"}")))
+                .content(validBodyWith(Map.of("timeFormat", "H24"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.timeFormat").value("H24"));
     mockMvc
@@ -203,13 +203,13 @@ class BookingDisplayPreferencesControllerMVCIT {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.timeFormat").value("H24"));
 
-    for (String invalid : new String[] {"\"NOPE\"", "\"h24\"", "1", "true"}) {
+    for (Object invalid : new Object[] {"NOPE", "h24", 1, true}) {
       mockMvc
           .perform(
               put(PATH)
                   .header("apiKey", fixture.userKey())
                   .contentType(MediaType.APPLICATION_JSON)
-                  .content(validBody().replace("}", ",\"timeFormat\":" + invalid + "}")))
+                  .content(validBodyWith(Map.of("timeFormat", invalid))))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
     }
