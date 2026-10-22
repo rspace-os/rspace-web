@@ -13,6 +13,7 @@ import com.researchspace.api.v2.controller.ApiV2ControllerAdvice;
 import com.researchspace.api.v2.controller.ApiV2PreAuthenticationThrottlingInterceptor;
 import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
+import com.researchspace.api.v2.controller.BookingDisplayPreferencesController;
 import com.researchspace.api.v2.controller.BookingSettingsController;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.webapp.integrations.wopi.WopiAuthorisationInterceptor;
@@ -267,7 +268,10 @@ public class WebConfig extends WebMvcConfigurationSupport {
         jacksonConverter
             .getObjectMapper()
             .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
-        ApiV2JsonMappers.register(jacksonConverter, BookingSettingsController.SettingsPatch.class);
+        ApiV2JsonMappers.register(
+            jacksonConverter,
+            BookingSettingsController.SettingsPatch.class,
+            BookingDisplayPreferencesController.Replacement.class);
       }
       // and string response bodies to be UTF8
       if (converter instanceof StringHttpMessageConverter) {
