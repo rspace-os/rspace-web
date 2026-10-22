@@ -36,7 +36,6 @@ public final class ApiV2OpenApiDocumentService {
           mapping ->
               ApiV2OpenApiAnnotationMerger.merge(document, mapping.getHandlerMethods(), endpoints));
     }
-    ApiV2OpenApiValidator.validate(Json31.mapper().convertValue(document, OpenAPI.class));
     return document;
   }
 
