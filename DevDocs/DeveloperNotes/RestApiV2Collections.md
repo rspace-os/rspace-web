@@ -179,37 +179,11 @@ with a custom reader.
 
 ### `@ApiV2ResourceField`
 
-| Option | Default | Meaning |
-| --- | --- | --- |
-| `readAccess` | `INHERITED` | Controls field visibility. |
-| `createAccess` | `INHERITED` | Controls create input. `NEVER` rejects the field. |
-| `updateAccess` | `INHERITED` | Controls update input. `NEVER` rejects the field. |
-| `requiredOnCreate` | `false` | Rejects a create body that omits the field. |
-| `nullable` | `false` | Permits an explicit JSON `null`. Omission is different from `null`. |
-| `filterable` | `true` | Permits the field in a `where` expression. |
-| `sortable` | `true` | Permits the field in a `sort` expression. |
-| `property` | Component name | Selects the entity JavaBean property. |
-| `maxLength` | Unset | Sets the maximum input string length. |
-| `title`, `description` | Empty | Adds OpenAPI text. |
-| `example`, `additionalExamples` | Empty | Adds OpenAPI wire examples. Each must be a valid value. |
-| `format` | Empty | Adds OpenAPI string metadata. |
-| `minLength` | Unset | Sets the minimum input string length. |
-| `pattern` | Empty | Requires the input string to contain a match. |
-| `minimum`, `maximum` | Unset | Sets inclusive bounds for a number. |
-| `enumValues` | Empty | Restricts a `String` field to these values. |
-| `defaultValue` | Empty | Supplies a wire value when a create body omits the field. |
-| `deprecated` | `false` | Marks the OpenAPI field as deprecated. |
-
-The annotation builder supports these Java types:
-
-| Java type | JSON/OpenAPI type |
-| --- | --- |
-| `String` | string |
-| `int`, `Integer` | integer, `int32` |
-| `long`, `Long` | integer, `int64` |
-| `boolean`, `Boolean` | boolean |
-| `java.util.Date` | string, `date-time` |
-| A Java enum | string, with an `enum` of the constant names |
+See [`ApiV2ResourceField`](../../src/main/java/com/researchspace/model/collection/ApiV2ResourceField.java)
+for options and defaults, and
+[`CollectionFieldTypeRegistry`](../../src/main/java/com/researchspace/model/collection/CollectionFieldTypeRegistry.java)
+for built-in Java types. `property` defaults to the component name; omission differs from explicit
+null. `createAccess`/`updateAccess = NEVER` rejects the field on that write.
 
 The entity property must have a getter. The framework makes IDs and properties without setters
 read-only. For other server-managed properties, set both
@@ -218,8 +192,8 @@ read-only. For other server-managed properties, set both
 Set `filterable = false` and `sortable = false` for a computed property that is not persistent.
 This setting prevents the query layer from sending the property to Hibernate.
 
-Use a programmatic `CollectionDescription` for another scalar type. Also use it for a custom
-writer or row-specific field access.
+For additional scalar types, see [Add a field type](#add-a-field-type). Use programmatic
+descriptions for custom writers or row-specific access.
 
 Every ARRAY field declares a non-empty list of uniquely named child fields directly. Use
 `CollectionFieldTypes.array(Row.class, fields, adapter)` and `Field.embedded(name, type, reader)`.
