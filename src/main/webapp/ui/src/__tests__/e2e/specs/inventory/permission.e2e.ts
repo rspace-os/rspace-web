@@ -396,7 +396,7 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     await bobSample.close();
   });
 
-  test(`As a groupmate, I cannot change access permissions on an item shared with me`, async ({
+  test(`As a groupmate, I cannot change access permissions on an item shared with me, and lose access once the owner removes my group`, async ({
     browser,
     browserContextOptions,
     clientSysadmin,
@@ -450,6 +450,29 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     await stillSharedCharlieContainer.detailsPanel.collapseSection("Access Permissions");
     await expectFullAccess(stillSharedCharlieContainer.detailsPanel);
     await stillSharedCharlieContainer.close();
+
+    const unsharingAliceContainer = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      alice,
+      `/inventory/container/${alice.container.id}`,
+      alice.container.name,
+    );
+    await unsharingAliceContainer.detailsPanel.enterEditMode();
+    await unsharingAliceContainer.detailsPanel.expandSection("Access Permissions");
+    await unsharingAliceContainer.detailsPanel.accessPermissions().groupCheckbox(group.name).uncheck();
+    await unsharingAliceContainer.detailsPanel.saveEdit();
+    await unsharingAliceContainer.close();
+
+    const unsharedCharlieContainer = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${alice.container.id}`,
+      alice.container.name,
+    );
+    await expectPublicAccess(unsharedCharlieContainer.detailsPanel);
+    await unsharedCharlieContainer.close();
   });
 
   test(`As a user, I can see owner-group access change when an item is transferred to a new owner`, async ({

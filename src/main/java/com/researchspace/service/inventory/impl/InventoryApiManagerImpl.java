@@ -441,8 +441,8 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     boolean modeChanges =
         apiRec.getSharingMode() != null
             && !apiRec.getSharingMode().toString().equals(dbRec.getSharingMode().toString());
-    // a deleted group stays in the stored list but is never sent out (RSINV-761), so an unchanged
-    // echo omits it
+    // deleting a group leaves it in the stored list, but the UI never receives it, so an unchanged
+    // echo omits it; this filter can go once RSDEV-1605 removes deleted groups from the lists
     boolean listChanges =
         apiRec.getSharedWith() != null
             && !CollectionUtils.isEqualCollection(

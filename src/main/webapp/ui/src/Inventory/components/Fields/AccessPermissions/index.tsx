@@ -58,7 +58,10 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
 
   const notEditable =
     !fieldOwner.isFieldEditable("sharingMode") && !(fieldOwner instanceof InventoryBaseRecordCollection);
-  const ownershipControlMissing = fieldOwner instanceof InventoryBaseRecord && !fieldOwner.canTransfer;
+  const ownershipControlMissing =
+    fieldOwner instanceof InventoryBaseRecordCollection
+      ? fieldOwner.records.some((r) => !r.canTransfer)
+      : fieldOwner instanceof InventoryBaseRecord && !(fieldOwner.canTransfer && fieldOwner.canEdit);
 
   return (
     <>
@@ -78,7 +81,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
           </>
         }
         actions={
-          fieldOwner.canChooseWhichToEdit ? (
+          fieldOwner.canChooseWhichToEdit && !ownershipControlMissing ? (
             <ChooseToEdit
               checked={fieldOwner.isFieldEditable("sharingMode")}
               onChange={(checked) => {

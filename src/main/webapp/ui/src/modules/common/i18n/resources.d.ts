@@ -2808,7 +2808,7 @@ export default interface Resources {
           "description": "Accessible to the item's owner, and the PI.",
           "title": "Only the Owner"
         },
-        "ownershipControlRequired": "Only the item's owner, or a PI or Lab Admin of one of the owner's groups, can change its access permissions."
+        "ownershipControlRequired": "Only the item's owner, or a PI or Lab Admin of one of the owner's groups who can edit the item, can change its access permissions."
       },
       "attachments": {
         "actions": {

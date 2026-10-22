@@ -14,6 +14,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSha
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.api.v1.model.ApiUser;
@@ -792,5 +793,25 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     assertThat(sampleApiMgr.getApiSampleById(id, sysadmin).getPermittedActions())
         .containsExactly(
             ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.UPDATE);
+  }
+
+  @Test
+  public void sysadminCannotTransferAnotherUsersSample() {
+    User sysadmin = createAndSaveSysadminUser();
+    User newOwner = createAndSaveUserIfNotExists(getRandomName(10));
+    initialiseContentWithEmptyContent(sysadmin, newOwner);
+    ApiSampleInfo transfer = new ApiSampleInfo();
+    transfer.setId(createBasicSampleForUser(testUser).getId());
+    transfer.setOwner(new ApiUser());
+    transfer.getOwner().setUsername(newOwner.getUsername());
+
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> sampleApiMgr.changeApiSampleOwner(transfer, sysadmin));
+    assertThat(iae.getMessage()).endsWith("cannot be transferred by current User");
+    assertEquals(
+        testUser.getUsername(),
+        sampleApiMgr.getSampleById(transfer.getId(), testUser).getOwner().getUsername());
   }
 }

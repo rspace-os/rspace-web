@@ -354,7 +354,6 @@ public class InventoryPermissionUtils {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.LIMITED_READ);
     }
     if (!isLockedInstrumentTemplate(invRec) && canUserChangeAccessPermissions(invRec, user)) {
-      // FIXME community admin should also have TRANSFER permission
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
     }
   }
