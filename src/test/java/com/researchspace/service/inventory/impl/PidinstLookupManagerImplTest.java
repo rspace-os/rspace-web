@@ -78,6 +78,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -1246,8 +1247,8 @@ class PidinstLookupManagerImplTest {
     second.getMetadata().setName("Another microscope");
     second.getMetadata().setIdentifier(new B2instIdentifier("Handle", "21.T11975/fghij-67890"));
     second.setUpdated("2026-09-01T00:00:00+00:00");
-    B2instSearchResult page = searchResultOf(publishedRecord(), 2);
-    page.getHits().getHits().add(second);
+    B2instSearchResult page = searchResultOf(second, 2);
+    page.getHits().getHits().add(publishedRecord());
     when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50)).thenReturn(page);
     DigitalObjectIdentifier existing =
         new DigitalObjectIdentifier("21.T11975/fghij-67890", "Another microscope", "suffix123456");
@@ -1263,7 +1264,7 @@ class PidinstLookupManagerImplTest {
         manager.search("microscope", List.of("PIDINST_B2INST"), 0, user);
 
     assertEquals(2, result.getHits().size());
-    // newest update first, so the dated "Another microscope" comes first
+    // the registry's own order: "Another microscope" first
     assertEquals("IN7", result.getHits().get(0).getLinkedInstrumentGlobalId());
     assertNull(result.getHits().get(1).getLinkedInstrumentGlobalId());
     verify(doiDao, never()).findActiveByIdentifierAndType(anyString(), any());
@@ -1279,25 +1280,25 @@ class PidinstLookupManagerImplTest {
         .thenReturn(
             searchResultOf(
                 2,
+                publishedRecord(
+                    "21.T11975/b-new",
+                    "b-new",
+                    "2026-09-01T12:00:00.000001+00:00",
+                    "2026-01-01T00:00:00+00:00"),
                 // created after its DataCite twin, yet listed after it: DataCite was asked first
                 publishedRecord(
                     "21.T11975/b-tie",
                     "b-tie",
                     "2026-01-01T00:00:00+00:00",
-                    "2025-12-01T00:00:00+00:00"),
-                publishedRecord(
-                    "21.T11975/b-new",
-                    "b-new",
-                    "2026-09-01T12:00:00.000001+00:00",
-                    "2026-01-01T00:00:00+00:00")));
+                    "2025-12-01T00:00:00+00:00")));
     when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
         .thenReturn(
             dataCitePage(
                 2,
                 dataCiteInstrumentUpdatedAt(
-                    "10.1/d-tie", "2026-01-01T00:00:00Z", "2025-06-01T00:00:00Z"),
+                    "10.1/d-newest", "2026-09-30T00:00:00Z", "2024-01-01T00:00:00Z"),
                 dataCiteInstrumentUpdatedAt(
-                    "10.1/d-newest", "2026-09-30T00:00:00Z", "2024-01-01T00:00:00Z")));
+                    "10.1/d-tie", "2026-01-01T00:00:00Z", "2025-06-01T00:00:00Z")));
 
     ApiPidinstSearchResult result = manager.search("Zeiss", BOTH, 0, user);
 
@@ -1309,23 +1310,6 @@ class PidinstLookupManagerImplTest {
     assertEquals(2, result.getTotalsByProvider().get("PIDINST_B2INST"));
     assertEquals(2, result.getTotalsByProvider().get("PIDINST_DATACITE"));
     assertEquals(0, result.getPageNumber());
-  }
-
-  @Test
-  void aHitWithNoOrAnUnreadableUpdateTimeSortsAfterADatedOne() {
-    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
-        .thenReturn(
-            searchResultOf(
-                3,
-                publishedRecord("21.T11975/a-undated", "a", null, null),
-                publishedRecord("21.T11975/b-garbled", "b", "not-a-date", null),
-                publishedRecord("21.T11975/c-dated", "c", "2020-01-01T00:00:00+00:00", null)));
-
-    ApiPidinstSearchResult result = manager.search("Zeiss", List.of("PIDINST_B2INST"), 0, user);
-
-    assertIterableEquals(
-        List.of("21.T11975/c-dated", "21.T11975/a-undated", "21.T11975/b-garbled"),
-        result.getHits().stream().map(ApiPidinstRecord::getPid).toList());
   }
 
   @Test
@@ -1370,12 +1354,7 @@ class PidinstLookupManagerImplTest {
                 publishedRecord(
                     "21.T11975/late", "late", sameUpdate, "2026-04-01T00:00:00+00:00")));
 
-    List<String> seen = new ArrayList<>();
-    for (int page = 0; page <= 1; page++) {
-      manager.search("Zeiss", List.of("PIDINST_B2INST"), page, user).getHits().stream()
-          .map(ApiPidinstRecord::getPid)
-          .forEach(seen::add);
-    }
+    List<String> seen = pidsOfPages(List.of("PIDINST_B2INST"), 0, 1);
 
     assertEquals(51, seen.size());
     assertEquals(51, new HashSet<>(seen).size(), "a PID repeated: " + seen);
@@ -1399,6 +1378,152 @@ class PidinstLookupManagerImplTest {
     assertTrue(page1.getHits().isEmpty());
     assertEquals(3, page1.getTotalHits());
     verify(b2instConnector, never()).searchPublicRecords(anyString(), eq(1), eq(50));
+  }
+
+  private static String minutesBefore(String base, int minutes) {
+    return Instant.parse(base).minusSeconds(60L * minutes).toString();
+  }
+
+  /** The PIDs of the given merged pages of a "Zeiss" search, in the order served. */
+  private List<String> pidsOfPages(List<String> providers, int... pages) {
+    List<String> seen = new ArrayList<>();
+    for (int page : pages) {
+      manager.search("Zeiss", providers, page, user).getHits().stream()
+          .map(ApiPidinstRecord::getPid)
+          .forEach(seen::add);
+    }
+    return seen;
+  }
+
+  /**
+   * RSDEV-1556: DataCite's page 0 holds 50 records of which RSpace hides 10, and every B2INST hit
+   * is older, so page 0 is short (40) and page 1 starts where DataCite's page 1 starts.
+   */
+  @Test
+  void pagingThroughAThinnedRegistryPageShowsEveryKeptHitOnceAndInOrder() {
+    DataCiteDoi[] dc0 = new DataCiteDoi[50];
+    DataCiteDoi[] dc1 = new DataCiteDoi[50];
+    List<String> kept = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      DataCiteDoi doi =
+          dataCiteInstrumentUpdatedAt(
+              "10.1/dc-" + i, minutesBefore("2026-09-01T00:00:00Z", i), "2025-01-01T00:00:00Z");
+      if (i >= 5 && i < 15) {
+        doi.getAttributes().setState("registered"); // not findable: a hidden hit
+      } else {
+        kept.add("10.1/dc-" + i);
+      }
+      (i < 50 ? dc0 : dc1)[i % 50] = doi;
+    }
+    B2instDraftRecord[] b0 = new B2instDraftRecord[50];
+    B2instDraftRecord[] b1 = new B2instDraftRecord[50];
+    for (int i = 0; i < 100; i++) {
+      (i < 50 ? b0 : b1)[i % 50] =
+          publishedRecord(
+              "21.T11975/b2-" + i,
+              "b2-" + i,
+              minutesBefore("2026-08-01T00:00:00Z", i),
+              "2025-01-01T00:00:00Z");
+    }
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
+        .thenReturn(dataCitePage(100, dc0));
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 1, 50))
+        .thenReturn(dataCitePage(100, dc1));
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(searchResultOf(100, b0));
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 1, 50))
+        .thenReturn(searchResultOf(100, b1));
+
+    assertEquals(40, manager.search("Zeiss", BOTH, 0, user).getHits().size(), "page 0 is short");
+    assertEquals(kept, pidsOfPages(BOTH, 0, 1), "pages 0 and 1, in order, nothing else");
+  }
+
+  @Test
+  void aHitWithoutAnUpdateTimeMidPageIsShownOnceAndInItsRegistryOrder() {
+    B2instDraftRecord[] b0 = new B2instDraftRecord[50];
+    B2instDraftRecord[] b1 = new B2instDraftRecord[50];
+    List<String> all = new ArrayList<>();
+    for (int i = 0; i < 100; i++) {
+      all.add("21.T11975/r-" + i);
+      (i < 50 ? b0 : b1)[i % 50] =
+          publishedRecord(
+              "21.T11975/r-" + i,
+              "r-" + i,
+              i == 10 ? null : minutesBefore("2026-08-01T00:00:00Z", i),
+              "2025-01-01T00:00:00Z");
+    }
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(searchResultOf(100, b0));
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 1, 50))
+        .thenReturn(searchResultOf(100, b1));
+
+    assertEquals(all, pidsOfPages(List.of("PIDINST_B2INST"), 0, 1));
+  }
+
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = "not-a-date")
+  void anUndatedHitStaysBesideItsRegistryNeighboursWhenTheOtherRegistryHasOlderHits(
+      String unreadableUpdate) {
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(
+            searchResultOf(
+                3,
+                publishedRecord(
+                    "21.T11975/b-newest", "b-newest", "2026-09-01T00:00:00+00:00", null),
+                publishedRecord("21.T11975/b-undated", "b-undated", unreadableUpdate, null),
+                publishedRecord(
+                    "21.T11975/b-older", "b-older", "2026-08-01T00:00:00+00:00", null)));
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
+        .thenReturn(
+            dataCitePage(
+                1,
+                dataCiteInstrumentUpdatedAt(
+                    "10.1/d-oldest", "2026-07-01T00:00:00Z", "2026-07-01T00:00:00Z")));
+
+    assertIterableEquals(
+        List.of("21.T11975/b-newest", "21.T11975/b-undated", "21.T11975/b-older", "10.1/d-oldest"),
+        manager.search("Zeiss", BOTH, 0, user).getHits().stream()
+            .map(ApiPidinstRecord::getPid)
+            .toList());
+  }
+
+  @Test
+  void twoUndatedHeadsKeepTheOrderAsked() {
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50))
+        .thenReturn(
+            searchResultOf(1, publishedRecord("21.T11975/b-undated", "b-undated", null, null)));
+    when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
+        .thenReturn(
+            dataCitePage(1, dataCiteInstrument("10.1/d-undated", "findable", "Instrument")));
+
+    assertIterableEquals(
+        List.of("10.1/d-undated", "21.T11975/b-undated"),
+        manager.search("Zeiss", BOTH, 0, user).getHits().stream()
+            .map(ApiPidinstRecord::getPid)
+            .toList());
+  }
+
+  @Test
+  void aHitWithoutAPidIsHiddenButStillCountsInTheRegistryTotal() {
+    B2instDraftRecord noPid = publishedRecord("21.T11975/b", "b", null, null);
+    noPid.getMetadata().setIdentifier(null);
+    B2instSearchResult page =
+        searchResultOf(
+            0,
+            publishedRecord("21.T11975/a", "a", null, null),
+            noPid,
+            publishedRecord("21.T11975/c", "c", null, null));
+    // no total from the index, so the records it sent stand in for it
+    page.getHits().setTotal(null);
+    when(b2instConnector.searchPublicRecords(ZEISS_TERM, 0, 50)).thenReturn(page);
+
+    ApiPidinstSearchResult result = manager.search("Zeiss", List.of("PIDINST_B2INST"), 0, user);
+
+    assertIterableEquals(
+        List.of("21.T11975/a", "21.T11975/c"),
+        result.getHits().stream().map(ApiPidinstRecord::getPid).toList());
+    assertEquals(3, result.getTotalHits());
   }
 
   @Test

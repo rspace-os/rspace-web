@@ -484,6 +484,41 @@ public class UserDaoTest extends BaseDaoTestCase {
     assertStringsInAscendingOrder(emailsAsc);
   }
 
+  @Test
+  public void listUsersInCommunityBindsSearchTermAsParameter() {
+    User pi = createAndSaveAPi();
+    User quotedName = createAndSaveRandomUser();
+    quotedName.setLastName("O'Brien");
+    quotedName = userDao.save(quotedName);
+    User other = createAndSaveRandomUser();
+    initialiseContentWithEmptyContent(pi, quotedName, other);
+    Group g1 = createGroup("g1", pi);
+    addUsersToGroup(pi, g1, quotedName, other);
+    User admin = createAndSaveAdminUser();
+    Community comm = createAndSaveCommunity(admin, getRandomAlphabeticString("newCommunity"));
+    logoutAndLoginAs(admin);
+    communityMgr.addGroupToCommunity(g1.getId(), comm.getId(), admin);
+    RSpaceTestUtils.logout();
+
+    PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
+    UserSearchCriteria sc = new UserSearchCriteria();
+    sc.setWithoutBackdoorSysadmins(true);
+    pgCrit.setSearchCriteria(sc);
+
+    // a quote in the term is matched as text, case-insensitively, not parsed as HQL
+    sc.setAllFields("o'bri");
+    ISearchResults<User> byQuotedName = userDao.listUsersInCommunity(comm.getId(), pgCrit);
+    assertEquals(1, byQuotedName.getTotalHits().intValue());
+    assertEquals(1, byQuotedName.getResults().size());
+    assertTrue(byQuotedName.getResults().contains(quotedName));
+
+    // an injection payload matches nothing rather than widening the query
+    sc.setAllFields("' or '1'='1");
+    ISearchResults<User> byPayload = userDao.listUsersInCommunity(comm.getId(), pgCrit);
+    assertEquals(0, byPayload.getTotalHits().intValue());
+    assertTrue(byPayload.getResults().isEmpty());
+  }
+
   void assertStringsInDescendingOrder(List<String> strings) {
     for (int i = 0; i < strings.size() - 1; i++) {
       assertFalse(strings.get(i).toLowerCase().compareTo(strings.get(i + 1).toLowerCase()) < 0);
