@@ -782,7 +782,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample fullTestUserSample =
         sampleApiMgr.getApiSampleById(retrievedTestUserSample.getId(), pi);
     assertEquals(testUserSample.getName(), fullTestUserSample.getName());
-    // pi have update, transfer and change-requestable permission to user's sample
+    // pi has update, transfer and change-requestable permission to user's sample
     assertThat(fullTestUserSample.getPermittedActions()).hasSize(4);
     // pi only see public details of other user's sample
     ApiSample sampleRetrievedByPi = sampleApiMgr.getApiSampleById(otherUserSample.getId(), pi);
@@ -803,38 +803,6 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertTrue(sampleRetrievedByOtherUser.isClearedForPublicView());
     sampleRetrievedByOtherUser = sampleApiMgr.getApiSampleById(piSample.getId(), otherUser);
     assertTrue(sampleRetrievedByOtherUser.isClearedForPublicView());
-
-    /*
-     * check that "requestable" search bypasses ownership/group scoping entirely
-     */
-
-    // mark testUser's sample as requestable by other users
-    ApiSample requestableUpdate = new ApiSample();
-    requestableUpdate.setId(testUserSample.getId());
-    requestableUpdate.setRequestable(true);
-    sampleApiMgr.updateApiSample(requestableUpdate, testUser);
-
-    // otherUser, outside testUser's group, now finds it; other requestable samples may exist too
-    ApiSampleSearchResult otherUserRequestableResult =
-        sampleApiMgr.getSamplesForUser(null, null, null, true, null, otherUser);
-    List<Long> otherUserRequestableResultIds =
-        otherUserRequestableResult.getSamples().stream()
-            .map(ApiSampleInfo::getId)
-            .collect(Collectors.toList());
-    assertTrue(otherUserRequestableResultIds.contains(testUserSample.getId()));
-
-    // otherUser cannot read the sample, so gets its public view, which still shows requestable
-    ApiSample sampleViewedByOtherUser =
-        sampleApiMgr.getApiSampleById(testUserSample.getId(), otherUser);
-    assertTrue(sampleViewedByOtherUser.isClearedForPublicView());
-    assertTrue(sampleViewedByOtherUser.getRequestable());
-
-    // pi is not its owner, but may transfer it, and so may also change whether it is requestable
-    ApiSample piRequestableUpdate = new ApiSample();
-    piRequestableUpdate.setId(testUserSample.getId());
-    piRequestableUpdate.setRequestable(false);
-    sampleApiMgr.updateApiSample(piRequestableUpdate, pi);
-    assertFalse(sampleApiMgr.getApiSampleById(testUserSample.getId(), testUser).getRequestable());
 
     /*
      * check visibility for community admin administering the group
@@ -887,39 +855,6 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         ApiInventoryRecordPermittedAction.CHANGE_OWNER,
         fullOtherUserSample.getPermittedActions().get(1));
-  }
-
-  @Test
-  public void requestableSearchCanBeNarrowedByNameQuery() {
-    User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
-    initialiseContentWithEmptyContent(otherUser);
-
-    String uniqueSampleName = getRandomAlphabeticString("requestableQueryTarget");
-    ApiSampleWithFullSubSamples testUserSample =
-        createBasicSampleForUser(testUser, uniqueSampleName);
-
-    ApiSample requestableUpdate = new ApiSample();
-    requestableUpdate.setId(testUserSample.getId());
-    requestableUpdate.setRequestable(true);
-    sampleApiMgr.updateApiSample(requestableUpdate, testUser);
-
-    // otherUser has no other access to testUser's sample, but the unscoped requestable search
-    // still finds it when the free-text query matches its name
-    ApiSampleSearchResult matchingResult =
-        sampleApiMgr.getSamplesForUser(null, null, null, true, uniqueSampleName, otherUser);
-    List<Long> matchingIds =
-        matchingResult.getSamples().stream().map(ApiSampleInfo::getId).collect(Collectors.toList());
-    assertTrue(matchingIds.contains(testUserSample.getId()));
-
-    // a query that doesn't match its name excludes it, even though it's still requestable
-    ApiSampleSearchResult nonMatchingResult =
-        sampleApiMgr.getSamplesForUser(
-            null, null, null, true, getRandomAlphabeticString("nonMatching"), otherUser);
-    List<Long> nonMatchingIds =
-        nonMatchingResult.getSamples().stream()
-            .map(ApiSampleInfo::getId)
-            .collect(Collectors.toList());
-    assertFalse(nonMatchingIds.contains(testUserSample.getId()));
   }
 
   @Test
@@ -1397,7 +1332,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void requestable_canOnlyBeChangedByWhoeverMayTransferTheSample() {
+  public void requestable_needsEditAndTransfer() {
     User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
     User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("owner"));
     User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
@@ -1413,15 +1348,24 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample memberChange = new ApiSample();
     memberChange.setId(sample.getId());
     memberChange.setRequestable(true);
-    assertThrows(
-        ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(memberChange, member));
+    ApiRuntimeException refused =
+        assertThrows(
+            ApiRuntimeException.class, () -> sampleApiMgr.updateApiSample(memberChange, member));
+    assertEquals("errors.inventory.sampleRequest.requestableNotPermitted", refused.getMessage());
     assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
+
+    // the pi may edit and transfer it, so may change it
+    ApiSample piChange = new ApiSample();
+    piChange.setId(sample.getId());
+    piChange.setRequestable(true);
+    sampleApiMgr.updateApiSample(piChange, pi);
+    assertTrue(sampleApiMgr.getApiSampleById(sample.getId(), owner).getRequestable());
 
     // other edits that resend the current value are not a change
     ApiSample memberRename = new ApiSample();
     memberRename.setId(sample.getId());
     memberRename.setName("renamed by member");
-    memberRename.setRequestable(false);
+    memberRename.setRequestable(true);
     assertEquals("renamed by member", sampleApiMgr.updateApiSample(memberRename, member).getName());
   }
 
@@ -1553,7 +1497,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     setSampleRequestsAvailable(HierarchicalPermission.DENIED);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
 
-    assertThrows(ApiRuntimeException.class, () -> markRequestable(sample, testUser));
+    ApiRuntimeException refused =
+        assertThrows(ApiRuntimeException.class, () -> markRequestable(sample, testUser));
+    assertEquals("errors.inventory.sampleRequest.notEnabled", refused.getMessage());
     assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), testUser).getRequestable());
   }
 

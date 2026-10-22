@@ -33,7 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** Two clients transitioning the same request at once must not both succeed. */
+/** Concurrent changes to one request must not both apply. */
 public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   private @Autowired SampleRequestApiManager sampleRequestApiMgr;

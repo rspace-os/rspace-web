@@ -165,7 +165,6 @@ public class SampleRequest implements Serializable {
     return statusChanges;
   }
 
-  /** As below, with no transferred sample. */
   public SampleRequestStatusChange recordStatus(
       User author, SampleRequestStatus newStatus, String reason) {
     return recordStatus(author, newStatus, reason, null);

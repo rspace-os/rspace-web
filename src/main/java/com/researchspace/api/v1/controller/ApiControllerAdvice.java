@@ -126,8 +126,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
   /**
    * A concurrent edit, not a server fault: MariaDB 11.6+ (innodb_snapshot_isolation) refuses to
-   * lock a row changed since the transaction began (error 1020), and a deadlock (1213) rolls one
-   * side back. Either way nothing was saved, and the client can retry.
+   * lock a row changed since the transaction's first read (error 1020), and a deadlock (1213) rolls
+   * one side back. Either way nothing was saved, and the client can retry.
    */
   @ExceptionHandler(DataAccessException.class)
   public ResponseEntity<Object> handleDataAccess(
