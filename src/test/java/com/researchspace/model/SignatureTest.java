@@ -2,15 +2,32 @@ package com.researchspace.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.core.testutil.JakartaValidatorTest;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.record.TestFactory;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 public class SignatureTest extends JakartaValidatorTest {
+
+  @Test
+  public void nonStructuredRecordSigningResolvesValidationMessage() {
+    Signature signature = new Signature();
+    signature.setRecordSigned(new EcatImage());
+
+    UnsupportedOperationException exception =
+        assertThrows(UnsupportedOperationException.class, signature::generateRecordContentHash);
+
+    assertEquals(
+        "only structured documents can be signed",
+        new MessageSourceUtils(new JsonMessageSource()).getExceptionMessage(exception));
+    assertThat(signature.getHashes()).isEmpty();
+  }
 
   @Test
   public void testSetUp() {

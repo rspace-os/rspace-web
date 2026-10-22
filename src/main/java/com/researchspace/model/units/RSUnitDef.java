@@ -2,6 +2,7 @@ package com.researchspace.model.units;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import java.util.Arrays;
 import java.util.Optional;
 import javax.measure.Unit;
@@ -82,7 +83,8 @@ public enum RSUnitDef {
    */
   public static RSUnitDef getUnitById(Integer id) {
     return getUnitByIdOptional(id)
-        .orElseThrow(() -> new IllegalArgumentException("invalid ID for unit"));
+        .orElseThrow(
+            () -> new LocalizedIllegalArgumentException("validation.quantity.unitIdInvalid"));
   }
 
   private static Optional<RSUnitDef> getUnitByIdOptional(Integer id) {

@@ -1,5 +1,6 @@
 package com.researchspace.inv.audit;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditTrailService;
@@ -10,7 +11,6 @@ import com.researchspace.model.events.ListOfMaterialsCreationEvent;
 import com.researchspace.model.events.ListOfMaterialsDeleteEvent;
 import com.researchspace.model.events.ListOfMaterialsEditingEvent;
 import com.researchspace.model.record.StructuredDocument;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;

@@ -81,9 +81,10 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       throw new IllegalArgumentException(
           messages.getMessage("apps.errors.notFoundByProperty", new Object[] {propName}));
     }
-    Validate.isTrue(
-        app.getName().equalsIgnoreCase(expectedAppName),
-        "Configuration properties do not belong to the requested app");
+    if (!app.getName().equalsIgnoreCase(expectedAppName)) {
+      throw new IllegalArgumentException(
+          messages.getMessage("apps.errors.configPropertiesWrongApp"));
+    }
     if (cfg == null) {
       logger.info(
           "No UserAppConfig set for user {} for property {}, setting",
@@ -100,13 +101,15 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
     AppConfigElementSet set = null;
     if (appConfigSetDataId == null) {
       if (untrustedSlack) {
-        throw new AuthorizationException("Slack channels are added by connecting to Slack");
+        throw new AuthorizationException(
+            messages.getMessage("apps.slack.errors.channelsAddedByConnecting"));
       }
       // null means "keep the stored secret", and a new set has none (e.g. an OAuth secret held in
       // a session that expired before the save)
-      Validate.isTrue(
-          appConfigSetData.values().stream().noneMatch(Objects::isNull),
-          "a new config set has no stored secret to keep");
+      if (appConfigSetData.values().stream().anyMatch(Objects::isNull)) {
+        throw new IllegalArgumentException(
+            messages.getMessage("apps.errors.newConfigSetMissingSecret"));
+      }
       set = createAppConfigElementSetFromMap(appConfigSetData, app);
       cfg.addConfigSet(set);
       appCfgDao.save(cfg);
@@ -115,7 +118,8 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
     } else {
       AppConfigElementSet saved = appCfgDao.getAppConfigElementSetById(appConfigSetDataId);
       if (saved == null || !cfg.getId().equals(saved.getUserAppConfig().getId())) {
-        throw new AuthorizationException("Not permitted to update this AppConfig set");
+        throw new AuthorizationException(
+            messages.getMessage("apps.errors.updateConfigSetNotPermitted"));
       }
       Map<String, String> data = new HashMap<>(appConfigSetData);
       data.replaceAll(
@@ -136,7 +140,7 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
 
   private void assertAppCanBeUpdatedByUntrustedOrigin(App app) {
     if ("app.orcid".equals(app.getName())) {
-      throw new AuthorizationException("This App cannot be updated this way");
+      throw new AuthorizationException(messages.getMessage("apps.errors.cannotUpdateThisWay"));
     }
   }
 
@@ -148,7 +152,8 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
           AppConfigElement stored = saved.findElementByPropertyName(name);
           if (!"SLACK_CHANNEL_LABEL".equals(name)
               && (stored == null || !Objects.equals(stored.getValue(), value))) {
-            throw new AuthorizationException("Only a Slack channel's label can be changed");
+            throw new AuthorizationException(
+                messages.getMessage("apps.slack.errors.channelOnlyLabelEditable"));
           }
         });
   }
@@ -179,14 +184,18 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       Long appConfigElementSetId, User subject, String expectedAppName) {
     AppConfigElementSet set = appCfgDao.getAppConfigElementSetById(appConfigElementSetId);
     if (set == null) {
-      throw new AuthorizationException("Not permitted to delete this AppConfig set");
+      throw new AuthorizationException(
+          messages.getMessage("apps.errors.deleteConfigSetNotPermitted"));
     }
     UserAppConfig cfg = set.getUserAppConfig();
     permUtils.assertIsPermitted(cfg, PermissionType.DELETE, subject, " Update AppConfig ");
     // checked after permission, so another user's set id reveals nothing about its app
-    Validate.isTrue(
-        cfg.getApp().getName().equalsIgnoreCase(expectedAppName),
-        "Options " + appConfigElementSetId + " do not belong to " + expectedAppName);
+    if (!cfg.getApp().getName().equalsIgnoreCase(expectedAppName)) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "apps.errors.configSetWrongApp",
+              new Object[] {appConfigElementSetId, expectedAppName}));
+    }
     cfg.removeConfigSet(set);
     appCfgDao.save(cfg);
     return set;

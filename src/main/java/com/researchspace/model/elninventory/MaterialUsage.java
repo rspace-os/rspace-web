@@ -1,5 +1,6 @@
 package com.researchspace.model.elninventory;
 
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.InventoryRecordConnectedEntity;
 import com.researchspace.model.units.QuantityInfo;
@@ -75,8 +76,8 @@ public class MaterialUsage extends InventoryRecordConnectedEntity implements Ser
   public void setUsedQuantity(QuantityInfo newQuantity) {
     if (newQuantity != null && newQuantity.getUnitId() != null) {
       if (BigDecimal.ZERO.compareTo(newQuantity.getNumericValue()) > 0) {
-        throw new IllegalArgumentException(
-            "Trying to set negative record quantity: " + newQuantity.getNumericValue());
+        throw new LocalizedIllegalArgumentException(
+            "errors.inventory.listOfMaterials.negativeQuantity", newQuantity.getNumericValue());
       }
     }
     this.usedQuantity = newQuantity;

@@ -1,4 +1,4 @@
-package com.researchspace.service;
+package com.researchspace.core.util;
 
 import com.ibm.icu.text.ListFormatter;
 import java.util.Collection;

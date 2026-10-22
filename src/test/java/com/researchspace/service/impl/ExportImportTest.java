@@ -1,8 +1,12 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,9 +14,15 @@ import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.ArchivalFileNotExistException;
 import com.researchspace.core.util.ResponseUtil;
+import com.researchspace.export.pdf.ExportToFileConfig;
+import com.researchspace.model.User;
+import com.researchspace.model.comms.NotificationType;
+import com.researchspace.model.field.LocalizedIOException;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.archive.PdfWordExportManager;
 import com.researchspace.service.archive.export.ExportFailureException;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.WriteListener;
@@ -26,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,6 +48,8 @@ public class ExportImportTest {
   @TempDir public File folder;
 
   @Mock private IPropertyHolder properties;
+  @Mock private CommunicationManager commMgr;
+  @Mock private PdfWordExportManager pdfWordExportManager;
 
   @InjectMocks private ExportImportImpl exportImpl;
 
@@ -109,6 +122,57 @@ public class ExportImportTest {
               + " export.",
           e.getMessage());
     }
+  }
+
+  @Test
+  public void wrappedLocalizedIoFailureIsTranslatedInExportNotification() throws IOException {
+    LocalizedIOException tiffFailure =
+        new LocalizedIOException(
+            "validation.imageConversion.sourceUnreadable", new File("specimen.tiff"));
+    ExportFailureException exportFailure = new ExportFailureException(tiffFailure);
+
+    String notificationMessage = exportFailureNotification(exportFailure);
+
+    assertEquals(
+        "Your export [TIFF export] failed for the following reason: Can't read file:specimen.tiff",
+        notificationMessage);
+    assertFalse(notificationMessage.contains("validation.imageConversion.sourceUnreadable"));
+    assertFalse(notificationMessage.contains("LocalizedIOException"));
+  }
+
+  @Test
+  public void ordinaryExportFailureKeepsTheOriginalMessage() throws IOException {
+    ExportFailureException exportFailure =
+        new ExportFailureException(new IOException("ordinary failure"));
+
+    assertEquals(
+        "Your export [TIFF export] failed for the following reason: " + exportFailure.getMessage(),
+        exportFailureNotification(exportFailure));
+  }
+
+  private String exportFailureNotification(ExportFailureException exportFailure)
+      throws IOException {
+    doThrow(exportFailure)
+        .when(pdfWordExportManager)
+        .doExport(any(), any(), any(), any(), any(), any());
+    ExportToFileConfig config = new ExportToFileConfig();
+    config.setExportName("TIFF export");
+    User exporter = new User("exporter");
+
+    assertThrows(
+        ExportFailureException.class,
+        () ->
+            exportImpl.asyncExportSelectionToPdf(
+                new Long[0], new String[0], new String[0], config, exporter));
+
+    ArgumentCaptor<String> notificationMessage = ArgumentCaptor.forClass(String.class);
+    verify(commMgr)
+        .systemNotify(
+            eq(NotificationType.PROCESS_COMPLETED),
+            notificationMessage.capture(),
+            eq(exporter.getUsername()),
+            eq(true));
+    return notificationMessage.getValue();
   }
 
   @Test

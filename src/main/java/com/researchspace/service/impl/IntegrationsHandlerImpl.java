@@ -15,6 +15,7 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONF
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
 import com.researchspace.model.User;
@@ -34,7 +35,6 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.ClientReadableSecret;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.IntegrationsHandler;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -719,7 +719,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
     if (GITHUB_APP_NAME.equals(appName) && optionsId == null) {
       String accessToken = GitHubPendingToken.get(user.getUsername());
       if (StringUtils.isBlank(accessToken)) {
-        throw new IllegalStateException("GitHub OAuth connection is required");
+        throw new IllegalStateException(
+            messages.getMessage("apps.github.errors.oauthConnectionRequired"));
       }
       userConnManager.saveWithNewAppConfigElementSet(
           options, GITHUB_APP_NAME, accessToken, null, trustedOrigin, user);
@@ -743,7 +744,8 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
             || DSW_APP_NAME.equals(appName)
             || MSTEAMS_APP_NAME.equals(appName))
         && isBlank(originalOptions.get(credentialSetting))) {
-      throw new IllegalArgumentException("A new configuration must include its credential");
+      throw new IllegalArgumentException(
+          messages.getMessage("apps.errors.newConfigMissingCredential"));
     }
     UserAppConfig savedConfig =
         appConfigMgr.saveAppConfigElementSet(
