@@ -332,8 +332,7 @@ suites read.
 - With "Start on clock intervals" on, the start's local minute of day must also be a
   multiple of the increment, counted from midnight in the item's timezone
   (`errors.api.v2.booking.alignment`). The end only follows the duration rule, so a
-  17-minute aligned booking from 23:48 ends at 00:05. Earlier versions required both
-  endpoints on the grid; this is the only semantic change for existing aligned items.
+  17-minute aligned booking from 23:48 ends at 00:05.
 - Alignment is effective only below 1440 minutes and never for Days. The stored flag is
   not rewritten, so returning to a shorter increment restores the user's choice.
 

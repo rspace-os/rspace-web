@@ -7,12 +7,8 @@ Booking separates display preferences from scheduling rules:
   route-level "today", booking-form wall clocks (until the user picks another zone; see the form
   timezone below), availability domains, and the Now marker.
 - The **time format** chooses the 12- or 24-hour clock: Automatic (the default), 12-hour or
-  24-hour. Automatic preserves existing behaviour: booking pages follow the browser region, in-app
-  notifications follow the region named by the request's `Accept-Language`, and emails, which have
-  no browser, use the usual clock of the message language. An explicit 12- or 24-hour choice
-  replaces all three. `BookingNotificationMessageFormatter` receives it as a `BookingTimeFormat`
-  (from `DashboardController` and from the `BookingNotificationRecipient` snapshot for email) and
-  turns it into the ICU `hc` keyword (`h12`, or `h23` so midnight is 00:00).
+  24-hour. Automatic follows the browser region on booking pages. See
+  [Notification times](BookingNotifications.md#notification-times) for notification formatting.
 - The **scheduling timezone** remains on each `BookingConfiguration`. It controls opening-hour and
   slot-policy calculations and the timezone metadata in calendar feeds. Existing values are not
   rewritten.
@@ -306,35 +302,14 @@ adjustments back to the form
 and prevents submission until the matching adjustment is acknowledged. Keep
 that bridge shared when adding another form consumer.
 
-The browsed-day query uses raw confirmed bookings from `fetchDayBookings`.
-Availability checks stay in the owning page and cover the entire committed
-draft, independently of the browsed date or whether the narrow-layout schedule
-sheet is open. On narrow layouts, a floating Day schedule button appears at
-the right edge while the form is in view and opens a right-side sheet. Its tab
-stays attached to the sheet's left edge as it slides in and out, and closes the
-sheet when pressed. The wide layout gives the form 65% and the sidebar 35%
-of the space remaining after the column gap. The form fills its column without
-an additional width cap, with the timeline below the item information card. Opening the
-sheet does not start a second day-schedule query. Do not use padded
-availability intervals as visual event durations.
-Both fetch paths retain the projection, authorization scope and pagination cap;
-an incomplete schedule is an error, never evidence that an instrument is free.
-
-Existing events use deterministic overlap lanes. The draft spans the event
-area, with an opaque theme-derived tint that stays unchanged during gestures.
-The presentation follows the Codex Vertical Day Timeline: a compact card with
-a centered date between previous/next buttons, timezone and instrument context,
-continuous hour lines and thin
-draft resize edges. The full zoned day remains scrollable at 56 pixels per hour;
-it is not restricted to the prototype's sample hours. Short intervals remain
-editable through the booking form's date and time fields. The item information
-card appears above the timeline on wide add and edit layouts. Event item names
-use a single-line ellipsis; hover text and event details retain the full name.
-An Event details disclosure below the grid lets users inspect very short or crowded events
-without a second calendar view. Pointer and keyboard
-adjustments share scheduling-zone slot calculations while positions
-use elapsed time in the display zone. Cancelling a gesture or losing pointer
-capture discards its preview without changing the form.
+Use `BookingDayTimelineAside`, `VerticalDayTimeline` and `VerticalDayTimelineCanvas` for responsive
+layout and event presentation. Fetch raw confirmed events with `fetchDayBookings`; draft availability
+checks cover the complete interval independently of the browsed date or sheet visibility, and opening
+the sheet reuses the existing query. Retain projection, authorization and pagination safeguards;
+incomplete reads are errors. Keep short or crowded events accessible through form fields and event
+details. Pointer and keyboard adjustments share scheduling-zone slot calculations; positions use
+elapsed time in the display zone. Cancelled gestures or lost pointer capture discard previews without
+changing the form. Do not use padded availability intervals as visual event durations.
 
 ## Booking window reconciliation
 
