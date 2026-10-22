@@ -125,9 +125,9 @@ the same sample; there is no uniqueness rule.
 ### D8 Status history is a table, not the audit log
 
 Every state, including the initial PENDING, is a `SampleRequestStatusChange` row, so the
-details view reads the history in one query. RSpace's audit trail is written to log files,
-not a table, so it can never feed a details view. Envers was rejected: it suits records
-that change in many ways and may be restored, not a linear state history.
+details view reads the whole history from one table. RSpace's audit trail is written to log
+files, not a table, so it can never feed a details view. Envers was rejected: it suits
+records that change in many ways and may be restored, not a linear state history.
 
 ### D9 A transfer closes the open requests: fulfilled for the recipient, rejected for others
 

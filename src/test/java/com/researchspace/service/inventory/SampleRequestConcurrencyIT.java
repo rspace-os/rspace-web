@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -16,8 +17,11 @@ import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -29,11 +33,15 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalAnswers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** Concurrent changes to one request must not both apply. */
+/** Concurrent changes to a request, or to its sample, must leave a consistent result. */
 public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   private @Autowired SampleRequestApiManager sampleRequestApiMgr;
@@ -44,6 +52,8 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   private User requester;
   private Long requestId;
   private Long sampleId;
+  private String sampleGlobalId;
+  private final List<Runnable> restoreSwappedDependencies = new ArrayList<>();
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -65,6 +75,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     logoutAndLoginAs(owner);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
     sampleId = sample.getId();
+    sampleGlobalId = sample.getGlobalId();
     ApiSample requestable = new ApiSample();
     requestable.setId(sample.getId());
     requestable.setRequestable(true);
@@ -79,6 +90,8 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
+    restoreSwappedDependencies.forEach(Runnable::run);
+    restoreSwappedDependencies.clear();
     if (originalSampleRequestsAvailable != null) {
       logoutAndLoginAsSysAdmin();
       systemPropertyMgr.save(
@@ -172,7 +185,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
       } catch (ExecutionException e) {
         // with innodb_snapshot_isolation (MariaDB 11.6+) the transfer is refused instead, which is
         // equally safe; any other failure is not
-        assertTrue(isSnapshotConflict(e), () -> "unexpected transfer failure: " + e.getCause());
+        assertTrue(hasSqlErrorCode(e, 1020), () -> "unexpected transfer failure: " + e.getCause());
         // the API maps a conflict to 409 only when it arrives as a DataAccessException
         assertInstanceOf(DataAccessException.class, e.getCause());
       }
@@ -188,10 +201,140 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     }
   }
 
-  /** MariaDB's ER_CHECKREAD: "Record has changed since last read". */
-  private static boolean isSnapshotConflict(Throwable thrown) {
+  @Test
+  public void requestRaisedDuringATransferIsNotLeftWithThePreviousOwner() throws Exception {
+    User newOwner = createAndSaveUser(getRandomAlphabeticString("cNew"));
+    initUsers(newOwner);
+    CountDownLatch createPaused = new CountDownLatch(1);
+    CountDownLatch releaseCreate = new CountDownLatch(1);
+    pauseCreateRequestAfterItsLock(createPaused, releaseCreate);
+    CountDownLatch transferClosing = new CountDownLatch(1);
+    CountDownLatch transferClosed = new CountDownLatch(1);
+    watchTransferClosingRequests(transferClosing, transferClosed);
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      // the new request has read the sample, and still holds its lock, but is not saved yet
+      Future<Long> create =
+          pool.submit(
+              () -> {
+                ApiSampleRequestPost post = new ApiSampleRequestPost();
+                post.setSampleGlobalId(sampleGlobalId);
+                post.setNote("raised while the sample is being transferred");
+                return sampleRequestApiMgr.createRequest(post, requester).getId();
+              });
+      assertTrue(createPaused.await(30, TimeUnit.SECONDS));
+
+      Future<?> transfer =
+          pool.submit(
+              () -> {
+                ApiSample toNewOwner = new ApiSample();
+                toNewOwner.setId(sampleId);
+                toNewOwner.setOwner(new ApiUser(newOwner));
+                sampleApiMgr.changeApiSampleOwner(toNewOwner, owner);
+              });
+      // the transfer has reached the step that competes with the new request, and the request's
+      // lock holds it there until the request is saved
+      assertTrue(transferClosing.await(30, TimeUnit.SECONDS));
+      assertFalse(
+          transferClosed.await(2, TimeUnit.SECONDS),
+          "the transfer must wait for the request being raised");
+      releaseCreate.countDown();
+      Long raisedId = create.get(30, TimeUnit.SECONDS);
+
+      boolean transferred = true;
+      try {
+        transfer.get(60, TimeUnit.SECONDS);
+      } catch (ExecutionException e) {
+        // with innodb_snapshot_isolation (MariaDB 11.6+) the transfer is refused instead
+        assertTrue(
+            hasSqlErrorCode(e, 1020, 1213), () -> "unexpected transfer failure: " + e.getCause());
+        transferred = false;
+      }
+
+      ApiSampleRequest raised = sampleRequestApiMgr.getRequestById(raisedId, requester);
+      if (transferred) {
+        assertEquals(
+            SampleRequestStatus.REJECTED,
+            raised.getStatus(),
+            "the transfer must close a request raised while it ran");
+      } else {
+        assertEquals(SampleRequestStatus.PENDING, raised.getStatus());
+        assertEquals(
+            owner.getUsername(),
+            sampleApiMgr.getApiSampleById(sampleId, owner).getOwner().getUsername());
+      }
+    } finally {
+      releaseCreate.countDown();
+      pool.shutdownNow();
+    }
+  }
+
+  /**
+   * Holds createRequest at its first permission check, which comes after it share-locks the sample
+   * and before it saves the request.
+   */
+  private void pauseCreateRequestAfterItsLock(CountDownLatch paused, CountDownLatch release) {
+    SystemPropertyPermissionManager realPermissions =
+        swapDependency(
+            sampleRequestApiMgr,
+            "systemPropertyPermissions",
+            SystemPropertyPermissionManager.class);
+    SystemPropertyPermissionManager pausing =
+        currentDependency(sampleRequestApiMgr, "systemPropertyPermissions");
+    Mockito.doAnswer(
+            call -> {
+              if (paused.getCount() > 0) {
+                paused.countDown();
+                awaitQuietly(release);
+              }
+              return realPermissions.isPropertyAllowed(
+                  call.<User>getArgument(0), call.<SystemPropertyName>getArgument(1));
+            })
+        .when(pausing)
+        .isPropertyAllowed(Mockito.any(User.class), Mockito.any(SystemPropertyName.class));
+  }
+
+  /** Counts the transfer into and out of closing the sample's open requests. */
+  private void watchTransferClosingRequests(CountDownLatch entered, CountDownLatch finished) {
+    SampleRequestApiManager realRequests =
+        swapDependency(sampleApiMgr, "sampleRequestApiManager", SampleRequestApiManager.class);
+    SampleRequestApiManager watching = currentDependency(sampleApiMgr, "sampleRequestApiManager");
+    Mockito.doAnswer(
+            call -> {
+              entered.countDown();
+              realRequests.closeActiveRequestsForTransferredSample(
+                  call.getArgument(0), call.getArgument(1), call.getArgument(2));
+              finished.countDown();
+              return null;
+            })
+        .when(watching)
+        .closeActiveRequestsForTransferredSample(Mockito.any(), Mockito.any(), Mockito.any());
+  }
+
+  /**
+   * Replaces a manager's dependency with a Mockito mock that delegates to the real one, for the
+   * test to stub, and restores it after the test. Returns the real dependency.
+   */
+  private <T> T swapDependency(Object manager, String field, Class<T> type) {
+    Object target = AopTestUtils.getUltimateTargetObject(manager);
+    T real = type.cast(ReflectionTestUtils.getField(target, field));
+    ReflectionTestUtils.setField(
+        target, field, Mockito.mock(type, AdditionalAnswers.delegatesTo(real)));
+    restoreSwappedDependencies.add(() -> ReflectionTestUtils.setField(target, field, real));
+    return real;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> T currentDependency(Object manager, String field) {
+    Object target = AopTestUtils.getUltimateTargetObject(manager);
+    return (T) ReflectionTestUtils.getField(target, field);
+  }
+
+  /** MariaDB's "record has changed since last read" (1020) or "deadlock found" (1213). */
+  private static boolean hasSqlErrorCode(Throwable thrown, int... codes) {
     for (Throwable cause = thrown; cause != null; cause = cause.getCause()) {
-      if (cause instanceof SQLException sql && sql.getErrorCode() == 1020) {
+      if (cause instanceof SQLException sql
+          && Arrays.stream(codes).anyMatch(code -> code == sql.getErrorCode())) {
         return true;
       }
     }
