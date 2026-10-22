@@ -1675,6 +1675,9 @@ export default interface Resources {
       },
       "orderLabel": "Sort field"
     },
+    "units": {
+      "items": "items"
+    },
     "userDetails": {
       "accountDisabled": "Disabled",
       "accountEnabled": "Enabled",
@@ -1684,6 +1687,8 @@ export default interface Resources {
       "openProfile": "Open profile",
       "roleAt": "{role} at",
       "roles": {
+        "groupOwner": "Group Owner",
+        "labAdmin": "Lab Admin",
         "pi": "PI",
         "user": "User"
       },
@@ -5282,9 +5287,38 @@ export default interface Resources {
         "uploadImage": "Change Image"
       },
       "preferences": {
+        "box": "Box",
+        "boxLinkType": "Box Link Type",
+        "chemistry": "Chemistry",
+        "defaultPdfPageSize": "Default PDF page size",
+        "deletedRecordsPerPage": "Number of deleted items per page",
+        "directoryResultsPerPage": "Number of Directory items per page",
+        "documentShared": "A document is shared with me",
+        "documentUnshared": "A document is unshared with me",
+        "dropbox": "Dropbox",
+        "ecat": "Ecat",
+        "ecatServer": "eCAT Server",
+        "formsPerPage": "Number of Forms per page",
+        "googleDrive": "GoogleDrive",
+        "guidedTours": "Show guided tours",
+        "initialWorkspaceView": "Whether Workspace page opens up as list view or tree view initially",
+        "mendeley": "Mendeley",
+        "notificationsByEmail": "Send notifications by email",
+        "oneDrive": "OneDrive",
+        "piCanEditAllWork": "PI can edit all work in lab group",
+        "processCompleted": "A background process finishes",
+        "processFailed": "A background process fails",
+        "requestStatusChanged": "A request status changes",
+        "requestsByEmail": "Send requests by email",
+        "sharedDocumentDeleted": "A shared document is deleted",
+        "sharedDocumentEdited": "A shared document is edited",
+        "sharedRecordsPerPage": "Number of shared items per page",
+        "uiClientSettings": "UI client-side settings",
+        "uiJsonSettings": "UI client-side settings, in json format",
         "updateButton": {
           "label": "Update Preferences"
-        }
+        },
+        "workspaceResultsPerPage": "Number of Workspace items per page"
       },
       "sectionLabel": {
         "collaborationGroups": "Collaboration Groups:",
@@ -5415,12 +5449,19 @@ export default interface Resources {
         }
       },
       "errors": {
+        "cannotUpdateThisWay": "This App cannot be updated this way",
+        "configPropertiesWrongApp": "Configuration properties do not belong to the requested app",
+        "configSetWrongApp": "Options {0} do not belong to {1}",
+        "deleteConfigSetNotPermitted": "Not permitted to delete this AppConfig set",
         "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
         "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
+        "newConfigMissingCredential": "A new configuration must include its credential",
+        "newConfigSetMissingSecret": "A new config set has no stored secret to keep",
         "noneValid": "There were no valid Apps: {0}",
         "notFoundByName": "No app with name [{0}]",
         "notFoundByProperty": "App could not be identified for property {0}",
-        "requestSupport": "There is a problem with your request, please contact support."
+        "requestSupport": "There is a problem with your request, please contact support.",
+        "updateConfigSetNotPermitted": "Not permitted to update this AppConfig set"
       },
       "fieldmark": {
         "errors": {
@@ -5434,6 +5475,7 @@ export default interface Resources {
       "github": {
         "errors": {
           "getFolderContents": "Error while getting GitHub folder contents",
+          "oauthConnectionRequired": "GitHub OAuth connection is required",
           "parseTreeRequest": "Error while parsing the request"
         }
       },
@@ -5484,6 +5526,8 @@ export default interface Resources {
       },
       "slack": {
         "errors": {
+          "channelOnlyLabelEditable": "Only a Slack channel's label can be changed",
+          "channelsAddedByConnecting": "Slack channels are added by connecting to Slack",
           "missingResponseField": "The Slack response is missing required field {0}",
           "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
           "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
@@ -5846,7 +5890,8 @@ export default interface Resources {
       "searchTermMinLength": "Search term must be at least {0} characters",
       "searchTermTooLong": "Search term at index {2} is too long ({0} chars) - max search string length is {1} chars.",
       "signing": {
-        "failed": "Signing failed"
+        "failed": "Signing failed",
+        "structuredDocumentRequired": "only structured documents can be signed"
       },
       "signupCode": {
         "failed": "Please supply the correct signup code (this is case sensitive)."
@@ -5899,6 +5944,10 @@ export default interface Resources {
       "username": "Username",
       "yourComment": "your comment"
     },
+    "pagination": {
+      "first": "First",
+      "last": "Last"
+    },
     "relativeDate": {
       "daysAgo": "{0, plural, one {# day ago at {1}} other {# days ago at {1}}}",
       "today": "Today at {0}",
@@ -5915,6 +5964,17 @@ export default interface Resources {
       "property": "Property"
     },
     "validation": {
+      "barcode": {
+        "qrTextRequired": "QR code text cannot be empty",
+        "textRequired": "Barcode text cannot be empty"
+      },
+      "community": {
+        "adminRoleRequired": "A community admin must have  an admin role"
+      },
+      "dateRange": {
+        "fromAfterTo": "From must be earlier than to",
+        "invalidFormat": "could not parse [{0}]. Argument must match one or both of {1}, or {2}"
+      },
       "errors": {
         "allVersionsRequired": "allVersions is a required field.",
         "archiveTypeInvalid": "archiveType must be one of xml, html or eln.",
@@ -5950,6 +6010,84 @@ export default interface Resources {
         "subjectStringMax": "Subject \"${validatedValue}\" must be less than {max} characters.",
         "titleRequired": "Title is a required field.",
         "titleStringRange": "Title \"${validatedValue}\" must be between {min} and {max} characters."
+      },
+      "fieldData": {
+        "dateAfterMaximum": "Input date [{0}] after maximum [{1}]",
+        "dateBeforeMinimum": "Input date [{0}] before minimum [{1}]",
+        "invalidChoice": "Invalid data for Choice Field [{0}]",
+        "invalidDateFormat": "Invalid date format [{0}]",
+        "invalidGlobalIdPrefix": "The prefix {0} is not a globalIdPrefix. It must belong to GlobalIdPrefix enumset",
+        "invalidNumberFormat": "Invalid number format [{0}].",
+        "invalidRadio": "Invalid data for Radio Field [{0}]",
+        "invalidReference": "Invalid data ({0}) for Source Field [{1}] - must be parsable into GlobalIds",
+        "invalidUri": "Invalid URI syntax; {0}",
+        "numberAboveMaximum": "Data [{0}] greater than maximum [{1}]",
+        "numberBelowMinimum": "Data [{0}] smaller than minimum [{1}]",
+        "tooManyDecimalPlaces": "Data [{0}] has too many decimal places (should be [{1}] )."
+      },
+      "form": {
+        "fieldCountMismatch": "The field order must contain {0} fields, but contains {1}",
+        "inactiveFieldId": "Field ID [{0}] is not active on this form; active field IDs are [{1}]"
+      },
+      "globalIdentifier": {
+        "invalidFormat": "OID {0} did not match pattern {1}",
+        "required": "oid cannot be null or empty"
+      },
+      "imageConversion": {
+        "conversionFailed": "Could not convert {0} to  a png format",
+        "destinationInvalid": "destinationFolder must be a readable directory{0}",
+        "filesRequired": "files can't be null",
+        "sourceNotTiff": "{0}isn't a tiff file?",
+        "sourceUnreadable": "Can't read file:{0}"
+      },
+      "imageData": {
+        "invalidEncoding": "Image string doesn't seem to be base64-encoded",
+        "required": "Expected base64 web image string but was null or empty.",
+        "separatorRequired": "Expected base64 web image string to contain a comma."
+      },
+      "inventoryField": {
+        "extraNumberInvalid": "''{0}'' cannot be parsed into number",
+        "invalidData": "{0}",
+        "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
+        "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
+        "invalidForLatestTemplate": "Field [{0}] value [{1}] is invalid according to latest template field definition",
+        "invalidIgsn": "Invalid IGSN format: [{0}]",
+        "invalidNumber": "Invalid number: {0}",
+        "invalidTime": "{0} is an invalid 24hour time format. Valid format is HH:mm.",
+        "mandatoryContentMissing": "Field [{0}] is mandatory, but no content is provided",
+        "mandatoryInLatestTemplate": "Field [{0}] is empty, but is mandatory in latest template field definition",
+        "noConnectedTemplate": "Field [{0}] has no connected template field",
+        "optionsNotAllowed": "Some supplied values are not allowed options",
+        "radioSingleOptionOnly": "Only one option can be selected on a radio field"
+      },
+      "netFile": {
+        "linkTypeInvalid": "unexpected link type: {0}"
+      },
+      "oauthApp": {
+        "nameRequired": "name must be non-empty"
+      },
+      "pagination": {
+        "negativePageNumber": "Page number cannot be -ve, was [{0}]",
+        "negativeResultsPerPage": "Results per page cannot be -ve, was [{0}]",
+        "sortOrderRequired": "sort order cannot be null!"
+      },
+      "preference": {
+        "unknownEnumValue": "Unknown value [{0}] for [{1}]; expected one of {2}"
+      },
+      "quantity": {
+        "incomparableUnits": "items to sum are not commensurate - they have different unit categories",
+        "parseFailed": "Could not parse quantity [{0}]",
+        "subtractionCategoryMismatch": "items to subtract are not commensurate - they have different unit categories",
+        "temperatureAboveAbsoluteZero": "Invalid temperature - must be a temperature measurement greater than absolute zero",
+        "unitIdInvalid": "invalid ID for unit",
+        "unitUnrecognized": "Could not parse quantity because unit [{0}] is not recognized",
+        "unsupportedUnitType": "Unsupported unit type: {0}"
+      },
+      "settings": {
+        "invalidBoolean": "[{0}] is not a boolean value",
+        "invalidNumber": "[{0}] is not a number",
+        "textTooLong": "Text value is {0} characters long; the maximum is {1}",
+        "valueTooLong": "Value is {0} characters long; the maximum is {1}"
       }
     }
   },
@@ -5984,6 +6122,9 @@ export default interface Resources {
       }
     },
     "messages": {
+      "calendar": {
+        "requestFrom": "RS request from {0}"
+      },
       "completionBy": {
         "label": "Due for completion by:"
       },
@@ -6002,6 +6143,9 @@ export default interface Resources {
       },
       "joinRequest": {
         "toJoin": "To join: {0}"
+      },
+      "moreInfo": {
+        "witnessDocumentSigning": "To proceed, please follow the above link to the document. Then, click on the 'Witness' button."
       },
       "orderBy": {
         "completionDate": "| Completion date",
@@ -6039,6 +6183,18 @@ export default interface Resources {
         "message": "Message",
         "messageRequest": "Message request",
         "request": "{0} request"
+      },
+      "types": {
+        "basic": "Basic message",
+        "createCollaborationGroup": "Create a Collaboration Group",
+        "createLabGroupAsPi": "Create LabGroup as PI",
+        "global": "Message to all users",
+        "joinExistingCollaborationGroup": "Join existing collaboration Group",
+        "joinLabGroup": "Join LabGroup",
+        "joinProjectGroup": "Join Project Group",
+        "reviewDocument": "Review document",
+        "shareDocument": "Share document",
+        "witnessDocumentSigning": "Witness document signing"
       },
       "updateReply": {
         "label": "Update & Reply"
@@ -6848,6 +7004,12 @@ export default interface Resources {
           "help": "Please enter a short description of this group."
         }
       },
+      "roles": {
+        "groupOwner": "Group Owner",
+        "labAdmin": "Lab Admin",
+        "pi": "PI",
+        "user": "User"
+      },
       "shared": {
         "title": "Shared Documents"
       },
@@ -6905,6 +7067,11 @@ export default interface Resources {
           "inGroup": "The new PI must already belong to the group",
           "role": "New PI must have global PI role"
         }
+      },
+      "types": {
+        "collaborationGroup": "Collaboration Group",
+        "labGroup": "Lab Group",
+        "projectGroup": "Project Group"
       },
       "userDeletion": {
         "errors": {
@@ -6990,6 +7157,10 @@ export default interface Resources {
   "server.inventory": {
     "errors": {
       "inventory": {
+        "attachment": {
+          "sampleTemplateUnsupported": "Sample templates do not support file attachments yet",
+          "workbenchUnsupported": "Files cannot be attached to a workbench"
+        },
         "barcode": {
           "contentRequired": "Content parameter is required",
           "heightNonNegative": "Requested height cannot be less then zero",
@@ -7001,20 +7172,32 @@ export default interface Resources {
         },
         "bulk": {
           "creationUnsupportedType": "Bulk creation only supports records with the ''type'' field set to {0}; was: {1}.",
+          "deleteUnsupportedType": "Bulk delete does not support records of type: {0}",
+          "duplicateUnsupportedType": "Bulk duplicate does not support records of type: {0}",
+          "moveUnsupportedType": "Bulk move does not support records of type: {0}",
           "operationTypeRequired": "Bulk operation must specify operationType",
+          "ownerChangeUnsupportedType": "Bulk owner change does not support records of type: {0}",
           "recordCount": "Bulk operation must specify at least 1, at most 100 records",
-          "recordsRequired": "Bulk operation must specify list of records"
+          "recordsRequired": "Bulk operation must specify list of records",
+          "restoreUnsupportedType": "Bulk restore does not support records of type: {0}",
+          "rollbackUnsupported": "Operation type {0} does not allow the rollback option",
+          "templateUpdateUnsupportedType": "Update to latest template does not support records of type: {0}",
+          "updateUnsupportedType": "Bulk update does not support records of type: {0}"
         },
         "container": {
           "deletion": {
             "notEmpty": "Container {0} is not empty and cannot be deleted"
           },
+          "directLocationUnsupported": "{0} containers cannot add locations directly",
+          "explicitCoordinatesNotAllowed": "{0} container can''t use explicit location coordinates",
           "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
           "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
           "gridLayoutRequired": "Grid layout must be set for a grid container.",
+          "imageContainerLocationRequired": "Image container must provide target location id, not coordinates",
           "imageTooLarge": "Container image cannot be larger than 10MB",
           "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'.",
           "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
+          "noCoordinatesRequired": "{0} container cannot store content without providing specific coordinates",
           "notFound": "No container with id: {0}",
           "typeRequired": "Container type (cType) is required and must be one of {0}."
         },
@@ -7035,6 +7218,7 @@ export default interface Resources {
           "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
         },
         "field": {
+          "attachmentUnsupported": "{0} fields do not support file attachments",
           "deleteRequestIdMissing": "'id' property not provided for a field with 'deleteFieldRequest' flag.",
           "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
           "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
@@ -7138,20 +7322,27 @@ export default interface Resources {
           "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
           "nameRequired": "name cannot be empty",
-          "nameTooLong": "Name cannot be longer than 255 chars"
+          "nameTooLong": "Name cannot be longer than 255 chars",
+          "negativeQuantity": "Record quantity cannot be negative: {0}"
         },
         "location": {
+          "occupied": "Location {0} is already occupied by record {1}",
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
           "outsideNewGridDimensions": "Container has a location ({0},{1}) which would be outside new grid dimensions (columns: {2}, rows: {3})."
         },
         "move": {
+          "containerDeleted": "Cannot move into deleted container",
+          "containerIntoItself": "Cannot move container into itself",
+          "containerIntoSubcontainer": "Cannot move container into its subcontainer",
           "targetContainer": {
             "unavailable": "Cannot locate target container from provided target container and location details"
           },
           "targetLocation": {
             "notFoundInImageContainer": "Target location not found.",
             "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
-          }
+          },
+          "unsupportedRecordType": "Container {0} can''t hold record of type: {1}",
+          "workbenchIntoContainer": "Workbench cannot be moved into another container"
         },
         "name": {
           "tooLong": "Name is too long (max {0} chars)",
@@ -7274,6 +7465,7 @@ export default interface Resources {
           "valueRequired": "A temperature needs a numeric value."
         },
         "template": {
+          "choiceDefinitionRequired": "Choice field must supply a definition",
           "deleted": "Sample template {0} is in the trash and cannot be used to create a sample. Restore it, or choose another template.",
           "emptyFieldName": "Field name cannot be empty",
           "emptyFieldType": "Field type cannot be empty",
@@ -7282,6 +7474,7 @@ export default interface Resources {
           "invalidRelationType": "{0} is not a valid DataCite relation type",
           "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
           "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
+          "radioDefinitionRequired": "Radio field must supply a definition",
           "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
         },
         "validation": {
@@ -7408,6 +7601,9 @@ export default interface Resources {
           "remove": "Remove",
           "rename": "Rename"
         },
+        "breadcrumb": {
+          "home": "Home"
+        },
         "document": {
           "creating": "Creating a document..."
         },
@@ -7481,6 +7677,25 @@ export default interface Resources {
         },
         "publicJournal": {
           "contactLabel": "contact: {0}"
+        },
+        "recordInfoPanel": {
+          "type": {
+            "audio": "Audio",
+            "chemistry": "Chemistry",
+            "dmps": "DMPs",
+            "document": "Document",
+            "exports": "Exports",
+            "folder": "Folder",
+            "form": "Form",
+            "image": "Image",
+            "miscellaneous": "Miscellaneous",
+            "notebook": "Notebook",
+            "snippet": "Snippet",
+            "structuredDocument": "Structured Document",
+            "systemFolder": "System Folder",
+            "template": "Template",
+            "video": "Video"
+          }
         },
         "renameForm": {
           "nameRequired": "Please enter a name!"
@@ -9182,6 +9397,10 @@ export default interface Resources {
       "settings": {
         "additionalPropertiesInfo": "Some settings can only be adjusted by IT staff with with access to the server environment, for more information about additional settings see: {0}",
         "additionalPropertiesLink": "Additional Server Properties / Settings",
+        "errors": {
+          "communityWriteRequired": "Cannot change settings without community write permission",
+          "globalRequiresSysadmin": "Only a sysadmin can change a global system setting"
+        },
         "header": {
           "info": "Click on a setting name for additional description, or on a setting value to start editing."
         },
@@ -9503,6 +9722,7 @@ export default interface Resources {
         }
       },
       "create": {
+        "defaultName": "Untitled document",
         "errors": {
           "failed": "Could not create new document"
         }
@@ -9629,6 +9849,16 @@ export default interface Resources {
       }
     },
     "folder": {
+      "addChild": {
+        "errors": {
+          "cycle": "Addition of [{0}] to  folder[{1}]  would produce a cycle in the folder tree, which currently is not permitted.",
+          "policyRejected": "ChildAddPolicy [{0}] does not permit child addition of [{1}] to  folder[{2}]",
+          "self": "Cannot add this object [{0}] as a child of itself."
+        }
+      },
+      "create": {
+        "defaultName": "Untitled Folder"
+      },
       "delete": {
         "errors": {
           "failed": "Unknown server error deleting folder: {0}",
@@ -9977,6 +10207,9 @@ export default interface Resources {
       "singleDocHelp": "The message will include a link to the current document. Only RSpace users with access to the document will be able to use the link."
     },
     "notebook": {
+      "create": {
+        "defaultName": "Untitled Notebook"
+      },
       "errors": {
         "nestedNotebook": "Notebooks and folders cannot be created inside notebooks.",
         "noNotebookInGallery": "You can only create a Notebook in the Workspace, not the Gallery folder tree"

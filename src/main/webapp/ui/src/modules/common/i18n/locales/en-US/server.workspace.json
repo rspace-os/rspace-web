@@ -169,6 +169,7 @@
       }
     },
     "create": {
+      "defaultName": "Untitled document",
       "errors": {
         "failed": "Could not create new document"
       }
@@ -256,6 +257,16 @@
     }
   },
   "folder": {
+    "addChild": {
+      "errors": {
+        "cycle": "Addition of [{0}] to  folder[{1}]  would produce a cycle in the folder tree, which currently is not permitted.",
+        "policyRejected": "ChildAddPolicy [{0}] does not permit child addition of [{1}] to  folder[{2}]",
+        "self": "Cannot add this object [{0}] as a child of itself."
+      }
+    },
+    "create": {
+      "defaultName": "Untitled Folder"
+    },
     "delete": {
       "errors": {
         "failed": "Unknown server error deleting folder: {0}",
@@ -637,6 +648,9 @@
     "singleDocHelp": "The message will include a link to the current document. Only RSpace users with access to the document will be able to use the link."
   },
   "notebook": {
+    "create": {
+      "defaultName": "Untitled Notebook"
+    },
     "errors": {
       "nestedNotebook": "Notebooks and folders cannot be created inside notebooks.",
       "noNotebookInGallery": "You can only create a Notebook in the Workspace, not the Gallery folder tree"

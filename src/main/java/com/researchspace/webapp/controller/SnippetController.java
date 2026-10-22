@@ -1,10 +1,10 @@
 package com.researchspace.webapp.controller;
 
 import com.ibm.icu.text.ListFormatter;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.record.Snippet;
-import com.researchspace.service.ListFormatUtils;
 import java.security.Principal;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;

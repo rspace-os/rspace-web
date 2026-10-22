@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
+import legacyJsEn from "@/modules/common/i18n/locales/en-US/server.legacyJs.json";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import materialTheme from "../../../../../theme";
 
@@ -69,18 +70,52 @@ function renderDoc(props: Partial<React.ComponentProps<typeof DocumentSections>>
 
 // Rich-text translations need the real bundle because cimode returns keys without
 // the tags that embed links.
-async function renderDocWithRealI18n(props: Partial<React.ComponentProps<typeof DocumentSections>> = {}) {
+async function renderDocWithRealI18n(
+  props: Partial<React.ComponentProps<typeof DocumentSections>> = {},
+  legacyJs = legacyJsEn,
+) {
   return renderWithRealI18n(
     <ThemeProvider theme={materialTheme}>
       <QueryClientProvider client={createQueryClient()}>
         <DocumentSections info={baseInfo} isNotebook={false} {...props} />
       </QueryClientProvider>
     </ThemeProvider>,
-    { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
+    { resources: { inventory: inventoryEn, "server.legacyJs": legacyJs }, defaultNS: "inventory" },
   );
 }
 
+const legacyJsWithStructuredDocumentLabel = {
+  ...legacyJsEn,
+  legacyjs: {
+    ...legacyJsEn.legacyjs,
+    core: {
+      ...legacyJsEn.legacyjs.core,
+      recordInfoPanel: {
+        ...legacyJsEn.legacyjs.core.recordInfoPanel,
+        type: {
+          ...legacyJsEn.legacyjs.core.recordInfoPanel.type,
+          structuredDocument: "Localized structured document category",
+        },
+      },
+    },
+  },
+};
+
 describe("DocumentSections (structured document)", () => {
+  it("translates the known structured document category", async () => {
+    await renderDocWithRealI18n({}, legacyJsWithStructuredDocumentLabel);
+
+    expect(screen.getByText("Localized structured document category")).toBeInTheDocument();
+    await screen.findByText(/not published/i);
+  });
+
+  it("preserves the raw display value for an unknown record category", async () => {
+    await renderDocWithRealI18n({ info: { ...baseInfo, type: "__proto__" } });
+
+    expect(screen.getByText("__proto__")).toBeInTheDocument();
+    await screen.findByText(/not published/i);
+  });
+
   it("renders the core metadata table rows", () => {
     renderDoc();
     expect(screen.getByText("My experiment")).toBeInTheDocument();

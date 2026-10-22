@@ -506,7 +506,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> sampleApiMgr.createNewApiSample(sampleWithInvalidExtraField, testUser));
-    assertEquals("'3.14asdf' cannot be parsed into number", iae.getMessage());
+    assertEquals("'3.14asdf' cannot be parsed into number", messages.getExceptionMessage(iae));
 
     // verify extra field cannot be named as default sample field (RSINV-162)
     ApiExtraField unallowedFieldName = new ApiExtraField();
@@ -542,7 +542,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         "[] is invalid for field type Text: Field [myText (mandatory - no default value)] is"
             + " mandatory, but no content is provided",
-        iae.getMessage());
+        messages.getExceptionMessage(iae));
 
     // add content in mandatory fields
     newSample.setFields(
@@ -570,7 +570,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         "[ ] is invalid for field type Text: Field [myText (mandatory - with default value)] is"
             + " mandatory, but no content is provided",
-        iae.getMessage());
+        messages.getExceptionMessage(iae));
 
     // attempt to update with blank options in mandatory radio field
     ApiInventoryEntityField radioFieldUpdate = new ApiInventoryEntityField();
@@ -585,7 +585,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     assertEquals(
         "[] is invalid for field type Radio: Field [myRadio (mandatory - with default value)] is"
             + " mandatory, but no content is provided",
-        iae.getMessage());
+        messages.getExceptionMessage(iae));
 
     // attempt to update with correct new options
     textFieldUpdate.setContent("updated content");

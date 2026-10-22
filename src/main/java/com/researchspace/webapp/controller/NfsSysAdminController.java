@@ -1,9 +1,9 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.service.FilestoreAclChecker;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.NfsManager;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;

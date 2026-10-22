@@ -3,6 +3,9 @@ package com.researchspace.core.util.imageutils;
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static java.lang.String.format;
 
+import com.researchspace.model.field.LocalizedIOException;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.LocalizedNullPointerException;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.io.FileSaver;
@@ -342,19 +345,21 @@ public class ImageUtils {
   public static File convertTiffToPng(
       File tiffFileToConvert, File destinationFolder, String newFileName) throws IOException {
     if (tiffFileToConvert == null || destinationFolder == null) {
-      throw new IllegalArgumentException("files can't be null");
+      throw new LocalizedIllegalArgumentException("validation.imageConversion.filesRequired");
     }
     if (!tiffFileToConvert.canRead()) {
-      throw new IllegalArgumentException("Can't read file:" + tiffFileToConvert);
+      throw new LocalizedIllegalArgumentException(
+          "validation.imageConversion.sourceUnreadable", tiffFileToConvert);
     }
     if (!destinationFolder.exists()
         || !destinationFolder.isDirectory()
         || !destinationFolder.canWrite()) {
-      throw new IllegalArgumentException(
-          "destinationFolder must be a readable directory" + destinationFolder);
+      throw new LocalizedIllegalArgumentException(
+          "validation.imageConversion.destinationInvalid", destinationFolder);
     }
     if (!isTiff(FilenameUtils.getExtension(tiffFileToConvert.getName()))) {
-      throw new IllegalArgumentException(tiffFileToConvert + "isn't a tiff file?");
+      throw new LocalizedIllegalArgumentException(
+          "validation.imageConversion.sourceNotTiff", tiffFileToConvert);
     }
     ImagePlus imp = IJ.openImage(tiffFileToConvert.getAbsolutePath());
     FileSaver saver = new FileSaver(imp);
@@ -363,7 +368,8 @@ public class ImageUtils {
     if (ok) {
       return new File(path);
     } else {
-      throw new IOException("Could not convert " + tiffFileToConvert + " to  a png format");
+      throw new LocalizedIOException(
+          "validation.imageConversion.conversionFailed", tiffFileToConvert);
     }
   }
 
@@ -479,12 +485,19 @@ public class ImageUtils {
   }
 
   private static void validateIsBase64WebImageString(String base64WebImage) {
-    Validate.notEmpty(base64WebImage, "Expected base64 web image string but was null or empty.");
-    Validate.isTrue(
-        base64WebImage.contains(","), "Expected base64 web image string to contain a ','.");
-    Validate.isTrue(
-        Base64.isBase64(base64WebImage.split(",")[1]),
-        "Image string doesn't seem to be base64-encoded");
+    if (base64WebImage == null) {
+      throw new LocalizedNullPointerException("validation.imageData.required");
+    }
+    if (base64WebImage.isEmpty()) {
+      throw new LocalizedIllegalArgumentException("validation.imageData.required");
+    }
+    if (!base64WebImage.contains(",")) {
+      throw new LocalizedIllegalArgumentException("validation.imageData.separatorRequired");
+    }
+    String imageData = base64WebImage.split(",", -1)[1];
+    if (imageData.isEmpty() || !Base64.isBase64(imageData)) {
+      throw new LocalizedIllegalArgumentException("validation.imageData.invalidEncoding");
+    }
   }
 
   /**

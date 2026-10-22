@@ -69,27 +69,16 @@ public class ReferenceFieldForm extends FieldForm {
       for (String val : values) {
         val = val.trim();
         if (!GlobalIdentifier.isValid(val)) {
-          el.addErrorMsg(invalidDataMsg(val, data));
+          el.addErrorMsgCode("validation.fieldData.invalidReference", val, data);
         }
         if (val.length() >= 2) {
           if (!validPrefixes.contains(val.substring(0, 2))) {
-            el.addErrorMsg(invalidPrefixMsg(val));
+            el.addErrorMsgCode("validation.fieldData.invalidGlobalIdPrefix", val.substring(0, 2));
           }
         }
       }
     }
     return el;
-  }
-
-  private String invalidDataMsg(String val, String data) {
-    return String.format(
-        "Invalid data (%s) for Source Field [%s] - must be parsable into GlobalIds", val, data);
-  }
-
-  private String invalidPrefixMsg(String val) {
-    return String.format(
-        "The prefix %s is not a globalIdPrefix. " + "It must belong to GlobalIdPrefix enumset",
-        (val.substring(0, 2)));
   }
 
   @Override

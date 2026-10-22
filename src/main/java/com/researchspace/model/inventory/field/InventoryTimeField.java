@@ -37,8 +37,7 @@ public class InventoryTimeField extends InventoryEntityField {
   public ErrorList validate(String fieldData) {
     ErrorList errors = super.validate(fieldData);
     if (timeHasContentAndIsInvalid(fieldData)) {
-      errors.addErrorMsg(
-          String.format("%s is an invalid 24hour time format. Valid format is HH:mm.", fieldData));
+      errors.addErrorMsgCode("validation.inventoryField.invalidTime", fieldData);
     }
     return errors;
   }

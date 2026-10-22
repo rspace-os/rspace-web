@@ -208,7 +208,7 @@ public class InventoryFilesApiController extends BaseApiInventoryController
               chemString, FilenameUtils.getExtension(fileProperty.getFileName()), format);
       return new ByteArrayInputStream(chemistryExportResponse);
     } catch (Exception e) {
-      throw new InternalServerErrorException(e.getMessage());
+      throw new InternalServerErrorException(messages.getExceptionChainMessage(e));
     }
   }
 

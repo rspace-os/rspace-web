@@ -1,5 +1,6 @@
 package com.researchspace.model.inventory.field;
 
+import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.FieldType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
@@ -45,8 +46,8 @@ public class ExtraLinkField extends ExtraField {
   }
 
   @Override
-  public String validateNewData(String data) {
-    return null;
+  public ErrorList validateNewData(String data) {
+    return new ErrorList();
   }
 
   @Override

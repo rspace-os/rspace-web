@@ -2,6 +2,7 @@ package com.researchspace.model.record;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,6 +46,18 @@ public class BreadcrumbGeneratorTest {
     assertTrue(bcrumb.isContainLinks());
     assertThat(bcrumb.getElements()).hasSize(1);
     assertEquals(single.getName(), bcrumb.getElements().get(0).getDisplayname());
+    assertFalse(bcrumb.getElements().get(0).isHome());
+  }
+
+  @Test
+  public void testFolderNamedHomeIsNotMarkedAsHome() {
+    Folder homeNamedFolder = TestFactory.createAFolder("Home", createAUser());
+    homeNamedFolder.setId(1L);
+
+    Breadcrumb breadcrumb = bGen.generateBreadcrumb(homeNamedFolder, homeNamedFolder);
+
+    assertEquals("Home", breadcrumb.getElements().get(0).getDisplayname());
+    assertFalse(breadcrumb.getElements().get(0).isHome());
   }
 
   @Test
@@ -100,5 +113,6 @@ public class BreadcrumbGeneratorTest {
     assertThat(bcrumb.getElements()).hasSize(2);
     assertEquals(
         BreadcrumbGenerator.HOME_FOLDER_DISPLAY_NAME, bcrumb.getElements().get(0).getDisplayname());
+    assertTrue(bcrumb.getElements().get(0).isHome());
   }
 }
