@@ -170,107 +170,7 @@ The ID field makes the sort result stable.
 
 ### 2. Add the operations class and the resource spec
 
-```java
-package com.researchspace.widgets.api.v2;
-
-import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
-import com.researchspace.api.v2.resource.ApiV2ErrorMapping;
-import com.researchspace.api.v2.resource.ResourceOperations;
-import com.researchspace.api.v2.resource.ResourceOperation;
-import com.researchspace.api.v2.auth.ApiV2Caller;
-import com.researchspace.model.User;
-import com.researchspace.model.collection.ParsedDocument;
-import com.researchspace.model.collection.ResourcePage;
-import com.researchspace.model.collection.ResourceRequest;
-import com.researchspace.widgets.model.ApiV2WidgetResource;
-import com.researchspace.widgets.model.Widget;
-import com.researchspace.widgets.service.WidgetManager;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-
-@Configuration(proxyBeanMethods = false)
-public class WidgetResourceOperations implements ResourceOperations<Widget, Long> {
-
-  private final WidgetManager manager;
-
-  public WidgetResourceOperations(WidgetManager manager) {
-    this.manager = manager;
-  }
-
-  @Bean
-  ApiV2ResourceSpec<Widget, Long> widgetApiV2Resource() {
-    return new ApiV2ResourceSpec<>(
-        ApiV2WidgetResource.DESCRIPTION,
-        this,
-        Long::valueOf,
-        "errors.api.v2.widget.create",
-        "errors.api.v2.widget.update",
-        Map.of(
-            ResourceOperation.CREATE,
-            List.of(
-                ApiV2ErrorMapping.of(
-                    WidgetNameConflictException.class,
-                    HttpStatus.CONFLICT,
-                    "errors.api.v2.widget.name.conflict",
-                    "A widget with this name already exists."))));
-  }
-
-  @Override
-  public ResourcePage<Widget> find(ResourceRequest request, User subject) {
-    return manager.getWidgets(request, subject);
-  }
-
-  @Override
-  public long count(ResourceRequest request, User subject) {
-    return manager.countWidgets(request, subject);
-  }
-
-  @Override
-  public Optional<Widget> findById(Long id, User subject) {
-    return manager.getWidget(id, subject);
-  }
-
-  @Override
-  public Widget create(ParsedDocument document, ApiV2Caller caller) {
-    return manager.createWidget(WidgetCreate.from(document), caller.subject(), caller.actor());
-  }
-
-  @Override
-  public List<Widget> createMany(List<ParsedDocument> documents, ApiV2Caller caller) {
-    return manager.createResources(
-        documents.stream().map(WidgetInput::from).map(WidgetInput::toWidget).toList(),
-        caller.subject(),
-        caller.actor());
-  }
-
-  @Override
-  public Optional<Widget> update(Long id, ParsedDocument document, ApiV2Caller caller) {
-    return manager.updateWidget(
-        id, WidgetPatch.from(document), caller.subject(), caller.actor());
-  }
-
-  @Override
-  public List<Widget> updateMany(
-      ResourceRequest request, ParsedDocument document, ApiV2Caller caller) {
-    return manager.updateWidgets(
-        request, WidgetPatch.from(document), caller.subject(), caller.actor());
-  }
-
-  @Override
-  public Optional<Widget> delete(Long id, ApiV2Caller caller) {
-    return manager.removeWidget(id, caller.subject(), caller.actor());
-  }
-
-  @Override
-  public List<Widget> deleteMany(ResourceRequest request, ApiV2Caller caller) {
-    return manager.removeWidgets(request, caller.subject(), caller.actor());
-  }
-}
-```
+See `MaintenanceResourceOperations` for the spec bean, error mappings, document conversion and CRUD delegation. Resources that audit who acted on another user's behalf also pass `caller.actor()` to their manager.
 
 Spring finds each `ApiV2ResourceSpec` bean below `com.researchspace`. Do not add a central registry
 entry. At startup, `ApiV2ResourceCatalog` validates all definitions and fails if any is invalid.
@@ -324,7 +224,6 @@ outside the HTTP registration pipeline.
 For a REST API v2 request, the user supplied to a read is the effective subject. A write receives
 an `ApiV2Caller`, which contains the effective subject and the originating actor. The manager must
 authorize the subject. An audit event must use the actor and retain the subject when they differ.
-Record the subject alongside the actor when they differ.
 
 Use `InMemoryCollectionQuery` for a bounded collection that does not use database queries. This
 adapter applies the standard filter, sort, page, and count rules to a resource snapshot.
@@ -382,43 +281,8 @@ The generic REST controller uses an `ApiV2ResourceRegistration`. The registratio
 access checks, parses JSON, resolves relationships, and renders the response. It then calls the
 resource operations class.
 
-Other Java code can inject the concrete operations class when it already has REST API v2 types
-such as `ResourceRequest` or `ParsedDocument`.
-
-```java
-@Service
-public final class WidgetReportService {
-
-  private final WidgetResourceOperations widgetOperations;
-
-  public WidgetReportService(WidgetResourceOperations widgetOperations) {
-    this.widgetOperations = widgetOperations;
-  }
-
-  public ResourcePage<Widget> findWidgets(ResourceRequest request, User subject) {
-    return widgetOperations.find(request, subject);
-  }
-}
-```
-
-Inject the concrete class, since many beans implement `ResourceOperations<?, ?>` and interface
-injection is ambiguous.
-
-Code can also inject its `ApiV2ResourceSpec` bean and call `operations()`. Use a qualifier when more
-than one resource spec is in the injection context.
-
-```java
-private final ApiV2ResourceSpec<Widget, Long> widgetSpec;
-
-public WidgetReportService(
-    @Qualifier("widgetApiV2Resource") ApiV2ResourceSpec<Widget, Long> spec) {
-  this.widgetSpec = spec;
-}
-
-public ResourcePage<Widget> findWidgets(ResourceRequest request, User subject) {
-  return widgetSpec.operations().find(request, subject);
-}
-```
+Inject the concrete operations class because unqualified `ResourceOperations<?, ?>` injection is
+ambiguous. Alternatively, inject a qualified `ApiV2ResourceSpec<T, ID>` and call `spec.operations()`.
 
 Direct calls to `ResourceOperations` skip the registration layer and these tasks:
 
@@ -482,30 +346,10 @@ The default resource spec exposes these operations:
 | `DELETE` | `DELETE /api/v2/widgets/{id}` | `delete` |
 | `BULK_DELETE` | `DELETE /api/v2/widgets?where=...` | `deleteMany` |
 
-Use the full `ApiV2ResourceSpec` constructor to expose fewer operations:
-
-```java
-return new ApiV2ResourceSpec<>(
-    ApiV2WidgetResource.DESCRIPTION,
-    this,
-    Long::valueOf,
-    "errors.api.v2.widget.create",
-    "errors.api.v2.widget.update",
-    EnumSet.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ),
-    Map.of());
-```
-
-Operation exposure and access are different controls:
-
-| # | Requirement |
-| --- | --- |
-| 1. | `exposedOperations` controls whether a route exists and appears in OpenAPI. |
-| 2. | `AccessPolicy` controls who can use an exposed route. |
-
-An unexposed operation returns `405` with an `Allow` header listing supported methods. This check
-precedes the access policy, so an unexposed write returns `405` even for anonymous callers.
-
-For a read-only HTTP contract, omit all write operations. Also use a read-only access policy.
+Set `exposedOperations` in `ApiV2ResourceSpec` to choose HTTP routes and OpenAPI paths;
+`AccessPolicy` controls who may use them. Unexposed operations return `405` with `Allow` before
+access checks, including for anonymous callers. For read-only collections, expose `LIST`, `COUNT`,
+and `READ` and use a read-only access policy.
 
 ## Resource configuration
 
