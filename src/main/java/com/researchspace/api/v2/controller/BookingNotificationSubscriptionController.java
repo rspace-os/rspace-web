@@ -1,11 +1,5 @@
 package com.researchspace.api.v2.controller;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Preferences;
@@ -17,8 +11,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import java.io.IOException;
 import java.util.List;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,55 +31,16 @@ public class BookingNotificationSubscriptionController {
   private static final String SUBSCRIPTIONS = "/users/me/booking-notification-subscriptions";
   private static final String ITEM = "/booking-configurations/{id}/notification-subscription";
 
-  /** Rejects string and numeric coercion for notification choices. */
-  public static class StrictBooleanDeserializer extends StdDeserializer<Boolean> {
-    public StrictBooleanDeserializer() {
-      super(Boolean.class);
-    }
+  public record PreferenceReplacement(@NotNull Boolean autoSubscribeOwnedItems) {}
 
-    @Override
-    public Boolean deserialize(JsonParser parser, DeserializationContext context)
-        throws IOException {
-      if (parser.hasToken(JsonToken.VALUE_TRUE)) return true;
-      if (parser.hasToken(JsonToken.VALUE_FALSE)) return false;
-      return (Boolean) context.handleUnexpectedToken(Boolean.class, parser);
-    }
-  }
-
-  public record PreferenceReplacement(
-      @NotNull @JsonDeserialize(using = StrictBooleanDeserializer.class)
-          Boolean autoSubscribeOwnedItems) {
-    @JsonAnySetter
-    void rejectUnknownField(String name, Object value) {
-      throw new IllegalArgumentException(name);
-    }
-  }
-
-  public record SubscriptionReplacement(
-      @NotNull @JsonDeserialize(using = StrictBooleanDeserializer.class) Boolean enabled,
-      @NotNull @Min(-1) Long version) {
-    @JsonAnySetter
-    void rejectUnknownField(String name, Object value) {
-      throw new IllegalArgumentException(name);
-    }
-  }
+  public record SubscriptionReplacement(@NotNull Boolean enabled, @NotNull @Min(-1) Long version) {}
 
   public record Lookup(
-      @NotNull @Size(min = 1, max = 100) List<@NotNull @Positive Long> configurationIds) {
-    @JsonAnySetter
-    void rejectUnknownField(String name, Object value) {
-      throw new IllegalArgumentException(name);
-    }
-  }
+      @NotNull @Size(min = 1, max = 100) List<@NotNull @Positive Long> configurationIds) {}
 
   public record BulkReplacement(
       @NotNull @Size(min = 1, max = 100) List<@NotNull @Positive Long> configurationIds,
-      @NotNull @JsonDeserialize(using = StrictBooleanDeserializer.class) Boolean enabled) {
-    @JsonAnySetter
-    void rejectUnknownField(String name, Object value) {
-      throw new IllegalArgumentException(name);
-    }
-  }
+      @NotNull Boolean enabled) {}
 
   public record UnsubscribeResult(int updatedCount) {}
 
@@ -107,7 +62,7 @@ public class BookingNotificationSubscriptionController {
     return manager.getPreferences(caller.subject(), caller.actor());
   }
 
-  @PutMapping(PREFERENCES)
+  @PutMapping(value = PREFERENCES, consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "replaceMyBookingNotificationPreferences",
       summary = "Change the automatic subscription default without changing existing subscriptions",
@@ -134,7 +89,7 @@ public class BookingNotificationSubscriptionController {
     return manager.get(id, caller.subject(), caller.actor());
   }
 
-  @PutMapping(ITEM)
+  @PutMapping(value = ITEM, consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "replaceMyBookingNotificationSubscription",
       summary = "Update the caller's personal subscription with optimistic concurrency",
@@ -151,7 +106,7 @@ public class BookingNotificationSubscriptionController {
     return manager.replace(id, body.enabled(), body.version(), caller.subject(), caller.actor());
   }
 
-  @PostMapping(SUBSCRIPTIONS + "/lookup")
+  @PostMapping(value = SUBSCRIPTIONS + "/lookup", consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "lookupMyBookingNotificationSubscriptions",
       summary = "Read personal subscriptions for up to 100 readable instruments",
@@ -164,7 +119,7 @@ public class BookingNotificationSubscriptionController {
     return manager.getMany(body.configurationIds(), caller.subject(), caller.actor());
   }
 
-  @PutMapping(SUBSCRIPTIONS)
+  @PutMapping(value = SUBSCRIPTIONS, consumes = MediaType.APPLICATION_JSON_VALUE)
   @Operation(
       operationId = "replaceMyBookingNotificationSubscriptions",
       summary = "Subscribe or unsubscribe from selected readable instruments",
