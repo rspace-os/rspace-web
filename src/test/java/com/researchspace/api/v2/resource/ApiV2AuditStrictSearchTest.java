@@ -8,6 +8,7 @@ import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.FileManifest;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.ReadObserver;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.Request;
 import com.researchspace.api.v2.resource.ApiV2AuditStrictSearch.StrictReadException;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -461,8 +463,7 @@ class ApiV2AuditStrictSearchTest {
         "RSLogs.txt",
         event("01 Jan 2026 12:00:00,000", "BC1")
             + "\n"
-            + event("01 Jan 2026 13:00:00,000", "BC1")
-                .replace("\"name\":\"item\"", "\"name\":\"PayloadMarker\"")
+            + event("01 Jan 2026 13:00:00,000", Map.of("id", "BC1", "name", "PayloadMarker"))
             + "\n");
 
     List<AuditTrailSearchResult> results =
@@ -493,8 +494,9 @@ class ApiV2AuditStrictSearchTest {
   void textSearchDoesNotInspectUnpublishedAuditFields() throws IOException {
     write(
         "RSLogs.txt",
-        event("01 Jan 2026 12:00:00,000", "BC1")
-                .replace("\"name\":\"item\"", "\"name\":\"Visible\",\"secret\":\"PrivateMarker\"")
+        event(
+                "01 Jan 2026 12:00:00,000",
+                Map.of("id", "BC1", "name", "Visible", "secret", "PrivateMarker"))
             + "\n");
 
     assertTrue(
@@ -504,10 +506,12 @@ class ApiV2AuditStrictSearchTest {
   @Test
   void resourceScopeMatchesOnlyTheDecodedTopLevelIdentifier() throws IOException {
     String identifier = "things:41";
-    String unrelated = event("01 Jan 2026 12:00:00,000", "things:42");
-    String purpose = unrelated.replace("\"name\":\"item\"", "\"purpose\":\"" + identifier + "\"");
+    String purpose =
+        event("01 Jan 2026 12:00:00,000", Map.of("id", "things:42", "purpose", identifier));
     String nested =
-        unrelated.replace("\"name\":\"item\"", "\"target\":{\"id\":\"" + identifier + "\"}");
+        event(
+            "01 Jan 2026 12:00:00,000",
+            Map.of("id", "things:42", "target", Map.of("id", identifier)));
     String direct = event("01 Jan 2026 13:00:00,000", identifier.replace(":", "\\u003a"));
     write("RSLogs.txt", purpose + "\n" + nested + "\n" + direct + "\n");
     Request request =
@@ -608,5 +612,10 @@ class ApiV2AuditStrictSearchTest {
   private static String event(String timestamp, String id) {
     return "%s - domain:UNKNOWN action:CREATE [{\"data\":{\"id\":\"%s\",\"name\":\"item\"}}] alice(Alice Example)"
         .formatted(timestamp, id);
+  }
+
+  private static String event(String timestamp, Map<String, ?> data) {
+    return "%s - domain:UNKNOWN action:CREATE [%s] alice(Alice Example)"
+        .formatted(timestamp, JacksonUtil.toJson(Map.of("data", data)));
   }
 }
