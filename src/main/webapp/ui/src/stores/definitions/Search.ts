@@ -144,6 +144,10 @@ export type UiConfig = {
   /**
    * Turns off drag-and-drop in a grid used only to select locations, such as one that picks empty
    * locations for new records. The container's own page leaves it false.
+   *
+   * It also switches the grid's keyboard model: focus and the arrow keys no longer select, and
+   * Space toggles the focused location. The grid assumes such a search also sets
+   * `onlyAllowSelectingEmptyLocations`, as every caller does.
    */
   dragAndDropDisabled: boolean;
 };
