@@ -1,5 +1,7 @@
 package com.researchspace.api.v2.controller;
 
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -12,17 +14,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Preferences;
 import com.researchspace.booking.service.BookingNotificationSubscriptionManager.Status;
 import com.researchspace.model.User;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.webapp.config.WebConfig;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -39,9 +45,19 @@ class BookingNotificationSubscriptionControllerTest {
 
   @BeforeEach
   void setUp() {
+    MappingJackson2HttpMessageConverter jsonConverter = new MappingJackson2HttpMessageConverter();
+    ApiV2JsonMappers.register(
+        jsonConverter,
+        BookingNotificationSubscriptionController.PreferenceReplacement.class,
+        BookingNotificationSubscriptionController.SubscriptionReplacement.class,
+        BookingNotificationSubscriptionController.Lookup.class,
+        BookingNotificationSubscriptionController.BulkReplacement.class);
+    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    when(messages.getMessage(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
     mvc =
         MockMvcBuilders.standaloneSetup(new BookingNotificationSubscriptionController(manager))
-            .setControllerAdvice(new ApiV2ControllerAdvice(mock(MessageSourceUtils.class)))
+            .setControllerAdvice(new ApiV2ControllerAdvice(messages))
+            .setMessageConverters(jsonConverter, new WebConfig.YamlJackson2HttpMessageConverter())
             .build();
   }
 
@@ -154,6 +170,73 @@ class BookingNotificationSubscriptionControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
         .andExpect(status().isBadRequest());
+    verifyNoInteractions(manager);
+  }
+
+  @Test
+  void rejectsUnknownFieldsInLookupAndBulkReplacement() throws Exception {
+    mvc.perform(
+            post(SUBSCRIPTIONS + "/lookup")
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"configurationIds\":[12],\"ownerId\":99}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    mvc.perform(
+            put(SUBSCRIPTIONS)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"configurationIds\":[12],\"enabled\":true,\"ownerId\":99}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    verifyNoInteractions(manager);
+  }
+
+  @Test
+  void rejectsBooleanCoercionsAndFloatingPointVersions() throws Exception {
+    for (String invalidBoolean : List.of("1", "0", "\"true\"")) {
+      mvc.perform(
+              put(DEFAULTS)
+                  .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content("{\"autoSubscribeOwnedItems\":" + invalidBoolean + "}"))
+          .andExpect(
+              result ->
+                  assertInstanceOf(
+                      HttpMessageNotReadableException.class, result.getResolvedException()))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    }
+    mvc.perform(
+            put(ITEM)
+                .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"enabled\":true,\"version\":15.0}"))
+        .andExpect(
+            result ->
+                assertInstanceOf(
+                    HttpMessageNotReadableException.class, result.getResolvedException()))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    verifyNoInteractions(manager);
+  }
+
+  @Test
+  void keepsSubscriptionBooleansStrictForYamlBodies() throws Exception {
+    for (String invalidBoolean : List.of("1", "\"true\"")) {
+      mvc.perform(
+              put(DEFAULTS)
+                  .requestAttr(ApiV2Caller.REQUEST_ATTRIBUTE, caller)
+                  .contentType(MediaType.parseMediaType("application/x-yaml"))
+                  .accept(MediaType.APPLICATION_JSON)
+                  .content("autoSubscribeOwnedItems: " + invalidBoolean + "\n"))
+          .andExpect(
+              result ->
+                  assertInstanceOf(
+                      HttpMessageNotReadableException.class, result.getResolvedException()))
+          .andExpect(status().isBadRequest())
+          .andExpect(jsonPath("$.code").value("errors.api.v2.invalidRequest"));
+    }
     verifyNoInteractions(manager);
   }
 }
