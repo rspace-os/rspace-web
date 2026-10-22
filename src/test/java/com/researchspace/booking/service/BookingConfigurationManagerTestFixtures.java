@@ -1,7 +1,5 @@
 package com.researchspace.booking.service;
 
-import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.OVERSIZED_MUTATION_LIMIT;
-import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.target;
 import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.defaults;
 import static com.researchspace.booking.service.BookingConfigurationManagerTestFixtures.instrument;
 import static com.researchspace.testutils.BookingTestSchedules.hours;
