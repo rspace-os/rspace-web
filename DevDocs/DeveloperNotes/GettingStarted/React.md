@@ -97,9 +97,8 @@ for eager and lazy route behavior.
 ## Shared frontend helpers
 
 The [frontend README](../../../src/main/webapp/ui/README.md#shared-frontend-helpers) lists reusable
-layout, query, API-header, and test helpers. `renderInRouter` in
-`src/main/webapp/ui/src/__tests__/helpers/renderInRouter.tsx` renders a supplied route tree with a
-memory router and returns the render result plus router. Reuse it for isolated route-aware tests.
+layout, query, API-header, and test helpers. For isolated route-aware tests, reuse `renderInRouter`
+from the [shared helper table](../../../src/main/webapp/ui/README.md#shared-frontend-helpers).
 
 For non-route components, keep heavy optional features behind their existing lazy imports and
 inspect `pnpm build:stats` after changing shared imports. See React's
