@@ -8,9 +8,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.testutils.ApiV2Fixture;
 import com.researchspace.webapp.controller.MVCTestBase;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -159,7 +162,7 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
         .perform(get(itemPath(second)).header("apiKey", key))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.enabled").value(false));
-    String change = "{\"enabled\":false,\"version\":" + version + "}";
+    String change = JacksonUtil.toJson(Map.of("enabled", false, "version", version));
     mockMvc
         .perform(
             put(itemPath(first))
@@ -180,7 +183,9 @@ class BookingNotificationSubscriptionControllerIT extends MVCTestBase {
             put(SUBSCRIPTIONS)
                 .header("apiKey", key)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"configurationIds\":[" + first + "," + second + "],\"enabled\":true}"))
+                .content(
+                    JacksonUtil.toJson(
+                        Map.of("configurationIds", List.of(first, second), "enabled", true))))
         .andExpect(status().isOk());
     mockMvc.perform(delete(SUBSCRIPTIONS).header("apiKey", key)).andExpect(status().isOk());
     mockMvc
