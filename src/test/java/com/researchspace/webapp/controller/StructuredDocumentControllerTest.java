@@ -31,6 +31,7 @@ import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -316,6 +317,21 @@ public class StructuredDocumentControllerTest {
     final StructuredDocument sd = TestFactory.createAnySD();
     sd.setId(3L);
     return sd;
+  }
+
+  @Test
+  public void autosaveFieldReturnsResolvedValidationMessages() {
+    NumberFieldForm form = new NumberFieldForm("n");
+    form.setMaxNumberValue(10.0);
+    Field field = form.createNewFieldFromForm();
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(fieldManager.get(1L, user)).thenReturn(Optional.of(field));
+
+    AjaxReturnObject<Boolean> rc = strucDocCtrller.autosaveField("11", 1L, mockPrincipal);
+
+    assertEquals(
+        List.of("Data [11] greater than maximum [10.0]"), rc.getErrorMsg().getErrorMessages());
+    verify(recordMgr, never()).saveTemporaryDocument(anyLong(), eq(user), anyString());
   }
 
   @Test

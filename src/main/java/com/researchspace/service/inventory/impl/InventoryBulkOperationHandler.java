@@ -3,6 +3,7 @@ package com.researchspace.service.inventory.impl;
 import static com.researchspace.core.util.ListFormatUtils.formatList;
 
 import com.ibm.icu.text.ListFormatter;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.api.v1.controller.ContainersApiController;
 import com.researchspace.api.v1.controller.InstrumentTemplatesApiController;
@@ -26,7 +27,6 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.model.User;
-import com.researchspace.model.field.LocalizedException;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.InventoryMoveHelper;
@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.function.BiFunction;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindException;
@@ -176,18 +175,22 @@ public class InventoryBulkOperationHandler {
     if (cause instanceof BindException bindException) {
       return apiControllerAdvice.getApiErrorFromBindException(bindException);
     }
-    Throwable exceptionToResolve =
-        e instanceof LocalizedException || e instanceof MessageSourceResolvable ? e : cause;
-    String errorMessage =
-        exceptionToResolve instanceof LocalizedException
-                || exceptionToResolve instanceof MessageSourceResolvable
-            ? messages.getExceptionMessage(exceptionToResolve)
-            : e.getMessage();
     return new ApiError(
         HttpStatus.BAD_REQUEST,
         ApiErrorCodes.INVALID_FIELD.getCode(),
         messages.getMessage("api.errors.detected", new Object[] {1}),
-        errorMessage);
+        findApiErrorCode(e),
+        messages.getExceptionChainMessage(e));
+  }
+
+  /** The frontend picks tailored alerts for some failures by this code. */
+  private static String findApiErrorCode(Throwable e) {
+    for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+      if (cause instanceof ApiRuntimeException apiException) {
+        return apiException.getErrorCode();
+      }
+    }
+    return null;
   }
 
   private ApiInventoryRecordInfo createInventoryRecord(ApiInventoryRecordInfo recInfo, User user) {

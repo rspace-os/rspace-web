@@ -186,6 +186,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleLocalizedIllegalStateException(
       Exception ex, WebRequest request) {
     String resolvedMessage = messages.getExceptionMessage(ex);
+    log.error("api error: {}", resolvedMessage, ex);
     ApiError apiError =
         new ApiError(
             HttpStatus.INTERNAL_SERVER_ERROR,
@@ -199,6 +200,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleLocalizedIllegalArgumentException(
       LocalizedIllegalArgumentException ex, WebRequest request) {
     String resolvedMessage = messages.getMessage(ex);
+    log.error("api illegal argument: {}", resolvedMessage, ex);
     ApiError apiError =
         new ApiError(
             HttpStatus.UNPROCESSABLE_ENTITY,

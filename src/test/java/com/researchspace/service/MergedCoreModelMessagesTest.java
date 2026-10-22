@@ -8,6 +8,7 @@ import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.comms.MessageType;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.LocalizedIllegalArgumentException;
+import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.preference.Preference;
 import java.util.Locale;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,17 @@ class MergedCoreModelMessagesTest {
     messages.resolve(errors);
 
     assertEquals("Data [11] greater than maximum [10]", errors.getErrorMessages().get(0));
+  }
+
+  @Test
+  void numberFieldBoundsKeepTheirFullPrecision() {
+    NumberFieldForm form = new NumberFieldForm("n");
+    form.setMaxNumberValue(1.23456);
+
+    ErrorList errors = form.validate("2");
+    messages.resolve(errors);
+
+    assertEquals("Data [2] greater than maximum [1.23456]", errors.getErrorMessages().get(0));
   }
 
   @Test

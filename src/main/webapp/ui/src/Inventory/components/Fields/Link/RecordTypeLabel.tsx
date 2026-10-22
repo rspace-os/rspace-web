@@ -1,4 +1,5 @@
 import type React from "react";
+import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 
 const RECORD_TYPE_LABEL_KEYS = {
@@ -21,6 +22,16 @@ const RECORD_TYPE_LABEL_KEYS = {
 
 /** Translate a known workspace record category while preserving unknown server values. */
 export default function RecordTypeLabel({ type }: { type: string }): React.ReactElement {
+  // server.legacyJs is not preloaded by the Inventory root; without a local boundary its first
+  // load would suspend the whole app.
+  return (
+    <Suspense fallback={type}>
+      <TranslatedRecordType type={type} />
+    </Suspense>
+  );
+}
+
+function TranslatedRecordType({ type }: { type: string }): React.ReactElement {
   const { t } = useTranslation("server.legacyJs");
   const key = Object.hasOwn(RECORD_TYPE_LABEL_KEYS, type)
     ? RECORD_TYPE_LABEL_KEYS[type as keyof typeof RECORD_TYPE_LABEL_KEYS]
