@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -72,8 +73,11 @@ public class SelfServiceLabGroupControllerTest {
   private Long newLabGroupID = 10L;
 
   @BeforeEach
-  public void allowSelfServiceLabGroups() {
+  public void stubSessionUser() {
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
+  }
+
+  private void allowSelfServiceLabGroups() {
     when(systemPropertyPermissionManager.isPropertyAllowed(
             piUser, SystemPropertyName.SELF_SERVICE_LABGROUPS))
         .thenReturn(true);
@@ -86,6 +90,7 @@ public class SelfServiceLabGroupControllerTest {
   }
 
   private void stubValidGroupCreation() {
+    allowSelfServiceLabGroups();
     when(createCloudGroup.getEmails()).thenReturn(new String[] {""});
     when(createCloudGroup.getGroupName()).thenReturn("grpName");
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
@@ -104,6 +109,7 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldReturnAjaxObjectWithErrors() {
+    allowSelfServiceLabGroups();
     when(bindingResult.hasErrors()).thenReturn(true);
     ErrorList errorList = new ErrorList();
     errorList.addErrorMsg("a");
@@ -129,6 +135,7 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldReturnErrorWhenDuplicateNameForSelfServiceLabGroup() {
+    allowSelfServiceLabGroups();
     when(createCloudGroup.getGroupName()).thenReturn("grpName");
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
     BindingResult errorsEx = new BeanPropertyBindingResult(createCloudGroup, "");
@@ -152,6 +159,7 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldSendJoinGroupRequestsAndEmailsIfUsersInvitedToJoin() {
+    allowSelfServiceLabGroups();
     String[] emails = new String[] {"email1@com", "email2@com"};
     List<User> invitedUsers = List.of(invitedUser1, invitedUser2);
     when(createCloudGroup.getGroupName()).thenReturn("grpName");
@@ -174,6 +182,7 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldNotSendJoinGroupRequestsIfNoUsersInvitedToJoin() {
+    allowSelfServiceLabGroups();
     when(createCloudGroup.getEmails()).thenReturn(new String[] {""});
     when(createCloudGroup.getGroupName()).thenReturn("grpName");
     when(userManager.getAuthenticatedUserInSession()).thenReturn(piUser);
@@ -243,9 +252,16 @@ public class SelfServiceLabGroupControllerTest {
   }
 
   @Test
-  public void shouldRefuseDeletionWhenSelfServiceLabGroupsDenied() {
-    denySelfServiceLabGroups();
-    assertThrows(AuthorizationException.class, () -> controller.removeGroup(1L));
-    verifyNoInteractions(groupManager);
+  public void shouldDeleteOwnSelfServiceLabGroupWhileSelfServiceLabGroupsDenied() {
+    lenient()
+        .when(
+            systemPropertyPermissionManager.isPropertyAllowed(
+                piUser, SystemPropertyName.SELF_SERVICE_LABGROUPS))
+        .thenReturn(false);
+    when(groupManager.getGroup(1L)).thenReturn(newLabGroup);
+    when(newLabGroup.isSelfService()).thenReturn(true);
+    when(newLabGroup.getOwner()).thenReturn(piUser);
+    assertEquals("redirect:/userform", controller.removeGroup(1L));
+    verify(groupManager).removeGroup(1L, piUser);
   }
 }

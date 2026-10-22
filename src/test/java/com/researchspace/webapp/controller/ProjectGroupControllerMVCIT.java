@@ -158,7 +158,7 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void deletionIsRefusedWhileDenied() throws Exception {
+  public void deletionStillWorksWhileDenied() throws Exception {
     MvcResult created =
         mockMvc
             .perform(
@@ -169,12 +169,10 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
     Long groupId = extractProjectGroupId(created);
 
     setProjectGroups(HierarchicalPermission.DENIED);
-    MvcResult denied = mockMvc.perform(post("/projectGroup/deleteGroup/" + groupId)).andReturn();
-    assertInstanceOf(AuthorizationException.class, denied.getResolvedException());
-    assertNotNull(grpMgr.getGroup(groupId));
-
-    setProjectGroups(HierarchicalPermission.ALLOWED);
-    grpMgr.removeGroup(groupId, pi);
+    mockMvc
+        .perform(post("/projectGroup/deleteGroup/" + groupId))
+        .andExpect(status().is3xxRedirection());
+    assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(groupId));
   }
 
   private void setProjectGroups(HierarchicalPermission value) {

@@ -532,20 +532,20 @@ resolved during design. This file is a glossary only — no implementation detai
 
 - **Self-service Lab Group** — a Lab Group a PI creates for themselves from the My RSpace
   menu, becoming its PI and owner, without a sysadmin or community admin creating it for
-  them. It exists only where the "self-service lab groups" setting
+  them. It can be created only where the "self-service lab groups" setting
   (`self_service_labgroups`) is allowed for that PI. While the setting is denied, RSpace
-  refuses to show the creation page, to create such a group and to delete one, however the
-  request arrives, and records the attempt in the security log (RSDEV-1345). A PI may
-  delete their own self-service Lab Group; a Lab Group created for them by an admin is
-  never deleted this way.
+  refuses to show the creation page and to create such a group, however the request
+  arrives, and records the attempt in the security log (RSDEV-1345). A PI may delete their
+  own self-service Lab Group at any time, even while the setting is denied; a Lab Group
+  created for them by an admin is never deleted this way.
   _Avoid_: cloud group (that is the RSpace Community sign-up flow), PI group
 
 - **Project Group** — a group with no PI that any user can create for collaboration. It
   has at least one Group Owner, by default its creator; owners invite members and make
   other members owners, only the creator may delete the group, and any member but the last
-  owner may leave. It
-  exists only where the "allow project groups" setting (`allow_project_groups`) is
-  allowed for that user, with the same refusal rule as the self-service Lab Group.
+  owner may leave. It can be created only where the "allow project groups" setting
+  (`allow_project_groups`) is allowed for that user, with the same refusal rule as the
+  self-service Lab Group; deleting one is not affected by the setting.
   _Avoid_: collaboration group (that is a group of Lab Groups), user group
 
 - **Allowed for a user (setting)** — the state of a sysadmin-controlled setting as it

@@ -120,17 +120,19 @@ it's generally OK to throw an `AuthorisationException`.
 
 #### System-property feature switches
 
-A feature a sysadmin can switch off through a system property (for
-example `self_service_labgroups` or `allow_project_groups`) is enforced on
-the server, in the controller that performs the action, with
-`SystemPropertyPermissionManager.isPropertyAllowed(user, SystemPropertyName.X)`.
-The user-aware overload applies the settings hierarchy: a sysadmin `DENIED`
-is absolute; otherwise any of the user's communities (those of their Lab
-Groups, plus any they administer) can switch the feature off with `DENIED`
-or `DENIED_BY_DEFAULT`, and under a sysadmin `DENIED_BY_DEFAULT` one that
-sets `ALLOWED` switches it on. Hiding the menu entry in the UI is a courtesy, not enforcement: the
-request can still be sent directly. Refuse with an `AuthorizationException`
-so the attempt reaches the security log (RSDEV-1345).
+Some features can be switched off by a sysadmin through a system setting,
+for example self-service Lab Groups (`self_service_labgroups`) or Project
+Groups (`allow_project_groups`).
+
+Hiding a menu entry does not switch a feature off, because a user can
+still send the request directly. The controller that performs the action
+should check the setting itself, using `SystemPropertyPermissionManager`.
+
+Use the variant of the check that takes the user, so that settings made by
+community admins are taken into account as well as the sysadmin's.
+
+When the setting is off, throw an `AuthorizationException`, so that the
+attempt is recorded in the security log.
 
 #### Refreshing permissions
 

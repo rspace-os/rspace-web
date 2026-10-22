@@ -4,7 +4,6 @@ import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,17 +76,11 @@ public class SelfServiceLabGroupControllerMVCIT extends MVCTestBase {
   }
 
   @Test
-  public void deletionIsRefusedWhileDenied() throws Exception {
+  public void deletionStillWorksWhileDenied() throws Exception {
     setSelfServiceLabGroups(HierarchicalPermission.ALLOWED);
     Long groupId = newGroupId(postCreate("ToDelete"));
 
     setSelfServiceLabGroups(HierarchicalPermission.DENIED);
-    MvcResult denied =
-        mockMvc.perform(post("/selfServiceLabGroup/deleteGroup/" + groupId)).andReturn();
-    assertInstanceOf(AuthorizationException.class, denied.getResolvedException());
-    assertNotNull(grpMgr.getGroup(groupId));
-
-    setSelfServiceLabGroups(HierarchicalPermission.ALLOWED);
     mockMvc
         .perform(post("/selfServiceLabGroup/deleteGroup/" + groupId))
         .andExpect(status().is3xxRedirection());

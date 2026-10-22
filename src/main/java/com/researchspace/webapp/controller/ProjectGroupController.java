@@ -146,7 +146,6 @@ public class ProjectGroupController extends BaseController {
   public String removeGroup(@PathVariable("grpid") Long groupId) {
 
     User subject = userManager.getAuthenticatedUserInSession();
-    assertProjectGroupsAllowed(subject);
     Group targetGroup = groupManager.getGroup(groupId);
     if (!(targetGroup.isProjectGroup() && targetGroup.getOwner().equals(subject))) {
       throw new AuthorizationException(

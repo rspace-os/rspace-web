@@ -126,7 +126,6 @@ public class SelfServiceLabGroupController extends BaseController {
   public String removeGroup(@PathVariable("grpid") Long groupId) {
 
     User subject = userManager.getAuthenticatedUserInSession();
-    assertSelfServiceLabGroupsAllowed(subject);
     Group targetGroup = groupManager.getGroup(groupId);
     if (!(targetGroup.isSelfService() && targetGroup.getOwner().equals(subject))) {
       throw new AuthorizationException(

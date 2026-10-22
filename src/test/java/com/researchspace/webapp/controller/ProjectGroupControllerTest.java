@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -76,13 +77,6 @@ public class ProjectGroupControllerTest {
   }
 
   @Test
-  public void shouldRefuseDeletionWhenProjectGroupsDenied() {
-    stubProjectGroups(false);
-    assertThrows(AuthorizationException.class, () -> controller.removeGroup(1L));
-    verifyNoInteractions(groupManager);
-  }
-
-  @Test
   public void shouldCreateProjectGroupWhenAllowed() {
     stubProjectGroups(true);
     when(createCloudGroup.getGroupName()).thenReturn("grpName");
@@ -97,8 +91,12 @@ public class ProjectGroupControllerTest {
   }
 
   @Test
-  public void shouldDeleteOwnProjectGroupWhenAllowed() {
-    stubProjectGroups(true);
+  public void shouldDeleteOwnProjectGroupWhileProjectGroupsDenied() {
+    lenient()
+        .when(
+            systemPropertyPermissionManager.isPropertyAllowed(
+                owner, SystemPropertyName.ALLOW_PROJECT_GROUPS))
+        .thenReturn(false);
     when(groupManager.getGroup(1L)).thenReturn(newGroup);
     when(newGroup.isProjectGroup()).thenReturn(true);
     when(newGroup.getOwner()).thenReturn(owner);
