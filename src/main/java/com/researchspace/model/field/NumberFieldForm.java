@@ -139,14 +139,16 @@ public class NumberFieldForm extends FieldForm {
 
     if (getMinNumberValue() != null) {
       if (!defaultValueAndValueIsZero(dataN) && dataN < getMinNumberValue()) {
-        el.addErrorMsgCode("validation.fieldData.numberBelowMinimum", data, getMinNumberValue());
+        el.addErrorMsgCode(
+            "validation.fieldData.numberBelowMinimum", data, String.valueOf(getMinNumberValue()));
         return el;
       }
     }
 
     if (!defaultValueAndValueIsZero(dataN) && getMaxNumberValue() != null) {
       if (dataN > getMaxNumberValue()) {
-        el.addErrorMsgCode("validation.fieldData.numberAboveMaximum", data, getMaxNumberValue());
+        el.addErrorMsgCode(
+            "validation.fieldData.numberAboveMaximum", data, String.valueOf(getMaxNumberValue()));
         return el;
       }
     }

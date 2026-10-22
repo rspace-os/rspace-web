@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -116,16 +117,14 @@ class InventoryBulkOperationHandlerGuardTest {
         handler, "messages", new MessageSourceUtils(new JsonMessageSource()));
     RuntimeException coded = new ApiRuntimeException("errors.required", "Name");
     for (Exception exception : List.of(coded, new RuntimeException("wrapper", coded))) {
-      assertEquals(
-          "Name is a required field.",
-          handler.convertExceptionToApiError(exception).getErrors().get(0));
+      ApiError error = handler.convertExceptionToApiError(exception);
+      assertEquals("Name is a required field.", error.getErrors().get(0));
+      assertEquals("errors.required", error.getMessageCode());
     }
-    assertEquals(
-        "outer",
-        handler
-            .convertExceptionToApiError(
-                new RuntimeException("outer", new RuntimeException("inner")))
-            .getErrors()
-            .get(0));
+    ApiError ordinary =
+        handler.convertExceptionToApiError(
+            new RuntimeException("outer", new RuntimeException("inner")));
+    assertEquals("outer", ordinary.getErrors().get(0));
+    assertNull(ordinary.getMessageCode());
   }
 }

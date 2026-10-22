@@ -26,6 +26,12 @@ function escapeHtml(value: string): string {
 }
 
 describe("breadcrumb JSP tag", () => {
+  it("escapes display names only once, through the EL resolver", () => {
+    const markup = readFileSync(resolve(__dirname, "../../../WEB-INF/tags/breadcrumb.tag"), "utf8");
+    expect(markup).toContain(`>\${bce.displayname}</span>`);
+    expect(markup).not.toMatch(/<c:out[^>]*bce\.displayname/);
+  });
+
   it("passes string IDs and safely displays translated home and ordinary names", () => {
     const elements: Array<BreadcrumbElement> = [
       { attributes: { "data-id": "42", "data-home": "true" }, text: "Stored Home Folder Name" },
