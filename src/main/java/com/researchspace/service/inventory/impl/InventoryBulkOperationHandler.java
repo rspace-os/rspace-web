@@ -111,12 +111,7 @@ public class InventoryBulkOperationHandler {
       case CHANGE_OWNER:
         return runOperationForEachRecordFromBulkList(
             bulkOpConfig,
-            (record, user) ->
-                changeInventoryRecordOwner(
-                    record,
-                    user,
-                    bulkOpConfig.getActor(),
-                    bulkOpConfig.isTransferBookingConfigurationOwnership()));
+            (record, user) -> changeInventoryRecordOwner(record, user, bulkOpConfig.getActor()));
       default:
         throw new IllegalStateException("unhandled operation for type: " + operationType);
     }
@@ -343,10 +338,7 @@ public class InventoryBulkOperationHandler {
   }
 
   private ApiInventoryRecordInfo changeInventoryRecordOwner(
-      ApiInventoryRecordInfo recInfo,
-      User user,
-      User actor,
-      boolean transferBookingConfigurationOwnership) {
+      ApiInventoryRecordInfo recInfo, User user, User actor) {
     ApiInventoryRecordType recInfoType = recInfo.getType();
     BindException errors = new BindException(recInfo, "record");
 
@@ -363,12 +355,7 @@ public class InventoryBulkOperationHandler {
               recInfo.getId(), (ApiContainer) recInfo, errors, user);
         case INSTRUMENT:
           return instrumentsApiController.changeInstrumentOwner(
-              recInfo.getId(),
-              (ApiInstrument) recInfo,
-              errors,
-              user,
-              actor,
-              transferBookingConfigurationOwnership);
+              recInfo.getId(), (ApiInstrument) recInfo, errors, user, actor);
         case INSTRUMENT_TEMPLATE:
           return instrumentTemplatesApiController.changeInstrumentTemplateOwner(
               recInfo.getId(), (ApiInstrumentTemplate) recInfo, errors, user);
