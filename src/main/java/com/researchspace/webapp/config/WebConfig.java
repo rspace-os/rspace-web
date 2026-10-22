@@ -14,6 +14,7 @@ import com.researchspace.api.v2.controller.ApiV2PreAuthenticationThrottlingInter
 import com.researchspace.api.v2.controller.ApiV2PreHandlerProblemResolver;
 import com.researchspace.api.v2.controller.ApiV2RequestThrottlingInterceptor;
 import com.researchspace.api.v2.controller.BookingDisplayPreferencesController;
+import com.researchspace.api.v2.controller.BookingNotificationSubscriptionController;
 import com.researchspace.api.v2.controller.BookingSettingsController;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.webapp.integrations.wopi.WopiAuthorisationInterceptor;
@@ -271,7 +272,11 @@ public class WebConfig extends WebMvcConfigurationSupport {
         ApiV2JsonMappers.register(
             jacksonConverter,
             BookingSettingsController.SettingsPatch.class,
-            BookingDisplayPreferencesController.Replacement.class);
+            BookingDisplayPreferencesController.Replacement.class,
+            BookingNotificationSubscriptionController.PreferenceReplacement.class,
+            BookingNotificationSubscriptionController.SubscriptionReplacement.class,
+            BookingNotificationSubscriptionController.Lookup.class,
+            BookingNotificationSubscriptionController.BulkReplacement.class);
       }
       // and string response bodies to be UTF8
       if (converter instanceof StringHttpMessageConverter) {
