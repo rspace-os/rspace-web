@@ -1,6 +1,5 @@
 package com.researchspace.api.v2.contract;
 
-import com.researchspace.model.inventory.Instrument;
 import static com.researchspace.api.v2.contract.ApiV2FilterExpansionMVCIT.OBJECT_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
