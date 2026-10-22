@@ -535,8 +535,8 @@ resolved during design. This file is a glossary only — no implementation detai
   them. It can be created only where the "self-service lab groups" setting
   (`self_service_labgroups`) is allowed for that PI. While the setting is denied, RSpace
   refuses to show the creation page and to create such a group, however the request
-  arrives, and records the attempt in the security log (RSDEV-1345). A PI may delete their
-  own self-service Lab Group at any time, even while the setting is denied; a Lab Group
+  arrives, and records the attempt in the security log. A PI may delete their own
+  self-service Lab Group at any time, even while the setting is denied; a Lab Group
   created for them by an admin is never deleted this way.
   _Avoid_: cloud group (that is the RSpace Community sign-up flow), PI group
 
