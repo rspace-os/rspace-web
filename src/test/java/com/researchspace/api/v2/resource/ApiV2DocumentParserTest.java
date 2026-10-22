@@ -199,7 +199,7 @@ class ApiV2DocumentParserTest {
     String oversized = "x".repeat(User.DEFAULT_MAXFIELD_LEN + 1);
     assertThrows(
         DocumentValidationException.class,
-        () -> parseMaintenanceUpdate(mapper.readTree("{\"message\":\"" + oversized + "\"}")));
+        () -> parseMaintenanceUpdate(mapper.createObjectNode().put("message", oversized)));
   }
 
   @Test
