@@ -19,6 +19,7 @@ import com.researchspace.service.resourceaccess.ResourceGranteeDirectoryEntry;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -67,7 +68,7 @@ public class ResourceAccessController {
     return response(document);
   }
 
-  @PutMapping("/{resource}/{id}/access")
+  @PutMapping(value = "/{resource}/{id}/access", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<ResourceAccessDocument> replace(
       @PathVariable String resource,
       @PathVariable String id,

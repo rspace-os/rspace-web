@@ -33,6 +33,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -210,7 +211,7 @@ public class ApiV2CrudController {
     return okWithDocumentEtag(registration, document);
   }
 
-  @PostMapping("/{resource}")
+  @PostMapping(value = "/{resource}", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Map<String, Object>> create(
       @PathVariable String resource,
       @RequestBody ApiV2JsonBody body,
@@ -220,7 +221,7 @@ public class ApiV2CrudController {
         .body(requireResource(resource, ResourceOperation.CREATE).create(body.node(), caller));
   }
 
-  @PostMapping("/{resource}/bulk")
+  @PostMapping(value = "/{resource}/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<ApiV2BulkResult<Map<String, Object>>> createMany(
       @PathVariable String resource,
       @RequestBody ApiV2JsonBody body,
@@ -232,7 +233,7 @@ public class ApiV2CrudController {
                 .createMany(body.node(), caller));
   }
 
-  @PatchMapping("/{resource}/{id}")
+  @PatchMapping(value = "/{resource}/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Map<String, Object>> update(
       @PathVariable String resource,
       @PathVariable String id,
@@ -251,7 +252,7 @@ public class ApiV2CrudController {
     return okWithDocumentEtag(registration, document);
   }
 
-  @PatchMapping("/{resource}")
+  @PatchMapping(value = "/{resource}", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ApiV2BulkResult<Map<String, Object>> updateMany(
       @PathVariable String resource,
       @RequestParam(required = false) String where,
