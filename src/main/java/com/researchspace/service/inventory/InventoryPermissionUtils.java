@@ -295,13 +295,8 @@ public class InventoryPermissionUtils {
     if (!canRead) {
       throwNotFoundException(record.getId());
     }
-    // can read, just can't transfer. we can show more useful message. A locked (default/system)
-    // instrument template cannot be transferred by anyone (transfer does not consult
-    // canUserEditInventoryRecord, so the lock is enforced explicitly here too).
-    String invRecOwner = record.getOwner().getUsername();
-    if (isLockedInstrumentTemplate(record)
-        || (!user.getUsername().equals(invRecOwner)
-            && !isPiOrAdminOfRecordOwnerGroup(user, invRecOwner))) {
+    // can read, just can't transfer. we can show more useful message.
+    if (!canUserTransferInventoryRecord(record, user)) {
       throw new IllegalArgumentException(
           record.getType()
               + " with id ["
@@ -312,6 +307,27 @@ public class InventoryPermissionUtils {
       throw new IllegalArgumentException(
           record.getType() + " with id [" + record.getId() + "] is deleted and cannot be edited");
     }
+  }
+
+  /**
+   * Whether the user may change a sample's requestable flag: they must be able to both edit and
+   * transfer it, so a PI cannot change it on a member's sample shared with no one.
+   */
+  public boolean canUserChangeRequestable(InventoryRecord record, User user) {
+    return record.isSample()
+        && canUserEditInventoryRecord(record, user)
+        && canUserTransferInventoryRecord(record, user);
+  }
+
+  /**
+   * The owner, or a PI or Lab Admin of the owner's group. Nobody may transfer a locked
+   * (default/system) instrument template.
+   */
+  public boolean canUserTransferInventoryRecord(InventoryRecord record, User user) {
+    String invRecOwner = record.getOwner().getUsername();
+    return !isLockedInstrumentTemplate(record)
+        && (user.getUsername().equals(invRecOwner)
+            || isPiOrAdminOfRecordOwnerGroup(user, invRecOwner));
   }
 
   // user is a PI(or Lab admin) of the group
@@ -345,6 +361,9 @@ public class InventoryPermissionUtils {
             || user.hasSysadminRole())) {
       // FIXME community admin should also have TRANSFER permission
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
+    }
+    if (canUserChangeRequestable(invRec, user)) {
+      apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_REQUESTABLE);
     }
   }
 

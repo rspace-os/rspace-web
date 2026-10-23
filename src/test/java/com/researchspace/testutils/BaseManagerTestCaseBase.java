@@ -28,6 +28,7 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiGroupInfoWithSha
 import com.researchspace.api.v1.model.ApiListOfMaterials;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -1687,6 +1688,13 @@ public abstract class BaseManagerTestCaseBase {
 
   protected ApiSampleWithFullSubSamples createBasicSampleForUser(User user, String sampleName) {
     return createBasicSampleForUser(user, sampleName, "mySubSample", null);
+  }
+
+  protected void markSampleRequestable(ApiSampleWithFullSubSamples sample, User owner) {
+    ApiSample update = new ApiSample();
+    update.setId(sample.getId());
+    update.setRequestable(true);
+    sampleApiMgr.updateApiSample(update, owner);
   }
 
   protected ApiSampleWithFullSubSamples createBasicSampleForUserAndGroups(

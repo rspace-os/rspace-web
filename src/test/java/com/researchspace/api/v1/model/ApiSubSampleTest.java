@@ -164,7 +164,7 @@ public class ApiSubSampleTest extends SpringTransactionalTest {
     subSampleWithJustGlobalViewProperties.setGlobalId(apiSubSample.getGlobalId());
     subSampleWithJustGlobalViewProperties.setType(apiSubSample.getType());
     subSampleWithJustGlobalViewProperties.setName(apiSubSample.getName());
-    subSampleWithJustGlobalViewProperties.setOwner(apiSubSample.getOwner());
+    subSampleWithJustGlobalViewProperties.setOwner(apiSubSample.getOwner().publicDataCopy());
     subSampleWithJustGlobalViewProperties.setPermittedActions(apiSubSample.getPermittedActions());
     subSampleWithJustGlobalViewProperties.setLinks(apiSubSample.getLinks());
     // also has a reference to public info of parent sample

@@ -80,7 +80,7 @@ public class ApiSampleTemplateTest extends SpringTransactionalTest {
     templateWithJustGlobalViewProperties.setGlobalId(retrievedTemplate.getGlobalId());
     templateWithJustGlobalViewProperties.setType(retrievedTemplate.getType());
     templateWithJustGlobalViewProperties.setName(retrievedTemplate.getName());
-    templateWithJustGlobalViewProperties.setOwner(retrievedTemplate.getOwner());
+    templateWithJustGlobalViewProperties.setOwner(retrievedTemplate.getOwner().publicDataCopy());
     templateWithJustGlobalViewProperties.setPermittedActions(
         retrievedTemplate.getPermittedActions());
     templateWithJustGlobalViewProperties.setLinks(retrievedTemplate.getLinks());

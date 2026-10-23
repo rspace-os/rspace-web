@@ -4,15 +4,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTable;
 import static org.springframework.test.jdbc.JdbcTestUtils.countRowsInTableWhere;
 
+import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
+import com.researchspace.api.v1.model.ApiSample;
+import com.researchspace.api.v1.model.ApiSampleRequest;
+import com.researchspace.api.v1.model.ApiSampleRequestPost;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
+import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.ContainerDao;
@@ -27,6 +35,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RSChemElement;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.Role;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.comms.MessageType;
@@ -39,11 +48,14 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleRequest;
+import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.permissions.PermissionType;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
@@ -58,10 +70,12 @@ import com.researchspace.service.UserDeletionPolicy.UserTypeRestriction;
 import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
 import com.researchspace.service.impl.TemplateTransferService;
+import com.researchspace.service.inventory.SampleRequestApiManager;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.TestGroup;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -81,6 +95,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
 public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
+
+  private @Autowired SampleRequestApiManager sampleRequestApiMgr;
+  private @Autowired SystemPropertyManager systemPropertyMgr;
+  private String originalSampleRequestsAvailable;
 
   private @Autowired UserDeletionManager userDeletionMgr;
   private @Autowired CommunityUserManager communityUserMgr;
@@ -106,8 +124,21 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
+    restoreSampleRequestsAvailable();
     RSpaceTestUtils.logout();
     super.tearDown();
+  }
+
+  /** This class commits, so a changed system property would otherwise leak into later tests. */
+  private void restoreSampleRequestsAvailable() {
+    if (originalSampleRequestsAvailable != null) {
+      logoutAndLoginAsSysAdmin();
+      systemPropertyMgr.save(
+          SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+          originalSampleRequestsAvailable,
+          getSysAdminUser());
+      originalSampleRequestsAvailable = null;
+    }
   }
 
   @Test
@@ -1193,5 +1224,226 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
   private UserDeletionPolicy getDeleteTempUserPolicy() {
     return new UserDeletionPolicy(UserTypeRestriction.TEMP_USER);
+  }
+
+  @Test
+  public void removeUserWhoRaisedASampleRequest() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(
+            fixture.requester.getId(),
+            new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+            sysadmin);
+
+    assertTrue(result.isSucceeded(), "deleting a user who raised a sample request must succeed");
+    assertUserNotExist(fixture.requester);
+
+    // the request survives for the sample owner, still naming who asked
+    ApiSampleRequest surviving =
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner);
+    assertEquals(fixture.requesterUsername, surviving.getRequester().getUsername());
+    assertNull(surviving.getRequester().getId(), "a deleted requester has no id to resolve");
+    assertEquals(
+        fixture.requesterUsername,
+        surviving.getStatusChanges().get(0).getCreatedBy().getUsername());
+  }
+
+  @Test
+  public void removeOwnerOfARequestedSample() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(
+            fixture.owner.getId(),
+            new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+            sysadmin);
+
+    assertTrue(result.isSucceeded(), "deleting the owner of a requested sample must succeed");
+    assertUserNotExist(fixture.owner);
+
+    // the sample is gone, so requests against it go with it
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.requester));
+  }
+
+  @Test
+  public void removeRecipientOfASampleThatFulfilledARequest() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+
+    // the owner fulfils the request with a new sample, then hands it over
+    logoutAndLoginAs(fixture.owner);
+    ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(fixture.owner);
+    ApiSampleRequestStatusPut fulfil = new ApiSampleRequestStatusPut();
+    fulfil.setStatus(SampleRequestStatus.FULFILLED);
+    fulfil.setTransferredSampleGlobalId(aliquot.getGlobalId());
+    sampleRequestApiMgr.updateStatus(fixture.requestId, fulfil, fixture.owner);
+    ApiSample toRequester = new ApiSample();
+    toRequester.setId(aliquot.getId());
+    toRequester.setOwner(new ApiUser(fixture.requester));
+    sampleApiMgr.changeApiSampleOwner(toRequester, fixture.owner);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(
+            fixture.requester.getId(),
+            new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+            sysadmin);
+
+    assertTrue(result.isSucceeded(), "deleting the recipient of a fulfilling sample must succeed");
+    assertUserNotExist(fixture.requester);
+
+    // the fulfilled request survives against the owner's sample, no longer naming the deleted
+    // fulfilling sample
+    ApiSampleRequest surviving =
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner);
+    assertEquals(SampleRequestStatus.FULFILLED, surviving.getStatus());
+    assertNull(surviving.getStatusChanges().get(1).getTransferredSample());
+  }
+
+  @Test
+  public void removeOriginalOwnerAfterTheRequestedSampleWasTransferred() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+    String ownerUsername = fixture.owner.getUsername();
+
+    // the owner hands the requested sample to the requester, so it no longer goes with the owner
+    logoutAndLoginAs(fixture.owner);
+    ApiSample toRequester = new ApiSample();
+    toRequester.setId(
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner).getSample().getId());
+    toRequester.setOwner(new ApiUser(fixture.requester));
+    sampleApiMgr.changeApiSampleOwner(toRequester, fixture.owner);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(
+            fixture.owner.getId(),
+            new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+            sysadmin);
+
+    assertTrue(result.isSucceeded(), "deleting the original owner must succeed");
+    assertUserNotExist(fixture.owner);
+
+    ApiSampleRequest surviving =
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.requester);
+    assertEquals(ownerUsername, surviving.getOriginalOwner().getUsername());
+    assertNull(surviving.getOriginalOwner().getId(), "a deleted original owner has no id");
+  }
+
+  @Test
+  public void removeUserWhoOnlyActedOnASampleRequest() throws Exception {
+    User labAdmin = createAndSaveUser(getRandomAlphabeticString("srAdmin"));
+    initUsers(labAdmin);
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers(labAdmin);
+    String labAdminUsername = labAdmin.getUsername();
+    labAdmin = userMgr.getUserByUsername(labAdminUsername, true);
+
+    // a lab admin of the owner's group transfers the sample, so the fulfilment is theirs
+    logoutAndLoginAs(labAdmin);
+    ApiSample toRequester = new ApiSample();
+    toRequester.setId(
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner).getSample().getId());
+    toRequester.setOwner(new ApiUser(fixture.requester));
+    sampleApiMgr.changeApiSampleOwner(toRequester, labAdmin);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    ServiceOperationResult<User> result =
+        userDeletionMgr.removeUser(
+            labAdmin.getId(), new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION), sysadmin);
+
+    assertTrue(result.isSucceeded(), "deleting a user who only acted on a request must succeed");
+    assertUserNotExist(labAdmin);
+
+    ApiSampleRequest surviving =
+        sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.requester);
+    ApiSampleRequestStatusChange fulfilment = surviving.getStatusChanges().get(1);
+    assertEquals(SampleRequestStatus.FULFILLED, fulfilment.getStatus());
+    assertEquals(labAdminUsername, fulfilment.getCreatedBy().getUsername());
+    assertNull(fulfilment.getCreatedBy().getId(), "a deleted actor has no id");
+  }
+
+  @Test
+  public void reusedUsernameDoesNotInheritADeletedRequestersRequests() throws Exception {
+    SampleRequestFixture fixture = createSampleRequestBetweenTwoUsers();
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    assertTrue(
+        userDeletionMgr
+            .removeUser(
+                fixture.requester.getId(),
+                new UserDeletionPolicy(UserTypeRestriction.NO_RESTRICTION),
+                sysadmin)
+            .isSucceeded());
+    User reused = createAndSaveUser(fixture.requesterUsername);
+
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.getRequestById(fixture.requestId, reused));
+    assertEquals(
+        0L,
+        sampleRequestApiMgr
+            .getRequestsForUser(
+                PaginationCriteria.createDefaultForClass(SampleRequest.class),
+                null,
+                null,
+                null,
+                reused)
+            .getTotalHits()
+            .longValue());
+    ApiSampleRequestStatusPut cancel = new ApiSampleRequestStatusPut();
+    cancel.setStatus(SampleRequestStatus.CANCELLED);
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.updateStatus(fixture.requestId, cancel, reused));
+  }
+
+  private static class SampleRequestFixture {
+    User owner;
+    User requester;
+    String requesterUsername;
+    Long requestId;
+  }
+
+  private SampleRequestFixture createSampleRequestBetweenTwoUsers() throws Exception {
+    return createSampleRequestBetweenTwoUsers(null);
+  }
+
+  /**
+   * {@code labAdmin}, if given, is made a lab admin of the owner's group before the sample is
+   * created.
+   */
+  private SampleRequestFixture createSampleRequestBetweenTwoUsers(User labAdmin) throws Exception {
+    SampleRequestFixture fixture = new SampleRequestFixture();
+    fixture.owner = createAndSaveUser(getRandomAlphabeticString("srOwner"), Constants.PI_ROLE);
+    fixture.requester = createAndSaveUser(getRandomAlphabeticString("srReq"));
+    initUsers(fixture.owner, fixture.requester);
+    Group group = createGroupForUsersWithDefaultPi(fixture.owner, fixture.requester);
+    if (labAdmin != null) {
+      addUserToGroup(labAdmin, group, RoleInGroup.RS_LAB_ADMIN, piUser);
+    }
+
+    logoutAndLoginAsSysAdmin();
+    originalSampleRequestsAvailable =
+        systemPropertyMgr.findByName(SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE).getValue();
+    systemPropertyMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
+
+    logoutAndLoginAs(fixture.owner);
+    ApiSampleWithFullSubSamples sample = createBasicSampleForUser(fixture.owner);
+    markSampleRequestable(sample, fixture.owner);
+
+    logoutAndLoginAs(fixture.requester);
+    ApiSampleRequestPost post = new ApiSampleRequestPost();
+    post.setSampleGlobalId(sample.getGlobalId());
+    post.setNote("needed for the assay");
+    fixture.requestId = sampleRequestApiMgr.createRequest(post, fixture.requester).getId();
+    fixture.requesterUsername = fixture.requester.getUsername();
+
+    return fixture;
   }
 }
