@@ -31,7 +31,6 @@ import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -152,11 +151,17 @@ public class ArchiveParseTest {
   }
 
   @ParameterizedTest
-  @CsvSource({"1, 0, EXPANDED_SIZE", "0, 2147483647, FREE_DISK_SPACE"})
-  public void extractionUsesDeploymentDiskLimitsInMegabytes(
+  @CsvSource({
+    "1, 0, 0, EXPANDED_SIZE, 1048576",
+    "0, 1, 0, ENTRY_COUNT, 1",
+    "0, 0, 2147483647, FREE_DISK_SPACE, 2251799812636672"
+  })
+  public void extractionUsesDeploymentLimits(
       int maxExpandedSizeMB,
+      int maxEntries,
       int minFreeSpaceMB,
       ZipExtractionLimitException.Limit expectedLimit,
+      long expectedLimitValue,
       @TempDir File tempDir)
       throws IOException {
     File zip = new File(tempDir, "big.zip");
@@ -164,12 +169,15 @@ public class ArchiveParseTest {
       out.putArchiveEntry(new ZipArchiveEntry("big.bin"));
       out.write(new byte[2 * 1024 * 1024]);
       out.closeArchiveEntry();
+      out.putArchiveEntry(new ZipArchiveEntry("small.txt"));
+      out.closeArchiveEntry();
     }
     DiskSpaceCheckerImpl diskSpaceChecker = new DiskSpaceCheckerImpl();
     diskSpaceChecker.setMaxArchiveSizeMB(Integer.toString(maxExpandedSizeMB));
-    diskSpaceChecker.setSpaceRequiredToStartArchiveExportMB(Integer.toString(minFreeSpaceMB));
     ArchiveParserImpl realParser = new ArchiveParserImpl();
     ReflectionTestUtils.setField(realParser, "diskSpaceChecker", diskSpaceChecker);
+    ReflectionTestUtils.setField(realParser, "importMaxEntries", maxEntries);
+    ReflectionTestUtils.setField(realParser, "importMinFreeSpaceMB", minFreeSpaceMB);
 
     ZipExtractionLimitException e =
         assertThrows(
@@ -177,7 +185,7 @@ public class ArchiveParseTest {
             () -> realParser.extractZipFolder(zip, new File(tempDir, "out")));
 
     assertEquals(expectedLimit, e.getLimit());
-    assertEquals(Math.max(maxExpandedSizeMB, minFreeSpaceMB) * FileUtils.ONE_MB, e.getLimitValue());
+    assertEquals(expectedLimitValue, e.getLimitValue());
     assertEquals(0, new File(tempDir, "out").list().length);
   }
 

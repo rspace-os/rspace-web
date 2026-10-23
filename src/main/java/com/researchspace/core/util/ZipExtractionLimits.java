@@ -31,17 +31,14 @@ public record ZipExtractionLimits(
     int maxCompressionRatio,
     long ratioFloorBytes) {
 
-  /** Mirrors the default archive export limits: 10 000 MB expanded, 1 000 MB kept free. */
+  /** Mirrors the default deployment properties for archive import. */
   public static final ZipExtractionLimits DEFAULTS =
       new ZipExtractionLimits(
-          10_000 * FileUtils.ONE_MB,
-          1_000_000,
-          1_000 * FileUtils.ONE_MB,
-          100,
-          10 * FileUtils.ONE_MB);
+          10_000 * FileUtils.ONE_MB, 500_000, 2_000 * FileUtils.ONE_MB, 100, 10 * FileUtils.ONE_MB);
 
-  /** Copies these limits with the two disk-related bounds replaced. */
-  public ZipExtractionLimits withDiskLimits(long maxExpandedBytes, long minFreeDiskBytes) {
+  /** Copies these limits with the deployment-configurable bounds replaced. */
+  public ZipExtractionLimits withDeploymentLimits(
+      long maxExpandedBytes, int maxEntries, long minFreeDiskBytes) {
     return new ZipExtractionLimits(
         maxExpandedBytes, maxEntries, minFreeDiskBytes, maxCompressionRatio, ratioFloorBytes);
   }

@@ -54,6 +54,7 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.xml.sax.SAXException;
 
 /** Parses archive files. */
@@ -69,6 +70,12 @@ public class ArchiveParserImpl implements IArchiveParser {
   private @Autowired RSMetaDataManager metadataMgr;
   private @Autowired MessageSourceUtils messages;
   private @Autowired DiskSpaceChecker diskSpaceChecker;
+
+  @Value("${archive.import.maxEntries}")
+  private int importMaxEntries;
+
+  @Value("${archive.import.minFreeSpaceMB}")
+  private int importMinFreeSpaceMB;
 
   @Qualifier("propertyHolder")
   @Autowired
@@ -260,11 +267,12 @@ public class ArchiveParserImpl implements IArchiveParser {
 
   protected File extractZipFolder(File zipFile, File outFolder) throws IOException {
     log.info("Extracting {} into {}", zipFile.getAbsolutePath(), outFolder.getAbsolutePath());
-    // the import shares the export's disk bounds: same partition, same failure mode
+    // the size cap is shared with export so that anything a server exports fits its own import
     ZipExtractionLimits limits =
-        ZipExtractionLimits.DEFAULTS.withDiskLimits(
+        ZipExtractionLimits.DEFAULTS.withDeploymentLimits(
             diskSpaceChecker.getMaxArchiveSizeMB() * FileUtils.ONE_MB,
-            diskSpaceChecker.getMinSpaceRequiredToStartArchiveExportMB() * FileUtils.ONE_MB);
+            importMaxEntries,
+            importMinFreeSpaceMB * FileUtils.ONE_MB);
     return new File(ZipUtils.extractZip(zipFile, outFolder, limits));
   }
 
