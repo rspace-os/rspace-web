@@ -2324,7 +2324,7 @@ export default interface Resources {
         "title": "Unsaved changes?"
       },
       "validation": {
-        "descriptionTooLong": "Description cannot be longer than 250 characters.",
+        "descriptionTooLong": "Description cannot be longer than 2000 characters.",
         "distinctFieldNames": "All field names must be distinct.",
         "editLockExpired": "Edit lock has expired. Please refresh.",
         "nameRequired": "Name cannot be empty.",

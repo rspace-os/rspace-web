@@ -21,6 +21,7 @@ import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.math.BigDecimal;
@@ -230,7 +231,8 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
     ApiInventoryBulkOperationPost bulkRequest = new ApiInventoryBulkOperationPost();
     bulkRequest.setOperationType(BulkApiOperationType.CREATE);
     bulkRequest.setRollbackOnError(false);
-    String tooLongDesc = "tooLongDesc" + StringUtils.repeat("x", 250);
+    String tooLongDesc =
+        "tooLongDesc" + StringUtils.repeat("x", InventoryRecord.DESCRIPTION_LENGTH);
     ApiSampleWithFullSubSamples sampleWithTooLongDesc = new ApiSampleWithFullSubSamples("okName");
     sampleWithTooLongDesc.setDescription(tooLongDesc);
     ApiSampleWithFullSubSamples sampleWithNoNameAndTooLongDesc = new ApiSampleWithFullSubSamples();
@@ -245,13 +247,13 @@ public class InventoryBulkOperationsApiControllerTest extends SpringTransactiona
     ApiError firstError = createResult.getResults().get(0).getError();
     assertThat(firstError.getErrors()).hasSize(1);
     assertEquals(
-        "description: description cannot be greater than 250 characters.",
+        "description: description cannot be greater than 2000 characters.",
         firstError.getErrors().get(0));
     ApiError secondError = createResult.getResults().get(1).getError();
     assertThat(secondError.getErrors()).hasSize(2);
     assertEquals("name: name is a required field.", secondError.getErrors().get(0));
     assertEquals(
-        "description: description cannot be greater than 250 characters.",
+        "description: description cannot be greater than 2000 characters.",
         secondError.getErrors().get(1));
   }
 
