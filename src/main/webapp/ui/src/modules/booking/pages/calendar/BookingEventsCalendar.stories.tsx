@@ -148,7 +148,9 @@ export const Interactive: Story = {
     await userEvent.click(body.getByRole("menuitemradio", { name: "Day" }));
     await closePopup();
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(3);
-    await userEvent.click(canvas.getByRole("button", { name: "My Bookings" }));
+    await userEvent.click(canvas.getByRole("button", { name: /^Filters(?:$|,)/ }));
+    await userEvent.click(await body.findByRole("switch", { name: "My Bookings" }));
+    await closePopup();
     expect(canvas.getAllByTestId("day-timeline-scroller")).toHaveLength(2);
     expect(canvas.getByRole("button", { name: "Remove My Bookings filter" })).toBeVisible();
   },
