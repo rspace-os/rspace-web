@@ -93,7 +93,7 @@ So we edit this file and set the following;
      -DRS_FILE_BASE=/PATH/TO/FILESTORAGE -Djava.awt.headless=true\
      -Dliquibase.context=run -Dspring.profiles.active=prod -Djmelody.dir=/media/rspace/jmelody"
     
-    JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 (Adjust java_home variable to be that of the installed java jdk)
 PLEASE NOTE: "/PATH/TO/FILESTORAGE" should be the server path to your filestore eg. /data/rspace-filestore
