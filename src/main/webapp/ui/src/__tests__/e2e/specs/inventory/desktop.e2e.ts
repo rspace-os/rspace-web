@@ -66,9 +66,7 @@ test.describe(`Inventory Desktop layout`, { tag: tags.INVENTORY }, () => {
     pageInventory,
     clientInventory,
     page,
-    browserName,
   }) => {
-    test.skip(browserName === "webkit", "Known WebKit timeout while opening a result after hiding the right panel");
     const sampleName = uniqueName("e2e-desktop-preview-sample");
 
     const sample = await clientInventory.createSample({ name: sampleName, newSampleSubSamplesCount: 30 });

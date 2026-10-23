@@ -47,7 +47,6 @@ export default function MainSearchNavigationContext({ children }: MainSearchNavi
     if (!search.activeResult && search.filteredResults.length && !uiStore.isVerySmall && !uiStore.isSmall) {
       try {
         await search.setActiveResult();
-        uiStore.setVisiblePanel("right");
       } catch (e) {
         if (e instanceof UserCancelledAction) return;
         throw e;
