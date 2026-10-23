@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 public class ZipUtils {
   private static final Logger log = LoggerFactory.getLogger(ZipUtils.class);
 
-  // RSpace exports nest a handful of levels; resolving a path costs time that grows with its depth
   private static final int MAX_ENTRY_DEPTH = 64;
 
   /**
