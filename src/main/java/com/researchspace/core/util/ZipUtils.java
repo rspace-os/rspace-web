@@ -234,6 +234,7 @@ public class ZipUtils {
           }
         }
       }
+      budget.checkFreeDiskSpace();
 
     } catch (InvalidArchiveException e) {
       log.warn("Rejected archive {}: {}", archiveFile.getName(), e.getMessage());

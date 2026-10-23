@@ -345,6 +345,27 @@ class ZipUtilsExtractionTest {
   }
 
   @Test
+  void rejectsShortExtractionThatFinishesBelowDiskReserve() throws IOException {
+    File zip = makeZip(file("a.txt", bytes(4096)));
+    File dest = newDestination();
+    AtomicInteger diskChecks = new AtomicInteger();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 1, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () ->
+                ZipUtils.extractZip(
+                    zip,
+                    dest,
+                    limits,
+                    () -> diskChecks.getAndIncrement() == 0 ? Long.MAX_VALUE : 0));
+
+    assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
   void rejectsExtractionWhenPartitionFillsPartWay() throws IOException {
     File zip = makeZip(file("a.bin", bytes(20 * 1024 * 1024)));
     File dest = newDestination();
