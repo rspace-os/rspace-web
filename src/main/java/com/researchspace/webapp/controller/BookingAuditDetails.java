@@ -87,7 +87,10 @@ final class BookingAuditDetails {
           "ACTIVE", "booking:bookableItems.states.active",
           "ARCHIVED", "booking:bookableItemDetails.archived",
           "BOOKING", "booking:bookings.form.typeBooking",
-          "MAINTENANCE", "booking:calendar.feed.maintenance");
+          "MAINTENANCE", "booking:calendar.feed.maintenance",
+          "MINUTES", "booking:settings.fields.incrementMinutes",
+          "HOURS", "booking:settings.fields.incrementHours",
+          "DAYS", "booking:settings.fields.incrementDays");
 
   private BookingAuditDetails() {}
 
@@ -216,7 +219,7 @@ final class BookingAuditDetails {
           flag ? "common:actions.yes" : "common:actions.no", locale);
     }
     if (forDisplay
-        && ("state".equals(key) || "kind".equals(key))
+        && ("state".equals(key) || "kind".equals(key) || "incrementUnit".equals(key))
         && DISPLAY_VALUES.containsKey(value)) {
       return messages.getMessageForLocale(DISPLAY_VALUES.get(value), locale);
     }
