@@ -22,12 +22,12 @@ export function requestStatusLabel(status: string, t: TFunction<"inventory">): s
   return status in STATUS_LABEL_KEY ? t(STATUS_LABEL_KEY[status as keyof typeof STATUS_LABEL_KEY]) : status;
 }
 
-// Text colour only - independent of STATUS_BACKGROUND below, and not matched to it: APPROVED's
-// background is blue-gray but this gives it green ("success") text, and FULFILLED's background
-// is green but this gives it blue ("info") text. That's the actual, current rendering, not a typo
-// to "fix" by swapping these two - changing it would change the chips' appearance, which is out
-// of scope here. Flagging it so it doesn't look like unexplained drift next time someone reads
-// this against the doc comment on RequestsStatusChip below.
+// Text colour only - independent of theme.palette.sampleRequestStatus below, and not matched to
+// it: APPROVED's background is blue-gray but this gives it green ("success") text, and
+// FULFILLED's background is green but this gives it blue ("info") text. That's the actual,
+// current rendering, not a typo to "fix" by swapping these two - changing it would change the
+// chips' appearance, which is out of scope here. Flagging it so it doesn't look like unexplained
+// drift next time someone reads this against the doc comment on RequestsStatusChip below.
 const STATUS_PALETTE_KEY: Record<string, "warning" | "success" | "error" | "info"> = {
   PENDING: "warning",
   APPROVED: "success",
@@ -35,11 +35,13 @@ const STATUS_PALETTE_KEY: Record<string, "warning" | "success" | "error" | "info
   REJECTED: "error",
 };
 
-export const STATUS_BACKGROUND: Record<string, string> = {
-  PENDING: "#FDF0DF",
-  APPROVED: "#E7EEF2",
-  FULFILLED: "#E6F1E8",
-  REJECTED: "#FBEAE8",
+// Maps a status onto the matching key of theme.palette.sampleRequestStatus - CANCELLED isn't
+// part of that namespace at all, since it already renders with theme.palette.grey directly.
+const STATUS_BACKGROUND_KEY: Record<string, "pending" | "approved" | "fulfilled" | "rejected"> = {
+  PENDING: "pending",
+  APPROVED: "approved",
+  FULFILLED: "fulfilled",
+  REJECTED: "rejected",
 };
 
 const STATUS_DOT_COLOR: Record<string, string> = {
@@ -47,9 +49,9 @@ const STATUS_DOT_COLOR: Record<string, string> = {
   APPROVED: "#3E5866",
 };
 
-// Darkened from rgb(183, 121, 31): that text on STATUS_BACKGROUND.PENDING was 3.24:1, below WCAG
-// AA's 4.5:1 minimum for small text. This is ~4.57:1 against that same background, same hue, just
-// a bit darker - see RequestsStatusChip.test.tsx for the contrast-ratio check itself.
+// Darkened from rgb(183, 121, 31): that text on theme.palette.sampleRequestStatus.pending was
+// 3.24:1, below WCAG AA's 4.5:1 minimum for small text. This is ~4.57:1 against that same
+// background, same hue, just a bit darker.
 export const PENDING_TEXT_COLOR = "rgb(150, 99, 25)";
 
 function ChipLabel({ status }: { status: string }): React.ReactNode {
@@ -104,7 +106,7 @@ export default function RequestsStatusChip({
           // a plain sx class. "&&&" repeats this rule's own selector three times to match
           // (and beat) that specificity regardless of whether this chip is clickable.
           "&&&": {
-            backgroundColor: STATUS_BACKGROUND.PENDING,
+            backgroundColor: theme.palette.sampleRequestStatus.pending,
             color: PENDING_TEXT_COLOR,
             border,
           },
@@ -132,6 +134,7 @@ export default function RequestsStatusChip({
   }
 
   const paletteColor = theme.palette[STATUS_PALETTE_KEY[status] ?? "warning"];
+  const backgroundKey = STATUS_BACKGROUND_KEY[status];
 
   return (
     <Chip
@@ -141,7 +144,7 @@ export default function RequestsStatusChip({
       sx={{
         fontWeight: theme.typography.fontWeightMedium,
         "&&&": {
-          backgroundColor: STATUS_BACKGROUND[status],
+          backgroundColor: backgroundKey ? theme.palette.sampleRequestStatus[backgroundKey] : undefined,
           color: darken(paletteColor.dark, 0.3),
           border,
         },
