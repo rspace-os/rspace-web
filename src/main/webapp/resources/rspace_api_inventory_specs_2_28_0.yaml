@@ -6070,6 +6070,7 @@ components:
         id:
           type: integer
           format: int64
+          nullable: true
           description: Unique identifier for the User.
           example: 23
         username:
@@ -6079,24 +6080,29 @@ components:
           example: fbloggs
         email:
           type: string
-          description: Email address for User.
+          nullable: true
+          description: Email address for User. Null where only public details are shown.
           pattern: \S+@\S+
           example: bloggs@uni.edu
         firstName:
           type: string
+          nullable: true
           description: First name of the User.
           example: Fred
         lastName:
           type: string
+          nullable: true
           description: Last name of the User.
           example: Bloggs
         homeFolderId:
           type: number
+          nullable: true
           description: The id of the home ELN folder. May be empty if account has not yet
             been initialised.
           example: 24556
         workbenchId:
           type: number
+          nullable: true
           description: The id of the user's Inventory Workbench. May be empty if account
             has not yet been initialised.
           example: 24557
