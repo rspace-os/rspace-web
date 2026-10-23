@@ -23,7 +23,17 @@ public class TimeFieldDTO<T> extends AbstractFormFieldDTO<TimeFieldForm> {
 
   public TimeFieldDTO(
       String defaultValue, String minValue, String maxValue, String timeFormat, String name) {
-    super(name, false);
+    this(defaultValue, minValue, maxValue, timeFormat, name, false);
+  }
+
+  public TimeFieldDTO(
+      String defaultValue,
+      String minValue,
+      String maxValue,
+      String timeFormat,
+      String name,
+      boolean isMandatory) {
+    super(name, isMandatory);
     this.defaultValue = defaultValue;
     this.minValue = minValue;
     this.maxValue = maxValue;

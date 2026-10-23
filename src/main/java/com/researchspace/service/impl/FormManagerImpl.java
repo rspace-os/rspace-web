@@ -32,9 +32,11 @@ import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -301,6 +303,25 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     if (formDao.exists(formId)) {
       formTracker.unlockRecord(formDao.get(formId), user, SessionAttributeUtils::getSessionId);
     }
+  }
+
+  @Override
+  public Set<Long> getCopiedTemporaryFieldIds(RSForm form) {
+    if (form == null || form.getId() == null || !form.isTemporary()) {
+      return Collections.emptySet();
+    }
+    RSForm original = formDao.getOriginalFromTemporaryForm(form.getId());
+    if (original == null) {
+      return Collections.emptySet();
+    }
+    Set<Long> copiedFieldIds = new HashSet<>();
+    for (FieldForm originalField : original.getFieldForms()) {
+      if (originalField.getTempFieldForm() != null
+          && originalField.getTempFieldForm().getId() != null) {
+        copiedFieldIds.add(originalField.getTempFieldForm().getId());
+      }
+    }
+    return copiedFieldIds;
   }
 
   @RequiresPermissions("FORM:READ")
