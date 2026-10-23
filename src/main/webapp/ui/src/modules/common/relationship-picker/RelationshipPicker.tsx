@@ -17,12 +17,9 @@ import {
 } from "@/modules/common/ui/combobox";
 import { Spinner } from "@/modules/common/ui/spinner";
 import { cn } from "@/modules/common/utils/cn";
-import {
-  useRelationshipOptionAvailability,
-  useRelationshipOptions,
-  useSelectedRelationshipOptions,
-} from "./relationshipOptionQueries";
+import { useRelationshipOptionAvailability, useRelationshipOptions } from "./relationshipOptionQueries";
 import type { RelationshipOptionWithSource, RelationshipSource } from "./relationshipSources";
+import { useSelectedRelationshipOptions } from "./useSelectedRelationshipOptions";
 
 // Matches the h-8 / text-xs controls a filter row uses. The inner input needs its own rules because
 // `Input` hard-codes h-9 and md:text-sm, which a class on the wrapper cannot override.
