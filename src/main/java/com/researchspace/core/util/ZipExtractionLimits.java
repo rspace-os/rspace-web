@@ -40,7 +40,7 @@ public record ZipExtractionLimits(
           10_000 * FileUtils.ONE_MB, 500_000, 2_000 * FileUtils.ONE_MB, 100, 10 * FileUtils.ONE_MB);
 
   public ZipExtractionLimits withDeploymentLimits(
-      long maxExpandedBytes, int maxEntries, long minFreeDiskBytes) {
+      long maxExpandedBytes, int maxEntries, long minFreeDiskBytes, int maxCompressionRatio) {
     return new ZipExtractionLimits(
         maxExpandedBytes, maxEntries, minFreeDiskBytes, maxCompressionRatio, ratioFloorBytes);
   }

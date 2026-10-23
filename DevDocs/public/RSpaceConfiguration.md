@@ -507,6 +507,7 @@ These optional settings configure  behaviour of the RSpace application.
 * **archive.minSpaceRequiredToStartMB** Minimum available disk space on temp folder partition required for RSpace to start/continue archive export process. Archive import also stops if extracting an uploaded archive would leave less than this free. In megabytes, default is 2000 (2 GB).
 * **archive.maxExpandedSizeMB** Maximum size of constructed archive export. Also the maximum size an imported archive may expand to when extracted. In megabytes, default is 10000 (10 GB). 0 removes the limit.
 * **archive.import.maxEntries** Maximum number of files and folders an imported archive may contain. Default is 500000. 0 removes the limit.
+* **archive.import.maxCompressionRatio** Maximum number of times an imported archive may expand relative to its compressed size, judged once more than 10 MB has been extracted. Raise it if archives holding large, mostly blank files (such as uncompressed image masks) are rejected. Default is 100. 0 removes the limit.
 * **importArchiveFromServer.enabled**. true/false.  If true, enhances import of RSpace XML archives by being able to specify a file path on the server. This enables archives stored on the server to be re-imported without tedious download and re-upload through web interface. Default is false.
 * **pdf.defaultPageSize** Default PDF export page size . Valid values are UNKNOWN,A4,LETTER. Default is A4.
 

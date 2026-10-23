@@ -157,22 +157,25 @@ public class ArchiveParseTest {
 
   @ParameterizedTest
   @CsvSource({
-    "1, 0, 0, EXPANDED_SIZE, 1048576",
-    "0, 1, 0, ENTRY_COUNT, 1",
-    "0, 0, 2147483647, FREE_DISK_SPACE, 2251799812636672"
+    "1, 0, 0, 0, EXPANDED_SIZE, 1048576",
+    "0, 1, 0, 0, ENTRY_COUNT, 1",
+    "0, 0, 2147483647, 0, FREE_DISK_SPACE, 2251799812636672",
+    "0, 0, 0, 50, COMPRESSION_RATIO, 50"
   })
   public void extractionUsesDeploymentLimits(
       int maxExpandedSizeMB,
       int maxEntries,
       int minFreeSpaceMB,
+      int maxCompressionRatio,
       ZipExtractionLimitException.Limit expectedLimit,
       long expectedLimitValue,
       @TempDir File tempDir)
       throws IOException {
     File zip = new File(tempDir, "big.zip");
     try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(zip)) {
+      // past the 10 MiB floor, so the ratio is judged
       out.putArchiveEntry(new ZipArchiveEntry("big.bin"));
-      out.write(new byte[2 * 1024 * 1024]);
+      out.write(new byte[12 * 1024 * 1024]);
       out.closeArchiveEntry();
       out.putArchiveEntry(new ZipArchiveEntry("small.txt"));
       out.closeArchiveEntry();
@@ -183,6 +186,7 @@ public class ArchiveParseTest {
     ArchiveParserImpl realParser = new ArchiveParserImpl();
     ReflectionTestUtils.setField(realParser, "diskSpaceChecker", diskSpaceChecker);
     ReflectionTestUtils.setField(realParser, "importMaxEntries", maxEntries);
+    ReflectionTestUtils.setField(realParser, "importMaxCompressionRatio", maxCompressionRatio);
 
     ZipExtractionLimitException e =
         assertThrows(

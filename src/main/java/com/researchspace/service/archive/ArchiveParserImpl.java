@@ -74,6 +74,9 @@ public class ArchiveParserImpl implements IArchiveParser {
   @Value("${archive.import.maxEntries}")
   private int importMaxEntries;
 
+  @Value("${archive.import.maxCompressionRatio}")
+  private int importMaxCompressionRatio;
+
   @Qualifier("propertyHolder")
   @Autowired
   private Versionable rspaceVersion;
@@ -269,7 +272,8 @@ public class ArchiveParserImpl implements IArchiveParser {
         ZipExtractionLimits.DEFAULTS.withDeploymentLimits(
             diskSpaceChecker.getMaxArchiveSizeMB() * FileUtils.ONE_MB,
             importMaxEntries,
-            diskSpaceChecker.getMinSpaceRequiredToStartArchiveExportMB() * FileUtils.ONE_MB);
+            diskSpaceChecker.getMinSpaceRequiredToStartArchiveExportMB() * FileUtils.ONE_MB,
+            importMaxCompressionRatio);
     return new File(ZipUtils.extractZip(zipFile, outFolder, limits));
   }
 
