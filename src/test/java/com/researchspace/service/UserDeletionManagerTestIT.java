@@ -1244,7 +1244,8 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ApiSampleRequest surviving =
         sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner);
     assertEquals(fixture.requesterUsername, surviving.getRequester().getUsername());
-    assertNull(surviving.getRequester().getId(), "a deleted requester has no id to resolve");
+    assertEquals(fixture.requester.getId(), surviving.getRequester().getId());
+    assertNull(surviving.getRequester().getFirstName(), "a deleted requester has no name to show");
     assertEquals(
         fixture.requesterUsername,
         surviving.getStatusChanges().get(0).getCreatedBy().getUsername());
@@ -1330,7 +1331,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ApiSampleRequest surviving =
         sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.requester);
     assertEquals(ownerUsername, surviving.getOriginalOwner().getUsername());
-    assertNull(surviving.getOriginalOwner().getId(), "a deleted original owner has no id");
+    assertEquals(fixture.owner.getId(), surviving.getOriginalOwner().getId());
   }
 
   @Test
@@ -1362,7 +1363,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ApiSampleRequestStatusChange fulfilment = surviving.getStatusChanges().get(1);
     assertEquals(SampleRequestStatus.FULFILLED, fulfilment.getStatus());
     assertEquals(labAdminUsername, fulfilment.getCreatedBy().getUsername());
-    assertNull(fulfilment.getCreatedBy().getId(), "a deleted actor has no id");
+    assertEquals(labAdmin.getId(), fulfilment.getCreatedBy().getId());
   }
 
   @Test

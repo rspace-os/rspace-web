@@ -5036,10 +5036,7 @@ components:
           type: string
           description: The version of the ontology this tag data is contained in.
     SampleRequestInfo:
-      description: >-
-        Summary of a request for material from a Sample. A user deleted since
-        keeps their username in `requester`, `originalOwner` and each
-        `createdBy`, with a null id.
+      description: Summary of a request for material from a Sample.
       properties:
         id:
           type: integer
@@ -6070,7 +6067,6 @@ components:
         id:
           type: integer
           format: int64
-          nullable: true
           description: Unique identifier for the User.
           example: 23
         username:
