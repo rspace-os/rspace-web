@@ -22,10 +22,14 @@ import {
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
 const publicView = document.getElementById("public_document_view") !== null;
 
-/* Refresh while the token is still valid, at the same margin as JwtService.isExpiringSoon. */
+/*
+ * Refresh while the token is still valid, at the same margin as JwtService.isExpiringSoon. Expiry is measured
+ * against the client clock, so the floor stops a clock running ~an hour fast from refreshing in a tight loop.
+ */
 const REFRESH_MARGIN_SECONDS = 300;
+const MIN_REFRESH_DELAY_SECONDS = 60;
 const refreshDelayMs = (token: string) =>
-  Math.max(0, JwtService.secondsToExpiry(token) - REFRESH_MARGIN_SECONDS) * 1000;
+  Math.max(MIN_REFRESH_DELAY_SECONDS, JwtService.secondsToExpiry(token) - REFRESH_MARGIN_SECONDS) * 1000;
 
 export type {
   B2InstSettings,

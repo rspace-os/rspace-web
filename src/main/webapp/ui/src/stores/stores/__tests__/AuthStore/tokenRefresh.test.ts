@@ -58,4 +58,15 @@ describe("AuthStore token refresh", () => {
     expect(store.isAuthenticated).toBe(true);
     expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), (3600 - 300) * 1000);
   });
+
+  test("waits at least a minute when a fresh token already looks close to expiry", async () => {
+    // A client clock running ~56 minutes fast sees every new one-hour token as expiring in 240 s.
+    server.use(http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: fakeJwt(240) })));
+    vi.spyOn(Date, "now").mockReturnValue(NOW);
+    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+
+    await getRootStore().authStore.authenticate();
+
+    expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 60 * 1000);
+  });
 });
