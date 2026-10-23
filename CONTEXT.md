@@ -49,8 +49,8 @@ resolved during design. This file is a glossary only — no implementation detai
   Subsamples have none of their own: they follow their sample.
   _Avoid_: sharing, sharing mode, sharing settings
 - **Owner's groups** — the default access permission: every member of a group
-  the owner belongs to, lab, collaboration or project, has full access. Membership
-  is read live, so leaving or being removed from the group ends that access.
+  the owner belongs to, lab, collaboration or project, has full access. Leaving or
+  being removed from the group ends that access.
 - **Explicit access list** — the access permission that names the groups, any in
   the system, whose members have full access.
   _Avoid_: whitelist
