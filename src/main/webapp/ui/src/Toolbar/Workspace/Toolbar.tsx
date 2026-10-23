@@ -13,31 +13,35 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Skeleton from "@mui/material/Skeleton";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { produce } from "immer";
 import React from "react";
-import { createRoot } from "react-dom/client";
 import Analytics from "../../components/Analytics";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
 import TreeSort from "../../components/TreeSort";
 import i18n from "../../modules/common/i18n";
-import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import CreateMenu from "../ToolbarCreateMenu";
 import SocialActions from "../ToolbarSocial";
+import type { ToolbarConditionalRender, ToolbarEventHandlers } from "../types";
 import AdvancedSearch from "./AdvancedSearch/AdvancedSearch";
 import CompareDialog from "./CompareDialog";
 import RenameDialog from "./RenameDialog";
 import SimpleSearch from "./SimpleSearch/SimpleSearch";
 import TagDialog from "./TagDialog";
 
-class WorkspaceToolbar extends React.Component {
-  constructor(props) {
+export type WorkspaceToolbarProps = {
+  domContainer: HTMLElement;
+  conditionalRender: Partial<ToolbarConditionalRender>;
+  eventHandlers: Pick<ToolbarEventHandlers, "onCreateRequest">;
+};
+
+class WorkspaceToolbar extends React.Component<WorkspaceToolbarProps> {
+  constructor(props: WorkspaceToolbarProps) {
     super(props);
     this.state = {
       open: [false, false],
@@ -532,50 +536,4 @@ class WorkspaceToolbar extends React.Component {
 
 WorkspaceToolbar.contextType = AnalyticsContext;
 
-// biome-ignore lint/suspicious/noImplicitAnyLet: globals assigned before use
-let rootNode;
-// biome-ignore lint/suspicious/noImplicitAnyLet: globals assigned before use
-let domContainer;
-
-/*
- * We remember the last props so that renderToolbar only needs to be passed the
- * props that have changed
- */
-let prevProps = {
-  conditionalRender: {},
-  eventHandlers: {
-    onCreateRequest: () => {},
-  },
-};
-
-window.renderToolbar = (newProps) => {
-  if (!rootNode) {
-    domContainer = document.getElementById("toolbar2");
-    rootNode = createRoot(domContainer);
-  }
-  prevProps = {
-    conditionalRender: {
-      ...prevProps.conditionalRender,
-      ...(newProps?.conditionalRender ?? {}),
-    },
-    eventHandlers: {
-      ...prevProps.eventHandlers,
-      ...(newProps?.eventHandlers ?? {}),
-    },
-  };
-  rootNode.render(
-    // content() uses i18n.t() directly, not the hook, so I18nRoot must gate this whole render or labels freeze as raw keys.
-    <I18nRoot namespaces={["workspace", "common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
-      <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
-    </I18nRoot>,
-  );
-};
-
-/*
- * By waiting on window load event, we give the jQuery parts of the code an
- * opportunity to set up event handlers for the ReactToolbarMounted event
- * dispatched above.
- */
-window.addEventListener("load", () => {
-  window.renderToolbar();
-});
+export default WorkspaceToolbar;

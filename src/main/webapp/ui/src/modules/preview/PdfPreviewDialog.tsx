@@ -1,0 +1,82 @@
+import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import React from "react";
+import Alerts from "@/components/Alerts/Alerts";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { CallableAsposePreview, useAsposePreview } from "@/eln/gallery/components/CallableAsposePreview";
+import { CallablePdfPreview, usePdfPreview } from "@/eln/gallery/components/CallablePdfPreview";
+import materialTheme from "@/theme";
+
+export const OPEN_PDF_PREVIEW_DIALOG = "OPEN_PDF_PREVIEW_DIALOG";
+
+export type OpenPdfPreviewDialogEventDetail = {
+  documentId: number;
+  revisionId?: number | null;
+  name: string;
+  fileExtension: string;
+  publicView?: boolean;
+};
+
+function buildPdfStreamUrl({
+  documentId,
+  revisionId = null,
+  publicView = false,
+}: Pick<OpenPdfPreviewDialogEventDetail, "documentId" | "revisionId" | "publicView">): string {
+  return (
+    (publicView ? "/public/publicView" : "") +
+    `/Streamfile/${documentId}${revisionId != null ? `?revision=${revisionId}` : ""}`
+  );
+}
+
+export function PdfPreviewDialogFromGlobalEvent(): React.ReactNode {
+  const { openPdfPreview } = usePdfPreview();
+  const { openAsposePreviewFromDetails } = useAsposePreview();
+
+  React.useEffect(() => {
+    function handler(event: Event) {
+      const {
+        documentId,
+        revisionId = null,
+        fileExtension,
+        publicView = false,
+      } = (event as CustomEvent<OpenPdfPreviewDialogEventDetail>).detail;
+
+      if (fileExtension.toLowerCase() === "pdf") {
+        openPdfPreview(buildPdfStreamUrl({ documentId, revisionId, publicView }));
+        return;
+      }
+
+      void openAsposePreviewFromDetails({
+        documentId,
+        revisionId,
+        fileExtension,
+        publicView,
+      });
+    }
+
+    window.addEventListener(OPEN_PDF_PREVIEW_DIALOG, handler);
+    return () => {
+      window.removeEventListener(OPEN_PDF_PREVIEW_DIALOG, handler);
+    };
+  }, [openAsposePreviewFromDetails, openPdfPreview]);
+
+  return null;
+}
+
+export function PdfPreviewDialogWrapper(): React.ReactNode {
+  return (
+    <StyledEngineProvider injectFirst enableCssLayer>
+      <ThemeProvider theme={materialTheme}>
+        <ErrorBoundary topOfViewport>
+          <Alerts>
+            <CallablePdfPreview>
+              <CallableAsposePreview>
+                <PdfPreviewDialogFromGlobalEvent />
+              </CallableAsposePreview>
+            </CallablePdfPreview>
+          </Alerts>
+        </ErrorBoundary>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  );
+}
