@@ -11,7 +11,6 @@ import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.service.inventory.SampleRequestApiManager;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +21,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class SampleRequestsApiController extends BaseApiInventoryController
     implements SampleRequestsApi {
 
-  @Autowired private SampleRequestApiManager sampleRequestMgr;
+  private final SampleRequestApiManager sampleRequestMgr;
+
+  public SampleRequestsApiController(SampleRequestApiManager sampleRequestMgr) {
+    this.sampleRequestMgr = sampleRequestMgr;
+  }
 
   @Override
   public ApiSampleRequestSearchResult getRequestsForUser(

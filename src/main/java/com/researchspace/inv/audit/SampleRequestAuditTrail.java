@@ -6,7 +6,6 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.events.SampleRequestStatusEvent;
 import com.researchspace.model.inventory.SampleRequest;
 import com.researchspace.model.inventory.SampleRequestStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -14,7 +13,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Component
 public class SampleRequestAuditTrail {
 
-  private @Autowired AuditTrailService auditer;
+  private final AuditTrailService auditer;
+
+  public SampleRequestAuditTrail(AuditTrailService auditer) {
+    this.auditer = auditer;
+  }
 
   @TransactionalEventListener
   public void sampleRequestStatusRecorded(SampleRequestStatusEvent event) {

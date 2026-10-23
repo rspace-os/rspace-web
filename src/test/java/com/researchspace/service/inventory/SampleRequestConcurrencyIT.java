@@ -12,15 +12,18 @@ import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleRequestDao;
+import com.researchspace.dao.UserDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.inventory.impl.SampleRequestApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -36,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
 import org.springframework.test.util.AopTestUtils;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -46,6 +50,12 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   private @Autowired SampleRequestApiManager sampleRequestApiMgr;
   private @Autowired SystemPropertyManager systemPropertyMgr;
+  private @Autowired SampleRequestDao sampleRequestDao;
+  private @Autowired SampleDao sampleDao;
+  private @Autowired UserDao userDao;
+  private @Autowired InventoryPermissionUtils invPermissions;
+  private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
+  private @Autowired ApplicationEventPublisher publisher;
 
   private String originalSampleRequestsAvailable;
   private User owner;
@@ -53,7 +63,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   private Long requestId;
   private Long sampleId;
   private String sampleGlobalId;
-  private final List<Runnable> restoreSwappedDependencies = new ArrayList<>();
+  private SampleRequestApiManager realTransferRequestsMgr;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -76,10 +86,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
     sampleId = sample.getId();
     sampleGlobalId = sample.getGlobalId();
-    ApiSample requestable = new ApiSample();
-    requestable.setId(sample.getId());
-    requestable.setRequestable(true);
-    sampleApiMgr.updateApiSample(requestable, owner);
+    markSampleRequestable(sample, owner);
 
     logoutAndLoginAs(requester);
     ApiSampleRequestPost post = new ApiSampleRequestPost();
@@ -90,8 +97,12 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
-    restoreSwappedDependencies.forEach(Runnable::run);
-    restoreSwappedDependencies.clear();
+    if (realTransferRequestsMgr != null) {
+      Object transferringMgr = AopTestUtils.getUltimateTargetObject(sampleApiMgr);
+      ReflectionTestUtils.setField(
+          transferringMgr, "sampleRequestApiManager", realTransferRequestsMgr);
+      realTransferRequestsMgr = null;
+    }
     if (originalSampleRequestsAvailable != null) {
       logoutAndLoginAsSysAdmin();
       systemPropertyMgr.save(
@@ -207,7 +218,8 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     initUsers(newOwner);
     CountDownLatch createPaused = new CountDownLatch(1);
     CountDownLatch releaseCreate = new CountDownLatch(1);
-    pauseCreateRequestAfterItsLock(createPaused, releaseCreate);
+    SampleRequestApiManager pausingManager =
+        managerPausingAfterItsLock(createPaused, releaseCreate);
     CountDownLatch transferClosing = new CountDownLatch(1);
     CountDownLatch transferClosed = new CountDownLatch(1);
     watchTransferClosingRequests(transferClosing, transferClosed);
@@ -220,7 +232,8 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
                 ApiSampleRequestPost post = new ApiSampleRequestPost();
                 post.setSampleGlobalId(sampleGlobalId);
                 post.setNote("raised while the sample is being transferred");
-                return sampleRequestApiMgr.createRequest(post, requester).getId();
+                return new TransactionTemplate(getTxMger())
+                    .execute(tx -> pausingManager.createRequest(post, requester).getId());
               });
       assertTrue(createPaused.await(30, TimeUnit.SECONDS));
 
@@ -270,64 +283,57 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   }
 
   /**
-   * Holds createRequest at its first permission check, which comes after it share-locks the sample
-   * and before it saves the request.
+   * A manager whose createRequest holds at its first permission check, which comes after it
+   * share-locks the sample and before it saves the request.
    */
-  private void pauseCreateRequestAfterItsLock(CountDownLatch paused, CountDownLatch release) {
-    SystemPropertyPermissionManager realPermissions =
-        swapDependency(
-            sampleRequestApiMgr,
-            "systemPropertyPermissions",
-            SystemPropertyPermissionManager.class);
+  private SampleRequestApiManager managerPausingAfterItsLock(
+      CountDownLatch paused, CountDownLatch release) {
     SystemPropertyPermissionManager pausing =
-        currentDependency(sampleRequestApiMgr, "systemPropertyPermissions");
+        Mockito.mock(
+            SystemPropertyPermissionManager.class,
+            AdditionalAnswers.delegatesTo(systemPropertyPermissions));
     Mockito.doAnswer(
             call -> {
               if (paused.getCount() > 0) {
                 paused.countDown();
                 awaitQuietly(release);
               }
-              return realPermissions.isPropertyAllowed(
+              return systemPropertyPermissions.isPropertyAllowed(
                   call.<User>getArgument(0), call.<SystemPropertyName>getArgument(1));
             })
         .when(pausing)
         .isPropertyAllowed(Mockito.any(User.class), Mockito.any(SystemPropertyName.class));
+    return new SampleRequestApiManagerImpl(
+        sampleRequestDao,
+        sampleDao,
+        sampleApiMgr,
+        invPermissions,
+        messages,
+        pausing,
+        userDao,
+        publisher);
   }
 
   /** Counts the transfer into and out of closing the sample's open requests. */
   private void watchTransferClosingRequests(CountDownLatch entered, CountDownLatch finished) {
-    SampleRequestApiManager realRequests =
-        swapDependency(sampleApiMgr, "sampleRequestApiManager", SampleRequestApiManager.class);
-    SampleRequestApiManager watching = currentDependency(sampleApiMgr, "sampleRequestApiManager");
+    Object transferringMgr = AopTestUtils.getUltimateTargetObject(sampleApiMgr);
+    SampleRequestApiManager real =
+        (SampleRequestApiManager)
+            ReflectionTestUtils.getField(transferringMgr, "sampleRequestApiManager");
+    SampleRequestApiManager watching =
+        Mockito.mock(SampleRequestApiManager.class, AdditionalAnswers.delegatesTo(real));
     Mockito.doAnswer(
             call -> {
               entered.countDown();
-              realRequests.closeActiveRequestsForTransferredSample(
+              real.closeActiveRequestsForTransferredSample(
                   call.getArgument(0), call.getArgument(1), call.getArgument(2));
               finished.countDown();
               return null;
             })
         .when(watching)
         .closeActiveRequestsForTransferredSample(Mockito.any(), Mockito.any(), Mockito.any());
-  }
-
-  /**
-   * Replaces a manager's dependency with a Mockito mock that delegates to the real one, for the
-   * test to stub, and restores it after the test. Returns the real dependency.
-   */
-  private <T> T swapDependency(Object manager, String field, Class<T> type) {
-    Object target = AopTestUtils.getUltimateTargetObject(manager);
-    T real = type.cast(ReflectionTestUtils.getField(target, field));
-    ReflectionTestUtils.setField(
-        target, field, Mockito.mock(type, AdditionalAnswers.delegatesTo(real)));
-    restoreSwappedDependencies.add(() -> ReflectionTestUtils.setField(target, field, real));
-    return real;
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T> T currentDependency(Object manager, String field) {
-    Object target = AopTestUtils.getUltimateTargetObject(manager);
-    return (T) ReflectionTestUtils.getField(target, field);
+    realTransferRequestsMgr = real;
+    ReflectionTestUtils.setField(transferringMgr, "sampleRequestApiManager", watching);
   }
 
   /** MariaDB's "record has changed since last read" (1020) or "deadlock found" (1213). */

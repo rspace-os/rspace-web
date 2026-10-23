@@ -1435,10 +1435,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
 
     logoutAndLoginAs(fixture.owner);
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(fixture.owner);
-    ApiSample requestable = new ApiSample();
-    requestable.setId(sample.getId());
-    requestable.setRequestable(true);
-    sampleApiMgr.updateApiSample(requestable, fixture.owner);
+    markSampleRequestable(sample, fixture.owner);
 
     logoutAndLoginAs(fixture.requester);
     ApiSampleRequestPost post = new ApiSampleRequestPost();

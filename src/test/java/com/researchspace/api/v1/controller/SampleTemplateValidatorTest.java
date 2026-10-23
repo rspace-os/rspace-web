@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -8,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.units.RSUnitDef;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -172,6 +174,15 @@ public class SampleTemplateValidatorTest extends InventoryRecordValidationTestBa
     assertThat(errors.getFieldErrors())
         .as("expected an invalid-relation-type error, got: " + errors.getAllErrors())
         .anyMatch(fe -> "errors.inventory.template.invalidRelationType".equals(fe.getCode()));
+  }
+
+  @Test
+  public void putRejectsADescriptionOverTheCap() {
+    ApiSampleTemplate put = newValidPut();
+    put.setDescription(randomAlphabetic(InventoryRecord.DESCRIPTION_LENGTH + 1));
+    Errors e = validate(putValidator, put);
+    assertEquals(1, e.getErrorCount());
+    assertFieldNameIs(e, "description");
   }
 
   // --- helpers --------------------------------------------------------------------------

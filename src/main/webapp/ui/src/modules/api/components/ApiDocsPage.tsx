@@ -55,14 +55,14 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
       {
         title: i18n.t("common:apiDocs.sources.eln"),
         slug: "rspace-eln",
-        url: `${baseUrl}/resources/rspace_api_specs_2_27_1.yaml`,
+        url: `${baseUrl}/resources/rspace_api_specs_2_28_0.yaml`,
         default: true,
         agent: DISABLED_AGENT,
       },
       {
         title: i18n.t("common:apiDocs.sources.inventory"),
         slug: "rspace-inventory",
-        url: `${baseUrl}/resources/rspace_api_inventory_specs_2_27_1.yaml`,
+        url: `${baseUrl}/resources/rspace_api_inventory_specs_2_28_0.yaml`,
         agent: DISABLED_AGENT,
       },
     ],
