@@ -3,7 +3,6 @@ package com.researchspace.service.inventory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
-import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
@@ -61,10 +60,7 @@ public class SampleRequestAuditTrailIT extends RealTransactionSpringTestBase {
 
     logoutAndLoginAs(owner);
     sample = createBasicSampleForUser(owner);
-    ApiSample requestable = new ApiSample();
-    requestable.setId(sample.getId());
-    requestable.setRequestable(true);
-    sampleApiMgr.updateApiSample(requestable, owner);
+    markSampleRequestable(sample, owner);
 
     realAuditer = (AuditTrailService) ReflectionTestUtils.getField(auditTrailListener, "auditer");
     ReflectionTestUtils.setField(auditTrailListener, "auditer", mockAuditer);

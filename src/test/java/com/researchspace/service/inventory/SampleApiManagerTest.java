@@ -1293,7 +1293,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     User outsider = createAndSaveUserIfNotExists(getRandomAlphabeticString("outsider"));
     initialiseContentWithEmptyContent(outsider);
     String name = getRandomAlphabeticString("publicOwner");
-    markRequestable(createBasicSampleForUser(testUser, name), testUser);
+    markSampleRequestable(createBasicSampleForUser(testUser, name), testUser);
 
     ApiSampleInfo found =
         sampleApiMgr.getSamplesForUser(null, null, null, true, name, outsider).getSamples().get(0);
@@ -1317,8 +1317,8 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples alicesSample = createBasicSampleForUser(alice, "alice's sample");
     ApiSampleWithFullSubSamples bobsSample = createBasicSampleForUser(bob, "bob's sample");
     createBasicSampleForUser(alice, "alice's sample nobody may request");
-    markRequestable(alicesSample, alice);
-    markRequestable(bobsSample, bob);
+    markSampleRequestable(alicesSample, alice);
+    markSampleRequestable(bobsSample, bob);
 
     List<Long> found =
         sampleApiMgr
@@ -1455,7 +1455,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples underscore = createBasicSampleForUser(alice, "lot_7");
     ApiSampleWithFullSubSamples letter = createBasicSampleForUser(alice, "lotX7");
     for (ApiSampleWithFullSubSamples sample : List.of(percent, plain, underscore, letter)) {
-      markRequestable(sample, alice);
+      markSampleRequestable(sample, alice);
     }
 
     assertEquals(List.of(percent.getId()), requestableIdsMatching("50%", alice));
@@ -1476,7 +1476,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     User alice = createAndSaveUserIfNotExists(getRandomAlphabeticString("alice"));
     initialiseContentWithEmptyContent(alice);
     ApiSampleWithFullSubSamples trashed = createBasicSampleForUser(alice, "alice's old sample");
-    markRequestable(trashed, alice);
+    markSampleRequestable(trashed, alice);
     sampleApiMgr.markSampleAsDeleted(trashed.getId(), false, alice);
 
     // testUser has no access to alice's samples, so asking for deleted items must not reveal them
@@ -1498,7 +1498,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
 
     ApiRuntimeException refused =
-        assertThrows(ApiRuntimeException.class, () -> markRequestable(sample, testUser));
+        assertThrows(ApiRuntimeException.class, () -> markSampleRequestable(sample, testUser));
     assertEquals("errors.inventory.sampleRequest.notEnabled", refused.getMessage());
     assertFalse(sampleApiMgr.getApiSampleById(sample.getId(), testUser).getRequestable());
   }
@@ -1506,7 +1506,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   @Test
   public void alreadyRequestableSample_staysEditableWhenSampleRequestsDisabled() {
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
-    markRequestable(sample, testUser);
+    markSampleRequestable(sample, testUser);
     setSampleRequestsAvailable(HierarchicalPermission.DENIED);
 
     // a client resending the current flag with other edits is not turning it on
@@ -1525,7 +1525,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   @Test
   public void requestableSearch_findsNothingWhenSampleRequestsDisabled() {
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(testUser);
-    markRequestable(sample, testUser);
+    markSampleRequestable(sample, testUser);
     setSampleRequestsAvailable(HierarchicalPermission.DENIED);
 
     ApiSampleSearchResult found =
@@ -1545,12 +1545,5 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
   private void setSampleRequestsAvailable(HierarchicalPermission permission) {
     systemPropertyMgr.save(
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE, permission, getSysAdminUser());
-  }
-
-  private void markRequestable(ApiSampleWithFullSubSamples sample, User owner) {
-    ApiSample update = new ApiSample();
-    update.setId(sample.getId());
-    update.setRequestable(true);
-    sampleApiMgr.updateApiSample(update, owner);
   }
 }

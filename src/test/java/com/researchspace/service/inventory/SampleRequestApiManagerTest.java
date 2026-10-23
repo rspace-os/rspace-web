@@ -82,7 +82,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
         HierarchicalPermission.ALLOWED,
         getSysAdminUser());
     sample = createBasicSampleForUser(owner);
-    markRequestable(sample);
+    markSampleRequestable(sample, owner);
   }
 
   @AfterEach
@@ -300,10 +300,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     ApiSampleRequest sent = raiseRequest("Need 2ml for the binding assay");
 
     ApiSampleWithFullSubSamples requesterOwnedSample = createBasicSampleForUser(requester);
-    ApiSample requesterOwnedSampleUpdate = new ApiSample();
-    requesterOwnedSampleUpdate.setId(requesterOwnedSample.getId());
-    requesterOwnedSampleUpdate.setRequestable(true);
-    sampleApiMgr.updateApiSample(requesterOwnedSampleUpdate, requester);
+    markSampleRequestable(requesterOwnedSample, requester);
     ApiSampleRequestPost post = new ApiSampleRequestPost();
     post.setSampleGlobalId(requesterOwnedSample.getGlobalId());
     post.setNote("Need 1ml of yours");
@@ -329,7 +326,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   @Test
   public void getRequestsForUser_filteredBySample_returnsOnlyThatSamplesRequests() {
     ApiSampleWithFullSubSamples otherSample = createBasicSampleForUser(owner);
-    markRequestable(otherSample);
+    markSampleRequestable(otherSample, owner);
     ApiSampleRequest onFirst = raiseRequest("Need 2ml for the binding assay");
     raiseRequestAgainst(otherSample, "Need 5ml of the other one");
 
@@ -497,10 +494,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     Group otherGroup = createGroup("otherGroup", otherPi);
     addUsersToGroup(otherPi, otherGroup, otherOwner);
     ApiSampleWithFullSubSamples theirSample = createBasicSampleForUser(otherOwner);
-    ApiSample requestable = new ApiSample();
-    requestable.setId(theirSample.getId());
-    requestable.setRequestable(true);
-    sampleApiMgr.updateApiSample(requestable, otherOwner);
+    markSampleRequestable(theirSample, otherOwner);
     // the owner's community then switches sample requests off; the requester's has them on
     User sysadmin = logoutAndLoginAsSysAdmin();
     Community community = createAndSaveCommunity(sysadmin, getRandomAlphabeticString("comm"));
@@ -1038,13 +1032,6 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     post.setReason(reason);
     post.setTransferredSampleGlobalId(transferredSampleGlobalId);
     return post;
-  }
-
-  private void markRequestable(ApiSampleWithFullSubSamples target) {
-    ApiSample update = new ApiSample();
-    update.setId(target.getId());
-    update.setRequestable(true);
-    sampleApiMgr.updateApiSample(update, owner);
   }
 
   private void transferSample(User newOwner, User transferredBy) {

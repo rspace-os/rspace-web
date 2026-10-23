@@ -24,7 +24,6 @@ import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.inventory.impl.SampleRequestApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -64,7 +63,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   private Long requestId;
   private Long sampleId;
   private String sampleGlobalId;
-  private final List<Runnable> restoreSwappedDependencies = new ArrayList<>();
+  private SampleRequestApiManager realTransferRequestsMgr;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -87,10 +86,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
     sampleId = sample.getId();
     sampleGlobalId = sample.getGlobalId();
-    ApiSample requestable = new ApiSample();
-    requestable.setId(sample.getId());
-    requestable.setRequestable(true);
-    sampleApiMgr.updateApiSample(requestable, owner);
+    markSampleRequestable(sample, owner);
 
     logoutAndLoginAs(requester);
     ApiSampleRequestPost post = new ApiSampleRequestPost();
@@ -101,8 +97,12 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
-    restoreSwappedDependencies.forEach(Runnable::run);
-    restoreSwappedDependencies.clear();
+    if (realTransferRequestsMgr != null) {
+      Object transferringMgr = AopTestUtils.getUltimateTargetObject(sampleApiMgr);
+      ReflectionTestUtils.setField(
+          transferringMgr, "sampleRequestApiManager", realTransferRequestsMgr);
+      realTransferRequestsMgr = null;
+    }
     if (originalSampleRequestsAvailable != null) {
       logoutAndLoginAsSysAdmin();
       systemPropertyMgr.save(
@@ -316,38 +316,24 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   /** Counts the transfer into and out of closing the sample's open requests. */
   private void watchTransferClosingRequests(CountDownLatch entered, CountDownLatch finished) {
-    SampleRequestApiManager realRequests =
-        swapDependency(sampleApiMgr, "sampleRequestApiManager", SampleRequestApiManager.class);
-    SampleRequestApiManager watching = currentDependency(sampleApiMgr, "sampleRequestApiManager");
+    Object transferringMgr = AopTestUtils.getUltimateTargetObject(sampleApiMgr);
+    SampleRequestApiManager real =
+        (SampleRequestApiManager)
+            ReflectionTestUtils.getField(transferringMgr, "sampleRequestApiManager");
+    SampleRequestApiManager watching =
+        Mockito.mock(SampleRequestApiManager.class, AdditionalAnswers.delegatesTo(real));
     Mockito.doAnswer(
             call -> {
               entered.countDown();
-              realRequests.closeActiveRequestsForTransferredSample(
+              real.closeActiveRequestsForTransferredSample(
                   call.getArgument(0), call.getArgument(1), call.getArgument(2));
               finished.countDown();
               return null;
             })
         .when(watching)
         .closeActiveRequestsForTransferredSample(Mockito.any(), Mockito.any(), Mockito.any());
-  }
-
-  /**
-   * Replaces a manager's dependency with a Mockito mock that delegates to the real one, for the
-   * test to stub, and restores it after the test. Returns the real dependency.
-   */
-  private <T> T swapDependency(Object manager, String field, Class<T> type) {
-    Object target = AopTestUtils.getUltimateTargetObject(manager);
-    T real = type.cast(ReflectionTestUtils.getField(target, field));
-    ReflectionTestUtils.setField(
-        target, field, Mockito.mock(type, AdditionalAnswers.delegatesTo(real)));
-    restoreSwappedDependencies.add(() -> ReflectionTestUtils.setField(target, field, real));
-    return real;
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T> T currentDependency(Object manager, String field) {
-    Object target = AopTestUtils.getUltimateTargetObject(manager);
-    return (T) ReflectionTestUtils.getField(target, field);
+    realTransferRequestsMgr = real;
+    ReflectionTestUtils.setField(transferringMgr, "sampleRequestApiManager", watching);
   }
 
   /** MariaDB's "record has changed since last read" (1020) or "deadlock found" (1213). */
