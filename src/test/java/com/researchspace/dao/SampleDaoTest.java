@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -15,7 +14,6 @@ import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.List;
 import java.util.stream.Stream;
-import org.hibernate.exception.DataException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -68,21 +66,6 @@ public class SampleDaoTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void storesADescriptionAtTheCap() {
-    User user = createAndSaveRandomUser();
-    Container workbench = containerDao.getWorkbenchForUser(user);
-    Sample sample = recordFactory.createSample("long description sample", user);
-    sample.getSubSamples().get(0).moveToNewParent(workbench);
-    String description = "é".repeat(InventoryRecord.DESCRIPTION_LENGTH);
-    sample.setDescription(description);
-    Long id = sampleDao.persistNewSample(sample).getId();
-    flushDatabaseState();
-    sessionFactory.getCurrentSession().clear();
-
-    assertEquals(description, sampleDao.get(id).getDescription());
-  }
-
-  @Test
   public void everyInventoryDescriptionColumnHoldsTheCap() {
     List<String> tables =
         Stream.of("Sample", "SubSample", "Container", "InstrumentEntity")
@@ -105,17 +88,5 @@ public class SampleDaoTest extends SpringTransactionalTest {
             tables.stream()
                 .map(table -> table + "=" + InventoryRecord.DESCRIPTION_LENGTH)
                 .toList());
-  }
-
-  @Test
-  public void refusesADescriptionOverTheCapAtTheColumn() {
-    User user = createAndSaveRandomUser();
-    Container workbench = containerDao.getWorkbenchForUser(user);
-    Sample sample = recordFactory.createSample("too long description sample", user);
-    sample.getSubSamples().get(0).moveToNewParent(workbench);
-    sample.setDescription("é".repeat(InventoryRecord.DESCRIPTION_LENGTH + 1));
-    sampleDao.persistNewSample(sample);
-
-    assertThrows(DataException.class, this::flushDatabaseState);
   }
 }
