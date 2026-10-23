@@ -227,6 +227,17 @@ class BookingAuditDetailsTest {
     assertNull(record.getEvent().getDisplayName());
   }
 
+  @Test
+  void wordsIncrementUnitsForDisplay() {
+    AuditTrailSearchResult booking = result(AuditDomain.BOOKING, "bookings:1");
+    booking.getEvent().getData().getData().put("incrementUnit", "DAYS");
+
+    BookingAuditDetails.addTo(List.of(booking), messages, Locale.US);
+
+    assertEquals(
+        "Status: Active; " + label("incrementUnit") + ": Days", booking.getEvent().getDetails());
+  }
+
   private static AuditTrailSearchResult result(AuditDomain domain, String id) {
     AuditData data = new AuditData();
     data.getData().put("id", id);
