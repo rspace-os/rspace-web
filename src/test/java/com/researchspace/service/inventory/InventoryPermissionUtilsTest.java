@@ -829,13 +829,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
             createBasicContainerForUser(testUser, "ownerGroups").getId(), testUser);
     Container accessList =
         containerApiMgr.getContainerById(
-            createBasicContainerForUser(testUser, "accessList").getId(), testUser);
-    ApiContainer toAccessList = new ApiContainer();
-    toAccessList.setId(accessList.getId());
-    toAccessList.setSharingMode(ApiInventorySharingMode.WHITELIST);
-    toAccessList.setSharedWith(
-        List.of(ApiGroupInfoWithSharedFlag.forSharingWithGroup(group, testUser)));
-    containerApiMgr.updateApiContainer(toAccessList, testUser);
+            createBasicContainerForUser(testUser, "accessList", List.of(group)).getId(), testUser);
     Container membersOwn =
         containerApiMgr.getContainerById(
             createBasicContainerForUser(member, "membersOwn").getId(), member);
@@ -878,15 +872,9 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
 
     Container container =
         containerApiMgr.getContainerById(
-            createBasicContainerForUser(testUser, "shared").getId(), testUser);
-    ApiContainer toAccessList = new ApiContainer();
-    toAccessList.setId(container.getId());
-    toAccessList.setSharingMode(ApiInventorySharingMode.WHITELIST);
-    toAccessList.setSharedWith(
-        List.of(
-            ApiGroupInfoWithSharedFlag.forSharingWithGroup(ownersGroup, testUser),
-            ApiGroupInfoWithSharedFlag.forSharingWithGroup(otherGroup, testUser)));
-    containerApiMgr.updateApiContainer(toAccessList, testUser);
+            createBasicContainerForUser(testUser, "shared", List.of(ownersGroup, otherGroup))
+                .getId(),
+            testUser);
     assertFullAccess(container, member);
 
     logoutAndLoginAs(labAdmin);
@@ -911,13 +899,7 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
             createBasicContainerForUser(owner, "ownerGroups").getId(), owner);
     Container accessList =
         containerApiMgr.getContainerById(
-            createBasicContainerForUser(owner, "accessList").getId(), owner);
-    ApiContainer toAccessList = new ApiContainer();
-    toAccessList.setId(accessList.getId());
-    toAccessList.setSharingMode(ApiInventorySharingMode.WHITELIST);
-    toAccessList.setSharedWith(
-        List.of(ApiGroupInfoWithSharedFlag.forSharingWithGroup(projectGroup, owner)));
-    containerApiMgr.updateApiContainer(toAccessList, owner);
+            createBasicContainerForUser(owner, "accessList", List.of(projectGroup)).getId(), owner);
     assertFullAccess(ownerGroups, member);
     assertFullAccess(accessList, member);
 
