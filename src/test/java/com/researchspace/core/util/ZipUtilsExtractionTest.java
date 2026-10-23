@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,16 @@ class ZipUtilsExtractionTest {
 
   private static byte[] bytes(int length) {
     return new byte[length];
+  }
+
+  /** A destination whose reported free space the test controls. */
+  private static File withUsableSpace(File dir, LongSupplier usableSpace) {
+    return new File(dir.getPath()) {
+      @Override
+      public long getUsableSpace() {
+        return usableSpace.getAsLong();
+      }
+    };
   }
 
   private static byte[] randomBytes(int length) {
@@ -359,9 +370,9 @@ class ZipUtilsExtractionTest {
             () ->
                 ZipUtils.extractZip(
                     zip,
-                    dest,
-                    limits,
-                    () -> diskChecks.getAndIncrement() == 0 ? Long.MAX_VALUE : 0));
+                    withUsableSpace(
+                        dest, () -> diskChecks.getAndIncrement() == 0 ? Long.MAX_VALUE : 0),
+                    limits));
 
     assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
     assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
@@ -382,15 +393,16 @@ class ZipUtilsExtractionTest {
             () ->
                 ZipUtils.extractZip(
                     zip,
-                    dest,
-                    limits,
-                    () -> {
-                      if (diskChecks.getAndIncrement() == 0) {
-                        return Long.MAX_VALUE;
-                      }
-                      writtenWhenFull.set(new File(dest, "a.bin").length());
-                      return 0;
-                    }));
+                    withUsableSpace(
+                        dest,
+                        () -> {
+                          if (diskChecks.getAndIncrement() == 0) {
+                            return Long.MAX_VALUE;
+                          }
+                          writtenWhenFull.set(new File(dest, "a.bin").length());
+                          return 0;
+                        }),
+                    limits));
 
     assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
     assertThat(writtenWhenFull.get()).isBetween(16L * 1024 * 1024, 20L * 1024 * 1024 - 1);
@@ -415,15 +427,16 @@ class ZipUtilsExtractionTest {
             () ->
                 ZipUtils.extractZip(
                     zip,
-                    dest,
-                    limits,
-                    () -> {
-                      if (diskChecks.getAndIncrement() == 0) {
-                        return Long.MAX_VALUE;
-                      }
-                      extractedWhenFull.set(dest.list().length);
-                      return 0;
-                    }));
+                    withUsableSpace(
+                        dest,
+                        () -> {
+                          if (diskChecks.getAndIncrement() == 0) {
+                            return Long.MAX_VALUE;
+                          }
+                          extractedWhenFull.set(dest.list().length);
+                          return 0;
+                        }),
+                    limits));
 
     assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
     assertEquals(1023, extractedWhenFull.get(), "must stop at the 1024th entry");
