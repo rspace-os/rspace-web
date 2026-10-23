@@ -22,6 +22,15 @@ import {
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
 const publicView = document.getElementById("public_document_view") !== null;
 
+/*
+ * Refresh while the token is still valid, at the same margin as JwtService.isExpiringSoon. Expiry is measured
+ * against the client clock, so the floor stops a clock running ~an hour fast from refreshing in a tight loop.
+ */
+const REFRESH_MARGIN_SECONDS = 300;
+const MIN_REFRESH_DELAY_SECONDS = 60;
+const refreshDelayMs = (token: string) =>
+  Math.max(MIN_REFRESH_DELAY_SECONDS, JwtService.secondsToExpiry(token) - REFRESH_MARGIN_SECONDS) * 1000;
+
 export type {
   B2InstSettings,
   DataCiteServerUrl,
@@ -60,7 +69,11 @@ export default class AuthStore {
     if (this.timeoutId) {
       clearTimeout(this.timeoutId);
     }
-    this.isAuthenticated = false;
+    /*
+     * isAuthenticated stays as it is until the request settles: Router only
+     * renders the Inventory routes while it is true, so clearing it here would
+     * unmount the whole page for every token refresh.
+     */
     const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
     return axios
       .get<{ data: string }>(oAuthUrl)
@@ -70,6 +83,7 @@ export default class AuthStore {
 
           if (typeof token === "undefined") {
             // Usually this means that backend returned login.html in response.data
+            this.isAuthenticated = false;
             window.location.href = "/login";
             return Promise.resolve();
           }
@@ -80,14 +94,17 @@ export default class AuthStore {
           this.isSynchronizing = false;
 
           // Reauthenticate few minutes before token expiry
-          this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+          this.timeoutId = setTimeout(() => void this.authenticate(), refreshDelayMs(token));
         }),
       )
       .then(() => {})
-      .catch(() => {
-        // @ts-expect-error I can update the location by assigning a string to it
-        window.location = "/login";
-      });
+      .catch(
+        action(() => {
+          this.isAuthenticated = false;
+          // @ts-expect-error I can update the location by assigning a string to it
+          window.location = "/login";
+        }),
+      );
   }
 
   signOut() {
@@ -114,7 +131,7 @@ export default class AuthStore {
       this.isSynchronizing = false;
 
       // Reauthenticate few minutes before token expiry
-      this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+      this.timeoutId = setTimeout(() => void this.authenticate(), refreshDelayMs(token));
       return Promise.resolve();
     }
 
