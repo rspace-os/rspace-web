@@ -36,6 +36,11 @@ resolved during design. This file is a glossary only — no implementation detai
   Owner, Manufacturer, etc.).
 - **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
   individual record after creation, outside any template definition.
+- **Description (inventory record)** — the free, formatted text a user writes about
+  a Sample, Subsample, Container, Instrument or template to say what it is. It holds
+  up to 2000 characters counting the formatting markup, the same cap as a subsample
+  note. The description of an ELN record and the content of an Extra text field are
+  different things and keep their own, shorter cap for now.
 
 ## Instrument PID registration (B2INST/PIDINST)
 
@@ -52,7 +57,7 @@ resolved during design. This file is a glossary only — no implementation detai
   record the fact against the instrument. Only the last calibration date is
   documentation-only now: PIDINST's Date vocabulary has no home for it. The
   measurement technique and calibration links were documentation-only until
-  RSDEV-1253 mapped them to RelatedIdentifier entries with a fixed IsDescribedBy
+  they were mapped to RelatedIdentifier entries with a fixed IsDescribedBy
   relation (see ADR 0007); the relation type stored on the link itself still
   never leaves RSpace. A documentation-only field is still an ordinary
   instrument field, so users fill, edit and read it as usual.

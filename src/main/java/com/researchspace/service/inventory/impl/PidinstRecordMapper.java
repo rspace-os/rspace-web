@@ -23,9 +23,9 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InstrumentTemplate;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.BaseRecord;
-import com.researchspace.model.record.EditInfo;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -44,7 +44,7 @@ import org.apache.commons.lang3.StringUtils;
  * plus the linked identifier (CONTEXT.md, "Instrument import"; ADR 0009). Pure functions, no
  * Spring.
  *
- * <p>Values are cut to what RSpace can store rather than refused: name to 255, description to 250
+ * <p>Values are cut to what RSpace can store rather than refused: name to 255, description to 2000
  * with an ellipsis, field content to 1000. Only a missing mandatory Owner or Manufacturer refuses
  * the import, because a placeholder in a mandatory field would be worse data than no record.
  */
@@ -196,7 +196,8 @@ final class PidinstRecordMapper {
         truncate(
             StringUtils.defaultIfBlank(record.getName(), record.getPid()),
             BaseRecord.DEFAULT_VARCHAR_LENGTH));
-    instrument.setDescription(truncate(record.getDescription(), EditInfo.DESCRIPTION_LENGTH));
+    instrument.setDescription(
+        truncate(record.getDescription(), InventoryRecord.DESCRIPTION_LENGTH));
     for (InventoryEntityField templateField : template.getActiveFields()) {
       String value =
           templateField.getType() == FieldType.LINK
