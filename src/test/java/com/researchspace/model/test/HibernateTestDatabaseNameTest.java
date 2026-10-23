@@ -44,6 +44,12 @@ class HibernateTestDatabaseNameTest {
   }
 
   @Test
+  void rejectsEmptyName() {
+    System.setProperty(HibernateTest.DB_NAME_PROPERTY, "");
+    assertThrows(IllegalArgumentException.class, HibernateTest::scratchDatabaseName);
+  }
+
+  @Test
   void rejectsNameLongerThanMariaDbAllows() {
     System.setProperty(HibernateTest.DB_NAME_PROPERTY, "h".repeat(65));
     assertThrows(IllegalArgumentException.class, HibernateTest::scratchDatabaseName);

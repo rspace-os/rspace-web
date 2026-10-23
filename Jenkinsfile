@@ -44,8 +44,9 @@ pipeline {
         SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
-        // scratch database for the HibernateTest classes; prefixed before sanitising so the 63-char cap covers the whole name
-        HIBTEST_DBNAME = branchToDbName("hibtest_${BRANCH_NAME}")
+        // scratch database for the HibernateTest classes; the hash of the full branch name comes before the readable
+        // part so the 63-char cap can never cut it, keeping names unique even for branches that sanitise or truncate alike
+        HIBTEST_DBNAME = branchToDbName("hibtest_${branchNameHash(BRANCH_NAME)}_${BRANCH_NAME}")
         CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
         AWS_TOMCAT_AMI = 'ami-0a3f8106db17a5218'
         APP_VERSION = readMavenPom().getVersion()
