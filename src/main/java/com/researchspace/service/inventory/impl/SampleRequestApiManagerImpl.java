@@ -35,24 +35,37 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Service("sampleRequestApiManager")
 public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
-  private @Autowired SampleRequestDao sampleRequestDao;
-  private @Autowired SampleDao sampleDao;
-  private @Autowired SampleApiManager sampleApiManager;
-  private @Autowired InventoryPermissionUtils invPermissions;
-  private @Autowired MessageSourceUtils messages;
-  private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
-  private @Autowired UserDao userDao;
-  private @Autowired ApplicationEventPublisher publisher;
+  private final SampleRequestDao sampleRequestDao;
+  private final SampleDao sampleDao;
+  private final SampleApiManager sampleApiManager;
+  private final InventoryPermissionUtils invPermissions;
+  private final MessageSourceUtils messages;
+  private final SystemPropertyPermissionManager systemPropertyPermissions;
+  private final UserDao userDao;
+  private final ApplicationEventPublisher publisher;
 
-  @Override
-  public void setPublisher(ApplicationEventPublisher publisher) {
+  public SampleRequestApiManagerImpl(
+      SampleRequestDao sampleRequestDao,
+      SampleDao sampleDao,
+      SampleApiManager sampleApiManager,
+      InventoryPermissionUtils invPermissions,
+      MessageSourceUtils messages,
+      SystemPropertyPermissionManager systemPropertyPermissions,
+      UserDao userDao,
+      ApplicationEventPublisher publisher) {
+    this.sampleRequestDao = sampleRequestDao;
+    this.sampleDao = sampleDao;
+    this.sampleApiManager = sampleApiManager;
+    this.invPermissions = invPermissions;
+    this.messages = messages;
+    this.systemPropertyPermissions = systemPropertyPermissions;
+    this.userDao = userDao;
     this.publisher = publisher;
   }
 

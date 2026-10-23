@@ -20,6 +20,8 @@ import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
+import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleRequestDao;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
@@ -32,6 +34,8 @@ import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.inventory.impl.SampleRequestApiManagerImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
@@ -52,7 +56,10 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
 
   private @Autowired SampleRequestApiManager sampleRequestApiMgr;
   private @Autowired SystemPropertyManager systemPropertyMgr;
-  private @Autowired ApplicationEventPublisher realPublisher;
+  private @Autowired SampleRequestDao sampleRequestDao;
+  private @Autowired SampleDao sampleDao;
+  private @Autowired InventoryPermissionUtils invPermissions;
+  private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
 
   private User owner;
   private User requester;
@@ -79,8 +86,7 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @AfterEach
-  public void restorePublisherAndSetting() {
-    sampleRequestApiMgr.setPublisher(realPublisher);
+  public void restoreSampleRequestsAvailable() {
     systemPropertyMgr.save(
         SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
         originalSampleRequestsAvailable,
@@ -90,9 +96,10 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   @Test
   public void createRequest_publishesStatusEventForAuditing() {
     ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
-    sampleRequestApiMgr.setPublisher(mockPublisher);
 
-    ApiSampleRequest created = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleRequest created =
+        managerPublishingTo(mockPublisher)
+            .createRequest(postFor(sample, "Need 2ml for the binding assay"), requester);
 
     ArgumentCaptor<SampleRequestStatusEvent> published =
         ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
@@ -105,12 +112,10 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   @Test
   public void updateStatus_publishesStatusEventForAuditing() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
-    // installed after raising, so only the transition's event is captured
     ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
-    sampleRequestApiMgr.setPublisher(mockPublisher);
 
-    sampleRequestApiMgr.updateStatus(
-        raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
+    managerPublishingTo(mockPublisher)
+        .updateStatus(raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), owner);
 
     ArgumentCaptor<SampleRequestStatusEvent> published =
         ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
@@ -121,14 +126,14 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void transfer_publishesAStatusEventForEachRequestItCloses() {
+  public void closingRequestsOnATransfer_publishesAStatusEventForEach() {
     ApiSampleRequest recipients = raiseRequest("Need 2ml for the binding assay");
     User otherRequester = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
     ApiSampleRequest others = raiseRequestAs(otherRequester);
     ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
-    sampleRequestApiMgr.setPublisher(mockPublisher);
 
-    transferSample(requester, owner);
+    managerPublishingTo(mockPublisher)
+        .closeActiveRequestsForTransferredSample(sample.getId(), owner, requester);
 
     ArgumentCaptor<SampleRequestStatusEvent> published =
         ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
@@ -149,13 +154,13 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   public void refusedTransitionPublishesNothingToAudit() {
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
     ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
-    sampleRequestApiMgr.setPublisher(mockPublisher);
+    SampleRequestApiManager manager = managerPublishingTo(mockPublisher);
 
     // the requester may not approve their own request
     assertThrows(
         ApiRuntimeException.class,
         () ->
-            sampleRequestApiMgr.updateStatus(
+            manager.updateStatus(
                 raised.getId(), statusPost(SampleRequestStatus.APPROVED, null), requester));
 
     Mockito.verifyNoInteractions(mockPublisher);
@@ -985,10 +990,8 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   private ApiSampleRequest raiseRequestAs(User user) {
-    ApiSampleRequestPost post = new ApiSampleRequestPost();
-    post.setSampleGlobalId(sample.getGlobalId());
-    post.setNote("Need 2ml for the binding assay");
-    return sampleRequestApiMgr.createRequest(post, user);
+    return sampleRequestApiMgr.createRequest(
+        postFor(sample, "Need 2ml for the binding assay"), user);
   }
 
   private ApiSampleRequest raiseRequest(String note) {
@@ -996,10 +999,27 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   private ApiSampleRequest raiseRequestAgainst(ApiSampleWithFullSubSamples target, String note) {
+    return sampleRequestApiMgr.createRequest(postFor(target, note), requester);
+  }
+
+  private static ApiSampleRequestPost postFor(ApiSampleWithFullSubSamples target, String note) {
     ApiSampleRequestPost post = new ApiSampleRequestPost();
     post.setSampleGlobalId(target.getGlobalId());
     post.setNote(note);
-    return sampleRequestApiMgr.createRequest(post, requester);
+    return post;
+  }
+
+  /** The manager as Spring builds it, but publishing to the given publisher. */
+  private SampleRequestApiManager managerPublishingTo(ApplicationEventPublisher publisher) {
+    return new SampleRequestApiManagerImpl(
+        sampleRequestDao,
+        sampleDao,
+        sampleApiMgr,
+        invPermissions,
+        messages,
+        systemPropertyPermissions,
+        userDao,
+        publisher);
   }
 
   private ApiSampleRequestSearchResult listFor(SampleRequestRole role, User user) {
