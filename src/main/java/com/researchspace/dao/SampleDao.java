@@ -37,6 +37,21 @@ public interface SampleDao extends SampleEntityDao<Sample> {
       User user);
 
   /**
+   * As {@link #getSamplesForUser(PaginationCriteria, Long, String, InventorySearchDeletedOption,
+   * User)}, optionally limited by {@code requestable} and, for a requestable search, by a name
+   * containing {@code query} (case-insensitive). {@code requestable=true} searches every
+   * requestable sample not in the trash, whatever the user's permissions.
+   */
+  ISearchResults<Sample> getSamplesForUser(
+      PaginationCriteria<Sample> pgCrit,
+      Long parentTemplateId,
+      String ownedBy,
+      InventorySearchDeletedOption deletedItemsOption,
+      Boolean requestable,
+      String query,
+      User user);
+
+  /**
    * Get a global id of a Sample that has a field with given id, or null if there is no such sample.
    */
   GlobalIdentifier getSampleGlobalIdFromFieldId(Long id);
@@ -73,4 +88,10 @@ public interface SampleDao extends SampleEntityDao<Sample> {
    * @return {@code true} if at least one sample or template with that name is owned by the user
    */
   boolean entityNameExistsForUser(String name, User owner);
+
+  /**
+   * Loads a sample with a shared row lock held until the transaction ends, so a concurrent
+   * ownership change waits for this transaction instead of interleaving with it. Null if absent.
+   */
+  Sample getWithSharedLock(Long id);
 }
