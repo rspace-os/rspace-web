@@ -845,10 +845,6 @@ export default interface Resources {
       "toastLabel": "{variant, select, success {success} warning {warning} error {error} notice {notice} other {alert}} alert",
       "warning": "Warning"
     },
-    "apiAuthentication": {
-      "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
-      "warningTitle": "Could not authenticate via API"
-    },
     "apiDocs": {
       "sources": {
         "eln": "RSpace ELN",

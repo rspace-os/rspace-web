@@ -1,46 +1,51 @@
-/**
- * @module axios
- * @summary Set the HTTP headers that are common to all requests.
- *
- * Rather than import axios directly, the entire application MUST import this
- * module as it sets the headers that are common to all requests. To do this,
- * simply import this module as follows:
- * ```
- * import axios from "@/common/axios";
- * ```
- */
+/** Import Axios through this module to include browser headers and UI token recovery. */
 
-import axios from "axios";
+import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from "axios";
+import { getUiAuthorization, isUiApiUrl, recoverUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
-/*
- * The server remembers the last the page the user attempted to load when
- * redirecting to the login page, so that any links the user taps such as
- * browser bookmarks will resolve after they have logged in. This is a common
- * pattern in web applications and is used to ensure that the user is taken to
- * the page they were trying to access after they have authenticated.
- *
- * For this to work, we have to the tell the server which requests should not
- * be remembered as otherwise API calls will be navigated to after the user
- * has logged in, if they happen to be the last request from the user's
- * browser, and the user will be presented with a wall of JSON.
- *
- * By setting X-Requested-With to XMLHttpRequest, we are telling the server that
- * this request was made by JavaScript and should not be remembered as the last
- * page the user was trying to access.
- *
- */
+// Prevent API requests from becoming the server's post-login redirect target.
 axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
 
-/**
- * We re-export the axios instance so that it can be used by the modules that
- * call this one.
- *
- * Technically, we could just have the callers import axios directly provided
- * that they import this module but by re-exporting axios we can use dependency
- * cruiser to prohibit the use of axios directly in the rest of the codebase
- * thereby ensuring that all uses of axios correctly set the X-Requested-With
- * header.
- */
+function installUiTokenRecovery(client: AxiosInstance): AxiosInstance {
+  client.interceptors.request.use((config) => {
+    const authorization = config.headers.get("Authorization");
+    if (isUiApiUrl(client.getUri(config)) && typeof authorization === "string" && authorization.startsWith("Bearer ")) {
+      config.headers.set("Authorization", getUiAuthorization(authorization));
+    }
+    return config;
+  });
+  client.interceptors.response.use(undefined, async (error: unknown) => {
+    if (axios.isAxiosError(error) && error.response?.status === 401 && error.config) {
+      const config: InternalAxiosRequestConfig & { uiTokenRetried?: boolean } = error.config;
+      const authorization = config.headers.get("Authorization");
+      const url = new URL(client.getUri(config), globalThis.location.href);
+      if (
+        !config.uiTokenRetried &&
+        isUiApiUrl(url.href) &&
+        typeof authorization === "string" &&
+        authorization.startsWith("Bearer ")
+      ) {
+        const token = await recoverUiToken(
+          authorization,
+          url.pathname.replace(/\/$/, "") === "/api/v1/userDetails/whoami",
+        );
+        if (token && config.method?.toUpperCase() === "GET") {
+          config.uiTokenRetried = true;
+          config.headers.set("Authorization", `Bearer ${token}`);
+          return client.request(config);
+        }
+      }
+    }
+    throw error;
+  });
+  return client;
+}
+
+installUiTokenRecovery(axios);
+// Axios instances do not inherit the default instance's interceptors.
+const create = axios.create.bind(axios);
+axios.create = (config) => installUiTokenRecovery(create(config));
+
 export default axios;
 
 export * from "axios";
