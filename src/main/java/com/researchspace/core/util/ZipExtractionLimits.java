@@ -31,12 +31,11 @@ public record ZipExtractionLimits(
     int maxCompressionRatio,
     long ratioFloorBytes) {
 
-  /** Mirrors the default deployment properties for archive import. */
+  /** Keep in step with defaultDeployment.properties; used by callers that pass no limits. */
   public static final ZipExtractionLimits DEFAULTS =
       new ZipExtractionLimits(
           10_000 * FileUtils.ONE_MB, 500_000, 2_000 * FileUtils.ONE_MB, 100, 10 * FileUtils.ONE_MB);
 
-  /** Copies these limits with the deployment-configurable bounds replaced. */
   public ZipExtractionLimits withDeploymentLimits(
       long maxExpandedBytes, int maxEntries, long minFreeDiskBytes) {
     return new ZipExtractionLimits(

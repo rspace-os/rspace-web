@@ -110,10 +110,10 @@ public class ZipUtils {
    * folder containing everything else.
    *
    * <p>Extraction is safe against archives that originate from user uploads: an absolute entry name
-   * is rejected, as is one nested more than 64 levels deep, and each entry's canonical destination
-   * must resolve inside the extraction directory (covering {@code ..} traversal and backslash
-   * variants). Extraction also stops once the archive exceeds {@link ZipExtractionLimits#DEFAULTS}
-   * (bytes written, entry count, compression ratio, free disk space), so a zip bomb cannot fill the
+   * is rejected, as is one nested too deep, and each entry's canonical destination must resolve
+   * inside the extraction directory (covering {@code ..} traversal and backslash variants).
+   * Extraction also stops once the archive exceeds {@link ZipExtractionLimits#DEFAULTS} (bytes
+   * written, entry count, compression ratio, free disk space), so a zip bomb cannot fill the
    * partition. A rejection or I/O failure aborts and removes everything the extraction created; it
    * does not restore pre-existing files that a failed run has already overwritten, so extract into
    * a fresh directory when the destination may hold content worth keeping.
@@ -264,10 +264,7 @@ public class ZipUtils {
     return (topLevelDir != null) ? topLevelDir.getAbsolutePath() : null;
   }
 
-  /**
-   * Tracks what an extraction has written against its {@link ZipExtractionLimits}. The ratio
-   * compares bytes written with the archive file's length.
-   */
+  /** Tracks what an extraction has written against its {@link ZipExtractionLimits}. */
   private static final class ExtractionBudget {
     private static final long DISK_CHECK_INTERVAL_BYTES = 16L * 1024 * 1024;
     // directories and tiny files take a disk block each but add little or nothing to the bytes
@@ -343,7 +340,7 @@ public class ZipUtils {
   /**
    * Returns the first directory on the way down from {@code root} to {@code dir} (both canonical)
    * that does not exist yet, or null if none is missing; deleting it recursively after creating
-   * {@code dir} removes every directory that created and nothing that existed before.
+   * {@code dir} removes every directory created and nothing that existed before.
    */
   private static Path topmostMissingDirectory(Path root, Path dir) {
     Path relative = root.relativize(dir);

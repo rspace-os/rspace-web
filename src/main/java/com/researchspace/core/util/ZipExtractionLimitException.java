@@ -7,7 +7,6 @@ package com.researchspace.core.util;
  */
 public class ZipExtractionLimitException extends InvalidArchiveException {
 
-  /** The bound that stopped extraction. */
   public enum Limit {
     EXPANDED_SIZE,
     ENTRY_COUNT,
