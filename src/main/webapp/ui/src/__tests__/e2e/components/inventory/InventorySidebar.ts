@@ -8,6 +8,7 @@ export type InventorySidebarSection =
   | "Sample Templates"
   | "Instrument Templates"
   | "IGSN IDs"
+  | "Requests"
   | "Export Data"
   | "Settings";
 
@@ -52,11 +53,20 @@ export class InventorySidebar {
     ]);
   }
 
+  /** The sidebar button for a section, e.g. to assert it's present/absent without navigating. */
+  item(section: InventorySidebarSection): Locator {
+    return this.root.getByRole("button", { name: section, exact: true });
+  }
+
   async navigateTo(section: InventorySidebarSection): Promise<void> {
     await this.ensureOpen();
-    const button = this.root.getByRole("button", { name: section, exact: true });
+    const button = this.item(section);
     if (section === "IGSN IDs") {
       await Promise.all([this.page.waitForURL("**/inventory/identifiers/igsn**"), button.click()]);
+      return;
+    }
+    if (section === "Requests") {
+      await Promise.all([this.page.waitForURL("**/inventory/requests**"), button.click()]);
       return;
     }
     if (section === "Export Data") {

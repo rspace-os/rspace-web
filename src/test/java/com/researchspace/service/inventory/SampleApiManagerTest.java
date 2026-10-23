@@ -972,7 +972,7 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
         .hasSize(2); // read/transfer
     assertEquals(user3Sample.getGlobalId(), visibleSamples.getSamples().get(1).getGlobalId());
     assertThat(visibleSamples.getSamples().get(1).getPermittedActions())
-        .hasSize(4); // read/edit/transfer/change requestable
+        .hasSize(4); // read/edit/transfer/change-requestable
     assertEquals(user1Sample.getGlobalId(), visibleSamples.getSamples().get(2).getGlobalId());
     assertThat(visibleSamples.getSamples().get(2).getPermittedActions()).hasSize(2); // read/edit
 

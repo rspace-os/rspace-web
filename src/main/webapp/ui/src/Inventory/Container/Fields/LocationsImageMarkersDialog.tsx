@@ -13,6 +13,7 @@ import Tabs from "@mui/material/Tabs";
 import { observer } from "mobx-react-lite";
 import React, { createRef, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import TitledBox from "../../../components/TitledBox";
 import type { Location } from "../../../stores/definitions/Container";
 import ContainerModel from "../../../stores/models/ContainerModel";
@@ -120,9 +121,7 @@ function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialo
       <Grid container sx={{ flexDirection: "column" }}>
         <Grid>
           <DialogContentText>
-            {t("container.fields.locationsImage.tapInstruction")}
-            <br />
-            {t("container.fields.locationsImage.dragInstruction")}
+            <TransRichText i18nKey="inventory:container.fields.locationsImage.instructions" />
           </DialogContentText>
         </Grid>
         <Grid size={12}>
