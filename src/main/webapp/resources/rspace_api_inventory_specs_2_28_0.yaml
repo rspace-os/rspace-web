@@ -7,7 +7,7 @@ info:
     This variant additionally documents the beta **Instruments** and **Instrument Templates** endpoints.
 
     **Note:** To switch to the ELN API from the API docs, select **RSpace ELN** from the dropdown at the top of the navigation menu.
-  version: "2.27.1"
+  version: "2.28.0"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html

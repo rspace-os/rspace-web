@@ -1003,7 +1003,6 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     return post;
   }
 
-  /** The manager as Spring builds it, but publishing to the given publisher. */
   private SampleRequestApiManager managerPublishingTo(ApplicationEventPublisher publisher) {
     return new SampleRequestApiManagerImpl(
         sampleRequestDao,

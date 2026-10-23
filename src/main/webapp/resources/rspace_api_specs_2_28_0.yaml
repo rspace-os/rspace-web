@@ -34,7 +34,7 @@ info:
     #### Language support
 
     A high-level overview of API usage can be found on our [Github page](https://github.com/rspace-os/api-tutorial). We are also  developing rich language bindings and example code for `Python`, `Java` and others. Please suggest any use-cases or ideas for improving the API!
-  version: "2.27.1"
+  version: "2.28.0"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
