@@ -192,7 +192,7 @@ public class ZipUtils {
       Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
       while (entries.hasMoreElements()) {
         ZipArchiveEntry zipEntry = entries.nextElement();
-        budget.countEntry(zipEntry);
+        budget.countEntries(1, zipEntry);
         String name = zipEntry.getName();
         name = name.replace('\\', '/');
         if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
@@ -238,7 +238,6 @@ public class ZipUtils {
         if (!destinationFile.exists()) {
           created.add(destinationFile);
         }
-        budget.startEntry(zipEntry);
         try (InputStream entryStream = zipFile.getInputStream(zipEntry);
             FileOutputStream fos = new FileOutputStream(destinationFile)) {
           int n;
@@ -279,7 +278,6 @@ public class ZipUtils {
     private final LongSupplier usableSpace;
     private int entries;
     private long totalWritten;
-    private long writtenSinceDiskCheck;
     private String entryName = "";
 
     ExtractionBudget(ZipExtractionLimits limits, File archiveFile, LongSupplier usableSpace) {
@@ -288,31 +286,24 @@ public class ZipUtils {
       this.usableSpace = usableSpace;
     }
 
-    void countEntry(ZipArchiveEntry entry) throws ZipExtractionLimitException {
-      countEntries(1, entry);
-    }
-
     void countEntries(int count, ZipArchiveEntry entry) throws ZipExtractionLimitException {
+      entryName = entry.getName();
       int before = entries;
       entries += count;
       if (limits.maxEntries() > 0 && entries > limits.maxEntries()) {
         throw new ZipExtractionLimitException(
             ZipExtractionLimitException.Limit.ENTRY_COUNT,
             limits.maxEntries(),
-            "more than " + limits.maxEntries() + " entries, at " + entry.getName());
+            "more than " + limits.maxEntries() + " entries, at " + entryName);
       }
       if (entries / DISK_CHECK_INTERVAL_ENTRIES != before / DISK_CHECK_INTERVAL_ENTRIES) {
         checkFreeDiskSpace();
       }
     }
 
-    void startEntry(ZipArchiveEntry entry) {
-      entryName = entry.getName();
-    }
-
     void countWritten(int bytes) throws ZipExtractionLimitException {
+      long before = totalWritten;
       totalWritten += bytes;
-      writtenSinceDiskCheck += bytes;
       if (limits.maxExpandedBytes() > 0 && totalWritten > limits.maxExpandedBytes()) {
         throw new ZipExtractionLimitException(
             ZipExtractionLimitException.Limit.EXPANDED_SIZE,
@@ -328,8 +319,7 @@ public class ZipUtils {
             ratio,
             "archive inflates more than " + ratio + " times, at entry " + entryName);
       }
-      if (writtenSinceDiskCheck >= DISK_CHECK_INTERVAL_BYTES) {
-        writtenSinceDiskCheck = 0;
+      if (totalWritten / DISK_CHECK_INTERVAL_BYTES != before / DISK_CHECK_INTERVAL_BYTES) {
         checkFreeDiskSpace();
       }
     }
