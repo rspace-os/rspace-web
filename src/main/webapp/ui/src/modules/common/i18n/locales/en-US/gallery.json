@@ -154,7 +154,7 @@
     "nameStepLabel": "Name the Filestore",
     "noReadAccess": "(no read access; contact your sysadmin)"
   },
-  "callableAsposePreview": {
+  "callableDocumentPreview": {
     "generatePdfError": "Could not generate a PDF preview for .{fileExtension} documents.",
     "previewError": "Could not generate preview."
   },

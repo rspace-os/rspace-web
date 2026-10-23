@@ -21,6 +21,7 @@ const MOCK_PROBE_URL = `http://localhost:${MOCK_PORT}/e2e-health`;
 const HEADLESS = env.headless;
 
 const CLOUD_SPECS = "**/specs/cloud/**/*.e2e.ts";
+const CONVERSION_SPECS = "**/*.conversion.e2e.ts";
 
 const PW_LOG = env.playwrightLog;
 if (PW_LOG === "trace") {
@@ -90,8 +91,8 @@ export default defineConfig<E2EOptions>({
 
     ...browserProjects.map(({ name, browserName, appUser }) => ({
       name,
-      testMatch: env.cloud ? CLOUD_SPECS : "**/*.e2e.ts",
-      testIgnore: env.cloud ? undefined : CLOUD_SPECS,
+      testMatch: name === "conversion" ? CONVERSION_SPECS : env.cloud ? CLOUD_SPECS : "**/*.e2e.ts",
+      testIgnore: name === "conversion" || env.cloud ? undefined : [CLOUD_SPECS, CONVERSION_SPECS],
       dependencies: ["setup"],
       grep: name === "mobile" ? new RegExp(tags.MOBILE) : undefined,
       use: {

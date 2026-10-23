@@ -148,8 +148,12 @@ EOF
   echo "rspace-dev: wrote ${ENV_FILE} (app=${app_port}, vite=${vite_port}, db=${db_port}, debug=${debug_port})" >&2
 }
 
-# Read a value out of .env.
-env_get() { grep -E "^$1=" "${ENV_FILE}" 2>/dev/null | head -n1 | cut -d= -f2-; }
+# Read a value from .env. Missing optional keys return an empty string.
+env_get() {
+  local line
+  line="$(grep -m1 -E "^$1=" "${ENV_FILE}" 2>/dev/null || true)"
+  printf '%s' "${line#*=}"
+}
 
 compose() {
   ensure_env
@@ -223,9 +227,22 @@ ensure_shared_volumes() {
   docker volume create rspace-dev-pnpm-store >/dev/null
 }
 
+# The conversion sidecar runs under its own AppArmor profile, which Docker cannot load
+# itself. Hosts without AppArmor (macOS, Windows) ignore the profile name.
+ensure_sidecar_apparmor_profile() {
+  [ "$(cat /sys/module/apparmor/parameters/enabled 2>/dev/null)" = "Y" ] || return 0
+  grep -q '^rspace-conversion-sidecar ' /sys/kernel/security/apparmor/profiles 2>/dev/null \
+    && return 0
+  local profile="${SCRIPT_DIR}/../conversion-sidecar/apparmor/rspace-conversion-sidecar"
+  echo "rspace-dev: loading the conversion sidecar AppArmor profile (needs sudo)" >&2
+  sudo apparmor_parser -r -W "${profile}" \
+    || die "could not load ${profile}; load it with: sudo apparmor_parser -r -W ${profile}"
+}
+
 cmd_up() {
   ensure_env
   ensure_shared_volumes
+  ensure_sidecar_apparmor_profile
   local fresh="false" arg
   for arg in "$@"; do
     case "${arg}" in

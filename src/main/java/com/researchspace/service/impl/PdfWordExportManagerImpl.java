@@ -10,6 +10,7 @@ import com.researchspace.archive.ExportScope;
 import com.researchspace.core.util.EscapeReplacement;
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.dao.RecordDao;
+import com.researchspace.documentconversion.ext.DocumentConversionException;
 import com.researchspace.documentconversion.spi.ConversionResult;
 import com.researchspace.export.pdf.ExportOperationDetails;
 import com.researchspace.export.pdf.ExportProcessor;
@@ -38,6 +39,7 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.PdfWordExportManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFailureException;
@@ -79,6 +81,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
   private @Autowired CommunicationManager commMgr;
   private @Autowired FolderManager fMger;
   private @Autowired MessageSourceUtils messageSource;
+  private @Autowired UserLocaleService userLocaleService;
 
   private @Autowired IPermissionUtils permissions;
   private @Autowired List<ExportProcessor> exportProcessors;
@@ -435,6 +438,12 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
       processor.makeExport(tempExportFile, exportInputHtml, strucDoc, exportConfig);
       tempExportFiles.add(tempExportFile);
       return exportInputHtml.getIgsnInventoryLinkedItems();
+    } catch (DocumentConversionException ex) {
+      log.warn("Document conversion failed during export", ex);
+      throw new ExportFailureException(
+          messageSource.getMessageForLocale(
+              ex.error().messageKey(), userLocaleService.getLocaleFor(user)),
+          ex);
     } catch (AuthorizationException ex) {
       log.warn(ex.toString());
       throw new ExportFailureException(

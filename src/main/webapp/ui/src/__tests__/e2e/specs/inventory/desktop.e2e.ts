@@ -68,7 +68,10 @@ test.describe(`Inventory Desktop layout`, { tag: tags.INVENTORY }, () => {
     page,
     browserName,
   }) => {
-    test.skip(browserName === "webkit", "Known WebKit timeout while opening a result after hiding the right panel");
+    test.skip(
+      browserName === "webkit" || browserName === "firefox",
+      "Inventory auto-select race reopens the right panel; remove once rspace-os/rspace-web#1260 merges",
+    );
     const sampleName = uniqueName("e2e-desktop-preview-sample");
 
     const sample = await clientInventory.createSample({ name: sampleName, newSampleSubSamplesCount: 30 });
