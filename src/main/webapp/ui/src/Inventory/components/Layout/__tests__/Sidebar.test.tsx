@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import type React from "react";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "../../../../components/LandmarksContext";
 import NavigateContext from "../../../../stores/contexts/Navigate";
@@ -12,6 +14,11 @@ import { storesContext } from "../../../../stores/stores-context";
 import materialTheme from "../../../../theme";
 import Sidebar from "../Sidebar";
 
+function renderWithProviders(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   useIntegrationIsAllowedAndEnabled: () => ({
     tag: "success",
@@ -19,10 +26,20 @@ vi.mock("../../../../hooks/api/integrationHelpers", () => ({
   }),
 }));
 
+// Defaults to DENIED so the two pre-existing tests below are unaffected; the Requests-visibility
+// tests further down set this explicitly for each case.
+const deploymentProperties: Record<string, string> = {
+  "inventory.sampleRequests.available": "DENIED",
+};
+vi.mock("../../../../hooks/api/useDeploymentProperty", () => ({
+  useDeploymentProperty: (name: string) => ({ tag: "success", value: deploymentProperties[name] }),
+}));
+
 const mockAxios = new MockAdapter(axios);
 describe("Sidebar", () => {
   beforeEach(() => {
     mockAxios.reset();
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
   });
 
   test("Should have no axe violations.", async () => {
@@ -40,7 +57,7 @@ describe("Sidebar", () => {
         },
       },
     });
-    const { container } = render(
+    const { container } = renderWithProviders(
       <ThemeProvider theme={materialTheme}>
         <LandmarksProvider>
           <storesContext.Provider value={rootStore}>
@@ -79,7 +96,7 @@ describe("Sidebar", () => {
         },
       },
     });
-    render(
+    renderWithProviders(
       <ThemeProvider theme={materialTheme}>
         <LandmarksProvider>
           <storesContext.Provider value={rootStore}>
@@ -108,5 +125,36 @@ describe("Sidebar", () => {
     const [url] = navFn.mock.calls[0];
     expect(url).toMatch(/^\/inventory\/search\?/);
     expect(setVisiblePanel).not.toHaveBeenCalled();
+  });
+
+  function renderSidebar() {
+    mockAxios.onGet("livechatProperties").reply(200, { livechatEnabled: false });
+    const rootStore = makeMockRootStore({
+      uiStore: { alwaysVisibleSidebar: true, sidebarOpen: true },
+      searchStore: { search: { benchSearch: true } },
+    });
+    return renderWithProviders(
+      <ThemeProvider theme={materialTheme}>
+        <LandmarksProvider>
+          <storesContext.Provider value={rootStore}>
+            <Sidebar id="foo" />
+          </storesContext.Provider>
+        </LandmarksProvider>
+      </ThemeProvider>,
+    );
+  }
+
+  test("hides the Requests nav item when inventory.sampleRequests.available is not ALLOWED.", () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+    renderSidebar();
+
+    expect(screen.queryByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeNull();
+  });
+
+  test("shows the Requests nav item when inventory.sampleRequests.available is ALLOWED.", () => {
+    deploymentProperties["inventory.sampleRequests.available"] = "ALLOWED";
+    renderSidebar();
+
+    expect(screen.getByRole("button", { name: "inventory:layout.sidebar.requests" })).toBeInTheDocument();
   });
 });
