@@ -43,7 +43,8 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
   private User testUser;
 
   @BeforeEach
-  public void setUp() {
+  public void setUp() throws Exception {
+    super.setUp();
     testUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
     initialiseContentWithEmptyContent(testUser);
     assertTrue(testUser.isContentInitialized());
@@ -813,5 +814,137 @@ public class InventoryPermissionUtilsTest extends SpringTransactionalTest {
     assertEquals(
         testUser.getUsername(),
         sampleApiMgr.getSampleById(transfer.getId(), testUser).getOwner().getUsername());
+  }
+
+  @Test
+  public void removedMemberLosesAccessToItemsSharedWithTheLabGroup() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
+    User groupmate = createAndSaveUserIfNotExists(getRandomAlphabeticString("mate"));
+    initialiseContentWithEmptyContent(pi, member, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, member, groupmate);
+    Container ownerGroups =
+        containerApiMgr.getContainerById(
+            createBasicContainerForUser(testUser, "ownerGroups").getId(), testUser);
+    Container accessList =
+        containerApiMgr.getContainerById(
+            createBasicContainerForUser(testUser, "accessList").getId(), testUser);
+    ApiContainer toAccessList = new ApiContainer();
+    toAccessList.setId(accessList.getId());
+    toAccessList.setSharingMode(ApiInventorySharingMode.WHITELIST);
+    toAccessList.setSharedWith(
+        List.of(ApiGroupInfoWithSharedFlag.forSharingWithGroup(group, testUser)));
+    containerApiMgr.updateApiContainer(toAccessList, testUser);
+    Container membersOwn =
+        containerApiMgr.getContainerById(
+            createBasicContainerForUser(member, "membersOwn").getId(), member);
+
+    assertFullAccess(ownerGroups, member);
+    assertFullAccess(accessList, member);
+
+    logoutAndLoginAs(pi);
+    grpMgr.removeUserFromGroup(member.getUsername(), group.getId(), pi);
+
+    assertPublicViewOnly(ownerGroups, member);
+    assertPublicViewOnly(accessList, member);
+    assertFullAccess(ownerGroups, groupmate);
+    assertFullAccess(accessList, groupmate);
+
+    assertEquals(testUser.getUsername(), ownerGroups.getOwner().getUsername());
+    assertEquals(InventorySharingMode.OWNER_GROUPS, ownerGroups.getSharingMode());
+    assertEquals(testUser.getUsername(), accessList.getOwner().getUsername());
+    assertEquals(InventorySharingMode.WHITELIST, accessList.getSharingMode());
+    assertThat(accessList.getSharedWithUniqueNames()).containsExactly(group.getUniqueName());
+
+    assertEquals(member.getUsername(), membersOwn.getOwner().getUsername());
+    assertEquals(InventorySharingMode.OWNER_GROUPS, membersOwn.getSharingMode());
+    assertFullAccess(membersOwn, member);
+  }
+
+  @Test
+  public void removedMemberKeepsAccessThroughAnotherGroupOnTheAccessList() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User labAdmin = createAndSaveUserIfNotExists(getRandomAlphabeticString("labAdmin"));
+    User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
+    initialiseContentWithEmptyContent(pi, labAdmin, member);
+    Group ownersGroup = createGroup("owners-" + getRandomName(5), pi);
+    addUsersToGroup(pi, ownersGroup, testUser, labAdmin, member);
+    Group otherGroup = createGroup("other-" + getRandomName(5), pi);
+    addUsersToGroup(pi, otherGroup, member);
+    logoutAndLoginAs(pi);
+    grpMgr.setRoleForUser(
+        ownersGroup.getId(), labAdmin.getId(), RoleInGroup.RS_LAB_ADMIN.name(), pi);
+
+    Container container =
+        containerApiMgr.getContainerById(
+            createBasicContainerForUser(testUser, "shared").getId(), testUser);
+    ApiContainer toAccessList = new ApiContainer();
+    toAccessList.setId(container.getId());
+    toAccessList.setSharingMode(ApiInventorySharingMode.WHITELIST);
+    toAccessList.setSharedWith(
+        List.of(
+            ApiGroupInfoWithSharedFlag.forSharingWithGroup(ownersGroup, testUser),
+            ApiGroupInfoWithSharedFlag.forSharingWithGroup(otherGroup, testUser)));
+    containerApiMgr.updateApiContainer(toAccessList, testUser);
+    assertFullAccess(container, member);
+
+    logoutAndLoginAs(labAdmin);
+    grpMgr.removeUserFromGroup(member.getUsername(), ownersGroup.getId(), labAdmin);
+    // still listed through the other group
+    assertFullAccess(container, member);
+    logoutAndLoginAs(pi);
+    grpMgr.removeUserFromGroup(member.getUsername(), otherGroup.getId(), pi);
+    assertPublicViewOnly(container, member);
+  }
+
+  @Test
+  public void memberLeavingAProjectGroupLosesAccessToItemsSharedWithIt() {
+    User owner = createAndSaveUserIfNotExists(getRandomAlphabeticString("powner"));
+    User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("pmember"));
+    initialiseContentWithEmptyContent(owner, member);
+    Group projectGroup = createProjectGroupForUsers(owner, "", "", owner, member);
+    assertTrue(projectGroup.isProjectGroup());
+
+    Container ownerGroups =
+        containerApiMgr.getContainerById(
+            createBasicContainerForUser(owner, "ownerGroups").getId(), owner);
+    Container accessList =
+        containerApiMgr.getContainerById(
+            createBasicContainerForUser(owner, "accessList").getId(), owner);
+    ApiContainer toAccessList = new ApiContainer();
+    toAccessList.setId(accessList.getId());
+    toAccessList.setSharingMode(ApiInventorySharingMode.WHITELIST);
+    toAccessList.setSharedWith(
+        List.of(ApiGroupInfoWithSharedFlag.forSharingWithGroup(projectGroup, owner)));
+    containerApiMgr.updateApiContainer(toAccessList, owner);
+    assertFullAccess(ownerGroups, member);
+    assertFullAccess(accessList, member);
+
+    // Leave Group: the member removes themselves, which a project group allows
+    logoutAndLoginAs(member);
+    grpMgr.removeUserFromGroup(member.getUsername(), projectGroup.getId(), member);
+
+    assertPublicViewOnly(ownerGroups, member);
+    assertPublicViewOnly(accessList, member);
+    assertFullAccess(ownerGroups, owner);
+    assertFullAccess(accessList, owner);
+  }
+
+  private void assertFullAccess(Container container, User user) {
+    assertTrue(invPermissionUtils.canUserReadInventoryRecord(container, user));
+    assertTrue(invPermissionUtils.canUserEditInventoryRecord(container, user));
+    ApiContainer view = containerApiMgr.getApiContainerById(container.getId(), user);
+    assertThat(view.getPermittedActions())
+        .contains(ApiInventoryRecordPermittedAction.READ, ApiInventoryRecordPermittedAction.UPDATE);
+    assertFalse(view.isClearedForPublicView());
+  }
+
+  private void assertPublicViewOnly(Container container, User user) {
+    assertFalse(invPermissionUtils.canUserReadInventoryRecord(container, user));
+    assertFalse(invPermissionUtils.canUserEditInventoryRecord(container, user));
+    ApiContainer view = containerApiMgr.getApiContainerById(container.getId(), user);
+    assertThat(view.getPermittedActions()).isEmpty();
+    assertTrue(view.isClearedForPublicView());
   }
 }
