@@ -1,103 +1,35 @@
 import {
-  type ColumnDef,
   type ColumnOrderState,
   type ColumnVisibilityState,
-  columnFilteringFeature,
-  columnOrderingFeature,
-  columnResizingFeature,
-  columnSizingFeature,
-  columnVisibilityFeature,
-  createColumnHelper,
-  createFilteredRowModel,
-  createPaginatedRowModel,
-  createSortedRowModel,
   FlexRender,
   functionalUpdate,
-  globalFilteringFeature,
-  rowPaginationFeature,
-  rowSortingFeature,
   type SortingState,
-  tableFeatures,
   useTable,
 } from "@tanstack/react-table";
-import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, CircleHelpIcon } from "lucide-react";
-import { memo, type ReactNode, useCallback, useId, useMemo } from "react";
+import { memo, useCallback, useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName } from "@/modules/common/collection/collectionConfig";
-import { fieldLabel } from "@/modules/common/collection/collectionConfig";
-import { formatList } from "@/modules/common/i18n/listFormat";
-import { Button } from "@/modules/common/ui/button";
 import { Checkbox } from "@/modules/common/ui/checkbox";
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/common/ui/empty";
 import { Skeleton } from "@/modules/common/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/modules/common/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/modules/common/ui/table";
 import { cn } from "@/modules/common/utils/cn";
-import type {
-  FilterState,
-  TableListCardFieldLayout,
-  TableListPresentationVisibility,
-  TableListProps,
-} from "../tableListState";
+import type { FilterState, TableListPresentationVisibility, TableListProps } from "../tableListState";
 import { TableListPagination } from "./pagination/TableListPagination";
 import { TableListCardGrid, type TableListCardItem } from "./TableListCardView";
+import { TableListHeaderCell } from "./TableListHeaderCell";
+import { TableListSelectionBar } from "./TableListSelectionBar";
+import { TableListEmptyState, TableListErrorState } from "./TableListStates";
+import { displayValue, selectionColumnId, tableListFeatures } from "./tableListFeatures";
 import { matchesFilters } from "./tableListPredicates";
-
-type ColumnMeta = {
-  labelKey: string;
-  label?: string;
-  cardLabel?: ReactNode;
-  card?: TableListCardFieldLayout;
-  descriptionKey?: string;
-  description?: string;
-};
+import { useTableListColumnDefs } from "./useTableListColumnDefs";
 
 const noUiColumns = [] as const;
-const selectionColumnId = "table-list-selection";
 const StableTableBody = memo(TableBody);
 
 function presentationClass(visibility: Exclude<TableListPresentationVisibility, false>): string | undefined {
   if (visibility === "narrow") return "@3xl/table-list:hidden";
   if (visibility === "wide") return "hidden @3xl/table-list:block";
   return undefined;
-}
-
-const tableListFeatures = tableFeatures({
-  columnMeta: {} as ColumnMeta,
-  columnFilteringFeature,
-  columnOrderingFeature,
-  columnSizingFeature,
-  columnResizingFeature,
-  columnVisibilityFeature,
-  globalFilteringFeature,
-  rowSortingFeature,
-  rowPaginationFeature,
-  filteredRowModel: createFilteredRowModel(),
-  sortedRowModel: createSortedRowModel(),
-  paginatedRowModel: createPaginatedRowModel(),
-});
-
-function displayValue(value: unknown, language: string | undefined): string {
-  if (value === null || value === undefined) return "";
-  if (value instanceof Date) return value.toLocaleString();
-  if (Array.isArray(value))
-    return formatList(
-      value.map((item) => displayValue(item, language)),
-      language,
-      { type: "unit", style: "short" },
-    );
-  if (typeof value === "object") {
-    if ("name" in value && typeof value.name === "string") return value.name;
-    if ("title" in value && typeof value.title === "string") return value.title;
-    if ("id" in value) return String(value.id);
-  }
-  return String(value);
-}
-
-function SortIcon({ direction }: { direction: false | "asc" | "desc" }) {
-  if (direction === "asc") return <ArrowUpIcon aria-hidden="true" />;
-  if (direction === "desc") return <ArrowDownIcon aria-hidden="true" />;
-  return <ArrowUpDownIcon aria-hidden="true" className="opacity-45" />;
 }
 
 type TableListDataTableProps<TDocument extends Record<string, unknown>> = Pick<
@@ -151,7 +83,6 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   const cardViewLabel = t("tableList.cardView", { collection: collectionLabel });
   const resizeId = useId();
   const translate = useCallback((key: string) => (i18n.exists(key) ? t(key as never) : key), [i18n, t]);
-  const columnHelper = useMemo(() => createColumnHelper<typeof tableListFeatures, TDocument>(), []);
   const listFields = useMemo(() => config.fields.filter((field) => field.list !== false), [config.fields]);
   const visibleFields = features.columns === false ? config.defaultColumns : features.columns.value;
   const visibleSet = useMemo(() => new Set(visibleFields), [visibleFields]);
@@ -162,84 +93,15 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
   const sortingEnabled = sortingState !== false;
   const hasSelection = selection !== undefined;
 
-  const columns = useMemo(
-    () =>
-      [
-        ...(hasSelection
-          ? [
-              columnHelper.display({
-                id: selectionColumnId,
-                header: () => null,
-                cell: () => null,
-                size: 28,
-                minSize: 28,
-                maxSize: 28,
-                enableSorting: false,
-                enableResizing: false,
-              }),
-            ]
-          : []),
-        ...listFields.map((field) =>
-          columnHelper.accessor((row) => row[field.name], {
-            id: field.name,
-            header: () => {
-              const listConfig = field.list || undefined;
-              return listConfig?.renderHeader
-                ? listConfig.renderHeader({ config, field })
-                : fieldLabel(field, translate);
-            },
-            cell: ({ row }) => {
-              const value = row.original[field.name];
-              const listConfig = field.list || undefined;
-              const content = listConfig?.renderCell
-                ? listConfig.renderCell({ config, field, row: row.original, value })
-                : displayValue(value, i18n.resolvedLanguage);
-              if (field.name === config.useAsTitle && onRowOpen) {
-                return (
-                  <button
-                    type="button"
-                    className="font-medium text-link hover:underline focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
-                    onClick={() => onRowOpen(row.original)}
-                  >
-                    {content}
-                  </button>
-                );
-              }
-              return content;
-            },
-            meta: {
-              labelKey: field.labelKey,
-              label: field.label,
-              cardLabel: fieldLabel(field, translate),
-              card: field.list ? field.list.card : undefined,
-              descriptionKey: field.list ? field.list.descriptionKey : undefined,
-              description: field.list ? field.list.description : undefined,
-            },
-            size: field.list ? field.list.width : undefined,
-            minSize: field.list ? field.list.minWidth : undefined,
-            enableSorting: sortingEnabled && field.capabilities.sortable,
-          }),
-        ),
-        ...uiColumns.map((column) =>
-          columnHelper.display({
-            id: column.id,
-            header: () => column.label,
-            cell: ({ row }) => column.renderCell(row.original),
-            size: column.width,
-            minSize: column.minWidth,
-            enableSorting: false,
-            meta: {
-              labelKey: column.id,
-              // A column id is not a catalog key; `actions` would resolve to the common actions object.
-              label: typeof column.label === "string" ? column.label : column.id,
-              cardLabel: column.label,
-              card: column.card,
-            },
-          }),
-        ),
-      ] as unknown as readonly ColumnDef<typeof tableListFeatures, TDocument, unknown>[],
-    [columnHelper, config, hasSelection, listFields, onRowOpen, sortingEnabled, translate, uiColumns],
-  );
+  const columns = useTableListColumnDefs({
+    config,
+    listFields,
+    hasSelection,
+    onRowOpen,
+    sortingEnabled,
+    translate,
+    uiColumns,
+  });
 
   const sorting: SortingState = useMemo(
     () =>
@@ -320,6 +182,18 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
     });
     selection.onChange(next);
   };
+
+  const resizeColumn = (columnId: string, size: number) =>
+    table.setColumnSizing((current) => ({ ...current, [columnId]: size }));
+  const selectAllPage = (
+    <Checkbox
+      aria-label={t("tableList.selection.selectAllPage")}
+      checked={allVisibleSelected}
+      indeterminate={someVisibleSelected}
+      disabled={headerSelectionDisabled}
+      onCheckedChange={updateVisibleSelection}
+    />
+  );
 
   const renderRowSelection = useCallback(
     (rowId: string, row: TDocument) => {
@@ -466,21 +340,9 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               ))}
             </div>
           ) : status === "error" ? (
-            <Empty className="rounded-sm border-0 p-6">
-              <EmptyHeader>
-                <EmptyTitle>{t("tableList.error.title")}</EmptyTitle>
-                <EmptyDescription>
-                  {error instanceof Error ? error.message : t("tableList.error.description")}
-                </EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <TableListErrorState error={error} />
           ) : visibleRows.length === 0 && !renderRowsWhenEmpty ? (
-            <Empty className="rounded-sm border-0 p-6">
-              <EmptyHeader>
-                <EmptyTitle>{t("tableList.empty.title")}</EmptyTitle>
-                <EmptyDescription>{emptyDescription ?? t("tableList.empty.description")}</EmptyDescription>
-              </EmptyHeader>
-            </Empty>
+            <TableListEmptyState description={emptyDescription} />
           ) : (
             renderRows(visibleRows)
           )}
@@ -501,115 +363,19 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
             <TableHeader>
               {table.getHeaderGroups().map((group) => (
                 <TableRow key={group.id} className="hover:bg-transparent">
-                  {group.headers.map((header) => {
-                    const direction = header.column.getIsSorted();
-                    const meta = header.column.columnDef.meta;
-                    const label = meta ? fieldLabel(meta, translate) : header.column.id;
-                    const description =
-                      meta?.description ?? (meta?.descriptionKey ? translate(meta.descriptionKey) : null);
-                    const headerLabelId = `${resizeId}-${header.id}-label`;
-                    const resizeLabelId = `${resizeId}-${header.id}-resize`;
-                    const resizeOffset =
-                      columnResizing.isResizingColumn === header.column.id ? (columnResizing.deltaOffset ?? 0) : 0;
-                    return (
-                      <TableHead
-                        key={header.id}
-                        aria-labelledby={headerLabelId}
-                        aria-sort={
-                          header.column.getCanSort()
-                            ? direction === "asc"
-                              ? "ascending"
-                              : direction === "desc"
-                                ? "descending"
-                                : "none"
-                            : undefined
-                        }
-                        className="relative h-9 bg-muted/35 pr-4 text-xs"
-                      >
-                        <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-                          {header.column.id === selectionColumnId && selection ? (
-                            <span id={headerLabelId}>
-                              <Checkbox
-                                aria-label={t("tableList.selection.selectAllPage")}
-                                checked={allVisibleSelected}
-                                indeterminate={someVisibleSelected}
-                                disabled={headerSelectionDisabled}
-                                onCheckedChange={updateVisibleSelection}
-                              />
-                            </span>
-                          ) : header.column.getCanSort() ? (
-                            <button
-                              type="button"
-                              aria-label={t("tableList.actions.sortBy", { column: label })}
-                              className="flex min-w-0 items-center gap-1 rounded-sm hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                              onClick={header.column.getToggleSortingHandler()}
-                            >
-                              <span id={headerLabelId} className="min-w-0 overflow-hidden text-ellipsis">
-                                <FlexRender header={header} />
-                              </span>
-                              <SortIcon direction={direction} />
-                            </button>
-                          ) : (
-                            <span id={headerLabelId} className="min-w-0 overflow-hidden text-ellipsis">
-                              <FlexRender header={header} />
-                            </span>
-                          )}
-                          {description ? (
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={
-                                  <button
-                                    type="button"
-                                    aria-label={t("tableList.tooltip", { column: label })}
-                                    className="rounded-sm text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-                                  />
-                                }
-                              >
-                                <CircleHelpIcon aria-hidden="true" className="size-3!" />
-                              </TooltipTrigger>
-                              <TooltipContent side="bottom" align="start" className="rounded-sm">
-                                {description}
-                              </TooltipContent>
-                            </Tooltip>
-                          ) : null}
-                        </div>
-                        {header.column.id !== selectionColumnId && header.column.getCanResize() ? (
-                          <button
-                            type="button"
-                            aria-labelledby={`${resizeLabelId} ${headerLabelId}`}
-                            className="group absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            onDoubleClick={() => header.column.resetSize()}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                header.column.resetSize();
-                                return;
-                              }
-                              if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-                              event.preventDefault();
-                              const minimum = header.column.columnDef.minSize ?? 20;
-                              const maximum = header.column.columnDef.maxSize ?? Number.MAX_SAFE_INTEGER;
-                              const delta = event.key === "ArrowLeft" ? -16 : 16;
-                              const size = Math.min(maximum, Math.max(minimum, header.column.getSize() + delta));
-                              table.setColumnSizing((current) => ({ ...current, [header.column.id]: size }));
-                            }}
-                          >
-                            <span id={resizeLabelId} className="sr-only">
-                              {t("tableList.actions.resizeColumn")}
-                            </span>
-                            <span
-                              aria-hidden="true"
-                              data-active={header.column.getIsResizing()}
-                              className="mx-auto block h-full w-px bg-border group-hover:bg-primary group-focus-visible:bg-primary data-[active=true]:bg-primary"
-                              style={{ transform: `translateX(${resizeOffset}px)` }}
-                            />
-                          </button>
-                        ) : null}
-                      </TableHead>
-                    );
-                  })}
+                  {group.headers.map((header) => (
+                    <TableListHeaderCell
+                      key={header.id}
+                      header={header}
+                      resizeId={resizeId}
+                      resizeOffset={
+                        columnResizing.isResizingColumn === header.column.id ? (columnResizing.deltaOffset ?? 0) : 0
+                      }
+                      translate={translate}
+                      selectAllControl={selection ? selectAllPage : undefined}
+                      onResize={resizeColumn}
+                    />
+                  ))}
                 </TableRow>
               ))}
             </TableHeader>
@@ -625,25 +391,13 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               ) : status === "error" ? (
                 <TableRow>
                   <TableCell colSpan={colSpan} className="h-40">
-                    <Empty className="rounded-sm border-0 p-6">
-                      <EmptyHeader>
-                        <EmptyTitle>{t("tableList.error.title")}</EmptyTitle>
-                        <EmptyDescription>
-                          {error instanceof Error ? error.message : t("tableList.error.description")}
-                        </EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
+                    <TableListErrorState error={error} />
                   </TableCell>
                 </TableRow>
               ) : rowModel.rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={colSpan} className={reserveEmptyRows ? "h-90" : "h-40"}>
-                    <Empty className="rounded-sm border-0 p-6">
-                      <EmptyHeader>
-                        <EmptyTitle>{t("tableList.empty.title")}</EmptyTitle>
-                        <EmptyDescription>{emptyDescription ?? t("tableList.empty.description")}</EmptyDescription>
-                      </EmptyHeader>
-                    </Empty>
+                    <TableListEmptyState description={emptyDescription} />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -657,23 +411,11 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
         <div className={presentationClass(cardPresentation)}>
           {status === "error" ? (
             <section aria-label={cardViewLabel} className={reserveEmptyRows ? "min-h-90 py-3" : "min-h-40 py-3"}>
-              <Empty className="rounded-sm border-0 p-6">
-                <EmptyHeader>
-                  <EmptyTitle>{t("tableList.error.title")}</EmptyTitle>
-                  <EmptyDescription>
-                    {error instanceof Error ? error.message : t("tableList.error.description")}
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <TableListErrorState error={error} />
             </section>
           ) : status !== "loading" && rowModel.rows.length === 0 ? (
             <section aria-label={cardViewLabel} className={reserveEmptyRows ? "min-h-90 py-3" : "min-h-40 py-3"}>
-              <Empty className="rounded-sm border-0 p-6">
-                <EmptyHeader>
-                  <EmptyTitle>{t("tableList.empty.title")}</EmptyTitle>
-                  <EmptyDescription>{emptyDescription ?? t("tableList.empty.description")}</EmptyDescription>
-                </EmptyHeader>
-              </Empty>
+              <TableListEmptyState description={emptyDescription} />
             </section>
           ) : (
             <TableListCardGrid
@@ -683,13 +425,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
               selectionControl={
                 selection && status !== "loading" ? (
                   <>
-                    <Checkbox
-                      aria-label={t("tableList.selection.selectAllPage")}
-                      checked={allVisibleSelected}
-                      indeterminate={someVisibleSelected}
-                      disabled={headerSelectionDisabled}
-                      onCheckedChange={updateVisibleSelection}
-                    />
+                    {selectAllPage}
                     <span aria-hidden="true">{t("tableList.selection.selectAllPage")}</span>
                   </>
                 ) : undefined
@@ -711,40 +447,7 @@ export function TableListDataTable<TDocument extends Record<string, unknown>>({
           onChange={features.pagination.onChange}
         />
       ) : null}
-      {selection && selection.value.size > 0 ? (
-        <section
-          aria-label={t("tableList.selection.regionLabel")}
-          className="fixed inset-x-4 bottom-4 z-50 mx-auto flex w-fit max-w-[calc(100vw-2rem)] flex-wrap items-center justify-center gap-2 rounded-sm border bg-popover p-2 text-popover-foreground shadow-lg"
-        >
-          <output aria-live="polite" aria-atomic="true" className="px-1 text-sm font-medium">
-            {t("tableList.selection.count", {
-              count: selection.value.size,
-            })}
-          </output>
-          {selection.value.size >= selection.maximumCount ? (
-            <span className="text-xs text-muted-foreground">
-              {t("tableList.selection.limit", {
-                count: selection.maximumCount,
-              })}
-            </span>
-          ) : null}
-          <div className="flex flex-wrap items-center justify-center gap-1">
-            {selection.renderActions({
-              selectedRowIds: selection.value,
-              clearSelection: () => selection.onChange(new Set()),
-            })}
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={selection.disabled}
-              onClick={() => selection.onChange(new Set())}
-            >
-              {t("tableList.selection.clear")}
-            </Button>
-          </div>
-        </section>
-      ) : null}
+      {selection && selection.value.size > 0 ? <TableListSelectionBar selection={selection} /> : null}
     </div>
   );
 }
