@@ -74,9 +74,6 @@ public class ArchiveParserImpl implements IArchiveParser {
   @Value("${archive.import.maxEntries}")
   private int importMaxEntries;
 
-  @Value("${archive.import.minFreeSpaceMB}")
-  private int importMinFreeSpaceMB;
-
   @Qualifier("propertyHolder")
   @Autowired
   private Versionable rspaceVersion;
@@ -267,12 +264,12 @@ public class ArchiveParserImpl implements IArchiveParser {
 
   protected File extractZipFolder(File zipFile, File outFolder) throws IOException {
     log.info("Extracting {} into {}", zipFile.getAbsolutePath(), outFolder.getAbsolutePath());
-    // the size cap is shared with export so that anything a server exports fits its own import
+    // the disk bounds are shared with export: same partition, and anything exported fits on import
     ZipExtractionLimits limits =
         ZipExtractionLimits.DEFAULTS.withDeploymentLimits(
             diskSpaceChecker.getMaxArchiveSizeMB() * FileUtils.ONE_MB,
             importMaxEntries,
-            importMinFreeSpaceMB * FileUtils.ONE_MB);
+            diskSpaceChecker.getMinSpaceRequiredToStartArchiveExportMB() * FileUtils.ONE_MB);
     return new File(ZipUtils.extractZip(zipFile, outFolder, limits));
   }
 

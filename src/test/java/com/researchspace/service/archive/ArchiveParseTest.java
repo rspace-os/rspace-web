@@ -174,10 +174,10 @@ public class ArchiveParseTest {
     }
     DiskSpaceCheckerImpl diskSpaceChecker = new DiskSpaceCheckerImpl();
     diskSpaceChecker.setMaxArchiveSizeMB(Integer.toString(maxExpandedSizeMB));
+    diskSpaceChecker.setSpaceRequiredToStartArchiveExportMB(Integer.toString(minFreeSpaceMB));
     ArchiveParserImpl realParser = new ArchiveParserImpl();
     ReflectionTestUtils.setField(realParser, "diskSpaceChecker", diskSpaceChecker);
     ReflectionTestUtils.setField(realParser, "importMaxEntries", maxEntries);
-    ReflectionTestUtils.setField(realParser, "importMinFreeSpaceMB", minFreeSpaceMB);
 
     ZipExtractionLimitException e =
         assertThrows(
