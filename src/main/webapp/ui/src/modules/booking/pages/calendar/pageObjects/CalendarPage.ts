@@ -36,6 +36,24 @@ export class CalendarPage {
     await userEvent.keyboard("{Escape}");
   }
 
+  /** A quick filter switch in the open Filters menu. */
+  quickFilter(name: "My Bookings" | "Owned Items"): Locator {
+    return page.getByRole("switch", { name, exact: true });
+  }
+
+  /** Turns a quick filter on or off in the Filters menu, then closes the menu. */
+  async toggleQuickFilter(name: "My Bookings" | "Owned Items"): Promise<void> {
+    await this.filters.click();
+    await this.quickFilter(name).click();
+    await userEvent.keyboard("{Escape}");
+  }
+
+  /** Opens the filter panel through the Filters menu. */
+  async openFilterPanel(): Promise<void> {
+    await this.filters.click();
+    await page.getByRole("button", { name: "Edit filters", exact: true }).click();
+  }
+
   event(itemName: string): Locator {
     return page.getByRole("article", { name: itemName, exact: false });
   }

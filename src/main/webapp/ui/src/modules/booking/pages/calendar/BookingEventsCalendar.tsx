@@ -251,6 +251,7 @@ export function BookingEventsCalendar({
             eventFilterExpression !== null ||
             mineOnly ||
             myItemsOnly,
+          presentation: "menu",
           buttons: [
             {
               id: "mine",

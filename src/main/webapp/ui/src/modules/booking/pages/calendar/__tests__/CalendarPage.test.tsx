@@ -34,8 +34,12 @@ async function chooseView(user: User, option: string) {
   await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
 }
 
+/** Turns a quick filter on or off in the Filters menu, then closes it. */
 async function toggleQuickFilter(user: User, name: string) {
-  await user.click(await screen.findByRole("button", { name }));
+  await user.click(await screen.findByRole("button", { name: /^Filters(?:$|,)/ }));
+  await user.click(await screen.findByRole("switch", { name }));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("switch", { name })).not.toBeInTheDocument());
 }
 
 function catalogueItem(item: (typeof bookableItemFixtures)[number], overrides: Record<string, unknown> = {}) {
@@ -90,13 +94,13 @@ describe("CalendarPage", () => {
       expect(screen.getByRole("button", { name })).toBeVisible();
     }
 
-    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAccessibleDescription("Bookings you made");
-    expect(screen.getByRole("button", { name: "Owned Items" })).toHaveAccessibleDescription(
+    await user.click(screen.getByRole("button", { name: /^Filters(?:$|,)/ }));
+    expect(await screen.findByRole("switch", { name: "My Bookings" })).toHaveAccessibleDescription("Bookings you made");
+    expect(screen.getByRole("switch", { name: "Owned Items" })).toHaveAccessibleDescription(
       "Bookings on items you own",
     );
-    await user.click(screen.getByRole("button", { name: /^Filters(?:$|,)/ }));
+    await user.click(screen.getByRole("button", { name: "Edit filters" }));
     expect(await screen.findByRole("button", { name: "Add filter" })).toBeVisible();
-    expect(screen.getByRole("button", { name: /^Filters(?:$|,)/ })).toHaveAttribute("aria-expanded", "true");
   });
 
   it("shows quick filters that are on as removable chips", async () => {
@@ -105,13 +109,11 @@ describe("CalendarPage", () => {
     await screen.findByRole("region", { name: "Resource booking schedule" });
 
     await toggleQuickFilter(user, "My Bookings");
-    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Filters, none applied" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Filters, 1 applied" })).toBeVisible();
     const remove = screen.getByRole("button", { name: "Remove My Bookings filter" });
 
     await user.click(remove);
     expect(screen.queryByRole("button", { name: "Remove My Bookings filter" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "My Bookings" })).toHaveAttribute("aria-pressed", "false");
     // The chip unmounts with its button, so focus moves to the Filters control rather than the page.
     expect(screen.getByRole("button", { name: "Filters, none applied" })).toHaveFocus();
   });
