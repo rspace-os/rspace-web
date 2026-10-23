@@ -23,6 +23,13 @@ export class RequestsPage extends BasePage {
    * happens to be left as on a given instance.
    */
   readonly transferSampleButton: Locator;
+  /**
+   * Owner-only: opens the Choose Sample to Prepare dialog for the currently selected subsample.
+   * Shown in place of `transferSampleButton` whenever inventory.operations.available is ALLOWED,
+   * offering a choice between transferring the existing sample directly or creating a new one
+   * via the Operations Wizard first.
+   */
+  readonly prepareSampleButton: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -30,6 +37,7 @@ export class RequestsPage extends BasePage {
     this.noRequestsMessage = this.root.getByText("No requests found.", { exact: true });
     this.heading = this.root.getByRole("heading", { level: 5 });
     this.transferSampleButton = this.root.getByRole("button", { name: "Transfer Sample", exact: true });
+    this.prepareSampleButton = this.root.getByRole("button", { name: "Prepare Sample", exact: true });
   }
 
   /** Owner-only: selects the first available subsample in the Sample Locations section. */
@@ -89,6 +97,33 @@ export class RequestsPage extends BasePage {
     await this.root.getByRole("button", { name: "Mark as Fulfilled", exact: true }).click();
     const dialog = this.page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Fulfil", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+  }
+
+  /**
+   * Owner-only: opens the Choose Sample to Prepare dialog via `prepareSampleButton` and picks
+   * "Transfer the existing sample and all subsamples", leaving the Transfer Ownership dialog
+   * that then opens for the caller to interact with - its content differs by scenario (recipient,
+   * bullets shown, etc.), so isn't modelled generically here.
+   */
+  async chooseToTransferDirectly(): Promise<void> {
+    await this.prepareSampleButton.click();
+    const dialog = this.page.getByRole("dialog", { name: "Choose Sample to Prepare" });
+    await dialog.getByRole("radio", { name: "Transfer the existing sample and all subsamples" }).check();
+    await dialog.getByRole("button", { name: "Proceed", exact: true }).click();
+    await dialog.waitFor({ state: "hidden" });
+  }
+
+  /**
+   * Owner-only: opens the Choose Sample to Prepare dialog via `prepareSampleButton` and picks
+   * "Create a new sample derived from the existing sample", leaving the Operations Wizard dialog
+   * that then opens (see OperationWizardComponent) for the caller to interact with.
+   */
+  async chooseToCreateViaWizard(): Promise<void> {
+    await this.prepareSampleButton.click();
+    const dialog = this.page.getByRole("dialog", { name: "Choose Sample to Prepare" });
+    await dialog.getByRole("radio", { name: "Create a new sample derived from the existing sample" }).check();
+    await dialog.getByRole("button", { name: "Proceed", exact: true }).click();
     await dialog.waitFor({ state: "hidden" });
   }
 }

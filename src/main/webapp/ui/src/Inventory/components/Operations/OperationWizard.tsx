@@ -156,6 +156,7 @@ function OperationWizard({
   origins,
   pendingRenewals,
   onPerformed,
+  excludedOperationKeys,
 }: {
   open: boolean;
   onClose: () => void;
@@ -167,10 +168,15 @@ function OperationWizard({
   pendingRenewals?: React.MutableRefObject<Promise<unknown>>;
   /** `null` when the operation creates no sample (Destroy). */
   onPerformed?: (sample: OperationResult | null) => void;
+  /** Hides matching operations from the picker, e.g. a caller for whom Destroy makes no sense. */
+  excludedOperationKeys?: ReadonlySet<string>;
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
   const resolveLabel = resolveLabelFrom(t);
   const describeOperationError = useDescribeOperationError();
+  const availableOperations = excludedOperationKeys
+    ? operations.filter((op) => !excludedOperationKeys.has(op.key))
+    : operations;
   const origin = representativeOrigin(origins);
   // Derived via categoryOfUnit rather than SubSampleModel.quantityCategory: that getter throws when
   // the (localStorage-backed) unit store has no entry for the id, which is every id before GET
@@ -879,7 +885,7 @@ function OperationWizard({
           )
         ) : (
           <OperationPicker
-            operations={operations}
+            operations={availableOperations}
             onSelect={selectOperation}
             selectionCount={origins.length}
             allSameCategory={allSameCategory}

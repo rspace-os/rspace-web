@@ -192,12 +192,8 @@ function RequestSampleButton({ onClick }: { onClick: () => void }): React.ReactN
       onClick={onClick}
       sx={{
         color: theme.palette.record.sample.lighter,
-        backgroundColor: theme.palette.primary.main,
-        borderColor: theme.palette.primary.main,
-        "&:hover": {
-          backgroundColor: theme.palette.primary.dark,
-          borderColor: theme.palette.primary.dark,
-        },
+        backgroundColor: theme.palette.primary.dark,
+        borderColor: theme.palette.primary.dark,
       }}
     >
       {t("sample.requestMaterialSection.requestSampleButton")}
@@ -265,7 +261,7 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
   // On success the newly-created request's status simply replaces the request button, and the
   // dialog closes.
   const sendRequest = () => {
-    if (!activeResult.globalId || isProcessingAction) return;
+    if (!activeResult.globalId || isProcessingAction || requestText.trim() === "") return;
     sendRequestMutation.mutate(
       { sampleGlobalId: activeResult.globalId, note: requestText },
       {
@@ -398,6 +394,7 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
                 multiline
                 minRows={3}
                 fullWidth
+                autoFocus
                 value={requestText}
                 onChange={({ target: { value } }) => setRequestText(value)}
               />
@@ -406,7 +403,12 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button color="primary" variant="contained" disabled={isProcessingAction} onClick={sendRequest}>
+          <Button
+            color="primary"
+            variant="contained"
+            disabled={isProcessingAction || requestText.trim() === ""}
+            onClick={sendRequest}
+          >
             {t("sample.requestMaterialSection.sendRequestButton")}
           </Button>
         </DialogActions>

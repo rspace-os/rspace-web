@@ -12,7 +12,7 @@ function change(overrides: Partial<ApiSampleRequestStatusChangeItem> = {}): ApiS
     id: 1,
     status: "PENDING",
     created: "2026-01-01T10:00:00Z",
-    createdBy: { id: 1, firstName: "Olive", lastName: "Owner" },
+    createdBy: { id: 1, username: "owner", firstName: "Olive", lastName: "Owner" },
     reason: null,
     transferredSample: null,
     ...overrides,
