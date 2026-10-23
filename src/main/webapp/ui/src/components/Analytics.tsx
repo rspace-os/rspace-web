@@ -3,6 +3,7 @@ import posthog from "posthog-js";
 import { PostHogProvider, usePostHog } from "posthog-js/react";
 import React, { useContext, useEffect, useRef } from "react";
 import axios from "@/common/axios";
+import { useTracedRequest } from "@/common/otel";
 import AnalyticsContext from "../stores/contexts/Analytics";
 
 declare global {
@@ -162,6 +163,7 @@ type AnalyticsArgs = {
 export default function Analytics({ children }: AnalyticsArgs): React.ReactNode {
   const [postHogEnabled, setPostHogEnable] = React.useState(false);
   const analyticsContext = useContext(AnalyticsContext);
+  const traceRequest = useTracedRequest();
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
@@ -173,13 +175,15 @@ export default function Analytics({ children }: AnalyticsArgs): React.ReactNode 
     void (async () => {
       const {
         data: { analyticsEnabled, analyticsServerType, analyticsServerHost, analyticsServerKey, analyticsUserId },
-      } = await api.current.get<{
-        analyticsEnabled: boolean;
-        analyticsServerType: "posthog" | "segment";
-        analyticsServerHost: string;
-        analyticsServerKey: string;
-        analyticsUserId: string;
-      }>("/analyticsProperties");
+      } = await traceRequest(() =>
+        api.current.get<{
+          analyticsEnabled: boolean;
+          analyticsServerType: "posthog" | "segment";
+          analyticsServerHost: string;
+          analyticsServerKey: string;
+          analyticsUserId: string;
+        }>("/analyticsProperties"),
+      );
       if (analyticsEnabled) {
         if (analyticsServerType === "posthog") {
           setPostHogEnable(true);

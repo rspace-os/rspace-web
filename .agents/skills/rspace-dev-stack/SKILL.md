@@ -26,6 +26,7 @@ Run `./docker/dev/rspace-dev ps` first; reuse a running instance.
 ./docker/dev/rspace-dev up --fresh        # rebuild DB
 ./docker/dev/rspace-dev up --chemistry    # include chemistry microservice
 ./docker/dev/rspace-dev up --e2e          # include integration mocks
+./docker/dev/rspace-dev up --observability # include OTel + Elastic APM/ELK
 ./docker/dev/rspace-dev logs app         # wait for Jetty "app started"
 ```
 
@@ -35,6 +36,11 @@ ports. Logins: `user1a` / `user1234`; sysadmin `sysadmin1` / `sysWisc23!`.
 `--e2e` runs integration mocks in the shared frontend/backend network namespace
 and points backend integrations at them. Pass the printed mock port as
 `E2E_MOCK_PORT` to Playwright. This setting persists until `up --no-e2e`.
+
+`--observability` enables backend and browser telemetry and starts the
+Collector, APM Server, Elasticsearch, and Kibana (four resource-heavy
+containers). It persists in `.env` until `up --no-observability`. Open
+`/app/apm` on the Kibana URL printed by `ps`; see `docker/dev/README.md`.
 
 ## Enable chemistry
 

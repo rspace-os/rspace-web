@@ -20,7 +20,7 @@ export function currentPageKey(): PageBrandingKey {
     gallery: "gallery",
   };
   const firstPathFragment = window.location.pathname.split("/")[1];
-  if (firstPathFragment in pages) return pages[firstPathFragment];
+  if (Object.hasOwn(pages, firstPathFragment)) return pages[firstPathFragment];
   return "unknown";
 }
 

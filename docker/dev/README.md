@@ -5,11 +5,11 @@
 > manual Maven/Jetty workflow in the
 > [Getting Started guide](/DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md).
 
-Boot a **complete** RSpace instance — database, Java/Jetty backend, and Vite
-frontend — for the git worktree you are currently in, with one command. Your
-worktree source is bind-mounted into the containers, so edits on your machine
-are live: the frontend hot-reloads automatically (HMR), and the backend can be
-hot-redeployed or restarted without rebuilding any image.
+Boot a **complete** RSpace instance — database, Java/Jetty backend, Vite
+frontend, and Apache ingress — for the git worktree you are currently in, with
+one command. Your worktree source is bind-mounted into the containers, so edits
+on your machine are live: the frontend hot-reloads automatically (HMR), and the
+backend can be hot-redeployed or restarted without rebuilding any image.
 
 > This is for **local development only**. It uses throwaway credentials and is
 > not hardened. For running RSpace as a real deployment, use
@@ -98,7 +98,7 @@ The first boot:
 1. builds the backend and frontend images,
 2. starts MariaDB and waits until it is healthy,
 3. creates the schema and sample data (`drop-recreate-db`),
-4. compiles and starts the backend, and installs frontend deps + starts Vite.
+4. compiles and starts the backend, installs frontend deps, and starts Vite and Apache.
 
 This takes several minutes the first time (Maven and pnpm download
 dependencies). Watch progress with:
@@ -142,7 +142,10 @@ The default filestore script mode publishes host loopback ports, which the Docke
 ./docker/dev/rspace-dev up --no-e2e    # stop using integration mocks
 ./docker/dev/rspace-dev up --mailpit   # also start the Mailpit SMTP catcher
 ./docker/dev/rspace-dev up --no-mailpit # stop using Mailpit
-./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db | chemistry | mailpit
+./docker/dev/rspace-dev up --observability # also start OpenTelemetry + Elastic APM/ELK
+./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | apache | db
+                                       #   | chemistry | mailpit (plus otel-collector
+                                       #   | elasticsearch | kibana with --observability)
 ./docker/dev/rspace-dev ps             # status + URLs/ports for this worktree
 ./docker/dev/rspace-dev reload         # recompile Java + hot-redeploy webapp
 ./docker/dev/rspace-dev restart        # full backend JVM restart
@@ -439,7 +442,7 @@ wrong, `restart`.
 > connected; `rspace-dev restart` is a new JVM, so re-attach afterward.
 > `RSPACE_HOTSWAP=false` disables the agent (e.g. to rule it out while diagnosing
 > a startup issue). JBR + HotswapAgent are pinned third-party components — see
-> `Dockerfile.app` for versions.
+> `Dockerfile.app` and `java-dependencies.pom.xml` for versions.
 
 ## Troubleshooting
 
@@ -458,6 +461,56 @@ is the quick lookup.
 | E2E integration calls reach live services or fail DNS | The stack was started without its mock mode | Run `rspace-dev up --e2e`; use the mock port printed by `rspace-dev ps` when running Playwright. |
 | Password reset / signup / notification emails never arrive anywhere | Mailpit not enabled — `email.enabled=false` by default locally, so mail is only logged | Run `rspace-dev up --mailpit`; read captured mail at the Mailpit URL printed by `rspace-dev ps`. |
 | Docker Desktop using too much RAM/disk | Multiple stacks running, or large caches | `rspace-dev down` worktrees you aren't using; reclaim disk per "Destroying a worktree's instance". |
+## Observability
+
+Start the optional OpenTelemetry and Elastic APM/ELK stack with:
+
+```bash
+./docker/dev/rspace-dev up --observability
+```
+
+This enables backend and browser telemetry and starts four optional containers:
+`otel-collector`, `apm-server`, `elasticsearch`, and `kibana`. Run
+`./docker/dev/rspace-dev ps` to find Kibana, then open `/app/apm`.
+
+Apache is the normal ingress for the dev stack. It sends `/otlp/v1/traces` and
+`/otlp/v1/metrics` to the Collector's browser-only receiver and sends other
+requests to RSpace. Browser and backend telemetry use separate receivers,
+processors, and pipelines; browser input cannot enter the backend or log
+pipelines. Browser service identity is forced to `rspace-frontend` in the
+Collector. The public app URL and port do not change.
+
+The first boot downloads the Elastic APM integration and may take a few
+minutes. It requires internet access.
+
+The setting persists as `RSPACE_OBSERVABILITY=true` in `.env` until
+`up --no-observability`, which also stops the four observability containers
+and keeps their data. `down` and `nuke` remove the optional containers; `nuke`
+also deletes their data.
+
+Only the trusted backend gRPC receiver is bound to loopback for host-run
+backends. Browser HTTP ingestion remains container-only and is exposed through
+Apache with method/content-type checks, stripped credentials, and a 512 KiB
+body limit. Those checks do not authenticate clients: production must keep the
+Collector private and enforce both request-size and sustained/burst rate limits
+for `/otlp/` at the reverse proxy or WAF.
+
+Application log export defaults to off. Set `OTEL_LOGS_EXPORTER=otlp` only
+after auditing/redacting logs and defining storage access and retention.
+Slow-request logging works independently of the agent. The Collector strips
+query strings from backend span URLs, and the agent omits JVM command-line
+arguments from its resource attributes.
+
+Do not put credentials in URLs. Browser URL attributes are sanitized before
+export and identity-normalized again by the Collector, but all browser
+telemetry remains untrusted. Production telemetry stores also require access
+controls, retention limits, and an incident-response path. Rotate affected
+GitHub tokens if an earlier vulnerable build was deployed with browser
+telemetry enabled.
+
+See
+[`DevDocs/DeveloperNotes/Observability.md`](/DevDocs/DeveloperNotes/Observability.md)
+for configuration details.
 
 ## Notes & gotchas
 
@@ -480,8 +533,8 @@ is the quick lookup.
   MariaDB uses a smaller InnoDB buffer pool than `rspace-docker` for local use
   (see `db/db-config.cnf`). Vite uses a large Node heap; give Docker Desktop a
   generous memory limit.
-- **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
-  `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
+- **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`,
+  `APACHE_IMAGE`, and `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
 - **Session cookies**: each instance names its session cookie
   `JSESSIONID_<app port>` (via the `rs.session.cookie.name` system property),
   so concurrent localhost logins don't evict each other. Override with
