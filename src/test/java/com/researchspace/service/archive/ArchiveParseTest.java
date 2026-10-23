@@ -124,17 +124,22 @@ public class ArchiveParseTest {
         report, ImportValidationRule.ZIP_FILE_CAN_UNZIP, ValidationTestResult.FAIL);
   }
 
-  @Test
-  public void extractionLimitFailureReportsWhichLimitTripped() {
+  @ParameterizedTest
+  @CsvSource({
+    "EXPANDED_SIZE, 10485760000, extractionExpandedSizeExceeded, 10000",
+    "FREE_DISK_SPACE, 2097152000, extractionInsufficientDiskSpace, 2000",
+    "ENTRY_COUNT, 500000, extractionEntryCountExceeded, 500000",
+    "COMPRESSION_RATIO, 100, extractionCompressionRatioExceeded, 100"
+  })
+  public void extractionLimitFailureReportsWhichLimitTripped(
+      ZipExtractionLimitException.Limit limit,
+      long limitValue,
+      String messageKey,
+      long expectedArgument) {
     parser.isZip = true;
-    parser.extractionFailure =
-        new ZipExtractionLimitException(
-            ZipExtractionLimitException.Limit.EXPANDED_SIZE, 10_000L * 1024 * 1024, "test");
+    parser.extractionFailure = new ZipExtractionLimitException(limit, limitValue, "test");
     StaticMessageSource source = new StaticMessageSource();
-    source.addMessage(
-        "archiveImport.errors.extractionExpandedSizeExceeded",
-        Locale.getDefault(),
-        "expands beyond {0} MB");
+    source.addMessage("archiveImport.errors." + messageKey, Locale.getDefault(), "limit {0}");
     MessageSourceUtils messages = new MessageSourceUtils();
     messages.setMessageSource(source);
     ReflectionTestUtils.setField(parser, "messages", messages);
@@ -146,7 +151,7 @@ public class ArchiveParseTest {
     assertRuleValidationResult(
         report, ImportValidationRule.ZIP_FILE_CAN_UNZIP, ValidationTestResult.FAIL);
     assertEquals(
-        List.of(MessageFormat.format("expands beyond {0} MB", 10_000L)),
+        List.of(MessageFormat.format("limit {0}", expectedArgument)),
         report.getErrorList().getErrorMessages());
   }
 

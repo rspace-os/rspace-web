@@ -231,7 +231,7 @@ apitoken.encryption.key: DYF...
 archive.folder.location: archive
 archive.folder.storagetime: 1
 archive.maxExpandedSizeMB: 10000
-archive.minSpaceRequiredToStartMB: 1000
+archive.minSpaceRequiredToStartMB: 2000
 aspose.app: /home/builder/rspace/aspose/aspose-app.jar
 aspose.cacheConverted: true
 aspose.jvmArgs:
