@@ -367,6 +367,31 @@ class ZipUtilsExtractionTest {
     assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
   }
 
+  @Test
+  void rejectsExtractionWhenPartitionFillsDuringEmptyEntries() throws IOException {
+    EntrySpec[] specs = new EntrySpec[1100];
+    for (int i = 0; i < specs.length; i++) {
+      specs[i] = file("empty" + i + ".txt", bytes(0));
+    }
+    File zip = makeZip(specs);
+    File dest = newDestination();
+    AtomicInteger diskChecks = new AtomicInteger();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 1, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () ->
+                ZipUtils.extractZip(
+                    zip,
+                    dest,
+                    limits,
+                    () -> diskChecks.getAndIncrement() == 0 ? Long.MAX_VALUE : 0));
+
+    assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
   private static int indexOfLocalHeader(byte[] raw, int occurrence) {
     int found = 0;
     for (int i = 0; i < raw.length - 3; i++) {

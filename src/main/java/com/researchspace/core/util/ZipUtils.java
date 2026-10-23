@@ -254,6 +254,8 @@ public class ZipUtils {
    */
   private static final class ExtractionBudget {
     private static final long DISK_CHECK_INTERVAL_BYTES = 16L * 1024 * 1024;
+    // directories and tiny files take a disk block each but add little or nothing to the bytes
+    private static final int DISK_CHECK_INTERVAL_ENTRIES = 1024;
 
     private final ZipExtractionLimits limits;
     private final long archiveCompressedBytes;
@@ -276,6 +278,9 @@ public class ZipUtils {
             ZipExtractionLimitException.Limit.ENTRY_COUNT,
             limits.maxEntries(),
             "more than " + limits.maxEntries() + " entries, at " + entry.getName());
+      }
+      if (entries % DISK_CHECK_INTERVAL_ENTRIES == 0) {
+        checkFreeDiskSpace();
       }
     }
 
