@@ -538,6 +538,76 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     await unsharedByList.close();
   });
 
+  test(`As a Project Group member, I lose access to items shared with the group once I leave it`, async ({
+    browser,
+    browserContextOptions,
+    clientSysadmin,
+    apiContext,
+    flowUserSession,
+  }) => {
+    test.slow();
+
+    const bob = await createInventoryActor(clientSysadmin, apiContext, "Bob", "ROLE_USER");
+    const charlie = await createActor(clientSysadmin, "Charlie", "ROLE_USER");
+    const group = await clientSysadmin.createGroup({
+      displayName: alphaNumericUnique("e2ePermProjectGroup"),
+      type: "PROJECT_GROUP",
+      users: [
+        { username: bob.username, roleInGroup: "GROUP_OWNER" },
+        { username: charlie.username, roleInGroup: "DEFAULT" },
+      ],
+    });
+    const bobContainer = await createContainer(bob);
+    const alice = await createInventoryActor(clientSysadmin, apiContext, "Alice", "ROLE_PI");
+    const aliceContainer = await createContainer(alice);
+    await alice.client.updateContainer(aliceContainer.id, {
+      sharingMode: "WHITELIST",
+      sharedWith: [{ group: { id: group.id }, shared: true }],
+    });
+
+    const sharedByGroup = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${bobContainer.id}`,
+      bobContainer.name,
+    );
+    await expectFullAccess(sharedByGroup.detailsPanel);
+    await sharedByGroup.close();
+    const sharedByList = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${aliceContainer.id}`,
+      aliceContainer.name,
+    );
+    await expectFullAccess(sharedByList.detailsPanel);
+    await sharedByList.close();
+
+    const charlieSession = await flowUserSession(charlie.username, charlie.password);
+    await charlieSession.groupDetails.openGroup(group.id);
+    await charlieSession.groupDetails.leaveGroup();
+
+    const unsharedByGroup = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${bobContainer.id}`,
+      bobContainer.name,
+    );
+    await expectPublicAccess(unsharedByGroup.detailsPanel);
+    await unsharedByGroup.close();
+    const unsharedByList = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${aliceContainer.id}`,
+      aliceContainer.name,
+    );
+    await expectPublicAccess(unsharedByList.detailsPanel);
+    await unsharedByList.close();
+  });
+
   test(`As a user, I can see owner-group access change when an item is transferred to a new owner`, async ({
     browser,
     browserContextOptions,
