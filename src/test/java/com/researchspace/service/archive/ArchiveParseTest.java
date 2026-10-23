@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
 import com.researchspace.archive.ArchivalDocument;
@@ -18,6 +21,7 @@ import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.ZipExtractionLimitException;
 import com.researchspace.core.util.version.SemanticVersion;
 import com.researchspace.model.ArchivalCheckSum;
+import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.ImportArchiveReport.ValidationResult;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -27,8 +31,12 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.context.support.StaticMessageSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -141,6 +149,30 @@ public class ArchiveParseTest {
     assertEquals(
         List.of(MessageFormat.format("expands beyond {0} MB", 10_000L)),
         report.getErrorList().getErrorMessages());
+  }
+
+  @Test
+  public void extractionUsesDeploymentDiskLimitsInMegabytes(@TempDir File tempDir)
+      throws IOException {
+    File zip = new File(tempDir, "big.zip");
+    try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(zip)) {
+      out.putArchiveEntry(new ZipArchiveEntry("big.bin"));
+      out.write(new byte[2 * 1024 * 1024]);
+      out.closeArchiveEntry();
+    }
+    DiskSpaceChecker diskSpaceChecker = mock(DiskSpaceChecker.class);
+    when(diskSpaceChecker.getMaxArchiveSizeMB()).thenReturn(1);
+    when(diskSpaceChecker.getMinSpaceRequiredToStartArchiveExportMB()).thenReturn(0);
+    ArchiveParserImpl realParser = new ArchiveParserImpl();
+    ReflectionTestUtils.setField(realParser, "diskSpaceChecker", diskSpaceChecker);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () -> realParser.extractZipFolder(zip, new File(tempDir, "out")));
+
+    assertEquals(ZipExtractionLimitException.Limit.EXPANDED_SIZE, e.getLimit());
+    assertEquals(FileUtils.ONE_MB, e.getLimitValue());
   }
 
   @Test

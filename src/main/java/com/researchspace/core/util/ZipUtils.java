@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.LongSupplier;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -136,13 +137,23 @@ public class ZipUtils {
    */
   public static String extractZip(
       File archiveFile, File destinationFolder, ZipExtractionLimits limits) throws IOException {
+    return extractZip(archiveFile, destinationFolder, limits, destinationFolder::getUsableSpace);
+  }
+
+  /** Lets tests simulate the partition filling up part-way through an extraction. */
+  static String extractZip(
+      File archiveFile,
+      File destinationFolder,
+      ZipExtractionLimits limits,
+      LongSupplier usableSpace)
+      throws IOException {
     if (!destinationFolder.exists()) {
       boolean dirMade = destinationFolder.mkdir();
       if (!dirMade) {
         throw new IllegalStateException("Couldn't make folder to unzip into");
       }
     }
-    return unzipFolder(archiveFile, destinationFolder, limits);
+    return unzipFolder(archiveFile, destinationFolder, limits, usableSpace);
   }
 
   /**
@@ -154,7 +165,11 @@ public class ZipUtils {
    * @return The name of top-level folder or <code>null</code> if no top-level folder
    */
   private static String unzipFolder(
-      File archiveFile, File zipDestinationFolder, ZipExtractionLimits limits) throws IOException {
+      File archiveFile,
+      File zipDestinationFolder,
+      ZipExtractionLimits limits,
+      LongSupplier usableSpace)
+      throws IOException {
 
     final int bufferSize = 65536;
     File topLevelDir = null;
@@ -162,7 +177,7 @@ public class ZipUtils {
     String rootPrefix = rootPath.endsWith(File.separator) ? rootPath : rootPath + File.separator;
     // paths this extraction created, so a rejection can remove exactly what it wrote
     Set<File> created = new LinkedHashSet<>();
-    ExtractionBudget budget = new ExtractionBudget(limits, archiveFile, zipDestinationFolder);
+    ExtractionBudget budget = new ExtractionBudget(limits, archiveFile, usableSpace);
 
     try (ZipFile zipFile = new ZipFile(archiveFile)) {
       byte[] buf = new byte[bufferSize];
@@ -242,16 +257,16 @@ public class ZipUtils {
 
     private final ZipExtractionLimits limits;
     private final long archiveCompressedBytes;
-    private final File destination;
+    private final LongSupplier usableSpace;
     private int entries;
     private long totalWritten;
     private long writtenSinceDiskCheck;
     private String entryName = "";
 
-    ExtractionBudget(ZipExtractionLimits limits, File archiveFile, File destination) {
+    ExtractionBudget(ZipExtractionLimits limits, File archiveFile, LongSupplier usableSpace) {
       this.limits = limits;
       this.archiveCompressedBytes = Math.max(1, archiveFile.length());
-      this.destination = destination;
+      this.usableSpace = usableSpace;
     }
 
     void countEntry(ZipArchiveEntry entry) throws ZipExtractionLimitException {
@@ -293,8 +308,7 @@ public class ZipUtils {
     }
 
     void checkFreeDiskSpace() throws ZipExtractionLimitException {
-      if (limits.minFreeDiskBytes() > 0
-          && destination.getUsableSpace() < limits.minFreeDiskBytes()) {
+      if (limits.minFreeDiskBytes() > 0 && usableSpace.getAsLong() < limits.minFreeDiskBytes()) {
         throw new ZipExtractionLimitException(
             ZipExtractionLimitException.Limit.FREE_DISK_SPACE,
             limits.minFreeDiskBytes(),

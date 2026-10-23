@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
@@ -340,6 +341,29 @@ class ZipUtilsExtractionTest {
             ZipExtractionLimitException.class, () -> ZipUtils.extractZip(zip, dest, limits));
 
     assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void rejectsExtractionWhenPartitionFillsPartWay() throws IOException {
+    File zip = makeZip(file("a.bin", bytes(20 * 1024 * 1024)));
+    File dest = newDestination();
+    AtomicInteger diskChecks = new AtomicInteger();
+    // plenty of space at the start, none by the first re-check after 16 MiB written
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 1, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () ->
+                ZipUtils.extractZip(
+                    zip,
+                    dest,
+                    limits,
+                    () -> diskChecks.getAndIncrement() == 0 ? Long.MAX_VALUE : 0));
+
+    assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertEquals(2, diskChecks.get());
     assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
   }
 
