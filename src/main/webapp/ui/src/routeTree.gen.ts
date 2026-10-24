@@ -9,10 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as BookingRouteRouteImport } from './routes/booking/route'
+import { Route as BookingIndexRouteImport } from './routes/booking/index'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
 import { Route as PublicMaintenanceInProgressIndexRouteImport } from './routes/public/maintenanceInProgress/index'
 import { Route as PublicApiDocsIndexRouteImport } from './routes/public/apiDocs/index'
+import { Route as BookingPreferencesIndexRouteImport } from './routes/booking/preferences/index'
+import { Route as BookingConfigSettingsIndexRouteImport } from './routes/booking/config/settings/index'
 
+const BookingRouteRoute = BookingRouteRouteImport.update({
+  id: '/booking',
+  path: '/booking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookingIndexRoute = BookingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BookingRouteRoute,
+} as any)
 const AboutIndexRoute = AboutIndexRouteImport.update({
   id: '/about/',
   path: '/about/',
@@ -29,36 +43,76 @@ const PublicApiDocsIndexRoute = PublicApiDocsIndexRouteImport.update({
   path: '/public/apiDocs/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BookingPreferencesIndexRoute = BookingPreferencesIndexRouteImport.update({
+  id: '/preferences/',
+  path: '/preferences/',
+  getParentRoute: () => BookingRouteRoute,
+} as any)
+const BookingConfigSettingsIndexRoute =
+  BookingConfigSettingsIndexRouteImport.update({
+    id: '/config/settings/',
+    path: '/config/settings/',
+    getParentRoute: () => BookingRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
+  '/booking': typeof BookingRouteRouteWithChildren
   '/about/': typeof AboutIndexRoute
+  '/booking/': typeof BookingIndexRoute
+  '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/config/settings/': typeof BookingConfigSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof AboutIndexRoute
+  '/booking': typeof BookingIndexRoute
+  '/booking/preferences': typeof BookingPreferencesIndexRoute
   '/public/apiDocs': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/config/settings': typeof BookingConfigSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/booking': typeof BookingRouteRouteWithChildren
   '/about/': typeof AboutIndexRoute
+  '/booking/': typeof BookingIndexRoute
+  '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/config/settings/': typeof BookingConfigSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/about/' | '/public/apiDocs/' | '/public/maintenanceInProgress/'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/about' | '/public/apiDocs' | '/public/maintenanceInProgress'
-  id:
-    | '__root__'
+  fullPaths:
+    | '/booking'
     | '/about/'
+    | '/booking/'
+    | '/booking/preferences/'
     | '/public/apiDocs/'
     | '/public/maintenanceInProgress/'
+    | '/booking/config/settings/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/about'
+    | '/booking'
+    | '/booking/preferences'
+    | '/public/apiDocs'
+    | '/public/maintenanceInProgress'
+    | '/booking/config/settings'
+  id:
+    | '__root__'
+    | '/booking'
+    | '/about/'
+    | '/booking/'
+    | '/booking/preferences/'
+    | '/public/apiDocs/'
+    | '/public/maintenanceInProgress/'
+    | '/booking/config/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  BookingRouteRoute: typeof BookingRouteRouteWithChildren
   AboutIndexRoute: typeof AboutIndexRoute
   PublicApiDocsIndexRoute: typeof PublicApiDocsIndexRoute
   PublicMaintenanceInProgressIndexRoute: typeof PublicMaintenanceInProgressIndexRoute
@@ -66,6 +120,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/booking': {
+      id: '/booking'
+      path: '/booking'
+      fullPath: '/booking'
+      preLoaderRoute: typeof BookingRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/booking/': {
+      id: '/booking/'
+      path: '/'
+      fullPath: '/booking/'
+      preLoaderRoute: typeof BookingIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
     '/about/': {
       id: '/about/'
       path: '/about'
@@ -87,10 +155,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicApiDocsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/booking/preferences/': {
+      id: '/booking/preferences/'
+      path: '/preferences'
+      fullPath: '/booking/preferences/'
+      preLoaderRoute: typeof BookingPreferencesIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
+    '/booking/config/settings/': {
+      id: '/booking/config/settings/'
+      path: '/config/settings'
+      fullPath: '/booking/config/settings/'
+      preLoaderRoute: typeof BookingConfigSettingsIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
   }
 }
 
+interface BookingRouteRouteChildren {
+  BookingIndexRoute: typeof BookingIndexRoute
+  BookingPreferencesIndexRoute: typeof BookingPreferencesIndexRoute
+  BookingConfigSettingsIndexRoute: typeof BookingConfigSettingsIndexRoute
+}
+
+const BookingRouteRouteChildren: BookingRouteRouteChildren = {
+  BookingIndexRoute: BookingIndexRoute,
+  BookingPreferencesIndexRoute: BookingPreferencesIndexRoute,
+  BookingConfigSettingsIndexRoute: BookingConfigSettingsIndexRoute,
+}
+
+const BookingRouteRouteWithChildren = BookingRouteRoute._addFileChildren(
+  BookingRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
+  BookingRouteRoute: BookingRouteRouteWithChildren,
   AboutIndexRoute: AboutIndexRoute,
   PublicApiDocsIndexRoute: PublicApiDocsIndexRoute,
   PublicMaintenanceInProgressIndexRoute: PublicMaintenanceInProgressIndexRoute,

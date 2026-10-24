@@ -338,6 +338,7 @@
       "sharedRecordsPerPage": "Number of shared items per page",
       "uiClientSettings": "UI client-side settings",
       "uiJsonSettings": "UI client-side settings, in json format",
+      "bookingDisplayPreferences": "Booking display preferences",
       "updateButton": {
         "label": "Update Preferences"
       },

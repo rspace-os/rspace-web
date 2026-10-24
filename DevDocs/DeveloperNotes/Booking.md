@@ -114,3 +114,11 @@ booking and maintenance event. Maintenance requires `CREATE_BLOCKOUT`, exposed a
 closed weekdays, increment/alignment and the item maximum, but retains the absolute cap.
 
 Booking Owners and Managers hold the maintenance capability.
+
+## Scheduling timezone writes
+
+The `timezone` field on `/api/v2/booking-configurations` is now read-only. It remains available in
+GET responses as the item's scheduling timezone, but create, patch, and bulk requests that include
+it receive the collection framework's normal `400 Bad Request` response. Public creates assign the
+JVM-backed institution timezone. This is an immediate breaking change; internal Java manager
+commands retain their timezone fields for fixtures and other trusted scheduling workflows.

@@ -1,0 +1,190 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { Suspense } from "react";
+import { describe, expect, it } from "vitest";
+import { server } from "@/__tests__/mswServer";
+import BookingSettingsPage from "../BookingSettingsPage";
+import { bookingSettingsFixture } from "./bookingSettingsFixture";
+
+const settings = {
+  ...bookingSettingsFixture,
+  bufferBeforeMinutes: 3,
+  bufferAfterMinutes: 7,
+  state: "ACTIVE" as const,
+};
+
+function renderPage(queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={null}>
+        <BookingSettingsPage />
+      </Suspense>
+    </QueryClientProvider>,
+  );
+}
+
+describe("BookingSettingsPage", () => {
+  it("keeps the draft's version after a background settings refresh", async () => {
+    const user = userEvent.setup();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let current = settings;
+    let submitted: unknown;
+    server.use(
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(current)),
+      http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+        submitted = await request.json();
+        return HttpResponse.json({ status: 409, code: "errors.api.v2.bookingConfiguration.stale" }, { status: 409 });
+      }),
+    );
+    renderPage(queryClient);
+    const doubleBooking = await screen.findByRole("checkbox", {
+      name: "booking:settings.fields.allowDoubleBooking",
+    });
+    await user.click(doubleBooking);
+    current = {
+      ...settings,
+      configurationVersion: 1,
+      openingHours: settings.openingHours.map((entry) => ({ ...entry, end: "20:00" })),
+    };
+    await act(() => queryClient.refetchQueries({ queryKey: ["api-v2", "booking-settings", "admin"] }));
+    await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+    expect(await screen.findByText("booking:settings.errors.stale")).toBeVisible();
+    expect(submitted).toMatchObject({
+      configurationVersion: 0,
+      openingHours: settings.openingHours,
+      allowDoubleBooking: true,
+    });
+    expect(doubleBooking).toBeChecked();
+  });
+
+  it("offers every supported time increment", async () => {
+    server.use(http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)));
+    renderPage();
+
+    const granularity = await screen.findByRole("combobox", {
+      name: "booking:settings.fields.granularity",
+    });
+    expect(
+      within(granularity)
+        .getAllByRole("option")
+        .map((option) => option.getAttribute("value")),
+    ).toEqual(["1", "5", "10", "15"]);
+  });
+
+  it("does not submit an invalid maximum duration", async () => {
+    const user = userEvent.setup();
+    let patches = 0;
+    server.use(
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", () => {
+        patches += 1;
+        return HttpResponse.json(settings);
+      }),
+    );
+    renderPage();
+
+    const maximum = await screen.findByRole("spinbutton", {
+      name: "booking:settings.fields.maximumDuration",
+    });
+    await user.clear(maximum);
+    await user.type(maximum, "7");
+    expect(maximum).toHaveAccessibleDescription("booking:settings.fields.maximumDurationDescription");
+    expect(screen.getByText("booking:settings.errors.maximumDuration")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+    expect(patches).toBe(0);
+  });
+
+  it("preserves asymmetric buffers during an unrelated edit", async () => {
+    const user = userEvent.setup();
+    let body: unknown;
+    server.use(
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ ...settings, allowDoubleBooking: true, configurationVersion: 1 });
+      }),
+    );
+    renderPage();
+
+    const buffer = await screen.findByRole("spinbutton", {
+      name: "booking:settings.fields.buffer",
+    });
+    expect(buffer).toHaveValue(null);
+    expect(buffer).not.toBeRequired();
+    expect(screen.getByText("booking:settings.fields.bufferMixed")).toBeVisible();
+    await user.click(screen.getByRole("checkbox", { name: "booking:settings.fields.allowDoubleBooking" }));
+    await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("booking:settings.saved");
+    expect(body).toEqual({
+      slotGranularityMinutes: 5,
+      openingHours: settings.openingHours,
+      bufferBeforeMinutes: 3,
+      bufferAfterMinutes: 7,
+      maxBookingDurationMinutes: 0,
+      allowDoubleBooking: true,
+      availabilityWindowStart: "08:00",
+      availabilityWindowEnd: "18:00",
+      timezoneMode: "BROWSER",
+      customTimezone: null,
+      defaultSharedWith: "ALL_USERS",
+      selectedGranteeKeys: [],
+      configurationVersion: 0,
+    });
+  });
+
+  it("writes one entered buffer value to both stored directions", async () => {
+    const user = userEvent.setup();
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...settings, ...body, configurationVersion: 1 });
+      }),
+    );
+    renderPage();
+
+    const buffer = await screen.findByRole("spinbutton", {
+      name: "booking:settings.fields.buffer",
+    });
+    await user.type(buffer, "12");
+    await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+    expect(await screen.findByRole("status")).toBeVisible();
+    expect(body).toMatchObject({ bufferBeforeMinutes: 12, bufferAfterMinutes: 12 });
+    expect(body).toMatchObject({ configurationVersion: 0 });
+  });
+
+  it("keeps a stale form open and asks the admin to reload", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get("/api/v2/booking-settings/admin", () => HttpResponse.json(settings)),
+      http.patch("/api/v2/booking-settings/admin", () =>
+        HttpResponse.json(
+          {
+            status: 409,
+            code: "errors.api.v2.bookingConfiguration.stale",
+            detail: "stale",
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderPage();
+
+    await user.click(
+      await screen.findByRole("checkbox", {
+        name: "booking:settings.fields.allowDoubleBooking",
+      }),
+    );
+    await user.click(screen.getByRole("button", { name: "booking:settings.actions.save" }));
+
+    expect(await screen.findByText("booking:settings.errors.stale")).toBeVisible();
+    expect(screen.getByRole("button", { name: "booking:settings.actions.save" })).toBeEnabled();
+  });
+});
