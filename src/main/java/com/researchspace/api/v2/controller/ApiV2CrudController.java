@@ -1,14 +1,19 @@
 package com.researchspace.api.v2.controller;
 
 import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.api.v2.json.ApiV2JsonBody;
+import com.researchspace.api.v2.model.ApiV2BulkResult;
 import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
+import com.researchspace.api.v2.model.ApiV2RuntimeFieldCatalog;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
+import com.researchspace.api.v2.resource.ResourceDeleteOptions;
+import com.researchspace.api.v2.resource.ResourceDeleteResult;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
 import com.researchspace.model.collection.ResourceRequest;
@@ -19,21 +24,28 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -89,7 +101,7 @@ public class ApiV2CrudController {
    * cache can serve one user's field names to another.
    */
   @GetMapping("/{resource}/fields/{namespace}")
-  public ResponseEntity<Map<String, Object>> runtimeFields(
+  public ResponseEntity<ApiV2RuntimeFieldCatalog> runtimeFields(
       @PathVariable String resource,
       @PathVariable String namespace,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false) ApiV2Caller caller,
@@ -103,14 +115,13 @@ public class ApiV2CrudController {
     RuntimeFieldCatalogQuery query = catalogQuery(search, ids, page, limit);
     RuntimeFieldCatalogPage catalog =
         registration.runtimeFieldCatalog(subject(caller), namespace, query);
-    Map<String, Object> body = new LinkedHashMap<>();
-    body.put("fields", catalog.fields().stream().map(ApiV2CrudController::catalogEntry).toList());
-    body.put("hasMore", catalog.hasMore());
-    if (catalog.total() != null) {
-      body.put("totalFields", catalog.total());
-    }
-    body.put("page", query.page());
-    body.put("limit", query.limit());
+    ApiV2RuntimeFieldCatalog body =
+        new ApiV2RuntimeFieldCatalog(
+            catalog.fields().stream().map(ApiV2CrudController::catalogEntry).toList(),
+            catalog.hasMore(),
+            catalog.total(),
+            query.page(),
+            query.limit());
     return ResponseEntity.ok().cacheControl(CacheControl.noStore().cachePrivate()).body(body);
   }
 
@@ -145,25 +156,19 @@ public class ApiV2CrudController {
     }
   }
 
-  private static Map<String, Object> catalogEntry(RuntimeFieldDefinition definition) {
-    Map<String, Object> entry = new LinkedHashMap<>();
-    entry.put("id", definition.id());
-    entry.put("selector", definition.selector());
-    entry.put("label", definition.label());
-    entry.put("type", definition.type().name().toLowerCase(Locale.ROOT));
-    entry.put("jsonType", definition.type().jsonType());
-    entry.put(
-        "operators",
-        definition.operators().stream()
-            .map(ApiV2OpenApiGenerator::operatorToken)
-            .sorted()
-            .toList());
-    entry.put("supportsWildcards", definition.supportsWildcards());
-    entry.put("columnSelectable", definition.columnSelectable());
-    entry.put("sortable", false);
-    entry.put("source", Map.of("id", definition.sourceId(), "label", definition.sourceLabel()));
-    entry.put("options", definition.options());
-    return entry;
+  private static ApiV2RuntimeFieldCatalog.Entry catalogEntry(RuntimeFieldDefinition definition) {
+    return new ApiV2RuntimeFieldCatalog.Entry(
+        definition.id(),
+        definition.selector(),
+        definition.label(),
+        definition.type().name().toLowerCase(Locale.ROOT),
+        definition.type().jsonType(),
+        definition.operators().stream().map(ApiV2OpenApiGenerator::operatorToken).sorted().toList(),
+        definition.supportsWildcards(),
+        definition.columnSelectable(),
+        false,
+        new ApiV2RuntimeFieldCatalog.Source(definition.sourceId(), definition.sourceLabel()),
+        definition.options());
   }
 
   @GetMapping("/{resource}/count")
@@ -203,9 +208,116 @@ public class ApiV2CrudController {
                 registration.registry(),
                 registration.runtimeFieldContext(user)),
             user);
+    return okWithDocumentEtag(registration, document);
+  }
+
+  @PostMapping(value = "/{resource}", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Map<String, Object>> create(
+      @PathVariable String resource,
+      @RequestBody ApiV2JsonBody body,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(requireResource(resource, ResourceOperation.CREATE).create(body.node(), caller));
+  }
+
+  @PostMapping(value = "/{resource}/bulk", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<ApiV2BulkResult<Map<String, Object>>> createMany(
+      @PathVariable String resource,
+      @RequestBody ApiV2JsonBody body,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(
+            requireResource(resource, ResourceOperation.BULK_CREATE)
+                .createMany(body.node(), caller));
+  }
+
+  @PatchMapping(value = "/{resource}/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Map<String, Object>> update(
+      @PathVariable String resource,
+      @PathVariable String id,
+      @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+      @RequestBody ApiV2JsonBody body,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    ApiV2ResourceRegistration<?, ?> registration =
+        requireResource(resource, ResourceOperation.UPDATE);
+    Long expectedVersion =
+        registration
+            .ifMatchRequiredCode()
+            .map(code -> ApiV2ConditionalRequest.parseVersion(ifMatch, code))
+            .orElse(null);
+    Map<String, Object> document = registration.update(id, body.node(), expectedVersion, caller);
+    return okWithDocumentEtag(registration, document);
+  }
+
+  @PatchMapping(value = "/{resource}", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ApiV2BulkResult<Map<String, Object>> updateMany(
+      @PathVariable String resource,
+      @RequestParam(required = false) String where,
+      @RequestBody ApiV2JsonBody body,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    ApiV2ResourceRegistration<?, ?> registration =
+        requireResource(resource, ResourceOperation.BULK_UPDATE);
+    return registration.updateMany(
+        ApiV2ResourceRequestParser.bulk(
+            where,
+            registration.description(),
+            registration.registry(),
+            registration.runtimeFieldContext(subject(caller))),
+        body.node(),
+        caller);
+  }
+
+  @DeleteMapping("/{resource}/{id}")
+  public ResponseEntity<Map<String, Object>> delete(
+      @PathVariable String resource,
+      @PathVariable String id,
+      @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch,
+      @RequestParam(defaultValue = "false") boolean permanent,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    ApiV2ResourceRegistration<?, ?> registration =
+        requireResource(resource, ResourceOperation.DELETE);
+    Long expectedVersion =
+        registration.deleteRequiresIfMatch()
+            // Registration guarantees a versioned delete has an If-Match error code.
+            ? ApiV2ConditionalRequest.parseVersion(
+                ifMatch, registration.ifMatchRequiredCode().orElseThrow())
+            : null;
+    ResourceDeleteResult<Map<String, Object>> result =
+        registration.delete(id, new ResourceDeleteOptions(expectedVersion, permanent), caller);
+    if (result.isPermanentlyDeleted()) {
+      return ResponseEntity.noContent().build();
+    }
+    Map<String, Object> document = result.resource().orElseThrow(NotFoundException::new);
+    return okWithDocumentEtag(registration, document);
+  }
+
+  private static ResponseEntity<Map<String, Object>> okWithDocumentEtag(
+      ApiV2ResourceRegistration<?, ?> registration, Map<String, Object> document) {
     ResponseEntity.BodyBuilder response = ResponseEntity.ok();
     registration.documentEtag(document).ifPresent(response::eTag);
     return response.body(document);
+  }
+
+  @DeleteMapping("/{resource}")
+  public ApiV2BulkResult<Map<String, Object>> deleteMany(
+      @PathVariable String resource,
+      @RequestParam(required = false) String where,
+      @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE, required = false)
+          ApiV2Caller caller) {
+    ApiV2ResourceRegistration<?, ?> registration =
+        requireResource(resource, ResourceOperation.BULK_DELETE);
+    return registration.deleteMany(
+        ApiV2ResourceRequestParser.bulk(
+            where,
+            registration.description(),
+            registration.registry(),
+            registration.runtimeFieldContext(subject(caller))),
+        caller);
   }
 
   /**
