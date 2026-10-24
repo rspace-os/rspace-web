@@ -289,5 +289,15 @@ The shared transport helpers do not parse Booking-specific problem extensions.
 Calendar, catalogue, and add-booking routes ignore malformed date parameters (including
 non-string values) and use their normal display-timezone defaults.
 
+## Settings access and draft stability
+
+`BookingSettingsRoutePage` checks sysadmin access before requesting settings. A 403 produces
+the not-permitted state. Settings and item queries use `retryUnlessClientError` from
+`modules/common/queries/queryRetry.ts`: permanent 4xx responses do not retry, except 408/429;
+network failures and 5xx responses retain three retries. Clean Settings forms adopt a
+refreshed baseline. Dirty forms and failed saves retain input, including weekday editing history.
+A successful save or explicit reload adopts server values and starts a new editing session.
+Item configuration and notification editors likewise retain drafts through background refreshes.
+
 The Booking API scheduling-timezone write contract is in
 [Booking](Booking.md#scheduling-timezone-writes).

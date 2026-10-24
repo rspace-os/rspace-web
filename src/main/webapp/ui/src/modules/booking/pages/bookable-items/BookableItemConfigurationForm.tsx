@@ -1,7 +1,6 @@
-import { Form, isDirty, useForm } from "@formisch/react";
+import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { pick } from "es-toolkit";
-import { useEffect, useState } from "react";
-
+import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   SchedulingSettingsFields,
@@ -9,6 +8,7 @@ import {
 } from "@/modules/booking/configuration/schedulingSettings";
 import { RenderFields } from "@/modules/common/collection-form/RenderFields";
 import { DirtyNavigationGuard } from "@/modules/common/navigation/DirtyNavigationGuard";
+import { Button } from "@/modules/common/ui/button";
 import {
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
@@ -22,15 +22,21 @@ function configurationInput(configuration: BookingConfiguration): BookingConfigu
   };
 }
 
-/** Each edit session keeps the version and input it opened with, even after a refetch. */
+/**
+ * Each edit session keeps the version and input it opened with, even after a background refetch. After a
+ * conflict the draft is kept and the next Save targets the version loaded by the conflict refresh, unless
+ * the user discards the draft to load the latest configuration.
+ */
 export function BookableItemConfigurationForm({
   configuration,
   globalId,
   formId,
   pending,
   staleEdit,
+  conflictVersion = null,
   failed,
   onSubmit,
+  onDiscardConflictedDraft,
   onSaveBlockedChange,
 }: {
   configuration: BookingConfiguration;
@@ -38,13 +44,19 @@ export function BookableItemConfigurationForm({
   formId: string;
   pending: boolean;
   staleEdit: boolean;
+  /** The server version loaded after the last conflict, or null when the draft has not conflicted. */
+  conflictVersion?: number | null;
   failed: boolean;
   onSubmit: (input: BookingConfigurationUpdateInput, version: number) => Promise<unknown>;
+  /** Called after the draft is replaced by the latest configuration, so the owner can clear the conflict. */
+  onDiscardConflictedDraft?: () => void;
   /** True until a field changes; the owner disables Save. */
   onSaveBlockedChange?: (blocked: boolean) => void;
 }) {
   const { t } = useTranslation("booking");
-  const [version] = useState(configuration.configurationVersion);
+  const [version, setVersion] = useState(configuration.configurationVersion);
+  // Remount on discard so remembered weekday hours do not outlive the draft.
+  const [draftGeneration, setDraftGeneration] = useState(0);
   const form = useForm({
     schema: BookingConfigurationUpdateInputSchema,
     initialInput: configurationInput(configuration),
@@ -53,6 +65,19 @@ export function BookableItemConfigurationForm({
   useEffect(() => {
     onSaveBlockedChange?.(!dirty);
   }, [dirty, onSaveBlockedChange]);
+  const discardDraft = () => {
+    reset(form, { initialInput: configurationInput(configuration) });
+    setVersion(configuration.configurationVersion);
+    setDraftGeneration((generation) => generation + 1);
+    onDiscardConflictedDraft?.();
+    // The discard button leaves with the conflict alert, so move focus to the reloaded fields.
+    requestAnimationFrame(() =>
+      document
+        .getElementById(formId)
+        ?.querySelector<HTMLElement>("input:not([disabled]), button:not([disabled])")
+        ?.focus(),
+    );
+  };
   return (
     <>
       <DirtyNavigationGuard
@@ -68,19 +93,26 @@ export function BookableItemConfigurationForm({
         id={formId}
         of={form}
         className="min-w-0 space-y-4"
-        onSubmit={(input) => (!dirty ? undefined : onSubmit(input, version))}
+        onSubmit={(input) => (!dirty ? undefined : onSubmit(input, conflictVersion ?? version))}
       >
-        <RenderFields
-          fields={bookingConfigurationFields.filter((field) => field.name !== "target" && field.name !== "timezone")}
-          form={form}
-          disabled={pending}
-          layout="inline"
-        />
-        <SchedulingSettingsFields form={form} disabled={pending} layout="inline" />
+        <Fragment key={draftGeneration}>
+          <RenderFields
+            fields={bookingConfigurationFields.filter((field) => field.name !== "target" && field.name !== "timezone")}
+            form={form}
+            disabled={pending}
+            layout="inline"
+          />
+          <SchedulingSettingsFields form={form} disabled={pending} layout="inline" />
+        </Fragment>
         {staleEdit ? (
-          <p role="alert" className="text-sm text-destructive">
-            {t("bookableItems.staleEdit")}
-          </p>
+          <div className="space-y-2">
+            <p role="alert" className="text-sm text-destructive">
+              {t("bookableItems.staleEdit")}
+            </p>
+            <Button type="button" size="sm" variant="outline" disabled={pending} onClick={discardDraft}>
+              {t("bookableItems.actions.discardDraft")}
+            </Button>
+          </div>
         ) : failed ? (
           <p role="alert" className="text-sm text-destructive">
             {t("bookableItems.editError")}

@@ -48,19 +48,21 @@ export async function permanentlyDeleteBookingConfiguration(id: number, version:
 export const BOOKING_CONFIGURATION_READ_FIELDS =
   "id,configurationVersion,target,enabled,state,timezone,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,maxBookingDurationMinutes,allowDoubleBooking,createdAt,createdByName,updatedAt,effectiveRole,roleSources,capabilities,ownerHealth";
 
+export const bookingConfigurationTargetQueryKey = (globalId: string) =>
+  ["api-v2", "booking-configurations", "target", globalId] as const;
+
 const bookingConfigurationReadParameters = {
   depth: "1",
   "fields[booking-configurations]": BOOKING_CONFIGURATION_READ_FIELDS,
 };
 
-/** The booking configuration API answered with an error status. */
 export class BookingConfigurationRequestError extends Error {
   constructor(readonly status: number) {
     super(`Booking configuration request failed with status ${status}`);
   }
 }
 
-/** No readable booking configuration exists for a target. */
+/** No readable booking configuration exists for a target: it is unconfigured, missing, or not visible. */
 class BookingConfigurationNotFoundError extends Error {
   readonly status = 404;
 }

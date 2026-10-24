@@ -1,7 +1,12 @@
 import { createElement } from "react";
-import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { useTranslation } from "react-i18next";
+import {
+  bookingTimeZoneOptions,
+  browserTimeZone,
+  useBookingTimeFormat,
+} from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
-import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
+import { formatBookingDateTime } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
@@ -55,12 +60,12 @@ export const bookingConfigurationConfig = {
       name: "state",
       type: "select",
       options: ["ACTIVE", "ARCHIVED"],
-      labelKey: "booking:bookableItems.fields.state",
+      // The column header and the columns panel both read this label.
+      labelKey: "booking:bookableItems.fields.status",
       form: false,
       list: {
         dependencies: ["enabled"],
         // One status column: an archived item is Archived; an active one is Enabled or Disabled.
-        renderHeader: () => i18n.t("booking:bookableItems.fields.status"),
         renderCell: ({ row }) =>
           row.state === "ARCHIVED"
             ? i18n.t("booking:bookableItemDetails.archived")
@@ -83,14 +88,7 @@ export const bookingConfigurationConfig = {
       labelKey: "booking:bookableItems.fields.updatedAt",
       form: false,
       list: {
-        renderCell: ({ row }) =>
-          row.updatedAt
-            ? new Intl.DateTimeFormat(i18n.language, {
-                dateStyle: "medium",
-                timeStyle: "short",
-                hourCycle: bookingHourCycle(),
-              }).format(new Date(row.updatedAt))
-            : i18n.t("booking:bookableItemDetails.notAvailable"),
+        renderCell: ({ row }) => createElement(ConfigurationUpdatedAt, { value: row.updatedAt }),
       },
     },
     {
@@ -167,3 +165,11 @@ export const bookingConfigurationConfig = {
 export type BookingConfigurationRow = CollectionRow<BookingConfiguration, "id" | "target">;
 
 export const bookingConfigurationFields = resolveCollectionConfig(bookingConfigurationConfig).fields;
+
+function ConfigurationUpdatedAt({ value }: { value: string | null | undefined }) {
+  const { i18n, t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
+  return value
+    ? formatBookingDateTime(value, browserTimeZone() ?? "UTC", i18n.language, timeFormat)
+    : t("bookableItemDetails.notAvailable");
+}

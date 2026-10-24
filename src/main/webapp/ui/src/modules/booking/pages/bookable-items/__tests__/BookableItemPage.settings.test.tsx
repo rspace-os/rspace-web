@@ -108,18 +108,18 @@ describe("BookableItemPage", () => {
   });
 
   describe("weekly opening hours", () => {
-    const withHours = {
+    const independent = {
       ...configuration,
-      openingHours: [1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
-        dayOfWeek,
-        start: dayOfWeek === 6 ? "10:00" : "08:00",
-        end: dayOfWeek === 6 ? "16:00" : "17:30",
-      })),
+      openingHours: [
+        { dayOfWeek: 1, start: "08:00", end: "17:30" },
+        { dayOfWeek: 2, start: "09:00", end: "16:00" },
+        { dayOfWeek: 6, start: "10:00", end: "16:00" },
+      ],
     };
     function serve() {
       const patches: Record<string, unknown>[] = [];
       server.use(
-        http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([withHours], 2))),
+        http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([independent], 2))),
         http.get("/api/v2/bookings", () => HttpResponse.json(collectionPage([], 10))),
         http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
           patches.push((await request.json()) as Record<string, unknown>);
@@ -128,57 +128,74 @@ describe("BookableItemPage", () => {
       );
       return patches;
     }
+    const dayHours = (day: string) => screen.getByRole("group", { name: day });
+    const save = () => screen.getByRole("button", { name: "booking:bookableItems.actions.save" });
     async function openEditor(user: ReturnType<typeof userEvent.setup>) {
       await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
       await user.click(await screen.findByRole("button", { name: "booking:bookableItemDetails.edit" }));
       await screen.findByRole("group", { name: "Monday" });
     }
 
-    it("reads out every weekday with its own range and marks closed days", async () => {
+    it("reads every weekday's own hours and omitted days as closed", async () => {
       const user = userEvent.setup();
       serve();
       renderPage();
       await user.click(await screen.findByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
       const panel = screen.getByRole("tabpanel");
-      expect(within(panel).getByText("10:00 AM–04:00 PM")).toBeVisible();
-      expect(within(panel).getAllByText("08:00 AM–05:30 PM")).toHaveLength(5);
-      expect(within(panel).getByText("Sunday").nextElementSibling).toHaveTextContent(
-        "booking:bookableItemDetails.openingHours.closed",
-      );
+      expect(within(panel).getByText("10:00 AM\u201304:00 PM")).toBeVisible();
+      expect(within(panel).getByText("08:00 AM\u201305:30 PM")).toBeVisible();
+      expect(within(panel).getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(4);
       expect(within(panel).getByText("UTC")).toBeVisible();
     });
 
-    it("omits a day closed before saving without changing other weekdays", async () => {
+    it("changes only one day and restores the complete schedule on cancel", async () => {
+      const user = userEvent.setup();
+      const patches = serve();
+      renderPage();
+      await openEditor(user);
+      const mondayEnd = within(dayHours("Monday")).getByLabelText("booking:settings.fields.openingEnd");
+      await user.clear(mondayEnd);
+      await user.type(mondayEnd, "12:00");
+      expect(within(dayHours("Tuesday")).getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("16:00");
+      await user.click(screen.getByRole("checkbox", { name: "Sunday" }));
+      expect(
+        within(dayHours("Sunday")).getByRole("checkbox", { name: "booking:settings.openingHours.openAllDay" }),
+      ).toBeChecked();
+      await user.click(
+        within(screen.getByRole("tabpanel")).getByRole("button", { name: "booking:bookableItemDetails.cancelEdit" }),
+      );
+      await openEditor(user);
+      expect(within(dayHours("Monday")).getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("17:30");
+      expect(screen.getByRole("checkbox", { name: "Sunday" })).not.toBeChecked();
+      expect(patches).toHaveLength(0);
+      expect(save()).toBeDisabled();
+    });
+
+    it("submits the supplied replacement week with closed days omitted", async () => {
       const user = userEvent.setup();
       const patches = serve();
       renderPage();
       await openEditor(user);
       await user.click(screen.getByRole("checkbox", { name: "Saturday" }));
-      await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
+      await user.click(save());
       await waitFor(() => expect(patches).toHaveLength(1));
-      expect(patches[0]).toMatchObject({
-        openingHours: withHours.openingHours.filter((entry) => entry.dayOfWeek !== 6),
-      });
+      expect(patches[0]).toMatchObject({ openingHours: independent.openingHours.slice(0, 2) });
     });
 
-    it("restores a closed day's unsaved interval after a stale save", async () => {
+    it.each([412, 503])("retains an unchecked day's hours after a failed save (%s)", async (status) => {
       const user = userEvent.setup();
       serve();
-      server.use(
-        http.patch("/api/v2/booking-configurations/7", () => HttpResponse.json({ status: 412 }, { status: 412 })),
-      );
+      server.use(http.patch("/api/v2/booking-configurations/7", () => HttpResponse.json({ status }, { status })));
       renderPage();
       await openEditor(user);
       await user.click(screen.getByRole("checkbox", { name: "Saturday" }));
-      await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.save" }));
-      expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.staleEdit");
+      await user.click(save());
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        status === 412 ? "booking:bookableItems.staleEdit" : "booking:bookableItems.editError",
+      );
       await user.click(screen.getByRole("checkbox", { name: "Saturday" }));
-      expect(
-        within(screen.getByRole("group", { name: "Saturday" })).getByLabelText("booking:settings.fields.openingStart"),
-      ).toHaveValue("10:00");
-      expect(
-        within(screen.getByRole("group", { name: "Saturday" })).getByLabelText("booking:settings.fields.openingEnd"),
-      ).toHaveValue("16:00");
+      expect(within(dayHours("Saturday")).getByLabelText("booking:settings.fields.openingStart")).toHaveValue("10:00");
+      expect(within(dayHours("Saturday")).getByLabelText("booking:settings.fields.openingEnd")).toHaveValue("16:00");
     });
   });
 

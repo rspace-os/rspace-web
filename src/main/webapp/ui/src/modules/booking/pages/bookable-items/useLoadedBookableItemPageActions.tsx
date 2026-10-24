@@ -11,6 +11,7 @@ import {
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
+  bookingConfigurationTargetQueryKey,
   invalidateBookingCatalogueQueries,
   permanentlyDeleteBookingConfiguration,
   restoreBookingConfiguration,
@@ -54,6 +55,8 @@ export function useLoadedBookableItemPageActions({
   const queryClient = useQueryClient();
   const [saveAnnouncement, setSaveAnnouncement] = useState<"saved" | "archived" | "restored" | null>(null);
   const [staleEdit, setStaleEdit] = useState(false);
+  // The server version loaded after a conflict; the next Save of the kept draft targets it.
+  const [conflictVersion, setConflictVersion] = useState<number | null>(null);
   const [rulesSaveBlocked, setRulesSaveBlocked] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
@@ -92,14 +95,16 @@ export function useLoadedBookableItemPageActions({
       ]);
       setSaveAnnouncement("saved");
       setStaleEdit(false);
+      setConflictVersion(null);
       setEdit(false);
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         setStaleEdit(true);
-        await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
-        });
+        const queryKey = bookingConfigurationTargetQueryKey(globalId);
+        await queryClient.refetchQueries({ queryKey });
+        const latest = queryClient.getQueryData<BookingConfiguration>(queryKey);
+        if (latest) setConflictVersion(latest.configurationVersion);
       }
     },
   });
@@ -118,7 +123,7 @@ export function useLoadedBookableItemPageActions({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -137,7 +142,7 @@ export function useLoadedBookableItemPageActions({
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && error.status === 412) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -146,14 +151,18 @@ export function useLoadedBookableItemPageActions({
     mutationFn: () =>
       permanentlyDeleteBookingConfiguration(configuration.id, configuration.configurationVersion, token),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      // The deleted configuration's instrument becomes an eligible target again.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
+      ]);
       setPermanentDeleteOpen(false);
       void navigate({ to: "/booking/config/bookable-items", ignoreBlocker: true });
     },
     onError: async (error) => {
       if (error instanceof ApiV2ProblemError && (error.status === 409 || error.status === 412)) {
         await queryClient.refetchQueries({
-          queryKey: ["api-v2", "booking-configurations", "target", globalId],
+          queryKey: bookingConfigurationTargetQueryKey(globalId),
         });
       }
     },
@@ -204,7 +213,14 @@ export function useLoadedBookableItemPageActions({
   const cancelEdit = () => {
     setSaveAnnouncement(null);
     setStaleEdit(false);
+    setConflictVersion(null);
     setEdit(false);
+  };
+
+  const discardConflictedDraft = () => {
+    updateMutation.reset();
+    setStaleEdit(false);
+    setConflictVersion(null);
   };
 
   const handleLifecycleAction = (action: BookingConfigurationLifecycleAction) => {
@@ -244,5 +260,7 @@ export function useLoadedBookableItemPageActions({
     handleLifecycleAction,
     rulesSaveBlocked,
     setRulesSaveBlocked,
+    conflictVersion,
+    discardConflictedDraft,
   };
 }
