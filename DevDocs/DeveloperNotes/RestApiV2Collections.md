@@ -2,7 +2,7 @@
 
 REST API v2 resource definitions specify the public fields, access rules, relationships, and default
 sort. A resource operations class connects the definition to a domain manager. An
-`ApiV2ResourceSpec` bean registers its HTTP operations.
+`ApiV2ResourceSpec` bean registers its HTTP operations and schemas in OpenAPI.
 
 Use a concrete controller for an operation outside collection CRUD, such as `/api/v2/users/me`.
 For query compilation, authentication and request limits, see
@@ -65,6 +65,7 @@ These routes use concrete controllers:
 
 | Route | Access | Result |
 | --- | --- | --- |
+| `GET /api/v2/openapi.json` | Public | The generated OpenAPI 3.1 document. |
 | `GET /api/v2/config` | Public | Application version, branding, help links, description, and support email. |
 | `POST /api/v2/oauth/tokens` | Browser session | A non-cached, session-bound UI OAuth token that retains actor and subject during run-as. |
 | `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
@@ -203,7 +204,7 @@ validates this text against the public resource definition.
 Use `AccessPolicy.readOnly(...)` for a collection that clients only read, such as a relationship
 target that a picker searches. The policy rejects mutations before dispatch, so the operations
 class implements only `find`, `count`, and `findById`. Limit
-`exposedOperations` to `LIST`, `COUNT`, and `READ` to match the routes the collection serves.
+`exposedOperations` to `LIST`, `COUNT`, and `READ` so OpenAPI documents only the routes the collection serves.
 
 Each resource name has one catalog entry. Registration also makes it a relationship target, so
 adding an `ApiV2RelationshipTargetSpec` for an existing resource-spec name causes a duplicate-target
@@ -434,10 +435,20 @@ rows remain available; those rules cannot be rerun after projection removes thei
 must validate complete values before creating such an included document. This exception does not
 apply to readOverrides or fresh serializer output.
 
-Defaults and published examples pass declared-child validation, including scalar child
-constraints. The declared child list controls the public object shape. Scalar to-many fields and generic
-array row editors remain deferred; existing relationship multiplicity and arbitrary historical audit
-JSON are unchanged.
+Defaults and published examples pass declared-child validation, including scalar child constraints.
+OpenAPI publishes object and array examples as JSON values, including additional examples.
+STRING examples retain their raw text, even when that text looks like JSON.
+Recursive `fields` metadata and OpenAPI object `items` come from those definitions. The declared
+child list controls the public object shape; child constraints, documentation, nullability, and
+operation-specific access shape recursive `properties` and `items`, with `additionalProperties: false`
+on each object. The array factory's inclusive row bounds publish as `minItems` and `maxItems`. Request
+schemas describe a supplied array as a complete replacement: required children and child defaults
+apply to every supplied row on CREATE and UPDATE, while the outer field remains optional on update.
+These schemas do not enable HTTP write routes for read-only collections. Read properties may be
+omitted by child access, so read item schemas do not require those keys. Each declared property also
+publishes `x-rspace-fields` for custom frontend renderers. Scalar to-many fields and generic array row
+editors remain deferred; existing relationship multiplicity and arbitrary historical audit JSON are
+unchanged.
 
 `CollectionFieldTypes.object()` remains available for read-only opaque objects. Writable non-array
 structured values can still use `structured(...)`; ARRAY values always use declared children.
@@ -445,14 +456,14 @@ structured values can still use `structured(...)`; ARRAY values always use decla
 A writable field can default to a fixed value when omitted on create: use the annotation's
 `defaultValue`, or call `defaultValue(value)` on a programmatic field. An explicit client value,
 including an allowed `null`, takes precedence. The framework applies it only on create and
-records it as create-schema metadata. The default must pass the field's own rules, and a required
+publishes it in the create schema. The default must pass the field's own rules, and a required
 field cannot have one. Dynamic defaults are not supported yet. Apply contextual values in the create
 operation.
 
 ### Field constraints
 
 The framework enforces `maxLength`, `minLength`, `pattern`, `minimum`, `maximum` and `enumValues`
-when a client writes a value. Violations return `INVALID_VALUE`. Schema metadata distinguishes body constraints from query constraints:
+when a client writes a value. Violations return `INVALID_VALUE`. OpenAPI publishes each rule only where the server checks it:
 
 | Rule | Checked on writes | Checked in `where` | Published on |
 | --- | --- | --- | --- |

@@ -5,12 +5,12 @@ import com.researchspace.api.v2.model.ApiV2CollectionQuery;
 import com.researchspace.api.v2.model.ApiV2CountResult;
 import com.researchspace.api.v2.model.ApiV2FieldsetQuery;
 import com.researchspace.api.v2.model.ApiV2ListResult;
+import com.researchspace.api.v2.openapi.ApiV2OpenApiGenerator;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.ResourceOperation;
 import com.researchspace.model.User;
-import com.researchspace.model.collection.Operator;
 import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.RuntimeFieldCatalogPage;
 import com.researchspace.model.collection.RuntimeFieldCatalogQuery;
@@ -154,29 +154,16 @@ public class ApiV2CrudController {
     entry.put("jsonType", definition.type().jsonType());
     entry.put(
         "operators",
-        definition.operators().stream().map(ApiV2CrudController::token).sorted().toList());
+        definition.operators().stream()
+            .map(ApiV2OpenApiGenerator::operatorToken)
+            .sorted()
+            .toList());
     entry.put("supportsWildcards", definition.supportsWildcards());
     entry.put("columnSelectable", definition.columnSelectable());
     entry.put("sortable", false);
     entry.put("source", Map.of("id", definition.sourceId(), "label", definition.sourceLabel()));
     entry.put("options", definition.options());
     return entry;
-  }
-
-  private static String token(Operator operator) {
-    return switch (operator) {
-      case EQUAL -> "==";
-      case NOT_EQUAL -> "!=";
-      case GREATER_THAN -> "=gt=";
-      case GREATER_THAN_OR_EQUAL -> "=ge=";
-      case LESS_THAN -> "=lt=";
-      case LESS_THAN_OR_EQUAL -> "=le=";
-      case IN -> "=in=";
-      case NOT_IN -> "=out=";
-      case CONTAINS -> "=contains=";
-      case LIKE -> "=like=";
-      case EXISTS -> "=exists=";
-    };
   }
 
   @GetMapping("/{resource}/count")
