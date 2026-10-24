@@ -12,12 +12,16 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/modules/comm
 import { UserBadge } from "@/modules/common/ui/user-badge";
 import { type BookingEventPeriod, fetchBookableItemEvents } from "./bookableItemEvents";
 
-type BookingEventListProps = {
+export type BookingEventListProps = {
   globalId: string;
   timezone: string;
   period: BookingEventPeriod;
   cutoff: string;
 };
+
+export function BookingEventList(props: BookingEventListProps) {
+  return <BookingEventTable {...props} key={`${props.globalId}:${props.period}:${props.cutoff}`} />;
+}
 
 function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventListProps) {
   const { t, i18n } = useTranslation("booking");
@@ -65,7 +69,6 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             name: "kind",
             type: "text",
             labelKey: "booking:bookableItemDetails.events.kind",
-            label: t("bookableItemDetails.events.kind"),
             list: {
               width: 180,
               renderCell: ({ row }) =>
@@ -77,7 +80,6 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
             type: "text",
             nullable: true,
             labelKey: "booking:bookableItemDetails.events.actor",
-            label: t("bookableItemDetails.events.actor"),
             list: {
               width: 220,
               renderCell: ({ row }) => {
@@ -201,8 +203,4 @@ function BookingEventTable({ globalId, timezone, period, cutoff }: BookingEventL
       rowActions={rowActions}
     />
   );
-}
-
-export function BookingEventList(props: BookingEventListProps) {
-  return <BookingEventTable {...props} key={`${props.globalId}:${props.period}:${props.cutoff}`} />;
 }

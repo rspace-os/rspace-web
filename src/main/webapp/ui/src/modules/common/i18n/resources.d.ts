@@ -910,6 +910,7 @@ export default interface Resources {
         "lastDays": "{count, plural, one {Last # day} other {Last # days}}",
         "next": "Next",
         "nextPage": "Next, page {page, number}",
+        "onBehalfOf": "On behalf of {name}",
         "page": "Page {page, number} of {totalPages, number}",
         "pagination": "Audit event pages",
         "period": "Period",
@@ -5116,6 +5117,7 @@ export default interface Resources {
       },
       "showRightPanel": "Show right panel",
       "sidebar": {
+        "bookingSystem": "Booking System",
         "exportData": "Export Data",
         "igsnIds": "IGSN IDs",
         "itemsListLabel": "List existing Inventory items",

@@ -12,6 +12,8 @@ export function setupCalendarScrollTo() {
 }
 
 export function setupCalendarBookableItems() {
+  // The calendar keeps its search in the document URL, so a search typed in one test must not seed the next.
+  window.history.replaceState(null, "", "/");
   server.use(...bookableItemsHandlers(() => undefined));
 }
 
