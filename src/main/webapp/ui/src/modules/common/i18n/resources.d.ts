@@ -6045,7 +6045,6 @@ export default interface Resources {
         "separatorRequired": "Expected base64 web image string to contain a comma."
       },
       "inventoryField": {
-        "extraNumberInvalid": "''{0}'' cannot be parsed into number",
         "invalidData": "{0}",
         "invalidDate": "{0} is an invalid date format. Valid format is yyyy-MM-dd.",
         "invalidForFieldType": "[{0}] is invalid for field type {1}: {2}",
@@ -7233,6 +7232,7 @@ export default interface Resources {
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "notFound": "No inventory entity field with id: {0}",
+          "numberInvalid": "''{0}'' is not a valid number or exceeds the supported precision and range.",
           "validation": "{0}"
         },
         "file": {
