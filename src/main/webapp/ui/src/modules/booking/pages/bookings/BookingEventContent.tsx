@@ -22,6 +22,10 @@ import { BookingEventSkeleton } from "./BookingEventSkeleton";
 import { BookingMetadataAside } from "./BookingMetadataAside";
 import { DeleteBookingDialog } from "./DeleteBookingDialog";
 
+const isPermanentBookingError = (error: unknown) =>
+  error instanceof BookingUnavailableError ||
+  (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500);
+
 export function BookingEventContent() {
   const { t } = useTranslation(["booking", "common"]);
   const { id } = useParams({ from: "/booking/calendar/bookings/$id" });
@@ -40,11 +44,7 @@ export function BookingEventContent() {
     queryKey: ["api-v2", "bookings", bookingId],
     enabled: validBookingId && Boolean(token),
     queryFn: ({ signal }) => fetchBooking(bookingId, token, signal),
-    retry: (failureCount, error) => {
-      if (error instanceof BookingUnavailableError) return false;
-      if (error instanceof ApiV2ProblemError && error.status >= 400 && error.status < 500) return false;
-      return failureCount < 2;
-    },
+    retry: (failureCount, error) => failureCount < 2 && !isPermanentBookingError(error),
   });
   const editing = pathname.endsWith("/edit");
   const bookingItem = useBookableItemConfiguration(
@@ -65,10 +65,7 @@ export function BookingEventContent() {
   );
 
   if (!validBookingId || booking.isError || (!booking.isPending && !booking.data)) {
-    const transportFailure =
-      booking.isError &&
-      !(booking.error instanceof BookingUnavailableError) &&
-      !(booking.error instanceof ApiV2ProblemError && booking.error.status >= 400 && booking.error.status < 500);
+    const transportFailure = booking.isError && !isPermanentBookingError(booking.error);
     return (
       <main className="p-4 sm:p-8">
         <Empty className="border">
@@ -143,10 +140,10 @@ export function BookingEventContent() {
               ) : undefined
             }
           >
-            {canViewItem && target.value.parentContainerName && target.value.parentContainerGlobalId ? (
+            {canViewItem && document.location ? (
               <InventoryLocationLink
-                name={target.value.parentContainerName}
-                globalId={target.value.parentContainerGlobalId}
+                name={document.location.value.name}
+                globalId={document.location.value.globalId}
                 compact
               />
             ) : null}

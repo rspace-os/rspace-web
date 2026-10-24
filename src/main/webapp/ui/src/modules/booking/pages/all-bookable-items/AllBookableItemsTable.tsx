@@ -24,7 +24,14 @@ import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { TooltipIconLink } from "@/modules/common/ui/tooltip-icon-link";
 import { cn } from "@/modules/common/utils/cn";
-import { type AllBookableItem, AvailabilityCandidateLimitError, withAvailability } from "./availabilityQuickFilters";
+import { ArchiveBookableItemDialog } from "../bookable-items/ArchiveBookableItemDialog";
+import { BookingConfigurationActionsMenu } from "../bookable-items/BookingConfigurationActionsMenu";
+import {
+  archiveBookingConfiguration,
+  permanentlyDeleteBookingConfiguration,
+} from "../bookable-items/bookingConfiguration";
+import { PermanentDeleteBookableItemDialog } from "../bookable-items/PermanentDeleteBookableItemDialog";
+import { type AllBookableItem, withAvailability } from "./availabilityQuickFilters";
 import type { useAllBookableItemsData } from "./useAllBookableItemsData";
 
 type AllBookableItemsTableProps = Omit<
@@ -33,11 +40,17 @@ type AllBookableItemsTableProps = Omit<
   | "invalidFilter"
   | "catalogue"
   | "runtimeFieldState"
-  | "selectedNotificationIds"
+  | "bulkMutation"
+  | "failedBulkAction"
   | "notificationSubscriptionMutation"
+  | "rows"
+  | "selectedRowIds"
+  | "selectionPending"
+  | "setFailedBulkAction"
 > & {
   types?: readonly string[];
   mine: boolean;
+  directSysadmin: boolean;
   tableProps: TableListProps<AllBookableItem>;
   setDate: (nextDate: string) => void;
   resetView: () => void;
@@ -49,25 +62,26 @@ export function AllBookableItemsTable({
   userToday,
   selectedDate,
   filters,
-  runtimeFilterBlocked,
   quickMode,
-  quickFilterText,
-  bounds,
-  quickIndex,
-  quickFilterPending,
-  quickFilterError,
-  rows,
   hasNoBookableItems,
-  setSelectedNotificationIds,
+  setSelectedRowIds,
   notificationFeedback,
-  useQuickAvailability,
   availability,
   types,
   mine,
+  directSysadmin,
   tableProps,
   setDate,
   resetView,
   setFilters,
+  canAdd,
+  counts,
+  minute,
+  onLifecycleChanged,
+  rowsBounds,
+  rowsDate,
+  token,
+  quickFilterText,
 }: AllBookableItemsTableProps) {
   const { t } = useTranslation("booking");
   const navigate = useNavigate({ from: "/booking/all-items/" });
@@ -75,15 +89,14 @@ export function AllBookableItemsTable({
     () => ({
       id: "actions",
       label: t("allBookableItems.fields.actions"),
-      width: 176,
-      minWidth: 120,
-      renderCell: ({ row }) => {
+      width: 224,
+      minWidth: 176,
+      renderCell: ({ row, activate }) => {
         if (!row.target) return null;
-        const rowDate = quickMode ? (quickIndex.data?.get(row.target.globalId)?.date ?? selectedDate) : selectedDate;
         const detailsLabel = t("allBookableItems.actions.viewDetails");
         const bookLabel = t("allBookableItems.actions.book");
         return (
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
             <TooltipIconLink label={detailsLabel} icon={<EyeIcon aria-hidden="true" />}>
               <Link
                 aria-label={detailsLabel}
@@ -100,7 +113,7 @@ export function AllBookableItemsTable({
                   className={buttonVariants({ variant: "outline", size: "icon-lg" })}
                   data-slot="button"
                   to="/booking/calendar/bookings/add"
-                  search={{ date: rowDate, target: row.target.globalId }}
+                  search={{ date: rowsDate, target: row.target.globalId }}
                 />
               </TooltipIconLink>
             ) : null}
@@ -119,19 +132,45 @@ export function AllBookableItemsTable({
                 />
               </TooltipIconLink>
             ) : null}
+            {/* The Administration lifecycle actions; listed items are always active, so never Restore. */}
+            <BookingConfigurationActionsMenu
+              configuration={row}
+              itemName={row.target.value.name}
+              directSysadmin={directSysadmin}
+              // The neighbouring links render borderless at 40 px.
+              triggerClassName="min-h-10 min-w-10 border-transparent"
+              onAction={activate}
+            />
           </div>
         );
       },
-      renderInteraction: () => null,
+      renderInteraction: ({ actionId, row, close }) =>
+        actionId === "archive" ? (
+          <ArchiveBookableItemDialog
+            configuration={row}
+            close={close}
+            onArchive={(id, version) => archiveBookingConfiguration(id, version, token)}
+            onArchived={(id) => onLifecycleChanged([id])}
+          />
+        ) : actionId === "permanent-delete" ? (
+          <PermanentDeleteBookableItemDialog
+            configuration={row}
+            close={close}
+            onDelete={(id, version) => permanentlyDeleteBookingConfiguration(id, version, token)}
+            onDeleted={() => onLifecycleChanged([row.id], true)}
+          />
+        ) : null,
     }),
-    [quickIndex.data, quickMode, selectedDate, t],
+    [directSysadmin, onLifecycleChanged, rowsDate, t, token],
   );
 
   const availabilityFilters: TableListFilterButtons = {
     legend: t("allBookableItems.quickFilters.legend"),
+    align: "end",
     controlsOnSeparateRow: true,
     controls: (
       <BookingDateControls
+        className="mr-auto"
         date={selectedDate}
         today={userToday}
         timeZone={preferences.timeZone}
@@ -154,7 +193,7 @@ export function AllBookableItemsTable({
         icon: <PackageCheckIcon aria-hidden="true" />,
         pressed: mine,
         onClick: () => {
-          setSelectedNotificationIds(new Set());
+          setSelectedRowIds(new Set());
           void navigate({
             search: (current) => ({ ...current, mine: mine ? undefined : true, page: undefined }),
             replace: true,
@@ -173,10 +212,14 @@ export function AllBookableItemsTable({
                 aria-hidden="true"
                 className="ml-0.5 min-w-5 rounded-sm bg-foreground px-1 text-[10px] text-background"
               >
-                {quickIndex.isError ? (
+                {counts.isError ? (
                   "—"
-                ) : quickIndex.data ? (
-                  [...quickIndex.data.values()].filter(({ category }) => category === mode).length
+                ) : counts.data ? (
+                  mode === "available-now" ? (
+                    counts.data.availableNow
+                  ) : (
+                    counts.data.freeLaterToday
+                  )
                 ) : (
                   <Skeleton className="h-3 w-3" />
                 )}
@@ -186,7 +229,6 @@ export function AllBookableItemsTable({
           description: text.description,
           icon: mode === "available-now" ? <Clock3Icon aria-hidden="true" /> : <CalendarClockIcon aria-hidden="true" />,
           pressed: quickMode === mode,
-          disabled: quickIndex.error instanceof AvailabilityCandidateLimitError && quickMode !== mode,
           onClick: () =>
             setFilters({
               ...filters,
@@ -205,20 +247,12 @@ export function AllBookableItemsTable({
           {t("allBookableItems.quickFilters.loading")}
         </p>
       ) : null}
-      {quickIndex.isError ? (
+      {counts.isError ? (
         <div role="alert" className="flex items-center gap-3">
-          <span>
-            {t(
-              quickIndex.error instanceof AvailabilityCandidateLimitError
-                ? "allBookableItems.quickFilters.limit"
-                : "allBookableItems.quickFilters.error",
-            )}
-          </span>
-          {quickIndex.error instanceof AvailabilityCandidateLimitError ? null : (
-            <Button type="button" variant="outline" onClick={() => void quickIndex.refetch()}>
-              {t("allBookableItems.quickFilters.retry")}
-            </Button>
-          )}
+          <span>{t("allBookableItems.quickFilters.error")}</span>
+          <Button type="button" variant="outline" onClick={() => void counts.refetch()}>
+            {t("allBookableItems.quickFilters.retry")}
+          </Button>
         </div>
       ) : null}
       {notificationFeedback ? (
@@ -235,7 +269,6 @@ export function AllBookableItemsTable({
         {...tableProps}
         headingClassName="text-2xl font-semibold"
         onReset={resetView}
-        rows={runtimeFilterBlocked || quickFilterPending || quickFilterError ? [] : rows}
         filterButtons={availabilityFilters}
         presentations={{ table: "wide", cards: "narrow" }}
         uiColumns={[
@@ -260,25 +293,7 @@ export function AllBookableItemsTable({
                     }
                   : {}),
               };
-              const quickEntry = quickIndex.data?.get(target.globalId);
-              if (quickMode || (useQuickAvailability && quickEntry)) {
-                if (!quickEntry) return t("calendar.availabilityUnavailable");
-                return (
-                  <AvailabilityBar
-                    intervals={quickEntry.intervals}
-                    periodStart={new Date(quickEntry.bounds.start)}
-                    periodEnd={new Date(quickEntry.bounds.end)}
-                    now={quickIndex.now}
-                    showBookingContextDetails={false}
-                    showCurrentAvailability
-                    showPeriodLabels
-                    timeZone={preferences.timeZone}
-                    instrumentTimeZone={row.timezone}
-                    item={item}
-                  />
-                );
-              }
-              if ((useQuickAvailability && quickIndex.isPending) || availability.isPending)
+              if (availability.isPending)
                 return (
                   <div aria-busy="true">
                     <span role="status" className="sr-only">
@@ -293,9 +308,9 @@ export function AllBookableItemsTable({
               return (
                 <AvailabilityBar
                   intervals={availability.data.get(target.globalId) ?? []}
-                  periodStart={new Date(bounds.start)}
-                  periodEnd={new Date(bounds.end)}
-                  now={selectedDate === userToday ? quickIndex.now : undefined}
+                  periodStart={new Date(rowsBounds.start)}
+                  periodEnd={new Date(rowsBounds.end)}
+                  now={rowsDate === userToday ? new Date(minute) : undefined}
                   showBookingContextDetails={false}
                   showCurrentAvailability
                   showPeriodLabels
@@ -311,16 +326,23 @@ export function AllBookableItemsTable({
         emptyDescription={
           hasNoBookableItems ? (
             <>
-              {t("bookableItems.primer.description")}{" "}
-              <Link to="/booking/bookable-items/add">{t("bookableItems.addTitle")}</Link>
+              {t("bookableItems.primer.description")}
+              {canAdd && (
+                <>
+                  {" "}
+                  <Link to="/booking/bookable-items/add">{t("bookableItems.addTitle")}</Link>
+                </>
+              )}
             </>
           ) : undefined
         }
         createAction={
-          <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
-            <PlusIcon aria-hidden="true" data-icon="inline-start" />
-            {t("bookableItems.actions.add")}
-          </Link>
+          canAdd ? (
+            <Link to="/booking/bookable-items/add" className={cn(buttonVariants(), "rounded-sm")} data-slot="button">
+              <PlusIcon aria-hidden="true" data-icon="inline-start" />
+              {t("bookableItems.actions.add")}
+            </Link>
+          ) : undefined
         }
       />
     </main>

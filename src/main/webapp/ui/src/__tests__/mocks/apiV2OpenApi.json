@@ -838,6 +838,52 @@
               "description" : "A logged-in session is required."
             }
           },
+          "location" : {
+            "anyOf" : [ {
+              "oneOf" : [ {
+                "allOf" : [ {
+                  "$ref" : "#/components/schemas/BookingLocationsReference"
+                }, {
+                  "properties" : {
+                    "globalId" : {
+                      "example" : "IC1",
+                      "pattern" : "^IC\\d+$",
+                      "type" : "string"
+                    }
+                  },
+                  "required" : [ "globalId" ],
+                  "type" : "object"
+                } ]
+              }, {
+                "properties" : {
+                  "globalId" : {
+                    "example" : "IC1",
+                    "pattern" : "^IC\\d+$",
+                    "type" : "string"
+                  },
+                  "relationTo" : {
+                    "const" : "booking-locations",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "$ref" : "#/components/schemas/BookingLocationsRead"
+                  }
+                },
+                "required" : [ "globalId", "relationTo", "value" ],
+                "type" : "object"
+              } ]
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "Filter-only: the bookable item's immediate Inventory parent Container or workbench, matched only where the caller may read it. Address a workbench as IC plus its ID. Responses render null; the booking catalogue returns each item's readable location.",
+            "readOnly" : true,
+            "title" : "Location",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
           "maxBookingDurationMinutes" : {
             "description" : "Maximum elapsed minutes for one booking, where 0 disables the item limit.",
             "example" : 120,
@@ -1819,6 +1865,70 @@
         "required" : [ "relationTo", "value" ],
         "type" : "object"
       },
+      "BookingLocationsRead" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "globalId" : {
+            "description" : "Container or workbench global identifier.",
+            "example" : "IC12",
+            "readOnly" : true,
+            "title" : "Global ID",
+            "type" : "string",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "id" : {
+            "description" : "Container identifier.",
+            "example" : 12,
+            "format" : "int64",
+            "readOnly" : true,
+            "title" : "Location ID",
+            "type" : "integer",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "name" : {
+            "description" : "Container name.",
+            "example" : "Cold room",
+            "maxLength" : 255,
+            "readOnly" : true,
+            "title" : "Name",
+            "type" : "string",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          }
+        },
+        "required" : [ "id" ],
+        "type" : "object",
+        "x-rspace-access" : {
+          "authentication" : "AUTHENTICATED",
+          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+          "description" : "A logged-in session is required."
+        }
+      },
+      "BookingLocationsReference" : {
+        "properties" : {
+          "relationTo" : {
+            "const" : "booking-locations",
+            "type" : "string"
+          },
+          "value" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "relationTo", "value" ],
+        "type" : "object"
+      },
       "BookingOwnerHealth" : {
         "properties" : {
           "hasEffectiveOwner" : {
@@ -1974,6 +2084,52 @@
           "kind" : {
             "enum" : [ "BOOKING", "MAINTENANCE" ],
             "type" : "string",
+            "x-rspace-access" : {
+              "authentication" : "AUTHENTICATED",
+              "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
+              "description" : "A logged-in session is required."
+            }
+          },
+          "location" : {
+            "anyOf" : [ {
+              "oneOf" : [ {
+                "allOf" : [ {
+                  "$ref" : "#/components/schemas/BookingLocationsReference"
+                }, {
+                  "properties" : {
+                    "globalId" : {
+                      "example" : "IC1",
+                      "pattern" : "^IC\\d+$",
+                      "type" : "string"
+                    }
+                  },
+                  "required" : [ "globalId" ],
+                  "type" : "object"
+                } ]
+              }, {
+                "properties" : {
+                  "globalId" : {
+                    "example" : "IC1",
+                    "pattern" : "^IC\\d+$",
+                    "type" : "string"
+                  },
+                  "relationTo" : {
+                    "const" : "booking-locations",
+                    "type" : "string"
+                  },
+                  "value" : {
+                    "$ref" : "#/components/schemas/BookingLocationsRead"
+                  }
+                },
+                "required" : [ "globalId", "relationTo", "value" ],
+                "type" : "object"
+              } ]
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "The bookable item's immediate Inventory parent Container or workbench, rendered and matched only where the caller may read it; otherwise null. Address a workbench as IC plus its ID.",
+            "readOnly" : true,
+            "title" : "Location",
             "x-rspace-access" : {
               "authentication" : "AUTHENTICATED",
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
@@ -3218,6 +3374,27 @@
                 },
                 "wildcards" : false
               },
+              "location" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "picker" : {
+                  "globalIdPrefix" : "IC",
+                  "identity" : "globalId",
+                  "resource" : "booking-locations"
+                },
+                "schema" : {
+                  "description" : "RSpace global identifier.",
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
+              "location.value" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
               "maxBookingDurationMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
@@ -3411,6 +3588,35 @@
                 "type" : "string"
               },
               "wildcards" : true
+            },
+            "location.globalId" : {
+              "operators" : [ ],
+              "schema" : {
+                "type" : "string"
+              },
+              "title" : "Global ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.id" : {
+              "operators" : [ ],
+              "schema" : {
+                "format" : "int64",
+                "type" : "integer"
+              },
+              "title" : "Location ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.name" : {
+              "operators" : [ ],
+              "schema" : {
+                "maxLength" : 255,
+                "type" : "string"
+              },
+              "title" : "Name",
+              "viaTitle" : "Location",
+              "wildcards" : false
             },
             "target.deleted" : {
               "operators" : [ "==" ],
@@ -3747,6 +3953,27 @@
                 },
                 "wildcards" : false
               },
+              "location" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "picker" : {
+                  "globalIdPrefix" : "IC",
+                  "identity" : "globalId",
+                  "resource" : "booking-locations"
+                },
+                "schema" : {
+                  "description" : "RSpace global identifier.",
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
+              "location.value" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
               "maxBookingDurationMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
@@ -3941,6 +4168,35 @@
               },
               "wildcards" : true
             },
+            "location.globalId" : {
+              "operators" : [ ],
+              "schema" : {
+                "type" : "string"
+              },
+              "title" : "Global ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.id" : {
+              "operators" : [ ],
+              "schema" : {
+                "format" : "int64",
+                "type" : "integer"
+              },
+              "title" : "Location ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.name" : {
+              "operators" : [ ],
+              "schema" : {
+                "maxLength" : 255,
+                "type" : "string"
+              },
+              "title" : "Name",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
             "target.deleted" : {
               "operators" : [ "==" ],
               "schema" : {
@@ -4115,6 +4371,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "users" : {
                 "type" : "string"
               }
@@ -4123,8 +4382,9 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
+            "booking-locations" : [ "id", "globalId", "name" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -4144,6 +4404,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "users" : {
                 "type" : "string"
               }
@@ -4152,8 +4415,9 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
+            "booking-locations" : [ "id", "globalId", "name" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -4405,6 +4669,27 @@
                 },
                 "wildcards" : false
               },
+              "location" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "picker" : {
+                  "globalIdPrefix" : "IC",
+                  "identity" : "globalId",
+                  "resource" : "booking-locations"
+                },
+                "schema" : {
+                  "description" : "RSpace global identifier.",
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
+              "location.value" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
               "maxBookingDurationMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
@@ -4598,6 +4883,35 @@
                 "type" : "string"
               },
               "wildcards" : true
+            },
+            "location.globalId" : {
+              "operators" : [ ],
+              "schema" : {
+                "type" : "string"
+              },
+              "title" : "Global ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.id" : {
+              "operators" : [ ],
+              "schema" : {
+                "format" : "int64",
+                "type" : "integer"
+              },
+              "title" : "Location ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.name" : {
+              "operators" : [ ],
+              "schema" : {
+                "maxLength" : 255,
+                "type" : "string"
+              },
+              "title" : "Name",
+              "viaTitle" : "Location",
+              "wildcards" : false
             },
             "target.deleted" : {
               "operators" : [ "==" ],
@@ -5295,6 +5609,27 @@
                 },
                 "wildcards" : false
               },
+              "location" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "picker" : {
+                  "globalIdPrefix" : "IC",
+                  "identity" : "globalId",
+                  "resource" : "booking-locations"
+                },
+                "schema" : {
+                  "description" : "RSpace global identifier.",
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
+              "location.value" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
               "maxBookingDurationMinutes" : {
                 "operators" : [ "!=", "==", "=ge=", "=gt=", "=in=", "=le=", "=lt=", "=out=" ],
                 "schema" : {
@@ -5488,6 +5823,35 @@
                 "type" : "string"
               },
               "wildcards" : true
+            },
+            "location.globalId" : {
+              "operators" : [ ],
+              "schema" : {
+                "type" : "string"
+              },
+              "title" : "Global ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.id" : {
+              "operators" : [ ],
+              "schema" : {
+                "format" : "int64",
+                "type" : "integer"
+              },
+              "title" : "Location ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.name" : {
+              "operators" : [ ],
+              "schema" : {
+                "maxLength" : 255,
+                "type" : "string"
+              },
+              "title" : "Name",
+              "viaTitle" : "Location",
+              "wildcards" : false
             },
             "target.deleted" : {
               "operators" : [ "==" ],
@@ -6310,6 +6674,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "users" : {
                 "type" : "string"
               }
@@ -6318,8 +6685,9 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
+            "booking-locations" : [ "id", "globalId", "name" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -6339,6 +6707,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "users" : {
                 "type" : "string"
               }
@@ -6347,8 +6718,9 @@
           },
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
-            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "createdBy", "updatedBy" ],
+            "booking-configurations" : [ "id", "enabled", "state", "timezone", "slotGranularityMinutes", "openingHours", "bufferBeforeMinutes", "bufferAfterMinutes", "maxBookingDurationMinutes", "allowDoubleBooking", "configurationVersion", "createdByName", "effectiveRole", "roleSources", "capabilities", "ownerHealth", "createdAt", "updatedAt", "target", "location", "createdBy", "updatedBy" ],
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
+            "booking-locations" : [ "id", "globalId", "name" ],
             "users" : [ "id", "username", "firstName", "lastName", "email", "createdAt" ]
           },
           "x-rspace-comma-separated-values" : true,
@@ -7369,6 +7741,27 @@
                 },
                 "wildcards" : false
               },
+              "location" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "picker" : {
+                  "globalIdPrefix" : "IC",
+                  "identity" : "globalId",
+                  "resource" : "booking-locations"
+                },
+                "schema" : {
+                  "description" : "RSpace global identifier.",
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
+              "location.value" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
               "purpose" : {
                 "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
                 "schema" : {
@@ -7467,6 +7860,35 @@
             }
           },
           "x-rspace-relationship-fields" : {
+            "location.globalId" : {
+              "operators" : [ ],
+              "schema" : {
+                "type" : "string"
+              },
+              "title" : "Global ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.id" : {
+              "operators" : [ ],
+              "schema" : {
+                "format" : "int64",
+                "type" : "integer"
+              },
+              "title" : "Location ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.name" : {
+              "operators" : [ ],
+              "schema" : {
+                "maxLength" : 255,
+                "type" : "string"
+              },
+              "title" : "Name",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
             "target.deleted" : {
               "operators" : [ "==" ],
               "schema" : {
@@ -7590,6 +8012,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "bookings" : {
                 "type" : "string"
               }
@@ -7599,7 +8024,8 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ]
+            "booking-locations" : [ "id", "globalId", "name" ],
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "exclude"
@@ -7615,6 +8041,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "bookings" : {
                 "type" : "string"
               }
@@ -7624,7 +8053,8 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ]
+            "booking-locations" : [ "id", "globalId", "name" ],
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "fields"
@@ -7996,6 +8426,27 @@
                 },
                 "wildcards" : false
               },
+              "location" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "picker" : {
+                  "globalIdPrefix" : "IC",
+                  "identity" : "globalId",
+                  "resource" : "booking-locations"
+                },
+                "schema" : {
+                  "description" : "RSpace global identifier.",
+                  "type" : "string"
+                },
+                "wildcards" : false
+              },
+              "location.value" : {
+                "operators" : [ "!=", "==", "=exists=", "=in=", "=out=" ],
+                "schema" : {
+                  "format" : "int64",
+                  "type" : "integer"
+                },
+                "wildcards" : false
+              },
               "purpose" : {
                 "operators" : [ "!=", "==", "=contains=", "=exists=", "=in=", "=like=", "=out=" ],
                 "schema" : {
@@ -8094,6 +8545,35 @@
             }
           },
           "x-rspace-relationship-fields" : {
+            "location.globalId" : {
+              "operators" : [ ],
+              "schema" : {
+                "type" : "string"
+              },
+              "title" : "Global ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.id" : {
+              "operators" : [ ],
+              "schema" : {
+                "format" : "int64",
+                "type" : "integer"
+              },
+              "title" : "Location ID",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
+            "location.name" : {
+              "operators" : [ ],
+              "schema" : {
+                "maxLength" : 255,
+                "type" : "string"
+              },
+              "title" : "Name",
+              "viaTitle" : "Location",
+              "wildcards" : false
+            },
             "target.deleted" : {
               "operators" : [ "==" ],
               "schema" : {
@@ -8349,6 +8829,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "bookings" : {
                 "type" : "string"
               }
@@ -8358,7 +8841,8 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ]
+            "booking-locations" : [ "id", "globalId", "name" ],
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "exclude"
@@ -8374,6 +8858,9 @@
               "booking-instruments" : {
                 "type" : "string"
               },
+              "booking-locations" : {
+                "type" : "string"
+              },
               "bookings" : {
                 "type" : "string"
               }
@@ -8383,7 +8870,8 @@
           "style" : "deepObject",
           "x-rspace-allowed-fields" : {
             "booking-instruments" : [ "id", "globalId", "name", "deleted" ],
-            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target" ]
+            "booking-locations" : [ "id", "globalId", "name" ],
+            "bookings" : [ "id", "version", "timezone", "requesterId", "kind", "start", "end", "state", "purpose", "bookedBy", "createdBy", "privacy", "canEdit", "canCancel", "canViewConfiguration", "createdAt", "updatedAt", "target", "location" ]
           },
           "x-rspace-comma-separated-values" : true,
           "x-rspace-mutually-exclusive-with" : "fields"

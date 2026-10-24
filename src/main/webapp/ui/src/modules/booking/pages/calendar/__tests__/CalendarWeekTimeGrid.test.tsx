@@ -25,10 +25,9 @@ function booking(id: number, start: string, end: string, name = "Confocal micros
         ...target.value,
         id: 100 + id,
         name,
-        parentContainerName: null,
-        parentContainerGlobalId: null,
       },
     },
+    location: null,
     start,
     end,
   };

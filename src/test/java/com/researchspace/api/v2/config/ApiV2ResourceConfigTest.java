@@ -21,7 +21,7 @@ import com.researchspace.api.v2.resource.ApiV2ResourceSpec;
 import com.researchspace.api.v2.resource.ResourceOperations;
 import com.researchspace.api.v2.user.UserResourceOperations;
 import com.researchspace.booking.api.v2.BookingConfigurationResourceOperations;
-import com.researchspace.booking.api.v2.BookingInstrumentRelationshipOperations;
+import com.researchspace.booking.api.v2.BookingRelationshipTargetOperations;
 import com.researchspace.booking.api.v2.TimeSlotBookingResourceOperations;
 import com.researchspace.booking.config.BookingResourceAccessConfiguration;
 import com.researchspace.booking.config.BookingTimeConfig;
@@ -188,31 +188,6 @@ class ApiV2ResourceConfigTest {
     assertDoesNotThrow(() -> endpoints.authorize(get, list, null));
   }
 
-  @Test
-  void wiresRegistrationsIntoTheGenericController() {
-    try (AnnotationConfigApplicationContext context = newContext()) {
-      context.register(ApiV2ResourceConfig.class, ApiV2CrudController.class);
-      context.refresh();
-
-      assertTrue(context.containsBean("maintenanceApiV2Resource"));
-      assertTrue(context.containsBean("userApiV2Resource"));
-      assertTrue(context.containsBean("timeSlotBookingApiV2Resource"));
-      assertNotNull(context.getBean(ApiV2CrudController.class));
-      assertEquals(
-          List.of(
-              "booking-configurations",
-              "booking-instruments",
-              "bookings",
-              "instruments",
-              "maintenances",
-              "users"),
-          context.getBean(ApiV2ResourceCatalog.class).registry().resources().stream()
-              .map(CollectionDescription::resourceName)
-              .sorted()
-              .toList());
-    }
-  }
-
   /**
    * The point of flat aggregation: a resource spec declared in a separate configuration, with no
    * edit to {@link ApiV2ResourceConfig}, reaches both the registry and the generic controller.
@@ -230,6 +205,7 @@ class ApiV2ResourceConfigTest {
           List.of(
               "booking-configurations",
               "booking-instruments",
+              "booking-locations",
               "bookings",
               "instruments",
               "maintenances",
@@ -277,6 +253,9 @@ class ApiV2ResourceConfigTest {
         () -> mock(BookingConfigurationTargetManager.class));
     context.registerBean(TimeSlotBookingManager.class, () -> mock(TimeSlotBookingManager.class));
     context.registerBean(
+        com.researchspace.booking.service.BookingLocationFilterManager.class,
+        () -> mock(com.researchspace.booking.service.BookingLocationFilterManager.class));
+    context.registerBean(
         InstrumentEntityApiManager.class, () -> mock(InstrumentEntityApiManager.class));
     InstrumentCustomFieldManager customFields = mock(InstrumentCustomFieldManager.class);
     // The generated OpenAPI document reads both from the real manager.
@@ -300,7 +279,7 @@ class ApiV2ResourceConfigTest {
     context.register(
         BookingTimeConfig.class,
         BookingConfigurationResourceOperations.class,
-        BookingInstrumentRelationshipOperations.class,
+        BookingRelationshipTargetOperations.class,
         TimeSlotBookingResourceOperations.class,
         InstrumentResourceOperations.class,
         MaintenanceResourceOperations.class,

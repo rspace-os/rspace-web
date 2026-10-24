@@ -11,6 +11,7 @@ import {
   BOOKING_CONFIGURATION_READ_FIELDS,
   type BookingConfiguration,
   type BookingConfigurationUpdateInput,
+  invalidateBookingCatalogueQueries,
   permanentlyDeleteBookingConfiguration,
   restoreBookingConfiguration,
 } from "./bookingConfiguration";
@@ -87,7 +88,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+        invalidateBookingCatalogueQueries(queryClient),
       ]);
       setSaveAnnouncement("saved");
       setStaleEdit(false);
@@ -162,7 +163,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
-        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+        invalidateBookingCatalogueQueries(queryClient),
       ]);
       void navigate({ to: "/booking", ignoreBlocker: true });
     },

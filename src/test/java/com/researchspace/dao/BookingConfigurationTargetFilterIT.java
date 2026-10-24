@@ -16,6 +16,7 @@ import com.researchspace.dao.query.CollectionQueryExecutor;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -360,7 +361,8 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
         List.of(
             ApiV2BookingConfigurationResource.DESCRIPTION,
             ApiV2UserResource.DESCRIPTION,
-            bookingTarget));
+            bookingTarget,
+            ApiV2BookingLocationResource.DESCRIPTION));
   }
 
   private static CollectionDescription<BookingConfiguration> bookingConfigurations(
@@ -392,7 +394,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
             Map.of(selector, "configuration")));
   }
 
-  private static ResourceRequest narrowedByTargetName(String term, List<Long> instrumentIds) {
+  private static ResourceRequest byTargetNameAndIds(String term, List<Long> instrumentIds) {
     return targetNameRequest(
         new FilterExpression.Comparison("target.name", Operator.LIKE, List.of(term), false),
         instrumentIds);
@@ -586,7 +588,7 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
   }
 
   @Test
-  void narrowingByTargetIdsPrunesWithoutLosingTheTargetReadRule() {
+  void combinesTargetNameAndIdFiltersWithoutLosingTheTargetReadRule() {
     User owner = createInitAndLoginAnyUser();
     ApiInstrument confocal = createBasicInstrumentForUser(owner, "Confocal microscope");
     ApiInstrument centrifuge = createBasicInstrumentForUser(owner, "Centrifuge");
@@ -595,18 +597,18 @@ class BookingConfigurationTargetFilterIT extends SpringTransactionalTest {
     FilterExpression noInstrumentIsReadable = NO_INSTRUMENT_IS_READABLE;
 
     assertEquals(
-        1, count(narrowedByTargetName("confocal", List.of(confocal.getId())), targets(null)));
+        1, count(byTargetNameAndIds("confocal", List.of(confocal.getId())), targets(null)));
     assertEquals(
-        0, count(narrowedByTargetName("confocal", List.of(centrifuge.getId())), targets(null)));
+        0, count(byTargetNameAndIds("confocal", List.of(centrifuge.getId())), targets(null)));
     assertEquals(
         1,
         count(
-            narrowedByTargetName("confocal", List.of(confocal.getId(), centrifuge.getId())),
+            byTargetNameAndIds("confocal", List.of(confocal.getId(), centrifuge.getId())),
             targets(null)));
     assertEquals(
         0,
         count(
-            narrowedByTargetName("confocal", List.of(confocal.getId())),
+            byTargetNameAndIds("confocal", List.of(confocal.getId())),
             targets(noInstrumentIsReadable)));
   }
 }

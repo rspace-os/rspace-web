@@ -11,6 +11,7 @@ import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.model.User;
 import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2BookingLocationResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
@@ -87,7 +88,8 @@ class RuntimeFieldQueryTest {
                         .toList(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.idField(),
                     ApiV2BookingInstrumentResource.DESCRIPTION.defaultSort(),
-                    AccessPolicy.readOnly(readAccess)))),
+                    AccessPolicy.readOnly(readAccess)),
+                ApiV2BookingLocationResource.DESCRIPTION)),
         null);
   }
 
@@ -281,7 +283,8 @@ class RuntimeFieldQueryTest {
                 ApiV2BookingConfigurationResource.DESCRIPTION,
                 ApiV2BookingInstrumentResource.DESCRIPTION,
                 ApiV2UserResource.DESCRIPTION,
-                source));
+                source,
+                ApiV2BookingLocationResource.DESCRIPTION));
     var translator = new RsqlCollectionQuery(ApiV2BookingConfigurationResource.DESCRIPTION, "cfg");
     Predicate predicate =
         translator.translate(
