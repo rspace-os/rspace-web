@@ -329,7 +329,7 @@
             "type" : "boolean"
           },
           "subscriptionUrl" : {
-            "description" : "The newly issued subscription URL.",
+            "description" : "The caller's current subscription URL.",
             "format" : "uri",
             "type" : "string"
           },
@@ -348,7 +348,7 @@
             "type" : "boolean"
           },
           "subscriptionUrl" : {
-            "description" : "The current subscription URL, or null when inactive or awaiting migration.",
+            "description" : "The current subscription URL, or null when inactive.",
             "format" : "uri",
             "type" : [ "string", "null" ]
           },
@@ -5744,7 +5744,7 @@
         "tags" : [ "booking-calendar-subscriptions" ],
         "x-rspace-access" : {
           "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
-          "description" : "Authenticated active callers with Booking enabled; status and creation also require read access to the bookable item."
+          "description" : "Authenticated active callers with Booking enabled and read access to the bookable item."
         },
         "x-rspace-operation" : "CALENDAR_REVOKE"
       },
@@ -5812,13 +5812,121 @@
         "tags" : [ "booking-calendar-subscriptions" ],
         "x-rspace-access" : {
           "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
-          "description" : "Authenticated active callers with Booking enabled; status and creation also require read access to the bookable item."
+          "description" : "Authenticated active callers with Booking enabled and read access to the bookable item."
         },
         "x-rspace-operation" : "CALENDAR_STATUS"
       },
       "post" : {
-        "description" : "Replaces any active credential and returns the new subscription URL.",
-        "operationId" : "createOrReplaceBookingCalendarSubscription",
+        "description" : "Returns the caller's existing subscription URL unchanged, or issues one when none exists. Repeating the request is safe.",
+        "operationId" : "createBookingCalendarSubscription",
+        "parameters" : [ {
+          "description" : "Booking configuration identifier.",
+          "in" : "path",
+          "name" : "configurationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "The existing subscription URL, unchanged.",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "Prevents storage of caller-specific subscription state.",
+                "schema" : {
+                  "const" : "private, no-store",
+                  "type" : "string"
+                }
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingCalendarSubscriptionCreated"
+                }
+              }
+            },
+            "description" : "A newly issued subscription URL.",
+            "headers" : {
+              "Cache-Control" : {
+                "description" : "Prevents storage of caller-specific subscription state.",
+                "schema" : {
+                  "const" : "private, no-store",
+                  "type" : "string"
+                }
+              },
+              "ETag" : {
+                "$ref" : "#/components/headers/ETag"
+              }
+            }
+          },
+          "401" : {
+            "$ref" : "#/components/responses/Unauthenticated"
+          },
+          "403" : {
+            "$ref" : "#/components/responses/Forbidden"
+          },
+          "404" : {
+            "$ref" : "#/components/responses/NotFound"
+          },
+          "406" : {
+            "$ref" : "#/components/responses/NotAcceptable"
+          },
+          "409" : {
+            "content" : {
+              "application/problem+json" : {
+                "example" : {
+                  "code" : "errors.api.v2.bookingConfiguration.lifecycleConflict",
+                  "detail" : "The bookable item is archived.",
+                  "status" : 409,
+                  "title" : "The bookable item is archived."
+                },
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiV2Problem"
+                }
+              }
+            },
+            "description" : "The bookable item is archived."
+          },
+          "429" : {
+            "$ref" : "#/components/responses/TooManyRequests"
+          },
+          "500" : {
+            "$ref" : "#/components/responses/UnexpectedError"
+          }
+        },
+        "security" : [ {
+          "apiKey" : [ ]
+        }, {
+          "bearerAuth" : [ ]
+        } ],
+        "summary" : "Create a calendar subscription",
+        "tags" : [ "booking-calendar-subscriptions" ],
+        "x-rspace-access" : {
+          "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
+          "description" : "Authenticated active callers with Booking enabled and read access to the bookable item."
+        },
+        "x-rspace-operation" : "CALENDAR_CREATE"
+      }
+    },
+    "/api/v2/booking-configurations/{configurationId}/calendar-subscription/rotate" : {
+      "post" : {
+        "description" : "Issues a new subscription URL when If-Match carries the current status ETag. Calendars using the old URL stop updating.",
+        "operationId" : "rotateBookingCalendarSubscription",
         "parameters" : [ {
           "description" : "Booking configuration identifier.",
           "in" : "path",
@@ -5846,7 +5954,7 @@
                 }
               }
             },
-            "description" : "New subscription URL.",
+            "description" : "The new subscription URL.",
             "headers" : {
               "Cache-Control" : {
                 "description" : "Prevents storage of caller-specific subscription state.",
@@ -5880,12 +5988,12 @@
               "application/problem+json" : {
                 "examples" : {
                   "errors.api.v2.bookingCalendar.subscriptionConflict" : {
-                    "summary" : "The subscription changed since it was read.",
+                    "summary" : "The subscription is missing or changed since it was read.",
                     "value" : {
                       "code" : "errors.api.v2.bookingCalendar.subscriptionConflict",
-                      "detail" : "The subscription changed since it was read.",
+                      "detail" : "The subscription is missing or changed since it was read.",
                       "status" : 409,
-                      "title" : "The subscription changed since it was read."
+                      "title" : "The subscription is missing or changed since it was read."
                     }
                   },
                   "errors.api.v2.bookingConfiguration.lifecycleConflict" : {
@@ -5903,7 +6011,7 @@
                 }
               }
             },
-            "description" : "The bookable item is archived or the subscription changed since it was read."
+            "description" : "The bookable item is archived or the subscription is missing or changed since it was read."
           },
           "428" : {
             "content" : {
@@ -5933,13 +6041,13 @@
         }, {
           "bearerAuth" : [ ]
         } ],
-        "summary" : "Create or replace a calendar subscription",
+        "summary" : "Replace a calendar subscription URL",
         "tags" : [ "booking-calendar-subscriptions" ],
         "x-rspace-access" : {
           "denialReasonCodes" : [ "errors.api.v2.authenticationRequired", "errors.api.v2.forbidden" ],
-          "description" : "Authenticated active callers with Booking enabled; status and creation also require read access to the bookable item."
+          "description" : "Authenticated active callers with Booking enabled and read access to the bookable item."
         },
-        "x-rspace-operation" : "CALENDAR_CREATE"
+        "x-rspace-operation" : "CALENDAR_ROTATE"
       }
     },
     "/api/v2/booking-configurations/{id}" : {

@@ -12,7 +12,7 @@ const HttpUrlSchema = v.pipe(
 const ActiveCalendarSubscriptionStatusSchema = v.strictObject({
   active: v.literal(true),
   updatedAt: v.pipe(v.string(), v.isoTimestamp()),
-  subscriptionUrl: v.nullable(HttpUrlSchema),
+  subscriptionUrl: HttpUrlSchema,
 });
 
 const InactiveCalendarSubscriptionStatusSchema = v.strictObject({
@@ -26,10 +26,17 @@ export const CalendarSubscriptionStatusSchema = v.variant("active", [
   InactiveCalendarSubscriptionStatusSchema,
 ]);
 
-export const CalendarSubscriptionCreatedSchema = v.strictObject({
-  ...ActiveCalendarSubscriptionStatusSchema.entries,
-  subscriptionUrl: HttpUrlSchema,
-});
+export const CalendarSubscriptionCreatedSchema = ActiveCalendarSubscriptionStatusSchema;
+
+const ItemCalendarLinksSchema = v.array(
+  v.strictObject({
+    configurationId: v.number(),
+    itemGlobalId: v.string(),
+    itemName: v.string(),
+    updatedAt: v.pipe(v.string(), v.isoTimestamp()),
+    subscriptionUrl: HttpUrlSchema,
+  }),
+);
 
 export type CalendarSubscriptionStatus = v.InferOutput<typeof CalendarSubscriptionStatusSchema>;
 export type CalendarSubscriptionCreated = v.InferOutput<typeof CalendarSubscriptionCreatedSchema>;
@@ -37,6 +44,7 @@ export type CalendarSubscriptionCreated = v.InferOutput<typeof CalendarSubscript
 export type UserCalendarSubscriptionStatus = CalendarSubscriptionStatus & { etag: string };
 /** The response etag is opaque; preserve it for the next rotation as in UserCalendarSubscriptionStatus. */
 export type UserCalendarSubscriptionCreated = CalendarSubscriptionCreated & { etag: string };
+export type ItemCalendarLink = v.InferOutput<typeof ItemCalendarLinksSchema>[number];
 
 export const calendarSubscriptionQueryKey = (configurationId: number) =>
   ["api-v2", "booking-configurations", configurationId, "calendar-subscription"] as const;
@@ -49,6 +57,10 @@ const userCalendarSubscriptionPath = "/api/v2/users/me/booking-calendar-subscrip
 
 export const userCalendarSubscriptionQueryKey = ["api-v2", "users", "me", "booking-calendar-subscription"] as const;
 
+const itemCalendarLinksPath = "/api/v2/users/me/bookable-item-calendar-subscriptions";
+
+export const itemCalendarLinksQueryKey = ["api-v2", "users", "me", "bookable-item-calendar-subscriptions"] as const;
+
 async function requireSuccess(response: Response): Promise<Response> {
   if (!response.ok) throw await parseApiV2Problem(response);
   return response;
@@ -60,78 +72,86 @@ function requireEtag(response: Response): string {
   return etag;
 }
 
+async function fetchSubscriptionStatus(
+  path: string,
+  token: string,
+  signal?: AbortSignal,
+): Promise<UserCalendarSubscriptionStatus> {
+  const response = await requireSuccess(await fetch(path, { headers: apiV2Headers(token), signal }));
+  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
+  return { ...status, etag: requireEtag(response) };
+}
+
 export async function fetchCalendarSubscriptionStatus(
   configurationId: number,
   token: string,
   signal?: AbortSignal,
 ): Promise<UserCalendarSubscriptionStatus> {
-  const response = await requireSuccess(
-    await fetch(calendarSubscriptionPath(configurationId), {
-      headers: apiV2Headers(token),
-      signal,
-    }),
-  );
-  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
-  return { ...status, etag: requireEtag(response) };
+  return fetchSubscriptionStatus(calendarSubscriptionPath(configurationId), token, signal);
 }
 
-export async function createOrReplaceCalendarSubscription(
+/** Returns the caller's link, issuing one only when none exists. Repeating it is safe. */
+export async function createCalendarSubscription(
+  configurationId: number,
+  token: string,
+): Promise<UserCalendarSubscriptionCreated> {
+  return issueLink(calendarSubscriptionPath(configurationId), token);
+}
+
+/** Replaces the caller's link. Calendars using the old one stop updating. */
+export async function rotateCalendarSubscription(
   configurationId: number,
   token: string,
   etag: string,
 ): Promise<UserCalendarSubscriptionCreated> {
+  return issueLink(`${calendarSubscriptionPath(configurationId)}/rotate`, token, etag);
+}
+
+async function issueLink(path: string, token: string, etag?: string): Promise<UserCalendarSubscriptionCreated> {
   const response = await requireSuccess(
-    await fetch(calendarSubscriptionPath(configurationId), {
+    await fetch(path, {
       method: "POST",
-      headers: apiV2Headers(token, { "If-Match": etag }),
+      headers: apiV2Headers(token, etag === undefined ? undefined : { "If-Match": etag }),
     }),
   );
   const created = parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);
   return { ...created, etag: requireEtag(response) };
 }
 
-export async function revokeCalendarSubscription(configurationId: number, token: string): Promise<void> {
-  const response = await fetch(calendarSubscriptionPath(configurationId), {
-    method: "DELETE",
-    headers: apiV2Headers(token),
-  });
+async function revokeSubscription(path: string, token: string): Promise<void> {
+  const response = await fetch(path, { method: "DELETE", headers: apiV2Headers(token) });
   if (response.status !== 204) throw await parseApiV2Problem(response);
+}
+
+export async function revokeCalendarSubscription(configurationId: number, token: string): Promise<void> {
+  return revokeSubscription(calendarSubscriptionPath(configurationId), token);
 }
 
 export async function fetchUserCalendarSubscriptionStatus(
   token: string,
   signal?: AbortSignal,
 ): Promise<UserCalendarSubscriptionStatus> {
-  const response = await requireSuccess(
-    await fetch(userCalendarSubscriptionPath, {
-      headers: apiV2Headers(token),
-      signal,
-    }),
-  );
-  const status = parseOrThrow(CalendarSubscriptionStatusSchema, (await response.json()) as unknown);
-  return { ...status, etag: requireEtag(response) };
+  return fetchSubscriptionStatus(userCalendarSubscriptionPath, token, signal);
 }
 
-export async function createOrReplaceUserCalendarSubscription(
+export async function createUserCalendarSubscription(token: string): Promise<UserCalendarSubscriptionCreated> {
+  return issueLink(userCalendarSubscriptionPath, token);
+}
+
+export async function rotateUserCalendarSubscription(
   token: string,
   etag: string,
 ): Promise<UserCalendarSubscriptionCreated> {
-  const response = await requireSuccess(
-    await fetch(userCalendarSubscriptionPath, {
-      method: "POST",
-      headers: apiV2Headers(token, { "If-Match": etag }),
-    }),
-  );
-  const created = parseOrThrow(CalendarSubscriptionCreatedSchema, (await response.json()) as unknown);
-  return { ...created, etag: requireEtag(response) };
+  return issueLink(`${userCalendarSubscriptionPath}/rotate`, token, etag);
 }
 
 export async function revokeUserCalendarSubscription(token: string): Promise<void> {
-  const response = await fetch(userCalendarSubscriptionPath, {
-    method: "DELETE",
-    headers: apiV2Headers(token),
-  });
-  if (response.status !== 204) throw await parseApiV2Problem(response);
+  return revokeSubscription(userCalendarSubscriptionPath, token);
+}
+
+export async function fetchItemCalendarLinks(token: string, signal?: AbortSignal): Promise<ItemCalendarLink[]> {
+  const response = await requireSuccess(await fetch(itemCalendarLinksPath, { headers: apiV2Headers(token), signal }));
+  return parseOrThrow(ItemCalendarLinksSchema, (await response.json()) as unknown);
 }
 
 export function toWebcalUrl(feedUrl: string): string {

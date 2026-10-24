@@ -33,6 +33,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -217,6 +218,57 @@ class BookingNotificationSubscriptionManagerTest {
     inOrder.verify(instruments).lockById(10L);
     inOrder.verify(instruments).lockById(20L);
     inOrder.verify(subscriptions).unsubscribeEnabledForUser(eq(owner.getId()), any());
+  }
+
+  @Test
+  void preferencesExposeTheSharedProfileEventChoicesAndEffectiveEmailDelivery() {
+    stubPreference(Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, true);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, false);
+    stubPreference(Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, true);
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, false);
+
+    assertEquals(
+        new BookingNotificationSubscriptionManager.Preferences(true, false, true, false),
+        manager.getPreferences(owner, actor));
+  }
+
+  @Test
+  void replacingPreferencesWritesTheProfileEventChoicesButNotEmailDelivery() {
+    stubPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL, true);
+
+    BookingNotificationSubscriptionManager.Preferences saved =
+        manager.replacePreferences(
+            new BookingNotificationSubscriptionManager.PreferenceChanges(false, true, false),
+            owner,
+            actor);
+
+    assertEquals(
+        new BookingNotificationSubscriptionManager.Preferences(false, true, false, true), saved);
+    verify(userManager)
+        .setPreference(
+            Preference.BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS, "false", owner.getUsername());
+    verify(userManager)
+        .setPreference(Preference.NOTIFICATION_BOOKING_CREATED_PREF, "true", owner.getUsername());
+    verify(userManager)
+        .setPreference(
+            Preference.NOTIFICATION_BOOKING_CANCELLED_PREF, "false", owner.getUsername());
+    verify(userManager, never())
+        .setPreference(eq(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL), any(), any());
+    verify(subscriptions, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void preferencesRequireBookingForTheSubject() {
+    when(featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, owner)).thenReturn(false);
+
+    assertThrows(
+        AuthorizationException.class,
+        () ->
+            manager.replacePreferences(
+                new BookingNotificationSubscriptionManager.PreferenceChanges(true, true, true),
+                owner,
+                actor));
+    verify(userManager, never()).setPreference(any(), any(), any());
   }
 
   private void stubPreference(Preference preference, boolean enabled) {

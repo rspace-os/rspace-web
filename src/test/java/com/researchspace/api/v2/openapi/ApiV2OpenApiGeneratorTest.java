@@ -342,8 +342,26 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "getBookingCalendarSubscription", objectMap(management.get("get")).get("operationId"));
     assertEquals(
-        "createOrReplaceBookingCalendarSubscription",
-        objectMap(management.get("post")).get("operationId"));
+        "createBookingCalendarSubscription", objectMap(management.get("post")).get("operationId"));
+    assertEquals(
+        Set.of("200", "201", "401", "403", "404", "406", "409", "429", "500"),
+        objectMap(objectMap(management.get("post")).get("responses")).keySet());
+    Map<String, Object> rotate =
+        objectMap(
+            objectMap(
+                    paths.get(
+                        "/api/v2/booking-configurations/{configurationId}/calendar-subscription/rotate"))
+                .get("post"));
+    assertEquals("rotateBookingCalendarSubscription", rotate.get("operationId"));
+    assertTrue(
+        objectMapList(rotate.get("parameters")).stream()
+            .anyMatch(
+                parameter ->
+                    parameter.get("name").equals("If-Match")
+                        && Boolean.TRUE.equals(parameter.get("required"))));
+    assertEquals(
+        Set.of("200", "400", "401", "403", "404", "406", "409", "428", "429", "500"),
+        objectMap(rotate.get("responses")).keySet());
     assertEquals(
         "revokeBookingCalendarSubscription",
         objectMap(management.get("delete")).get("operationId"));
@@ -354,14 +372,14 @@ class ApiV2OpenApiGeneratorTest {
         Set.of("200", "401", "403", "404", "406", "429", "500"),
         objectMap(get.get("responses")).keySet());
     assertEquals(
-        Set.of("200", "400", "401", "403", "404", "406", "409", "428", "429", "500"),
-        objectMap(post.get("responses")).keySet());
-    assertEquals(
         Set.of("204", "401", "403", "404", "406", "429", "500"),
         objectMap(delete.get("responses")).keySet());
 
-    Map<String, Object> ifMatch =
+    assertFalse(
         objectMapList(post.get("parameters")).stream()
+            .anyMatch(parameter -> parameter.get("name").equals("If-Match")));
+    Map<String, Object> ifMatch =
+        objectMapList(rotate.get("parameters")).stream()
             .filter(parameter -> parameter.get("name").equals("If-Match"))
             .findFirst()
             .orElseThrow();
@@ -369,7 +387,7 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(true, ifMatch.get("required"));
     assertEquals("string", objectMap(ifMatch.get("schema")).get("type"));
 
-    for (Map<String, Object> operation : List.of(get, post)) {
+    for (Map<String, Object> operation : List.of(get, post, rotate)) {
       Map<String, Object> headers =
           objectMap(objectMap(objectMap(operation.get("responses")).get("200")).get("headers"));
       assertEquals(Set.of("Cache-Control", "ETag"), headers.keySet());
@@ -378,6 +396,9 @@ class ApiV2OpenApiGeneratorTest {
       assertEquals("private, no-store", cacheControlSchema.get("const"));
       assertEquals("#/components/headers/ETag", objectMap(headers.get("ETag")).get("$ref"));
     }
+    assertEquals(
+        objectMap(objectMap(objectMap(post.get("responses")).get("200")).get("headers")),
+        objectMap(objectMap(objectMap(post.get("responses")).get("201")).get("headers")));
     assertEquals(
         Set.of("Cache-Control"),
         objectMap(objectMap(objectMap(delete.get("responses")).get("204")).get("headers"))
