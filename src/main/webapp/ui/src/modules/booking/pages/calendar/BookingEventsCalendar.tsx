@@ -1,4 +1,6 @@
-import { CalendarCheck2Icon } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { CalendarCheck2Icon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { BookingDateControls, BookingTimeZoneBadge } from "@/modules/booking/components/BookingToolbar";
@@ -9,15 +11,31 @@ import {
   type DayTimelineViewState,
 } from "@/modules/booking/components/DayTimeline";
 import { useDayTimelineScrollSync } from "@/modules/booking/components/useDayTimelineScrollSync";
-import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
+import { BookingForm, type BookingFormSubmission, type EditableBooking } from "@/modules/booking/creation/BookingForm";
+import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { bookingProblemKey, isBookingOutcomeUncertain } from "@/modules/booking/creation/useCreateBooking";
+import {
+  ApiV2ProblemError,
+  type BookingListDocument,
+  type BookingUpdate,
+  isBookingOverlapError,
+  updateBooking,
+} from "@/modules/booking/domain/booking";
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { addCalendarDays, sliceAcrossZonedDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
+import {
+  addCalendarDays,
+  sliceAcrossZonedDay,
+  wallClockToDayMinute,
+  zonedDayBounds,
+} from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import i18n from "@/modules/common/i18n";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Badge } from "@/modules/common/ui/badge";
-import { Button } from "@/modules/common/ui/button";
+import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
@@ -104,6 +122,29 @@ function periodDates(date: string, view: CalendarView): readonly string[] {
   return datesFrom(firstOfMonth(date), monthDayCount(date));
 }
 
+function nextFreeRange(
+  events: readonly BookingListDocument[],
+  date: string,
+  timezone: string,
+  startWindow: number,
+  endWindow: number,
+  increment: number,
+): { startMinute: number; endMinute: number } | undefined {
+  startWindow = wallClockToDayMinute(date, timezone, startWindow);
+  endWindow = wallClockToDayMinute(date, timezone, endWindow);
+  if (endWindow <= startWindow) return undefined;
+  const duration = Math.min(60, endWindow - startWindow);
+  const firstStart = Math.ceil(startWindow / increment) * increment;
+  const occupied = events.map((event) => sliceAcrossZonedDay(event.start, event.end, date, timezone));
+  for (let startMinute = firstStart; startMinute + duration <= endWindow; startMinute += increment) {
+    const endMinute = startMinute + duration;
+    if (!occupied.some((event) => event.startMinute < endMinute && event.endMinute > startMinute)) {
+      return { startMinute, endMinute };
+    }
+  }
+  return undefined;
+}
+
 function shiftDate(date: string, view: CalendarView, delta: number): string {
   if (view === "day") return addCalendarDays(date, delta);
   if (view === "week") return addCalendarDays(date, delta * 7);
@@ -116,10 +157,28 @@ function occursOn(event: BookingListDocument, date: string, timezone: string): b
   return Date.parse(event.start) < Date.parse(bounds.end) && Date.parse(event.end) > Date.parse(bounds.start);
 }
 
-function eventsOn(events: readonly BookingListDocument[], date: string, timezone: string) {
+function eventsOn(
+  events: readonly BookingListDocument[],
+  date: string,
+  timezone: string,
+  editors?: ReadonlyMap<number, BookingListDocument>,
+) {
   return events
-    .filter((event) => occursOn(event, date, timezone))
+    .filter((event) => occursOn(editors?.get(event.id) ?? event, date, timezone))
     .toSorted((left, right) => left.start.localeCompare(right.start));
+}
+
+function timelineEditorPositions(
+  editors: ReadonlyMap<number, BookingListDocument> | undefined,
+  date: string,
+  timezone: string,
+) {
+  return new Map(
+    [...(editors?.values() ?? [])].map((event) => [
+      String(event.id),
+      sliceAcrossZonedDay(event.start, event.end, date, timezone),
+    ]),
+  );
 }
 
 function formatDate(date: string, options: Intl.DateTimeFormatOptions): string {
@@ -205,9 +264,211 @@ function EventCard({
       timezone={timezone}
       compactCards={compact}
       variant={overlay ? "timeline" : "flow"}
+      renderEventActions={() => <BookingActions event={event} timezone={timezone} />}
+      renderBlockoutActions={() => <BookingActions event={event} timezone={timezone} />}
     />
   );
   return overlay ? <div className={cn("relative", compact ? "min-h-18" : "min-h-14")}>{card}</div> : card;
+}
+
+/** Whole-number grid tracks, kept as literal class strings because Tailwind scans source text. */
+const ACTION_COLUMNS = ["grid-cols-1", "grid-cols-1", "grid-cols-2", "grid-cols-3"];
+
+function isEditableBooking(event: BookingListDocument): event is BookingListDocument & EditableBooking {
+  return event.privacy === "full" && event.canEdit && event.state === "CONFIRMED";
+}
+
+const BookingEditorsContext = React.createContext<
+  | {
+      setEditors: React.Dispatch<React.SetStateAction<Map<string, BookingListDocument>>>;
+      positions: ReadonlyMap<number, BookingListDocument>;
+    }
+  | undefined
+>(undefined);
+
+function InlineBookingEditor({
+  event: initialEvent,
+  timezone,
+  token,
+  onClose,
+}: {
+  event: BookingListDocument & EditableBooking;
+  timezone: string;
+  token: string;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation(["booking", "common"]);
+  const queryClient = useQueryClient();
+  const [event, setEvent] = React.useState(initialEvent);
+  const [formEvent, setFormEvent] = React.useState(initialEvent);
+  const anchorEvent = React.useRef(initialEvent).current;
+  const editorId = React.useId();
+  const setEditors = React.useContext(BookingEditorsContext)?.setEditors;
+  React.useEffect(() => {
+    setEditors?.((current) => new Map(current).set(editorId, anchorEvent));
+    return () =>
+      setEditors?.((current) => {
+        const next = new Map(current);
+        next.delete(editorId);
+        return next;
+      });
+  }, [editorId, anchorEvent, setEditors]);
+  const configuration = useBookableItemConfiguration(event.target.globalId, token);
+  const mutation = useMutation({
+    mutationFn: (submission: BookingFormSubmission) => {
+      const patch: BookingUpdate = {
+        ...(submission.window.start !== event.start ? { start: submission.window.start } : {}),
+        ...(submission.window.end !== event.end ? { end: submission.window.end } : {}),
+        ...(submission.purpose !== event.purpose ? { purpose: submission.purpose } : {}),
+      };
+      return Object.keys(patch).length === 0
+        ? Promise.resolve(event)
+        : updateBooking(event.id, event.version, patch, token);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      onClose();
+    },
+    onError: async (error) => {
+      if (
+        isBookingOutcomeUncertain(error) ||
+        (error instanceof ApiV2ProblemError &&
+          (error.status === 412 ||
+            error.code === "errors.api.v2.booking.concurrentModification" ||
+            error.code === "errors.api.v2.forbidden" ||
+            error.code === "errors.api.v2.booking.state.transition"))
+      ) {
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      }
+      if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      }
+    },
+  });
+  const mutationHasError = React.useRef(false);
+  if (event !== initialEvent && !mutation.isPending) {
+    setEvent(initialEvent);
+    if (!isBookingOutcomeUncertain(mutation.error)) setFormEvent(initialEvent);
+  }
+  mutationHasError.current = mutation.isError;
+  const resetMutation = mutation.reset;
+  const clearMutationErrorOnChange = React.useCallback(() => {
+    if (!mutationHasError.current) return;
+    mutationHasError.current = false;
+    resetMutation();
+  }, [resetMutation]);
+
+  if (configuration.isPending) {
+    return (
+      <div className="space-y-4 border-border border-t p-4" aria-busy="true">
+        <p role="status" className="sr-only">
+          {t("bookings.loadingConfiguration")}
+        </p>
+        <Skeleton aria-hidden="true" className="h-12 w-full" />
+        <Skeleton aria-hidden="true" className="h-24 w-full" />
+      </div>
+    );
+  }
+  if (configuration.isError || !configuration.data) {
+    return (
+      <div className="space-y-3 border-border border-t p-4">
+        <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => void configuration.refetch()}>
+            {t("common:actions.retry")}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            {t("bookings.form.cancel")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
+      <BookingForm
+        key={formEvent.version}
+        mode="edit"
+        density="compact"
+        displayTimezone={timezone}
+        booking={formEvent}
+        configuration={configuration.data}
+        token={token}
+        pending={mutation.isPending}
+        error={
+          mutation.error
+            ? t(
+                isBookingOutcomeUncertain(mutation.error)
+                  ? "bookings.errors.outcomeUncertain"
+                  : bookingProblemKey(mutation.error),
+              )
+            : undefined
+        }
+        submissionBlocked={isBookingOverlapError(mutation.error)}
+        onStateChange={clearMutationErrorOnChange}
+        onCancel={() => {
+          mutation.reset();
+          onClose();
+        }}
+        onSubmit={(submission) => mutation.mutateAsync(submission)}
+      />
+    </div>
+  );
+}
+
+function BookingActions({ event, timezone }: { event: BookingListDocument; timezone: string }) {
+  const { t } = useTranslation("booking");
+  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
+  const [editing, setEditing] = React.useState(false);
+  const editable = isEditableBooking(event);
+  if (editing && editable) {
+    return <InlineBookingEditor event={event} timezone={timezone} token={token} onClose={() => setEditing(false)} />;
+  }
+  const canViewDetails = event.privacy === "full";
+  const actionCount = (canViewDetails ? 1 : 0) + (editable ? 1 : 0);
+  if (actionCount === 0) return null;
+  return (
+    <div
+      className={cn(
+        "grid border-border border-t text-xs",
+        ACTION_COLUMNS[actionCount],
+        actionCount > 1 && "divide-x divide-border",
+      )}
+    >
+      {canViewDetails ? (
+        <Link
+          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
+          to="/booking/calendar/bookings/$id"
+          params={{ id: String(event.id) }}
+        >
+          {t("calendar.actions.viewDetails")}
+        </Link>
+      ) : null}
+      {editable ? (
+        <button
+          type="button"
+          className={cn(buttonVariants({ variant: "link", size: "xs" }), "h-auto rounded-none py-2")}
+          onClick={() => setEditing(true)}
+        >
+          {t("calendar.actions.edit")}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function actionsFor(events: readonly BookingListDocument[], timezone: string) {
+  return (timelineEvent: Extract<DayTimelineEvent, { kind: "booking" }>) => {
+    const event = events.find(({ id }) => String(id) === timelineEvent.id);
+    return event ? <BookingActions event={event} timezone={timezone} /> : null;
+  };
+}
+
+function blockoutActionsFor(events: readonly BookingListDocument[], timezone: string) {
+  return (timelineEvent: Extract<DayTimelineEvent, { kind: "blockout" }>) => {
+    const event = events.find(({ id }) => String(id) === timelineEvent.id);
+    return event ? <BookingActions event={event} timezone={timezone} /> : null;
+  };
 }
 
 function SegmentedControl<Option extends string>({
@@ -332,6 +593,7 @@ function TimeGrid({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = calendarDates(date, view);
   const month = firstOfMonth(date).slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
@@ -343,10 +605,15 @@ function TimeGrid({
             <DayTimeline
               date={date}
               timezone={timezone}
-              events={eventsOn(events, date, timezone).map((event) => toTimelineEvent(event, date, timezone))}
+              events={eventsOn(events, date, timezone, editorPositions).map((event) =>
+                toTimelineEvent(event, date, timezone),
+              )}
+              eventPositions={timelineEditorPositions(editorPositions, date, timezone)}
               startWindow={availabilityStartMinute}
               endWindow={availabilityEndMinute}
               showZoomControls={false}
+              renderEventActions={actionsFor(events, timezone)}
+              renderBlockoutActions={blockoutActionsFor(events, timezone)}
             />
           </div>
           {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
@@ -378,7 +645,7 @@ function TimeGrid({
                   {isLoading ? (
                     <Skeleton aria-hidden="true" className="h-20 w-full" />
                   ) : (
-                    eventsOn(events, day, timezone).map((event) => (
+                    eventsOn(events, day, timezone, editorPositions).map((event) => (
                       <EventCard
                         key={`${day}-${event.id}`}
                         event={event}
@@ -442,6 +709,9 @@ function ResourceSchedule({
   today,
   availabilityStartMinute,
   availabilityEndMinute,
+  resourceConfigurations,
+  creationDisabled,
+  onResourceRangeSelect,
   isLoading = false,
 }: {
   date: string;
@@ -452,7 +722,14 @@ function ResourceSchedule({
   today: string;
   availabilityStartMinute: number;
   availabilityEndMinute: number;
+  resourceConfigurations?: readonly BookableItemOption[];
+  creationDisabled: boolean;
   isLoading?: boolean;
+  onResourceRangeSelect?: (
+    resource: BookableItemOption,
+    range: { startMinute: number; endMinute: number },
+    trigger: HTMLElement,
+  ) => void;
 }) {
   const { t } = useTranslation("booking");
   const [timelineViewState, setTimelineViewState] = React.useState<DayTimelineViewState>({
@@ -460,12 +737,13 @@ function ResourceSchedule({
     centerMinute: 13 * 60,
   });
   const timelineScrollSync = useDayTimelineScrollSync();
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = React.useMemo(() => periodDates(date, view), [date, view]);
   const eventsByResourceAndDate = React.useMemo(() => {
     const index = new Map<string, BookingListDocument[]>();
     for (const event of events) {
       for (const day of dates) {
-        if (!occursOn(event, day, timezone)) continue;
+        if (!occursOn(editorPositions?.get(event.id) ?? event, day, timezone)) continue;
         const key = `${event.target.globalId}|${day}`;
         const rows = index.get(key) ?? [];
         rows.push(event);
@@ -474,7 +752,7 @@ function ResourceSchedule({
     }
     for (const rows of index.values()) rows.sort((left, right) => left.start.localeCompare(right.start));
     return index;
-  }, [dates, events, timezone]);
+  }, [dates, events, timezone, editorPositions]);
   const calendarRef = useScrollToToday(date, view, today);
   const resourceRows = React.useMemo(
     () =>
@@ -484,6 +762,10 @@ function ResourceSchedule({
         ).values(),
       ].toSorted((left, right) => left.value.name.localeCompare(right.value.name)),
     [events, resources],
+  );
+  const configurationByTarget = React.useMemo(
+    () => new Map(resourceConfigurations?.map((configuration) => [configuration.globalId, configuration])),
+    [resourceConfigurations],
   );
   return (
     <section aria-label={t("calendar.layout.resources")} className="p-3" aria-busy={isLoading}>
@@ -499,8 +781,19 @@ function ResourceSchedule({
           <div className="min-w-225 divide-y">
             {resourceRows.map((resource, index) => {
               const resourceEvents = eventsByResourceAndDate.get(`${resource.globalId}|${date}`) ?? [];
+              const configuration = configurationByTarget.get(resource.globalId);
+              const proposedRange = configuration
+                ? nextFreeRange(
+                    resourceEvents,
+                    date,
+                    timezone,
+                    availabilityStartMinute,
+                    availabilityEndMinute,
+                    configuration.slotGranularityMinutes,
+                  )
+                : undefined;
               return (
-                <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)]">
+                <section key={resource.globalId} className="grid grid-cols-[12rem_minmax(0,1fr)_auto]">
                   <header className="border-r bg-muted/30 p-1">
                     <InventoryItem
                       locationPlacement="below"
@@ -522,6 +815,7 @@ function ResourceSchedule({
                         date={date}
                         timezone={timezone}
                         events={resourceEvents.map((event) => toTimelineEvent(event, date, timezone))}
+                        eventPositions={timelineEditorPositions(editorPositions, date, timezone)}
                         startWindow={availabilityStartMinute}
                         endWindow={availabilityEndMinute}
                         showZoomControls={false}
@@ -531,9 +825,35 @@ function ResourceSchedule({
                         onViewStateChange={setTimelineViewState}
                         scrollSync={timelineScrollSync}
                         showScrollbar={index === resourceRows.length - 1}
+                        renderEventActions={actionsFor(resourceEvents, timezone)}
+                        renderBlockoutActions={blockoutActionsFor(resourceEvents, timezone)}
+                        snapIncrementMinutes={configuration?.slotGranularityMinutes}
+                        creationDisabled={isLoading || creationDisabled || !configuration}
+                        onRangeSelect={
+                          configuration && onResourceRangeSelect
+                            ? (range, trigger) => onResourceRangeSelect(configuration, range, trigger)
+                            : undefined
+                        }
                       />
                     </div>
                     {isLoading && <Skeleton aria-hidden="true" className="absolute inset-0 h-full w-full" />}
+                  </div>
+                  <div className="flex items-center border-l p-2">
+                    <Button
+                      type="button"
+                      size="icon-sm"
+                      variant="outline"
+                      disabled={
+                        isLoading || creationDisabled || !configuration || !proposedRange || !onResourceRangeSelect
+                      }
+                      aria-label={t("calendar.actions.addForItem", { item: resource.value.name })}
+                      onClick={(event) => {
+                        if (!configuration || !proposedRange || !onResourceRangeSelect) return;
+                        onResourceRangeSelect(configuration, proposedRange, event.currentTarget);
+                      }}
+                    >
+                      <PlusIcon aria-hidden="true" />
+                    </Button>
                   </div>
                 </section>
               );
@@ -594,6 +914,7 @@ function Agenda({
   isLoading?: boolean;
 }) {
   const { t } = useTranslation("booking");
+  const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = periodDates(date, view);
   const dateRailRef = useScrollToToday(date, view, today);
   return (
@@ -640,7 +961,7 @@ function Agenda({
             </div>
           ) : (
             dates.flatMap((day) => {
-              const dayEvents = eventsOn(events, day, timezone);
+              const dayEvents = eventsOn(events, day, timezone, editorPositions);
               if (dayEvents.length === 0) return [];
               return [
                 <section key={day} className="space-y-2">
@@ -681,7 +1002,11 @@ export function BookingEventsCalendar({
   onControlsReset,
   onViewChange,
   onLayoutChange,
+  creationAction,
+  resourceConfigurations,
   resourceTableProps,
+  creationDisabled = false,
+  onResourceRangeSelect,
 }: {
   date: string;
   view: CalendarView;
@@ -700,15 +1025,37 @@ export function BookingEventsCalendar({
   onControlsReset: () => void;
   onViewChange: (view: CalendarView) => void;
   onLayoutChange: (layout: CalendarLayout) => void;
+  /** Production creation action rendered without replacing the calendar controls. */
+  creationAction?: React.ReactNode;
+  resourceConfigurations?: readonly BookableItemOption[];
   resourceTableProps?: TableListProps<BookingConfiguration>;
+  creationDisabled?: boolean;
+  onResourceRangeSelect?: (
+    resource: BookableItemOption,
+    range: { startMinute: number; endMinute: number },
+    trigger: HTMLElement,
+  ) => void;
 }) {
   const { t } = useTranslation("booking");
   const todayValue = todayInTimeZone(timezone);
   const [mineOnly, setMineOnly] = React.useState(false);
-  const mine = events.filter((event) => event.requesterId === currentUserId);
+  const [editors, setEditors] = React.useState(() => new Map<string, BookingListDocument>());
+  // Pin open cards by booking id so reconciliation can show new times without unmounting their drafts.
+  const editorContext = React.useMemo(
+    () => ({ setEditors, positions: new Map([...editors.values()].map((event) => [event.id, event])) }),
+    [editors],
+  );
+  const displayedEvents = React.useMemo(() => {
+    const byId = new Map(events.map((event) => [event.id, event]));
+    for (const event of editors.values()) {
+      if (!byId.has(event.id)) byId.set(event.id, event);
+    }
+    return [...byId.values()];
+  }, [editors, events]);
+  const mine = displayedEvents.filter((event) => event.requesterId === currentUserId);
   const table = useTableList({
     config: bookingEventListConfig,
-    dataSource: { type: "client", rows: mineOnly ? mine : events },
+    dataSource: { type: "client", rows: mineOnly ? mine : displayedEvents },
     features: { sorting: false, pagination: false, columns: false },
     queryString: false,
   });
@@ -730,6 +1077,7 @@ export function BookingEventsCalendar({
       {!isError && (
         <TableList
           {...table.tableProps}
+          createAction={creationAction}
           filterButtons={{
             legend: t("calendar.quickFilters.legend"),
             controls: (
@@ -762,7 +1110,7 @@ export function BookingEventsCalendar({
           }}
           renderRowsWhenEmpty
           renderRows={(filteredEvents) => (
-            <>
+            <BookingEditorsContext.Provider value={editorContext}>
               {layout === "time-grid" && (
                 <TimeGrid
                   date={date}
@@ -799,7 +1147,10 @@ export function BookingEventsCalendar({
                           today={todayValue}
                           availabilityStartMinute={availabilityStartMinute}
                           availabilityEndMinute={availabilityEndMinute}
+                          resourceConfigurations={resourceConfigurations}
+                          creationDisabled={creationDisabled}
                           isLoading={isLoading}
+                          onResourceRangeSelect={onResourceRangeSelect}
                         />
                       )
                     }
@@ -814,7 +1165,10 @@ export function BookingEventsCalendar({
                     today={todayValue}
                     availabilityStartMinute={availabilityStartMinute}
                     availabilityEndMinute={availabilityEndMinute}
+                    resourceConfigurations={resourceConfigurations}
+                    creationDisabled={creationDisabled}
                     isLoading={isLoading}
+                    onResourceRangeSelect={onResourceRangeSelect}
                   />
                 ))}
               {layout === "agenda" && (
@@ -827,7 +1181,7 @@ export function BookingEventsCalendar({
                   isLoading={isLoading}
                 />
               )}
-            </>
+            </BookingEditorsContext.Provider>
           )}
         />
       )}

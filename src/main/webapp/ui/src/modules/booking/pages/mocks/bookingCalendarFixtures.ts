@@ -1,16 +1,24 @@
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 
-const target = (id: number, name: string, location?: { name: string; globalId: string } | null) => ({
-  relationTo: "booking-instruments" as const,
-  globalId: `IN${id}`,
-  value: {
-    id,
-    name,
-    deleted: false,
-    parentContainerName: location === null ? null : (location?.name ?? `${name} room`),
-    parentContainerGlobalId: location === null ? null : (location?.globalId ?? `IC${id}`),
-  },
-});
+export function bookingTarget(id: number, name: string, location?: { name: string; globalId: string } | null) {
+  const base = {
+    relationTo: "booking-instruments" as const,
+    value: { id, name, deleted: false },
+    globalId: `IN${id}`,
+  };
+  if (location === undefined) return base;
+  return {
+    ...base,
+    value: {
+      ...base.value,
+      parentContainerName: location === null ? null : location.name,
+      parentContainerGlobalId: location === null ? null : location.globalId,
+    },
+  };
+}
+
+const target = (id: number, name: string, location?: { name: string; globalId: string } | null) =>
+  bookingTarget(id, name, location === undefined ? { name: `${name} room`, globalId: `IC${id}` } : location);
 
 const timestamps = {
   version: 0,
@@ -61,20 +69,21 @@ export const busyBooking: BookingListDocument = {
 };
 
 export function collectionResponse(
-  docs: readonly Record<string, unknown>[],
-  options: { page?: number; totalDocs?: number; totalPages?: number } = {},
+  docs: readonly unknown[],
+  options: { page?: number; limit?: number; totalDocs?: number; totalPages?: number } = {},
 ) {
   const page = options.page ?? 1;
+  const limit = options.limit ?? 100;
   const totalDocs = options.totalDocs ?? docs.length;
   // As ApiV2ListResult.of; a test may still name totalPages to describe pages it does not build.
-  const totalPages = options.totalPages ?? (totalDocs > 0 ? Math.ceil(totalDocs / 100) : 0);
+  const totalPages = options.totalPages ?? (limit > 0 && totalDocs > 0 ? Math.ceil(totalDocs / limit) : 0);
   const hasPrevPage = page > 1 && page <= totalPages;
   return {
     docs,
     totalDocs,
-    limit: 100,
+    limit,
     page,
-    pagingCounter: (page - 1) * 100 + 1,
+    pagingCounter: (page - 1) * limit + 1,
     totalPages,
     hasPrevPage,
     hasNextPage: page < totalPages,

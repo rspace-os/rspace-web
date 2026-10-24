@@ -15,11 +15,16 @@ import { Route as AboutIndexRouteImport } from './routes/about/index'
 import { Route as PublicMaintenanceInProgressIndexRouteImport } from './routes/public/maintenanceInProgress/index'
 import { Route as PublicApiDocsIndexRouteImport } from './routes/public/apiDocs/index'
 import { Route as BookingPreferencesIndexRouteImport } from './routes/booking/preferences/index'
+import { Route as BookingMyBookingsIndexRouteImport } from './routes/booking/my-bookings/index'
 import { Route as BookingCalendarIndexRouteImport } from './routes/booking/calendar/index'
 import { Route as BookingConfigSettingsIndexRouteImport } from './routes/booking/config/settings/index'
 import { Route as BookingConfigBookableItemsIndexRouteImport } from './routes/booking/config/bookable-items/index'
 import { Route as BookingBookableItemsAddIndexRouteImport } from './routes/booking/bookable-items/add/index'
+import { Route as BookingCalendarBookingsIdRouteRouteImport } from './routes/booking/calendar/bookings/$id/route'
+import { Route as BookingCalendarBookingsAddIndexRouteImport } from './routes/booking/calendar/bookings/add/index'
+import { Route as BookingCalendarBookingsIdIndexRouteImport } from './routes/booking/calendar/bookings/$id/index'
 import { Route as BookingBookableItemsGlobalIdChar123TabChar125IndexRouteImport } from './routes/booking/bookable-items/$globalId/{-$tab}/index'
+import { Route as BookingCalendarBookingsIdEditIndexRouteImport } from './routes/booking/calendar/bookings/$id/edit/index'
 
 const BookingRouteRoute = BookingRouteRouteImport.update({
   id: '/booking',
@@ -52,6 +57,11 @@ const BookingPreferencesIndexRoute = BookingPreferencesIndexRouteImport.update({
   path: '/preferences/',
   getParentRoute: () => BookingRouteRoute,
 } as any)
+const BookingMyBookingsIndexRoute = BookingMyBookingsIndexRouteImport.update({
+  id: '/my-bookings/',
+  path: '/my-bookings/',
+  getParentRoute: () => BookingRouteRoute,
+} as any)
 const BookingCalendarIndexRoute = BookingCalendarIndexRouteImport.update({
   id: '/calendar/',
   path: '/calendar/',
@@ -75,11 +85,35 @@ const BookingBookableItemsAddIndexRoute =
     path: '/bookable-items/add/',
     getParentRoute: () => BookingRouteRoute,
   } as any)
+const BookingCalendarBookingsIdRouteRoute =
+  BookingCalendarBookingsIdRouteRouteImport.update({
+    id: '/calendar/bookings/$id',
+    path: '/calendar/bookings/$id',
+    getParentRoute: () => BookingRouteRoute,
+  } as any)
+const BookingCalendarBookingsAddIndexRoute =
+  BookingCalendarBookingsAddIndexRouteImport.update({
+    id: '/calendar/bookings/add/',
+    path: '/calendar/bookings/add/',
+    getParentRoute: () => BookingRouteRoute,
+  } as any)
+const BookingCalendarBookingsIdIndexRoute =
+  BookingCalendarBookingsIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => BookingCalendarBookingsIdRouteRoute,
+  } as any)
 const BookingBookableItemsGlobalIdChar123TabChar125IndexRoute =
   BookingBookableItemsGlobalIdChar123TabChar125IndexRouteImport.update({
     id: '/bookable-items/$globalId/{-$tab}/',
     path: '/bookable-items/$globalId/{-$tab}/',
     getParentRoute: () => BookingRouteRoute,
+  } as any)
+const BookingCalendarBookingsIdEditIndexRoute =
+  BookingCalendarBookingsIdEditIndexRouteImport.update({
+    id: '/edit/',
+    path: '/edit/',
+    getParentRoute: () => BookingCalendarBookingsIdRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -87,18 +121,24 @@ export interface FileRoutesByFullPath {
   '/about/': typeof AboutIndexRoute
   '/booking/': typeof BookingIndexRoute
   '/booking/calendar/': typeof BookingCalendarIndexRoute
+  '/booking/my-bookings/': typeof BookingMyBookingsIndexRoute
   '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/calendar/bookings/$id': typeof BookingCalendarBookingsIdRouteRouteWithChildren
   '/booking/bookable-items/add/': typeof BookingBookableItemsAddIndexRoute
   '/booking/config/bookable-items/': typeof BookingConfigBookableItemsIndexRoute
   '/booking/config/settings/': typeof BookingConfigSettingsIndexRoute
   '/booking/bookable-items/$globalId/{-$tab}/': typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
+  '/booking/calendar/bookings/$id/': typeof BookingCalendarBookingsIdIndexRoute
+  '/booking/calendar/bookings/add/': typeof BookingCalendarBookingsAddIndexRoute
+  '/booking/calendar/bookings/$id/edit/': typeof BookingCalendarBookingsIdEditIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof AboutIndexRoute
   '/booking': typeof BookingIndexRoute
   '/booking/calendar': typeof BookingCalendarIndexRoute
+  '/booking/my-bookings': typeof BookingMyBookingsIndexRoute
   '/booking/preferences': typeof BookingPreferencesIndexRoute
   '/public/apiDocs': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress': typeof PublicMaintenanceInProgressIndexRoute
@@ -106,6 +146,9 @@ export interface FileRoutesByTo {
   '/booking/config/bookable-items': typeof BookingConfigBookableItemsIndexRoute
   '/booking/config/settings': typeof BookingConfigSettingsIndexRoute
   '/booking/bookable-items/$globalId/{-$tab}': typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
+  '/booking/calendar/bookings/$id': typeof BookingCalendarBookingsIdIndexRoute
+  '/booking/calendar/bookings/add': typeof BookingCalendarBookingsAddIndexRoute
+  '/booking/calendar/bookings/$id/edit': typeof BookingCalendarBookingsIdEditIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,13 +156,18 @@ export interface FileRoutesById {
   '/about/': typeof AboutIndexRoute
   '/booking/': typeof BookingIndexRoute
   '/booking/calendar/': typeof BookingCalendarIndexRoute
+  '/booking/my-bookings/': typeof BookingMyBookingsIndexRoute
   '/booking/preferences/': typeof BookingPreferencesIndexRoute
   '/public/apiDocs/': typeof PublicApiDocsIndexRoute
   '/public/maintenanceInProgress/': typeof PublicMaintenanceInProgressIndexRoute
+  '/booking/calendar/bookings/$id': typeof BookingCalendarBookingsIdRouteRouteWithChildren
   '/booking/bookable-items/add/': typeof BookingBookableItemsAddIndexRoute
   '/booking/config/bookable-items/': typeof BookingConfigBookableItemsIndexRoute
   '/booking/config/settings/': typeof BookingConfigSettingsIndexRoute
   '/booking/bookable-items/$globalId/{-$tab}/': typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
+  '/booking/calendar/bookings/$id/': typeof BookingCalendarBookingsIdIndexRoute
+  '/booking/calendar/bookings/add/': typeof BookingCalendarBookingsAddIndexRoute
+  '/booking/calendar/bookings/$id/edit/': typeof BookingCalendarBookingsIdEditIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,18 +176,24 @@ export interface FileRouteTypes {
     | '/about/'
     | '/booking/'
     | '/booking/calendar/'
+    | '/booking/my-bookings/'
     | '/booking/preferences/'
     | '/public/apiDocs/'
     | '/public/maintenanceInProgress/'
+    | '/booking/calendar/bookings/$id'
     | '/booking/bookable-items/add/'
     | '/booking/config/bookable-items/'
     | '/booking/config/settings/'
     | '/booking/bookable-items/$globalId/{-$tab}/'
+    | '/booking/calendar/bookings/$id/'
+    | '/booking/calendar/bookings/add/'
+    | '/booking/calendar/bookings/$id/edit/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
     | '/booking'
     | '/booking/calendar'
+    | '/booking/my-bookings'
     | '/booking/preferences'
     | '/public/apiDocs'
     | '/public/maintenanceInProgress'
@@ -147,19 +201,27 @@ export interface FileRouteTypes {
     | '/booking/config/bookable-items'
     | '/booking/config/settings'
     | '/booking/bookable-items/$globalId/{-$tab}'
+    | '/booking/calendar/bookings/$id'
+    | '/booking/calendar/bookings/add'
+    | '/booking/calendar/bookings/$id/edit'
   id:
     | '__root__'
     | '/booking'
     | '/about/'
     | '/booking/'
     | '/booking/calendar/'
+    | '/booking/my-bookings/'
     | '/booking/preferences/'
     | '/public/apiDocs/'
     | '/public/maintenanceInProgress/'
+    | '/booking/calendar/bookings/$id'
     | '/booking/bookable-items/add/'
     | '/booking/config/bookable-items/'
     | '/booking/config/settings/'
     | '/booking/bookable-items/$globalId/{-$tab}/'
+    | '/booking/calendar/bookings/$id/'
+    | '/booking/calendar/bookings/add/'
+    | '/booking/calendar/bookings/$id/edit/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -213,6 +275,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingPreferencesIndexRouteImport
       parentRoute: typeof BookingRouteRoute
     }
+    '/booking/my-bookings/': {
+      id: '/booking/my-bookings/'
+      path: '/my-bookings'
+      fullPath: '/booking/my-bookings/'
+      preLoaderRoute: typeof BookingMyBookingsIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
     '/booking/calendar/': {
       id: '/booking/calendar/'
       path: '/calendar'
@@ -241,6 +310,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingBookableItemsAddIndexRouteImport
       parentRoute: typeof BookingRouteRoute
     }
+    '/booking/calendar/bookings/$id': {
+      id: '/booking/calendar/bookings/$id'
+      path: '/calendar/bookings/$id'
+      fullPath: '/booking/calendar/bookings/$id'
+      preLoaderRoute: typeof BookingCalendarBookingsIdRouteRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
+    '/booking/calendar/bookings/add/': {
+      id: '/booking/calendar/bookings/add/'
+      path: '/calendar/bookings/add'
+      fullPath: '/booking/calendar/bookings/add/'
+      preLoaderRoute: typeof BookingCalendarBookingsAddIndexRouteImport
+      parentRoute: typeof BookingRouteRoute
+    }
+    '/booking/calendar/bookings/$id/': {
+      id: '/booking/calendar/bookings/$id/'
+      path: '/'
+      fullPath: '/booking/calendar/bookings/$id/'
+      preLoaderRoute: typeof BookingCalendarBookingsIdIndexRouteImport
+      parentRoute: typeof BookingCalendarBookingsIdRouteRoute
+    }
     '/booking/bookable-items/$globalId/{-$tab}/': {
       id: '/booking/bookable-items/$globalId/{-$tab}/'
       path: '/bookable-items/$globalId/{-$tab}'
@@ -248,28 +338,59 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRouteImport
       parentRoute: typeof BookingRouteRoute
     }
+    '/booking/calendar/bookings/$id/edit/': {
+      id: '/booking/calendar/bookings/$id/edit/'
+      path: '/edit'
+      fullPath: '/booking/calendar/bookings/$id/edit/'
+      preLoaderRoute: typeof BookingCalendarBookingsIdEditIndexRouteImport
+      parentRoute: typeof BookingCalendarBookingsIdRouteRoute
+    }
   }
 }
+
+interface BookingCalendarBookingsIdRouteRouteChildren {
+  BookingCalendarBookingsIdIndexRoute: typeof BookingCalendarBookingsIdIndexRoute
+  BookingCalendarBookingsIdEditIndexRoute: typeof BookingCalendarBookingsIdEditIndexRoute
+}
+
+const BookingCalendarBookingsIdRouteRouteChildren: BookingCalendarBookingsIdRouteRouteChildren =
+  {
+    BookingCalendarBookingsIdIndexRoute: BookingCalendarBookingsIdIndexRoute,
+    BookingCalendarBookingsIdEditIndexRoute:
+      BookingCalendarBookingsIdEditIndexRoute,
+  }
+
+const BookingCalendarBookingsIdRouteRouteWithChildren =
+  BookingCalendarBookingsIdRouteRoute._addFileChildren(
+    BookingCalendarBookingsIdRouteRouteChildren,
+  )
 
 interface BookingRouteRouteChildren {
   BookingIndexRoute: typeof BookingIndexRoute
   BookingCalendarIndexRoute: typeof BookingCalendarIndexRoute
+  BookingMyBookingsIndexRoute: typeof BookingMyBookingsIndexRoute
   BookingPreferencesIndexRoute: typeof BookingPreferencesIndexRoute
+  BookingCalendarBookingsIdRouteRoute: typeof BookingCalendarBookingsIdRouteRouteWithChildren
   BookingBookableItemsAddIndexRoute: typeof BookingBookableItemsAddIndexRoute
   BookingConfigBookableItemsIndexRoute: typeof BookingConfigBookableItemsIndexRoute
   BookingConfigSettingsIndexRoute: typeof BookingConfigSettingsIndexRoute
   BookingBookableItemsGlobalIdChar123TabChar125IndexRoute: typeof BookingBookableItemsGlobalIdChar123TabChar125IndexRoute
+  BookingCalendarBookingsAddIndexRoute: typeof BookingCalendarBookingsAddIndexRoute
 }
 
 const BookingRouteRouteChildren: BookingRouteRouteChildren = {
   BookingIndexRoute: BookingIndexRoute,
   BookingCalendarIndexRoute: BookingCalendarIndexRoute,
+  BookingMyBookingsIndexRoute: BookingMyBookingsIndexRoute,
   BookingPreferencesIndexRoute: BookingPreferencesIndexRoute,
+  BookingCalendarBookingsIdRouteRoute:
+    BookingCalendarBookingsIdRouteRouteWithChildren,
   BookingBookableItemsAddIndexRoute: BookingBookableItemsAddIndexRoute,
   BookingConfigBookableItemsIndexRoute: BookingConfigBookableItemsIndexRoute,
   BookingConfigSettingsIndexRoute: BookingConfigSettingsIndexRoute,
   BookingBookableItemsGlobalIdChar123TabChar125IndexRoute:
     BookingBookableItemsGlobalIdChar123TabChar125IndexRoute,
+  BookingCalendarBookingsAddIndexRoute: BookingCalendarBookingsAddIndexRoute,
 }
 
 const BookingRouteRouteWithChildren = BookingRouteRoute._addFileChildren(
