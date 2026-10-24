@@ -99,6 +99,7 @@ export function isPickerExpressionValid<TDocument>(
 
 function searchExpression<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
+  metadata: ApiV2CollectionMetadata<TDocument>,
   search: string,
 ): FilterExpression<TDocument> | null {
   const value = search.trim();
@@ -111,9 +112,26 @@ function searchExpression<TDocument>(
       children.push({ kind: "comparison", field, operator: "contains", value });
       continue;
     }
-    const globalId = supportedGlobalId(value);
-    if (globalId === null) continue;
     const relationship = selector.slice(0, selector.lastIndexOf(".")) as SearchSelector<TDocument>;
+    const picker = metadata.filtering.selectors[String(relationship)]?.picker;
+    const source = picker ? compatiblePickerSource(config, picker.resource, picker.globalIdPrefix) : undefined;
+    const normalized = source
+      ? source.normalizeValue
+        ? source.normalizeValue(value)
+        : source.ownsValue(value)
+          ? value
+          : null
+      : null;
+    const globalId = source
+      ? normalized !== null && source.ownsValue(normalized)
+        ? normalized
+        : null
+      : picker
+        ? picker.globalIdPrefix === "IN"
+          ? supportedGlobalId(value)
+          : null
+        : supportedGlobalId(value);
+    if (globalId === null) continue;
     children.push({ kind: "comparison", field: relationship, operator: "equals", value: globalId });
   }
   if (children.length === 0) return null;
@@ -187,7 +205,7 @@ export function collectionQueryParams<TDocument>(
     params.set("sort", serializeSorting(state.sorting));
   }
 
-  const search = searchExpression(config, state.filters.search);
+  const search = searchExpression(config, metadata, state.filters.search);
   const filters = state.filters.expression
     ? normalizePickerExpression(state.filters.expression, config, metadata)
     : null;

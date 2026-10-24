@@ -1,4 +1,3 @@
-import { cmp, eq } from "rsql-builder";
 import * as v from "valibot";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
@@ -21,11 +20,16 @@ const referenceSchema = v.object({
   ),
 });
 const validId = (value: string) => databaseIdFromGlobalId(value, "IN") !== null;
+const canonicalId = (value: string) => {
+  const id = databaseIdFromGlobalId(value, "IN");
+  return id === null ? null : `IN${id}`;
+};
 
 /** Booking access owns discovery and reference resolution through configurations. */
 export const bookingInstrumentSource: RelationshipSource = {
   id: "booking-instruments",
   globalIdPrefix: "IN",
+  normalizeValue: canonicalId,
   ownsValue: validId,
   search: async (term, token, signal) => {
     const value = term.trim();
@@ -41,9 +45,18 @@ export const bookingInstrumentSource: RelationshipSource = {
   },
   resolve: async (value, token, signal) => {
     if (!validId(value)) return null;
+    const canonical = canonicalId(value);
+    if (canonical === null) return null;
+    const resolved = await bookingInstrumentSource.resolveMany?.([value], token, signal);
+    return resolved?.[canonical] ?? null;
+  },
+  batchSize: 100,
+  resolveMany: async (values, token, signal) => {
+    const targets = [...new Set(values.map(canonicalId).filter((value): value is string => value !== null))];
+    if (targets.length === 0) return {};
     const parameters = new URLSearchParams({
-      where: cmp("target", eq(value.toUpperCase())).toString(),
-      limit: "1",
+      where: `target=in=(${targets.join(",")})`,
+      limit: String(Math.min(targets.length, 100)),
       depth: "1",
       "fields[booking-configurations]": "id,target",
     });
@@ -52,8 +65,14 @@ export const bookingInstrumentSource: RelationshipSource = {
       signal,
     });
     if (!response.ok) throw new Error(`Booking reference request failed (${response.status})`);
-    const target = parseOrThrow(referenceSchema, await response.json()).docs[0]?.target;
-    return target ? { ...target.value, globalId: target.globalId } : null;
+    const documents = parseOrThrow(referenceSchema, await response.json()).docs;
+    const requested = new Set(targets);
+    return Object.fromEntries(
+      documents.flatMap(({ target }) => {
+        const key = canonicalId(target.globalId);
+        return key !== null && requested.has(key) ? [[key, { ...target.value, globalId: key }]] : [];
+      }),
+    );
   },
   toOption: (document, context) => {
     const target = parseOrThrow(targetSchema, document);
