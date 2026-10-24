@@ -9,8 +9,14 @@ import {
 } from "@tanstack/react-router";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { Suspense } from "react";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
+import { isPlainDate } from "@/modules/booking/domain/bookingTime";
+import CalendarPage from "@/modules/booking/pages/calendar/CalendarPage";
 import BookingPreferencesPage from "@/modules/booking/pages/preferences/BookingPreferencesPage";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
+import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
+import { bookableItemsOpenApi } from "../bookable-items/mocks/bookableItemsMocks";
 
 /** Fetches preferences so reload persistence is observable. */
 export function BookingPreferencesPageStory() {
@@ -18,6 +24,11 @@ export function BookingPreferencesPageStory() {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+  queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
+  queryClient.setQueryData(
+    ["api-v2", "openapi", "booking-configurations"],
+    apiV2CollectionMetadataFromOpenApi(bookableItemsOpenApi, "booking-configurations"),
+  );
 
   const root = createRootRoute({ component: Outlet });
   const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
@@ -25,6 +36,15 @@ export function BookingPreferencesPageStory() {
     routeTree: root.addChildren([
       booking.addChildren([
         createRoute({ getParentRoute: () => booking, path: "/preferences/", component: BookingPreferencesPage }),
+        createRoute({
+          getParentRoute: () => booking,
+          path: "/calendar/",
+          validateSearch: (search: Record<string, unknown>): { date?: string; target?: string } => ({
+            date: typeof search.date === "string" && isPlainDate(search.date) ? search.date : undefined,
+            ...(typeof search.target === "string" && /^IN\d+$/.test(search.target) ? { target: search.target } : {}),
+          }),
+          component: CalendarPage,
+        }),
       ]),
     ]),
     history: createBrowserHistory(),
