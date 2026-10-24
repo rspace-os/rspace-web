@@ -63,6 +63,14 @@ export function BookingDetailsView() {
       </span>
     ),
   ]);
+  if (booking.state === "CANCELLED" && booking.cancellationReason) {
+    facts.push([
+      t("bookings.details.cancellationReason"),
+      <span key="cancellation-reason" className="whitespace-pre-line">
+        {booking.cancellationReason}
+      </span>,
+    ]);
+  }
 
   return (
     <Panel

@@ -79,12 +79,13 @@ class BookingNotificationServiceTest {
     Instrument instrument = instrument("<Mic & scope>");
     TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, actor);
     when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
+    List<BookingNotificationRecipient> recipients =
+        List.of(
+            new BookingNotificationRecipient(
+                recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, false));
     when(recipientReader.selectRecipients(
             INSTRUMENT_ID, notificationType, actor.getId(), actor.getId()))
-        .thenReturn(
-            List.of(
-                new BookingNotificationRecipient(
-                    recipient, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, false)));
+        .thenReturn(recipients);
 
     service.notify(booking, actor, notificationType);
 
@@ -96,7 +97,6 @@ class BookingNotificationServiceTest {
     assertEquals(true, config.getValue().isBroadcast());
     assertEquals(CommunicationNotifyPolicy.ALWAYS_NOTIFY, config.getValue().getPolicyOverride());
     assertEquals(false, config.getValue().isRecordAuthorisationRequired());
-    assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     assertEquals(Set.of(recipient), config.getValue().getNotificationTargetsOverride());
     // CommunicationManager mutates this set before persisting recipients.
     config.getValue().getNotificationTargetsOverride().remove(actor);
@@ -107,6 +107,7 @@ class BookingNotificationServiceTest {
     assertEquals("IN12", data.getInstrumentGlobalIdentifier());
     assertEquals("2026-01-02T03:04:05Z", data.getStartTime());
     assertEquals("2026-01-02T04:04:05Z", data.getEndTime());
+    assertFalse(config.getValue().isNotificationEventPreferenceOverride());
     // The saved message is also the email body, so it links with absolute URLs.
     String bookingLink =
         "<a href=\"https://rspace.example.org/booking/calendar/bookings/42\">42</a>";
@@ -179,11 +180,13 @@ class BookingNotificationServiceTest {
   }
 
   @Test
-  void marksCancellationRequesterForEventPreferenceOverride() {
+  void addsCancellationReasonAndPreferenceOverrideForARequesterCancelledBySomeoneElse() {
     User actor = user(1L, "owner");
     User requester = user(2L, "requester");
-    when(instrumentDao.getSafeNull(INSTRUMENT_ID))
-        .thenReturn(Optional.of(instrument("Microscope")));
+    Instrument instrument = instrument("Microscope");
+    TimeSlotBooking booking = booking(BOOKING_ID, BookingEventKind.BOOKING, requester);
+    booking.setCancellationReason("Needs <repair>");
+    when(instrumentDao.getSafeNull(INSTRUMENT_ID)).thenReturn(Optional.of(instrument));
     when(recipientReader.selectRecipients(
             INSTRUMENT_ID,
             NotificationType.NOTIFICATION_BOOKING_CANCELLED,
@@ -194,15 +197,18 @@ class BookingNotificationServiceTest {
                 new BookingNotificationRecipient(
                     requester, ZoneId.of("Europe/Berlin"), BookingTimeFormat.AUTOMATIC, true)));
 
-    service.notify(
-        booking(BOOKING_ID, BookingEventKind.BOOKING, requester),
-        actor,
-        NotificationType.NOTIFICATION_BOOKING_CANCELLED);
+    service.notify(booking, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
 
     ArgumentCaptor<NotificationConfig> config = ArgumentCaptor.forClass(NotificationConfig.class);
-    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), any());
+    ArgumentCaptor<String> message = ArgumentCaptor.forClass(String.class);
+    verify(communicationManager).notify(eq(actor), isNull(), config.capture(), message.capture());
     assertTrue(config.getValue().isNotificationEventPreferenceOverride());
     assertEquals(Set.of(requester), config.getValue().getNotificationTargetsOverride());
+    assertEquals(
+        "Needs <repair>",
+        ((BookingNotificationData) config.getValue().getNotificationData())
+            .getCancellationReason());
+    assertTrue(message.getValue().contains("Reason: Needs &lt;repair&gt;"), message.getValue());
   }
 
   @Test

@@ -1,13 +1,6 @@
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  Outlet,
-  RouterProvider,
-} from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
@@ -15,41 +8,16 @@ import { Suspense } from "react";
 import { describe, expect, it } from "vitest";
 import { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import type { BookingDetails } from "@/modules/booking/domain/booking";
 import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
-import { createBookingEventTestRouteTree } from "./bookingEventTestHarness";
+import { bookingEventFixture, createBookingEventTestRouter } from "./bookingEventTestHarness";
 
-const document = {
-  id: 41,
-  version: 0,
-  target: {
-    relationTo: "booking-instruments",
-    value: {
-      id: 123,
-      name: "Confocal microscope",
-      deleted: false,
-      parentContainerName: "Imaging lab",
-      parentContainerGlobalId: "IC456",
-    },
-    globalId: "IN123",
-  },
-  canViewConfiguration: true,
-  timezone: "Europe/Berlin",
-  start: "2026-08-17T08:00:00Z",
-  end: "2026-08-17T10:00:00Z",
-  state: "CONFIRMED",
-  kind: "BOOKING",
-  privacy: "full",
-  purpose: "Cell imaging",
-  bookedBy: "Ada Lovelace (ada)",
-  createdBy: "Grace Hopper (grace)",
-  canEdit: true,
-  canCancel: true,
-  createdAt: "2026-08-01T09:00:00Z",
-  updatedAt: "2026-08-02T10:00:00Z",
-} as const;
-
-function renderPage(path = "/booking/calendar/bookings/41", preferencesReady?: Promise<void>) {
+function renderPage(
+  path = "/booking/calendar/bookings/41",
+  preferencesReady?: Promise<void>,
+  preferences: unknown = inheritedBrowserBookingPreferences,
+) {
   server.use(oauthTokenHandler(true));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
@@ -61,20 +29,9 @@ function renderPage(path = "/booking/calendar/bookings/41", preferencesReady?: P
       }),
     );
   } else {
-    queryClient.setQueryData(bookingDisplayPreferencesQueryKey, inheritedBrowserBookingPreferences);
+    queryClient.setQueryData(bookingDisplayPreferencesQueryKey, preferences);
   }
-  const root = createRootRoute({ component: Outlet });
-  const booking = createRoute({ getParentRoute: () => root, path: "/booking", component: Outlet });
-  const myBookings = createRoute({ getParentRoute: () => booking, path: "/my-bookings", component: Outlet });
-  const item = createRoute({
-    getParentRoute: () => booking,
-    path: "/bookable-items/$globalId/{-$tab}",
-    component: Outlet,
-  });
-  const router = createRouter({
-    routeTree: root.addChildren([booking.addChildren([myBookings, item, createBookingEventTestRouteTree(booking)])]),
-    history: createMemoryHistory({ initialEntries: [path] }),
-  });
+  const router = createBookingEventTestRouter(path);
   return {
     ...render(
       <QueryClientProvider client={queryClient}>
@@ -97,7 +54,7 @@ describe("BookingEventPage", () => {
       http.get("/api/v2/bookings/41", async () => {
         requested = true;
         await booking.promise;
-        return HttpResponse.json(document);
+        return HttpResponse.json(bookingEventFixture);
       }),
     );
     renderPage("/booking/calendar/bookings/41", preferences.promise);
@@ -128,7 +85,7 @@ describe("BookingEventPage", () => {
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.queryByRole("button")).not.toBeInTheDocument();
     } finally {
-      response.resolve(HttpResponse.json(document));
+      response.resolve(HttpResponse.json(bookingEventFixture));
     }
     expect(await screen.findByRole("heading", { name: "Confocal microscope" })).toBeVisible();
     expect(screen.getByRole("main")).not.toHaveAttribute("aria-busy", "true");
@@ -137,7 +94,7 @@ describe("BookingEventPage", () => {
   it.each([403, 404])("does not retain another booking while navigating to a denied booking (%s)", async (status) => {
     const response = Promise.withResolvers<Response>();
     server.use(
-      http.get("/api/v2/bookings/41", () => HttpResponse.json(document)),
+      http.get("/api/v2/bookings/41", () => HttpResponse.json(bookingEventFixture)),
       http.get("/api/v2/bookings/42", () => response.promise),
     );
     const { router } = renderPage();
@@ -156,7 +113,7 @@ describe("BookingEventPage", () => {
   });
 
   it("renders the event readout, metadata aside, item return, and compact location", async () => {
-    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json(document)));
+    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json(bookingEventFixture)));
     renderPage();
 
     expect(await screen.findByRole("heading", { level: 1, name: "Confocal microscope" })).toHaveClass(
@@ -184,11 +141,32 @@ describe("BookingEventPage", () => {
     );
   });
 
+  it.each([
+    // Europe/Berlin repeats 02:00-03:00 on 2026-10-25; both bookings start at 02:30 and end at 03:30.
+    ["earlier", "2026-10-25T00:30:00Z", /0?2:30\s?(AM)? \+02:00 – .*0?3:30\s?(AM)? \+01:00/],
+    ["later", "2026-10-25T01:30:00Z", /0?2:30\s?(AM)? \+01:00 – .*0?3:30\s?(AM)? \+01:00/],
+  ])("tells the %s occurrence of a repeated hour apart in the booking's times", async (_, start, when) => {
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({ ...bookingEventFixture, start, end: "2026-10-25T02:30:00Z" }),
+      ),
+    );
+    renderPage("/booking/calendar/bookings/41", undefined, {
+      ...inheritedBrowserBookingPreferences,
+      timezoneMode: "CUSTOM",
+      customTimezone: "Europe/Berlin",
+      overridden: true,
+    });
+
+    const label = await screen.findByText("booking:bookings.details.when");
+    expect(label.nextElementSibling).toHaveTextContent(when);
+  });
+
   it("keeps role-lost details readable without configuration capabilities", async () => {
     server.use(
       http.get("/api/v2/bookings/41", () =>
         HttpResponse.json({
-          ...document,
+          ...bookingEventFixture,
           target: null,
           timezone: null,
           canViewConfiguration: false,
@@ -215,28 +193,45 @@ describe("BookingEventPage", () => {
   });
 
   it("cancels in place and keeps the same readable URL", async () => {
-    let current = {
-      ...document,
-      version: document.version as number,
-      state: document.state as "CONFIRMED" | "CANCELLED",
-      canEdit: document.canEdit as boolean,
-      canCancel: document.canCancel as boolean,
-    };
+    let current: BookingDetails = { ...bookingEventFixture };
     server.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(current)),
       http.patch("/api/v2/bookings/41", () => {
-        current = { ...current, version: 1, state: "CANCELLED", canEdit: false, canCancel: false };
+        current = {
+          ...current,
+          version: 1,
+          state: "CANCELLED",
+          cancellationReason: "Instrument needs recalibration",
+          canEdit: false,
+          canCancel: false,
+        };
         return HttpResponse.json(current);
       }),
     );
     const { router } = renderPage();
     const user = userEvent.setup();
 
-    await user.click(await screen.findByRole("button", { name: "booking:bookings.actions.cancel" }));
+    const trigger = await screen.findByRole("button", { name: "booking:bookings.actions.cancel" });
+    await user.click(trigger);
+    await user.click(screen.getByRole("button", { name: "booking:bookings.cancelDialog.keep" }));
+    await waitFor(() => expect(screen.getByText("booking:bookings.details.confirmed")).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+    const badge = screen.getByText("booking:bookings.details.confirmed");
+    const hiddenAtFocus: boolean[] = [];
+    badge.addEventListener("focus", () => {
+      hiddenAtFocus.push(Boolean(badge.closest('[aria-hidden="true"]')));
+    });
+    await user.click(trigger);
     const cancellationButtons = screen.getAllByRole("button", { name: "booking:bookings.actions.cancel" });
     await user.click(cancellationButtons[cancellationButtons.length - 1]);
 
-    expect(await screen.findByText("booking:bookings.details.cancelled")).toBeVisible();
+    const cancelledBadge = await screen.findByText("booking:bookings.details.cancelled");
+    await waitFor(() => expect(cancelledBadge).toHaveFocus());
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(hiddenAtFocus).toEqual([false]);
+    expect(screen.getByText("booking:bookings.details.cancellationReason")).toBeVisible();
+    expect(screen.getByText("Instrument needs recalibration")).toBeVisible();
     expect(router.state.location.pathname).toBe("/booking/calendar/bookings/41");
     expect(screen.queryByRole("button", { name: "booking:bookings.actions.cancel" })).not.toBeInTheDocument();
   });
@@ -261,7 +256,13 @@ describe("BookingEventPage", () => {
   it("conceals a busy-only response behind the unavailable state", async () => {
     server.use(
       http.get("/api/v2/bookings/41", () =>
-        HttpResponse.json({ ...document, privacy: "busy", purpose: null, bookedBy: null }),
+        HttpResponse.json({
+          ...bookingEventFixture,
+          privacy: "busy",
+          purpose: null,
+          cancellationReason: null,
+          bookedBy: null,
+        }),
       ),
     );
     renderPage();

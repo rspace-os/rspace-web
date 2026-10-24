@@ -594,6 +594,7 @@ See [Booking](DevDocs/DeveloperNotes/Booking.md) for domain, scheduling and life
 | 25. | Booking privacy | The visibility of event details to callers reading a Booking calendar. |
 | 26. | Half-open booking interval | A time interval including its start and excluding its end. |
 | 27. | Booking cancellation | The transition of a booking to the Cancelled state. |
+| 28. | Restore a booking | Return a cancelled booking to Confirmed under the event lifecycle rules. |
 
 ## Booking calendar presentation
 

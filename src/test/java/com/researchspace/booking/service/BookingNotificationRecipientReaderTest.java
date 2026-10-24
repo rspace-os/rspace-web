@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.dao.BookingNotificationSubscriptionDao;
@@ -70,6 +71,23 @@ class BookingNotificationRecipientReaderTest {
   }
 
   @Test
+  void excludesSubscriberWithoutReadResourceCapability() {
+    User subscriber = user("revoked-reader", 2L);
+    BookableItemNotificationSubscription subscription = subscriptionFor(subscriber);
+    when(subscriptions.findEnabledByInstrument(INSTRUMENT_ID)).thenReturn(List.of(subscription));
+    when(permissions.resolve(any(BookableTargetReference.class), eq(subscriber)))
+        .thenReturn(ResolvedResourceAccess.none());
+
+    assertEquals(
+        List.of(),
+        reader
+            .selectRecipients(INSTRUMENT_ID, NotificationType.NOTIFICATION_BOOKING_CREATED, 99L)
+            .stream()
+            .map(recipient -> recipient.user().getId())
+            .toList());
+  }
+
+  @Test
   void addsSubscribedCancellationRequesterOnlyOnce() {
     User requester = user("cancel-requester", 3L);
     BookableItemNotificationSubscription subscription = subscriptionFor(requester);
@@ -84,6 +102,7 @@ class BookingNotificationRecipientReaderTest {
 
     assertEquals(List.of(requester.getId()), selected.stream().map(r -> r.user().getId()).toList());
     assertTrue(selected.get(0).requester());
+    verify(displayPreferences).resolveForNotificationSnapshot(requester);
   }
 
   @Test

@@ -5,7 +5,7 @@ import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
-import { collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { busyBooking, collectionResponse, otherBooking, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { CALENDAR_BOOKING_FIELDS, loadCalendarEvents, useCalendarEvents } from "../calendarEvents";
 
 function calendarBounds(firstDate: string, lastDate: string, timezone: string) {
@@ -78,6 +78,19 @@ describe("calendar events", () => {
     const selectedFields = requests[0].searchParams.get("fields[bookings]");
     expect(selectedFields).toBe(CALENDAR_BOOKING_FIELDS);
     expect(selectedFields?.split(",")).toContain("canViewConfiguration");
+  });
+
+  it("accepts busy events with a concealed requester identity", async () => {
+    server.use(http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([busyBooking]))));
+
+    await expect(
+      loadCalendarEvents({
+        ...calendarBounds("2026-08-17", "2026-08-23", "Europe/Berlin"),
+        token: "token",
+        signal: new AbortController().signal,
+      }),
+    ).resolves.toEqual([busyBooking]);
+    expect(busyBooking.requesterId).toBeNull();
   });
 
   it("returns no events for an empty target scope while leaving undefined unrestricted", async () => {

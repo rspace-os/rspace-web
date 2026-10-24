@@ -34,14 +34,19 @@ import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -225,7 +230,7 @@ class TimeSlotBookingManagerLifecycleTest {
   }
 
   @Test
-  void requesterCanCancelButCannotReinstate() {
+  void requesterCanCancelAndThenRestoreTheBooking() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     stubReadableBookingAndConfigurationLock(existing);
 
@@ -263,14 +268,7 @@ class TimeSlotBookingManagerLifecycleTest {
     verify(events, times(1)).publishEvent(any(TimeSlotBookingAuditEvent.class));
     verify(bookingNotificationService, times(1))
         .notify(cancelled, actor, NotificationType.NOTIFICATION_BOOKING_CANCELLED);
-    assertThrows(
-        BookingStateTransitionException.class,
-        () ->
-            manager.updateBooking(
-                41L,
-                new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CONFIRMED),
-                actor,
-                actor));
+    // A cancelled booking cannot be edited, only restored.
     assertThrows(
         BookingStateTransitionException.class,
         () ->
@@ -279,6 +277,30 @@ class TimeSlotBookingManagerLifecycleTest {
                 new TimeSlotBookingManager.Patch(null, null, true, "Changed", null),
                 actor,
                 actor));
+    assertThrows(
+        BookingStateTransitionException.class,
+        () ->
+            manager.updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(
+                    null, null, true, "Changed", BookingState.CONFIRMED),
+                actor,
+                actor));
+
+    TimeSlotBooking restored =
+        manager
+            .updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CONFIRMED),
+                actor,
+                actor)
+            .orElseThrow();
+
+    assertEquals(BookingState.CONFIRMED, restored.getState());
+    assertNull(restored.getCancellationReason());
+    verify(bookingDao, times(2)).saveAndFlush(any(TimeSlotBooking.class));
+    verify(bookingNotificationService).notifyRestored(restored, actor);
+    verify(events, times(2)).publishEvent(any(TimeSlotBookingAuditEvent.class));
   }
 
   @Test
@@ -376,6 +398,154 @@ class TimeSlotBookingManagerLifecycleTest {
   }
 
   @Test
+  void restoreRequiresAFutureStartAnEnabledItemAndAFreeSlot() {
+    TimeSlotBooking cancelled = booking(41L, 12L, actor);
+    cancelled.setState(BookingState.CANCELLED);
+    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(cancelled));
+    TimeSlotBookingManager.Patch restore =
+        new TimeSlotBookingManager.Patch(null, null, false, null, BookingState.CONFIRMED);
+
+    cancelled.getBookingConfiguration().setEnabled(false);
+    when(configurationDao.lockActiveById(4L))
+        .thenReturn(Optional.of(cancelled.getBookingConfiguration()));
+    assertThrows(
+        BookingTargetUnavailableException.class,
+        () -> manager.updateBooking(41L, restore, actor, actor));
+
+    cancelled.getBookingConfiguration().setEnabled(true);
+    TimeSlotBooking taken =
+        event(
+            59L,
+            BookingEventKind.BOOKING,
+            start().toInstant().toString(),
+            end().toInstant().toString());
+    when(bookingDao.findFirstOverlap(eq(4L), any(), any(), eq(41L), any()))
+        .thenReturn(Optional.of(taken));
+    BookingOverlapException overlap =
+        assertThrows(
+            BookingOverlapException.class, () -> manager.updateBooking(41L, restore, actor, actor));
+    assertEquals(59L, overlap.conflict().id());
+
+    when(bookingDao.findFirstOverlap(eq(4L), any(), any(), eq(41L), any()))
+        .thenReturn(Optional.empty());
+    cancelled.setStartTime(Date.from(Instant.parse("2025-11-30T10:00:00Z")));
+    assertThrows(
+        BookingStateTransitionException.class,
+        () -> manager.updateBooking(41L, restore, actor, actor));
+
+    verify(bookingDao, never()).saveAndFlush(any());
+    verify(bookingNotificationService, never()).notifyRestored(any(), any());
+  }
+
+  @ParameterizedTest
+  @MethodSource("cancellationReasonInputs")
+  void cancellationReasonIsNormalizedOnTheCancellation(String input, String expected) {
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
+    when(configurationDao.lockActiveById(4L))
+        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+
+    TimeSlotBooking cancelled =
+        manager
+            .updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(
+                    null, null, false, null, BookingState.CANCELLED, input),
+                actor,
+                actor)
+            .orElseThrow();
+
+    assertEquals(expected, cancelled.getCancellationReason());
+    assertEquals(BookingState.CANCELLED, cancelled.getState());
+    assertEquals(expected, cancelled.getVisibleCancellationReason());
+  }
+
+  private static Stream<Arguments> cancellationReasonInputs() {
+    return Stream.of(
+        Arguments.of("  Instrument needs recalibration  ", "Instrument needs recalibration"),
+        Arguments.of(" \t\n ", null));
+  }
+
+  @Test
+  void rejectsAnOverlongReasonAndAReasonWithoutCancellation() {
+    assertEquals(
+        "errors.api.v2.booking.cancellationReason.length",
+        assertThrows(
+                BookingCancellationReasonLengthException.class,
+                () ->
+                    manager.updateBooking(
+                        41L,
+                        new TimeSlotBookingManager.Patch(
+                            null, null, false, null, BookingState.CANCELLED, "x".repeat(501)),
+                        actor,
+                        actor))
+            .getMessage());
+    assertEquals(
+        "errors.api.v2.booking.cancellationReason.requiresCancel",
+        assertThrows(
+                BookingCancellationReasonRequiresCancelException.class,
+                () ->
+                    manager.updateBooking(
+                        41L,
+                        new TimeSlotBookingManager.Patch(
+                            null, null, false, null, null, "Needs recalibration"),
+                        actor,
+                        actor))
+            .getMessage());
+    verify(bookingDao, never()).findReadableById(any(), any());
+    verify(configurationDao, never()).lockActiveById(any());
+    verify(events, never()).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
+  }
+
+  @Test
+  void repeatedCancellationRequiresTheSameReasonAndStillHonoursVersion() {
+    TimeSlotBooking existing = booking(41L, 12L, actor);
+    existing.setState(BookingState.CANCELLED);
+    existing.setCancellationReason("Already recalibrated");
+    existing.setVersion(4L);
+    when(bookingDao.findReadableById(eq(41L), any())).thenReturn(Optional.of(existing));
+    when(configurationDao.lockActiveById(4L))
+        .thenReturn(Optional.of(existing.getBookingConfiguration()));
+
+    TimeSlotBooking replayed =
+        manager
+            .updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(
+                    null, null, false, null, BookingState.CANCELLED, " Already recalibrated "),
+                existing.getVersion(),
+                actor,
+                actor)
+            .orElseThrow();
+    assertSame(existing, replayed);
+    verify(bookingDao, never()).saveAndFlush(any(TimeSlotBooking.class));
+    verify(events, never()).publishEvent(any(TimeSlotBookingAuditEvent.class));
+    verify(bookingNotificationService, never()).notify(any(), any(), any());
+
+    assertThrows(
+        BookingStateTransitionException.class,
+        () ->
+            manager.updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(
+                    null, null, false, null, BookingState.CANCELLED, "Different reason"),
+                existing.getVersion(),
+                actor,
+                actor));
+    assertThrows(
+        BookingConcurrentModificationException.class,
+        () ->
+            manager.updateBooking(
+                41L,
+                new TimeSlotBookingManager.Patch(
+                    null, null, false, null, BookingState.CANCELLED, "Already recalibrated"),
+                existing.getVersion() - 1,
+                actor,
+                actor));
+  }
+
+  @Test
   void unreadableBookingIsConcealedRegardlessOfExpectedVersion() {
     TimeSlotBooking existing = booking(41L, 12L, actor);
     stubReadableBookingAndConfigurationLock(existing);
@@ -435,5 +605,10 @@ class TimeSlotBookingManagerLifecycleTest {
         Optional.of(BookingResourceRoleScheme.VIEWER),
         Set.of(BookingResourceRoleScheme.READ_RESOURCE),
         List.of());
+  }
+
+  private static TimeSlotBooking event(
+      long id, BookingEventKind kind, String startValue, String endValue) {
+    return TimeSlotBookingManagerTest.event(id, kind, startValue, endValue);
   }
 }

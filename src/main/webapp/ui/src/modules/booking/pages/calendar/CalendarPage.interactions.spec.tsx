@@ -113,7 +113,12 @@ describe("Calendar page", () => {
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         updatedPayload = (await request.json()) as Record<string, unknown>;
         ifMatch = request.headers.get("If-Match");
-        return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
+        return HttpResponse.json({
+          ...ownBooking,
+          cancellationReason: null,
+          ...updatedPayload,
+          version: ownBooking.version + 1,
+        });
       }),
     );
     render(<CalendarPageStory history={history} />);
@@ -147,7 +152,12 @@ describe("Calendar page", () => {
     worker.use(
       http.patch("/api/v2/bookings/41", async ({ request }) => {
         updatedPayload = (await request.json()) as Record<string, unknown>;
-        return HttpResponse.json({ ...ownBooking, ...updatedPayload, version: ownBooking.version + 1 });
+        return HttpResponse.json({
+          ...ownBooking,
+          cancellationReason: null,
+          ...updatedPayload,
+          version: ownBooking.version + 1,
+        });
       }),
     );
     render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
@@ -171,6 +181,39 @@ describe("Calendar page", () => {
     await expect.element(card.getByText("Booking #42")).toBeVisible();
     await expect.element(save).toBeDisabled();
     expect(updatedPayload).toBeUndefined();
+  });
+
+  test.each(["Resources", "Time grid"])("aligns the inline editor with its overlap lane in %s", async (layout) => {
+    const earlier = {
+      ...ownBooking,
+      id: 46,
+      start: "2026-08-17T07:00:00Z",
+      end: "2026-08-17T09:00:00Z",
+      purpose: "Earlier calibration",
+    };
+    worker.use(
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([earlier, ownBooking]))),
+    );
+    render(<CalendarPageStory history={history} preferences={institutionBookingPreferences} />);
+    await page.getByRole("button", { name: layout, exact: true }).click();
+    await calendar.day.click();
+    const event = calendar.event("Cell imaging");
+    await expect.element(event).toBeVisible();
+    const lane = event.element().closest<HTMLElement>("[data-event-id]");
+    if (!lane) throw new Error("Booking must have a timeline lane");
+    expect(Number(lane.dataset.lane)).toBeGreaterThan(0);
+    await event.getByRole("button", { name: "Show details", exact: false }).click();
+    await calendar.editBooking.click();
+    const overlay = page.getByTestId("timeline-window-editor");
+    await expect.element(page.getByRole("button", { name: "Move booking time" })).toBeVisible();
+    await expect
+      .poll(() => Math.abs(overlay.element().getBoundingClientRect().top - event.element().getBoundingClientRect().top))
+      .toBeLessThanOrEqual(1);
+    await expect
+      .poll(() =>
+        Math.abs(overlay.element().getBoundingClientRect().height - event.element().getBoundingClientRect().height),
+      )
+      .toBeLessThanOrEqual(1);
   });
 
   test("moves and resizes a booking on the day timeline", async () => {
@@ -201,7 +244,7 @@ describe("Calendar page", () => {
   });
 
   test("opens a full event, edits it on its canonical page, and refreshes the readout", async () => {
-    let details = { ...ownBooking, createdBy: "Ada Lovelace (ada)" };
+    let details = { ...ownBooking, cancellationReason: null, createdBy: "Ada Lovelace (ada)" };
     worker.use(
       http.get("/api/v2/bookings/41", () => HttpResponse.json(details)),
       http.patch("/api/v2/bookings/41", async ({ request }) => {

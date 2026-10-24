@@ -58,7 +58,7 @@ export const otherBooking: BookingListDocument = {
 export const busyBooking: BookingListDocument = {
   ...otherBooking,
   id: 43,
-  requesterId: 3,
+  requesterId: null,
   start: "2026-08-21T09:00:00Z",
   end: "2026-08-21T11:00:00Z",
   purpose: null,

@@ -18,8 +18,13 @@ import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -73,6 +78,87 @@ public class BookingAuditTrailCsvGeneratorTest {
     assertEquals("Booking", getCellByRowColumn(csv, 4, 3));
     assertEquals("Cancelled", getCellByRowColumn(csv, 5, 2));
     assertEquals("Booking", getCellByRowColumn(csv, 5, 3));
+  }
+
+  @ParameterizedTest
+  @MethodSource("bookingCsvActionCases")
+  public void bookingCsvLabelsActions(
+      AuditDomain domain,
+      AuditAction action,
+      String id,
+      String state,
+      String description,
+      String expected)
+      throws IOException {
+    AuditTrailSearchResult result = createAuditSearchResult(domain, action, id, state, description);
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(
+            singleResult(result), defaultSearchConfig());
+
+    assertEquals(expected, getCellByRowColumn(csv, 2, 2));
+  }
+
+  private static Stream<Arguments> bookingCsvActionCases() {
+    return Stream.of(
+        Arguments.of(
+            AuditDomain.BOOKING, AuditAction.CREATE, "bookings:21", "CONFIRMED", null, "Created"),
+        Arguments.of(
+            AuditDomain.BOOKING, AuditAction.WRITE, "bookings:21", "CONFIRMED", null, "Changed"),
+        Arguments.of(
+            AuditDomain.BOOKING,
+            AuditAction.RESTORE,
+            "booking-configurations:22",
+            "ACTIVE",
+            null,
+            "Restored"),
+        Arguments.of(
+            AuditDomain.BOOKING, AuditAction.DELETE, "bookings:21", "CONFIRMED", null, "DELETE"),
+        Arguments.of(AuditDomain.RECORD, AuditAction.RESTORE, "SD23", "ACTIVE", null, "RESTORE"));
+  }
+
+  @Test
+  public void bookingNameIsTheRecordedNameTargetOrConfiguration() throws IOException {
+    AuditTrailSearchResult deleted =
+        createAuditSearchResult(
+            AuditDomain.BOOKING,
+            AuditAction.DELETE,
+            "booking-configurations:24",
+            "ARCHIVED",
+            "permanent=true");
+    deleted.getEvent().getData().getData().put("targetName", "Confocal microscope");
+    deleted.getEvent().getData().getData().put("deletedAt", "2026-09-28T18:29:48.555718112Z");
+    AuditTrailSearchResult configuration =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "booking-configurations:25", "ACTIVE", null);
+    configuration
+        .getEvent()
+        .getData()
+        .getData()
+        .put("target", Map.of("type", "INSTRUMENT", "id", 5));
+    AuditTrailSearchResult booking =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "bookings:26", "CONFIRMED", null);
+    booking
+        .getEvent()
+        .getData()
+        .getData()
+        .put("bookingConfigurationId", "booking-configurations:25");
+    AuditTrailSearchResult defaults =
+        createAuditSearchResult(
+            AuditDomain.BOOKING, AuditAction.WRITE, "booking-settings:1", null, null);
+
+    ResponseEntity<String> csv =
+        auditTrailSearchResultCsvGenerator.convertToCsv(
+            new SearchResultsImpl<>(toList(deleted, configuration, booking, defaults), 0, 4),
+            defaultSearchConfig());
+
+    assertEquals("Confocal microscope", getCellByRowColumn(csv, 2, 5));
+    assertEquals("IN5", getCellByRowColumn(csv, 3, 5));
+    assertEquals("booking-configurations:25", getCellByRowColumn(csv, 4, 5));
+    assertEquals("n/a", getCellByRowColumn(csv, 5, 5));
+    assertThat(csv.getBody()).contains("Deleted at (UTC): 2026-09-28T18:29:48Z;");
+    assertThat(csv.getBody()).doesNotContain("555718112");
   }
 
   @Test

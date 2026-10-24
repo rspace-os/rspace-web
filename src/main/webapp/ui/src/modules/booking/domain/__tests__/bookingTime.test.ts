@@ -16,6 +16,7 @@ import {
   formatPlainDate,
   formatWallClockTime,
   instantToWallClockMinute,
+  instrumentZoneDiffers,
   isPlainDate,
   resolveWallClock,
   sameTimeZone,
@@ -282,5 +283,21 @@ describe("sameTimeZone", () => {
     expect(sameTimeZone("Etc/UTC", "UTC")).toBe(true);
     expect(sameTimeZone("Asia/Kolkata", "Asia/Calcutta")).toBe(true);
     expect(sameTimeZone("Europe/Berlin", "Europe/Paris")).toBe(false);
+  });
+});
+
+describe("instrumentZoneDiffers", () => {
+  test("ignores an unavailable browser zone while retaining the display comparison", () => {
+    expect(instrumentZoneDiffers("UTC", "UTC", null)).toBe(false);
+    expect(instrumentZoneDiffers("UTC", "Europe/Berlin", null)).toBe(true);
+  });
+
+  test("treats timezone aliases as equivalent for both comparisons", () => {
+    expect(instrumentZoneDiffers("Asia/Kolkata", "Asia/Calcutta", "Asia/Kolkata")).toBe(false);
+  });
+
+  test("detects a difference from either the display zone or browser zone", () => {
+    expect(instrumentZoneDiffers("Europe/Berlin", "Europe/Paris", "Europe/Berlin")).toBe(true);
+    expect(instrumentZoneDiffers("UTC", "UTC", "Europe/Berlin")).toBe(true);
   });
 });
