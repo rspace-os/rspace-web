@@ -188,38 +188,7 @@ function realI18nWrapper() {
 }
 
 describe("BookableItemsPage", () => {
-  it("starts at the first page when applying the owner-attention filter", async () => {
-    const user = userEvent.setup();
-    const filteredPages: string[] = [];
-    server.use(
-      http.get("/api/v2/openapi.json", () => HttpResponse.json(openApi)),
-      http.get("/api/v2/booking-configurations", ({ request }) => {
-        const params = new URL(request.url).searchParams;
-        if (params.get("fields[booking-configurations]") === "id,ownerHealth") {
-          return HttpResponse.json(collectionPage([{ id: 7, ownerHealth: { hasEffectiveOwner: false } }]));
-        }
-        const page = Number(params.get("page"));
-        if ((params.get("where") ?? "").includes("id=in=(7)")) {
-          filteredPages.push(String(page));
-          return HttpResponse.json(pagedCollectionResponse(page === 1 ? [bookingConfiguration] : [], page, 1));
-        }
-        return HttpResponse.json(
-          pagedCollectionResponse(page === 2 ? [secondBookingConfiguration] : [bookingConfiguration], page),
-        );
-      }),
-    );
-    renderBookableItemsPage();
-    await screen.findByRole("link", { name: "booking:bookableItems.actions.viewDetails" });
-    await user.click(screen.getByRole("button", { name: "common:tableList.actions.nextPage" }));
-    await screen.findByText("Electron microscope");
-
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.ownerHealth.filter" }));
-
-    await waitFor(() => expect(filteredPages).toEqual(["1"]));
-    expect(await screen.findByText("Confocal microscope")).toBeVisible();
-  });
-
-  it("lists safe booking targets, owner health, and the Add action", async () => {
+  it("lists booking targets without obsolete owner-health controls", async () => {
     const user = userEvent.setup();
     const collectionRequests: Request[] = [];
     server.use(
@@ -243,7 +212,7 @@ describe("BookableItemsPage", () => {
       "text-2xl",
       "font-semibold",
     );
-    expect(screen.getByText("booking:bookableItems.ownerHealth.needsOwner")).toBeVisible();
+    expect(screen.queryByText("booking:bookableItems.ownerHealth.needsOwner")).not.toBeInTheDocument();
     expect(collectionRequests[0]?.headers.get("Authorization")).toBe(`Bearer ${OAUTH_TOKEN}`);
     expect(new URL(collectionRequests[0]?.url ?? "http://localhost").searchParams.get("depth")).toBe("1");
     expect(screen.getByRole("link", { name: "booking:bookableItems.actions.add" })).toHaveAttribute(
@@ -266,14 +235,7 @@ describe("BookableItemsPage", () => {
     expect(screen.getByRole("menuitem", { name: "booking:bookableItems.actions.archive" })).toBeVisible();
     await user.keyboard("{Escape}");
 
-    await user.click(screen.getByRole("button", { name: "booking:bookableItems.ownerHealth.filter" }));
-    await waitFor(() =>
-      expect(
-        collectionRequests.some((request) =>
-          decodeURIComponent(new URL(request.url).searchParams.get("where") ?? "").includes("id=in=(7)"),
-        ),
-      ).toBe(true),
-    );
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.ownerHealth.filter" })).not.toBeInTheDocument();
     await expectAccessible(container);
   });
 
@@ -478,7 +440,7 @@ describe("BookableItemsPage", () => {
     await waitFor(() => {
       const params = new URL(collectionRequest?.url ?? "http://localhost").searchParams;
       expect(params.get("fields[booking-configurations]")).toBe(
-        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities,ownerHealth",
+        "id,target,enabled,state,timezone,updatedAt,slotGranularityMinutes,openingHours,bufferBeforeMinutes,bufferAfterMinutes,allowDoubleBooking,maxBookingDurationMinutes,configurationVersion,effectiveRole,roleSources,capabilities",
       );
       expect(params.get("depth")).toBe("1");
     });

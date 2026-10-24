@@ -14,6 +14,7 @@ import com.researchspace.model.collection.DocumentValidationException.Violation;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.resourceaccess.ResourceAccessException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
@@ -58,6 +59,10 @@ class ApiV2ControllerAdviceTest {
     source.addMessage("errors.api.v2.bulk.limit", Locale.getDefault(), "Bulk limit detail");
     source.addMessage("errors.api.v2.tooManyRequests", Locale.getDefault(), "Throttle detail");
     source.addMessage("errors.api.v2.unexpected", Locale.getDefault(), "Unexpected detail");
+    source.addMessage(
+        "errors.api.v2.resourceAccess.inheritedReadOnly",
+        Locale.getDefault(),
+        "Inherited access is read-only.");
     source.addMessage(
         "errors.api.v2.methodNotAllowed", Locale.getDefault(), "Method not allowed detail");
     source.addMessage("errors.api.v2.notAcceptable", Locale.getDefault(), "Not acceptable detail");
@@ -151,6 +156,19 @@ class ApiV2ControllerAdviceTest {
         HttpStatus.INTERNAL_SERVER_ERROR,
         "errors.api.v2.unexpected",
         "Unexpected detail");
+  }
+
+  @Test
+  void mapsInheritedAccessMutationToItsLocalizedReadOnlyProblem() {
+    MockHttpServletRequest request = new MockHttpServletRequest("PUT", "/api/v2/items/1/access");
+
+    assertProblem(
+        advice.handleResourceAccess(
+            new ResourceAccessException(ResourceAccessException.Reason.INHERITED_READ_ONLY),
+            request),
+        HttpStatus.FORBIDDEN,
+        "errors.api.v2.resourceAccess.inheritedReadOnly",
+        "Inherited access is read-only.");
   }
 
   @Test

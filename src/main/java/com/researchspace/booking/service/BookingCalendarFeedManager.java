@@ -27,7 +27,6 @@ import com.researchspace.model.booking.TimeSlotBooking;
 import com.researchspace.model.booking.UserBookingCalendarSubscription;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.service.FeatureFlagManager;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import java.net.URI;
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -54,7 +53,7 @@ final class BookingCalendarFeedManager {
   private final TimeSlotBookingManager bookingManager;
   private final BookingInstrumentQueryDao instrumentDao;
   private final FeatureFlagManager featureFlags;
-  private final ResourceAccessManager accessManager;
+  private final BookingItemPermissions accessManager;
   private final BookingCalendarFeedGenerator generator;
   private final BookingCalendarProperties limits;
   private final URI serverBaseUrl;
@@ -66,7 +65,7 @@ final class BookingCalendarFeedManager {
       TimeSlotBookingManager bookingManager,
       BookingInstrumentQueryDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarProperties limits,
       URI serverBaseUrl,

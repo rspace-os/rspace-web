@@ -97,6 +97,7 @@ class ApiV2RelationshipContractMVCIT {
     mockMvc = fixture.mockMvc();
     sysadminKey = fixture.sysadminKey();
     owner = fixture.user();
+    fixture.makeOwnerRoleVisibleTo(fixture.otherUser(), owner);
     instrumentId = fixture.instrument(owner, "Confocal microscope " + fixture.marker());
   }
 
@@ -144,8 +145,9 @@ class ApiV2RelationshipContractMVCIT {
     }
 
     @Test
-    @DisplayName("Booking access returns only the safe target reference without Inventory access")
-    void bookingAccessReturnsSafeTargetReferenceWithoutInventoryAccess() throws Exception {
+    @DisplayName(
+        "Booking access returns only the safe target reference with read-only Inventory access")
+    void bookingAccessReturnsSafeTargetReferenceWithReadOnlyInventoryAccess() throws Exception {
       long id = fixture.bookingConfiguration(instrumentId, "Europe/Berlin");
 
       mockMvc
@@ -292,7 +294,7 @@ class ApiV2RelationshipContractMVCIT {
     }
 
     @Test
-    @DisplayName("a target filter uses the safe Booking projection without Inventory access")
+    @DisplayName("a target filter uses the safe Booking projection with read-only Inventory access")
     void aTargetFilterUsesTheSafeBookingProjection() throws Exception {
       long id = fixture.bookingConfiguration(instrumentId, "UTC");
 

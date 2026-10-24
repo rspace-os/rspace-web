@@ -3,7 +3,9 @@ package com.researchspace.api.v2.controller;
 import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.query.ApiV2ResourceRequestParser;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.booking.service.BookingCatalogueManager;
+import com.researchspace.service.FeatureFlagManager;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -21,11 +23,15 @@ public class BookingCatalogueController {
 
   private final BookingCatalogueManager manager;
   private final ApiV2ResourceCatalog resources;
+  private final FeatureFlagManager featureFlags;
 
   public BookingCatalogueController(
-      BookingCatalogueManager manager, ApiV2ResourceCatalog resources) {
+      BookingCatalogueManager manager,
+      ApiV2ResourceCatalog resources,
+      FeatureFlagManager featureFlags) {
     this.manager = manager;
     this.resources = resources;
+    this.featureFlags = featureFlags;
   }
 
   @GetMapping
@@ -39,14 +45,17 @@ public class BookingCatalogueController {
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
+    ApiV2ResourceRegistration<?, ?> registration =
+        resources.find("booking-configurations").orElseThrow();
     return manager.search(
         query,
         target,
         ApiV2ResourceRequestParser.filtered(
-                where,
-                resources.find("booking-configurations").orElseThrow().description(),
-                resources.registry())
-            .filter(),
+            where,
+            registration.description(),
+            resources.registry(),
+            registration.runtimeFieldContext(caller.subject())),
         targetTypes == null ? List.of() : targetTypes,
         locations == null ? List.of() : locations,
         capability,
@@ -62,6 +71,7 @@ public class BookingCatalogueController {
       @RequestParam(defaultValue = "1") @Min(1) int page,
       @RequestParam(defaultValue = "20") @Min(1) @Max(100) int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return manager.searchLocations(
         query, targetTypes == null ? List.of() : targetTypes, page, limit, caller.subject());
   }

@@ -40,11 +40,14 @@ public final class InstrumentReadAccess implements AccessFunction {
 
   @Override
   public AccessResult check(AccessContext context) {
-    if (!context.isAuthenticated()) {
+    if (!context.isAuthenticated()
+        || !context.user().isEnabled()
+        || context.user().isAccountLocked()) {
       return AccessResult.denied(AccessPolicy.AUTHENTICATION_REQUIRED);
     }
     FilterExpression constraint =
-        context.computeOnce(MEMO_KEY, FilterExpression.class, () -> constraint(context.user()));
+        context.computeOnce(
+            MEMO_KEY, FilterExpression.class, () -> constraint(context.user(), false));
     return AccessResult.allowedWhere(constraint);
   }
 
@@ -53,13 +56,15 @@ public final class InstrumentReadAccess implements AccessFunction {
     return Optional.of(DOCUMENTATION);
   }
 
-  private FilterExpression constraint(User user) {
+  /** Current item read or edit restriction, using the same Inventory sharing facts. */
+  public FilterExpression constraint(User user, boolean requireEdit) {
     if (user.hasSysadminRole()) {
       return NOT_DELETED;
     }
     List<String> groupMembers = permissions.getUsernameOfUserAndAllMembersOfTheirGroups(user);
     List<String> groupNames = user.getGroups().stream().map(Group::getUniqueName).toList();
-    List<String> visibleOwners = permissions.getOwnersVisibleWithUserRole(user);
+    List<String> visibleOwners =
+        requireEdit ? List.of() : permissions.getOwnersVisibleWithUserRole(user);
 
     List<FilterExpression> disjuncts = new ArrayList<>();
     disjuncts.add(equals(OWNER_USERNAME, user.getUsername()));

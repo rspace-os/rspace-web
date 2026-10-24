@@ -47,8 +47,6 @@ export async function saveBookingSettings(
     body: JSON.stringify({
       ...scheduling,
       ...display,
-      defaultSharedWith: input.defaultSharedWith,
-      selectedGranteeKeys: input.defaultSharedWith === "SELECTED" ? input.selectedGranteeKeys : [],
       configurationVersion,
     }),
   });

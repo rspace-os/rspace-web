@@ -2,8 +2,10 @@ package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
 
+import com.researchspace.booking.dao.BookingCalendarPermissionGateDao;
 import com.researchspace.booking.dao.BookingCalendarSubscriptionDao;
 import com.researchspace.booking.dao.BookingConfigurationDao;
+import com.researchspace.booking.dao.CurrentItemCalendarSubscription;
 import com.researchspace.booking.dao.UserBookingCalendarSubscriptionDao;
 import com.researchspace.core.util.CryptoUtils;
 import com.researchspace.core.util.SecureStringUtils;
@@ -17,7 +19,6 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import com.researchspace.service.resourceaccess.ResourceAccessManager;
 import jakarta.persistence.OptimisticLockException;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -50,13 +51,14 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   private static final String INACTIVE_USER_ETAG = "\"inactive\"";
 
   private final BookingCalendarCreationTransaction creationTransaction;
+  private final BookingCalendarPermissionGateDao permissionGate;
   private final BookingCalendarSubscriptionDao subscriptionDao;
   private final UserBookingCalendarSubscriptionDao userSubscriptionDao;
   private final BookingConfigurationDao configurationDao;
   private final TimeSlotBookingManager bookingManager;
   private final BookingInstrumentQueryDao instrumentDao;
   private final FeatureFlagManager featureFlags;
-  private final ResourceAccessManager accessManager;
+  private final BookingItemPermissions accessManager;
   private final BookingCalendarFeedGenerator generator;
   private final BookingCalendarProperties limits;
   private final URI serverBaseUrl;
@@ -73,9 +75,10 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       BookingInstrumentQueryDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarCreationTransaction creationTransaction,
+      BookingCalendarPermissionGateDao permissionGate,
       BookingCalendarProperties limits,
       IPropertyHolder properties) {
     this(
@@ -88,6 +91,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         accessManager,
         generator,
         creationTransaction,
+        permissionGate,
         limits,
         properties,
         () -> SecureStringUtils.getURLSafeSecureRandomString(32));
@@ -100,13 +104,15 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
       TimeSlotBookingManager bookingManager,
       BookingInstrumentQueryDao instrumentDao,
       FeatureFlagManager featureFlags,
-      ResourceAccessManager accessManager,
+      BookingItemPermissions accessManager,
       BookingCalendarFeedGenerator generator,
       BookingCalendarCreationTransaction creationTransaction,
+      BookingCalendarPermissionGateDao permissionGate,
       BookingCalendarProperties limits,
       IPropertyHolder properties,
       Supplier<String> tokenSupplier) {
     this.creationTransaction = creationTransaction;
+    this.permissionGate = permissionGate;
     this.subscriptionDao = subscriptionDao;
     this.userSubscriptionDao = userSubscriptionDao;
     this.configurationDao = configurationDao;
@@ -158,25 +164,36 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
   @Override
   public Created createOrRotate(
       Long configurationId, User subject, User actor, String expectedEtag) {
+    permissionGate.assertNoSuspendedAncestor();
+    if (permissionGate.hasActiveGate()) {
+      requirePersonalIdentity(subject, actor);
+      return createOrRotateInTransaction(configurationId, subject, expectedEtag);
+    }
     requirePersonalCaller(subject, actor);
     return creationTransaction.create(
         subject.getId(),
-        freshSubject -> createOrRotateItem(configurationId, freshSubject, expectedEtag));
+        freshSubject -> createOrRotateInTransaction(configurationId, freshSubject, expectedEtag));
   }
 
-  private Created createOrRotateItem(Long configurationId, User subject, String expectedEtag) {
-    requireFeatureMutation(subject);
+  private Created createOrRotateInTransaction(
+      Long configurationId, User subject, String expectedEtag) {
+    if (permissionGate.hasActiveGate()) {
+      requireFeatureEnabled(subject);
+    } else {
+      requireFeatureMutation(subject);
+    }
     BookingConfiguration configuration =
         configurationDao
             .lockById(configurationId)
             .orElseThrow(BookingCalendarNotFoundException::new);
-    requireCapability(
+    // lockById acquires the shared permission gate before the target and configuration locks.
+    requireMutationCapability(
         configuration, subject, BookingResourceRoleScheme.CREATE_CALENDAR_SUBSCRIPTION);
     if (configuration.getState() == BookingConfigurationState.ARCHIVED) {
       throw new BookingConfigurationLifecycleException();
     }
-    Optional<BookableItemCalendarSubscription> existing =
-        subscriptionDao.findByUserIdAndConfigurationId(subject.getId(), configurationId);
+    Optional<CurrentItemCalendarSubscription> existing =
+        subscriptionDao.lockCurrent(subject.getId(), configurationId);
     String currentEtag =
         existing.map(BookingCalendarManagerImpl::itemEtag).orElse(INACTIVE_USER_ETAG);
     if (!Objects.equals(expectedEtag, currentEtag)) {
@@ -184,21 +201,35 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     }
     String rawToken = tokenSupplier.get();
     Date updatedAt = new Date();
-    BookableItemCalendarSubscription subscription;
+    CurrentItemCalendarSubscription saved;
     String action;
     if (existing.isPresent()) {
-      subscription = existing.get();
-      subscription.setTokenHash(CryptoUtils.hashToken(rawToken));
-      subscription.setRawToken(rawToken);
-      subscription.setUpdatedAt(updatedAt);
+      try {
+        saved =
+            subscriptionDao.rotateCurrent(
+                existing.get(),
+                existing.get().tokenHash(),
+                CryptoUtils.hashToken(rawToken),
+                rawToken,
+                updatedAt);
+      } catch (OptimisticLockException | OptimisticLockingFailureException conflict) {
+        SECURITY_LOG.warn(
+            "Booking calendar subscription rotation conflicted for subject [{}], configuration"
+                + " [{}]",
+            subject.getUsername(),
+            configurationId,
+            conflict);
+        throw new UserSubscriptionConflictException(conflict);
+      }
       action = "replaced";
     } else {
-      subscription =
+      BookableItemCalendarSubscription subscription =
           new BookableItemCalendarSubscription(
               configuration, subject, CryptoUtils.hashToken(rawToken), rawToken, updatedAt);
+      subscriptionDao.saveAndFlush(subscription);
+      saved = subscriptionDao.reconcileCreated(subject.getId(), configurationId);
       action = "created";
     }
-    BookableItemCalendarSubscription saved = subscriptionDao.saveAndFlush(subscription);
     SECURITY_LOG.info(
         "Booking calendar subscription {} by actor [{}] for subject [{}], configuration [{}],"
             + " subscription [{}]",
@@ -206,14 +237,18 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
         subject.getUsername(),
         subject.getUsername(),
         configurationId,
-        saved.getId());
+        saved.id());
     String url = subscriptionUrl(rawToken);
-    Status status = new Status(true, saved.getUpdatedAt(), url, itemEtag(saved));
+    Status status = new Status(true, saved.updatedAt(), url, itemEtag(saved));
     return new Created(status, url);
   }
 
   private static String itemEtag(BookableItemCalendarSubscription subscription) {
     return "\"" + subscription.getTokenHash() + "\"";
+  }
+
+  private static String itemEtag(CurrentItemCalendarSubscription subscription) {
+    return "\"" + subscription.tokenHash() + "\"";
   }
 
   private String subscriptionUrl(String rawToken) {
@@ -265,7 +300,13 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   @Override
   public Created createOrRotateUser(User subject, User actor, String expectedEtag) {
+    permissionGate.assertNoSuspendedAncestor();
     requirePersonalCaller(subject, actor);
+    if (permissionGate.hasActiveGate()) {
+      permissionGate.markRollbackOnly();
+      throw new IllegalStateException(
+          "User-wide calendar links cannot be created or rotated inside a gated transaction");
+    }
     requireFeatureMutation(subject);
     User lockedUser = userSubscriptionDao.lockUser(subject.getId());
     if (lockedUser == null) {
@@ -399,8 +440,7 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private void requireMutationCapability(
       BookingConfiguration configuration, User subject, String capability) {
-    ResolvedResourceAccess access =
-        accessManager.resolve(configuration.getResourceAccess(), subject);
+    ResolvedResourceAccess access = accessManager.resolveForMutation(configuration, subject);
     if (!access.hasCapability(BookingResourceRoleScheme.READ_RESOURCE)) {
       throw new BookingCalendarNotFoundException();
     }
@@ -415,6 +455,10 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
 
   private void requireFeatureMutation(User subject) {
     requireActiveUser(subject);
+    requireFeatureEnabled(subject);
+  }
+
+  private void requireFeatureEnabled(User subject) {
     if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
@@ -424,6 +468,15 @@ public class BookingCalendarManagerImpl implements BookingCalendarManager {
     requireActiveUser(subject);
     requireActiveUser(actor);
     if (!Objects.equals(subject.getId(), actor.getId())) {
+      throw new AuthorizationException("errors.api.v2.forbidden");
+    }
+  }
+
+  private static void requirePersonalIdentity(User subject, User actor) {
+    if (subject == null
+        || actor == null
+        || subject.getId() == null
+        || !Objects.equals(subject.getId(), actor.getId())) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }

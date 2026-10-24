@@ -30,7 +30,6 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import jakarta.ws.rs.NotFoundException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.ZoneId;
@@ -257,7 +256,7 @@ public final class BookingSettingsController {
       })
   public SettingsDocument get(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return SettingsDocument.from(manager.getDefaults(caller.subject()), institutionClock);
   }
 
@@ -275,7 +274,7 @@ public final class BookingSettingsController {
       })
   public AdminSettingsDocument getAdmin(
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return AdminSettingsDocument.from(manager.getAdminDefaults(caller.subject()), institutionClock);
   }
 
@@ -284,7 +283,7 @@ public final class BookingSettingsController {
       @RequestParam String query,
       @RequestParam(defaultValue = "20") int limit,
       @RequestAttribute(name = ApiV2Caller.REQUEST_ATTRIBUTE) ApiV2Caller caller) {
-    requireEnabledRead(caller.subject());
+    BookingControllerSupport.requireEnabled(featureFlags, caller.subject());
     return directoryManager.searchForSettings(
         ResourceAccessController.validateQuery(query),
         ResourceAccessController.validateLimit(limit),
@@ -320,12 +319,6 @@ public final class BookingSettingsController {
             caller.subject(),
             caller.actor()),
         institutionClock);
-  }
-
-  private void requireEnabledRead(User actor) {
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, actor)) {
-      throw new NotFoundException();
-    }
   }
 
   private void requireEnabledMutation(User actor) {
