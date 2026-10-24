@@ -22,6 +22,8 @@ rejected.
 
 ## Query configuration
 
+Use the [Table List adapter guide](TableListAdapters.md) to connect a frontend table to a collection endpoint.
+
 The resource definition also allowlists queries. Clients can use:
 
 | # | Requirement |
@@ -233,6 +235,17 @@ Access routes are enabled by the resource's `ResourceAccessSpec`:
 
 Only opted-in resources expose these routes; ordinary collections return `404`. Access documents
 are private and must not be cached. OpenAPI includes the routes only for registered access support.
+
+The shared `ResourceAccessEditor` consumes the access document, capabilities, grantee search,
+and concurrency contract. Resource adapters supply translated role labels and notices.
+
+The React `ResourceAccessEditor` keeps its draft within one resource and bearer-token session.
+Changing either starts a fresh editor; access documents and grantee search results use the same
+session boundary in their query keys. A failed background or conflict refresh keeps the loaded
+document, unsaved draft and navigation guard mounted. After a stale replacement, Retry loading
+latest remains available and saving stays blocked until recovery succeeds. A successful Leave closes
+its confirmation even if the caller retains inherited access. Its optional navigation callback runs
+only while the editor session that initiated the request remains mounted.
 
 Do not run authorization functions during OpenAPI generation. The `INHERITED` preset uses the
 matching collection operation's documentation. Every other access function must include
