@@ -946,7 +946,35 @@ export default interface Resources {
       "userIdentity": "{fullName} ({username})"
     },
     "collectionForm": {
-      "fieldHelp": "About {label}"
+      "actions": {
+        "clear": "Clear {field}",
+        "openOptions": "Show options for {field}"
+      },
+      "examples": {
+        "fields": {
+          "collaborators": "Collaborators",
+          "enabled": "Enabled",
+          "id": "ID",
+          "modified": "Modified",
+          "notes": "Notes",
+          "owner": "Owner",
+          "score": "Score",
+          "status": "Status",
+          "title": "Title",
+          "titleDescription": "The human-readable name of the record."
+        },
+        "inventoryItem": "Inventory item",
+        "record": "Research record",
+        "recordDetails": "Record details",
+        "records": "Research records",
+        "relationships": "Relationships"
+      },
+      "fieldHelp": "About {label}",
+      "relationship": {
+        "empty": "No options found",
+        "remove": "Remove {item} from {field}",
+        "search": "Search {field}"
+      }
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
