@@ -233,6 +233,23 @@ class ApiV2OpenApiGeneratorTest {
     assertEquals(
         "#/components/schemas/ResourceRoleSource",
         objectMap(objectMap(readProperties.get("roleSources")).get("items")).get("$ref"));
+    Map<String, Object> openingHours = objectMap(readProperties.get("openingHours"));
+    assertEquals("array", openingHours.get("type"));
+    Map<String, Object> updateProperties =
+        objectMap(objectMap(schemas.get("BookingConfigurationsUpdate")).get("properties"));
+    Map<String, Object> hours = objectMap(updateProperties.get("openingHours"));
+    assertEquals(1, hours.get("minItems"));
+    assertEquals(7, hours.get("maxItems"));
+    Map<String, Object> item = objectMap(hours.get("items"));
+    assertEquals(false, item.get("additionalProperties"));
+    assertEquals(
+        java.util.Set.of("dayOfWeek", "start", "end"),
+        java.util.Set.copyOf((List<?>) item.get("required")));
+    assertTrue(objectMap(item.get("properties")).containsKey("dayOfWeek"));
+    for (String legacy : List.of("openingStart", "openingEnd", "openDays", "openingExceptions")) {
+      assertFalse(readProperties.containsKey(legacy));
+      assertFalse(updateProperties.containsKey(legacy));
+    }
   }
 
   @Test
@@ -668,6 +685,42 @@ class ApiV2OpenApiGeneratorTest {
   }
 
   @Test
+  void problemSchemaDocumentsTheBookingExtensionMembersAsOptional() {
+    Map<String, Object> schemas = schemas(document());
+    Map<String, Object> problem = objectMap(schemas.get("ApiV2Problem"));
+    Map<String, Object> properties = objectMap(problem.get("properties"));
+
+    for (String member :
+        List.of(
+            "conflict", "bufferBeforeMinutes", "bufferAfterMinutes", "maximumDurationMinutes")) {
+      assertTrue(properties.containsKey(member), member);
+      assertFalse(((List<?>) problem.get("required")).contains(member), member);
+    }
+    Map<String, Object> conflict = objectMap(schemas.get("BookingConflict"));
+    assertEquals(
+        List.of("end", "id", "kind", "start"),
+        ((List<?>) conflict.get("required")).stream().map(Object::toString).sorted().toList());
+    assertEquals(
+        "date-time", objectMap(objectMap(conflict.get("properties")).get("start")).get("format"));
+  }
+
+  @Test
+  void problemConflictIsTheConflictSchemaOrNullAsOpenApi31AllowsIt() {
+    Map<String, Object> properties =
+        objectMap(objectMap(schemas(document()).get("ApiV2Problem")).get("properties"));
+    Map<String, Object> conflict = objectMap(properties.get("conflict"));
+
+    assertFalse(conflict.containsKey("type"), conflict.toString());
+    assertFalse(conflict.containsKey("$ref"), conflict.toString());
+    assertEquals(
+        List.of(Map.of("$ref", "#/components/schemas/BookingConflict"), Map.of("type", "null")),
+        conflict.get("anyOf"));
+    assertTrue(conflict.get("description").toString().contains("errors.api.v2.booking.overlap"));
+    assertEquals(
+        List.of("integer", "null"), objectMap(properties.get("bufferBeforeMinutes")).get("type"));
+  }
+
+  @Test
   void documentsDailyAuditSnapshotContract() {
     Map<String, Object> document = document();
     Map<String, Object> paths = objectMap(document.get("paths"));
@@ -709,6 +762,38 @@ class ApiV2OpenApiGeneratorTest {
     assertTrue(
         String.valueOf(objectMap(auditResponses.get("400")).get("description"))
             .contains("narrower date range"));
+  }
+
+  @Test
+  void documentsTargetBrowsingAndKeepsGranteeSearchRequired() {
+    Map<String, Object> paths = objectMap(document().get("paths"));
+    Map<String, Object> targets =
+        objectMap(objectMap(paths.get("/api/v2/booking-configuration-targets")).get("get"));
+    Map<String, Object> grantees =
+        objectMap(objectMap(paths.get("/api/v2/booking-settings/access-grantees")).get("get"));
+
+    Map<String, Object> targetQuery =
+        objectMapList(targets.get("parameters")).stream()
+            .filter(parameter -> "query".equals(parameter.get("name")))
+            .findFirst()
+            .orElseThrow();
+    Map<String, Object> targetSchema = objectMap(targetQuery.get("schema"));
+    assertEquals(false, targetQuery.get("required"));
+    assertEquals("string", targetSchema.get("type"));
+    assertFalse(targetSchema.containsKey("minLength"));
+    assertTrue(targetQuery.get("description").toString().contains("empty or whitespace-only"));
+    assertTrue(targetQuery.get("description").toString().contains("two characters after trimming"));
+    assertTrue(
+        targets.get("description").toString().contains("Omitted, empty, or whitespace-only"));
+    assertTrue(targets.get("description").toString().contains("two characters after trimming"));
+
+    Map<String, Object> granteeQuery =
+        objectMapList(grantees.get("parameters")).stream()
+            .filter(parameter -> "query".equals(parameter.get("name")))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(true, granteeQuery.get("required"));
+    assertEquals(2, objectMap(granteeQuery.get("schema")).get("minLength"));
   }
 
   @Test

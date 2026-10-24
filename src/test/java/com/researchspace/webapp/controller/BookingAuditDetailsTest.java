@@ -7,6 +7,7 @@ import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.AuditData;
 import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.HistoricData;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.util.List;
@@ -15,7 +16,7 @@ import org.junit.jupiter.api.Test;
 
 class BookingAuditDetailsTest {
 
-  private final MessageSourceUtils messages = BookingAuditMessageFixture.messages();
+  private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @Test
   void formatsIndependentHoursAndKeepsUnknownHistoricalSchedulesVisible() {
@@ -51,7 +52,7 @@ class BookingAuditDetailsTest {
             + " Open days: Monday, Tuesday, Thursday, Friday, Sunday;"
             + " Different hours by day: Thursday 10:00–14:00; Time increment (minutes): 5;"
             + " Maximum duration (minutes): 0; Buffer before (minutes): 0;"
-            + " Buffer after (minutes): 0; Allow double booking: false",
+            + " Buffer after (minutes): 0; Allow concurrent bookings: false",
         BookingAuditDetails.format(data.getData(), messages, Locale.US));
   }
 

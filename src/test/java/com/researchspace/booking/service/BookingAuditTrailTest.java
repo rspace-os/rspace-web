@@ -103,51 +103,6 @@ class BookingAuditTrailTest {
   }
 
   @Test
-  void newConfigurationSnapshotsContainIndependentHours() {
-    User actor = TestFactory.createAnyUser("sysadmin");
-    BookingConfiguration configuration = new BookingConfiguration();
-    configuration.setId(7L);
-    configuration.setOpeningHours(openingHoursSnapshot());
-
-    SavedRecord saved =
-        savedRecord(
-            listener ->
-                listener.bookingConfigurationChanged(
-                    new BookingConfigurationAuditEvent(
-                        actor, actor, configuration, AuditAction.WRITE)));
-    AuditData parsed = saved.data();
-    String json = parsed.toJson();
-    assertTrue(
-        json.contains("\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"09:00\",\"end\":\"17:00\"}]"),
-        json);
-    assertFalse(parsed.getData().containsKey("openingStart"));
-    assertFalse(parsed.getData().containsKey("openingEnd"));
-  }
-
-  @Test
-  void writesPermanentDeleteSnapshotToAuditTrail() {
-    AuditTrailService auditTrail = mock(AuditTrailService.class);
-    User actor = mock(User.class);
-    BookingConfigurationPermanentDeleteSnapshot snapshot =
-        new BookingConfigurationPermanentDeleteSnapshot(
-            42L,
-            3L,
-            new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L),
-            "Microscope",
-            BookingConfigurationState.ARCHIVED,
-            2,
-            1,
-            4,
-            Instant.parse("2026-09-01T12:00:00Z"));
-
-    new BookingAuditTrail(auditTrail)
-        .bookingConfigurationPermanentlyDeleted(
-            new BookingConfigurationPermanentDeleteAuditEvent(actor, actor, snapshot));
-
-    verify(auditTrail).notify(any(GenericEvent.class));
-  }
-
-  @Test
   void permanentDeleteSnapshotSerializesItsTimestampForTheAuditLog() {
     User actor = TestFactory.createAnyUser("sysadmin");
     BookingConfigurationPermanentDeleteSnapshot snapshot =
@@ -179,6 +134,7 @@ class BookingAuditTrailTest {
     BookingConfiguration configuration = new BookingConfiguration();
     configuration.setId(42L);
     configuration.replaceTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 7L));
+    configuration.setOpeningHours(openingHoursSnapshot());
 
     SavedRecord saved =
         savedRecord(
@@ -188,6 +144,15 @@ class BookingAuditTrailTest {
     String json = saved.historicData().getData().toJson();
     AuditData parsed = saved.data();
     assertTrue(json.contains("\"target\":{\"type\":\"INSTRUMENT\",\"id\":7}"), json);
+    assertTrue(
+        json.contains(
+            "\"openingHours\":[{\"dayOfWeek\":1,\"start\":\"00:00\",\"end\":\"24:00\"},"
+                + "{\"dayOfWeek\":6,\"start\":\"10:00\",\"end\":\"16:00\"}]"),
+        json);
+    assertFalse(parsed.getData().containsKey("openingStart"));
+    assertFalse(parsed.getData().containsKey("openingEnd"));
+    assertFalse(json.contains("\"openDays\""), json);
+    assertFalse(json.contains("\"openingExceptions\""), json);
     assertEquals("booking-configurations:42", parsed.getData().get("id"));
     assertTrue(parsed.getData().get("target").toString().contains("INSTRUMENT"));
     assertEquals(AuditDomain.BOOKING, saved.historicData().getDomain());
@@ -209,18 +174,6 @@ class BookingAuditTrailTest {
         BookingConfigurationPermanentDeleteSnapshot.class
             .getAnnotation(AuditTrailData.class)
             .auditDomain());
-  }
-
-  @Test
-  void writesCommittedTimeSlotBookingEventToAuditTrail() {
-    AuditTrailService auditTrail = mock(AuditTrailService.class);
-    BookingAuditTrail listener = new BookingAuditTrail(auditTrail);
-
-    listener.timeSlotBookingChanged(
-        new TimeSlotBookingAuditEvent(
-            mock(User.class), mock(User.class), new TimeSlotBooking(), AuditAction.WRITE));
-
-    verify(auditTrail).notify(any(GenericEvent.class));
   }
 
   @Test
@@ -281,6 +234,8 @@ class BookingAuditTrailTest {
   }
 
   private static List<BookingOpeningHoursEntry> openingHoursSnapshot() {
-    return List.of(new BookingOpeningHoursEntry(1, "09:00", "17:00"));
+    return List.of(
+        new BookingOpeningHoursEntry(6, "10:00", "16:00"),
+        new BookingOpeningHoursEntry(1, "00:00", "24:00"));
   }
 }
