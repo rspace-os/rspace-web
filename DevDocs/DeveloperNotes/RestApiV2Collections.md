@@ -1,9 +1,11 @@
 # Add a REST API v2 collection
 
 REST API v2 resource definitions specify the public fields, access rules, relationships, and default
-sort. A `CollectionDescription` can be built programmatically or from an annotated record.
+sort. A resource operations class connects the definition to a domain manager. An
+`ApiV2ResourceSpec` bean registers its HTTP operations.
 
-For predicate compilation and signed relationship IDs, see
+Use a concrete controller for an operation outside collection CRUD, such as `/api/v2/users/me`.
+For query compilation, authentication and request limits, see
 [REST API v2 queries and access](RestApiV2QueriesAndAccess.md).
 
 ## Add a field type
@@ -56,6 +58,201 @@ non-queryable type uses `FieldComparisonStrategy.NONE` and no filter operators.
 Add tests for literal and document parsing, invalid values, schema output,
 serialization and compiled parameter bindings when introducing a type. Storage
 conversions also need a database comparison test.
+
+## Current concrete routes
+
+These routes use concrete controllers:
+
+| Route | Access | Result |
+| --- | --- | --- |
+| `GET /api/v2/config` | Public | Application version, branding, help links, description, and support email. |
+| `POST /api/v2/oauth/tokens` | Browser session | A non-cached, session-bound UI OAuth token that retains actor and subject during run-as. |
+| `GET /api/v2/users/me` | Authenticated | Identity, roles, capabilities, external identifiers, and API session state. |
+| `GET /api/v2/users/me/profile-image` | Authenticated | The current profile image as a non-cached PNG file. |
+
+Use concrete controllers for these and similar non-CRUD routes. Do not add resource specs for them.
+
+### Existing resources
+
+The `users` collection exposes `LIST`, `COUNT`, and `READ`. A system administrator can read all
+users; another authenticated user can read only their own row. An unexposed write returns `405`
+with an `Allow` header before its access policy runs. Its operations class has no persistent writes.
+
+`/api/v2/users/me/profile-image` returns a PNG only after the user has uploaded an image. Otherwise
+it returns `404`. Fetch the image and supply a client placeholder on `404`; pointing an image element
+directly at the route gives a new account a broken image.
+
+`/api/v2/config` returns a public allowlist of deployment properties, never a reflection of all
+properties, credentials, or secret paths. It is a concrete route, not a registered collection.
+
+## Add a resource
+
+A resource has these parts:
+
+| # | Requirement |
+| --- | --- |
+| 1. | A domain entity with JavaBean getters and setters. |
+| 2. | An annotated API resource record. |
+| 3. | A `ResourceOperations<T, ID>` class. |
+| 4. | A domain manager and a DAO. |
+
+> **Read only the ID through a lazy relationship.** The read transaction commits before the
+> renderer reads the relationship. The renderer takes a lazy to-one target's ID from its Hibernate
+> proxy without initializing it, but any other accessor on that proxy, such as a polymorphic kind
+> accessor, initializes it and the request returns 500. Tests can miss this failure because the test
+> context keeps the session open. Return the kind from an embedded value, or fetch the association
+> eagerly.
+
+### 1. Define the public resource
+
+The resource record allowlists entity properties. Each component maps to one property; absent
+properties are not exposed. The framework never instantiates the record.
+
+```java
+package com.researchspace.widgets.model;
+
+import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.ApiV2ResourceDefinition;
+import com.researchspace.model.collection.ApiV2ResourceField;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.Sort;
+import java.util.List;
+
+@ApiV2ResourceDefinition(name = "widgets", entity = Widget.class, id = "id")
+public record ApiV2WidgetResource(
+    @ApiV2ResourceField(
+            description = "Stable widget identifier.",
+            example = "42")
+        Long id,
+    @ApiV2ResourceField(
+            requiredOnCreate = true,
+            maxLength = 255,
+            description = "Widget name.",
+            example = "Centrifuge rotor")
+        String name,
+    @ApiV2ResourceField(description = "True when the widget is available.") boolean enabled) {
+
+  public static final CollectionDescription<Widget> DESCRIPTION =
+      CollectionDescription.fromApiV2Resource(
+          ApiV2WidgetResource.class,
+          Widget.class,
+          List.of(new Sort("name", true), new Sort("id", true)),
+          AccessPolicy.authenticated());
+}
+```
+
+The unique resource name is the URL segment. This example adds `/api/v2/widgets`. Do not change
+the name after clients use it.
+
+Each default sort must meet these rules:
+
+| # | Requirement |
+| --- | --- |
+| 1. | It uses only declared sortable fields. |
+| 2. | It does not contain a field more than once. |
+| 3. | Its last field is the ID field. |
+
+The ID field makes the sort result stable.
+
+### 2. Add the operations class and the resource spec
+
+Implement `ResourceOperations<Widget, Long>` with `find`, `count`, and `findById`, delegating to the
+domain manager. Register the adapter as a Spring bean below `com.researchspace`:
+
+```java
+@Bean
+ApiV2ResourceSpec<Widget, Long> widgetApiV2Resource() {
+  return new ApiV2ResourceSpec<>(
+      ApiV2WidgetResource.DESCRIPTION,
+      this,
+      Long::valueOf,
+      "errors.api.v2.widget.create",
+      "errors.api.v2.widget.update",
+      EnumSet.of(ResourceOperation.LIST, ResourceOperation.COUNT, ResourceOperation.READ),
+      Map.of());
+}
+```
+
+Pair this read-only registration with `AccessPolicy.readOnly(...)` in the description. The ID parser
+converts one URL segment to the ID type and must reject invalid IDs. At startup,
+`ApiV2ResourceCatalog` discovers resource-spec beans and rejects invalid definitions; no central
+registry entry is needed. Add operation-specific error mappings when an operation needs them.
+
+### 3. Keep domain work in the manager
+
+The operations class converts API input to domain commands. The manager handles:
+
+| # | Requirement |
+| --- | --- |
+| 1. | Domain authorization that the resource access policy cannot express. |
+| 2. | Transactions. |
+| 3. | Validation that needs two or more fields. |
+| 4. | Validation that needs stored data. |
+| 5. | Lifecycle actions and side effects. |
+| 6. | Limits and rules for bulk operations. |
+
+The DAO reads and writes the database, applying the typed `ResourceRequest` and returning a
+`ResourcePage`. Follow [Creating transactions](Transactions.md#creating-transactions) for the
+controller, manager and DAO boundary.
+
+Do not pass raw `where`, `sort`, or field-selection text to a manager. The common request parser
+validates this text against the public resource definition.
+
+## Add a read-only collection
+
+Use `AccessPolicy.readOnly(...)` for a collection that clients only read, such as a relationship
+target that a picker searches. The policy rejects mutations before dispatch, so the operations
+class implements only `find`, `count`, and `findById`. Limit
+`exposedOperations` to `LIST`, `COUNT`, and `READ` to match the routes the collection serves.
+
+Each resource name has one catalog entry. Registration also makes it a relationship target, so
+adding an `ApiV2RelationshipTargetSpec` for an existing resource-spec name causes a duplicate-target
+startup error.
+
+Describe a collection programmatically when a public field maps to a nested property. The annotated
+record derives the query property from a bean property name, so it cannot describe a value such as
+`editInfo.name`. `ApiV2InstrumentResource` is the example: it also declares `globalId` with
+`withQueryCapabilities(false, false)`, because a derived value has no column to filter or sort.
+
+Declare fields and relationships in one `List<? extends ResourceMember<T>>` passed to
+`CollectionDescription`. Member names must be unique across both kinds. Each kind retains its
+relative declaration order when exposed through `fields()` and `relationships()`.
+
+Express a read rule as a row constraint when the rule fits the described fields. A read access
+function returns `AccessResult.allowedWhere(...)`, and the registration folds that constraint into
+the list, the count, the single read, and relationship resolution. `ApiV2InstrumentResource` hides
+soft-deleted rows this way, so its operations class does not repeat the rule on each route.
+
+Use an `InternalFilter` when a server access rule needs a property that clients must not query.
+The query compiler can resolve this selector, but request parsing does not expose it.
+
+Inventory sharing uses internal selectors for the owner, sharing mode, and sharing ACL.
+`InventoryReadFilters.ALL` defines these selectors. Each applicable inventory description must
+include that list.
+
+`InstrumentReadAccess` returns one `AccessResult.allowedWhere(...)` constraint that uses those
+selectors. The manager evaluates the policy. `InventoryDaoHibernate` compiles the trusted
+constraint and combines it with the client filter. The database then applies access, filtering,
+sorting, pagination, and totals together.
+
+Do not filter rows again in the operations class. Java text rules differ from database collation,
+so matched rows can disappear from the page and total.
+
+Follow [Creating transactions](Transactions.md#creating-transactions): `InstrumentResourceOperations`
+delegates to the transaction-advised `InstrumentEntityApiManager`.
+
+## Standard routes
+
+| Operation | Method and route | Operations method |
+| --- | --- | --- |
+| `LIST` | `GET /api/v2/widgets` | `find` |
+| `COUNT` | `GET /api/v2/widgets/count` | `count` |
+| `READ` | `GET /api/v2/widgets/{id}` | `findById` |
+| Runtime fields | `GET /api/v2/widgets/fields/{namespace}` | Registered runtime provider |
+
+Limit `exposedOperations` to the operations the collection implements. An unexposed operation
+returns `405` with an `Allow` header before the access policy runs. Exposure and access are
+independent controls. Mutation routes are not exposed by the read controller.
 
 ## Resource configuration
 
@@ -283,3 +480,64 @@ read-only opaque type. Declare constraints on embedded children using the same s
 constraint `Pattern` must have no flags, because the published pattern cannot carry them.
 
 These per-field wire rules do not replace manager enforcement of domain rules.
+
+## Request and response payloads
+
+### List
+
+```http
+GET /api/v2/widgets?where=enabled==true&sort=name&limit=20&page=1
+```
+
+```json
+{
+  "docs": [
+    {
+      "id": 42,
+      "name": "Centrifuge rotor",
+      "enabled": true,
+      "createdAt": "2026-08-01T10:15:30Z",
+      "updatedAt": "2026-08-02T11:16:31Z",
+      "createdBy": {"relationTo": "users", "value": 7},
+      "updatedBy": {"relationTo": "users", "value": 12}
+    }
+  ],
+  "totalDocs": 1,
+  "limit": 20,
+  "page": 1,
+  "pagingCounter": 1,
+  "totalPages": 1,
+  "hasPrevPage": false,
+  "hasNextPage": false,
+  "prevPage": null,
+  "nextPage": null
+}
+```
+
+### Count and bulk results
+
+A count response contains the number of matches:
+
+```json
+{
+  "totalDocs": 12
+}
+```
+
+## JSON request binding
+
+Stack-owned API v2 JSON bodies use mapper copies derived from the MVC converter.
+`ApiV2JsonBody` preserves the collection parser's type rules and decimal-node
+handling while limiting documents to 10 MiB, strings to 2 MiB, token counts to
+100,000 and nesting depth to 100. The shared MVC mapper and other endpoints'
+`JsonNode` bindings keep their existing configuration.
+
+Register each fixed-shape request record in the single `ApiV2JsonMappers.register`
+call in `WebConfig.extendMessageConverters` at the layer that introduces it.
+The error advice reads that converter registration to identify strict bodies.
+
+Fixed-shape request records use strict binding: unknown fields and scalar
+coercions fail, including floating-point tokens such as `15.0` for integral
+fields. Collection field codecs retain their existing numeric rules. Required
+and nullable fields on HTTP records remain governed by their validation
+annotations, so partial settings updates and validation messages are preserved.
