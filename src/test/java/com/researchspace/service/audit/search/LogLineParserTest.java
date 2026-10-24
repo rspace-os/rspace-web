@@ -120,6 +120,36 @@ public class LogLineParserTest {
   }
 
   @Test
+  public void normalizesOnlyExactTopLevelBookingIdsFromUnknownDomain() throws ParseException {
+    for (String identifier :
+        new String[] {"bookings:41", "booking-configurations:42", "booking-settings:1"}) {
+      String line =
+          "01 Jan 2026 12:00:00,000 - domain:UNKNOWN action:WRITE"
+              + " [{\"data\":{\"id\":\""
+              + identifier
+              + "\"}}] alice(Alice Example)";
+
+      LogLine parsed = parser.parseLine(line, dateFormat);
+
+      Assertions.assertEquals(AuditDomain.BOOKING, parsed.getDomain());
+      Assertions.assertEquals(AuditAction.WRITE, parsed.getAction());
+    }
+
+    String nestedIdentifier =
+        "01 Jan 2026 12:00:00,000 - domain:UNKNOWN action:WRITE"
+            + " [{\"data\":{\"target\":{\"id\":\"bookings:41\"}}}]"
+            + " alice(Alice Example)";
+    String malformedIdentifier =
+        "01 Jan 2026 12:00:00,000 - domain:UNKNOWN action:WRITE"
+            + " [{\"data\":{\"id\":\"booking-settings:1v2\"}}] alice(Alice Example)";
+
+    Assertions.assertEquals(
+        AuditDomain.UNKNOWN, parser.parseLine(nestedIdentifier, dateFormat).getDomain());
+    Assertions.assertEquals(
+        AuditDomain.UNKNOWN, parser.parseLine(malformedIdentifier, dateFormat).getDomain());
+  }
+
+  @Test
   public void testOddUserNamesAreHandled_RSPAC_546() throws ParseException {
     String RSPAC_546BUG =
         "22 Aug 2014 08:28:18,010 - domain:AUDIT action:SEARCH [{\"data\":{}}] sys@admin1(System"

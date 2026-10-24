@@ -175,6 +175,20 @@ function _convertAuditTrailResults (xhr){
      	//update date format
      	var result = xhr.data.results[i];
      	result.timestamp = new Date(result.timestamp).toISOString();
+		result.event.displayAction = _getAuditDisplayAction(result.event);
+		result.event.resourceHref = _getAuditResourceHref(result.event);
+		result.event.displayDomain = result.event.domain === "BOOKING"
+			? RS.msg("legacyjs.audit.bookingActivityArea")
+			: result.event.domain;
+		if (result.event.domain === "BOOKING") {
+			result.event.description = _readableBookingDescription(result.event.description);
+		}
+		// Keep the raw description available for displayAction above.
+		if (result.event.details) {
+			result.event.description = result.event.description
+				? result.event.details + "; " + result.event.description
+				: result.event.details;
+		}
      	// show export description if possible:
      	if( result.data.action ==='EXPORT'
      		&& result.data.data && result.data.data.data) {
@@ -213,6 +227,92 @@ function _convertAuditTrailResults (xhr){
      }
 }
 
+// Delegated booking changes record "subject=<username>"; a permanent delete also records
+// "permanent=true", which the display action already states. Other text passes through.
+function _readableBookingDescription(description) {
+	if (!description) {
+		return description;
+	}
+	var subject = null;
+	var parts = description.split(";").map(function (part) {
+		return part.trim();
+	}).filter(function (part) {
+		if (part.indexOf("subject=") === 0) {
+			subject = part.slice("subject=".length);
+			return false;
+		}
+		return part !== "permanent=true" && part !== "";
+	});
+	if (subject) {
+		parts.push(RS.msg("legacyjs.audit.onBehalfOf", subject));
+	}
+	return parts.join("; ");
+}
+
+function _getAuditDisplayAction(event) {
+	var action = event.action;
+	if (event.domain !== "BOOKING") {
+		return action;
+	}
+	var payload = event.data && event.data.data;
+	var state = payload && payload.state;
+	var permanentDelete = action === "DELETE"
+		&& /(?:^|;)\s*permanent=true(?:;|$)/.test(event.description || "");
+	if (permanentDelete) {
+		return RS.msg("legacyjs.audit.permanentlyDeleted");
+	}
+	if (action === "DELETE" && state === "ARCHIVED") {
+		return RS.msg("legacyjs.audit.archived");
+	}
+	if (action === "WRITE" && state === "CANCELLED") {
+		return RS.msg("legacyjs.audit.cancelled");
+	}
+	return action;
+}
+
+function _getAuditResourceHref(event) {
+	var payload = event.data && event.data.data;
+	var id = payload && payload.id;
+	if (typeof id !== "string") {
+		return null;
+	}
+	var bookingId = /^bookings:([1-9][0-9]*)$/.exec(id);
+	if (bookingId && _isLongId(bookingId[1])) {
+		return "/booking/calendar/bookings/" + bookingId[1];
+	}
+	var configurationId = /^booking-configurations:([1-9][0-9]*)$/.exec(id);
+	if (configurationId && _isLongId(configurationId[1])) {
+		var target = payload.target;
+		var targetId = target && _positiveLongId(target.id);
+		if (target && target.type === "INSTRUMENT" && targetId) {
+			return "/booking/bookable-items/IN" + targetId + "/details";
+		}
+		return null;
+	}
+	if (_isValidGlobalId(id)) {
+		return "/globalId/" + encodeURIComponent(id);
+	}
+	return null;
+}
+
+function _positiveLongId(id) {
+	if (typeof id === "number") {
+		return Number.isSafeInteger(id) && id > 0 ? String(id) : null;
+	}
+	return typeof id === "string" && /^[1-9][0-9]*$/.test(id) && _isLongId(id) ? id : null;
+}
+
+function _isLongId(digits) {
+	var normalized = digits.replace(/^0+/, "") || "0";
+	return normalized.length < 19
+		|| (normalized.length === 19 && normalized <= "9223372036854775807");
+}
+
+function _isValidGlobalId(id) {
+	var match = /^([A-Z]{2})([0-9]+)(?:v([0-9]+))?$/.exec(id);
+	return !!match && _isLongId(match[2]) && (!match[3] || _isLongId(match[3]));
+}
+
 function _pad(n){return n<10 ? '0'+n : n}
 
 /**
@@ -231,7 +331,9 @@ function init() {
 		var html = Mustache.render($('#auditactionTemplate').html(), xhr);
 		$(".actionsRow").append(html);
 	})
-	var domainhtml = Mustache.render($('#auditdomainTemplate').html());
+	var domainhtml = Mustache.render($('#auditdomainTemplate').html(), {
+		bookingActivityArea: RS.msg("legacyjs.audit.bookingActivityArea")
+	});
 	$(".domainsRow").append(domainhtml);
 }
 
@@ -267,6 +369,9 @@ function doSerializeForm(forDownload) {
 			}
 			if (requestData[i]["value"] == "OTHER") {
 				domainsToSubmit = domainsToSubmit.concat(otherDomains)
+			}
+			if (requestData[i]["value"] == "BOOKING") {
+				domainsToSubmit.push("BOOKING")
 			}
 		}
 	}

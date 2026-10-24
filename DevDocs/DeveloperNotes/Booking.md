@@ -153,3 +153,8 @@ bindings and trusted constraints while owning its paging, sorting and DTO projec
 The `target` picker names `booking-instruments`, uses `globalId` identity and the `IN` prefix.
 The shared picker metadata, traversal limits and runtime catalog allowlist rules are documented
 in [Fields reached through a relationship](RestApiV2QueriesAndAccess.md#fields-reached-through-a-relationship).
+
+## Audit formatting
+
+See [Booking audit events](Logging.md#booking-audit-events) for snapshot rendering and historical
+schedule handling.
