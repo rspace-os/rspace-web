@@ -15,6 +15,7 @@ import com.researchspace.model.preference.Preference;
 import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.UserManager;
 import java.time.Clock;
+import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,9 +75,31 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
   @Override
   public ResolvedBookingDisplayPreferences get(User subject, User actor) {
     requireAccess(subject, actor);
+    return getForAuthorizedSubject(subject);
+  }
+
+  @Override
+  public Optional<ResolvedBookingDisplayPreferences> getForNotificationRecipient(User recipient) {
+    if (!active(recipient) || !featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, recipient)) {
+      return Optional.empty();
+    }
+    return Optional.of(getForAuthorizedSubject(recipient));
+  }
+
+  @Override
+  public ResolvedBookingDisplayPreferences resolveForNotificationSnapshot(User recipient) {
+    UserPreference preference =
+        recipient.getValueForPreference(Preference.BOOKING_DISPLAY_PREFERENCES);
+    return resolve(preference.getValue(), recipient);
+  }
+
+  private ResolvedBookingDisplayPreferences getForAuthorizedSubject(User subject) {
     UserPreference preference =
         userManager.getPreferenceForUser(subject, Preference.BOOKING_DISPLAY_PREFERENCES);
-    String value = preference.getValue();
+    return resolve(preference.getValue(), subject);
+  }
+
+  private ResolvedBookingDisplayPreferences resolve(String value, User subject) {
     if (value == null || value.isBlank()) {
       return resolved(globalDefaults(subject), false);
     }
@@ -158,10 +181,7 @@ public class BookingDisplayPreferencesManagerImpl implements BookingDisplayPrefe
   }
 
   private void requireAccess(User subject, User actor) {
-    if (!active(subject) || !active(actor)) {
-      throw new AuthorizationException("errors.api.v2.forbidden");
-    }
-    if (!featureFlags.isFeatureFlagEnabled(BOOKING_ENABLED, subject)) {
+    if (!BookingUserAccess.hasAccess(featureFlags, subject, actor)) {
       throw new AuthorizationException("errors.api.v2.forbidden");
     }
   }

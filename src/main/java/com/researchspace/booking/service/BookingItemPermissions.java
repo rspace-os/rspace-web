@@ -14,6 +14,7 @@ import com.researchspace.model.resourceaccess.ResourceRoleSource;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class BookingItemPermissions {
 
+  /** Personal notification management is granted to every reader of the Inventory item. */
+  public static final String MANAGE_NOTIFICATION_SUBSCRIPTION = "MANAGE_NOTIFICATION_SUBSCRIPTION";
+
   private final InventoryPermissionUtils inventoryPermissions;
   private final InstrumentDao instruments;
   private final BookingInstrumentQueryDao bookingInstruments;
@@ -35,6 +39,7 @@ public class BookingItemPermissions {
   private final BookingCalendarSubscriptionDao subscriptions;
   private final BookingCalendarCurrentAccessDao currentAccess;
   private final BookingCalendarPermissionGateDao permissionGate;
+  private final Set<String> ownerCapabilities;
 
   public BookingItemPermissions(
       InventoryPermissionUtils inventoryPermissions,
@@ -51,6 +56,9 @@ public class BookingItemPermissions {
     this.subscriptions = subscriptions;
     this.currentAccess = currentAccess;
     this.permissionGate = permissionGate;
+    this.ownerCapabilities =
+        withNotificationCapability(
+            withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)));
   }
 
   /**
@@ -170,15 +178,21 @@ public class BookingItemPermissions {
   private ResolvedResourceAccess role(String role) {
     return new ResolvedResourceAccess(
         Optional.of(role),
-        roleScheme.capabilities(role),
+        withNotificationCapability(roleScheme.capabilities(role)),
         List.of(ResourceRoleSource.implicit(role)));
   }
 
   private ResolvedResourceAccess owner() {
     return new ResolvedResourceAccess(
         Optional.of(BookingResourceRoleScheme.OWNER),
-        withoutAclManagement(roleScheme.capabilities(BookingResourceRoleScheme.OWNER)),
+        ownerCapabilities,
         List.of(ResourceRoleSource.implicit(BookingResourceRoleScheme.OWNER)));
+  }
+
+  private static Set<String> withNotificationCapability(Set<String> capabilities) {
+    Set<String> granted = new HashSet<>(capabilities);
+    granted.add(MANAGE_NOTIFICATION_SUBSCRIPTION);
+    return Set.copyOf(granted);
   }
 
   private ResolvedResourceAccess resolved(BookingCalendarCurrentAccessDao.Access access) {

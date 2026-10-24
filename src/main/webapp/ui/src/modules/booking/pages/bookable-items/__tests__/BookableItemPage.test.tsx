@@ -34,7 +34,7 @@ describe("BookableItemPage", () => {
     const facts = screen.getByRole("complementary", { name: "booking:bookableItemDetails.about" });
     const tabList = screen.getByRole("tablist");
     expect(heading.closest("section")?.parentElement).toBe(tabList.parentElement);
-    expect(facts.parentElement?.parentElement).toBe(tabList.parentElement);
+    expect(facts.parentElement?.parentElement?.parentElement).toBe(tabList.parentElement);
     expect(tabList.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
     expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
@@ -108,7 +108,12 @@ describe("BookableItemPage", () => {
         .getAllByRole("checkbox")
         .every((checkbox) => checkbox.getAttribute("aria-disabled") === "true"),
     ).toBe(true);
-    expect(screen.getAllByRole("radio").every((radio) => radio.getAttribute("aria-disabled") === "true")).toBe(true);
+    const inventoryPermissions = screen.getByRole("radiogroup", { name: "inventory:fields.accessPermissions.label" });
+    expect(
+      within(inventoryPermissions)
+        .getAllByRole("radio")
+        .every((radio) => radio.getAttribute("aria-disabled") === "true"),
+    ).toBe(true);
     expect(bookingAccessRequests).toBe(0);
     const details = screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" });
     await userEvent.setup().click(details);
