@@ -41,6 +41,10 @@ vi.mock("@/modules/common/stores/userSessionStore", () => ({
   UserSessionBootstrap: () => null,
 }));
 
+vi.mock("@/featureFlags/FeatureFlagDevtoolsMount", () => ({
+  default: () => <output aria-label="Feature flag devtools" />,
+}));
+
 function testQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
@@ -124,6 +128,25 @@ function chromeRoutes() {
         }),
       ]),
     ]),
+  ]);
+}
+
+function devtoolsRoutes() {
+  const rootRoute = shellRoot();
+  return rootRoute.addChildren([
+    createRoute({ getParentRoute: () => rootRoute, path: "/plain", component: () => null }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/public",
+      beforeLoad: () => ({ appBar: { currentPage: "rspace", authenticated: false } }),
+      component: () => null,
+    }),
+    createRoute({
+      getParentRoute: () => rootRoute,
+      path: "/without-app-bar",
+      beforeLoad: () => ({ appBar: false as const }),
+      component: () => null,
+    }),
   ]);
 }
 
@@ -217,6 +240,12 @@ describe("route chrome", () => {
 });
 
 describe("route sidebar state", () => {
+  it.each(["/plain", "/public", "/without-app-bar"] as const)("mounts feature flag devtools on %s", async (path) => {
+    renderShell(path, devtoolsRoutes());
+
+    expect(await screen.findByRole("status", { name: "Feature flag devtools" })).toBeVisible();
+  });
+
   it("opens on entry and removes the empty sidebar when leaving", async () => {
     const router = renderShell("/plain");
     expect(await screen.findByText(plainRouteText)).toBeVisible();

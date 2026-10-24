@@ -8,6 +8,7 @@ import { currentUserResponse } from "@/__tests__/helpers/currentUserResponse";
 import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
+import { useIsFeatureFlagEnabled } from "@/featureFlags/queries";
 import AccountMenu from "@/modules/common/app/AccountMenu";
 import NewAppBar from "@/modules/common/app/AppBar";
 import HelpMenu from "@/modules/common/app/HelpMenu";
@@ -24,6 +25,10 @@ vi.mock("@/modules/common/hooks/auth", () => ({
 
 vi.mock("@/modules/common/app/lighthouse", () => ({
   useLighthouseSdk: vi.fn(),
+}));
+
+vi.mock("@/featureFlags/queries", () => ({
+  useIsFeatureFlagEnabled: vi.fn(),
 }));
 
 vi.mock("@/modules/common/ui/avatar", () => ({
@@ -78,6 +83,7 @@ beforeEach(() => {
   server.use(...defaultHandlers);
   vi.mocked(useOauthTokenQuery).mockReturnValue({ data: "token" } as ReturnType<typeof useOauthTokenQuery>);
   vi.mocked(useLighthouseSdk).mockReturnValue({ lighthouseReady: false, showLighthouse: vi.fn() });
+  vi.mocked(useIsFeatureFlagEnabled).mockReturnValue(true);
 });
 
 afterEach(() => {

@@ -1,0 +1,20 @@
+// Test copy of src/main/resources/feature-flags/feature-flags.jsonc. It shadows that file on the
+// test classpath, so it must repeat every packaged flag; FeatureFlagManifestLoaderTest checks this.
+// testFlag exists only here, so the feature flag tests do not depend on a real flag.
+{
+  "flags": [
+    {
+      "name": "bookingEnabled",
+      "description": "Enables the Booking user interface and REST API v2 booking-configuration resource.",
+      "owner": "RSpace",
+      "expires": "2027-06-30",
+      "default": false
+    },
+    {
+      "name": "testFlag",
+      "description": "Test-only flag for the feature flag tests.",
+      "owner": "RSpace",
+      "expires": "2099-12-31"
+    }
+  ]
+}
