@@ -61,6 +61,7 @@ jobs:
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - '.ls-lint.yml'
               - '.github/workflows/**'
             java:
               - 'src/main/java/**'
@@ -460,6 +461,9 @@ jobs:
 
       - name: Build with bundle stats
         run: pnpm run build:stats
+
+      - name: Check generated routes are current
+        run: git diff --exit-code -- src/main/webapp/ui/src/routeTree.gen.ts src/main/webapp/ui/src/routes
 
       - name: Upload PR bundle stats
         uses: actions/upload-artifact@v7.0.1
@@ -905,3 +909,6 @@ jobs:
             -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
             -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
             -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
+
+      - name: Check generated routes are current
+        run: git diff --exit-code -- src/main/webapp/ui/src/routeTree.gen.ts src/main/webapp/ui/src/routes
