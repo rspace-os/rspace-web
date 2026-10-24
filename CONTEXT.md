@@ -532,3 +532,15 @@ resolved during design. This file is a glossary only — no implementation detai
   (a link field keeps the template's default link, if it has one), unless the field is
   mandatory, which refuses it.
   _Avoid_: empty column, unused column
+
+## Resource role permissions
+
+See [Security and permissions](DevDocs/DeveloperNotes/SecurityAndPermissions.md#resource-role-permissions) for role semantics.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Role scheme | The roles, ordering, capabilities and assignment rules for one protected resource type. |
+| 2. | Role assignment | A direct grant of one role to one grantee for one protected resource. |
+| 3. | Grantee | A user, group or dynamic audience receiving a role. |
+| 4. | Capability | An action allowed by a role scheme. |
+| 5. | Effective role | The highest role resolved from a user's applicable access sources for one resource. |
