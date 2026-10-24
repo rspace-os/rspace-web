@@ -7,6 +7,8 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.BookingCalendarNotFoundException;
+import com.researchspace.booking.service.BookingCalendarManagerImpl.UserSubscriptionConflictException;
 import com.researchspace.booking.service.BookingConfigurationLifecycleException;
 import com.researchspace.booking.service.BookingPolicyException;
 import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
@@ -156,9 +158,14 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.FORBIDDEN, "errors.api.v2.forbidden");
   }
 
-  @ExceptionHandler(NotFoundException.class)
+  @ExceptionHandler({NotFoundException.class, BookingCalendarNotFoundException.class})
   public ResponseEntity<ApiV2Problem> handleNotFound() {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
+  }
+
+  @ExceptionHandler(UserSubscriptionConflictException.class)
+  public ResponseEntity<ApiV2Problem> handleUserSubscriptionConflict() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingCalendar.subscriptionConflict");
   }
 
   @ExceptionHandler(ThrottlingException.class)

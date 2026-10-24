@@ -32,6 +32,10 @@ describe("BookableItemPage", () => {
     expect(within(facts).getByRole("link", { name: "Imaging lab" })).toHaveAttribute("href", "/globalId/IC456");
     expect(within(facts).getByText("Grace Hopper (grace)")).toBeVisible();
     expect(within(facts).getByText("booking:bookableItemDetails.fields.createdAt")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "booking:bookableItemDetails.calendarSubscription.trigger" }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "booking:bookings.actions.newBooking" })).toBeVisible();
     expect(screen.getByRole("button", { name: "booking:bookableItems.actions.menu" })).toBeVisible();
     expect(screen.getAllByText("UTC").length).toBeGreaterThan(0);
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.bookings" })).toHaveAttribute(

@@ -5,6 +5,7 @@ import { useQueryState } from "nuqs";
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { type BookingListDocument, BookingListDocumentTableValidation } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
@@ -204,6 +205,15 @@ export function UserBookingsPage({ requesterId, title, period, onPeriodChange }:
                 </TooltipTrigger>
                 <TooltipContent role="tooltip">{editLabel}</TooltipContent>
               </Tooltip>
+            ) : null}
+            {row.canViewConfiguration && row.state === "CONFIRMED" ? (
+              <BookingCalendarFileButton
+                bookingId={row.id}
+                itemName={row.target.value.name}
+                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
+                token={token}
+                iconOnly
+              />
             ) : null}
             {row.canCancel ? (
               <DeleteBookingDialog
