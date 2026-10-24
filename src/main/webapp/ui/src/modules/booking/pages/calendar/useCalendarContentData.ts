@@ -1,4 +1,4 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 import { parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
@@ -49,6 +49,16 @@ function andFilters<TDocument>(
   return { kind: "and", children };
 }
 
+function targetFilter(target: string | undefined) {
+  if (!target) return null;
+  return {
+    kind: "comparison",
+    field: "target",
+    operator: "equals",
+    value: target,
+  } as const;
+}
+
 function retypeFilter<TFrom, TTo>(expression: FilterExpression<TFrom>): FilterExpression<TTo> {
   if (expression.kind === "comparison") {
     return { ...expression, field: String(expression.field) as SearchSelector<TTo> };
@@ -96,8 +106,9 @@ function filterIssue<TDocument>({
 
 export function useCalendarContentData() {
   const { t } = useTranslation("booking");
-  const { date } = useSearch({ from: "/booking/calendar/" });
+  const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
+  const location = useLocation();
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
@@ -107,6 +118,7 @@ export function useCalendarContentData() {
   const [layout, setLayout] = React.useState<CalendarLayout>("resources");
   const [resettingControls, setResettingControls] = React.useState(false);
   const [mineOnly, setMineOnly] = React.useState(false);
+  const [myItemsOnly, setMyItemsOnly] = React.useState(false);
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -204,26 +216,35 @@ export function useCalendarContentData() {
     () => andFilters([eventExpression, requesterFilter]),
     [eventExpression, requesterFilter],
   );
+  const targetItemExpression = React.useMemo(() => targetFilter(target), [target]);
+  const targetEventExpression = React.useMemo(() => targetFilter(target), [target]);
   const calendarEventExpression = React.useMemo(
     () =>
       andFilters<BookingListDocument>([
         scopedEventExpression,
+        targetEventExpression,
         itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
       ]),
-    [itemExpression, scopedEventExpression],
+    [itemExpression, scopedEventExpression, targetEventExpression],
   );
-  const itemWhereParameter = itemExpression ? serializeRsqlExpression(itemExpression) : undefined;
+  const resourceItemExpression = React.useMemo(
+    () => andFilters([itemExpression, targetItemExpression]),
+    [itemExpression, targetItemExpression],
+  );
+  const itemWhereParameter = resourceItemExpression ? serializeRsqlExpression(resourceItemExpression) : undefined;
   const eventWhereParameter = scopedEventExpression ? serializeRsqlExpression(scopedEventExpression) : undefined;
   const calendarEventWhereParameter = calendarEventExpression
     ? serializeRsqlExpression(calendarEventExpression)
     : undefined;
   const filterScopeSignature = [
     calendarSearch,
+    target ?? "",
     itemWhereParameter ?? "",
     eventWhereParameter ?? "",
     calendarStart,
     calendarEnd,
     mineOnly,
+    myItemsOnly,
   ].join("|");
   const previousFilterScope = React.useRef(filterScopeSignature);
   const resourceScopeReady = previousFilterScope.current === filterScopeSignature;
@@ -245,6 +266,8 @@ export function useCalendarContentData() {
         itemWhereParameter,
         eventWhereParameter,
         calendarSearch,
+        myItemsOnly,
+        target,
         filtersBlocked,
       ],
       keepPreviousData: true,
@@ -258,6 +281,7 @@ export function useCalendarContentData() {
             calendarStart,
             calendarEnd,
             eventWhere: eventWhereParameter,
+            mine: myItemsOnly,
             page: state.page.pageIndex + 1,
             pageSize: state.page.pageSize,
           },
@@ -302,7 +326,7 @@ export function useCalendarContentData() {
     targetGlobalIds: layout === "resources" ? resourceTargetIds : undefined,
     enabled: calendarQueryReady && (layout !== "resources" || resourceTableReady),
     authScope: currentUser.id,
-    scope: { where: calendarEventWhereParameter, q: calendarSearch },
+    scope: { where: calendarEventWhereParameter, q: calendarSearch, mine: myItemsOnly },
   });
   // Display filters must not change the events used to propose a free booking window.
   // Without an event filter/Search this uses the display query's cache, avoiding a second request.
@@ -318,9 +342,6 @@ export function useCalendarContentData() {
   });
   const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
-  const onItemFiltersChange = (expression: FilterExpression<BookingConfiguration> | null) => {
-    void setItemWhere(expression ? serializeRsqlExpression(expression) : null);
-  };
   const onEventFiltersChange = (expression: FilterExpression<BookingListDocument> | null) => {
     void setEventWhere(expression ? serializeRsqlExpression(expression) : null);
   };
@@ -332,7 +353,6 @@ export function useCalendarContentData() {
     navigate,
     calendarSearch,
     setCalendarSearch,
-    currentUser,
     view,
     setView,
     layout,
@@ -353,16 +373,18 @@ export function useCalendarContentData() {
     eventIssue,
     eventRuntimeFields,
     filtersBlocked,
-    itemConfig,
     itemExpression,
     itemIssue,
     itemRuntimeFields,
     mineOnly,
     onEventFiltersChange,
-    onItemFiltersChange,
     onSearchChange,
     setEventWhere,
     setItemWhere,
     setMineOnly,
+    location,
+    myItemsOnly,
+    setMyItemsOnly,
+    targetItemExpression,
   };
 }
