@@ -60,6 +60,7 @@ copying them into feature modules.
 | 5. | `modules/common/app/detailPageLayout.ts` | `detailPageClassName` and `detailColumnsClassName` supply shared detail-page container and column classes. |
 | 6. | `modules/common/app/PageSkeleton.tsx` | `PageSkeleton` renders a busy main landmark and translated loading status; callers provide the placeholder rows and layout. |
 | 7. | `__tests__/helpers/renderInRouter.tsx` | `renderInRouter` renders a supplied route tree with memory history and returns the render result plus router. It accepts an alternate renderer. |
+| 8. | `__tests__/helpers/currentUserFixture.ts` | `currentUser` is a typed Ada Lovelace fixture. It has no PI or admin privileges, and its three session flags are false. Keep those defaults when reusing it. |
 
 The UI helpers use the existing generated `modules/common/utils/cn-tables.ts`. The root
 `postinstall` runs `pnpm cn:build` to generate it from the shared stylesheet.
@@ -120,6 +121,9 @@ build when changing the option. Bundling does not enable the public route:
 set `dev.storybook.preview.enabled=true` in the local/dev instance's
 `deployment.properties` to expose it on a local/dev instance. Leave it disabled
 on deployed production instances because the route is unauthenticated.
+
+Shared design-system stories live beside their components in `src/modules/common/ui`
+as `*.stories.tsx`.
 
 ## Testing strategy
 
