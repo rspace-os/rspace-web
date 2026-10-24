@@ -3,12 +3,16 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserMocks";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import {
   emulateForcedColors,
   emulateReducedMotion,
   expectNoAxeViolations,
 } from "@/__tests__/pageObjects/accessibility";
 import { withViewport } from "@/__tests__/pageObjects/viewport";
+import { AllBookableItemsStory } from "../all-bookable-items/AllBookableItemsPage.story";
+import { AllBookableItemsPage } from "../all-bookable-items/pageObjects/AllBookableItemsPage";
+import { bookingPagesHandlers } from "../mocks/bookingPagesMocks";
 import { auditPage } from "./__tests__/bookableItemAuditFixtures";
 import { BookableItemPageStory } from "./BookableItemPage.story";
 import {
@@ -98,11 +102,35 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  window.history.replaceState({}, "", "/");
   cleanup();
+  window.history.replaceState({}, "", "/");
 });
 
 describe("BookableItemPage", () => {
+  test("starts immutable maintenance creation from bookable item details for a direct sysadmin", async () => {
+    worker.use(
+      http.get("/api/v2/users/me", () =>
+        HttpResponse.json({
+          ...currentUser,
+          hasSysAdminRole: true,
+          session: { ...currentUser.session, operatedAs: false },
+        }),
+      ),
+      ...bookingPagesHandlers(),
+    );
+    render(<AllBookableItemsStory />);
+    await new AllBookableItemsPage().detailsButton.click();
+
+    await page.getByRole("button", { name: "More event creation options" }).click();
+    await page.getByRole("menuitem", { name: "New Maintenance Event" }).click();
+    const dialog = page.getByRole("dialog", { name: "New Maintenance Event" });
+    await expect.element(dialog).toBeVisible();
+    await expect.element(dialog.getByText("Confocal microscope", { exact: true })).toBeVisible();
+    await expect.element(dialog.getByRole("combobox", { name: "Bookable item" })).not.toBeInTheDocument();
+    await expect.element(dialog.getByRole("radio")).not.toBeInTheDocument();
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+  });
+
   test.each([200, 403])("keeps the Access tab mounted while its delayed read returns %s", async (status) => {
     const response = Promise.withResolvers<void>();
     worker.use(

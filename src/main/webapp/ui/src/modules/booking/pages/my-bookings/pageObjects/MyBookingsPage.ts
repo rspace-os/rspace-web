@@ -1,8 +1,9 @@
 import { type Locator, page } from "vitest/browser";
+import { bookableItemHeading, bookableItemTarget } from "../../bookable-items/pageObjects/bookableItemLocators";
 
 export class MyBookingsPageObject {
-  readonly bookableItemDetailsHeading: Locator = page.getByRole("heading", { name: "Confocal microscope" });
-  readonly bookableItemDetailsTarget: Locator = page.getByText("IN123", { exact: true });
+  readonly bookableItemDetailsHeading: Locator = bookableItemHeading("Confocal microscope");
+  readonly bookableItemDetailsTarget: Locator = bookableItemTarget("IN123");
 
   get upcoming(): Locator {
     return page.getByRole("button", { name: "Upcoming", exact: true });

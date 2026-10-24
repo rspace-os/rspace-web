@@ -1,3 +1,4 @@
+import { parse } from "@rsql/parser";
 import { HttpResponse, http, type RequestHandler } from "msw";
 import { apiV2CollectionResponse, apiV2ListResult } from "@/__tests__/mocks/apiV2CollectionMock";
 import { BOOKING_READ_FIELDS } from "@/modules/booking/domain/booking";
@@ -11,8 +12,45 @@ const detailBookingEvents = sampleBookingEvents.map((booking) => ({
   updatedAt: "2026-08-01T09:00:00Z",
 }));
 
+function matchesCatalogueFilter(
+  fixture: (typeof bookableItemFixtures)[number],
+  node: ReturnType<typeof parse>,
+): boolean {
+  if (node.type !== "COMPARISON")
+    return node.operator === ";"
+      ? matchesCatalogueFilter(fixture, node.left) && matchesCatalogueFilter(fixture, node.right)
+      : matchesCatalogueFilter(fixture, node.left) || matchesCatalogueFilter(fixture, node.right);
+  const actual = node.left.selector === "id" ? fixture.id : fixture.target.globalId;
+  const raw = Array.isArray(node.right.value) ? node.right.value : [node.right.value];
+  const values = raw.map((value) => (typeof actual === "number" ? Number(value) : value));
+  switch (node.operator) {
+    case "==":
+      return actual === values[0];
+    case "!=":
+      return actual !== values[0];
+    case "=in=":
+      return values.includes(actual);
+    case "=out=":
+      return !values.includes(actual);
+    case "=gt=":
+      return actual > values[0];
+    case "=ge=":
+      return actual >= values[0];
+    case "=lt=":
+      return actual < values[0];
+    case "=le=":
+      return actual <= values[0];
+    default:
+      throw new Error(`Unsupported catalogue fixture operator: ${node.operator}`);
+  }
+}
+
 export function collectionPage(docs: readonly unknown[], limit = 20) {
   return apiV2ListResult(docs, docs.length, limit, 1);
+}
+
+export function bookingCataloguePage(items: readonly unknown[], page: number, pageSize: number, total = items.length) {
+  return { items, page, pageSize, total, facets: { types: total === 0 ? [] : ["INSTRUMENT"] } };
 }
 
 const hazardClass = [
@@ -71,11 +109,14 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
       const url = new URL(request.url);
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
       const target = url.searchParams.get("target");
+      const where = url.searchParams.get("where");
+      const filter = where ? parse(where) : null;
       const locations = url.searchParams.getAll("location");
       const page = Number(url.searchParams.get("page") ?? "1");
       const pageSize = Number(url.searchParams.get("limit") ?? "20");
       const matching = bookableItemFixtures.filter(
         (fixture) =>
+          (!filter || matchesCatalogueFilter(fixture, filter)) &&
           (!query ||
             fixture.target.value.name.toLocaleLowerCase().includes(query) ||
             fixture.target.globalId.toLocaleLowerCase().includes(query)) &&
@@ -85,36 +126,31 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
               locations.includes(fixture.target.value.parentContainerGlobalId))),
       );
       const start = (page - 1) * pageSize;
-      return HttpResponse.json({
-        items: matching.slice(start, start + pageSize).map((fixture) => ({
-          configurationId: fixture.id,
-          configurationVersion: fixture.configurationVersion,
-          targetType: "INSTRUMENT",
-          targetId: fixture.target.value.id,
-          globalId: fixture.target.globalId,
-          name: fixture.target.value.name,
-          timezone: fixture.timezone,
-          slotGranularityMinutes: fixture.slotGranularityMinutes,
-          openingHours: fixture.openingHours,
-          bufferBeforeMinutes: fixture.bufferBeforeMinutes,
-          bufferAfterMinutes: fixture.bufferAfterMinutes,
-          maxBookingDurationMinutes: fixture.maxBookingDurationMinutes,
-          allowDoubleBooking: fixture.allowDoubleBooking,
-          effectiveRole: fixture.effectiveRole,
-          capabilities: fixture.capabilities,
-          location:
-            fixture.target.value.parentContainerName && fixture.target.value.parentContainerGlobalId
-              ? {
-                  name: fixture.target.value.parentContainerName,
-                  globalId: fixture.target.value.parentContainerGlobalId,
-                }
-              : null,
-        })),
-        page,
-        pageSize,
-        total: matching.length,
-        facets: { types: ["INSTRUMENT"] },
-      });
+      const items = matching.slice(start, start + pageSize).map((fixture) => ({
+        configurationId: fixture.id,
+        configurationVersion: fixture.configurationVersion,
+        targetType: "INSTRUMENT",
+        targetId: fixture.target.value.id,
+        globalId: fixture.target.globalId,
+        name: fixture.target.value.name,
+        timezone: fixture.timezone,
+        slotGranularityMinutes: fixture.slotGranularityMinutes,
+        openingHours: fixture.openingHours,
+        bufferBeforeMinutes: fixture.bufferBeforeMinutes,
+        bufferAfterMinutes: fixture.bufferAfterMinutes,
+        maxBookingDurationMinutes: fixture.maxBookingDurationMinutes,
+        allowDoubleBooking: fixture.allowDoubleBooking,
+        effectiveRole: fixture.effectiveRole,
+        capabilities: fixture.capabilities,
+        location:
+          fixture.target.value.parentContainerName && fixture.target.value.parentContainerGlobalId
+            ? {
+                name: fixture.target.value.parentContainerName,
+                globalId: fixture.target.value.parentContainerGlobalId,
+              }
+            : null,
+      }));
+      return HttpResponse.json(bookingCataloguePage(items, page, pageSize, matching.length));
     }),
     http.get("/api/v2/booking-catalogue/locations", ({ request }) => {
       const url = new URL(request.url);
