@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { DayTimeline, type DayTimelineRange } from "@/modules/booking/components/DayTimeline";
 import { toTimelineEvent } from "@/modules/booking/components/toTimelineEvent";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { proposeDayRange, timelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
@@ -55,6 +56,7 @@ export function CalendarTimeGrid({
   const { t } = useTranslation("booking");
   const editorPositions = React.useContext(BookingEditorsContext)?.positions;
   const dates = calendarDates(date, view);
+  const renderActions = actionsFor(events, timezone, date);
   const month = date.slice(0, 7);
   const calendarRef = useScrollToToday(date, view, today);
   const closedPeriods = React.useMemo(
@@ -62,7 +64,6 @@ export function CalendarTimeGrid({
     [schedule, date, timezone, view],
   );
   const canCreateBooking = schedule?.capabilities?.canCreateBooking === true;
-  const renderActions = actionsFor(events, timezone, date);
   return (
     <section aria-label={t("calendar.layout.time-grid")} className="py-3" aria-busy={isLoading}>
       {view === "day" ? (
@@ -81,7 +82,9 @@ export function CalendarTimeGrid({
               showZoomControls={false}
               renderEventActions={renderActions}
               renderBlockoutActions={renderActions}
-              snapIncrementMinutes={schedule?.slotGranularityMinutes}
+              proposeSelection={
+                schedule ? (range) => proposeDayRange(range, date, timezone, timelinePolicy(schedule)) : undefined
+              }
               creationDisabled={isLoading || creationDisabled || !canCreateBooking}
               onRangeSelect={
                 canCreateBooking && schedule && onRangeSelect

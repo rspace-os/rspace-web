@@ -214,7 +214,9 @@ function AllBookableItemsContentForUser({
                 activeAction={bulkMutation.isPending ? (bulkMutation.variables?.action ?? null) : null}
                 failedAction={failedBulkAction}
                 offerEnable={false}
-                onAction={(action, rowIds) => bulkMutation.mutateAsync({ action, rowIds: [...rowIds] })}
+                onAction={async (action, rowIds) => {
+                  await bulkMutation.mutateAsync({ action, rowIds: [...rowIds] });
+                }}
               />
             ) : null}
           </>

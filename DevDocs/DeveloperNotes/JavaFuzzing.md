@@ -19,17 +19,17 @@ The parser campaign is implemented in
 
 ## Booking targets
 
-[`BookingOpeningHoursCodecFuzzTest`](../../src/test/java/com/researchspace/model/booking/BookingOpeningHoursCodecFuzzTest.java)
-covers bounded invalid input, canonical JSON, round trips, and independent weekday/time entries.
-[`BookingSchedulingPolicyFuzzTest`](../../src/test/java/com/researchspace/booking/service/BookingSchedulingPolicyFuzzTest.java)
-covers opening/closing boundaries, minute grids, elapsed maximum duration, buffers, and booking and
-maintenance conflicts across fixed UTC, Berlin, Lord Howe, and Kathmandu dates, including DST gaps
-and folds. It uses an independent boundary oracle rather than copying the policy's coverage algorithm.
+See [`BookingOpeningHoursCodecFuzzTest`](../../src/test/java/com/researchspace/model/booking/BookingOpeningHoursCodecFuzzTest.java)
+and [`BookingSchedulingPolicyFuzzTest`](../../src/test/java/com/researchspace/booking/service/BookingSchedulingPolicyFuzzTest.java)
+for current generators and assertions, including a boundary oracle written independently of the
+policy's coverage algorithm. Parameterized regressions and
+[`BookingIncrementScenariosTest`](../../src/test/java/com/researchspace/booking/service/BookingIncrementScenariosTest.java)
+replay fixed boundaries during ordinary Maven tests.
 
 Run replay together with the existing unit tests:
 
 ```sh
-./mvnw -B test -Dfast=true -Dtest=RsqlFilterParserFuzzTest,BookingOpeningHoursCodecFuzzTest,BookingSchedulingPolicyFuzzTest,BookingOpeningHoursCodecTest,BookingSchedulingSettingsTest,BookingSchedulingPolicyImplTest
+./mvnw -B test -Dfast=true -Dtest=RsqlFilterParserFuzzTest,BookingOpeningHoursCodecFuzzTest,BookingSchedulingPolicyFuzzTest,BookingOpeningHoursCodecTest,BookingSchedulingSettingsTest,BookingSchedulingPolicyImplTest,BookingIncrementScenariosTest
 ```
 
 Each booking method defaults to a 30-second campaign. Run each separately:
@@ -39,6 +39,8 @@ JAZZER_FUZZ=1 ./mvnw -B test -Dfast=true '-Dtest=BookingOpeningHoursCodecFuzzTes
 JAZZER_FUZZ=1 ./mvnw -B test -Dfast=true '-Dtest=BookingOpeningHoursCodecFuzzTest#validSchedules'
 JAZZER_FUZZ=1 ./mvnw -B test -Dfast=true '-Dtest=BookingSchedulingPolicyFuzzTest#validBookingsAndConflicts'
 JAZZER_FUZZ=1 ./mvnw -B test -Dfast=true '-Dtest=BookingSchedulingPolicyFuzzTest#enforcesSingleRuleBoundaries'
+JAZZER_FUZZ=1 ./mvnw -B test -Dfast=true '-Dtest=BookingSchedulingPolicyFuzzTest#elapsedIncrements'
+JAZZER_FUZZ=1 ./mvnw -B test -Dfast=true '-Dtest=BookingSchedulingPolicyFuzzTest#calendarDayIncrements'
 ```
 
 ## Forks and reports
@@ -56,6 +58,9 @@ Booking seeds follow the same convention under
 and `src/test/resources/com/researchspace/booking/service/BookingSchedulingPolicyFuzzTestInputs/<method>/`.
 Arbitrary-text codec seeds contain raw UTF-8; structured methods consume raw `FuzzedDataProvider`
 bytes. Preserve those bytes, including the absence of a trailing newline.
+
+Some curated raw-byte inputs use a `.png` suffix to bypass Maven's UTF-8 resource filtering;
+these are fuzz inputs, not images. Preserve them unchanged.
 
 Jazzer saves a failing input in the conventional test-resource directory above. Preserve its bytes and rerun the ordinary test command without `JAZZER_FUZZ`; the normal Maven lifecycle copies the new resource before replay. Fix the defect, replay again, and retain a meaningful regression input.
 

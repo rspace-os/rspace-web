@@ -6,6 +6,7 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
 
   <changeSet id="rsdev-1187-booking-settings-columns" author="researchspace" context="run">
+    <validCheckSum>9:e1355dfa709819ea49a56f83d748f909</validCheckSum>
     <comment>Add scheduling settings to each existing booking configuration</comment>
     <addColumn tableName="BookingConfiguration">
       <column name="slotGranularityMinutes" type="BIGINT" defaultValueNumeric="5"/>
@@ -40,6 +41,7 @@
   </changeSet>
 
   <changeSet id="rsdev-1187-booking-configuration-defaults" author="researchspace" context="run">
+    <validCheckSum>9:d1f8e5ef486ee2c48d99e0a1ed7da677</validCheckSum>
     <comment>Create the singleton creation-time booking defaults and Envers history</comment>
     <createTable tableName="BookingConfigurationDefaults">
       <column name="id" type="BIGINT"><constraints primaryKey="true" nullable="false"/></column>
@@ -108,4 +110,21 @@
       <column name="maxBookingDurationMinutes" type="BIGINT"/>
     </addColumn>
   </changeSet>
+
+  <changeSet id="rsdev-1187-booking-fresh-seed-default" author="researchspace" context="run">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <sqlCheck expectedResult="1">
+        SELECT COUNT(*) FROM DATABASECHANGELOG
+        WHERE ID = 'rsdev-1187-booking-settings-fresh-origin'
+          AND AUTHOR = 'researchspace'
+          AND EXECTYPE = 'EXECUTED'
+      </sqlCheck>
+    </preConditions>
+    <comment>Apply the fifteen-minute default only to the singleton created by a fresh master migration</comment>
+    <update tableName="BookingConfigurationDefaults">
+      <column name="slotGranularityMinutes" valueNumeric="15"/>
+      <where>id = 1</where>
+    </update>
+  </changeSet>
+
 </databaseChangeLog>

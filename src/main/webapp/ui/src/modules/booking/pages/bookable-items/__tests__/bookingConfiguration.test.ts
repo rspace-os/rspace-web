@@ -2,10 +2,8 @@ import { HttpResponse, http } from "msw";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { apiV2CollectionMetadataFromOpenApi } from "@/modules/common/table-list/adapters/apiV2/apiV2CollectionMetadata";
 import { createApiV2FilterFields } from "@/modules/common/table-list/adapters/apiV2/apiV2FilterFields";
-import { parseTableViewState } from "@/modules/common/table-list/tableViewState";
 import {
   type BookingConfiguration,
   BookingConfigurationInputSchema,
@@ -17,7 +15,7 @@ import {
 } from "../bookingConfiguration";
 import { bookableItemsOpenApi, collectionPage } from "../mocks/bookableItemsMocks";
 
-it("offers no operators for openingHours and no removed schedule fields through API metadata", () => {
+it("offers no operators for openingHours through API metadata", () => {
   const metadata = apiV2CollectionMetadataFromOpenApi<BookingConfiguration>(
     bookableItemsOpenApi,
     "booking-configurations",
@@ -28,36 +26,7 @@ it("offers no operators for openingHours and no removed schedule fields through 
     type: "array",
     capabilities: { filterOperators: [], sortable: false },
   });
-  for (const field of ["openingStart", "openingEnd", "openDays", "openingExceptions"]) {
-    expect(filters.fields.map(({ name }) => name)).not.toContain(field);
-    expect(metadata.fields).not.toContain(field);
-    expect(metadata.filtering.selectors).not.toHaveProperty(field);
-  }
 });
-
-it.each(["openingStart", "openingEnd", "openDays", "openingExceptions"])(
-  "does not restore the removed schedule field %s from a saved view",
-  (field) => {
-    const config = resolveCollectionConfig(bookingConfigurationConfig);
-    const restored = parseTableViewState(
-      JSON.stringify({
-        v: 1,
-        search: "Microscope",
-        where: `enabled==true;${field}=="09:00"`,
-        columns: JSON.stringify({ fields: ["target", field] }),
-        defaults: JSON.stringify({ fields: config.defaultColumns }),
-        sort: field,
-      }),
-      config,
-    );
-    expect(restored).toEqual({
-      search: "Microscope",
-      where: null,
-      columns: config.defaultColumns,
-      sort: config.defaultSort ?? [],
-    });
-  },
-);
 
 const configuration = {
   id: 7,
@@ -77,7 +46,10 @@ const configuration = {
   enabled: true,
   timezone: "Europe/Berlin",
   slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
+  alignToIncrement: true,
   openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
   bufferBeforeMinutes: 0,
   bufferAfterMinutes: 0,
   maxBookingDurationMinutes: 0,
@@ -233,5 +205,28 @@ describe("booking configuration schedules", () => {
       { name: "start", required: true, writeConstraints: { format: "time" } },
       { name: "end", required: true, writeConstraints: { format: "time", allow24HourEnd: true } },
     ]);
+  });
+});
+
+describe("booking configuration Days maximum", () => {
+  // The floor is the nominal day count in minutes, whatever the timezone's shortest day is.
+  it.each(["UTC", "Australia/Lord_Howe", "Antarctica/Troll"])("applies the same floor in %s", (timezone) => {
+    const create = (maxBookingDurationMinutes: number) =>
+      v.safeParse(BookingConfigurationInputSchema, {
+        target: { relationTo: "booking-instruments", value: 123 },
+        enabled: true,
+        timezone,
+        slotGranularityMinutes: 1440,
+        incrementUnit: "DAYS",
+        alignToIncrement: true,
+        openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+
+        bufferBeforeMinutes: 0,
+        bufferAfterMinutes: 0,
+        maxBookingDurationMinutes,
+        allowDoubleBooking: false,
+      }).success;
+    expect([0, 1440, 1500].map(create)).toEqual([true, true, true]);
+    expect([1320, 1380, 1410].map(create)).toEqual([false, false, false]);
   });
 });

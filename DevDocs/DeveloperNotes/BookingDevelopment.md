@@ -116,3 +116,27 @@ Permanent user deletion removes live Booking rows through
 [`UserDeletionDaoHibernate.table2UserIdColumn`](../../src/main/java/com/researchspace/dao/hibernate/UserDeletionDaoHibernate.java),
 keyed by `TimeSlotBooking.requester_id`. Keep that cleanup mapping aligned if the
 requester column or table changes. Booking audit history is retained.
+
+## Upgrades
+
+### Existing increment schema
+
+Three historical booking changesets list their exact legacy checksums as accepted alternatives.
+A new `run` guard requires all four booking tables and either no increment columns
+or all eight compatible columns (`VARCHAR(8)` and `BIT(1)`, non-null on live tables
+and nullable in audit tables). A partial or incompatible schema stops the upgrade before the
+additive migration. A complete existing schema marks that migration ran without
+executing its DDL or backfill, preserving day units, unaligned starts, existing
+settings versions, and historical audit nulls. Fresh databases still run the
+unchanged additive body; fresh-only seed guards remain in place. This upgrade
+uses normal forward Liquibase processing, without clearing checksums or resetting
+the database.
+
+The guard and additive migration are in
+[`changeLog-rsdev-1187-booking-increment-fields.xml`](../../src/main/resources/sqlUpdates/changeLog-rsdev-1187-booking-increment-fields.xml).
+On an untouched fresh `dev-test` seed, that changelog changes the eight original
+configurations to fifteen-minute increments and adds one-day and unaligned
+fifteen-minute examples. Its preconditions protect existing configurations and
+occupied fixture IDs. See the
+[increment fixture SQL](../../src/main/resources/sqlUpdates/booking-dev-seed-increment-fixtures.sql)
+for the additional examples.

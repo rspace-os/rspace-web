@@ -1,7 +1,7 @@
 import { Form, isDirty, reset, useForm } from "@formisch/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellIcon, CheckIcon, SaveIcon, XIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
 import {
@@ -45,6 +45,10 @@ function ItemNotificationEditor({
     schema: BookingNotificationChoiceSchema,
     initialInput: bookingNotificationChoice(subscription.enabled),
   });
+  const dirty = isDirty(form);
+  useEffect(() => {
+    if (!dirty) reset(form, { initialInput: bookingNotificationChoice(subscription.enabled) });
+  }, [dirty, form, subscription.enabled]);
   const mutation = useMutation({
     mutationFn: ({ enabled, version }: { enabled: boolean; version: number }) =>
       replaceBookingNotificationSubscription(configurationId, enabled, version, token),
@@ -69,8 +73,8 @@ function ItemNotificationEditor({
       setFeedback("saveError");
     },
   });
-  const dirty = isDirty(form);
   const saved = feedback === "saved" && !dirty;
+
   return (
     <Card size="sm" aria-labelledby="item-notification-subscription-heading">
       <CardHeader>
@@ -110,6 +114,7 @@ function ItemNotificationEditor({
               type="submit"
               size="sm"
               disabled={mutation.isPending || !dirty}
+              focusableWhenDisabled={mutation.isPending || saved}
               aria-busy={mutation.isPending}
               className={
                 saved
@@ -190,15 +195,19 @@ export function BookableItemNotificationSubscription({
   }
 
   return (
-    <ItemNotificationEditor
-      key={`${subjectId}-${configurationId}-${subscription.data.version}-${subscription.data.enabled}`}
-      subjectId={subjectId}
-      configurationId={configurationId}
-      globalId={globalId}
-      token={token}
-      subscription={subscription.data}
-      feedback={feedback}
-      setFeedback={setFeedback}
-    />
+    <div>
+      <p role="status" className="sr-only">
+        {feedback === "saved" ? t("preferences.actions.saved") : null}
+      </p>
+      <ItemNotificationEditor
+        subjectId={subjectId}
+        configurationId={configurationId}
+        globalId={globalId}
+        token={token}
+        subscription={subscription.data}
+        feedback={feedback}
+        setFeedback={setFeedback}
+      />
+    </div>
   );
 }

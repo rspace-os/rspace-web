@@ -72,6 +72,8 @@ const BOOKING_PROBLEM_KEYS = {
   "errors.api.v2.booking.overlap": "bookings.errors.overlap",
   [BUFFER_CODE]: "bookings.errors.overlap",
   "errors.api.v2.booking.granularity": "bookings.errors.granularity",
+  "errors.api.v2.booking.alignment": "bookings.errors.alignmentRejected",
+  "errors.api.v2.booking.dayEndMissing": "bookings.errors.dayEndMissingRejected",
   "errors.api.v2.booking.openingHours": "bookings.errors.openingHours",
   "errors.api.v2.booking.target.unavailable": "bookings.errors.targetUnavailable",
   "errors.api.v2.forbidden": "bookings.errors.forbidden",
@@ -93,6 +95,12 @@ export function bookingProblemKey(error: unknown): BookingProblemKey {
     return "bookings.errors.concurrentModification";
   }
   return isMappedBookingProblemCode(error.code) ? BOOKING_PROBLEM_KEYS[error.code] : "bookings.errors.generic";
+}
+
+export function bookingCreationProblemKey(
+  error: unknown,
+): ReturnType<typeof bookingProblemKey> | "bookings.errors.outcomeUncertain" {
+  return isBookingOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
 }
 
 export function bookingProblemMessage(
@@ -127,10 +135,6 @@ export function bookingProblemMessage(
     if (limit) return maximumDurationMessage(limit, t);
   }
   return t(bookingProblemKey(error));
-}
-
-export function bookingCreationProblemKey(error: unknown): BookingProblemKey | "bookings.errors.outcomeUncertain" {
-  return isBookingOutcomeUncertain(error) ? "bookings.errors.outcomeUncertain" : bookingProblemKey(error);
 }
 
 /** The maximum-duration rejection with the limit spelled out, shared with the client-side check. */

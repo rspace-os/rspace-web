@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
-import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
+import { parseAsBoolean, parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { bookableItemOption } from "@/modules/booking/creation/bookableItemOption";
@@ -28,6 +28,7 @@ import type { FilterExpression } from "@/modules/common/table-list/tableListStat
 import { useTableList } from "@/modules/common/table-list/useTableList";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import type { CalendarFilterPanelKind } from "./CalendarFilterPanels";
+import { useCalendarEventFocus, useCalendarEventFocusResolution } from "./calendarEventFocus";
 import { calendarEventSourceConfig } from "./calendarEventSourceConfig";
 import { useCalendarEvents } from "./calendarEvents";
 import { type CalendarView, calendarDates, calendarLayouts, calendarViews } from "./calendarLayoutUtils";
@@ -47,7 +48,7 @@ const calendarViewParser = parseAsStringLiteral(calendarViews).withDefault("day"
 const calendarLayoutParser = parseAsStringLiteral(calendarLayouts)
   .withDefault("resources")
   .withOptions(calendarSearchOptions);
-
+const calendarQuickFilterParser = parseAsBoolean.withDefault(false).withOptions(calendarSearchOptions);
 function andFilters<TDocument>(
   filters: readonly (FilterExpression<TDocument> | null | undefined)[],
 ): FilterExpression<TDocument> | null {
@@ -120,16 +121,21 @@ export function useCalendarContentData() {
   const { date, target } = useSearch({ from: "/booking/calendar/" });
   const navigate = useNavigate({ from: "/booking/calendar/" });
   const location = useLocation();
-  const replaceSearch = (key: string, value?: string) => {
+  const replaceSearch = (update: (search: URLSearchParams) => void, resetScroll?: boolean) => {
     const search = new URLSearchParams(location.searchStr);
-    if (value === undefined) search.delete(key);
-    else search.set(key, value);
+    update(search);
     const query = search.toString();
-    void navigate({ to: query ? `${location.pathname}?${query}` : location.pathname, replace: true });
+    void navigate({
+      to: query ? `${location.pathname}?${query}` : location.pathname,
+      replace: true,
+      ...(resetScroll === undefined ? {} : { resetScroll }),
+    });
   };
   const [calendarSearch, setCalendarSearch] = useQueryState("calendar-resources.q", calendarSearchParser);
   const [itemWhere, setItemWhere] = useQueryState("calendar-resources.where", calendarWhereParser);
   const [eventWhere, setEventWhere] = useQueryState("calendar-events.where", calendarWhereParser);
+  const [mineOnly, setMineOnly] = useQueryState("mineOnly", calendarQuickFilterParser);
+  const [myItemsOnly, setMyItemsOnly] = useQueryState("myItemsOnly", calendarQuickFilterParser);
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
   const { data: currentUser } = useCurrentUserQuery();
   const [requestedView, setView] = useQueryState("view", calendarViewParser);
@@ -137,8 +143,8 @@ export function useCalendarContentData() {
   // Month is not offered in Resources, so a link asking for it opens the week, as switching layouts does.
   const view: CalendarView = layout === "resources" && requestedView === "month" ? "week" : requestedView;
   const [resettingControls, setResettingControls] = React.useState(false);
-  const [mineOnly, setMineOnly] = React.useState(false);
-  const [myItemsOnly, setMyItemsOnly] = React.useState(false);
+  const calendarFocus = useCalendarEventFocus({ location, navigate });
+  const { focusUnavailableRequest, setFocusUnavailableRequest, focusFallback } = calendarFocus;
   const preferences = useBookingDisplayPreferences();
   const beginCreation = useBookingCreationStore((state) => state.beginCreation);
   const creationActive = useBookingCreationStore((state) => state.activeCreation !== null);
@@ -241,20 +247,19 @@ export function useCalendarContentData() {
     () => andFilters([eventExpression, requesterFilter]),
     [eventExpression, requesterFilter],
   );
-  const targetItemExpression = React.useMemo(() => targetFilter(target), [target]);
-  const targetEventExpression = React.useMemo(() => targetFilter(target), [target]);
+  const targetExpression = React.useMemo(() => targetFilter(target), [target]);
   const calendarEventExpression = React.useMemo(
     () =>
       andFilters<BookingListDocument>([
         scopedEventExpression,
-        targetEventExpression,
+        targetExpression,
         itemExpression === null ? null : retypeFilter<BookingConfiguration, BookingListDocument>(itemExpression),
       ]),
-    [itemExpression, scopedEventExpression, targetEventExpression],
+    [itemExpression, scopedEventExpression, targetExpression],
   );
   const resourceItemExpression = React.useMemo(
-    () => andFilters([itemExpression, targetItemExpression]),
-    [itemExpression, targetItemExpression],
+    () => andFilters([itemExpression, targetExpression]),
+    [itemExpression, targetExpression],
   );
   const itemWhereParameter = resourceItemExpression ? serializeRsqlExpression(resourceItemExpression) : undefined;
   const eventWhereParameter = scopedEventExpression ? serializeRsqlExpression(scopedEventExpression) : undefined;
@@ -367,6 +372,25 @@ export function useCalendarContentData() {
   });
   const displayReady = calendarQueryReady;
   const resourceTargets = resourceTable.tableProps.rows.flatMap((row) => (row.target ? [row.target] : []));
+  useCalendarEventFocusResolution({
+    lifecycle: calendarFocus,
+    displayReady,
+    events,
+    layout,
+    view,
+    target,
+    preferencesTimeZone: preferences.timeZone,
+    resourceStatus: resourceTable.tableProps.status,
+    resourceTargetIds,
+    selectedDate,
+    calendarSearch,
+    itemWhere,
+    eventWhere,
+    mineOnly,
+    myItemsOnly,
+    setView,
+    setLayout,
+  });
   const targetOptionLabels = React.useMemo(
     () => ({
       unavailableLabel: (value: string) => commonT("relationshipPicker.unavailable", { value }),
@@ -434,5 +458,8 @@ export function useCalendarContentData() {
     targetName,
     replaceSearch,
     targetOption,
+    focusFallback,
+    focusUnavailableRequest,
+    setFocusUnavailableRequest,
   };
 }

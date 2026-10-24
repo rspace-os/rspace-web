@@ -70,7 +70,7 @@ export class BookableItemPage {
   }
 
   get maximumDuration(): Locator {
-    return page.getByRole("spinbutton").first();
+    return page.getByRole("spinbutton", { name: "Maximum booking duration (elapsed minutes)" });
   }
 
   get openingHours(): Locator {

@@ -76,6 +76,9 @@ const mutation = useMutation({
 return <TableList {...table.tableProps} alertsRef={alertsRef} />;
 ```
 
+For results that cross Booking routes or appear on detail pages, see
+[Booking frontend](./BookingFrontend.md). The page delivers table results through `alertsRef`.
+
 ## Add controlled row selection
 
 Pass `selection` when a page supplies bulk actions. The selected IDs stay in the page component,

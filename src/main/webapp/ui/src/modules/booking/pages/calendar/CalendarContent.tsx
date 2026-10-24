@@ -2,6 +2,7 @@ import * as React from "react";
 import { BookingCreationButtonGroup } from "@/modules/booking/creation/BookingCreationButtonGroup";
 import { dayMinuteToZonedTime, wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { BookingEventsCalendar } from "./BookingEventsCalendar";
+import { calendarEventFocusRetryChanges } from "./calendarEventFocus";
 import { useCalendarContentData } from "./useCalendarContentData";
 
 export function CalendarContent() {
@@ -44,6 +45,9 @@ export function CalendarContent() {
     targetName,
     replaceSearch,
     targetOption,
+    focusFallback,
+    focusUnavailableRequest,
+    setFocusUnavailableRequest,
   } = useCalendarContentData();
 
   return (
@@ -52,6 +56,8 @@ export function CalendarContent() {
       view={view}
       layout={layout}
       timezone={preferences.timeZone}
+      focusUnavailable={focusUnavailableRequest !== undefined}
+      focusFallback={focusFallback}
       availabilityStartMinute={preferences.availabilityWindow.startMinute}
       availabilityEndMinute={preferences.availabilityWindow.endMinute}
       events={displayReady ? (events.data ?? []) : []}
@@ -76,7 +82,7 @@ export function CalendarContent() {
               loading: targetName === undefined && targetOption?.restoreStatus === "loading",
               unresolvedLabel:
                 targetName === undefined && targetOption?.restoreStatus !== "loading" ? targetOption?.label : undefined,
-              onRemove: () => replaceSearch("target"),
+              onRemove: () => replaceSearch((search) => search.delete("target")),
             }
           : undefined
       }
@@ -90,12 +96,12 @@ export function CalendarContent() {
       }}
       mineOnly={mineOnly}
       onMineChange={(next) => {
-        setMineOnly(next);
+        void setMineOnly(next);
         resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
       }}
       myItemsOnly={myItemsOnly}
       onMyItemsChange={(next) => {
-        setMyItemsOnly(next);
+        void setMyItemsOnly(next);
         resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
       }}
       isLoading={
@@ -105,21 +111,29 @@ export function CalendarContent() {
       }
       isError={events.isError || (layout === "resources" && resourceTable.tableProps.status === "error")}
       onRetry={() => {
+        if (focusUnavailableRequest) {
+          setFocusUnavailableRequest(undefined);
+          replaceSearch((search) => calendarEventFocusRetryChanges(search, focusUnavailableRequest), false);
+        }
         if (layout === "resources" && resourceTable.tableProps.status === "error") {
           void resourceTable.refetch();
         } else {
           void events.refetch();
         }
       }}
-      onDateChange={(nextDate) => replaceSearch("date", nextDate)}
+      onDateChange={(nextDate) => replaceSearch((search) => search.set("date", nextDate))}
       onControlsReset={async () => {
         // Date navigation is asynchronous; avoid fetching an intermediate date/period combination.
         setResettingControls(true);
         try {
           await navigate({ search: (current) => ({ ...current, date: undefined, target: undefined }), replace: true });
-          await Promise.all([setCalendarSearch(null), setItemWhere(null), setEventWhere(null)]);
-          setMineOnly(false);
-          setMyItemsOnly(false);
+          await Promise.all([
+            setCalendarSearch(null),
+            setItemWhere(null),
+            setEventWhere(null),
+            setMineOnly(false),
+            setMyItemsOnly(false),
+          ]);
           resourceTable.setPage({ ...resourceTable.state.page, pageIndex: 0 });
           React.startTransition(() => {
             setView("day");

@@ -7,20 +7,17 @@ import { useEffect, useEffectEvent, useId, useMemo, useRef, useState } from "rea
 import { flushSync } from "react-dom";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { ClockChangeWarning } from "@/modules/booking/components/ClockChangeWarning";
 import { openingWindowsOnDate } from "@/modules/booking/components/DayTimelineEvent";
 import { BookableItemPicker } from "@/modules/booking/creation/BookableItemPicker";
 import { BookingFormAlerts } from "@/modules/booking/creation/BookingFormAlerts";
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import type { BookableItemOption } from "@/modules/booking/creation/bookableItemOption";
+import { timelinePolicy, unrestrictedTimelinePolicy } from "@/modules/booking/creation/timelineRange";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import type { Booking, BookingEventKind } from "@/modules/booking/domain/booking";
 import { todayInTimeZone, useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
-import {
-  ALL_ISO_WEEKDAYS,
-  ALWAYS_OPEN,
-  coversInterval,
-  type OpeningSchedule,
-} from "@/modules/booking/domain/bookingOpeningHours";
+import { ALL_ISO_WEEKDAYS, coversInterval } from "@/modules/booking/domain/bookingOpeningHours";
 import {
   type BookingTimeFormat,
   type BookingWindowDraft,
@@ -30,7 +27,7 @@ import {
   isPlainDate,
   sameDraft,
   sameTimeZone,
-  wallClockDraftFromInstants,
+  wallClockEndpointFromInstant,
   wallClockInstant,
   zonedDayBounds,
 } from "@/modules/booking/domain/bookingTime";
@@ -94,10 +91,6 @@ function openingHoursSummary(
       { type: "unit" },
     ),
   });
-}
-
-function openingSchedule({ openingHours }: OpeningSchedule): OpeningSchedule {
-  return { openingHours };
 }
 
 function purposeFields(eventKind: BookingEventKind) {
@@ -199,19 +192,10 @@ function emptyDraft(date = ""): BookingWindowDraft {
   return { startDate: date, startTime: "", endDate: date, endTime: "" };
 }
 
-function wallClockEndpoint(instant: string, timezone: string) {
-  const {
-    startDate: date,
-    startTime: time,
-    startOccurrence: occurrence,
-  } = wallClockDraftFromInstants(instant, instant, timezone);
-  return { date, time, occurrence };
-}
-
 function draftFromInstants(start: string, end: string, timezones: EndpointTimezones): BookingWindowDraft {
   const zones = endpointTimezones(timezones);
-  const startValue = wallClockEndpoint(start, zones.start);
-  const endValue = wallClockEndpoint(end, zones.end);
+  const startValue = wallClockEndpointFromInstant(start, zones.start);
+  const endValue = wallClockEndpointFromInstant(end, zones.end);
   return {
     startDate: startValue.date,
     startTime: startValue.time,
@@ -233,8 +217,8 @@ function convertDraft(draft: BookingWindowDraft, from: EndpointTimezones, to: En
   const { start, end } = resolveBookingWindow(draft, source);
   const startInstant = wallClockInstant(start, draft.startOccurrence);
   const endInstant = wallClockInstant(end, draft.endOccurrence);
-  const startValue = startInstant ? wallClockEndpoint(startInstant, destination.start) : undefined;
-  const endValue = endInstant ? wallClockEndpoint(endInstant, destination.end) : undefined;
+  const startValue = startInstant ? wallClockEndpointFromInstant(startInstant, destination.start) : undefined;
+  const endValue = endInstant ? wallClockEndpointFromInstant(endInstant, destination.end) : undefined;
   return {
     ...draft,
     ...(startValue
@@ -267,6 +251,10 @@ export function BookingForm(props: BookingFormProps) {
   const formTimezone = timezoneChoice ?? displayTimezone;
   const endFormTimezone = endTimezoneChoice ?? formTimezone;
   const formTimezones = useMemo(() => ({ start: formTimezone, end: endFormTimezone }), [formTimezone, endFormTimezone]);
+  const policy = useMemo(
+    () => (target ? timelinePolicy(target, eventKind) : unrestrictedTimelinePolicy(formTimezone)),
+    [target, eventKind, formTimezone],
+  );
   const originalDraft =
     props.mode === "edit" ? draftFromInstants(props.booking.start, props.booking.end, formTimezones) : undefined;
   const addDraft = initialWindow
@@ -327,18 +315,8 @@ export function BookingForm(props: BookingFormProps) {
   const allowPolicyMismatch = Boolean(originalDraft && sameDraft(draft, originalDraft));
   const enteredWindow = useMemo(() => resolveBookingWindow(draft, formTimezones).window, [draft, formTimezones]);
   const window = useMemo(
-    () =>
-      target
-        ? validateBookingWindow(draft, formTimezones, {
-            schedulingTimezone: target.timezone,
-            slotGranularityMinutes: target.slotGranularityMinutes,
-            maxBookingDurationMinutes: eventKind === "MAINTENANCE" ? 0 : target.maxBookingDurationMinutes,
-            ...(eventKind === "MAINTENANCE" ? ALWAYS_OPEN : openingSchedule(target)),
-            enforceOpeningHours: eventKind !== "MAINTENANCE",
-            allowPolicyMismatch,
-          }).window
-        : undefined,
-    [draft, formTimezones, target, eventKind, allowPolicyMismatch],
+    () => (target ? validateBookingWindow(draft, formTimezones, { ...policy, allowPolicyMismatch }).window : undefined),
+    [draft, formTimezones, target, policy, allowPolicyMismatch],
   );
   const selectTarget = (next: BookableItemOption | undefined) => {
     props.onTargetChange?.(next);
@@ -424,29 +402,35 @@ export function BookingForm(props: BookingFormProps) {
     setTimezoneChoice(next);
     applyTimezones({ start: next, end: endTimezoneChoice ?? next });
   };
+  // A flex column spaces the note only when it shows; its visually hidden live region takes no gap.
   const windowFields = (
-    <ZonedBookingWindowFields
-      displayTimezone={formTimezones.start}
-      endTimezone={formTimezones.end}
-      onTimezoneChange={props.fixedTimezone ? undefined : changeTimezone}
-      schedulingTimezone={target?.timezone ?? formTimezone}
-      slotGranularityMinutes={target?.slotGranularityMinutes ?? 1}
-      maxBookingDurationMinutes={eventKind === "MAINTENANCE" ? 0 : (target?.maxBookingDurationMinutes ?? 0)}
-      {...(eventKind === "MAINTENANCE" || !target ? ALWAYS_OPEN : openingSchedule(target))}
-      enforceOpeningHours={Boolean(target) && eventKind !== "MAINTENANCE"}
-      value={draft}
-      onChange={(next) => {
-        props.onDraftChange?.(convertDraft(next, formTimezones, displayTimezone), target?.globalId);
-        setDraft(next);
-      }}
-      allowPolicyMismatch={allowPolicyMismatch}
-      originalValue={originalDraft}
-      disabled={busy}
-      density={props.density}
-      // Once both endpoints are entered the times are checked, so a rule they break shows before submission.
-      showErrors={attempted || Boolean(draft.startDate && draft.startTime && draft.endDate && draft.endTime)}
-      startErrorId={bookingInPast ? pastStartErrorId : undefined}
-    />
+    <div className="flex flex-col gap-4">
+      <ZonedBookingWindowFields
+        displayTimezone={formTimezones.start}
+        endTimezone={formTimezones.end}
+        onTimezoneChange={props.fixedTimezone ? undefined : changeTimezone}
+        {...policy}
+        value={draft}
+        onChange={(next) => {
+          props.onDraftChange?.(convertDraft(next, formTimezones, displayTimezone), target?.globalId);
+          setDraft(next);
+        }}
+        allowPolicyMismatch={allowPolicyMismatch}
+        originalValue={originalDraft}
+        disabled={busy}
+        density={props.density}
+        // Once both endpoints are entered the times are checked, so a rule they break shows before submission.
+        showErrors={attempted || Boolean(draft.startDate && draft.startTime && draft.endDate && draft.endTime)}
+        startErrorId={bookingInPast ? pastStartErrorId : undefined}
+      />
+      {/* Informational only: shown alongside, never instead of, the window's validation errors. */}
+      <ClockChangeWarning
+        start={enteredWindow?.start}
+        end={enteredWindow?.end}
+        timezone={target?.timezone}
+        kind={eventKind}
+      />
+    </div>
   );
 
   return (
