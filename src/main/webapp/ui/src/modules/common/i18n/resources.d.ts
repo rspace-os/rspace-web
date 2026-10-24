@@ -811,12 +811,14 @@ export default interface Resources {
       "invite": "Invite",
       "logOut": "Log Out",
       "login": "Login",
+      "moreActions": "More actions",
       "move": "Move",
       "next": "Next",
       "no": "No",
       "none": "None",
       "ok": "OK",
       "open": "Open",
+      "previous": "Previous",
       "publish": "Publish",
       "remove": "Remove",
       "republish": "Republish",
@@ -826,6 +828,7 @@ export default interface Resources {
       "save": "Save",
       "search": "Search",
       "select": "Select",
+      "set": "Set",
       "share": "Share",
       "sign": "Sign",
       "submit": "Submit",
@@ -850,9 +853,11 @@ export default interface Resources {
       "warningTitle": "Could not authenticate via API"
     },
     "apiDocs": {
+      "pageTitle": "RSpace API Documentation | ResearchSpace",
       "sources": {
         "eln": "RSpace ELN",
-        "inventory": "RSpace Inventory"
+        "inventory": "RSpace Inventory",
+        "v2": "RSpace v2 (beta)"
       }
     },
     "apiErrors": {
@@ -894,6 +899,7 @@ export default interface Resources {
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
+      "logIn": "Log In",
       "logOut": "Log Out",
       "mainLinks": "main links",
       "mainNavigation": "Main Navigation",
@@ -928,7 +934,12 @@ export default interface Resources {
           "subheader": "Notebooks and documents",
           "title": "Workspace"
         }
-      }
+      },
+      "switchSection": "Switch section",
+      "userIdentity": "{fullName} ({username})"
+    },
+    "collectionForm": {
+      "fieldHelp": "About {label}"
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
@@ -1047,6 +1058,7 @@ export default interface Resources {
       "zenodo": "8i37k8kjqz-zenodo-integration"
     },
     "helpDocs": {
+      "brand": "Support",
       "chatWithUs": "Chat with us",
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
@@ -1130,6 +1142,23 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
+    "maintenanceMode": {
+      "description": "Scheduled maintenance is in progress now. Please try again later.",
+      "heading": "Maintenance mode",
+      "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+    },
+    "notFound": {
+      "message": "Page not found"
+    },
+    "pageTitles": {
+      "withProduct": "{pageTitle} | RSpace"
+    },
+    "pagination": {
+      "label": "Pagination",
+      "morePages": "More pages",
+      "nextPage": "Go to next page",
+      "previousPage": "Go to previous page"
+    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -1451,6 +1480,11 @@ export default interface Resources {
       "unknownFolder": "Unknown folder",
       "updatedSuccessfully": "Shares updated successfully."
     },
+    "sidebar": {
+      "description": "Displays the mobile sidebar.",
+      "title": "Sidebar",
+      "toggle": "Toggle sidebar"
+    },
     "stoichiometry": {
       "addReagent": {
         "addChemical": "Add Chemical",
@@ -1697,7 +1731,8 @@ export default interface Resources {
     "values": {
       "noValue": "No Value",
       "none": "None",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "unknownItem": "Unknown item"
     },
     "versionLockPicker": {
       "columns": {
@@ -5700,6 +5735,105 @@ export default interface Resources {
       "allFields": {
         "required": "Please fill in all the fields."
       },
+      "api": {
+        "pagination": {
+          "limit": {
+            "max": "Limit must not exceed {value}.",
+            "min": "Limit must be 1 or greater."
+          },
+          "page": {
+            "min": "Page must be 1 or greater."
+          }
+        },
+        "v2": {
+          "audit": {
+            "range": {
+              "inverted": "The audit search start date must not be after its end date.",
+              "tooWide": "The audit search range must not exceed {0} days."
+            },
+            "results": {
+              "tooMany": "The audit search returned too many results. Choose a narrower date range."
+            },
+            "snapshot": {
+              "changed": "The audit results changed while you were paging through them. Start again to view a fresh snapshot.",
+              "invalid": "The audit snapshot date and fingerprint must be supplied together and in the required format."
+            },
+            "unavailable": "The audit trail is temporarily unavailable. Try again later."
+          },
+          "authenticationRequired": "Authentication is required.",
+          "bulk": {
+            "filter": {
+              "required": "A where filter is required for bulk operations."
+            },
+            "limit": "The bulk operation exceeds the allowed batch size for this operation."
+          },
+          "delete": {
+            "permanent": {
+              "unsupported": "This resource does not support permanent deletion."
+            }
+          },
+          "depth": {
+            "max": "Depth must not exceed {value}.",
+            "min": "Depth must be 0 or greater.",
+            "range": "Depth must be between 0 and {0}."
+          },
+          "forbidden": "You do not have permission to perform this action.",
+          "invalidRequest": "The request contains an invalid value.",
+          "maintenance": {
+            "endDate": {
+              "required": "End date is required."
+            },
+            "patch": "The maintenance patch is invalid.",
+            "startDate": {
+              "required": "Start date is required."
+            },
+            "window": "End date must be after start date."
+          },
+          "methodNotAllowed": "This HTTP method is not supported for this resource.",
+          "missingParameter": "A required request parameter is missing.",
+          "notAcceptable": "The requested response content type is not available.",
+          "notFound": "The requested resource was not found.",
+          "query": {
+            "complexity": "The query is too complex.",
+            "field": "The query contains an unsupported field.",
+            "operator": "The query contains an unsupported operator.",
+            "syntax": "The RSQL expression is invalid.",
+            "value": "The query contains an invalid value."
+          },
+          "requestRejected": "The request could not be processed.",
+          "resourceAccess": {
+            "assignmentLimit": "A resource can have at most 100 named user or group assignments.",
+            "duplicateGrantee": "Each user or group can have only one direct role.",
+            "forbidden": "You do not have permission to manage access to this resource.",
+            "ifMatchRequired": "The current access version is required.",
+            "invalidGrantee": "The selected user or group is no longer available.",
+            "invalidRole": "The selected role is not valid for this resource.",
+            "ownerRequired": "At least one direct Owner must remain.",
+            "selfRemovalRequiresLeave": "Use the leave action to remove your own direct access.",
+            "stale": "Access changed after this page was loaded. Review the latest access before saving again."
+          },
+          "runtimeFields": {
+            "ids": {
+              "limit": "A request must not name more than {0} custom fields."
+            },
+            "page": {
+              "invalid": "The page number is out of range."
+            },
+            "projection": {
+              "limit": "A request must not select more than {0} custom field values."
+            },
+            "query": {
+              "invalid": "The custom field request is invalid. The page size must be between 1 and {0}."
+            }
+          },
+          "tooManyRequests": "Too many requests. Please try again later.",
+          "unexpected": "An unexpected error occurred.",
+          "unsupportedMediaType": "This content type is not supported for this resource.",
+          "where": {
+            "length": "The where expression must not exceed {0} characters."
+          }
+        }
+      },
       "authorization": {
         "apiError": "Authorisation error",
         "audit": {
@@ -5955,6 +6089,11 @@ export default interface Resources {
     "requestType": {
       "passwordReminder": "password reminder",
       "usernameReminder": "username reminder"
+    },
+    "resourceAccess": {
+      "audiences": {
+        "allUsers": "All users"
+      }
     },
     "resourceType": {
       "community": "Community",
