@@ -7,6 +7,12 @@ import com.researchspace.api.v2.auth.ApiV2Caller;
 import com.researchspace.api.v2.json.ApiV2JsonMappers;
 import com.researchspace.api.v2.openapi.ApiV2OpenApiController;
 import com.researchspace.api.v2.resource.ApiV2ResourceException;
+import com.researchspace.booking.service.BookingConfigurationLifecycleException;
+import com.researchspace.booking.service.BookingPolicyException;
+import com.researchspace.booking.service.InvalidBookingDefaultSharingException;
+import com.researchspace.booking.service.InvalidBookingDisplaySettingsException;
+import com.researchspace.booking.service.InvalidBookingSchedulingSettingsException;
+import com.researchspace.booking.service.StaleBookingSettingsException;
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.throttling.ThrottlingException;
 import com.researchspace.model.collection.CollectionQueryException;
@@ -155,6 +161,17 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.NOT_FOUND, "errors.api.v2.notFound");
   }
 
+  @ExceptionHandler(ThrottlingException.class)
+  public ResponseEntity<ApiV2Problem> handleThrottling() {
+    return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
+  }
+
+  @ExceptionHandler(ApiV2BadRequestException.class)
+  public ResponseEntity<ApiV2Problem> handleBadRequest(ApiV2BadRequestException ex) {
+    String detail = messages.getMessage(ex.getErrorCode(), ex.getArgs());
+    return ApiV2Problem.response(HttpStatus.BAD_REQUEST, detail, ex.getErrorCode(), detail);
+  }
+
   @ExceptionHandler(ApiV2AuditSnapshotConflictException.class)
   public ResponseEntity<ApiV2Problem> handleAuditSnapshotConflict() {
     return problem(HttpStatus.CONFLICT, "errors.api.v2.audit.snapshot.changed");
@@ -166,15 +183,37 @@ public class ApiV2ControllerAdvice {
     return problem(HttpStatus.SERVICE_UNAVAILABLE, "errors.api.v2.audit.unavailable");
   }
 
-  @ExceptionHandler(ThrottlingException.class)
-  public ResponseEntity<ApiV2Problem> handleThrottling() {
-    return problem(HttpStatus.TOO_MANY_REQUESTS, "errors.api.v2.tooManyRequests");
+  @ExceptionHandler(InvalidBookingSchedulingSettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleInvalidBookingSettings(
+      InvalidBookingSchedulingSettingsException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
   }
 
-  @ExceptionHandler(ApiV2BadRequestException.class)
-  public ResponseEntity<ApiV2Problem> handleBadRequest(ApiV2BadRequestException ex) {
-    String detail = messages.getMessage(ex.getErrorCode(), ex.getArgs());
-    return ApiV2Problem.response(HttpStatus.BAD_REQUEST, detail, ex.getErrorCode(), detail);
+  @ExceptionHandler(InvalidBookingDisplaySettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleInvalidBookingDisplaySettings(
+      InvalidBookingDisplaySettingsException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(InvalidBookingDefaultSharingException.class)
+  public ResponseEntity<ApiV2Problem> handleInvalidBookingDefaultSharing() {
+    return problem(
+        HttpStatus.BAD_REQUEST, "errors.api.v2.bookingConfiguration.defaultSharing.invalid");
+  }
+
+  @ExceptionHandler(BookingPolicyException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingPolicy(BookingPolicyException ex) {
+    return problem(HttpStatus.BAD_REQUEST, ex.reason().errorCode());
+  }
+
+  @ExceptionHandler(BookingConfigurationLifecycleException.class)
+  public ResponseEntity<ApiV2Problem> handleBookingConfigurationLifecycle() {
+    return problem(HttpStatus.CONFLICT, BookingConfigurationLifecycleException.MESSAGE_KEY);
+  }
+
+  @ExceptionHandler(StaleBookingSettingsException.class)
+  public ResponseEntity<ApiV2Problem> handleStaleBookingSettings() {
+    return problem(HttpStatus.CONFLICT, "errors.api.v2.bookingConfiguration.stale");
   }
 
   @ExceptionHandler(ApiV2ResourceException.class)

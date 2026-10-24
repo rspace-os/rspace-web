@@ -8,6 +8,8 @@ Use a concrete controller for an operation outside collection CRUD, such as `/ap
 For query compilation, authentication and request limits, see
 [REST API v2 queries and access](RestApiV2QueriesAndAccess.md).
 
+For booking domain rules and API examples, see [Booking](Booking.md).
+
 ## Add a field type
 
 Collection field implementations live in `model.collection.types`. Each implements

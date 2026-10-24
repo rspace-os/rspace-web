@@ -10,11 +10,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.dao.query.RsqlCollectionQuery.Predicate;
 import com.researchspace.dao.query.RsqlCollectionQuery.Subquery;
+import com.researchspace.inventory.model.ApiV2InstrumentResource;
 import com.researchspace.maintenance.model.ApiV2MaintenanceResource;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
+import com.researchspace.model.booking.ApiV2BookingInstrumentResource;
+import com.researchspace.model.booking.ApiV2TimeSlotBookingResource;
 import com.researchspace.model.collection.AccessFunction;
 import com.researchspace.model.collection.AccessPolicy;
 import com.researchspace.model.collection.AccessResult;
+import com.researchspace.model.collection.ApiV2UserResource;
 import com.researchspace.model.collection.CollectionDescription;
 import com.researchspace.model.collection.CollectionFieldTypes;
 import com.researchspace.model.collection.CollectionQueryException;
@@ -200,6 +205,48 @@ class RsqlCollectionQueryTest {
     Predicate translated = translator.translateTrusted(constraint);
 
     assertEquals(51, translated.parameters().size());
+  }
+
+  @Test
+  void compilesTrustedResourceRoleMembershipAsOneCorrelatedExists() {
+    RsqlCollectionQuery bookingTranslator =
+        new RsqlCollectionQuery(ApiV2BookingConfigurationResource.DESCRIPTION, "configuration");
+    ResourceRoleMembershipConstraint constraint =
+        new ResourceRoleMembershipConstraint(
+            "resourceAccess.id", 12L, Set.of(41L, 42L), Set.of("OWNER", "VIEWER"), true);
+
+    Predicate translated = bookingTranslator.translateTrusted(constraint);
+
+    assertEquals(1, translated.subqueries().size());
+    assertTrue(translated.expression().startsWith("EXISTS "));
+    assertTrue(where(translated).contains("configuration.resourceAccess.id"));
+    assertTrue(translated.parameters().containsValue(12L));
+    assertTrue(translated.parameters().containsValue(Set.of(41L, 42L)));
+    assertTrue(translated.parameters().containsValue(Set.of("OWNER", "VIEWER")));
+  }
+
+  @Test
+  void compilesTrustedMembershipOrCallerOwnedRowAsOnePredicate() {
+    RsqlCollectionQuery bookingTranslator =
+        new RsqlCollectionQuery(ApiV2TimeSlotBookingResource.DESCRIPTION, "booking");
+    QueryConstraint constraint =
+        new QueryConstraint.Or(
+            List.of(
+                new ResourceRoleMembershipConstraint(
+                    "bookingConfiguration.resourceAccess.id",
+                    12L,
+                    Set.of(41L),
+                    Set.of("OWNER", "VIEWER"),
+                    true),
+                new FilterExpression.Comparison(
+                    "requesterId", Operator.EQUAL, List.of(12L), false)));
+
+    Predicate translated = bookingTranslator.translateTrusted(constraint);
+
+    assertEquals(1, translated.subqueries().size());
+    assertTrue(translated.expression().contains(" OR "));
+    assertTrue(translated.expression().contains("booking.requester.id"));
+    assertTrue(where(translated).contains("booking.bookingConfiguration.resourceAccess.id"));
   }
 
   @Test
@@ -539,6 +586,36 @@ class RsqlCollectionQueryTest {
     return new LikeBudgetFixture(source, RelationshipReadAccess.unrestricted(registry));
   }
 
+  @Test
+  void translatesAutomaticAuditFieldAndUserRelationshipFilters() {
+    CollectionDescription<?> description = ApiV2BookingConfigurationResource.DESCRIPTION;
+    RsqlFilterParser auditParser = new RsqlFilterParser(description);
+    RsqlCollectionQuery auditTranslator = new RsqlCollectionQuery(description, "item");
+    RelationshipReadAccess targets =
+        RelationshipReadAccess.unrestricted(
+            new ResourceRegistry(
+                List.of(
+                    description,
+                    ApiV2UserResource.DESCRIPTION,
+                    ApiV2BookingInstrumentResource.DESCRIPTION,
+                    ApiV2InstrumentResource.DESCRIPTION)));
+
+    Predicate result =
+        auditTranslator.translate(
+            auditParser.parse(
+                "createdAt>=2026-08-01T00:00:00Z;updatedAt<2026-08-03T00:00:00Z;"
+                    + "createdBy.value==21;updatedBy.value==22"),
+            targets);
+
+    assertEquals(2, result.subqueries().size());
+    assertTrue(result.expression().contains("item.createdBy.id = :"));
+    assertTrue(result.expression().contains("item.updatedBy.id = :"));
+    assertTrue(result.parameters().containsValue(Date.from(Instant.parse("2026-08-01T00:00:00Z"))));
+    assertTrue(result.parameters().containsValue(Date.from(Instant.parse("2026-08-03T00:00:00Z"))));
+    assertTrue(result.parameters().containsValue(21L));
+    assertTrue(result.parameters().containsValue(22L));
+  }
+
   private static CollectionDescription<Related> relationshipDescription() {
     return new CollectionDescription<>(
         "related",
@@ -586,6 +663,10 @@ class RsqlCollectionQueryTest {
 
   private static FilterExpression where(RsqlFilterParser parser, String expression) {
     return parser.parse(expression);
+  }
+
+  private static String where(Predicate predicate) {
+    return predicate.subqueries().values().iterator().next().whereExpression();
   }
 
   private Predicate translate(String rsql) {

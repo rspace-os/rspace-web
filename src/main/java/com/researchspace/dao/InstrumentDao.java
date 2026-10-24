@@ -13,6 +13,7 @@ import com.researchspace.model.inventory.InstrumentParentLocationSummary;
 import com.researchspace.model.inventory.InstrumentReadSummary;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /** For DAO operations specific to Inventory {@link Instrument} (not templates). */
@@ -64,6 +65,15 @@ public interface InstrumentDao extends InstrumentEntityDao<Instrument> {
    */
   Set<Long> findByReadableImmediateParentIds(
       Set<Long> containerIds, Set<Long> workbenchIds, User caller);
+
+  /** Locks and returns one concrete Instrument for a coordinated ownership mutation. */
+  Optional<Instrument> lockById(Long id);
+
+  /**
+   * Locks and checks the current group memberships that allow {@code subject} to transfer an
+   * instrument owned by {@code owner}. Call this only after locking the instrument.
+   */
+  boolean hasLockedTransferAuthority(User subject, User owner);
 
   /** Returns all instruments whose image or thumbnail is the given file property. */
   List<Instrument> getAllUsingImage(FileProperty fileProperty);
