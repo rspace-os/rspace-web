@@ -1,16 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { CalendarClockIcon, EyeIcon, HistoryIcon, PencilIcon, RefreshCwIcon } from "lucide-react";
+import { CalendarClockIcon, CalendarX2Icon, HistoryIcon, RefreshCwIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
-import { BookingCalendarFileButton } from "@/modules/booking/components/BookingCalendarFileButton";
 import { type BookingListDocument, BookingListDocumentTableValidation } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
-import type { CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
@@ -19,15 +15,25 @@ import { useApiV2TableList } from "@/modules/common/table-list/adapters/apiV2/us
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
 import type { FilterExpression } from "@/modules/common/table-list/tableListState";
 import { Badge } from "@/modules/common/ui/badge";
-import { Button, buttonVariants } from "@/modules/common/ui/button";
+import { Button } from "@/modules/common/ui/button";
 import { ButtonGroup } from "@/modules/common/ui/button-group";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { Heading } from "@/modules/common/ui/typography";
-import { cn } from "@/modules/common/utils/cn";
-import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
+import {
+  type BookingRow,
+  BookingRowActions,
+  type CancelledBookingRow,
+  visibleBookingRowActions,
+} from "./BookingRowActions";
 import { upcomingBookingWhere } from "./bookingCountFilter";
 import { bookingListConfig } from "./bookingList";
-import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
+import { type MyBookingsPeriod, myBookingsPeriodParser, myBookingsPeriods } from "./search";
+
+const periodText = {
+  upcoming: { label: "myBookings.period.upcoming", empty: "myBookings.empty.upcoming", Icon: CalendarClockIcon },
+  past: { label: "myBookings.period.past", empty: "myBookings.empty.past", Icon: HistoryIcon },
+  cancelled: { label: "myBookings.period.cancelled", empty: "myBookings.empty.cancelled", Icon: CalendarX2Icon },
+} as const;
 
 const UpcomingCountSchema = v.object({ totalDocs: v.number() });
 const projection = {
@@ -46,10 +52,6 @@ const projection = {
     "canCancel",
   ],
 } as const;
-const emptyDescriptionKeys = {
-  upcoming: "myBookings.empty.upcoming",
-  past: "myBookings.empty.past",
-} as const satisfies Record<MyBookingsPeriod, string>;
 
 export type UserBookingsPageProps = {
   requesterId: number;
@@ -89,28 +91,16 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
       children: [
         { kind: "comparison", field: "requesterId", operator: "equals", value: requesterId },
         { kind: "comparison", field: "kind", operator: "equals", value: "BOOKING" },
-        ...(period === "upcoming"
-          ? [
-              { kind: "comparison" as const, field: "state" as const, operator: "equals" as const, value: "CONFIRMED" },
-              { kind: "comparison" as const, field: "end" as const, operator: "greaterThan" as const, value: asOfDate },
-            ]
+        // Cancelled bookings get their own period at any time, so upcoming and past list only confirmed ones.
+        ...(period === "cancelled"
+          ? [{ kind: "comparison" as const, field: "state" as const, operator: "equals" as const, value: "CANCELLED" }]
           : [
+              { kind: "comparison" as const, field: "state" as const, operator: "equals" as const, value: "CONFIRMED" },
               {
-                kind: "or" as const,
-                children: [
-                  {
-                    kind: "comparison" as const,
-                    field: "end" as const,
-                    operator: "lessThanOrEqual" as const,
-                    value: asOfDate,
-                  },
-                  {
-                    kind: "comparison" as const,
-                    field: "state" as const,
-                    operator: "equals" as const,
-                    value: "CANCELLED",
-                  },
-                ],
+                kind: "comparison" as const,
+                field: "end" as const,
+                operator: period === "upcoming" ? ("greaterThan" as const) : ("lessThanOrEqual" as const),
+                value: asOfDate,
               },
             ]),
       ],
@@ -142,112 +132,73 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
     queryKey: ["api-v2", "bookings", "count", "upcoming", requesterId, asOfDate.toISOString()],
     queryFn: ({ signal }) => fetchUpcomingBookingCount(requesterId, asOfDate, token, signal),
   });
-  const rowActions = useMemo<
-    TableListRowActions<
-      CollectionRow<BookingListDocument, "id" | "target" | "timezone" | "canViewConfiguration" | "state">
-    >
-  >(
+  const rows = table.tableProps.rows;
+  const periodControlsRef = useRef<HTMLDivElement>(null);
+  // A page-level live region: the cancelled row, and the dialog's own status message, unmount on refetch.
+  const [cancelAnnouncement, setCancelAnnouncement] = useState("");
+  const [pendingFocus, setPendingFocus] = useState<CancelledBookingRow | null>(null);
+  useEffect(() => {
+    // Waits until the refetched rows no longer include the cancelled booking, so focus never lands on it.
+    if (pendingFocus === null || rows.some(({ id }) => id === pendingFocus.bookingId)) return;
+    setPendingFocus(null);
+    const { position } = pendingFocus;
+    const remaining = position?.list.isConnected ? visibleBookingRowActions(position.list) : [];
+    const neighbourId = position
+      ? remaining[Math.min(position.index, remaining.length - 1)]?.dataset.bookingRowActions
+      : undefined;
+    const focusTarget = () => {
+      const neighbour =
+        neighbourId && position?.list.isConnected
+          ? visibleBookingRowActions(position.list).find((actions) => actions.dataset.bookingRowActions === neighbourId)
+          : undefined;
+      return (
+        neighbour?.querySelector<HTMLElement>("a, button:not(:disabled)") ??
+        periodControlsRef.current?.querySelector<HTMLElement>('[aria-pressed="true"]')
+      );
+    };
+    const target = focusTarget();
+    target?.focus();
+    // The card view can render a row's actions once more after the refetch commits, replacing the focused
+    // control. Removal does not blur in every engine, so watch the list briefly and follow the booking.
+    if (target && position?.list.isConnected) {
+      const observer = new MutationObserver(() => {
+        if (target.isConnected) return;
+        observer.disconnect();
+        if (document.activeElement === null || document.activeElement === document.body) focusTarget()?.focus();
+      });
+      observer.observe(position.list, { childList: true, subtree: true });
+      window.setTimeout(() => observer.disconnect(), 1000);
+    }
+  }, [pendingFocus, rows]);
+  const rowActions = useMemo<TableListRowActions<BookingRow>>(
     () => ({
       id: "actions",
       label: t("myBookings.actions.label"),
-      width: 176,
-      minWidth: 176,
-      renderCell: ({ row }) => {
-        const viewDetailsLabel = t("myBookings.actions.viewDetails");
-        const editLabel = t("myBookings.actions.edit");
-        const itemCalendarLabel = t("myBookings.actions.itemCalendar");
-        return (
-          <div className="flex flex-wrap gap-1">
-            {row.canViewConfiguration && row.target ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={itemCalendarLabel}
-                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
-                      data-slot="button"
-                      to="/booking/bookable-items/$globalId/{-$tab}"
-                      params={{ globalId: row.target.globalId, tab: undefined }}
-                    />
-                  }
-                >
-                  <CalendarClockIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{itemCalendarLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.privacy === "full" ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={viewDetailsLabel}
-                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
-                      data-slot="button"
-                      to="/booking/calendar/bookings/$id"
-                      params={{ id: String(row.id) }}
-                    />
-                  }
-                >
-                  <EyeIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{viewDetailsLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.canEdit && row.target && row.timezone ? (
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Link
-                      aria-label={editLabel}
-                      className={cn(buttonVariants({ size: "icon-lg", variant: "outline" }))}
-                      data-slot="button"
-                      to="/booking/calendar/bookings/$id/edit"
-                      params={{ id: String(row.id) }}
-                    />
-                  }
-                >
-                  <PencilIcon aria-hidden="true" />
-                </TooltipTrigger>
-                <TooltipContent role="tooltip">{editLabel}</TooltipContent>
-              </Tooltip>
-            ) : null}
-            {row.canViewConfiguration && row.target && row.state === "CONFIRMED" ? (
-              <BookingCalendarFileButton
-                bookingId={row.id}
-                itemName={row.target?.value.name ?? commonT("values.unknownItem")}
-                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
-                token={token}
-                iconOnly
-              />
-            ) : null}
-            {row.canCancel ? (
-              <DeleteBookingDialog
-                bookingId={row.id}
-                bookingVersion={row.version ?? 0}
-                itemName={row.target?.value.name ?? commonT("values.unknownItem")}
-                period={formatAgendaPeriod(row.start ?? "", row.end ?? "", preferences.timeZone)}
-                token={token}
-                iconOnly
-                triggerVariant="outline"
-                onDeleted={async () => {
-                  await table.refetch();
-                }}
-              />
-            ) : null}
-            {!row.canViewConfiguration && !row.canEdit && !row.canCancel ? (
-              <span className="text-sm text-muted-foreground">{t("myBookings.roleLoss.readOnly")}</span>
-            ) : null}
-          </div>
-        );
-      },
+      // Three 40px icon controls and "More actions", with their gaps and the cell padding, on one line.
+      width: 200,
+      minWidth: 200,
+      renderCell: ({ row }) => (
+        <BookingRowActions
+          row={row}
+          token={token}
+          timeZone={preferences.timeZone}
+          onCancelled={(cancelled) => {
+            // The dialog has already refetched the bookings; another refetch would re-mount the rows and drop focus.
+            setCancelAnnouncement(
+              t("myBookings.cancelled.announcement", { itemName: cancelled.itemName, period: cancelled.period }),
+            );
+            setPendingFocus(cancelled);
+          }}
+        />
+      ),
       renderInteraction: () => null,
     }),
     [preferences.timeZone, t, token],
   );
 
-  const selectPeriod = (nextPeriod: "upcoming" | "past") => {
+  const selectPeriod = (nextPeriod: MyBookingsPeriod) => {
     if (nextPeriod === period) return;
+    setPendingFocus(null);
     table.setPage({ ...table.state.page, pageIndex: 0 });
     void setPeriod(nextPeriod);
   };
@@ -263,44 +214,39 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
             {t("myBookings.timezone", { timezone: preferences.timeZone })}
           </p>
         </header>
-        <div className="space-y-2">
+        <div ref={periodControlsRef} className="space-y-2">
           <ButtonGroup aria-label={t("myBookings.period.legend")}>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "upcoming" ? "secondary" : "outline"}
-              aria-label={t("myBookings.period.upcoming")}
-              aria-pressed={period === "upcoming"}
-              onClick={() => selectPeriod("upcoming")}
-            >
-              <CalendarClockIcon aria-hidden="true" />
-              {t("myBookings.period.upcoming")}
-              {upcomingCount.isSuccess && (
-                <Badge
-                  variant={period === "upcoming" ? "secondary" : "outline"}
-                  className="pointer-events-none min-w-5 px-1"
-                  aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
+            {myBookingsPeriods.map((value) => {
+              const { Icon, label } = periodText[value];
+              return (
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={period === value ? "secondary" : "outline"}
+                  aria-label={t(label)}
+                  aria-pressed={period === value}
+                  onClick={() => selectPeriod(value)}
                 >
-                  {upcomingCount.data}
-                </Badge>
-              )}
-              {upcomingCount.isPending && (
-                <span role="status" className="sr-only">
-                  {t("myBookings.count.loading")}
-                </span>
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={period === "past" ? "secondary" : "outline"}
-              aria-label={t("myBookings.period.past")}
-              aria-pressed={period === "past"}
-              onClick={() => selectPeriod("past")}
-            >
-              <HistoryIcon aria-hidden="true" />
-              {t("myBookings.period.past")}
-            </Button>
+                  <Icon aria-hidden="true" />
+                  {t(label)}
+                  {value === "upcoming" && upcomingCount.isSuccess && (
+                    <Badge
+                      variant={period === "upcoming" ? "secondary" : "outline"}
+                      className="pointer-events-none min-w-5 px-1"
+                      aria-label={t("myBookings.count.accessible", { count: upcomingCount.data })}
+                    >
+                      {upcomingCount.data}
+                    </Badge>
+                  )}
+                  {value === "upcoming" && upcomingCount.isPending && (
+                    <span role="status" className="sr-only">
+                      {t("myBookings.count.loading")}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
           </ButtonGroup>
           {upcomingCount.isError && (
             <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
@@ -326,12 +272,14 @@ export function UserBookingsPage({ requesterId, title }: UserBookingsPageProps) 
         </div>
         <TableList
           {...table.tableProps}
-          variant="transparent"
           presentations={{ table: "wide", cards: "narrow" }}
-          emptyDescription={t(emptyDescriptionKeys[period])}
+          emptyDescription={t(periodText[period].empty)}
           rowActions={rowActions}
           hideHeader
         />
+        <p role="status" aria-live="polite" className="sr-only">
+          {cancelAnnouncement}
+        </p>
       </main>
     </TooltipProvider>
   );

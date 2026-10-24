@@ -54,8 +54,8 @@ describe("BookableItemPage", () => {
     await waitFor(() => expect(eventFilters).toHaveLength(2));
 
     await user.click(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" }));
-    expect(screen.getByText("08:00–17:30")).toBeVisible();
-    expect(screen.getByText("10:00–16:00")).toBeVisible();
+    expect(screen.getByText("08:00 AM–05:30 PM")).toBeVisible();
+    expect(screen.getByText("10:00 AM–04:00 PM")).toBeVisible();
     expect(screen.getAllByText("booking:bookableItemDetails.openingHours.closed")).toHaveLength(5);
     expect(screen.getByText("booking:bookableItemDetails.unlimited")).toBeVisible();
     expect(screen.getByRole("tab", { name: "booking:bookableItemDetails.tabs.details" })).toHaveAttribute(

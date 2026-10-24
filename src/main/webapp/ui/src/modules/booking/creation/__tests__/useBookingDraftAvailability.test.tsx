@@ -4,25 +4,11 @@ import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
-import { ALL_ISO_WEEKDAYS } from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft } from "@/modules/booking/domain/bookingTime";
 import type { BookingFormState } from "../BookingForm";
 import type { BookableItemOption } from "../bookableItemOption";
 import { useBookingDraftAvailability } from "../useBookingDraftAvailability";
-
-const target: BookableItemOption = {
-  configurationId: 7,
-  targetId: 123,
-  globalId: "IN123",
-  name: "Confocal microscope",
-  timezone: "Europe/Berlin",
-  slotGranularityMinutes: 5,
-  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
-  bufferBeforeMinutes: 0,
-  bufferAfterMinutes: 0,
-  maxBookingDurationMinutes: 0,
-  allowDoubleBooking: false,
-};
+import { confocalBooking, confocalBookingPage, confocalTarget as target } from "./creationTestFixtures";
 
 const draft: BookingWindowDraft = {
   startDate: "2026-10-19",
@@ -31,48 +17,8 @@ const draft: BookingWindowDraft = {
   endTime: "11:00",
 };
 
-function booking({
-  id,
-  start,
-  end,
-  kind = "BOOKING",
-}: {
-  id: number;
-  start: string;
-  end: string;
-  kind?: "BOOKING" | "MAINTENANCE";
-}) {
-  return {
-    id,
-    version: 0,
-    target: {
-      relationTo: "booking-instruments",
-      value: { id: 123, name: target.name, deleted: false },
-      globalId: target.globalId,
-    },
-    timezone: target.timezone,
-    start,
-    end,
-    state: "CONFIRMED",
-    kind,
-    privacy: "full",
-    purpose: `Purpose ${id}`,
-    bookedBy: "Ada Lovelace",
-    canEdit: false,
-    canCancel: false,
-    createdAt: "2026-10-01T09:00:00Z",
-    updatedAt: "2026-10-01T09:00:00Z",
-  };
-}
-
 function page(docs: readonly unknown[]) {
-  return HttpResponse.json({
-    docs,
-    totalDocs: docs.length,
-    totalPages: docs.length ? 1 : 0,
-    page: 1,
-    hasNextPage: false,
-  });
+  return HttpResponse.json(confocalBookingPage(docs));
 }
 
 function formState({
@@ -81,17 +27,20 @@ function formState({
   start = "2026-10-19T08:00:00Z",
   end = "2026-10-19T09:00:00Z",
   eventKind = "BOOKING",
+  meetsRules = true,
 }: {
   item?: BookableItemOption;
   value?: BookingWindowDraft;
   start?: string;
   end?: string;
   eventKind?: "BOOKING" | "MAINTENANCE";
+  meetsRules?: boolean;
 } = {}): BookingFormState {
   return {
     target: item,
     draft: value,
-    window: { start, end },
+    window: meetsRules ? { start, end } : undefined,
+    enteredWindow: { start, end },
     purpose: "Purpose",
     eventKind,
     dirty: true,
@@ -127,10 +76,42 @@ function renderAvailability({
 }
 
 describe("useBookingDraftAvailability", () => {
+  it("checks conflicts as soon as both endpoints are entered, before the item's rules are met", async () => {
+    server.use(
+      http.get("/api/v2/bookings", () =>
+        page([confocalBooking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
+      ),
+    );
+    const { result } = renderAvailability({ state: formState({ meetsRules: false }) });
+
+    await waitFor(() => expect(result.current.checking).toBe(false));
+    expect(result.current.conflicts).toHaveLength(1);
+    expect(result.current.blocksSubmission).toBe(true);
+  });
+
+  it("does not treat the item's closed hours as an overlap", async () => {
+    server.use(http.get("/api/v2/bookings", () => page([])));
+    // 08:00Z to 09:00Z is 10:00 to 11:00 in Berlin, after this item closes.
+    const { result } = renderAvailability({
+      state: formState({
+        item: {
+          ...target,
+          openingHours: target.openingHours.map((entry) => ({ ...entry, start: "08:00", end: "09:00" })),
+        },
+        meetsRules: false,
+      }),
+    });
+
+    await waitFor(() => expect(result.current.checking).toBe(false));
+    expect(result.current.violation).toBe(false);
+    expect(result.current.conflicts).toHaveLength(0);
+    expect(result.current.blocksSubmission).toBe(false);
+  });
+
   it("allows ordinary overlap with a warning when double booking is enabled", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        page([booking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
+        page([confocalBooking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
       ),
     );
     const { result } = renderAvailability({ state: formState({ item: { ...target, allowDoubleBooking: true } }) });
@@ -144,7 +125,7 @@ describe("useBookingDraftAvailability", () => {
   it("blocks maintenance over an ordinary booking even when the item permits double booking", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        page([booking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
+        page([confocalBooking({ id: 1, start: "2026-10-19T08:30:00Z", end: "2026-10-19T09:30:00Z" })]),
       ),
     );
     const { result } = renderAvailability({
@@ -159,7 +140,7 @@ describe("useBookingDraftAvailability", () => {
   it("applies the target buffer when deciding whether a booking overlaps", async () => {
     server.use(
       http.get("/api/v2/bookings", () =>
-        page([booking({ id: 2, start: "2026-10-19T07:50:00Z", end: "2026-10-19T07:55:00Z" })]),
+        page([confocalBooking({ id: 2, start: "2026-10-19T07:50:00Z", end: "2026-10-19T07:55:00Z" })]),
       ),
     );
     const { result } = renderAvailability({
@@ -173,7 +154,7 @@ describe("useBookingDraftAvailability", () => {
   });
 
   it("excludes the booking being edited from its own availability conflicts", async () => {
-    const current = booking({ id: 41, start: "2026-10-19T08:00:00Z", end: "2026-10-19T10:00:00Z" });
+    const current = confocalBooking({ id: 41, start: "2026-10-19T08:00:00Z", end: "2026-10-19T10:00:00Z" });
     server.use(http.get("/api/v2/bookings", () => page([current])));
     const { result } = renderAvailability({
       state: formState({ start: "2026-10-19T08:05:00Z", end: "2026-10-19T10:05:00Z" }),

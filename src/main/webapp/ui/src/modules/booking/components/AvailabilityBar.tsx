@@ -9,6 +9,7 @@ import {
   buildAvailabilitySlices,
   timestamp,
 } from "@/modules/booking/domain/availability";
+import { bookingLocale } from "@/modules/booking/domain/bookingTime";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
@@ -64,10 +65,6 @@ const stateClasses: Record<AvailabilityState, string> = {
   overlap: "bg-[repeating-linear-gradient(135deg,var(--color-blue-600)_0_3px,var(--color-amber-400)_3px_6px)]",
 };
 
-function supportedLocale(language: string): string {
-  return Intl.DateTimeFormat.supportedLocalesOf([language]).at(0) ?? "en-US";
-}
-
 function hasValidSource(interval: AvailabilityBarInterval): interval is SourcedAvailabilityBarInterval {
   if (interval.source === undefined) return false;
   const startsAt = interval.source.startsAt.getTime();
@@ -92,7 +89,7 @@ export function AvailabilityBar({
   item,
   className,
 }: AvailabilityBarProps) {
-  const { t, i18n } = useTranslation("booking");
+  const { t } = useTranslation("booking");
   const descriptionId = `${React.useId()}-description`;
   const accordionName = `${React.useId()}-bookings`;
   const start = timestamp(periodStart, "periodStart");
@@ -104,7 +101,7 @@ export function AvailabilityBar({
   const nowPosition = nowTimestamp === null ? null : Math.max(0, Math.min(1, (nowTimestamp - start) / (end - start)));
 
   const slices = buildAvailabilitySlices(intervals, new Date(start), new Date(end));
-  const locale = supportedLocale(i18n.language);
+  const locale = bookingLocale();
   const itemDateTimeFormatter = new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",

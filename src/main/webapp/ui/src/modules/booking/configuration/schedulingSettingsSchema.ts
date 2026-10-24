@@ -3,10 +3,13 @@ import {
   type BookingDisplayPreferencesInput,
   BookingTimezoneModeSchema,
 } from "@/modules/booking/domain/bookingDisplayPreferences";
-import { ALL_ISO_WEEKDAYS, OpeningHoursSchema } from "@/modules/booking/domain/bookingOpeningHours";
+import {
+  ALL_ISO_WEEKDAYS,
+  MAX_BOOKING_DURATION_MINUTES,
+  OpeningHoursSchema,
+} from "@/modules/booking/domain/bookingOpeningHours";
 
 export const MAX_BUFFER_MINUTES = 10_080;
-export const MAX_BOOKING_DURATION_MINUTES = 527_040;
 export const schedulingSettingsFieldNames = [
   "slotGranularityMinutes",
   "openingHours",

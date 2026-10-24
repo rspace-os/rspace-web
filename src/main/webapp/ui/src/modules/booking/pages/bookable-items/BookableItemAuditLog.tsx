@@ -10,7 +10,7 @@ import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Alert, AlertDescription, AlertTitle } from "@/modules/common/ui/alert";
 import { Button } from "@/modules/common/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupText } from "@/modules/common/ui/input-group";
-import { AuditEventItem } from "./BookableItemAuditEvent";
+import { AuditActionBadge, AuditEventItem, useAuditEventKindLabels } from "./BookableItemAuditEvent";
 import {
   AUDIT_ACTIONS,
   type AuditAction,
@@ -58,7 +58,24 @@ const auditEventConfig = resolveCollectionConfig<AuditRow>({
     { name: "timestamp", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.timestamp" },
     { name: "username", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.actor" },
     { name: "fullName", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.fullName" },
-    { name: "action", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.action" },
+    {
+      name: "action",
+      type: "text",
+      labelKey: "booking:bookableItemDetails.audit.fields.action",
+      list: {
+        width: 300,
+        minWidth: 220,
+        dependencies: ["description"],
+        renderCell: ({ row }) => (
+          <span>
+            <AuditActionBadge row={row} />
+            {row.description === null || row.description === undefined ? null : (
+              <span className="mt-2 block whitespace-normal text-muted-foreground">{row.description}</span>
+            )}
+          </span>
+        ),
+      },
+    },
     { name: "description", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.description" },
     { name: "domain", type: "text", labelKey: "booking:bookableItemDetails.audit.fields.domain" },
     { name: "target", type: "text", labelKey: "booking:bookableItems.fields.id" },
@@ -94,6 +111,13 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
   const focusResultsAfterRestart = useRef(false);
   const bounds = auditRangeToQuery(applied);
+  const eventKindLabels = useAuditEventKindLabels();
+  const actionLabels: Record<AuditAction, string> = {
+    CREATE: eventKindLabels.created,
+    WRITE: t("bookableItemDetails.audit.actions.changedOrCancelled"),
+    DELETE: eventKindLabels.deleted,
+    RESTORE: eventKindLabels.restored,
+  };
 
   const audit = useQuery({
     queryKey: [
@@ -200,6 +224,8 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
   });
   const resultDate = audit.data?.snapshotDate;
   const stableEmpty = resultDate !== undefined && applied.from > resultDate;
+  // The daily snapshot ends before today, so a range reaching past it cannot show the newest changes yet.
+  const rangeAfterSnapshot = resultDate !== undefined && applied.to > resultDate;
   const formattedResultDate =
     resultDate === undefined
       ? null
@@ -261,7 +287,7 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
             <option value="">{t("bookableItemDetails.audit.allActions")}</option>
             {AUDIT_ACTIONS.map((auditAction) => (
               <option key={auditAction} value={auditAction}>
-                {auditAction}
+                {actionLabels[auditAction]}
               </option>
             ))}
           </select>
@@ -362,7 +388,11 @@ export function BookableItemAuditLog({ configurationId }: { configurationId: num
           clientSide={false}
           status={audit.isPending ? "loading" : audit.isFetching ? "refreshing" : "idle"}
           emptyDescription={
-            stableEmpty ? t("bookableItemDetails.audit.emptyStable") : t("bookableItemDetails.audit.empty")
+            stableEmpty
+              ? t("bookableItemDetails.audit.emptyStable")
+              : rangeAfterSnapshot
+                ? t("bookableItemDetails.audit.emptyThroughSnapshot", { date: formattedResultDate })
+                : t("bookableItemDetails.audit.empty")
           }
           variant="transparent"
           hideHeader

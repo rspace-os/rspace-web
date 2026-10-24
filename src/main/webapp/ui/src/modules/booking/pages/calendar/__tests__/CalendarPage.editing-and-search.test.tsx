@@ -3,6 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
 import {
@@ -12,12 +13,8 @@ import {
 } from "../../bookable-items/mocks/bookableItemsMocks";
 import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
 import { bookingsOpenApi } from "../../my-bookings/mocks/bookingMocks";
-import {
-  renderCalendar,
-  restoreCalendarScrollTo,
-  setupCalendarBookableItems,
-  setupCalendarScrollTo,
-} from "./calendarPageTestUtils";
+import { restoreCalendarScrollTo, setupCalendarBookableItems, setupCalendarScrollTo } from "./calendarPageTestUtils";
+import { renderCalendar } from "./calendarTestHarness";
 
 beforeAll(() => setupCalendarScrollTo());
 beforeEach(() => setupCalendarBookableItems());
@@ -99,8 +96,8 @@ describe("CalendarPage", () => {
       expect(within(card).getByRole("textbox", { name: "Purpose" })).toHaveValue("Keep my calendar draft");
       expect(within(card).getByLabelText("Start time")).toHaveValue(originalTime);
       expect(within(card).getByText("Server value")).toBeVisible();
-      expect(within(card).getByRole("heading", { name: "11:00 (+1)–13:00 (+1)" })).toBeVisible();
-      expect(within(card).getByText("18-08-2026")).toBeVisible();
+      expect(within(card).getByRole("heading", { name: "11:00 AM (+1)–01:00 PM (+1)" })).toBeVisible();
+      expect(within(card).getByText("08/18/2026")).toBeVisible();
 
       await user.click(within(card).getByRole("button", { name: "Save changes" }));
       await waitFor(() => expect(within(card).queryByRole("button", { name: "Save changes" })).not.toBeInTheDocument());
@@ -180,6 +177,39 @@ describe("CalendarPage", () => {
 
     await waitFor(() => expect(within(card).queryByRole("textbox", { name: "Purpose" })).not.toBeInTheDocument());
     expect(within(card).queryByRole("button", { name: "Edit" })).not.toBeInTheDocument();
+  });
+
+  it("explains a server buffer rejection in the inline calendar editor and lists the named booking", async () => {
+    server.use(
+      http.get("/api/v2/booking-calendar/events", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.patch("/api/v2/bookings/41", () =>
+        HttpResponse.json(
+          {
+            status: 409,
+            code: "errors.api.v2.booking.buffer",
+            detail: "private server detail",
+            conflict: { id: 59, kind: "BOOKING", start: "2026-08-17T11:00:00Z", end: "2026-08-17T12:00:00Z" },
+            bufferBeforeMinutes: 0,
+            bufferAfterMinutes: 30,
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    await renderCalendar();
+
+    await user.click((await screen.findAllByRole("button", { name: /^Show details for Confocal microscope/ }))[0]);
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+    await user.type(await screen.findByRole("textbox", { name: "Purpose" }), " updated");
+    const save = screen.getByRole("button", { name: "Save changes" });
+    await user.click(save);
+
+    const alert = await screen.findByRole("alert", {}, { timeout: 3_000 });
+    await waitFor(() => expect(alert).toHaveTextContent("Too close to another booking"));
+    expect(alert).not.toHaveTextContent("private server detail");
+    expect(within(alert).getByRole("listitem")).toHaveTextContent("Booking #59");
+    expect(save).toBeDisabled();
   });
 
   it("uses one search for calendar events and bookable items", async () => {

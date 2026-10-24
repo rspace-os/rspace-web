@@ -62,12 +62,12 @@ describe("Booking display preferences", () => {
     await expect
       .element(preferences.end)
       .toHaveAccessibleDescription(
-        "00:00 means midnight at the end of the day. Choose a valid same-day window and, for Custom, a valid IANA timezone.",
+        "12:00 AM means midnight at the end of the day. Choose a valid same-day window and, for Custom, a valid IANA timezone.",
       );
     await expect.element(preferences.save).toBeDisabled();
     await preferences.end.fill("00:00");
     await expect.element(preferences.end).toHaveAttribute("aria-invalid", "false");
-    await expect.element(preferences.end).toHaveAccessibleDescription("00:00 means midnight at the end of the day.");
+    await expect.element(preferences.end).toHaveAccessibleDescription("12:00 AM means midnight at the end of the day.");
     await expect.element(preferences.save).toBeEnabled();
     await preferences.start.fill("");
     await expect.element(preferences.start).toHaveAttribute("aria-invalid", "true");

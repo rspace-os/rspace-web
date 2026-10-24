@@ -10,14 +10,15 @@ import { bookingCreationDraftFromHistoryState } from "@/modules/booking/creation
 import { useBookingDraftAvailability } from "@/modules/booking/creation/useBookingDraftAvailability";
 import { useBookingTimelineDraft } from "@/modules/booking/creation/useBookingTimelineDraft";
 import {
-  bookingCreationProblemKey,
+  bookingProblemFeedback,
+  isBookingConflictError,
   isBookingOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
-import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { Heading } from "@/modules/common/ui/typography";
+import { bookingFormFeedback } from "./bookingFormFeedback";
 
 export function AddBookingContent() {
   const { t } = useTranslation("booking");
@@ -62,6 +63,21 @@ export function AddBookingContent() {
     token,
     eventKind: "BOOKING",
   });
+  const problem = bookingProblemFeedback(mutation.error, t, {
+    displayTimezone: preferences.timeZone,
+    target: selectedTarget,
+    creation: true,
+  });
+  const feedback = bookingFormFeedback({
+    problem,
+    availability,
+    interactionActive: draftBridge.interactionActive,
+    fallbackError:
+      !mutation.error && !draftBridge.interactionActive && availability.violation && availability.conflicts.length === 0
+        ? t("bookings.errors.overlap")
+        : undefined,
+    t,
+  });
   const submit = async (submission: BookingFormSubmission) => {
     await mutation.mutateAsync(submission);
     await navigate({
@@ -90,27 +106,14 @@ export function AddBookingContent() {
               initialPurpose={transferredDraft?.purpose}
               token={token}
               pending={mutation.isPending}
-              error={
-                mutation.error
-                  ? t(bookingCreationProblemKey(mutation.error))
-                  : !draftBridge.interactionActive && availability.violation && availability.conflicts.length === 0
-                    ? t("bookings.errors.overlap")
-                    : undefined
-              }
-              warning={
-                !draftBridge.interactionActive && availability.failed
-                  ? t("bookings.warnings.availabilityUnknown")
-                  : undefined
-              }
-              conflicts={draftBridge.interactionActive ? [] : availability.conflicts}
-              conflictSeverity={availability.conflictSeverity}
+              {...feedback}
               outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
               submissionBlocked={
                 draftBridge.adjustmentPending ||
                 draftBridge.interactionActive ||
                 availability.checking ||
                 availability.blocksSubmission ||
-                isBookingOverlapError(mutation.error) ||
+                isBookingConflictError(mutation.error) ||
                 isBookingOutcomeUncertain(mutation.error)
               }
               showMobileItemInformation
@@ -127,7 +130,11 @@ export function AddBookingContent() {
           {selectedTarget ? (
             <div className="min-w-0 space-y-6">
               <div className="hidden @4xl:block">
-                <BookingItemInformationCard item={selectedTarget} displayTimezone={preferences.timeZone} />
+                <BookingItemInformationCard
+                  item={selectedTarget}
+                  displayTimezone={preferences.timeZone}
+                  date={(draftBridge.draft ?? initialWindow).startDate}
+                />
               </div>
               <BookingDayTimelineAside
                 target={selectedTarget}

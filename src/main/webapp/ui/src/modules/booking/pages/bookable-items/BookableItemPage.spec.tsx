@@ -704,4 +704,61 @@ describe("BookableItemPage", () => {
       await expectNoAxeViolations();
     });
   });
+
+  test("keeps equal weekday rows and no page overflow while editing hours by day at 320 CSS pixels", async () => {
+    await withViewport(320, async () => {
+      render(<BookableItemPageStory history={history} />);
+      await expect.element(pageObj.heading).toBeVisible();
+      await pageObj.openEditor();
+      await expect.element(pageObj.openingHours).toBeVisible();
+
+      const sharedHeight = pageObj.dayRow("Tuesday").element().getBoundingClientRect().height;
+      const mondayEnd = pageObj.openingEnd("Monday");
+      expect(pageObj.dayRow("Monday").element().getBoundingClientRect().height).toBe(sharedHeight);
+      await expect.element(pageObj.save).toBeDisabled();
+      await mondayEnd.fill("12:00");
+      await expect.element(mondayEnd).toHaveValue("12:00");
+      await expect.element(pageObj.openingStart("Monday")).toHaveValue("08:00");
+      await expect.element(pageObj.openingEnd("Tuesday")).toHaveValue("17:00");
+      await expect.element(mondayEnd).toHaveFocus();
+      await expect.element(pageObj.save).toBeEnabled();
+      await expect.poll(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth).toBe(true);
+      expect(pageObj.dayRow("Monday").element().getBoundingClientRect().height).toBe(sharedHeight);
+      // The newly enabled Save button fades in from its disabled opacity; check contrast once it is opaque.
+      await expect.poll(() => getComputedStyle(pageObj.save.element()).opacity).toBe("1");
+      await expectNoAxeViolations();
+    });
+  });
+
+  test("keeps independent weekday rows aligned without page overflow at 390 CSS pixels", async () => {
+    await withViewport(390, async () => {
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+      const contentHeight = (day: string) => {
+        const row = pageObj.dayRow(day).element();
+        const style = getComputedStyle(row);
+        const borderWidth = Number.parseFloat(style.borderTopWidth) + Number.parseFloat(style.borderBottomWidth);
+        return row.getBoundingClientRect().height - borderWidth;
+      };
+      const noOverflow = () => expect.poll(() => document.documentElement.scrollWidth).toBe(390);
+      render(<BookableItemPageStory history={history} />);
+      await expect.element(pageObj.heading).toBeVisible();
+      await pageObj.openEditor();
+      await expect.element(pageObj.openingHours).toBeVisible();
+      await noOverflow();
+
+      const sharedHeight = contentHeight("Tuesday");
+      expect(sharedHeight).toBeGreaterThan(0);
+      for (const day of days) expect(contentHeight(day), `${day} weekday content height`).toBe(sharedHeight);
+
+      const mondayStart = pageObj.openingStart("Monday");
+      await mondayStart.fill("10:00");
+      await expect.element(mondayStart).toHaveValue("10:00");
+      await expect.element(pageObj.openingStart("Tuesday")).toHaveValue("08:00");
+      await expect.element(pageObj.openingEnd("Tuesday")).toHaveValue("17:00");
+      await expect.element(mondayStart).toHaveFocus();
+      await expect.element(pageObj.save).toBeEnabled();
+      await noOverflow();
+      for (const day of days) expect(contentHeight(day), `${day} weekday content height after edit`).toBe(sharedHeight);
+    });
+  });
 });

@@ -42,6 +42,70 @@ export const confocalTarget: BookableItemOption = {
   allowDoubleBooking: false,
 };
 
+export function confocalTargetWith(overrides: Partial<BookableItemOption> = {}): BookableItemOption {
+  return { ...confocalTarget, ...overrides };
+}
+
+export function confocalTargetWithHours(start: string, end: string): BookableItemOption {
+  return confocalTargetWith({
+    openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek): OpeningHoursEntry => ({ dayOfWeek, start, end })),
+  });
+}
+
+export function confocalBooking({
+  id,
+  start,
+  end,
+  kind = "BOOKING",
+  targetGlobalId = confocalTarget.globalId,
+  targetValueId = confocalTarget.targetId,
+  targetName = confocalTarget.name,
+  timezone = confocalTarget.timezone,
+  purpose = `Purpose ${id}`,
+}: {
+  id: number;
+  start: string;
+  end: string;
+  kind?: "BOOKING" | "MAINTENANCE";
+  targetGlobalId?: string;
+  targetValueId?: number;
+  targetName?: string;
+  timezone?: string;
+  purpose?: string;
+}) {
+  return {
+    id,
+    version: 0,
+    target: {
+      relationTo: "booking-instruments" as const,
+      globalId: targetGlobalId,
+      value: { id: targetValueId, name: targetName, deleted: false },
+    },
+    timezone,
+    start,
+    end,
+    state: "CONFIRMED" as const,
+    kind,
+    privacy: "full" as const,
+    purpose,
+    bookedBy: "Ada Lovelace",
+    canEdit: false,
+    canCancel: false,
+    createdAt: "2026-10-01T09:00:00Z",
+    updatedAt: "2026-10-01T09:00:00Z",
+  };
+}
+
+export function confocalBookingPage(docs: readonly unknown[]) {
+  return {
+    docs,
+    totalDocs: docs.length,
+    totalPages: docs.length ? 1 : 0,
+    page: 1,
+    hasNextPage: false,
+  };
+}
+
 export const editableBooking = {
   id: 41,
   version: 0,
