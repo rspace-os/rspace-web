@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import { BookingSummaryAccordion } from "@/modules/booking/components/BookingSummaryAccordion";
 import {
   type AvailabilityInterval,
@@ -9,7 +10,7 @@ import {
   timestamp,
 } from "@/modules/booking/domain/availability";
 import { formatList } from "@/modules/common/i18n/listFormat";
-import { PopoverContent, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
+import { PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { cn } from "@/modules/common/utils/cn";
 import { AvailabilitySlicePopover } from "./AvailabilitySlicePopover";
 import { BookingKindIcon } from "./BookingKindIcon";
@@ -32,6 +33,7 @@ export type AvailabilityBarProps = {
   showCurrentAvailability?: boolean;
   showPeriodLabels?: boolean;
   timeZone: string;
+  instrumentTimeZone?: string | null;
   /** @deprecated The bar domain is now always the resolved display timezone. */
   userTimeZone?: string;
   item: {
@@ -86,6 +88,7 @@ export function AvailabilityBar({
   showCurrentAvailability = false,
   showPeriodLabels = false,
   timeZone,
+  instrumentTimeZone,
   item,
   className,
 }: AvailabilityBarProps) {
@@ -273,71 +276,77 @@ export function AvailabilityBar({
                 left={`${((slice.startsAt - start) / (end - start)) * 100}%`}
                 width={`${((slice.endsAt - slice.startsAt) / (end - start)) * 100}%`}
               >
-                <PopoverContent
-                  side="bottom"
-                  align="start"
-                  sideOffset={8}
-                  collisionPadding={8}
-                  sticky
-                  className="max-h-[min(32rem,var(--available-height))] w-80 gap-3 overflow-y-auto overscroll-contain rounded-sm p-3 duration-0 data-closed:animate-none data-open:animate-none"
-                >
-                  <div className="min-w-0">
-                    <PopoverTitle className="text-base font-semibold leading-tight">
-                      {formatTimeRange(slice)}
-                    </PopoverTitle>
-                    <PopoverDescription className="mt-1 text-xs">
-                      {t("availabilityBar.slice.count", {
-                        count: contributors.length,
-                      })}
-                    </PopoverDescription>
-                  </div>
-                  <ul className="space-y-1">
-                    {contributors.map(({ kind, source }) => {
-                      if (hasBookingDetails(source)) {
-                        const maintenance = source.booking.kind === "MAINTENANCE";
-                        const actor = maintenance ? source.booking.createdBy : source.booking.bookedBy;
-                        return (
-                          <BookingSummaryAccordion
-                            key={source.id}
-                            accordionName={accordionName}
-                            heading={maintenance ? t("bookings.maintenanceLabel") : item.name}
-                            summaryLabel={
-                              maintenance
-                                ? t("bookings.maintenanceLabel")
-                                : actor
-                                  ? t("availabilityBar.slice.bookedBy", { user: actor })
-                                  : t("availabilityBar.slice.sources.booking")
-                            }
-                            period={formatTimeRange(source)}
-                            purpose={source.booking.purpose}
-                            maintenance={maintenance}
-                            item={maintenance || showBookingContextDetails ? item : undefined}
-                            actor={maintenance || showBookingContextDetails ? actor : undefined}
-                            detailsBookingId={source.booking.id}
-                          />
-                        );
-                      }
-                      return (
-                        <li
-                          key={source.id}
-                          className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5"
-                        >
-                          <BookingKindIcon maintenance={kind !== "booking"} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-xs font-medium">
-                              {source.booking?.kind === "MAINTENANCE"
-                                ? t("bookings.maintenanceLabel")
-                                : kind === "booking"
-                                  ? t("availabilityBar.slice.sources.booking")
-                                  : t("availabilityBar.slice.sources.openingHours")}
-                            </span>
-                            <span className="block text-[11px] text-muted-foreground">{formatTimeRange(source)}</span>
-                          </span>
-                        </li>
-                      );
+                <div className="min-w-0">
+                  <PopoverTitle className="text-base font-semibold leading-tight">
+                    {formatTimeRange(slice)}
+                  </PopoverTitle>
+                  <PopoverDescription className="mt-1 text-xs">
+                    {t("availabilityBar.slice.count", {
+                      count: contributors.length,
                     })}
-                  </ul>
-                </PopoverContent>
+                  </PopoverDescription>
+                </div>
+                <ul className="space-y-1">
+                  {contributors.map(({ kind, source }) => {
+                    if (hasBookingDetails(source)) {
+                      const maintenance = source.booking.kind === "MAINTENANCE";
+                      const actor = maintenance ? source.booking.createdBy : source.booking.bookedBy;
+                      return (
+                        <BookingSummaryAccordion
+                          key={source.id}
+                          accordionName={accordionName}
+                          heading={maintenance ? t("bookings.maintenanceLabel") : item.name}
+                          summaryLabel={
+                            maintenance
+                              ? t("bookings.maintenanceLabel")
+                              : actor
+                                ? t("availabilityBar.slice.bookedBy", { user: actor })
+                                : t("availabilityBar.slice.sources.booking")
+                          }
+                          period={formatTimeRange(source)}
+                          periodTooltip={{
+                            start: source.startsAt.toISOString(),
+                            end: source.endsAt.toISOString(),
+                            displayTimeZone: timeZone,
+                            instrumentTimeZone,
+                          }}
+                          purpose={source.booking.purpose}
+                          maintenance={maintenance}
+                          item={maintenance || showBookingContextDetails ? item : undefined}
+                          actor={maintenance || showBookingContextDetails ? actor : undefined}
+                          detailsBookingId={source.booking.id}
+                        />
+                      );
+                    }
+                    return (
+                      <li
+                        key={source.id}
+                        className="flex min-w-0 items-center gap-2 rounded-sm border bg-background px-2 py-1.5"
+                      >
+                        <BookingKindIcon maintenance={kind !== "booking"} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-xs font-medium">
+                            {source.booking?.kind === "MAINTENANCE"
+                              ? t("bookings.maintenanceLabel")
+                              : kind === "booking"
+                                ? t("availabilityBar.slice.sources.booking")
+                                : t("availabilityBar.slice.sources.openingHours")}
+                          </span>
+                          <span className="block text-[11px] text-muted-foreground">
+                            <BookingInstrumentTimeTooltip
+                              start={source.startsAt.toISOString()}
+                              end={source.endsAt.toISOString()}
+                              displayTimeZone={timeZone}
+                              instrumentTimeZone={instrumentTimeZone}
+                            >
+                              {formatTimeRange(source)}
+                            </BookingInstrumentTimeTooltip>
+                          </span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </AvailabilitySlicePopover>
             );
           })}

@@ -138,7 +138,14 @@ export function useScrollToToday(date: string, view: CalendarView, today: string
 
 export function toTimelineEvent(event: BookingListDocument, date: string, timezone: string): DayTimelineEvent {
   const slice = sliceAcrossZonedDay(event.start, event.end, date, timezone);
-  if (event.privacy === "busy") return { id: String(event.id), kind: "booking", privacy: "busy", ...slice };
+  const instrumentTime = {
+    startInstant: event.start,
+    endInstant: event.end,
+    instrumentTimeZone: event.timezone,
+  };
+  if (event.privacy === "busy") {
+    return { id: String(event.id), kind: "booking", privacy: "busy", ...slice, ...instrumentTime };
+  }
   const target = event.target;
   const itemName = target?.value.name ?? i18n.t("common:values.unknownItem");
   const itemGlobalId = target?.globalId ?? null;
@@ -158,6 +165,7 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
       createdBy: event.createdBy ?? undefined,
       notes: event.purpose ?? undefined,
       ...slice,
+      ...instrumentTime,
     };
   }
   return {
@@ -174,6 +182,7 @@ export function toTimelineEvent(event: BookingListDocument, date: string, timezo
     notes: event.purpose ?? undefined,
     canEdit: event.canEdit,
     ...slice,
+    ...instrumentTime,
   };
 }
 export function actionsFor(events: readonly BookingListDocument[], timezone: string, timelineDate: string) {

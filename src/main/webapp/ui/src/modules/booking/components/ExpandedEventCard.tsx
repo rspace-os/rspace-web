@@ -1,11 +1,12 @@
 import { Wrench, X } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { PopoverClose, PopoverDescription, PopoverTitle } from "@/modules/common/ui/popover";
 import { UnknownItem } from "@/modules/common/ui/unknown-item";
 import { cn } from "@/modules/common/utils/cn";
 import { BookingDetailRows } from "./BookingDetailRows";
+import { BookingInstrumentTimeTooltip } from "./BookingInstrumentTimeTooltip";
 import {
   type DayTimelineActionRenderers,
   type DayTimelineEvent,
@@ -39,6 +40,19 @@ export function ExpandedEventCard({
   const spansMultipleDates = startDate !== endDate;
   const labelledTitle = event.kind === "booking" ? `${event.title} · ${event.bookedBy}` : event.title;
   const duration = Math.max(0, event.endMinute - event.startMinute);
+  const instrumentTime = (instant: string | undefined, children: ReactNode, end?: string) =>
+    instant ? (
+      <BookingInstrumentTimeTooltip
+        start={instant}
+        end={end}
+        displayTimeZone={timezone}
+        instrumentTimeZone={event.instrumentTimeZone}
+      >
+        {children}
+      </BookingInstrumentTimeTooltip>
+    ) : (
+      children
+    );
   const actions =
     event.kind === "booking" ? renderEventActions?.(event, exactPeriod) : renderBlockoutActions?.(event, exactPeriod);
   const dateTimeRows = [
@@ -77,10 +91,13 @@ export function ExpandedEventCard({
                   <dt className={cn(isBlockout ? "text-amber-800" : "text-primary-foreground")}>{label}</dt>
                   <dd>
                     <time dateTime={`${endpointDate}T${formatMinute(date, timezone, minute)}`}>
-                      {t("dayTimeline.expanded.dateTime", {
-                        date: formatDayDate(endpointDate),
-                        time: formatMinuteWithDayOffset(date, timezone, minute),
-                      })}
+                      {instrumentTime(
+                        key === "start" ? event.startInstant : event.endInstant,
+                        t("dayTimeline.expanded.dateTime", {
+                          date: formatDayDate(endpointDate),
+                          time: formatMinuteWithDayOffset(date, timezone, minute),
+                        }),
+                      )}
                     </time>
                   </dd>
                 </Fragment>
@@ -88,7 +105,7 @@ export function ExpandedEventCard({
             </dl>
           ) : (
             <time dateTime={startDate} className="mt-1.5 block text-xs leading-4">
-              {formatDayDate(startDate)}
+              {instrumentTime(event.startInstant, formatDayDate(startDate), event.endInstant)}
             </time>
           )}
         </div>

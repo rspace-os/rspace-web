@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { bookingTimeZoneOptions } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
@@ -67,10 +68,12 @@ export const bookingConfigurationConfig = {
     {
       name: "timezone",
       type: "select",
-      options: Intl.supportedValuesOf("timeZone"),
+      options: bookingTimeZoneOptions(),
       labelKey: "booking:bookableItems.fields.timezone",
+      required: true,
       list: false,
-      form: false,
+      // Create-only: the API rejects timezone changes, so edit forms filter this field out.
+      form: { descriptionKey: "booking:bookableItems.fields.timezoneDescription" },
     },
     {
       name: "updatedAt",

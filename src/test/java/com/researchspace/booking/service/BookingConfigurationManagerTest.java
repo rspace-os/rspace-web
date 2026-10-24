@@ -20,14 +20,18 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v2.auth.ApiV2Caller;
+import com.researchspace.booking.api.v2.BookingConfigurationResourceOperations;
 import com.researchspace.booking.dao.BookingConfigurationDao;
 import com.researchspace.booking.dao.BookingConfigurationDefaultsDao;
 import com.researchspace.booking.service.BookingConfigurationManager.Create;
 import com.researchspace.booking.service.BookingConfigurationManager.Patch;
 import com.researchspace.dao.AuditDao;
 import com.researchspace.dao.InstrumentDao;
+import com.researchspace.featureflags.FeatureFlags;
 import com.researchspace.model.User;
 import com.researchspace.model.audit.AuditedEntity;
+import com.researchspace.model.booking.ApiV2BookingConfigurationResource;
 import com.researchspace.model.booking.BookableTargetReference;
 import com.researchspace.model.booking.BookableTargetType;
 import com.researchspace.model.booking.BookingConfiguration;
@@ -38,14 +42,21 @@ import com.researchspace.model.booking.ResolvedBookableTarget;
 import com.researchspace.model.collection.CollectionMutationLimits;
 import com.researchspace.model.collection.FilterExpression;
 import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ParsedDocument;
 import com.researchspace.model.collection.ResourcePage;
 import com.researchspace.model.collection.ResourceRequest;
+import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.service.CollectionMutationException;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.resourceaccess.ResolvedResourceAccess;
-import jakarta.validation.ConstraintViolationException;
+import com.researchspace.testutils.BookingResourceTestFixtures;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -153,6 +164,44 @@ class BookingConfigurationManagerTest {
   }
 
   @Test
+  void persistsValidTimeZoneAliasesVerbatim() {
+    List<String> timeZones = List.of("Asia/Calcutta", "UTC", "Etc/UTC", "US/Eastern", "Etc/GMT+1");
+    long targetId = 20L;
+
+    for (String timeZone : timeZones) {
+      BookingConfiguration created =
+          manager.createConfiguration(new Create(true, timeZone, target(targetId++)), actor, actor);
+
+      assertEquals(timeZone, created.getTimeZone());
+    }
+  }
+
+  @Test
+  void unsupportedInstitutionClockDefaultIsRejectedByTheSharedManagerBeforeSaving() {
+    FeatureFlagManager featureFlags = mock(FeatureFlagManager.class);
+    when(featureFlags.isFeatureFlagEnabled(FeatureFlags.BOOKING_ENABLED, actor)).thenReturn(true);
+    BookingConfigurationResourceOperations operations =
+        new BookingConfigurationResourceOperations(
+            manager,
+            mock(BookingConfigurationProtectedResourceAccess.class),
+            featureFlags,
+            Clock.fixed(Instant.EPOCH, ZoneId.of("CST6CDT")),
+            ApiV2BookingConfigurationResource.DESCRIPTION);
+    ParsedDocument document =
+        new ParsedDocument(
+            WriteOperation.CREATE, Map.of("target", BookingResourceTestFixtures.resolved(12L)));
+
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> operations.create(document, ApiV2Caller.direct(actor)));
+
+    assertEquals("errors.api.v2.bookingConfiguration.timeZone.invalid", failure.getMessage());
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.TIME_ZONE, failure.reason());
+    verify(dao, never()).saveAndFlush(any());
+  }
+
+  @Test
   void copiesOneDefaultsSnapshotForBulkCreateAndHonoursExplicitOverrides() {
     BookingConfigurationDefaults defaults = defaults(15, "08:00", "18:00", 10, 20, 120, true);
     defaults.setOpeningHours(
@@ -249,6 +298,45 @@ class BookingConfigurationManagerTest {
             InvalidBookingSchedulingSettingsException.Reason.MAXIMUM_DURATION));
   }
 
+  @ParameterizedTest
+  @MethodSource("invalidTimeZoneCreates")
+  void rejectsUnsupportedTimeZoneCreatesWithControlledValidation(String timeZone) {
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () ->
+                manager.createConfiguration(new Create(true, timeZone, target(12L)), actor, actor));
+
+    assertEquals("errors.api.v2.bookingConfiguration.timeZone.invalid", failure.getMessage());
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.TIME_ZONE, failure.reason());
+    verify(dao, never()).saveAndFlush(any());
+  }
+
+  private static Stream<String> legacyTimeZones() {
+    return Stream.of("UT", "UTC+01:00", "SystemV/EST5EDT");
+  }
+
+  private static Stream<Arguments> invalidTimeZoneCreates() {
+    return Stream.of(
+        Arguments.of("UT"),
+        Arguments.of("UTC+01"),
+        Arguments.of("GMT+01"),
+        Arguments.of("UTC+01:00"),
+        Arguments.of("GMT+01:00"),
+        Arguments.of("Z"),
+        Arguments.of("+01"),
+        Arguments.of("+0100"),
+        Arguments.of("+01:00"),
+        Arguments.of("SystemV/CST6CDT"),
+        Arguments.of("CST6CDT"),
+        Arguments.of("EST5EDT"),
+        Arguments.of("MST7MDT"),
+        Arguments.of("PST8PDT"),
+        Arguments.of(""),
+        Arguments.of(" \t"),
+        Arguments.of((Object) null));
+  }
+
   @Test
   void validatesMaximumDurationAgainstTheSystemCapAndGranularity() {
     assertTrue(BookingSchedulingSettings.isGranularityValid(1));
@@ -287,7 +375,7 @@ class BookingConfigurationManagerTest {
     verify(dao).saveAndFlush(created.get(1));
 
     assertThrows(
-        ConstraintViolationException.class,
+        InvalidBookingSchedulingSettingsException.class,
         () ->
             manager.createConfigurations(
                 List.of(
@@ -297,6 +385,24 @@ class BookingConfigurationManagerTest {
                 actor));
     verify(dao, never())
         .findByTarget(new BookableTargetReference(BookableTargetType.INSTRUMENT, 14L));
+  }
+
+  @Test
+  void mixedBulkCreateRejectsUnsupportedTimeZoneBeforeSavingAnyConfiguration() {
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () ->
+                manager.createConfigurations(
+                    List.of(
+                        new Create(true, "Europe/Berlin", target(12L)),
+                        new Create(true, "UTC+01:00", target(13L))),
+                    actor,
+                    actor));
+
+    assertEquals("errors.api.v2.bookingConfiguration.timeZone.invalid", failure.getMessage());
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.TIME_ZONE, failure.reason());
+    verify(dao, never()).saveAndFlush(any());
   }
 
   @Test
@@ -335,7 +441,7 @@ class BookingConfigurationManagerTest {
 
     when(actor.hasSysadminRole()).thenReturn(true);
     assertThrows(
-        ConstraintViolationException.class,
+        InvalidBookingSchedulingSettingsException.class,
         () ->
             manager.createConfiguration(new Create(true, "Not/A_Zone", target(12L)), actor, actor));
 
@@ -376,22 +482,82 @@ class BookingConfigurationManagerTest {
   @Test
   void directServicePatchesPreserveFieldsThatWereNotProvided() {
     BookingConfiguration configuration = configuration(42L, 12L);
+    configuration.setTimeZone("UT");
     List<BookingOpeningHoursEntry> openingHours = hours("09:00", "17:00", 1, 3);
     configuration.setOpeningHours(openingHours);
     when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
 
     BookingConfiguration updated =
-        manager.updateConfiguration(42L, new Patch(true, null), actor, actor).orElseThrow();
+        manager
+            .updateConfiguration(
+                42L,
+                new Patch(
+                    true,
+                    null,
+                    new BookingSchedulingSettings.Patch(10L, null, null, null, null, null)),
+                actor,
+                actor)
+            .orElseThrow();
 
     assertTrue(updated.isEnabled());
+    assertEquals(10, updated.getSlotGranularityMinutes());
     assertEquals(openingHours, updated.getOpeningHours());
-    assertEquals("UTC", updated.getTimeZone());
+    assertEquals("UT", updated.getTimeZone());
     assertEquals(
         new BookableTargetReference(BookableTargetType.INSTRUMENT, 12L), updated.getTarget());
     assertSame(actor, updated.getUpdatedBy());
     assertTrue(updated.getUpdatedAt() != null);
     verify(itemPermissions).resolveForMutation(configuration, actor);
     verify(events).publishEvent(any(BookingConfigurationAuditEvent.class));
+  }
+
+  @Test
+  void rejectsChangedUnsupportedTimeZoneBeforeApplyingOrSavingDirectServicePatch() {
+    BookingConfiguration configuration = configuration(42L, 12L);
+    configuration.setEnabled(true);
+    configuration.setTimeZone("Europe/Berlin");
+    when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
+
+    InvalidBookingSchedulingSettingsException failure =
+        assertThrows(
+            InvalidBookingSchedulingSettingsException.class,
+            () -> manager.updateConfiguration(42L, new Patch(false, "UTC+01:00"), actor, actor));
+
+    assertEquals("errors.api.v2.bookingConfiguration.timeZone.invalid", failure.getMessage());
+    assertEquals(InvalidBookingSchedulingSettingsException.Reason.TIME_ZONE, failure.reason());
+    assertTrue(configuration.isEnabled());
+    assertEquals("Europe/Berlin", configuration.getTimeZone());
+    verify(dao, never()).saveAndFlush(any());
+    verify(events, never()).publishEvent(any());
+  }
+
+  @Test
+  void acceptsChangedValidTimeZoneAliasWithoutCanonicalizingIt() {
+    BookingConfiguration configuration = configuration(42L, 12L);
+    configuration.setTimeZone("Europe/Berlin");
+    when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
+
+    BookingConfiguration updated =
+        manager
+            .updateConfiguration(42L, new Patch(null, "Asia/Calcutta"), actor, actor)
+            .orElseThrow();
+
+    assertEquals("Asia/Calcutta", updated.getTimeZone());
+    verify(dao).saveAndFlush(updated);
+  }
+
+  @ParameterizedTest
+  @MethodSource("legacyTimeZones")
+  void explicitSameLegacyTimeZonePatchDoesNotRevalidateTheStoredValue(String timeZone) {
+    BookingConfiguration configuration = configuration(42L, 12L);
+    configuration.setTimeZone(timeZone);
+    when(dao.lockById(42L)).thenReturn(Optional.of(configuration));
+
+    BookingConfiguration updated =
+        manager.updateConfiguration(42L, new Patch(null, timeZone), actor, actor).orElseThrow();
+
+    assertEquals(timeZone, updated.getTimeZone());
+    verify(dao).saveAndFlush(updated);
   }
 
   @Test
