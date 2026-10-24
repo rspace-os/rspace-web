@@ -227,17 +227,22 @@ export function bookingLocale(): string {
   }
 }
 
+/** The Booking "Time format" preference: the browser region's clock, or an explicit 12- or 24-hour one. */
+export type BookingTimeFormat = "AUTOMATIC" | "H12" | "H24";
+
 /**
- * The browser's regional format, for numeric dates and times. Native date and time inputs always use it, so
- * following it (rather than the app language) keeps "14:00" or "2:00 PM" consistent between inputs and cards.
+ * The browser's regional format with the clock of `format`: the region's own for Automatic, otherwise a `-u-hc-`
+ * extension for an explicit 12- or 24-hour clock. Numeric dates keep the region's order either way.
  */
-export function bookingDateTimeLocale(): string {
-  return new Intl.DateTimeFormat().resolvedOptions().locale;
+export function bookingDateTimeLocale(format: BookingTimeFormat = "AUTOMATIC"): string {
+  const locale = new Intl.DateTimeFormat().resolvedOptions().locale;
+  if (format === "AUTOMATIC") return locale;
+  return new Intl.Locale(locale, { hourCycle: format === "H24" ? "h23" : "h12" }).toString();
 }
 
-/** The browser region's 12- or 24-hour clock, so times written in the app language still match native inputs. */
-export function bookingHourCycle(): Intl.DateTimeFormatOptions["hourCycle"] {
-  return new Intl.DateTimeFormat(bookingDateTimeLocale(), { hour: "numeric" }).resolvedOptions().hourCycle;
+/** The 12- or 24-hour clock of `bookingDateTimeLocale(format)`, so times written in the app language use it too. */
+export function bookingHourCycle(format: BookingTimeFormat = "AUTOMATIC"): Intl.DateTimeFormatOptions["hourCycle"] {
+  return new Intl.DateTimeFormat(bookingDateTimeLocale(format), { hour: "numeric" }).resolvedOptions().hourCycle;
 }
 
 /** A wall-clock `HH:mm` time as the locale writes it, which is also how native time inputs display it. */
@@ -285,30 +290,81 @@ export function formatDurationMinutes(
 }
 
 /**
- * A booking's start and end with the date, e.g. "Oct 8, 2026, 06:00 – 07:00", for sentences outside a dated list such
- * as the cancel confirmation. Words follow the app language; the clock follows the browser region.
+ * The UTC offset, such as " +02:00", after a time on a day whose clock changes, so the two occurrences of a repeated
+ * hour (and the times either side of a skipped one) read differently; empty on other days. `day` is the date the time
+ * is read against, by default its own.
  */
-export function formatBookingPeriod(start: string, end: string, timezone: string, locale = bookingLocale()): string {
+export function clockChangeOffsetLabel(time: Temporal.ZonedDateTime, day = time.toPlainDate().toString()): string {
+  return zonedDayBounds(day, time.timeZoneId).elapsedMinutes === 24 * 60 ? "" : ` ${time.offset}`;
+}
+
+function zonedDateTime(value: string, timeZone: string): Temporal.ZonedDateTime {
+  // Parsed as Date parses it, so any value the formatters accept also gets its offset.
+  return Temporal.Instant.fromEpochMilliseconds(new Date(value).getTime()).toZonedDateTimeISO(timeZone);
+}
+
+function dateTimeFormatter(
+  timeZone: string,
+  locale: string,
+  timeFormat: BookingTimeFormat,
+  timeStyle: "short" | "long" = "short",
+): Intl.DateTimeFormat {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
-    timeStyle: "short",
-    hourCycle: bookingHourCycle(),
-    timeZone: timezone,
-  }).formatRange(new Date(start), new Date(end));
+    timeStyle,
+    hourCycle: bookingHourCycle(timeFormat),
+    timeZone,
+  });
+}
+
+/** A date and time, with an optional long time style for audit records and a clock-change offset when needed. */
+export function formatBookingDateTime(
+  value: string,
+  timeZone: string,
+  locale = bookingLocale(),
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+  options: { timeStyle?: "short" | "long" } = {},
+): string {
+  const formatted = dateTimeFormatter(timeZone, locale, timeFormat, options.timeStyle).format(new Date(value));
+  return `${formatted}${clockChangeOffsetLabel(zonedDateTime(value, timeZone))}`;
+}
+
+/**
+ * A booking's start and end with the date, e.g. "Oct 8, 2026, 06:00 – 07:00", for sentences outside a dated list such
+ * as the cancel confirmation. Words follow the app language; the clock follows the browser region. When either end
+ * falls on a clock-change day, both ends are written as `formatBookingDateTime` writes them.
+ */
+export function formatBookingPeriod(
+  start: string,
+  end: string,
+  timezone: string,
+  locale = bookingLocale(),
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
+): string {
+  const formatter = dateTimeFormatter(timezone, locale, timeFormat);
+  const startOffset = clockChangeOffsetLabel(zonedDateTime(start, timezone));
+  const endOffset = clockChangeOffsetLabel(zonedDateTime(end, timezone));
+  if (!startOffset && !endOffset) return formatter.formatRange(new Date(start), new Date(end));
+  return `${formatter.format(new Date(start))}${startOffset} – ${formatter.format(new Date(end))}${endOffset}`;
 }
 
 export function formatAgendaPeriod(
   start: string,
   end: string,
   timezone: string,
-  locale = bookingDateTimeLocale(),
+  locale: string | undefined = undefined,
+  timeFormat: BookingTimeFormat = "AUTOMATIC",
 ): string {
-  const timeFormatter = new Intl.DateTimeFormat(locale, {
+  const resolvedLocale = locale ?? bookingDateTimeLocale(timeFormat);
+  const hourCycle =
+    locale !== undefined && timeFormat !== "AUTOMATIC" ? { hourCycle: bookingHourCycle(timeFormat) } : {};
+  const timeFormatter = new Intl.DateTimeFormat(resolvedLocale, {
     timeZone: timezone,
     hour: "2-digit",
     minute: "2-digit",
+    ...hourCycle,
   });
-  const offsetFormatter = new Intl.DateTimeFormat(locale, {
+  const offsetFormatter = new Intl.DateTimeFormat(resolvedLocale, {
     timeZone: timezone,
     hour: "2-digit",
     timeZoneName: "shortOffset",
@@ -324,7 +380,8 @@ export function formatAgendaPeriod(
     return `${timeFormatter.formatRange(startDate, endDate)} ${startOffset}`;
   }
 
-  const withOffset = new Intl.DateTimeFormat(locale, {
+  const withOffset = new Intl.DateTimeFormat(resolvedLocale, {
+    ...hourCycle,
     timeZone: timezone,
     hour: "2-digit",
     minute: "2-digit",

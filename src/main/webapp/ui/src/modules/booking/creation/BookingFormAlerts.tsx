@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BookingInstrumentTimeTooltip } from "@/modules/booking/components/BookingInstrumentTimeTooltip";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
+import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { formatAgendaPeriod } from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
 
@@ -25,6 +26,7 @@ export function BookingFormAlerts({
   outcomeUncertain,
 }: BookingFormAlertsProps) {
   const { t } = useTranslation("booking");
+  const timeFormat = useBookingTimeFormat();
 
   if (!warning && !error && !conflicts?.length) return null;
 
@@ -51,7 +53,7 @@ export function BookingFormAlerts({
               displayTimeZone={displayTimezone}
               instrumentTimeZone={booking.instrumentTimeZone}
             >
-              {formatAgendaPeriod(booking.start, booking.end, displayTimezone)}
+              {formatAgendaPeriod(booking.start, booking.end, displayTimezone, undefined, timeFormat)}
             </BookingInstrumentTimeTooltip>
           </li>
         );

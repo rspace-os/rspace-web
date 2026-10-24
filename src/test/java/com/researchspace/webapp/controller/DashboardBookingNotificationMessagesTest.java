@@ -2,14 +2,20 @@ package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.booking.service.BookingDisplayPreferencesManager;
 import com.researchspace.booking.service.BookingNotificationMessageFormatter;
 import com.researchspace.model.User;
+import com.researchspace.model.booking.BookingTimeFormat;
 import com.researchspace.model.booking.BookingTimezoneMode;
 import com.researchspace.model.comms.Notification;
 import com.researchspace.model.comms.NotificationType;
@@ -21,6 +27,7 @@ import jakarta.servlet.http.HttpSession;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -84,6 +91,7 @@ class DashboardBookingNotificationMessagesTest {
                     "18:00",
                     BookingTimezoneMode.CUSTOM,
                     "America/Los_Angeles",
+                    BookingTimeFormat.AUTOMATIC,
                     "Europe/Berlin",
                     true)));
     when(session.getAttribute(SessionAttributeUtils.TIMEZONE))
@@ -155,6 +163,81 @@ class DashboardBookingNotificationMessagesTest {
             .contains("Oct 8, 2026, 6:00 AM (Europe/Berlin, UTC+02:00)"),
         american.get(5L));
     assertFalse(american.get(5L).contains("06:00"), american.get(5L));
+  }
+
+  @Test
+  void anExplicitTimeFormatBeatsTheBrowserRegion() {
+    LocaleContextHolder.setLocale(Locale.US);
+    Notification structured =
+        bookingNotification(
+            7L, "Stored email text", data("2026-10-08T04:00:00Z", "2026-10-08T05:00:00Z"));
+    Notification legacy =
+        bookingNotification(
+            8L, "Booking 8 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.", null);
+
+    when(preferences.getForNotificationRecipient(recipient))
+        .thenReturn(
+            Optional.of(
+                new BookingDisplayPreferencesManager.ResolvedBookingDisplayPreferences(
+                    "08:00",
+                    "18:00",
+                    BookingTimezoneMode.INSTITUTION,
+                    null,
+                    BookingTimeFormat.H24,
+                    "Europe/Berlin",
+                    true)));
+
+    Map<Long, String> messages =
+        controller.bookingNotificationMessages(
+            List.of(structured, legacy), "recipient", session, "en-US,en;q=0.9");
+
+    assertTrue(
+        messages.get(7L).contains("Oct 8, 2026, 06:00 (Europe/Berlin, UTC+02:00)"),
+        messages.get(7L));
+    assertTrue(
+        messages.get(8L).contains("Oct 8, 2026, 07:00 (Europe/Berlin, UTC+02:00)."),
+        messages.get(8L));
+    assertFalse(messages.get(7L).contains("AM"), messages.get(7L));
+  }
+
+  @Test
+  void legacyFormattingFailurePropagatesAfterOneAttempt() {
+    LocaleContextHolder.setLocale(Locale.US);
+    String message = "Booking 9 from 2026-10-08T04:00:00Z to 2026-10-08T05:00:00Z.";
+    Notification legacy = bookingNotification(9L, message, null);
+    when(preferences.getForNotificationRecipient(recipient)).thenReturn(Optional.empty());
+    BookingNotificationMessageFormatter formatter =
+        spy(
+            new BookingNotificationMessageFormatter(
+                new JsonMessageSource(), "https://rspace.example.org"));
+    ReflectionTestUtils.setField(controller, "bookingMessageFormatter", formatter);
+    DateTimeParseException failure = new DateTimeParseException("Formatting failed", message, 0);
+    doThrow(failure)
+        .when(formatter)
+        .formatLegacy(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            message,
+            ZoneId.of("Europe/Berlin"),
+            Locale.US,
+            null,
+            null);
+
+    assertSame(
+        failure,
+        assertThrows(
+            DateTimeParseException.class,
+            () ->
+                controller.bookingNotificationMessages(
+                    List.of(legacy), "recipient", session, null)));
+
+    verify(formatter, times(1))
+        .formatLegacy(
+            NotificationType.NOTIFICATION_BOOKING_CREATED,
+            message,
+            ZoneId.of("Europe/Berlin"),
+            Locale.US,
+            null,
+            null);
   }
 
   private static Notification bookingNotification(
