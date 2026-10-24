@@ -131,6 +131,52 @@ describe("ResourceAccessEditor", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
+  it.each([401, 403, 404])("hides cached assignments after a same-token %i denial", async (status) => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const queryKey = ["api-v2", "test-collections", 9, "access", "token"] as const;
+    let accessRequests = 0;
+    server.use(
+      http.get("/api/v2/test-collections/9/access", () => {
+        accessRequests += 1;
+        if (accessRequests === 1 || accessRequests === 4) return HttpResponse.json(document(3, [owner, second]));
+        return new HttpResponse(null, { status: accessRequests === 2 ? status : 503 });
+      }),
+    );
+
+    render(
+      <QueryClientProvider client={client}>
+        <ResourceAccessEditor resource="test-collections" resourceId={9} token="token" adapter={adapter} />
+      </QueryClientProvider>,
+    );
+
+    await screen.findByRole("table");
+    expect(table().getByText("Ada Owner")).toBeVisible();
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+
+    expect(accessRequests).toBe(2);
+    expect(await screen.findByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ada Owner")).not.toBeInTheDocument();
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+    expect(accessRequests).toBe(3);
+    expect(screen.getByRole("alert")).toHaveTextContent("common:resourceAccess.loadError");
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ada Owner")).not.toBeInTheDocument();
+
+    await act(async () => {
+      await client.refetchQueries({ queryKey, type: "active" });
+    });
+    expect(accessRequests).toBe(4);
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(table().getByText("Ada Owner")).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("renders assignments without any mutation controls in read-only mode", async () => {
     let directoryRequests = 0;
     let mutationRequests = 0;

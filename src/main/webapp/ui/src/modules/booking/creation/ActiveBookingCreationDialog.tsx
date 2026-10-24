@@ -12,7 +12,8 @@ import {
   isBookingOutcomeUncertain,
   useCreateBooking,
 } from "@/modules/booking/creation/useCreateBooking";
-import { calendarAvailabilityRow } from "@/modules/booking/domain/availability";
+
+import { bookingConflicts, calendarAvailabilityRow } from "@/modules/booking/domain/availability";
 import { isBookingOverlapError } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { useCalendarAvailability } from "@/modules/booking/domain/useCalendarAvailability";
@@ -137,7 +138,8 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
         openingHours: maintenance
           ? [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" }))
           : availabilityTarget.openingHours,
-        allowDoubleBooking: maintenance ? false : availabilityTarget.allowDoubleBooking,
+        // Fetch overlaps even when double booking is allowed, so the form can explain them.
+        allowDoubleBooking: false,
       })
     : undefined;
   const availabilityInterval = formState?.window
@@ -159,6 +161,15 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
       availabilityTarget &&
       (availability.data.get(availabilityTarget.globalId)?.length ?? 0) > 0,
   );
+  const conflicts = availabilityViolation
+    ? bookingConflicts(availability.data?.get(availabilityTarget?.globalId ?? "") ?? [], preferences.timeZone)
+    : [];
+  const canOverlapBookings =
+    creation.eventKind === "BOOKING" &&
+    availabilityTarget?.allowDoubleBooking === true &&
+    conflicts.length > 0 &&
+    conflicts.every(({ kind }) => kind === "BOOKING");
+  const conflictBlocksSubmission = availabilityViolation && !canOverlapBookings;
 
   const anchor = document.getElementById(creation.triggerId);
   const markerDraft = windowAdjustment ?? formState?.draft ?? creation.window;
@@ -238,16 +249,18 @@ export function ActiveBookingCreationDialog({ creation }: { creation: BookingCre
             token={token}
             pending={mutation.isPending}
             error={
-              availabilityViolation
+              availabilityViolation && conflicts.length === 0
                 ? t("bookings.errors.overlap")
                 : mutation.error
                   ? t(bookingCreationProblemKey(mutation.error))
                   : undefined
             }
+            conflicts={conflicts}
+            conflictSeverity={canOverlapBookings && !isBookingOverlapError(mutation.error) ? "warning" : "error"}
             outcomeUncertain={isBookingOutcomeUncertain(mutation.error)}
             submissionBlocked={
               checkingAvailability ||
-              availabilityViolation ||
+              conflictBlocksSubmission ||
               isBookingOverlapError(mutation.error) ||
               isBookingOutcomeUncertain(mutation.error)
             }

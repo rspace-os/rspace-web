@@ -383,8 +383,7 @@
         "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
         "recipientLabel": "Recipient",
         "recipientSearchHint": "If the desired recipient cannot be found in this list, try searching for their name or username.",
-        "title": "Transfer Ownership",
-        "transferBookingConfigurationOwnership": "Also transfer Booking configuration ownership"
+        "title": "Transfer Ownership"
       },
       "disabled": {
         "noPermission": "{count, plural, one {You do not have permission to transfer this item.} other {You do not have permission to transfer these items.}}",

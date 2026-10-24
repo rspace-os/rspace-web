@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
+
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 import { bookerBookingAccess, collectionPage } from "../mocks/bookableItemsMocks";
 import { configuration, mockedUseCurrentUserQuery, renderPage, setupPage } from "./bookableItemPageTestUtils";

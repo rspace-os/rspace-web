@@ -47,7 +47,7 @@ export async function fetchBookableItemEvents(input: {
   });
   if (!response.ok) throw new Error(`Bookable item events request failed with status ${response.status}`);
   const result = parseOrThrow(BookableItemEventsSchema, (await response.json()) as unknown);
-  if (result.docs.some((booking) => booking.target.globalId !== input.globalId)) {
+  if (result.docs.some((booking) => booking.target !== null && booking.target.globalId !== input.globalId)) {
     throw new Error(`Booking response contained an event for another target`);
   }
   return result;

@@ -5,17 +5,27 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
+import { OAUTH_TOKEN } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
+import { BookingCreationStoreProvider } from "@/modules/booking/creation/bookingCreationStore";
 import { allBookableItemsSearch } from "@/modules/booking/pages/all-bookable-items/search";
+import BookableItemPage from "@/modules/booking/pages/bookable-items/BookableItemPage";
+import { bookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
+import { currentUserQueryKeys } from "@/modules/common/queries/currentUser";
+import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import {
   allDayBookableItemCandidates,
   bookableItemFixtures,
   bookableItemsHandlers,
+  bookableItemsOpenApi,
   bookingCataloguePage,
   collectionPage,
 } from "../bookable-items/mocks/bookableItemsMocks";
 import { renderBookingTestPage } from "../calendar/__tests__/calendarTestHarness";
+import { collectionResponse, ownBooking } from "../mocks/bookingCalendarFixtures";
 import AllBookableItemsPage from "./AllBookableItemsPage";
 
 const fixedClock = () => new Date("2026-08-17T08:30:00Z");
@@ -46,6 +56,30 @@ function catalogueItem(configuration: (typeof bookableItemFixtures)[number]) {
   };
 }
 
+function candidatePage(docs: readonly Omit<BookingConfiguration, "roleSources">[]) {
+  return {
+    items: docs.map((doc) => ({
+      ...doc,
+      configurationId: doc.id,
+      targetType: "INSTRUMENT",
+      targetId: doc.target?.value.id,
+      globalId: doc.target?.globalId,
+      name: doc.target?.value.name,
+      location: null,
+    })),
+    page: 1,
+    pageSize: 100,
+    total: docs.length,
+    facets: { types: ["INSTRUMENT"] },
+  };
+}
+
+function candidateHandler(resolver: Parameters<typeof http.get>[1]) {
+  return http.get("/api/v2/booking-catalogue", (info) =>
+    new URL(info.request.url).searchParams.get("limit") === "100" ? resolver(info) : undefined,
+  );
+}
+
 async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
   const rootRoute = createRootRoute({
     component: () => (
@@ -68,10 +102,60 @@ async function renderPage(initialEntry = "/booking/all-items?date=2026-08-17") {
     ]),
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
   });
-  return renderBookingTestPage(router);
+  return renderBookingTestPage(router, (queryClient) => queryClient.setQueryData(currentUserQueryKeys.me(), { id: 1 }));
+}
+
+async function renderMutationPages(initialEntry: string) {
+  const rootRoute = createRootRoute({
+    component: () => (
+      <BookingCreationStoreProvider>
+        <NuqsAdapter>
+          <Outlet />
+        </NuqsAdapter>
+      </BookingCreationStoreProvider>
+    ),
+  });
+  const bookingRoute = createRoute({ getParentRoute: () => rootRoute, path: "/booking", component: Outlet });
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([
+      bookingRoute.addChildren([
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/all-items/",
+          validateSearch: allBookableItemsSearch,
+          component: () => <AllBookableItemsPage clock={fixedClock} />,
+        }),
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/bookable-items/$globalId/{-$tab}/",
+          validateSearch: bookableItemSearch,
+          component: BookableItemPage,
+        }),
+      ]),
+    ]),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
+  });
+  return renderBookingTestPage(router, (queryClient) => {
+    queryClient.setQueryData(currentUserQueryKeys.me(), currentUser);
+    queryClient.setQueryData(["rspace.common.auth", "oauthToken", "v2"], OAUTH_TOKEN);
+  });
 }
 
 describe("AllBookableItemsPage", () => {
+  it("shares today's booking request between availability counts and bars", async () => {
+    const bookings = vi.fn(() => HttpResponse.json({ ...collectionPage([]), hasNextPage: false }));
+    server.use(
+      candidateHandler(() => HttpResponse.json(candidatePage(bookableItemFixtures))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/bookings", bookings),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage();
+    await screen.findAllByRole("link", { name: "Book" });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Available now" })).toHaveTextContent(/\d/));
+    expect(bookings).toHaveBeenCalledTimes(1);
+  });
+
   it("retains every advanced rule through apply, quick-filter changes, and date navigation", async () => {
     const user = userEvent.setup();
     const original = "id=ge=7;id=le=7;target==IN123;target==IN123";
@@ -93,6 +177,57 @@ describe("AllBookableItemsPage", () => {
     await waitFor(() => expect(router.state.location.search.where).toBe(original));
   });
 
+  it("hydrates runtime property filters before parsing and querying the catalogue", async () => {
+    const user = userEvent.setup();
+    const original = "target.customFields.SF152==BSL-2";
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json({
+          items: [],
+          page: 1,
+          pageSize: 20,
+          total: 0,
+          facets: { types: ["INSTRUMENT"] },
+        });
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    await renderPage(`/booking/all-items?where=${encodeURIComponent(original)}`);
+
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("where")).toBe(original));
+    await user.click(await screen.findByRole("button", { name: /^Filters/ }));
+    expect(
+      await screen.findByRole("combobox", { name: "Search Bookable item custom fields for filter 1" }),
+    ).toHaveValue("Hazard class (Cell line template · SF152)");
+  });
+
+  it("blocks the catalogue and preserves an unavailable runtime filter for explicit removal", async () => {
+    const original = "target.customFields.SF999==missing";
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        requests.push(new URL(request.url));
+        return HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0, facets: { types: ["INSTRUMENT"] } });
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    const { router } = await renderPage(`/booking/all-items?where=${encodeURIComponent(original)}&q=scope`);
+
+    const issue = await screen.findByRole("alert");
+    expect(issue).toHaveTextContent("invalid or unavailable field");
+    expect(issue).toHaveTextContent(original);
+    expect(requests).toHaveLength(0);
+    await userEvent.click(screen.getByRole("button", { name: "Reset saved view" }));
+    await waitFor(() => expect(router.state.location.search.where).toBeUndefined());
+    expect(router.state.location.search.q).toBe("scope");
+  });
+
   it.each([
     "availability=available-now&pageSize=50",
     "types=NOTATYPE&pageSize=50",
@@ -101,7 +236,7 @@ describe("AllBookableItemsPage", () => {
     const user = userEvent.setup();
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))),
+      candidateHandler(() => HttpResponse.json(candidatePage([]))),
       ...bookableItemsHandlers(() => undefined),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
@@ -122,12 +257,14 @@ describe("AllBookableItemsPage", () => {
     const requests: URL[] = [];
     server.use(
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([]))),
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
+      candidateHandler(() => HttpResponse.json(candidatePage([]))),
       http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
         requests.push(url);
         return HttpResponse.json(bookingCataloguePage([], 1, Number(url.searchParams.get("limit")), 0));
       }),
+      http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
     );
     const { router } = await renderPage("/booking/all-items?types=INSTRUMENT");
     const size = await screen.findByRole("combobox", { name: "Rows per page" });
@@ -154,11 +291,12 @@ describe("AllBookableItemsPage", () => {
     const requests: URL[] = [];
     let oversizedRequests = 0;
     server.use(
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(candidates))),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
       http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
+        if (!url.searchParams.has("where")) return HttpResponse.json(candidatePage(candidates));
         requests.push(url);
         const where = url.searchParams.get("where") ?? "";
         const targetIds = where.split("target=in=(")[1]?.split(")")[0]?.split(",") ?? [];
@@ -198,11 +336,12 @@ describe("AllBookableItemsPage", () => {
     const outsideCandidateItem = catalogueItem(bookableItemFixtures[1]);
     const requests: URL[] = [];
     server.use(
+      http.get("/api/v2/openapi.json", () => HttpResponse.json(bookableItemsOpenApi)),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage([candidateConfiguration]))),
       http.get("/api/v2/bookings", () => HttpResponse.json({ ...collectionPage([]), hasNextPage: false })),
       http.get("/api/v2/booking-catalogue", ({ request }) => {
         const url = new URL(request.url);
+        if (!url.searchParams.has("where")) return HttpResponse.json(candidatePage([candidateConfiguration]));
         requests.push(url);
         const where = url.searchParams.get("where") ?? "";
         if (where.includes(",") && where.includes("target=in=(") && where.includes("target==IN124")) {
@@ -241,7 +380,7 @@ describe("AllBookableItemsPage", () => {
   it("shows both availability counts before selecting a filter and after clearing it", async () => {
     const candidates = allDayBookableItemCandidates();
     server.use(
-      http.get("/api/v2/booking-configurations", () => HttpResponse.json(collectionPage(candidates))),
+      candidateHandler(() => HttpResponse.json(candidatePage(candidates))),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       ...bookableItemsHandlers(() => undefined),
       http.get("/api/v2/bookings", () =>
@@ -292,9 +431,9 @@ describe("AllBookableItemsPage", () => {
         release = resolve;
       });
       server.use(
-        http.get("/api/v2/booking-configurations", async () => {
+        candidateHandler(async () => {
           await pending;
-          return HttpResponse.json(collectionPage(bookableItemFixtures));
+          return HttpResponse.json(candidatePage(bookableItemFixtures));
         }),
         http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
         ...bookableItemsHandlers(() => undefined),
@@ -321,17 +460,14 @@ describe("AllBookableItemsPage", () => {
   it("retries a failed index and hides catalogue rows that do not match", async () => {
     let candidateRequests = 0;
     server.use(
-      http.get("/api/v2/booking-configurations", ({ request }) => {
+      candidateHandler(({ request }) => {
         const url = new URL(request.url);
-        if (
-          decodeURIComponent(url.searchParams.get("where") ?? "") ===
-          "enabled==true;state==ACTIVE;target.deleted==false"
-        ) {
+        if (!url.searchParams.get("where")) {
           candidateRequests += 1;
           if (candidateRequests <= 4) return new HttpResponse(null, { status: 500 });
-          return HttpResponse.json(collectionPage(bookableItemFixtures));
+          return HttpResponse.json(candidatePage(bookableItemFixtures));
         }
-        return HttpResponse.json(collectionPage([]));
+        return HttpResponse.json(candidatePage([]));
       }),
       http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
       ...bookableItemsHandlers(() => undefined),
@@ -349,4 +485,93 @@ describe("AllBookableItemsPage", () => {
     expect(screen.queryByText("Confocal microscope")).not.toBeInTheDocument();
     expect(router.state.location.search.availability).toBe("free-later-today");
   }, 15_000);
+
+  it("refreshes quick-filter availability after a successful configuration save in the stale window", async () => {
+    const user = userEvent.setup();
+    let allowDoubleBooking = false;
+    let configurationVersion: number = bookableItemFixtures[0].configurationVersion;
+    let configuration = {
+      ...bookableItemFixtures[0],
+      roleSources: [...bookableItemFixtures[0].roleSources],
+      allowDoubleBooking,
+      configurationVersion,
+    };
+    const patches: unknown[] = [];
+    const candidateRequests: string[] = [];
+    const catalogueItem = () => ({
+      configurationId: configuration.id,
+      configurationVersion: configuration.configurationVersion,
+      targetType: "INSTRUMENT",
+      targetId: configuration.target.value.id,
+      globalId: configuration.target.globalId,
+      name: configuration.target.value.name,
+      timezone: configuration.timezone,
+      slotGranularityMinutes: configuration.slotGranularityMinutes,
+      openingHours: configuration.openingHours,
+      bufferBeforeMinutes: configuration.bufferBeforeMinutes,
+      bufferAfterMinutes: configuration.bufferAfterMinutes,
+      maxBookingDurationMinutes: configuration.maxBookingDurationMinutes,
+      allowDoubleBooking: configuration.allowDoubleBooking,
+      effectiveRole: configuration.effectiveRole,
+      capabilities: configuration.capabilities,
+      location: null,
+    });
+    const startedAt = Date.now();
+    server.use(
+      http.patch("/api/v2/booking-configurations/7", async ({ request }) => {
+        patches.push(await request.json());
+        allowDoubleBooking = true;
+        configurationVersion = 1;
+        configuration = { ...configuration, allowDoubleBooking, configurationVersion };
+        return new HttpResponse(null, { status: 204 });
+      }),
+      http.get("/api/v2/booking-configurations", ({ request }) => {
+        const where = new URL(request.url).searchParams.get("where") ?? "";
+        return where.includes("IN123") ? HttpResponse.json(collectionPage([configuration], 2)) : undefined;
+      }),
+      http.get("/api/v2/booking-catalogue", ({ request }) => {
+        const url = new URL(request.url);
+        const where = url.searchParams.get("where") ?? "";
+        if (url.searchParams.get("limit") === "100" && url.searchParams.get("where") === null) {
+          candidateRequests.push(where);
+        }
+        const items = where.includes("id==0") ? [] : [catalogueItem()];
+        const page = Number(url.searchParams.get("page") ?? "1");
+        const pageSize = Number(url.searchParams.get("limit") ?? "20");
+        return HttpResponse.json(bookingCataloguePage(items, page, pageSize, items.length));
+      }),
+      http.get("/api/v2/bookings", () => HttpResponse.json(collectionResponse([ownBooking]))),
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "new-token" })),
+      ...bookableItemsHandlers(() => undefined),
+    );
+    const { router } = await renderMutationPages("/booking/all-items?date=2026-08-17&availability=available-now");
+
+    expect((await screen.findAllByText("No records found"))[0]).toBeVisible();
+    expect(candidateRequests).toHaveLength(1);
+    await act(async () => {
+      await router.navigate({
+        to: "/booking/bookable-items/$globalId/{-$tab}",
+        params: { globalId: "IN123", tab: "details" },
+        search: { edit: true },
+      });
+    });
+    await user.click(
+      await screen.findByRole("checkbox", { name: bookingEnglish.bookableItemDetails.fields.doubleBooking }),
+    );
+    await user.click(screen.getByRole("button", { name: bookingEnglish.bookableItems.actions.save }));
+    await waitFor(() => expect(patches).toHaveLength(1));
+    expect(patches[0]).toMatchObject({ allowDoubleBooking: true });
+    await waitFor(() => expect(router.state.location.search.edit).toBeUndefined());
+
+    await act(async () => {
+      await router.navigate({
+        to: "/booking/all-items",
+        search: { date: "2026-08-17", availability: "available-now" },
+      });
+    });
+
+    await waitFor(() => expect(candidateRequests).toHaveLength(2));
+    expect((await screen.findAllByText("Confocal microscope"))[0]).toBeVisible();
+    expect(Date.now() - startedAt).toBeLessThan(30_000);
+  });
 });

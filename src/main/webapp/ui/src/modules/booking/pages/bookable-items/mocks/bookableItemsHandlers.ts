@@ -26,9 +26,26 @@ function matchesCatalogueFilter(
     return node.operator === ";"
       ? matchesCatalogueFilter(fixture, node.left) && matchesCatalogueFilter(fixture, node.right)
       : matchesCatalogueFilter(fixture, node.left) || matchesCatalogueFilter(fixture, node.right);
-  const actual = node.left.selector === "id" ? fixture.id : fixture.target.globalId;
+  const customFieldPrefix = "target.customFields.";
+  const customFields = (fixture as unknown as Record<string, unknown>)["target.customFields"];
+  const actual = (
+    node.left.selector === "id"
+      ? fixture.id
+      : node.left.selector === "target"
+        ? fixture.target.globalId
+        : node.left.selector === "target.id"
+          ? fixture.target.value.id
+          : node.left.selector === "target.name"
+            ? fixture.target.value.name
+            : node.left.selector.startsWith(customFieldPrefix)
+              ? (customFields as Record<string, unknown> | undefined)?.[
+                  node.left.selector.slice(customFieldPrefix.length)
+                ]
+              : undefined
+  ) as string | number | undefined;
+  if (actual === undefined) return node.operator === "!=" || node.operator === "=out=";
   const raw = Array.isArray(node.right.value) ? node.right.value : [node.right.value];
-  const values = raw.map((value) => (typeof actual === "number" ? Number(value) : value));
+  const values = raw.map((value): string | number => (typeof actual === "number" ? Number(value) : String(value)));
   switch (node.operator) {
     case "==":
       return actual === values[0];
@@ -110,7 +127,7 @@ export function bookableItemsHandlers(onCollectionRequest: (request: Request) =>
             : bookableItemFixtures;
       return apiV2CollectionResponse("booking-configurations", request, docs);
     }),
-    http.get("/api/v2/booking-catalogue", ({ request }) => {
+    http.get(/\/api\/v2\/booking-catalogue(?:\/calendar)?$/, ({ request }) => {
       onCollectionRequest(request);
       const url = new URL(request.url);
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();

@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { bookingRelationshipSources } from "@/modules/booking/domain/bookingRelationshipSource";
 import type { CollectionConfig, CollectionRow } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
@@ -8,6 +9,7 @@ import type { BookingConfiguration } from "./bookingConfigurationSchema";
 
 export const bookingConfigurationConfig = {
   slug: "bookable-items",
+  relationshipSources: bookingRelationshipSources,
   idField: "id",
   labels: {
     singularKey: "booking:bookableItems.singular",

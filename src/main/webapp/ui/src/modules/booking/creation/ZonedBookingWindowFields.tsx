@@ -3,7 +3,7 @@ import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { OpeningHoursEntry } from "@/modules/booking/domain/bookingOpeningHours";
 import type { BookingWindowDraft, WallClockResolution } from "@/modules/booking/domain/bookingTime";
-import { FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
+import { FieldDescription, FieldError, FieldLegend, FieldSet } from "@/modules/common/ui/field";
 import { Input } from "@/modules/common/ui/input";
 import { Label } from "@/modules/common/ui/label";
 import { cn } from "@/modules/common/utils/cn";
@@ -291,11 +291,18 @@ export function ZonedBookingWindowFields({
     </div>
   ) : null;
 
+  const timezoneDescription = (
+    <FieldDescription className="mb-2">
+      {t("bookings.form.timezone", { timezone: resolvedDisplayTimezone })}
+    </FieldDescription>
+  );
+
   if (density === "compact" && value.startDate === value.endDate) {
     const dateId = `${fieldId}-date`;
     const dateInvalid = !value.startDate || Boolean(startErrorId);
     return (
       <div className="space-y-4">
+        {timezoneDescription}
         <div className="space-y-2">
           <Label htmlFor={dateId}>{t("bookings.form.date")}</Label>
           <Input
@@ -328,6 +335,7 @@ export function ZonedBookingWindowFields({
 
   return (
     <div className="space-y-6">
+      {timezoneDescription}
       {endpoint("start", result.start, value.startOccurrence)}
       {endpoint("end", result.end, value.endOccurrence)}
       {windowErrors}

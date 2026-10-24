@@ -88,10 +88,11 @@ export function BookableItemsContent() {
   const request = useMemo(
     () => ({
       token,
+      authScope: currentUser.id,
       depth: 1,
       projection: bookableItemsProjection,
     }),
-    [token],
+    [currentUser.id, token],
   );
   const table = useApiV2TableList({
     resourceName: "booking-configurations",
@@ -120,10 +121,19 @@ export function BookableItemsContent() {
     },
     [queryClient],
   );
+  const onCatalogueChanged = useCallback(
+    async (configurationId: number) => {
+      await Promise.all([
+        onChanged(configurationId),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
+      ]);
+    },
+    [onChanged, queryClient],
+  );
   const restoreMutation = useMutation({
     mutationFn: (configuration: BookingConfigurationRow) =>
       restoreBookingConfiguration(configuration.id, requiredVersion(configuration), token),
-    onSuccess: (_data, configuration) => onChanged(configuration.id),
+    onSuccess: (_data, configuration) => onCatalogueChanged(configuration.id),
   });
   const onRestore = useCallback(
     (configuration: BookingConfigurationRow) => restoreMutation.mutateAsync(configuration),
@@ -138,6 +148,7 @@ export function BookableItemsContent() {
       setFailedBulkAction(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
         ...(variables.action === "archive"
           ? [
               queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
@@ -177,7 +188,12 @@ export function BookableItemsContent() {
       ),
       renderInteraction: ({ actionId, row, close }) =>
         actionId === "archive" ? (
-          <ArchiveBookableItemDialog configuration={row} close={close} onArchive={onArchive} onArchived={onChanged} />
+          <ArchiveBookableItemDialog
+            configuration={row}
+            close={close}
+            onArchive={onArchive}
+            onArchived={onCatalogueChanged}
+          />
         ) : actionId === "permanent-delete" ? (
           <PermanentDeleteBookableItemDialog
             configuration={row}
@@ -187,7 +203,7 @@ export function BookableItemsContent() {
           />
         ) : null,
     }),
-    [directSysadmin, onArchive, onChanged, onPermanentDelete, onRestore, t],
+    [directSysadmin, onArchive, onCatalogueChanged, onChanged, onPermanentDelete, onRestore, t],
   );
 
   return (
