@@ -1,0 +1,407 @@
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type {
+  FilterOperator,
+  ResolvedCollectionConfig,
+  SearchSelector,
+} from "@/modules/common/collection/collectionConfig";
+import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/collectionConfig";
+import { Button } from "@/modules/common/ui/button";
+import { cn } from "@/modules/common/utils/cn";
+import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
+import { serializeRsqlExpression } from "../../rsql/rsqlCodec";
+import type { FilterExpression } from "../../tableListState";
+import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
+import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
+import { FilterValueInput } from "./FilterValueInput";
+import {
+  comparisonNodes,
+  type DraftRule,
+  defaultOperator,
+  fieldGroups,
+  isActive,
+  namespaceForSentinel,
+  parsedValue,
+  sentinelFor,
+  valueForOperator,
+} from "./filterDrafts";
+import { SortableFilterRow } from "./SortableFilterRow";
+
+const operatorKeys: Record<FilterOperator, `tableList.filters.operators.${FilterOperator}`> = {
+  equals: "tableList.filters.operators.equals",
+  notEquals: "tableList.filters.operators.notEquals",
+  greaterThan: "tableList.filters.operators.greaterThan",
+  greaterThanOrEqual: "tableList.filters.operators.greaterThanOrEqual",
+  lessThan: "tableList.filters.operators.lessThan",
+  lessThanOrEqual: "tableList.filters.operators.lessThanOrEqual",
+  in: "tableList.filters.operators.in",
+  notIn: "tableList.filters.operators.notIn",
+  contains: "tableList.filters.operators.contains",
+  matches: "tableList.filters.operators.matches",
+  exists: "tableList.filters.operators.exists",
+};
+
+export function TableListFilters<TDocument>({
+  config,
+  expression,
+  visibleFields,
+  onApply,
+  onShowColumn,
+  onSelectRuntimeField,
+  runtimeFieldDefinitions,
+  runtimeFieldAuthScope,
+  onClose,
+}: {
+  config: ResolvedCollectionConfig<TDocument>;
+  expression: FilterExpression<TDocument> | null;
+  visibleFields?: readonly SearchSelector<TDocument>[];
+  onApply: (expression: FilterExpression<TDocument> | null) => void;
+  onShowColumn?: (field: SearchSelector<TDocument>, shown: boolean) => void;
+  onSelectRuntimeField?: (namespace: string, definition: RuntimeFieldDefinition) => void;
+  runtimeFieldAuthScope?: string | number;
+  runtimeFieldDefinitions?: readonly {
+    namespace: string;
+    definitions: readonly RuntimeFieldDefinition[];
+  }[];
+  onClose: () => void;
+}) {
+  const { i18n, t } = useTranslation("common");
+  const fields = useMemo(
+    () =>
+      // A filter-only field is hidden from the columns but must still be offered here. That is how
+      // a selector derived from a relationship target, such as target.name, reaches the panel.
+      config.fields.filter(
+        (field) => field.capabilities.filterOperators.length > 0 && (field.list !== false || field.form === false),
+      ),
+    [config.fields],
+  );
+  const groups = useMemo(() => fieldGroups(fields), [fields]);
+  const runtimeSources = useMemo(
+    () =>
+      onSelectRuntimeField === undefined ? [] : (config.runtimeSources ?? []).filter((source) => source.filterable),
+    [config.runtimeSources, onSelectRuntimeField],
+  );
+  const runtimeSourceGroups = useMemo(() => groupRuntimeFieldSources(runtimeSources), [runtimeSources]);
+  const shownColumns = useMemo(() => new Set<string>((visibleFields ?? []).map(String)), [visibleFields]);
+  const offersColumns = onShowColumn !== undefined && visibleFields !== undefined;
+  // Shared parent tracks keep field, operator, value, optional-column and remove-control widths aligned across rows.
+  const rowColumns = offersColumns
+    ? "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_auto_2rem]"
+    : "sm:grid-cols-[1.5rem_5rem_minmax(10rem,1.3fr)_minmax(7.5rem,auto)_minmax(10rem,1.3fr)_2rem]";
+  const [rules, setRules] = useState<readonly DraftRule<TDocument>[]>(() => comparisonNodes(expression, config));
+  // The row editor edits direct AND comparisons. Keep nested Boolean groups intact.
+  const [savedGroups, setSavedGroups] = useState(() =>
+    (expression?.kind === "and" ? expression.children : expression ? [expression] : []).filter(
+      (node) => node.kind !== "comparison",
+    ),
+  );
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  // A server-published target title is already display text. Only treat configured semantic keys
+  // as i18n keys; otherwise a composed label such as "Bookable item: Name" is misread as a
+  // namespace-qualified key and loses its relationship prefix.
+  const translate = (key: string) => (i18n.exists(key) ? t(key as never) : key);
+  const fieldOptions: FilterSelectOption[] = groups.flatMap((group) =>
+    group.fields
+      .filter((candidate) => candidate.origin?.namespace === undefined)
+      .map((candidate) => ({
+        value: String(candidate.name),
+        label: fieldOptionLabel(candidate, translate),
+        groupLabelKey: group.labelKey,
+      })),
+  );
+  for (const group of runtimeSourceGroups) {
+    fieldOptions.push({
+      value: sentinelFor(group.key),
+      label: t("tableList.filters.customField.option"),
+      selectedLabel:
+        group.viaLabel === ""
+          ? t("tableList.filters.customField.option")
+          : t("tableList.filters.customField.optionVia", { via: group.viaLabel }),
+      groupLabelKey: group.viaLabel === "" ? "tableList.fieldGroups.customFields" : group.viaLabel,
+    });
+  }
+  const fieldSelectLabels = {
+    placeholder: t("tableList.filters.fieldSearch.placeholder"),
+    noMatch: t("tableList.filters.fieldSearch.noMatch"),
+    clear: t("tableList.filters.fieldSearch.clear"),
+    trigger: t("tableList.filters.fieldSearch.trigger"),
+  };
+  const operatorSelectLabels = {
+    placeholder: t("tableList.filters.operatorSearch.placeholder"),
+    noMatch: t("tableList.filters.operatorSearch.noMatch"),
+    clear: t("tableList.filters.operatorSearch.clear"),
+    trigger: t("tableList.filters.operatorSearch.trigger"),
+  };
+
+  const updateRule = (id: number, update: Partial<DraftRule<TDocument>>) => {
+    setRules((current) => current.map((rule) => (rule.id === id ? { ...rule, ...update } : rule)));
+  };
+  const reorderRules = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    setRules((current) => {
+      const sourceIndex = current.findIndex((rule) => rule.id === active.id);
+      const targetIndex = current.findIndex((rule) => rule.id === over.id);
+      return sourceIndex < 0 || targetIndex < 0 ? current : arrayMove([...current], sourceIndex, targetIndex);
+    });
+  };
+
+  return (
+    <section
+      id="table-list-control-panel"
+      aria-labelledby="table-list-filter-title"
+      className="rounded-sm border bg-popover p-4"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="table-list-filter-title" className="font-heading text-sm font-medium">
+            {t("tableList.filters.title")}
+          </h2>
+        </div>
+        <Button aria-label={t("tableList.actions.closeFilters")} size="icon-xs" variant="ghost" onClick={onClose}>
+          <XIcon aria-hidden="true" />
+        </Button>
+      </div>
+
+      {savedGroups.map((group, index) => (
+        <div key={serializeRsqlExpression(group)} className="mt-3 flex items-start gap-2 rounded-sm border p-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm">{t("tableList.filters.savedGroup")}</p>
+            <code className="break-all text-xs">{serializeRsqlExpression(group)}</code>
+          </div>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label={t("tableList.actions.removeFilter", { number: rules.length + index + 1 })}
+            onClick={() => setSavedGroups((groups) => groups.filter((_, position) => position !== index))}
+          >
+            <Trash2Icon aria-hidden="true" />
+          </Button>
+        </div>
+      ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        modifiers={[restrictToVerticalAxis]}
+        autoScroll
+        onDragEnd={reorderRules}
+      >
+        <SortableContext items={rules.map((rule) => rule.id)} strategy={verticalListSortingStrategy}>
+          <ol
+            aria-label={t("tableList.filters.title")}
+            className={cn("mt-4 grid max-h-72 list-none gap-x-2 gap-y-2 overflow-y-auto p-0", rowColumns)}
+          >
+            {rules.map((rule, index) => {
+              const chosen = fields.find((candidate) => candidate.name === rule.field);
+              const selectedNamespace = chosen?.origin?.namespace ?? null;
+              const pickingGroup =
+                namespaceForSentinel(String(rule.field)) ??
+                (selectedNamespace === null
+                  ? null
+                  : (runtimeSourceGroups.find((group) =>
+                      group.sources.some((source) => source.namespace === selectedNamespace),
+                    )?.key ?? null));
+              const sourceGroup = runtimeSourceGroups.find((candidate) => candidate.key === pickingGroup) ?? null;
+              const field = chosen ?? fields[0];
+              const awaitingDefinition = namespaceForSentinel(String(rule.field)) !== null;
+              if (!field) return null;
+              const operatorControl = awaitingDefinition ? null : (
+                <FilterSelect
+                  ariaLabel={t("tableList.filters.operator", { number: index + 1 })}
+                  options={field.capabilities.filterOperators.map((operator) => ({
+                    value: operator,
+                    label: t(operatorKeys[operator]),
+                    groupLabelKey: null,
+                  }))}
+                  value={rule.operator}
+                  labels={operatorSelectLabels}
+                  onChange={(next) => {
+                    const operator = next as FilterOperator;
+                    updateRule(rule.id, {
+                      operator,
+                      value: valueForOperator(rule.value, rule.operator, operator),
+                    });
+                  }}
+                />
+              );
+              const valueControl = awaitingDefinition ? null : (
+                <FilterValueInput
+                  field={field}
+                  sources={config.relationshipSources}
+                  authScope={runtimeFieldAuthScope}
+                  operator={rule.operator}
+                  value={rule.value}
+                  number={index + 1}
+                  onChange={(value) => updateRule(rule.id, { value })}
+                />
+              );
+              const runtimeFieldPicker = sourceGroup !== null && onSelectRuntimeField && (
+                <CustomFieldPicker
+                  key={sourceGroup.key}
+                  sources={sourceGroup.sources}
+                  ariaLabel={
+                    sourceGroup.viaLabel === ""
+                      ? t("tableList.filters.customField.searchLabel", { number: index + 1 })
+                      : t("tableList.filters.customField.searchLabelVia", {
+                          number: index + 1,
+                          via: sourceGroup.viaLabel,
+                        })
+                  }
+                  chosenLabel={awaitingDefinition ? undefined : fieldLabel(field, translate)}
+                  chosenSelector={awaitingDefinition ? undefined : String(rule.field)}
+                  known={runtimeFieldDefinitions ?? []}
+                  authScope={runtimeFieldAuthScope}
+                  onSelect={(namespace, definition) => {
+                    onSelectRuntimeField(namespace, definition);
+                    const selector = `${namespace}.${definition.id}` as SearchSelector<TDocument>;
+                    updateRule(rule.id, { field: selector, operator: "equals", value: "" });
+                  }}
+                />
+              );
+              return (
+                <SortableFilterRow
+                  key={rule.id}
+                  id={rule.id}
+                  moveLabel={t("tableList.actions.moveFilter", { number: index + 1 })}
+                >
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {index === 0 ? t("tableList.filters.where") : t("tableList.filters.and")}
+                  </span>
+                  <FilterSelect
+                    ariaLabel={t("tableList.filters.field", { number: index + 1 })}
+                    options={fieldOptions}
+                    labels={fieldSelectLabels}
+                    value={pickingGroup === null ? String(rule.field) : sentinelFor(pickingGroup)}
+                    onChange={(next) => {
+                      const namespace = namespaceForSentinel(next);
+                      if (namespace !== null) {
+                        updateRule(rule.id, { field: sentinelFor(namespace) as SearchSelector<TDocument>, value: "" });
+                        return;
+                      }
+                      const nextField = fields.find((candidate) => String(candidate.name) === next);
+                      if (nextField)
+                        updateRule(rule.id, { field: nextField.name, operator: defaultOperator(nextField), value: "" });
+                    }}
+                  />
+                  {sourceGroup === null ? operatorControl : <div className="sm:col-span-2">{runtimeFieldPicker}</div>}
+                  {sourceGroup === null ? valueControl : null}
+                  {offersColumns && field.list !== false && !awaitingDefinition ? (
+                    <label className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="size-3.5"
+                        checked={shownColumns.has(String(field.name))}
+                        onChange={(event) => onShowColumn?.(field.name, event.target.checked)}
+                      />
+                      {t("tableList.filters.alsoShowAsColumn")}
+                    </label>
+                  ) : null}
+                  <Button
+                    aria-label={t("tableList.actions.removeFilter", { number: index + 1 })}
+                    size="icon-xs"
+                    variant="ghost"
+                    onClick={() => setRules((current) => current.filter((candidate) => candidate.id !== rule.id))}
+                  >
+                    <Trash2Icon aria-hidden="true" />
+                  </Button>
+                  {sourceGroup !== null && !awaitingDefinition ? (
+                    <div className="grid gap-2 sm:col-start-3 sm:col-span-3 sm:grid-cols-[minmax(7.5rem,auto)_minmax(10rem,1fr)]">
+                      {operatorControl}
+                      {valueControl}
+                    </div>
+                  ) : null}
+                </SortableFilterRow>
+              );
+            })}
+          </ol>
+        </SortableContext>
+      </DndContext>
+
+      <Button
+        className="mt-3"
+        size="sm"
+        variant="ghost"
+        disabled={fields.length === 0}
+        onClick={() => {
+          const field = fields[0];
+          if (!field) return;
+          setRules((current) => [
+            ...current,
+            {
+              id: Math.max(0, ...current.map((rule) => rule.id)) + 1,
+              field: field.name,
+              operator: defaultOperator(field),
+              value: "",
+            },
+          ]);
+        }}
+      >
+        <PlusIcon aria-hidden="true" data-icon="inline-start" />
+        {t("tableList.actions.addFilter")}
+      </Button>
+
+      <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3">
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={rules.length === 0 && savedGroups.length === 0}
+          // Clearing applies straight away: leaving the applied filters in place while the panel
+          // shows none reads as a no-op.
+          onClick={() => {
+            setRules([]);
+            setSavedGroups([]);
+            onApply(null);
+          }}
+        >
+          {t("tableList.actions.clearAll")}
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => {
+            const comparisons: FilterExpression<TDocument>[] = rules.filter(isActive).map((rule) => {
+              const field = fields.find((candidate) => candidate.name === rule.field);
+              if (!field) throw new Error(`Unknown filter field ${rule.field}`);
+              return {
+                kind: "comparison",
+                field: rule.field,
+                operator: rule.operator,
+                value: parsedValue(rule, field),
+              };
+            });
+            comparisons.push(...savedGroups);
+            onApply(
+              comparisons.length === 0
+                ? null
+                : comparisons.length === 1
+                  ? comparisons[0]
+                  : { kind: "and", children: comparisons },
+            );
+          }}
+        >
+          {t("tableList.actions.applyFilters")}
+        </Button>
+      </div>
+    </section>
+  );
+}
