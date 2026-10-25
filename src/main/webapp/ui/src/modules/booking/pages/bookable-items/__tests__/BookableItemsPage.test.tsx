@@ -100,8 +100,16 @@ const openApi = {
                 selectors: {
                   ...filter.selectors,
                   id: { ...filter.selectors.id, operators: ["==", "=in="] },
-                  bufferBeforeMinutes: { operators: ["==", "=gt=", "=lt="], wildcards: false },
-                  bufferAfterMinutes: { operators: ["==", "=gt=", "=lt="], wildcards: false },
+                  bufferBeforeMinutes: {
+                    schema: { type: "integer" },
+                    operators: ["==", "=gt=", "=lt="],
+                    wildcards: false,
+                  },
+                  bufferAfterMinutes: {
+                    schema: { type: "integer" },
+                    operators: ["==", "=gt=", "=lt="],
+                    wildcards: false,
+                  },
                 },
               },
             };
