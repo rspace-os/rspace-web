@@ -22,11 +22,12 @@ may be zero. Runtime descriptors must include their catalog limits and `via`/`vi
 Missing values are errors rather than client-side defaults. The list response must reference
 a local Read component through `docs.items.$ref`.
 
-Absent relationship/runtime extensions mean no such capabilities. Optional titles, picker metadata
-and formats remain optional. Selector schemas support declared JSON types, nullable type unions
-and nonempty scalar `oneOf` variants. Mixed primitive variants use a text input. Other
-composition/reference forms are rejected in selectors. Unrelated OpenAPI properties and
-extensions do not need table-specific validation.
+Absent relationship/runtime extensions mean no such capabilities. Optional titles, picker metadata,
+formats and row bounds remain optional. Nullable Java-record properties may be absent or explicitly
+null, depending on the serializer; a null `defaultValue` means no default. Selector schemas support
+the generator's scalar types, nullable type unions and nonempty scalar `oneOf` variants. Mixed
+primitive variants use a text input. Other composition/reference forms are rejected in selectors.
+Unrelated OpenAPI properties and extensions do not need table-specific validation.
 
 ## REST API v2 setup
 
