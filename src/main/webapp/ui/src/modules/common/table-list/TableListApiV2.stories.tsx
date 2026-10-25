@@ -1,20 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { NuqsAdapter } from "nuqs/adapters/react";
-import * as v from "valibot";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { ApiV2CollectionMetadata } from "./adapters/apiV2/apiV2CollectionMetadata";
 import { useApiV2TableList } from "./adapters/apiV2/useApiV2TableList";
+import { researchRecordSchema as documentSchema } from "./stories/schemas";
 import { TableList } from "./TableList";
 import { type ResearchRecord, storyConfig, storyRecords } from "./TableList.stories";
-
-const documentSchema = v.object({
-  id: v.string(),
-  title: v.string(),
-  owner: v.string(),
-  score: v.number(),
-  enabled: v.boolean(),
-  modifiedAt: v.string(),
-});
 
 // Production modules read this object from the generated API V2 OpenAPI metadata.
 const metadata: ApiV2CollectionMetadata<ResearchRecord> = {
@@ -47,15 +39,11 @@ const metadata: ApiV2CollectionMetadata<ResearchRecord> = {
 const storyFetch: typeof globalThis.fetch = async () =>
   new Response(
     JSON.stringify({
-      docs: storyRecords.slice(0, 5),
+      ...v2ListEnvelope(storyRecords.slice(0, 5)),
       totalDocs: 37,
       limit: 5,
-      page: 1,
-      pagingCounter: 1,
       totalPages: 8,
-      hasPrevPage: false,
       hasNextPage: true,
-      prevPage: null,
       nextPage: 2,
     }),
     { status: 200, headers: { "Content-Type": "application/json" } },

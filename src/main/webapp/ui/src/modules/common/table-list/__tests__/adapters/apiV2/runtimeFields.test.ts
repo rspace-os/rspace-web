@@ -1,19 +1,18 @@
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
 import { createApiV2FilterFields, enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
 import { createApiV2CollectionAdapter, staleRuntimeFields } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
 import type { RuntimeFieldDefinition } from "../../../adapters/apiV2/runtimeFieldCatalog";
 import type { CollectionQueryState } from "../../../tableListState";
+import { runtimeDocumentSchema as documentSchema } from "../../fixtures/schemas";
 
 type Instrument = {
   id: number;
   name: string;
   customFields?: Record<string, string | number | readonly string[] | null>;
 };
-
-const documentSchema = v.object({ id: v.number(), name: v.string() });
 
 const config = {
   slug: "instruments",
@@ -232,7 +231,7 @@ describe("runtime custom fields", () => {
         adapter([definition(), temperature, definition({ id: "SF9", selector: "customFields.SF9" })]),
         state(["customFields.SF104", "customFields.SF108", "customFields.SF9"]),
       ),
-    ).toThrow('tableList.error.customFieldColumnLimit:{"limit":2}');
+    ).toThrow('common:tableList.error.customFieldColumnLimit:{"limit":2}');
   });
 
   it("counts the column limit per namespace, not across all of them", () => {
@@ -300,19 +299,11 @@ describe("runtime custom fields", () => {
     const built = adapter([definition(), temperature]);
     const page = built.parseResponse(
       {
-        docs: [
+        ...v2ListEnvelope([
           { id: 1, name: "Freezer", customFields: { SF104: "BSL-2", SF108: -80 } },
           { id: 2, name: "Bench", customFields: { SF104: null } },
-        ],
-        totalDocs: 2,
+        ]),
         limit: 20,
-        page: 1,
-        totalPages: 1,
-        pagingCounter: 1,
-        hasPrevPage: false,
-        hasNextPage: false,
-        prevPage: null,
-        nextPage: null,
       },
       ["id", "name", "customFields"] as never,
     );

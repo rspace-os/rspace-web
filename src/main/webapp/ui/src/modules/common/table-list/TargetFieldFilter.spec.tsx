@@ -37,8 +37,8 @@ describe("filtering by a field of a relationship target", () => {
     const { field, operator, value, apply, lastQuery } = await openFilterRow();
 
     // Offered because the API publishes target.name and the adapter derives it.
-    await choose(field, "Owner → Bookable item name");
-    await expect.element(field).toHaveValue("Owner → Bookable item name");
+    await choose(field, "Owner → Name");
+    await expect.element(field).toHaveValue("Owner → Name");
 
     // The server permits positive matching only on a target field, so no negative operator here.
     await userEvent.click(operator);

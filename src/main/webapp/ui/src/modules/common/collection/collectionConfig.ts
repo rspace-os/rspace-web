@@ -1,5 +1,19 @@
+import type { ParseKeys } from "i18next";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
+import i18n from "@/modules/common/i18n";
+import type Resources from "@/modules/common/i18n/resources";
 import type { RelationshipSource } from "@/modules/common/relationship-picker/relationshipSources";
+import type { FilterOperator } from "./filterOperators";
+import type { RelationshipFilterPicker } from "./relationshipFilterPicker";
+import type { runtimeFieldValueTypes } from "./runtimeFieldValueTypes";
+
+export type CollectionTranslationKey =
+  | { [N in keyof Resources]: `${N}:${ParseKeys<N>}` }[keyof Resources]
+  | ParseKeys<"common">;
+
+export function isIdLikeField(name: string): boolean {
+  return /(?:Id|Ids)$/.test(name);
+}
 
 export type FieldName<TDocument> = Extract<keyof TDocument, string>;
 
@@ -13,18 +27,7 @@ export type SortRule<TDocument> = {
   direction: SortDirection;
 };
 
-export type FilterOperator =
-  | "equals"
-  | "notEquals"
-  | "greaterThan"
-  | "greaterThanOrEqual"
-  | "lessThan"
-  | "lessThanOrEqual"
-  | "in"
-  | "notIn"
-  | "contains"
-  | "matches"
-  | "exists";
+export type { FilterOperator } from "./filterOperators";
 
 export type HeaderRendererContext<TDocument> = {
   config: ResolvedCollectionConfig<TDocument>;
@@ -76,6 +79,7 @@ export type FieldConditionContext<TDocument> = {
 
 export type FieldFormConfig<TDocument, TWidget extends string> = {
   descriptionKey?: string;
+  description?: string;
   widget?: TWidget;
   width?: CSSProperties["width"];
   condition?: (context: FieldConditionContext<TDocument>) => boolean;
@@ -95,7 +99,9 @@ export type SelectOption =
     };
 
 export function hierarchicalFieldLabel(viaLabel: string, ownLabel: string): string {
-  return viaLabel === "" ? ownLabel : `${viaLabel} \u2192 ${ownLabel}`;
+  return viaLabel === ""
+    ? ownLabel
+    : i18n.t("common:tableList.fields.hierarchicalLabel", { owner: viaLabel, field: ownLabel });
 }
 
 export function fieldLabel(field: { labelKey: string; label?: string }, translate: (key: string) => string): string {
@@ -107,7 +113,9 @@ export function fieldOptionLabel(
   translate: (key: string) => string,
 ): string {
   const label = fieldLabel(field, translate);
-  return field.origin?.sourceLabel ? `${label} (${field.origin.sourceLabel})` : label;
+  return field.origin?.sourceLabel
+    ? i18n.t("common:tableList.fields.labelWithSource", { label, source: field.origin.sourceLabel })
+    : label;
 }
 
 export function selectOptionText(option: SelectOption): string {
@@ -119,6 +127,8 @@ export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "selec
   isOptionDisabled?: (option: SelectOption, data: Partial<TDocument>) => boolean;
 };
 
+export type RuntimeFieldValueType = (typeof runtimeFieldValueTypes)[number];
+
 export type FieldOrigin = {
   kind: "relationshipTarget" | "runtimeField";
   groupLabelKey: string;
@@ -126,15 +136,10 @@ export type FieldOrigin = {
   stableId?: string;
   namespace?: string;
   viaLabel?: string;
-  runtimeValueType?: "text" | "number" | "date" | "time" | "radio" | "choice";
+  runtimeValueType?: RuntimeFieldValueType;
 };
 
-/** Optional API identity picker; resource selects an application-owned source, never a URL. */
-export type RelationshipFilterPicker = {
-  resource: string;
-  identity: "globalId";
-  globalIdPrefix: string;
-};
+export type { RelationshipFilterPicker } from "./relationshipFilterPicker";
 
 type BaseFieldConfig<
   TDocument,

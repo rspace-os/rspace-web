@@ -181,7 +181,9 @@ describe("TableList filters", () => {
     await user.click(screen.getByRole("button", { name: "common:tableList.actions.addFilter" }));
     await chooseFilterField(user, "common:tableList.filters.customField.option");
     await user.click(screen.getByRole("combobox", { name: "common:tableList.filters.customField.searchLabel" }));
-    await user.click(await screen.findByRole("option", { name: "Hazard classCell line template · SF104" }));
+    await user.click(
+      await screen.findByRole("option", { name: "Hazard classcommon:tableList.filters.customField.sourceAndId" }),
+    );
 
     expect(onSelectRuntimeField).toHaveBeenCalledWith("customFields", definition);
   });

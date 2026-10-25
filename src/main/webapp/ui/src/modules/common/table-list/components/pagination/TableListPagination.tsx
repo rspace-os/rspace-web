@@ -1,5 +1,6 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { Button } from "@/modules/common/ui/button";
 import type { PageState } from "../../tableListState";
 
@@ -16,7 +17,7 @@ export function TableListPagination({
   limits?: readonly number[];
   onChange: (value: PageState) => void;
 }) {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const pageCount = Math.max(Math.ceil(rowCount / value.pageSize), 1);
   const first = rowCount === 0 ? 0 : value.pageIndex * value.pageSize + 1;
   const last = Math.min((value.pageIndex + 1) * value.pageSize, rowCount);
@@ -34,7 +35,7 @@ export function TableListPagination({
           >
             {limits.map((limit) => (
               <option key={limit} value={limit}>
-                {limit}
+                {formatNumber(limit, i18n.resolvedLanguage ?? i18n.language)}
               </option>
             ))}
           </select>

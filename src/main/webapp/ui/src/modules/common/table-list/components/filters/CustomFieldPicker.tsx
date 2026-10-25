@@ -117,8 +117,20 @@ export function CustomFieldPicker({
   );
   const selected =
     [...loaded, ...results].find((item) => `${item.namespace}.${item.definition.id}` === chosenSelector) ?? null;
+  const typeLabels = {
+    text: t("tableList.filters.customField.types.text"),
+    number: t("tableList.filters.customField.types.number"),
+    date: t("tableList.filters.customField.types.date"),
+    time: t("tableList.filters.customField.types.time"),
+    radio: t("tableList.filters.customField.types.radio"),
+    choice: t("tableList.filters.customField.types.choice"),
+  };
+  const sourceLabel = (definition: RuntimeFieldDefinition) =>
+    definition.source.label
+      ? t("tableList.filters.customField.sourceAndId", { source: definition.source.label, id: definition.id })
+      : typeLabels[definition.type];
   const optionLabel = ({ definition }: RuntimeFieldOption) =>
-    `${definition.label} (${definition.source.label || definition.type}${definition.source.label ? ` · ${definition.id}` : ""})`;
+    t("tableList.filters.customField.optionLabel", { field: definition.label, source: sourceLabel(definition) });
 
   return (
     <div className="min-w-0">
@@ -170,9 +182,7 @@ export function CustomFieldPicker({
               >
                 <span className="block w-full truncate text-xs">{item.definition.label}</span>
                 <span className="block w-full truncate text-[11px] text-muted-foreground">
-                  {item.definition.source.label === ""
-                    ? item.definition.type
-                    : `${item.definition.source.label} · ${item.definition.id}`}
+                  {sourceLabel(item.definition)}
                 </span>
               </ComboboxItem>
             )}

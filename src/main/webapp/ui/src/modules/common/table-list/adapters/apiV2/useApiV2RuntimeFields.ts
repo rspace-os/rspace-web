@@ -1,5 +1,6 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
+import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
 import { type ApiV2CollectionMetadata, fetchApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
 import type { ApiV2CollectionFetchOptions } from "./createApiV2CollectionFetcher";
 import { fetchRuntimeFieldDefinitions, type RuntimeFieldDefinition } from "./runtimeFieldCatalog";
@@ -49,7 +50,7 @@ export function useApiV2RuntimeFields<TDocument>({
     throw new Error("Runtime field token callbacks require an authScope");
   }
   const requested = [...new Set(selectors)]
-    .filter((name) => namespaces.some((namespace) => name.startsWith(`${namespace.namespace}.`)))
+    .filter((name) => namespaces.some((namespace) => isRuntimeFieldInNamespace(name, namespace.namespace)))
     .sort();
   const unresolved = requested.filter(
     (name) => !selected.some((entry) => name === `${entry.namespace}.${entry.definition.id}`),
@@ -75,7 +76,7 @@ export function useApiV2RuntimeFields<TDocument>({
           definitions: await fetchRuntimeFieldDefinitions(
             namespace,
             unresolved
-              .filter((name) => name.startsWith(`${namespace.namespace}.`))
+              .filter((name) => isRuntimeFieldInNamespace(name, namespace.namespace))
               .map((name) => name.slice(namespace.namespace.length + 1)),
             { fetch: request?.fetch, headers, signal },
           ),

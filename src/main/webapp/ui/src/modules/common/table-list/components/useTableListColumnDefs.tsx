@@ -2,7 +2,7 @@ import { type ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
-import { fieldLabel } from "@/modules/common/collection/collectionConfig";
+import { fieldLabel, isIdLikeField } from "@/modules/common/collection/collectionConfig";
 import type { TableListProps, TableListUiColumn } from "../tableListState";
 import { displayValue, selectionColumnId, type tableListFeatures } from "./tableListFeatures";
 
@@ -57,7 +57,11 @@ export function useTableListColumnDefs<TDocument extends Record<string, unknown>
               const listConfig = field.list || undefined;
               const content = listConfig?.renderCell
                 ? listConfig.renderCell({ config, field, row: row.original, value })
-                : displayValue(value, i18n.resolvedLanguage);
+                : displayValue(
+                    value,
+                    i18n.resolvedLanguage ?? i18n.language,
+                    field.type === "number" && field.name !== config.idField && !isIdLikeField(field.name),
+                  );
               if (field.name === config.useAsTitle && onRowOpen) {
                 return (
                   <button

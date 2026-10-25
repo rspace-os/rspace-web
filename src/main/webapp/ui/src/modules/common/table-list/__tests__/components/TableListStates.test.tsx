@@ -3,6 +3,7 @@ import { act, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { LocalizedTableListError } from "../../LocalizedTableListError";
 import { TableList } from "../../TableList";
 import { config, emptyFilters, records } from "../fixtures/tableListFixtures";
 
@@ -50,9 +51,15 @@ describe("TableList states", () => {
     rerender(<TableList {...commonProps} />);
     expect(screen.getByText("common:tableList.empty.title")).toBeVisible();
 
-    rerender(<TableList {...commonProps} status="error" error={new Error("Expected card failure")} />);
+    rerender(
+      <TableList
+        {...commonProps}
+        status="error"
+        error={new LocalizedTableListError("Select at most 2 custom field columns.")}
+      />,
+    );
     expect(screen.getByText("common:tableList.error.title")).toBeVisible();
-    expect(screen.getByText("Expected card failure")).toBeVisible();
+    expect(screen.getByText("Select at most 2 custom field columns.")).toBeVisible();
   });
 
   it("renders loading, empty, and error states", () => {
@@ -91,7 +98,7 @@ describe("TableList states", () => {
       />,
     );
     expect(screen.getByText("common:tableList.error.title")).toBeVisible();
-    expect(screen.getByText("Expected failure")).toBeVisible();
+    expect(screen.getByText("common:tableList.error.description")).toBeVisible();
   });
 
   it("hides independently disabled features and passes accessibility checks", async () => {

@@ -1,8 +1,9 @@
 import { cmp, eq, escapeValue, Operation } from "rsql-builder";
-import * as v from "valibot";
+import { is } from "valibot";
 import type { RelationshipOption } from "@/modules/common/collection-form/RenderFields.types";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { GranteeSchema, InstrumentSchema, RelationshipSearchResponseSchema } from "./schemas";
 
 /**
  * What the picker owns and this layer cannot supply: the wording, because this layer has no i18n of
@@ -52,12 +53,6 @@ export type RelationshipOptionWithSource = RelationshipOption & {
   /** Safe state when a saved value could not be restored; the original value remains in `value`. */
   restoreStatus?: "loading" | "missing" | "failed" | "invalid" | "unknown" | "unresolved";
 };
-
-const InstrumentSchema = v.object({
-  id: v.number(),
-  name: v.string(),
-  globalId: v.string(),
-});
 
 async function instrumentRequest(
   url: string,
@@ -129,7 +124,7 @@ const instruments: RelationshipSource = {
     });
     const response = await instrumentRequest(`/api/v2/instruments?${params}`, token, signal);
     const body: unknown = await response.json();
-    if (!v.is(v.object({ docs: v.array(v.unknown()) }), body)) {
+    if (!is(RelationshipSearchResponseSchema, body)) {
       throw new Error("Relationship option response has an invalid envelope");
     }
     const requested = new Set(ids.map((id) => `IN${id}`));
@@ -165,14 +160,6 @@ const instruments: RelationshipSource = {
     };
   },
 };
-
-const GranteeSchema = v.object({
-  kind: v.picklist(["USER", "GROUP", "AUDIENCE"]),
-  id: v.union([v.number(), v.string()]),
-  key: v.string(),
-  name: v.string(),
-  detail: v.optional(v.nullable(v.string())),
-});
 
 export function granteeRelationshipSource(resource: string, resourceId: number): RelationshipSource {
   const id = `grantees:${resource}:${resourceId}`;

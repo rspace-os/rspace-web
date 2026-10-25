@@ -1,4 +1,5 @@
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { columnSelectors } from "./queryStringState";
 import { rsqlSelectors } from "./rsql/rsqlCodec";
 import {
   parseTableViewState,
@@ -38,19 +39,6 @@ export function storedTableViewSelectors(key: string): readonly string[] {
       ...(typeof where === "string" ? rsqlSelectors(where) : []),
       ...(typeof columns === "string" ? columnSelectors(columns) : []),
     ];
-  } catch {
-    return [];
-  }
-}
-
-export function columnSelectors(serialized: string): readonly string[] {
-  try {
-    const value: unknown = JSON.parse(serialized);
-    const raw =
-      typeof value === "object" && value !== null && !Array.isArray(value)
-        ? (value as { fields?: unknown }).fields
-        : value;
-    return Array.isArray(raw) ? raw.filter((name): name is string => typeof name === "string") : [];
   } catch {
     return [];
   }

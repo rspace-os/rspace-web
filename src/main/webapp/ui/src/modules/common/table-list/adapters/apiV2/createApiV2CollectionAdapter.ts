@@ -5,24 +5,27 @@ import type {
   FieldName,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/collectionConfig";
+import { isIdLikeField } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
+import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import type { CollectionPage, CollectionQueryState } from "../../tableListState";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
-import { createApiV2FilterFields, type RuntimeFieldCatalogForNamespace } from "./apiV2FilterFields";
+import {
+  createApiV2FilterFields,
+  isRelationshipWireSelector,
+  type RuntimeFieldCatalogForNamespace,
+} from "./apiV2FilterFields";
 import { collectionQueryParams, selectedFields } from "./collectionQueryParams";
-import { runtimeFieldValuesSchema } from "./runtimeFieldCatalog";
+import { type ApiV2DocumentSchema, createApiV2ResponseSchema } from "./schemas";
 
 export type { RuntimeFieldCatalogForNamespace } from "./apiV2FilterFields";
 
-/**
- * A document schema must be an object schema: the adapter narrows it to the selected fields with
- * `v.pick` before it validates a response.
- */
-export type ApiV2DocumentSchema<TDocument> = v.ObjectSchema<v.ObjectEntries, undefined> &
-  v.GenericSchema<unknown, TDocument>;
+export type { ApiV2DocumentSchema } from "./schemas";
 
 export type ApiV2CollectionAdapter<TDocument> = {
   config: ResolvedCollectionConfig<TDocument>;
@@ -66,8 +69,7 @@ function validateSearchSelectors<TDocument>(
     const selector = String(name);
     const published = metadata.filtering.selectors[selector];
     if (!published) throw new Error(`Searchable field is not filterable: ${selector}`);
-    const targetField = selector.slice(selector.indexOf(".") + 1);
-    if (selector.includes(".") && (targetField === "value" || targetField === "relationTo")) {
+    if (isRelationshipWireSelector(selector)) {
       throw new Error(`Relationship wire field is not searchable: ${selector}`);
     }
     if (!published.operators.includes("=contains=")) {
@@ -84,7 +86,10 @@ export function createApiV2CollectionAdapter<TDocument>({
   documentSchema,
   metadata,
   runtimeFields = [],
-  translate = (key) => key,
+  translate = (key, values) =>
+    key === "common:tableList.error.customFieldColumnLimit"
+      ? i18n.t("common:tableList.error.customFieldColumnLimit", { limit: Number(values?.limit), lng: language })
+      : key,
   language,
 }: ApiV2CollectionDefinition<TDocument>): ApiV2CollectionAdapter<TDocument> {
   const allowedFields = new Set(metadata.fields);
@@ -103,22 +108,17 @@ export function createApiV2CollectionAdapter<TDocument>({
     runtimeFields,
     translate,
   });
-  const relationships = new Map(
-    filterFields.sourceFields
-      .filter((field) => field.type === "relationship")
-      .map((field) => [String(field.name), field]),
-  );
-  const projectableRelationships = new Set(
-    filterFields.sourceFields
-      .filter((field) => field.type === "relationship" && field.name in documentSchema.entries)
-      .map((field) => field.name),
-  );
+  const relationshipNames = filterFields.sourceFields
+    .filter((field) => field.type === "relationship")
+    .map((field) => field.name);
+  const projectableRelationships = new Set(relationshipNames.filter((name) => name in documentSchema.entries));
   const relationshipFields = new Set(
     filterFields.relationshipFields
       .filter(({ owner }) => projectableRelationships.has(owner))
       .map(({ field }) => field.name),
   );
   const runtimeSelectors = filterFields.runtimeSelectors;
+  const runtimeNamespaces = metadata.runtimeFields ?? [];
   const projectableFields = new Set(Object.keys(documentSchema.entries) as FieldName<TDocument>[]);
   const fields: FieldConfig<TDocument>[] = [
     ...filterFields.sourceFields,
@@ -128,7 +128,7 @@ export function createApiV2CollectionAdapter<TDocument>({
             ...field,
             list: {
               dependencies: [owner],
-              renderCell: ({ row }: { row: TDocument }) => targetValue(row, owner, targetField),
+              renderCell: ({ row }: { row: TDocument }) => targetValue(row, owner, targetField, language),
             },
           }
         : { ...field, list: false as const },
@@ -138,7 +138,8 @@ export function createApiV2CollectionAdapter<TDocument>({
       list: namespace.columnSelectable
         ? {
             description: definition.source.label,
-            renderCell: ({ row }: { row: TDocument }) => runtimeValue(row, responseField, definition.id, language),
+            renderCell: ({ row }: { row: TDocument }) =>
+              runtimeValue(row, responseField, definition.id, definition.type === "number", language),
           }
         : (false as const),
     })),
@@ -147,26 +148,15 @@ export function createApiV2CollectionAdapter<TDocument>({
     ...sourceConfig,
     fields,
     defaultSort: sourceConfig.defaultSort ?? metadata.sorting.default,
-    runtimeNamespaces: (metadata.runtimeFields ?? []).map((namespace) => namespace.namespace),
+    runtimeNamespaces: runtimeNamespaces.map((namespace) => namespace.namespace),
   };
   const config = {
     ...resolveCollectionConfig(configInput),
     runtimeSources: filterFields.runtimeSources,
   };
-  const responseSchema = (
-    (metadata.runtimeFields ?? []).length === 0
-      ? documentSchema
-      : v.object({
-          ...documentSchema.entries,
-          ...Object.fromEntries(
-            (metadata.runtimeFields ?? [])
-              .filter((namespace) => namespace.responseField !== "")
-              .map((namespace) => [namespace.responseField, v.optional(runtimeFieldValuesSchema)]),
-          ),
-        })
-  ) as ApiV2DocumentSchema<TDocument>;
+  const responseSchema = createApiV2ResponseSchema(documentSchema, runtimeNamespaces);
   const isRuntimeSelector = (name: string) =>
-    (metadata.runtimeFields ?? []).some((namespace) => name.startsWith(`${namespace.namespace}.`));
+    runtimeNamespaces.some((namespace) => isRuntimeFieldInNamespace(name, namespace.namespace));
   const runtimeProjection = (state: CollectionQueryState<TDocument>) =>
     state.visibleFields.filter((name) => runtimeSelectors.has(name)).map(String);
   const catalogSelectors = filterFields.catalogSelectors;
@@ -177,12 +167,9 @@ export function createApiV2CollectionAdapter<TDocument>({
     isRuntimeSelector,
     selectedFields: (state) => {
       const selected = selectedFields(state, config, filterFields.virtualFields, projectableFields);
-      const namespaces = (metadata.runtimeFields ?? [])
-        .filter((namespace) =>
-          state.visibleFields.some(
-            (field) => runtimeSelectors.has(field) && String(field).startsWith(`${namespace.namespace}.`),
-          ),
-        )
+      const projection = runtimeProjection(state);
+      const namespaces = runtimeNamespaces
+        .filter((namespace) => projection.some((name) => isRuntimeFieldInNamespace(name, namespace.namespace)))
         .map((namespace) => namespace.responseField as FieldName<TDocument>);
       return namespaces.length === 0 ? selected : [...selected, ...namespaces];
     },
@@ -191,7 +178,7 @@ export function createApiV2CollectionAdapter<TDocument>({
       collectionQueryParams(state, config, metadata, filterFields.virtualFields, projectableFields, {
         projection: runtimeProjection(state),
         selectors: catalogSelectors,
-        projectionLimitMessage: (limit) => translate("tableList.error.customFieldColumnLimit", { limit }),
+        projectionLimitMessage: (limit) => translate("common:tableList.error.customFieldColumnLimit", { limit }),
       }),
     // A request selects the visible fields only, so a response omits every other field. Validate the
     // same projection that the request asked for: an omitted selected field stays an error, and an
@@ -200,7 +187,7 @@ export function createApiV2CollectionAdapter<TDocument>({
     parseResponse: (input, selected) => {
       const projection = v.pick(responseSchema, selected as unknown as [string, ...string[]]);
       const result = parseOrThrow(v2ListEnvelope(projection), input);
-      const rows = withExpandedTargetFields(result.docs as TDocument[], input, [...relationships.keys()]);
+      const rows = withExpandedTargetFields(result.docs as TDocument[], input, relationshipNames.map(String));
       return { rows, rowCount: result.totalDocs };
     },
   };
@@ -213,13 +200,15 @@ function runtimeValue<TDocument>(
   row: TDocument,
   responseField: FieldName<TDocument>,
   id: string,
+  numeric: boolean,
   language: string | undefined,
 ): string {
   const values = row[responseField];
   if (typeof values !== "object" || values === null || Array.isArray(values)) return "";
   const value = (values as Record<string, unknown>)[id];
   if (value === null || value === undefined) return "";
-  return Array.isArray(value) ? formatList(value, language, VALUE_LIST) : String(value);
+  const format = (item: unknown) => (numeric && typeof item === "number" ? formatNumber(item, language) : String(item));
+  return Array.isArray(value) ? formatList(value.map(format), language, VALUE_LIST) : format(value);
 }
 
 // Restore expanded display keys stripped by the page schema.
@@ -257,9 +246,20 @@ function expandedTarget(relationship: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
-function targetValue<TDocument>(row: TDocument, owner: FieldName<TDocument>, targetField: string): string {
+function targetValue<TDocument>(
+  row: TDocument,
+  owner: FieldName<TDocument>,
+  targetField: string,
+  language: string | undefined,
+): string {
   const value = expandedTarget(row[owner]);
   if (!value) return "";
   const fieldValue = value[targetField];
+  if (typeof fieldValue === "boolean")
+    return fieldValue
+      ? i18n.t("common:actions.yes", { lng: language })
+      : i18n.t("common:actions.no", { lng: language });
+  if (typeof fieldValue === "number" && targetField !== "id" && !isIdLikeField(targetField))
+    return formatNumber(fieldValue, language);
   return fieldValue === null || fieldValue === undefined ? "" : String(fieldValue);
 }

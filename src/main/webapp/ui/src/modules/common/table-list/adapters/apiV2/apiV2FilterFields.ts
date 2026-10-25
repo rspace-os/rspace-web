@@ -1,5 +1,6 @@
 import type {
   CollectionConfig,
+  CollectionTranslationKey,
   FieldConfig,
   FieldName,
   FilterOperator,
@@ -7,6 +8,7 @@ import type {
   RuntimeNamespaceSummary,
 } from "@/modules/common/collection/collectionConfig";
 import { fieldLabel, hierarchicalFieldLabel } from "@/modules/common/collection/collectionConfig";
+import { filterOperatorsByToken as semanticOperators } from "@/modules/common/collection/filterOperators";
 import {
   isFilterOperatorCompatible,
   resolveCollectionConfig,
@@ -18,20 +20,6 @@ import type {
   ApiV2RuntimeFieldNamespace,
 } from "./apiV2CollectionMetadata";
 import type { RuntimeFieldDefinition } from "./runtimeFieldCatalog";
-
-const semanticOperators: Record<ApiV2FilterOperator, FilterOperator> = {
-  "==": "equals",
-  "!=": "notEquals",
-  "=gt=": "greaterThan",
-  "=ge=": "greaterThanOrEqual",
-  "=lt=": "lessThan",
-  "=le=": "lessThanOrEqual",
-  "=in=": "in",
-  "=out=": "notIn",
-  "=contains=": "contains",
-  "=like=": "matches",
-  "=exists=": "exists",
-};
 
 export type RuntimeFieldCatalogForNamespace = {
   namespace: string;
@@ -101,37 +89,59 @@ function capabilitiesForSelector<TDocument>(
   };
 }
 
-/**
- * Returns a catalog label, or undefined when the translator does not know the key.
- *
- * Keys carry their namespace so a page-scoped translator, such as `useTranslation("booking")`,
- * still resolves these shared table labels. A missing key comes back as the key itself, with or
- * without its namespace, depending on the translator.
- */
-function catalogLabel(translate: (key: string) => string, key: string): string | undefined {
-  const value = translate(key);
-  const withoutNamespace = key.slice(key.indexOf(":") + 1);
-  return value === key || value === withoutNamespace || value.trim() === "" ? undefined : value;
+/** `<relationship>.value` and `<relationship>.relationTo` address the reference itself, not a target field. */
+export function isRelationshipWireSelector(selector: string): boolean {
+  return /^[^.]+\.(?:value|relationTo)$/.test(selector);
 }
 
-/** Relationship owners without a configured field, such as the shared audit relationships. */
-function ownerLabel(ownerName: string, viaTitle: string | undefined, translate: (key: string) => string): string {
-  return catalogLabel(translate, `common:tableList.fields.${ownerName}`) ?? (viaTitle?.trim() ? viaTitle : ownerName);
+/** Unknown metadata names stay display data rather than catalog paths. */
+function ownerLabel(
+  ownerName: string,
+  viaTitle: string | undefined,
+  t: (key: CollectionTranslationKey) => string,
+): string {
+  const labels = {
+    createdBy: t("common:tableList.fields.createdBy"),
+    updatedBy: t("common:tableList.fields.updatedBy"),
+    location: t("common:tableList.fields.location"),
+  };
+  return Object.hasOwn(labels, ownerName)
+    ? labels[ownerName as keyof typeof labels]
+    : viaTitle?.trim()
+      ? viaTitle
+      : ownerName;
 }
 
-/** A server title wins; otherwise the shared catalog names common target fields such as `firstName`. */
-function targetFieldLabel(targetField: string, title: string | undefined, translate: (key: string) => string): string {
-  return title ?? catalogLabel(translate, `common:tableList.targetFields.${targetField}`) ?? targetField;
+function targetFieldLabel(
+  targetField: string,
+  title: string | undefined,
+  t: (key: CollectionTranslationKey) => string,
+): string {
+  const labels = {
+    createdAt: t("common:tableList.targetFields.createdAt"),
+    deleted: t("common:tableList.targetFields.deleted"),
+    email: t("common:tableList.targetFields.email"),
+    firstName: t("common:tableList.targetFields.firstName"),
+    globalId: t("common:tableList.targetFields.globalId"),
+    id: t("common:tableList.targetFields.id"),
+    lastName: t("common:tableList.targetFields.lastName"),
+    name: t("common:tableList.targetFields.name"),
+    username: t("common:tableList.targetFields.username"),
+    updatedAt: t("common:tableList.targetFields.updatedAt"),
+  };
+  return Object.hasOwn(labels, targetField) ? labels[targetField as keyof typeof labels] : (title ?? targetField);
 }
 
-function relationshipLabels<TDocument>(
-  sourceConfig: CollectionConfig<TDocument>,
+type RelationshipField<TDocument> = Extract<FieldConfig<TDocument>, { type: "relationship" }>;
+
+function relationshipIndex<TDocument>(
+  fields: readonly FieldConfig<TDocument>[],
   translate: (key: string) => string,
-): ReadonlyMap<string, string> {
+): ReadonlyMap<string, { field: RelationshipField<TDocument>; label: string }> {
   return new Map(
-    sourceConfig.fields
+    fields
       .filter((field) => field.type === "relationship")
-      .map((field) => [String(field.name), fieldLabel(field, translate)] as const),
+      .map((field) => [String(field.name), { field, label: fieldLabel(field, translate) }] as const),
   );
 }
 
@@ -165,7 +175,7 @@ function derivedIdentityFields<TDocument>(
     const base: FieldConfig<TDocument> = {
       name,
       labelKey: selector,
-      label: published.title ?? ownerLabel(selector, undefined, translate),
+      label: ownerLabel(selector, published.title, translate),
       type: "relationship",
       relationTo: picker.resource,
       hasMany: false,
@@ -179,34 +189,29 @@ function derivedIdentityFields<TDocument>(
 
 function derivedTargetFields<TDocument>(
   sourceConfig: CollectionConfig<TDocument>,
+  relationships: ReturnType<typeof relationshipIndex<TDocument>>,
   metadata: ApiV2CollectionMetadata<TDocument>,
   translate: (key: string) => string,
 ): ApiV2RelationshipFilterField<TDocument>[] {
   const declared = new Set<string>(sourceConfig.fields.map((field) => String(field.name)));
-  const relationships = new Map(
-    sourceConfig.fields
-      .filter((field) => field.type === "relationship")
-      .map((field) => [String(field.name), field] as const),
-  );
-  return Object.entries(metadata.relationshipFields ?? {}).flatMap(([selector, published]) => {
+  return Object.entries(metadata.filtering.selectors).flatMap(([selector, published]) => {
     const dot = selector.indexOf(".");
     const ownerName = selector.slice(0, dot);
     const relationship = relationships.get(ownerName);
     const targetField = selector.slice(dot + 1);
-    if (declared.has(selector) || published.fieldType === null) return [];
+    if (dot < 0 || isRelationshipWireSelector(selector)) return [];
+    if (declared.has(selector) || published?.fieldType == null) return [];
 
     const name = selector as FieldName<TDocument>;
-    const owner = (relationship?.name ?? ownerName) as FieldName<TDocument>;
-    const viaLabel = relationship
-      ? fieldLabel(relationship, translate)
-      : ownerLabel(ownerName, published.viaTitle, translate);
+    const owner = (relationship?.field.name ?? ownerName) as FieldName<TDocument>;
+    const viaLabel = relationship ? relationship.label : ownerLabel(ownerName, published.viaTitle, translate);
     const common = {
       name,
       labelKey: selector,
       label: hierarchicalFieldLabel(viaLabel, targetFieldLabel(targetField, published.title, translate)),
       origin: {
         kind: "relationshipTarget" as const,
-        groupLabelKey: "tableList.fieldGroups.relationshipFields",
+        groupLabelKey: "tableList.fieldGroups.relationshipFields" satisfies CollectionTranslationKey,
         viaLabel,
       },
       list: false as const,
@@ -221,7 +226,7 @@ function derivedTargetFields<TDocument>(
 function derivedRuntimeFields<TDocument>(
   metadata: ApiV2CollectionMetadata<TDocument>,
   catalog: readonly RuntimeFieldCatalogForNamespace[],
-  viaLabels: ReadonlyMap<string, string>,
+  relationships: ReturnType<typeof relationshipIndex<TDocument>>,
 ): ApiV2RuntimeFilterField<TDocument>[] {
   const namespaces = new Map((metadata.runtimeFields ?? []).map((namespace) => [namespace.namespace, namespace]));
   return catalog.flatMap((entry) =>
@@ -232,14 +237,14 @@ function derivedRuntimeFields<TDocument>(
       const name = (
         namespace.via === "" ? definition.selector : `${namespace.via}.${definition.selector}`
       ) as FieldName<TDocument>;
-      const viaLabel = namespace.via === "" ? "" : (viaLabels.get(namespace.via) ?? namespace.via);
+      const viaLabel = namespace.via === "" ? "" : (relationships.get(namespace.via)?.label ?? namespace.via);
       const common = {
         name,
         labelKey: definition.selector,
         label: hierarchicalFieldLabel(viaLabel, definition.label),
         origin: {
           kind: "runtimeField" as const,
-          groupLabelKey: "tableList.fieldGroups.customFields",
+          groupLabelKey: "tableList.fieldGroups.customFields" satisfies CollectionTranslationKey,
           sourceLabel: definition.source.label,
           stableId: definition.id,
           namespace: namespace.namespace,
@@ -291,8 +296,7 @@ export function createApiV2FilterFields<TDocument>({
   localFields = [],
 }: ApiV2FilterFieldsDefinition<TDocument>): ApiV2FilterFields<TDocument> {
   const configuredSourceFields = sourceConfig.fields.map((field) => {
-    const selector =
-      metadata.filtering.selectors[String(field.name)] ?? metadata.relationshipFields?.[String(field.name)];
+    const selector = metadata.filtering.selectors[String(field.name)];
     if (localFields.includes(field.name)) return field;
     const sourceField = field;
     const picker = metadata.filtering.selectors[String(field.name)]?.picker;
@@ -308,13 +312,12 @@ export function createApiV2FilterFields<TDocument>({
     ...sourceConfig,
     fields: [...sourceConfig.fields, ...identityFields],
   };
-  const relationshipFields = derivedTargetFields(identityConfig, metadata, translate);
-  const labels = relationshipLabels(identityConfig, translate);
-  const runtimeDerivedFields = derivedRuntimeFields(metadata, runtimeFields, labels);
+  const relationships = relationshipIndex(identityConfig.fields, translate);
+  const relationshipFields = derivedTargetFields(identityConfig, relationships, metadata, translate);
+  const runtimeDerivedFields = derivedRuntimeFields(metadata, runtimeFields, relationships);
   const occupiedNames = new Set([
     ...sourceConfig.fields.map((field) => String(field.name)),
     ...Object.keys(metadata.filtering.selectors),
-    ...Object.keys(metadata.relationshipFields ?? {}),
   ]);
   const runtimeNames = new Set<string>();
   for (const { field } of runtimeDerivedFields) {
@@ -344,7 +347,7 @@ export function createApiV2FilterFields<TDocument>({
     .filter((namespace) => namespace.filterable || namespace.columnSelectable)
     .map((namespace) => ({
       namespace: namespace.namespace,
-      viaLabel: namespace.via === "" ? "" : (labels.get(namespace.via) ?? namespace.via),
+      viaLabel: namespace.via === "" ? "" : (relationships.get(namespace.via)?.label ?? namespace.via),
       catalog: namespace.catalog,
       maximumLimit: namespace.catalogMaximumLimit,
       filterable: namespace.filterable,

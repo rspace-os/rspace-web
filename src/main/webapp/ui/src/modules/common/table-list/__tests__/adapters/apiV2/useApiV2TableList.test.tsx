@@ -5,8 +5,8 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { Suspense, useState } from "react";
-import * as v from "valibot";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
@@ -14,6 +14,7 @@ import type { RuntimeFieldDefinition } from "../../../adapters/apiV2/runtimeFiel
 import { useApiV2RuntimeFields } from "../../../adapters/apiV2/useApiV2RuntimeFields";
 import { useApiV2TableList } from "../../../adapters/apiV2/useApiV2TableList";
 import { TableList } from "../../../TableList";
+import { tableListDocumentSchema as documentSchema } from "../../fixtures/schemas";
 
 type Instrument = {
   id: number;
@@ -21,8 +22,6 @@ type Instrument = {
   target?: string;
   customFields?: Record<string, string | number | readonly string[] | null>;
 };
-
-const documentSchema = v.object({ id: v.number(), name: v.string(), target: v.optional(v.string()) });
 
 const config = {
   slug: "instruments",
@@ -125,18 +124,7 @@ function Providers({ children, searchParams = "" }: { children: React.ReactNode;
 function collectionHandler(requests: string[]) {
   return http.get("/api/v2/instruments", ({ request }) => {
     requests.push(new URL(request.url).searchParams.get("where") ?? "");
-    return HttpResponse.json({
-      docs: [{ id: 1, name: "Centrifuge" }],
-      totalDocs: 1,
-      page: 1,
-      totalPages: 1,
-      pagingCounter: 1,
-      limit: 20,
-      hasNextPage: false,
-      hasPrevPage: false,
-      nextPage: null,
-      prevPage: null,
-    });
+    return HttpResponse.json({ ...v2ListEnvelope([{ id: 1, name: "Centrifuge" }]), limit: 20 });
   });
 }
 const catalog = (fields = [definition()]) => HttpResponse.json({ fields, hasMore: false, page: 1, limit: 50 });

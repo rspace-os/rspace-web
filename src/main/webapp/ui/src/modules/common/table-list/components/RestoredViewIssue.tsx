@@ -15,7 +15,7 @@ export function RestoredViewIssue({
   const { t } = useTranslation("common");
   return (
     <div role="alert" className={cn("space-y-2 border-b py-3 text-sm", className)}>
-      <p>{t(issue.kind === "network" ? "tableList.savedView.loadFailed" : "tableList.savedView.invalid")}</p>
+      <p>{issue.kind === "network" ? t("tableList.savedView.loadFailed") : t("tableList.savedView.invalid")}</p>
       {label ? <p className="text-xs text-muted-foreground">{label}</p> : null}
       {issue.encoded ? <pre className="whitespace-pre-wrap break-all text-xs">{issue.encoded}</pre> : null}
       <div className="flex gap-2">

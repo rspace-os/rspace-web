@@ -1,20 +1,11 @@
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import type { CollectionQueryState } from "../../../tableListState";
+import { testRecordSchema as documentSchema } from "../../fixtures/schemas";
 import type { TestRecord } from "../../fixtures/tableListFixtures";
-
-const documentSchema = v.object({
-  id: v.string(),
-  title: v.string(),
-  owner: v.string(),
-  score: v.number(),
-  enabled: v.boolean(),
-  modifiedAt: v.string(),
-  capability: v.optional(v.boolean()),
-});
 
 const metadata: ApiV2CollectionMetadata<TestRecord> = {
   resourceName: "records",
@@ -91,18 +82,7 @@ describe("createApiV2CollectionAdapter", () => {
     const docs: TestRecord[] = [{ id: "1", title: "A", owner: "Ada", score: 1, enabled: true, modifiedAt: "now" }];
     expect(
       adapter.parseResponse(
-        {
-          docs,
-          totalDocs: 42,
-          limit: 10,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 5,
-          hasPrevPage: false,
-          hasNextPage: true,
-          prevPage: null,
-          nextPage: 2,
-        },
+        { ...v2ListEnvelope(docs), totalDocs: 42, limit: 10, totalPages: 5, hasNextPage: true, nextPage: 2 },
         adapter.selectedFields(state),
       ),
       // The parsed row carries the selected fields only, like the request asked for.
@@ -112,17 +92,7 @@ describe("createApiV2CollectionAdapter", () => {
   it("validates the selected fields only", () => {
     const selected = adapter.selectedFields(state);
     const sparse = [{ id: "1", title: "A", owner: "Ada", enabled: true }];
-    const envelope = {
-      totalDocs: 1,
-      limit: 10,
-      page: 1,
-      pagingCounter: 1,
-      totalPages: 1,
-      hasPrevPage: false,
-      hasNextPage: false,
-      prevPage: null,
-      nextPage: null,
-    };
+    const envelope = { ...v2ListEnvelope(sparse), totalDocs: 1, limit: 10, totalPages: 1 };
 
     // `score` and `modifiedAt` are not selected, so their absence is not an error.
     expect(adapter.parseResponse({ ...envelope, docs: sparse }, selected)).toEqual({ rows: sparse, rowCount: 1 });

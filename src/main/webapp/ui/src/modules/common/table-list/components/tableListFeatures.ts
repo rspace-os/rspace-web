@@ -13,7 +13,9 @@ import {
   tableFeatures,
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
+import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import type { TableListCardFieldLayout } from "../tableListState";
 
 export type ColumnMeta = {
@@ -42,12 +44,15 @@ export const tableListFeatures = tableFeatures({
   paginatedRowModel: createPaginatedRowModel(),
 });
 
-export function displayValue(value: unknown, language: string | undefined): string {
+export function displayValue(value: unknown, language: string | undefined, formatNumbers = false): string {
   if (value === null || value === undefined) return "";
-  if (value instanceof Date) return value.toLocaleString();
+  if (value instanceof Date) return value.toLocaleString(language);
+  if (typeof value === "number") return formatNumbers ? formatNumber(value, language) : String(value);
+  if (typeof value === "boolean")
+    return value ? i18n.t("common:actions.yes", { lng: language }) : i18n.t("common:actions.no", { lng: language });
   if (Array.isArray(value))
     return formatList(
-      value.map((item) => displayValue(item, language)),
+      value.map((item) => displayValue(item, language, formatNumbers)),
       language,
       { type: "unit", style: "short" },
     );
