@@ -1,4 +1,3 @@
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
 import { createApiV2FilterFields, enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
@@ -6,14 +5,13 @@ import { createApiV2CollectionAdapter, staleRuntimeFields } from "../../../adapt
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
 import type { RuntimeFieldDefinition } from "../../../adapters/apiV2/runtimeFieldCatalog";
 import type { CollectionQueryState } from "../../../tableListState";
+import { runtimeDocumentSchema as documentSchema } from "../../fixtures/schemas";
 
 type Instrument = {
   id: number;
   name: string;
   customFields?: Record<string, string | number | readonly string[] | null>;
 };
-
-const documentSchema = v.object({ id: v.number(), name: v.string() });
 
 const config = {
   slug: "instruments",

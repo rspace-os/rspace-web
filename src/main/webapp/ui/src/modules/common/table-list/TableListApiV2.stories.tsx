@@ -1,20 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { NuqsAdapter } from "nuqs/adapters/react";
-import * as v from "valibot";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { ApiV2CollectionMetadata } from "./adapters/apiV2/apiV2CollectionMetadata";
 import { useApiV2TableList } from "./adapters/apiV2/useApiV2TableList";
+import { researchRecordSchema as documentSchema } from "./stories/schemas";
 import { TableList } from "./TableList";
 import { type ResearchRecord, storyConfig, storyRecords } from "./TableList.stories";
-
-const documentSchema = v.object({
-  id: v.string(),
-  title: v.string(),
-  owner: v.string(),
-  score: v.number(),
-  enabled: v.boolean(),
-  modifiedAt: v.string(),
-});
 
 // Production modules read this object from the generated API V2 OpenAPI metadata.
 const metadata: ApiV2CollectionMetadata<ResearchRecord> = {

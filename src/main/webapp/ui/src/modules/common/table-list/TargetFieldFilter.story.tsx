@@ -1,11 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import * as React from "react";
-import * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { queryKeys } from "@/modules/common/hooks/auth";
 import type { ApiV2CollectionMetadata } from "./adapters/apiV2/apiV2CollectionMetadata";
 import { useApiV2TableList } from "./adapters/apiV2/useApiV2TableList";
+import { targetFieldDocumentSchema as documentSchema } from "./stories/schemas";
 import { TableList } from "./TableList";
 
 type BookingConfiguration = {
@@ -13,12 +13,6 @@ type BookingConfiguration = {
   timeZone: string;
   target: string;
 };
-
-const documentSchema = v.object({
-  id: v.string(),
-  timeZone: v.string(),
-  target: v.string(),
-});
 
 const config = resolveCollectionConfig<BookingConfiguration>({
   slug: "bookingConfigurations",

@@ -1,4 +1,3 @@
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import type { SearchSelector } from "@/modules/common/collection/collectionConfig";
@@ -8,6 +7,10 @@ import { enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFiel
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
 import type { FilterExpression } from "../../../tableListState";
+import {
+  bookingRelationshipsSchema as documentSchema,
+  ownerlessDocumentSchema as ownerlessSchema,
+} from "../../fixtures/schemas";
 
 type RelationshipValue = {
   relationTo: "instruments";
@@ -15,19 +18,6 @@ type RelationshipValue = {
 };
 
 type Booking = { id: string; target: RelationshipValue; room: RelationshipValue };
-
-const relationshipSchema = v.object({
-  relationTo: v.literal("instruments"),
-  value: v.object({
-    id: v.number(),
-    name: v.string(),
-    deleted: v.boolean(),
-    label: v.optional(v.string()),
-    floor: v.optional(v.number()),
-  }),
-});
-
-const documentSchema = v.object({ id: v.string(), target: relationshipSchema, room: relationshipSchema });
 
 /**
  * Two relationships, and the config declares each one exactly once. Nothing here names a target's
@@ -203,7 +193,6 @@ describe("filter selectors derived from published relationship targets", () => {
         { name: "title" as const, labelKey: "title", type: "text" as const },
       ],
     };
-    const ownerlessSchema = v.object({ id: v.string(), title: v.string() });
     const ownerlessMetadata: ApiV2CollectionMetadata<OwnerlessRecord> = {
       resourceName: "ownerless-records",
       fields: ["id", "title"],

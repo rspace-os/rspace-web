@@ -8,6 +8,7 @@ import type {
 } from "@/modules/common/collection/collectionConfig";
 import type { FilterExpression } from "../tableListState";
 import { normalizeRsqlList, normalizeRsqlScalar } from "./filterValue";
+import { booleanScalar, dateTimeScalar, numberScalar, stringScalar } from "./schemas";
 
 const tokens = {
   equals: "==",
@@ -62,22 +63,6 @@ function serializeNode<TDocument>(expression: FilterExpression<TDocument>, isRoo
 export function serializeRsqlExpression<TDocument>(expression: FilterExpression<TDocument>): string {
   return serializeNode(expression, true);
 }
-
-const stringScalar = v.string();
-const booleanScalar = v.pipe(
-  v.picklist(["true", "false"]),
-  v.transform((value) => value === "true"),
-);
-const numberScalar = v.pipe(
-  v.string(),
-  v.transform((value) => (value.trim() === "" ? Number.NaN : Number(value))),
-  v.finite(),
-);
-const dateTimeScalar = v.pipe(
-  v.string(),
-  v.transform((value) => new Date(value)),
-  v.check((value) => !Number.isNaN(value.getTime())),
-);
 
 function parseScalar<TOutput>(schema: v.GenericSchema<string, TOutput>, value: string): TOutput | null {
   const result = v.safeParse(schema, value);

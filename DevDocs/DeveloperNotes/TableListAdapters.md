@@ -16,6 +16,18 @@ Every remote table, REST API v2 or not, loads its rows through a
 [`useTableList`](../../src/main/webapp/ui/src/modules/common/table-list/useTableList.ts) keeps the
 table and query state and returns `tableProps` plus functions that change that state.
 
+The OpenAPI reader validates the current generated contract with Valibot. Selector and runtime
+flags must be booleans, and query/catalog limits must be positive integers; `maximumProjections`
+may be zero. Runtime descriptors must include their catalog limits and `via`/`viaResource` values.
+Missing values are errors rather than client-side defaults. The list response must reference
+a local Read component through `docs.items.$ref`.
+
+Absent relationship/runtime extensions mean no such capabilities. Optional titles, picker metadata
+and formats remain optional. Selector schemas support declared JSON types, nullable type unions
+and nonempty scalar `oneOf` variants. Mixed primitive variants use a text input. Other
+composition/reference forms are rejected in selectors. Unrelated OpenAPI properties and
+extensions do not need table-specific validation.
+
 ## REST API v2 setup
 
 Use this procedure for most new tables.

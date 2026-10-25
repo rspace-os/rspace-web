@@ -13,16 +13,11 @@ import type { CollectionPage, CollectionQueryState } from "../../tableListState"
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
 import { createApiV2FilterFields, type RuntimeFieldCatalogForNamespace } from "./apiV2FilterFields";
 import { collectionQueryParams, selectedFields } from "./collectionQueryParams";
-import { runtimeFieldValuesSchema } from "./runtimeFieldCatalog";
+import { type ApiV2DocumentSchema, createApiV2ResponseSchema } from "./schemas";
 
 export type { RuntimeFieldCatalogForNamespace } from "./apiV2FilterFields";
 
-/**
- * A document schema must be an object schema: the adapter narrows it to the selected fields with
- * `v.pick` before it validates a response.
- */
-export type ApiV2DocumentSchema<TDocument> = v.ObjectSchema<v.ObjectEntries, undefined> &
-  v.GenericSchema<unknown, TDocument>;
+export type { ApiV2DocumentSchema } from "./schemas";
 
 export type ApiV2CollectionAdapter<TDocument> = {
   config: ResolvedCollectionConfig<TDocument>;
@@ -153,18 +148,7 @@ export function createApiV2CollectionAdapter<TDocument>({
     ...resolveCollectionConfig(configInput),
     runtimeSources: filterFields.runtimeSources,
   };
-  const responseSchema = (
-    (metadata.runtimeFields ?? []).length === 0
-      ? documentSchema
-      : v.object({
-          ...documentSchema.entries,
-          ...Object.fromEntries(
-            (metadata.runtimeFields ?? [])
-              .filter((namespace) => namespace.responseField !== "")
-              .map((namespace) => [namespace.responseField, v.optional(runtimeFieldValuesSchema)]),
-          ),
-        })
-  ) as ApiV2DocumentSchema<TDocument>;
+  const responseSchema = createApiV2ResponseSchema(documentSchema, metadata.runtimeFields ?? []);
   const isRuntimeSelector = (name: string) =>
     (metadata.runtimeFields ?? []).some((namespace) => name.startsWith(`${namespace.namespace}.`));
   const runtimeProjection = (state: CollectionQueryState<TDocument>) =>

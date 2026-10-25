@@ -1,20 +1,10 @@
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import type { CollectionQueryState } from "../../../tableListState";
+import { testRecordSchema as documentSchema } from "../../fixtures/schemas";
 import type { TestRecord } from "../../fixtures/tableListFixtures";
-
-const documentSchema = v.object({
-  id: v.string(),
-  title: v.string(),
-  owner: v.string(),
-  score: v.number(),
-  enabled: v.boolean(),
-  modifiedAt: v.string(),
-  capability: v.optional(v.boolean()),
-});
 
 const metadata: ApiV2CollectionMetadata<TestRecord> = {
   resourceName: "records",

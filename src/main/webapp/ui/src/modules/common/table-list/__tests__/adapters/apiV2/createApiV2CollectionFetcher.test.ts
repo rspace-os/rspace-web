@@ -1,5 +1,4 @@
 import { HttpResponse, http } from "msw";
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
@@ -7,19 +6,12 @@ import {
   apiV2CollectionRequestParams,
   createApiV2CollectionFetcher,
 } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
+import { expandedTargetDocumentSchema, testRecordSchema } from "../../fixtures/schemas";
 import { config, type TestRecord } from "../../fixtures/tableListFixtures";
 
 const adapter = createApiV2CollectionAdapter({
   config,
-  documentSchema: v.object({
-    id: v.string(),
-    title: v.string(),
-    owner: v.string(),
-    score: v.number(),
-    enabled: v.boolean(),
-    modifiedAt: v.string(),
-    capability: v.optional(v.boolean()),
-  }),
+  documentSchema: testRecordSchema,
   metadata: {
     resourceName: "records",
     fields: ["id", "title", "owner", "score", "enabled", "modifiedAt", "capability"],
@@ -136,13 +128,7 @@ describe("createApiV2CollectionFetcher", () => {
           },
         ],
       },
-      documentSchema: v.object({
-        id: v.string(),
-        target: v.object({
-          relationTo: v.literal("instruments"),
-          value: v.object({ id: v.number(), name: v.string() }),
-        }),
-      }),
+      documentSchema: expandedTargetDocumentSchema,
       metadata: {
         resourceName: "bookings",
         fields: ["id", "target"],

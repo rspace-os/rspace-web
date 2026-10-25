@@ -5,7 +5,6 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { Suspense, useState } from "react";
-import * as v from "valibot";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryHistoryNuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import { server } from "@/__tests__/mswServer";
@@ -14,6 +13,7 @@ import type { RuntimeFieldDefinition } from "../../../adapters/apiV2/runtimeFiel
 import { useApiV2RuntimeFields } from "../../../adapters/apiV2/useApiV2RuntimeFields";
 import { useApiV2TableList } from "../../../adapters/apiV2/useApiV2TableList";
 import { TableList } from "../../../TableList";
+import { tableListDocumentSchema as documentSchema } from "../../fixtures/schemas";
 
 type Instrument = {
   id: number;
@@ -21,8 +21,6 @@ type Instrument = {
   target?: string;
   customFields?: Record<string, string | number | readonly string[] | null>;
 };
-
-const documentSchema = v.object({ id: v.number(), name: v.string(), target: v.optional(v.string()) });
 
 const config = {
   slug: "instruments",

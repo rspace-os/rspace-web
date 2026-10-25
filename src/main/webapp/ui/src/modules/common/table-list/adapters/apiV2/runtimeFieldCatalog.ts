@@ -1,38 +1,9 @@
-import * as v from "valibot";
+import type * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { type ApiV2RuntimeFieldNamespace, apiV2FilterOperators } from "./apiV2CollectionMetadata";
-
-// Metadata validation imports this module, so read its operators after initialization.
-const filterOperator = v.lazy(() => v.picklist(apiV2FilterOperators));
-
-const runtimeFieldSchema = v.object({
-  id: v.pipe(v.string(), v.minLength(1)),
-  selector: v.pipe(v.string(), v.minLength(1)),
-  label: v.string(),
-  type: v.picklist(["text", "number", "date", "time", "radio", "choice"] as const),
-  jsonType: v.picklist(["string", "number", "array"] as const),
-  operators: v.array(filterOperator),
-  supportsWildcards: v.boolean(),
-  columnSelectable: v.boolean(),
-  sortable: v.boolean(),
-  source: v.object({ id: v.string(), label: v.string() }),
-  options: v.array(v.string()),
-});
-
-const catalogSchema = v.object({
-  fields: v.array(runtimeFieldSchema),
-  totalFields: v.optional(v.number()),
-  hasMore: v.boolean(),
-  page: v.number(),
-  limit: v.number(),
-});
+import type { ApiV2RuntimeFieldNamespace } from "./apiV2CollectionMetadata";
+import { catalogSchema, type runtimeFieldSchema, type runtimeFieldValuesSchema } from "./schemas";
 
 export type RuntimeFieldDefinition = v.InferOutput<typeof runtimeFieldSchema>;
-
-export const runtimeFieldValuesSchema = v.record(
-  v.string(),
-  v.nullable(v.union([v.string(), v.number(), v.array(v.string())])),
-);
 
 export type RuntimeFieldValues = v.InferOutput<typeof runtimeFieldValuesSchema>;
 
