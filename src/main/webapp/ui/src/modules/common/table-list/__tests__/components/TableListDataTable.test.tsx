@@ -7,7 +7,9 @@ import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
+import { parseRsqlExpression, serializeRsqlExpression } from "../../rsql/rsqlCodec";
 import { TableList } from "../../TableList";
+import type { FilterExpression, FilterState } from "../../tableListState";
 import { config, firstPage, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 const checkboxForRow = (title: string) =>
@@ -261,6 +263,63 @@ describe("TableList data table", () => {
     expect(screen.getByRole("cell", { name: "Gamma" })).toBeVisible();
     expect(screen.queryByRole("cell", { name: "Alpha" })).not.toBeInTheDocument();
     expect(screen.queryByRole("cell", { name: "Beta" })).not.toBeInTheDocument();
+  });
+
+  it.each<{
+    operator: "equals" | "greaterThan";
+    value: string;
+    expectedIds: readonly string[];
+  }>([
+    { operator: "equals", value: "2026-08-02T10:00:00Z", expectedIds: ["3"] },
+    { operator: "greaterThan", value: "2026-08-01T10:00:00Z", expectedIds: ["2", "3"] },
+  ])("keeps $operator date-time filtering stable after an RSQL round-trip", ({ operator, value, expectedIds }) => {
+    const initialExpression: FilterExpression<TestRecord> = {
+      kind: "comparison",
+      field: "modifiedAt",
+      operator,
+      value,
+    };
+    const restoredExpression = parseRsqlExpression(serializeRsqlExpression(initialExpression), config);
+    if (restoredExpression?.kind !== "comparison") {
+      throw new Error("Expected a restored date-time comparison");
+    }
+    expect(restoredExpression.value).toBeInstanceOf(Date);
+
+    function table(filters: FilterState<TestRecord>) {
+      return (
+        <TableList
+          queryString={false}
+          config={config}
+          rows={records}
+          getRowId={(row) => row.id}
+          clientSide
+          renderRows={(rows) => (
+            <ol aria-label="Filtered record IDs">
+              {rows.map((row) => (
+                <li key={row.id}>{row.id}</li>
+              ))}
+            </ol>
+          )}
+          features={{
+            filtering: { value: filters, onChange: vi.fn() },
+            sorting: false,
+            pagination: false,
+            columns: false,
+          }}
+        />
+      );
+    }
+    const visibleIds = () =>
+      within(screen.getByRole("list", { name: "Filtered record IDs" }))
+        .getAllByRole("listitem")
+        .map((item) => item.textContent ?? "");
+    const { rerender } = render(table({ search: "", expression: initialExpression }));
+
+    expect(visibleIds()).toEqual(expectedIds);
+
+    rerender(table({ search: "", expression: restoredExpression }));
+
+    expect(visibleIds()).toEqual(expectedIds);
   });
 
   it("keeps remote rows in server order when sorting changes", async () => {
