@@ -13,17 +13,14 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVerticalIcon, Trash2Icon, XIcon } from "lucide-react";
-import type { CSSProperties } from "react";
+import { Trash2Icon, XIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig, SortDirection, SortRule } from "@/modules/common/collection/collectionConfig";
 import { fieldLabel } from "@/modules/common/collection/collectionConfig";
 import { Button } from "@/modules/common/ui/button";
-import { cn } from "@/modules/common/utils/cn";
+import { SortableControlRow } from "../SortableControlRow";
 
 function SortableSortingRow({
   id,
@@ -48,30 +45,12 @@ function SortableSortingRow({
   onDirectionChange: (direction: SortDirection) => void;
   onRemove: () => void;
 }) {
-  const { attributes, isDragging, listeners, setNodeRef, transform, transition } = useSortable({ id });
-  const style: CSSProperties = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    zIndex: isDragging ? 1 : undefined,
-  };
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className={cn(
-        "grid grid-cols-[1.5rem_minmax(8rem,1fr)_minmax(8rem,12rem)_2rem] items-center gap-2 rounded-sm border bg-background p-2",
-        isDragging && "opacity-60 shadow-sm",
-      )}
+    <SortableControlRow
+      id={id}
+      moveLabel={moveLabel}
+      className="grid-cols-[1.5rem_minmax(8rem,1fr)_minmax(8rem,12rem)_2rem]"
     >
-      <button
-        type="button"
-        aria-label={moveLabel}
-        className="flex size-6 touch-none cursor-grab items-center justify-center rounded-sm text-muted-foreground hover:bg-muted active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVerticalIcon aria-hidden="true" className="size-3" />
-      </button>
       <span className="text-xs font-medium">{label}</span>
       <select
         aria-label={directionLabel}
@@ -85,7 +64,7 @@ function SortableSortingRow({
       <Button aria-label={removeLabel} size="icon-xs" variant="ghost" onClick={onRemove}>
         <Trash2Icon aria-hidden="true" />
       </Button>
-    </li>
+    </SortableControlRow>
   );
 }
 

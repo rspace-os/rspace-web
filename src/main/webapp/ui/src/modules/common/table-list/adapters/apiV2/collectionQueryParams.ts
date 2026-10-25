@@ -1,6 +1,13 @@
-import type { FieldName, ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import type {
+  FieldName,
+  RelationshipFilterPicker,
+  ResolvedCollectionConfig,
+} from "@/modules/common/collection/collectionConfig";
+import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
+import { relationshipSourceForPicker } from "@/modules/common/relationship-picker/relationshipSourceForPicker";
 import type { RelationshipSource } from "@/modules/common/relationship-picker/relationshipSources";
 import { relationshipSources as builtInRelationshipSources } from "@/modules/common/relationship-picker/relationshipSources";
+import { LocalizedTableListError } from "../../LocalizedTableListError";
 import { serializeSorting } from "../../queryStringState";
 import type { CollectionQueryState, FilterExpression } from "../../tableListState";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
@@ -8,15 +15,15 @@ import { serializeRsql } from "./rsql/serializeRsql";
 
 function compatiblePickerSource<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,
-  resource: string,
-  prefix: string,
+  picker: RelationshipFilterPicker,
 ): RelationshipSource | undefined {
   const sources = { ...builtInRelationshipSources, ...config.relationshipSources };
-  const source = sources[resource];
-  if (!source || source.globalIdPrefix !== prefix) {
-    return undefined;
-  }
-  return source;
+  return relationshipSourceForPicker(picker, sources);
+}
+
+function ownedPickerValue(value: string, source: RelationshipSource): string | null {
+  const normalized = source.normalizeValue ? source.normalizeValue(value) : source.ownsValue(value) ? value : null;
+  return normalized !== null && source.ownsValue(normalized) ? normalized : null;
 }
 
 class InvalidPickerValueError extends Error {}
@@ -25,8 +32,8 @@ function normalizePickerValue(value: unknown, source: RelationshipSource, field:
   if (typeof value !== "string") {
     throw new InvalidPickerValueError(`Relationship filter value must be a string: ${field}`);
   }
-  const normalized = source.normalizeValue ? source.normalizeValue(value) : source.ownsValue(value) ? value : null;
-  if (normalized === null || normalized === "" || !source.ownsValue(normalized)) {
+  const normalized = ownedPickerValue(value, source);
+  if (normalized === null || normalized === "") {
     throw new InvalidPickerValueError(`Invalid relationship filter value: ${field}`);
   }
   return normalized;
@@ -48,7 +55,7 @@ function normalizePickerExpression<TDocument>(
   if (expression.operator === "exists") return expression;
   const picker = metadata.filtering.selectors[String(expression.field)]?.picker;
   if (!picker) return expression;
-  const source = compatiblePickerSource(config, picker.resource, picker.globalIdPrefix);
+  const source = compatiblePickerSource(config, picker);
   // An unavailable or mismatched source keeps the existing typed filter path usable.
   if (!source) return expression;
   if (expression.operator === "in" || expression.operator === "notIn") {
@@ -179,12 +186,11 @@ export function collectionQueryParams<TDocument>(
     );
 
   for (const namespace of metadata.runtimeFields ?? []) {
-    const selected = runtimeProjection.filter((name) => name.startsWith(`${namespace.namespace}.`));
+    const selected = runtimeProjection.filter((name) => isRuntimeFieldInNamespace(name, namespace.namespace));
     if (selected.length > namespace.maximumProjections) {
-      throw new Error(
-        runtime.projectionLimitMessage?.(namespace.maximumProjections) ??
-          `Custom field column limit exceeded: maximum ${namespace.maximumProjections}`,
-      );
+      if (runtime.projectionLimitMessage)
+        throw new LocalizedTableListError(runtime.projectionLimitMessage(namespace.maximumProjections));
+      throw new Error(`Custom field column limit exceeded: maximum ${namespace.maximumProjections}`);
     }
   }
   params.set(

@@ -16,6 +16,18 @@ Every remote table, REST API v2 or not, loads its rows through a
 [`useTableList`](../../src/main/webapp/ui/src/modules/common/table-list/useTableList.ts) keeps the
 table and query state and returns `tableProps` plus functions that change that state.
 
+The OpenAPI reader validates the current generated contract with Valibot. Selector and runtime
+flags must be booleans, and query/catalog limits must be positive integers; `maximumProjections`
+may be zero. Runtime descriptors must include their catalog limits and `via`/`viaResource` values.
+Missing values are errors rather than client-side defaults. The list response must reference
+a local Read component through `docs.items.$ref`.
+
+Absent relationship/runtime extensions mean no such capabilities. Optional titles, picker metadata
+and formats remain optional. Selector schemas support declared JSON types, nullable type unions
+and nonempty scalar `oneOf` variants. Mixed primitive variants use a text input. Other
+composition/reference forms are rejected in selectors. Unrelated OpenAPI properties and
+extensions do not need table-specific validation.
+
 ## REST API v2 setup
 
 Use this procedure for most new tables.
@@ -112,8 +124,8 @@ The adapter replaces field capabilities with the generated API rules. The table 
 
 A collection config declares a relationship once. If an experiment schema uses an `owner`
 relationship instead of the scalar owner in the example above, the adapter derives one optional
-field for each target field in `x-rspace-relationship-fields`, such as `owner.name`, labelled
-"Owner → Name". You need not declare each target field separately. The adapter also
+field for each `<relationship>.<field>` selector in `x-rspace-filter`, such as `owner.name`,
+labelled "Owner → Name". You need not declare each target field separately. The adapter also
 exposes published relationship fields when their owner is absent from the collection config, such
 as `createdBy.username` and `updatedBy.username`. These fields remain filter-only and serialize the
 published selector without adding response fields.
@@ -129,10 +141,11 @@ Valibot drops undeclared keys, so the adapter restores the other target fields a
 renderer reads each value through its owner relationship. Sparse field requests select the owner
 relationship instead of the dotted selector.
 
-The field label combines the translated relationship label and the target field title, such as
-"Owner → Name". When the server publishes no title, the adapter uses the shared
-`common:tableList.targetFields.<field>` label, such as "Created by → First name", and falls back to
-the field name only when the catalog does not name it. An owner without a configured
+The field label combines the translated relationship label and the target field label, such as
+"Owner → Name". Built-in target fields use the shared `common:tableList.targetFields.<field>`
+catalog label ahead of the server title, so "Bookable item → Instrument name" becomes
+"Bookable item → Name". Unknown target fields use the server title, then the field name.
+Explicit labels for configured structured child fields are retained. An owner without a configured
 field uses `common:tableList.fields.<owner>`, such as "Created by", then the published
 `viaTitle`, then the owner name. A metadata-derived identity field takes its
 label from the same `common:tableList.fields.<selector>` key.

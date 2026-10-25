@@ -1,7 +1,9 @@
 import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
 import {
+  columnSelectors,
   parseColumns,
   parseSorting,
   serializeColumns,
@@ -11,7 +13,6 @@ import {
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "./rsql/rsqlCodec";
 import type { TableListFeatures, TableListQueryStringOptions } from "./tableListState";
 import {
-  columnSelectors,
   loadStoredTableView,
   saveStoredTableView,
   storedTableViewSelectors,
@@ -27,7 +28,8 @@ function staleFieldPolicy<TDocument>(config: ResolvedCollectionConfig<TDocument>
   if (namespaces.length === 0) return undefined;
   const known = new Set(config.fields.map((field) => String(field.name)));
   return {
-    isStale: (name: string) => !known.has(name) && namespaces.some((namespace) => name.startsWith(`${namespace}.`)),
+    isStale: (name: string) =>
+      !known.has(name) && namespaces.some((namespace) => isRuntimeFieldInNamespace(name, namespace)),
   };
 }
 

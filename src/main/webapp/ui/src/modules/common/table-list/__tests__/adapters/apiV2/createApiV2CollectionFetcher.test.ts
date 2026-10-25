@@ -1,25 +1,18 @@
 import { HttpResponse, http } from "msw";
-import * as v from "valibot";
 import { describe, expect, it } from "vitest";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { server } from "@/__tests__/mswServer";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import {
   apiV2CollectionRequestParams,
   createApiV2CollectionFetcher,
 } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
+import { expandedTargetDocumentSchema, testRecordSchema } from "../../fixtures/schemas";
 import { config, type TestRecord } from "../../fixtures/tableListFixtures";
 
 const adapter = createApiV2CollectionAdapter({
   config,
-  documentSchema: v.object({
-    id: v.string(),
-    title: v.string(),
-    owner: v.string(),
-    score: v.number(),
-    enabled: v.boolean(),
-    modifiedAt: v.string(),
-    capability: v.optional(v.boolean()),
-  }),
+  documentSchema: testRecordSchema,
   metadata: {
     resourceName: "records",
     fields: ["id", "title", "owner", "score", "enabled", "modifiedAt", "capability"],
@@ -45,18 +38,7 @@ describe("createApiV2CollectionFetcher", () => {
   it("rejects a parsed page when row validation fails", async () => {
     server.use(
       http.get("/api/v2/records", () =>
-        HttpResponse.json({
-          docs: [{ id: "1", title: "Invalid" }],
-          totalDocs: 1,
-          limit: 2,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 1,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        }),
+        HttpResponse.json({ ...v2ListEnvelope([{ id: "1", title: "Invalid" }]), limit: 2 }),
       ),
     );
     const fetchCollection = createApiV2CollectionFetcher<TestRecord>(adapter, {
@@ -85,15 +67,11 @@ describe("createApiV2CollectionFetcher", () => {
         expect(request.headers.get("Authorization")).toBe("Bearer test-token");
         expect(url.searchParams.get("page")).toBe("1");
         return HttpResponse.json({
-          docs: [],
+          ...v2ListEnvelope([]),
           totalDocs: 12,
           limit: 2,
-          page: 1,
-          pagingCounter: 1,
           totalPages: 6,
-          hasPrevPage: false,
           hasNextPage: true,
-          prevPage: null,
           nextPage: 2,
         });
       }),
@@ -136,13 +114,7 @@ describe("createApiV2CollectionFetcher", () => {
           },
         ],
       },
-      documentSchema: v.object({
-        id: v.string(),
-        target: v.object({
-          relationTo: v.literal("instruments"),
-          value: v.object({ id: v.number(), name: v.string() }),
-        }),
-      }),
+      documentSchema: expandedTargetDocumentSchema,
       metadata: {
         resourceName: "bookings",
         fields: ["id", "target"],
@@ -167,18 +139,7 @@ describe("createApiV2CollectionFetcher", () => {
         const url = new URL(request.url);
         expect(url.searchParams.get("depth")).toBe("2");
         expect(url.searchParams.get("fields[bookings]")).toBe("id,target");
-        return HttpResponse.json({
-          docs: [],
-          totalDocs: 0,
-          limit: 20,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 0,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        });
+        return HttpResponse.json({ ...v2ListEnvelope([]), limit: 20 });
       }),
     );
     const fetchCollection = createApiV2CollectionFetcher(bookingAdapter, { depth: 2 });
@@ -212,16 +173,8 @@ describe("createApiV2CollectionFetcher", () => {
       http.get("/api/v2/records", ({ request }) => {
         expect(new URL(request.url).searchParams.get("fields[records]")).toBe("id,title,score,capability");
         return HttpResponse.json({
-          docs: [{ id: "one", title: "One", score: 1, capability: true }],
-          totalDocs: 1,
+          ...v2ListEnvelope([{ id: "one", title: "One", score: 1, capability: true }]),
           limit: 2,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 1,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
         });
       }),
     );
@@ -253,18 +206,7 @@ describe("createApiV2CollectionFetcher", () => {
       http.get("/api/v2/records", ({ request }) => {
         expect(new URL(request.url).searchParams.get("where")).toContain("owner=contains=ada");
         expect(new URL(request.url).searchParams.get("where")).toContain("title=contains=scope");
-        return HttpResponse.json({
-          docs: [],
-          totalDocs: 0,
-          limit: 2,
-          page: 1,
-          pagingCounter: 1,
-          totalPages: 0,
-          hasPrevPage: false,
-          hasNextPage: false,
-          prevPage: null,
-          nextPage: null,
-        });
+        return HttpResponse.json({ ...v2ListEnvelope([]), limit: 2 });
       }),
     );
 

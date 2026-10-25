@@ -1,5 +1,5 @@
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/collectionConfig";
-import { parseColumns, parseSorting, serializeColumns, serializeSorting } from "./queryStringState";
+import { columnSelectors, parseColumns, parseSorting, serializeColumns, serializeSorting } from "./queryStringState";
 import { parseRsqlExpression, type StaleFieldPolicy, serializeRsqlExpression } from "./rsql/rsqlCodec";
 import type { FilterExpression } from "./tableListState";
 
@@ -71,10 +71,15 @@ export function parseTableViewState<TDocument>(
     ) {
       return null;
     }
+    let columns = config.defaultColumns;
+    if (state.columns !== null) {
+      if (typeof state.defaults !== "string") return null;
+      columns = savedColumns(state.columns, state.defaults, config, stale);
+    }
     return {
       search: state.search,
       where: state.where === null ? null : parseRsqlExpression(state.where, config, stale),
-      columns: savedColumns(state.columns, state.defaults, config, stale),
+      columns,
       sort:
         state.sort === null
           ? (config.defaultSort ?? [])
@@ -87,18 +92,17 @@ export function parseTableViewState<TDocument>(
 
 /**
  * A saved column selection plus any default column added to the configuration since it was saved, each placed
- * after the default that precedes it. Views saved before `defaults` was recorded gain every missing default once.
+ * after the default that precedes it.
  */
 function savedColumns<TDocument>(
-  columns: string | null,
-  defaults: string | undefined,
+  columns: string,
+  defaults: string,
   config: ResolvedCollectionConfig<TDocument>,
   stale?: StaleViewFields,
 ): readonly FieldName<TDocument>[] {
-  if (columns === null) return config.defaultColumns;
   const saved = parseColumns(columns, config, stale);
   if (saved === null) return config.defaultColumns;
-  const seen = new Set<string>(defaults === undefined ? [] : columnNames(defaults));
+  const seen = new Set<string>(columnSelectors(defaults));
   const merged = [...saved];
   config.defaultColumns.forEach((column, index) => {
     if (seen.has(column) || merged.includes(column)) return;
@@ -106,14 +110,4 @@ function savedColumns<TDocument>(
     merged.splice(previous === undefined ? 0 : merged.indexOf(previous) + 1, 0, column);
   });
   return merged;
-}
-
-function columnNames(serialized: string): readonly string[] {
-  try {
-    const value: unknown = JSON.parse(serialized);
-    const raw = isRecord(value) ? value.fields : value;
-    return Array.isArray(raw) ? raw.filter((name): name is string => typeof name === "string") : [];
-  } catch {
-    return [];
-  }
 }

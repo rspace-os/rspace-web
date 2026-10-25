@@ -6,25 +6,13 @@ import type {
   ResolvedCollectionConfig,
   ResolvedFieldConfig,
 } from "@/modules/common/collection/collectionConfig";
+import { filterOperatorsByToken, filterOperatorTokens as tokens } from "@/modules/common/collection/filterOperators";
 import type { FilterExpression } from "../tableListState";
 import { normalizeRsqlList, normalizeRsqlScalar } from "./filterValue";
-
-const tokens = {
-  equals: "==",
-  notEquals: "!=",
-  greaterThan: "=gt=",
-  greaterThanOrEqual: "=ge=",
-  lessThan: "=lt=",
-  lessThanOrEqual: "=le=",
-  in: "=in=",
-  notIn: "=out=",
-  contains: "=contains=",
-  matches: "=like=",
-  exists: "=exists=",
-} as const satisfies Record<FilterOperator, string>;
+import { booleanScalar, dateTimeScalar, numberScalar, stringScalar } from "./schemas";
 
 const operators = new Map<string, FilterOperator>([
-  ...Object.entries(tokens).map(([operator, token]) => [token, operator as FilterOperator] as const),
+  ...Object.entries(filterOperatorsByToken),
   // Accept symbolic aliases from URLs and saved state; serialization uses the canonical tokens above.
   [">", "greaterThan"],
   [">=", "greaterThanOrEqual"],
@@ -62,22 +50,6 @@ function serializeNode<TDocument>(expression: FilterExpression<TDocument>, isRoo
 export function serializeRsqlExpression<TDocument>(expression: FilterExpression<TDocument>): string {
   return serializeNode(expression, true);
 }
-
-const stringScalar = v.string();
-const booleanScalar = v.pipe(
-  v.picklist(["true", "false"]),
-  v.transform((value) => value === "true"),
-);
-const numberScalar = v.pipe(
-  v.string(),
-  v.transform((value) => (value.trim() === "" ? Number.NaN : Number(value))),
-  v.finite(),
-);
-const dateTimeScalar = v.pipe(
-  v.string(),
-  v.transform((value) => new Date(value)),
-  v.check((value) => !Number.isNaN(value.getTime())),
-);
 
 function parseScalar<TOutput>(schema: v.GenericSchema<string, TOutput>, value: string): TOutput | null {
   const result = v.safeParse(schema, value);

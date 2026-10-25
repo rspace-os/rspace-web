@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { FilterOperator, ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
 import { selectOptionText } from "@/modules/common/collection/collectionConfig";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
+import { relationshipSourceForPicker } from "@/modules/common/relationship-picker/relationshipSourceForPicker";
 import { type RelationshipSource, relationshipSources } from "@/modules/common/relationship-picker/relationshipSources";
 import { Input } from "@/modules/common/ui/input";
 import { MultiSelect } from "@/modules/common/ui/multi-select";
@@ -15,8 +16,7 @@ function identitySourceFor<TDocument>(
   sources: Readonly<Record<string, RelationshipSource>>,
 ): RelationshipSource | undefined {
   if (field.filterPicker) {
-    const source = sources[field.filterPicker.resource];
-    return source?.globalIdPrefix === field.filterPicker.globalIdPrefix ? source : undefined;
+    return relationshipSourceForPicker(field.filterPicker, sources);
   }
   return field.type === "relationship" ? sources[field.relationTo] : undefined;
 }
@@ -145,9 +145,9 @@ export function FilterValueInput<TDocument>({
                 : "text"
       }
       step={field.type === "dateTime" ? "any" : undefined}
-      placeholder={t(
-        operator === "matches" ? "tableList.filters.placeholders.pattern" : "tableList.filters.placeholders.value",
-      )}
+      placeholder={
+        operator === "matches" ? t("tableList.filters.placeholders.pattern") : t("tableList.filters.placeholders.value")
+      }
       value={scalarValue(value)}
       onChange={(event) => onChange(event.target.value)}
     />

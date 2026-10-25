@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import * as React from "react";
-import * as v from "valibot";
+import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { queryKeys } from "@/modules/common/hooks/auth";
 import type { ApiV2CollectionMetadata } from "./adapters/apiV2/apiV2CollectionMetadata";
 import { useApiV2TableList } from "./adapters/apiV2/useApiV2TableList";
+import { targetFieldDocumentSchema as documentSchema } from "./stories/schemas";
 import { TableList } from "./TableList";
 
 type BookingConfiguration = {
@@ -13,12 +14,6 @@ type BookingConfiguration = {
   timeZone: string;
   target: string;
 };
-
-const documentSchema = v.object({
-  id: v.string(),
-  timeZone: v.string(),
-  target: v.string(),
-});
 
 const config = resolveCollectionConfig<BookingConfiguration>({
   slug: "bookingConfigurations",
@@ -61,6 +56,7 @@ const metadata: ApiV2CollectionMetadata<BookingConfiguration> = {
         operators: ["==", "=contains=", "=like="],
         wildcards: true,
         title: "Bookable item name",
+        fieldType: "text",
       },
     },
     limits: {
@@ -69,14 +65,6 @@ const metadata: ApiV2CollectionMetadata<BookingConfiguration> = {
       maximumNesting: 10,
       maximumArguments: 100,
       maximumWhereLength: 4096,
-    },
-  },
-  relationshipFields: {
-    "target.name": {
-      operators: ["==", "=contains=", "=like="],
-      wildcards: true,
-      title: "Bookable item name",
-      fieldType: "text",
     },
   },
   pagination: { defaultLimit: 10, maximumLimit: 100 },
@@ -94,24 +82,10 @@ function Demo() {
         const url = new URL(String(input), "http://localhost");
         setLastQuery(decodeURIComponent(url.search));
         return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              docs: [],
-              totalDocs: 0,
-              limit: 10,
-              page: 1,
-              pagingCounter: 1,
-              totalPages: 0,
-              hasPrevPage: false,
-              hasNextPage: false,
-              prevPage: null,
-              nextPage: null,
-            }),
-            {
-              status: 200,
-              headers: { "content-type": "application/json" },
-            },
-          ),
+          new Response(JSON.stringify({ ...v2ListEnvelope([]), limit: 10 }), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
         );
       }) as typeof globalThis.fetch,
     }),

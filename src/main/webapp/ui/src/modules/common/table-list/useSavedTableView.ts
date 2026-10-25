@@ -1,8 +1,9 @@
 import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { columnSelectors } from "./queryStringState";
 import { rsqlSelectors } from "./rsql/rsqlCodec";
 import type { TableListQueryStringOptions } from "./tableListState";
-import { columnSelectors, readStoredTableView, removeStoredTableView, tableViewStorageKey } from "./tableViewStorage";
+import { readStoredTableView, removeStoredTableView, tableViewStorageKey } from "./tableViewStorage";
 import { parameterNames, tableIdFor } from "./useTableListQueryString";
 
 type RawView = {
