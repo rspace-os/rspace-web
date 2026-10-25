@@ -19,7 +19,11 @@ Shared infrastructure lives here:
 - `api/models/` — TypeScript types for request/response bodies.
 - `fixtures/` — typed fixture layers. Import `test` from `fixtures/flows`, or
   `dynamicUserTest` from `fixtures/dynamicUser`; import `expect` from
-  `@playwright/test` and tags from `tags.ts`.
+  `@playwright/test` and tags from `tags.ts`. Domain specs that need extra
+  fixtures extend one of these in their own module, e.g. `inventoryPermissionTest`
+  in `fixtures/inventoryPermissions.ts`.
+- `assertions/` — reusable domain checks shared by several specs (e.g.
+  `documents.ts`, `inventoryAccess.ts`).
 - `env.ts` — all config/env reading goes through here, nowhere else.
 - `users.ts` — seed user map. Browser projects pick distinct users to avoid parallel-run state collisions.
 - `tags.ts` — native Playwright tag constants for `test.describe`/`test` metadata.

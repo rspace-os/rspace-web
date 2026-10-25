@@ -198,7 +198,7 @@ test.describe(`Inventory Samples`, { tag: [tags.INVENTORY, tags.MOBILE] }, () =>
     await pageInventory.searchPanel.search(sampleName);
     await pageInventory.searchPanel.open(sampleName);
 
-    await (await pageInventory.detailsPanel.duplicateControl()).click();
+    await pageInventory.detailsPanel.duplicate();
 
     await expect(pageInventory.detailsPanel.heading).toContainText(`${sampleName}_COPY`);
 
