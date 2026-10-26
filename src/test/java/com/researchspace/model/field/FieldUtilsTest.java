@@ -37,10 +37,11 @@ public class FieldUtilsTest {
   }
 
   @Test
-  public void rejectsNullAndOverlongInput() {
+  public void lengthIsCheckedSeparatelyFromFormat() {
     assertFalse(FieldUtils.isValidRadioOrChoiceString(null));
     String longest = "a=" + "b".repeat(FieldUtils.MAX_OPTIONS_LENGTH - 2);
     assertTrue(FieldUtils.isValidRadioOrChoiceString(longest));
+    assertFalse(FieldUtils.isTooLong(longest));
     assertTrue(FieldUtils.isValidRadioOrChoiceString(longest + "b"));
     assertTrue(FieldUtils.isTooLong(longest + "b"));
     assertFalse(FieldUtils.isTooLong(null));
