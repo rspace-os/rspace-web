@@ -295,8 +295,10 @@ public class InventoryPermissionUtils {
     if (!canRead) {
       throwNotFoundException(record.getId());
     }
-    // can read, just can't transfer. we can show more useful message.
-    if (!canUserTransferInventoryRecord(record, user)) {
+    // can read, just can't transfer. we can show more useful message. A locked (default/system)
+    // instrument template cannot be transferred by anyone (transfer does not consult
+    // canUserEditInventoryRecord, so the lock is enforced explicitly here too).
+    if (isLockedInstrumentTemplate(record) || !canUserChangeAccessPermissions(record, user)) {
       throw new IllegalArgumentException(
           record.getType()
               + " with id ["
@@ -310,24 +312,31 @@ public class InventoryPermissionUtils {
   }
 
   /**
-   * Whether the user may change a sample's requestable flag: they must be able to both edit and
-   * transfer it, so a PI cannot change it on a member's sample shared with no one.
+   * Whether the user may change a sample's requestable flag: they must be able to both edit it and
+   * change its access permissions, so a PI cannot change it on a member's private sample.
    */
   public boolean canUserChangeRequestable(InventoryRecord record, User user) {
     return record.isSample()
         && canUserEditInventoryRecord(record, user)
-        && canUserTransferInventoryRecord(record, user);
+        && canUserChangeAccessPermissions(record, user);
   }
 
   /**
-   * The owner, or a PI or Lab Admin of the owner's group. Nobody may transfer a locked
-   * (default/system) instrument template.
+   * Ownership control (CONTEXT.md): the owner, or a PI / Lab Admin of a group the owner belongs to.
    */
-  public boolean canUserTransferInventoryRecord(InventoryRecord record, User user) {
-    String invRecOwner = record.getOwner().getUsername();
-    return !isLockedInstrumentTemplate(record)
-        && (user.getUsername().equals(invRecOwner)
-            || isPiOrAdminOfRecordOwnerGroup(user, invRecOwner));
+  public boolean canUserChangeAccessPermissions(InventoryRecord record, User user) {
+    String owner = record.getOwner().getUsername();
+    return user.getUsername().equals(owner) || isPiOrAdminOfRecordOwnerGroup(user, owner);
+  }
+
+  public void assertUserCanChangeAccessPermissions(InventoryRecord record, User user) {
+    if (!canUserChangeAccessPermissions(record, user)) {
+      throw new IllegalArgumentException(
+          record.getType()
+              + " with id ["
+              + record.getId()
+              + "] access permissions cannot be changed by current User");
+    }
   }
 
   // user is a PI(or Lab admin) of the group
@@ -346,7 +355,6 @@ public class InventoryPermissionUtils {
 
   public void setPermissionsInApiInventoryRecord(
       ApiInventoryRecordInfo apiInvRec, InventoryRecord invRec, User user) {
-    String invRecOwner = apiInvRec.getOwner().getUsername();
     if (canUserEditInventoryRecord(invRec, user)) {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.READ);
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.UPDATE);
@@ -355,11 +363,7 @@ public class InventoryPermissionUtils {
     } else if (canUserLimitedReadInventoryRecord(invRec, user)) {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.LIMITED_READ);
     }
-    if (!isLockedInstrumentTemplate(invRec)
-        && (user.getUsername().equals(invRecOwner)
-            || isPiOrAdminOfRecordOwnerGroup(user, invRecOwner)
-            || user.hasSysadminRole())) {
-      // FIXME community admin should also have TRANSFER permission
+    if (!isLockedInstrumentTemplate(invRec) && canUserChangeAccessPermissions(invRec, user)) {
       apiInvRec.addPermittedAction(ApiInventoryRecordPermittedAction.CHANGE_OWNER);
     }
     if (canUserChangeRequestable(invRec, user)) {

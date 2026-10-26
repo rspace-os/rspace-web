@@ -848,13 +848,9 @@ public class SampleApiManagerTest extends SpringTransactionalTest {
     ApiSample fullOtherUserSample =
         sampleApiMgr.getApiSampleById(otherUserSample.getId(), sysadmin);
     assertEquals(otherUserSample.getName(), fullOtherUserSample.getName());
-    // system admin have only read/transfer access to any sample
-    assertThat(fullOtherUserSample.getPermittedActions()).hasSize(2);
-    assertEquals(
-        ApiInventoryRecordPermittedAction.READ, fullOtherUserSample.getPermittedActions().get(0));
-    assertEquals(
-        ApiInventoryRecordPermittedAction.CHANGE_OWNER,
-        fullOtherUserSample.getPermittedActions().get(1));
+    // system admin have only read access to any sample
+    assertThat(fullOtherUserSample.getPermittedActions())
+        .containsExactly(ApiInventoryRecordPermittedAction.READ);
   }
 
   @Test

@@ -1259,6 +1259,7 @@ export default class InventoryBaseRecord
   }
 
   isFieldEditable(field: string): boolean {
+    if ((field === "sharingMode" || field === "sharedWith") && !this.canTransfer) return false;
     return !this.loading && !this.deleted && !this.historicalVersion && this.currentlyEditableFields.has(field);
   }
 

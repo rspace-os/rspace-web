@@ -31,4 +31,8 @@ export class AccessPermissionsEditor {
   groupCheckbox(groupName: string): Locator {
     return this.root.getByRole("row").filter({ hasText: groupName }).getByRole("checkbox");
   }
+
+  explanation(): Locator {
+    return this.root.getByRole("alert");
+  }
 }

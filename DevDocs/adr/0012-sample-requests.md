@@ -93,12 +93,12 @@ The requester, the original owner and each history entry's actor are stored as a
 (`requesterId`, `originalOwnerId`, `createdById`) and a username, with no foreign key to
 `User`, so a request and its history survive the deletion of either party and never block
 it. Access, listings, the requester's actions and the automatic fulfilment on transfer all
-match on the id. A username can pass to a different person once its holder is deleted (a
-new local signup, or an SSO identity provider reassigning it), but an id is never reused,
-so the new account does not inherit the deleted user's requests. The username stays for
-display: the API returns each party as a user object, and a deleted user keeps their
-username with a null id. Deleting a user deletes the requests against their own samples,
-with their history.
+match on the id. A username can pass to a different person once its holder is deleted (a new
+local signup, or an SSO identity provider reassigning it), but an id is never reused, so the
+new account does not inherit the deleted user's requests. The username stays for display:
+the API returns each party as a user object, and a deleted user keeps their id and username,
+with no name. Deleting a user deletes the requests against their own samples, with their
+history.
 
 ### D7 A fixed transition table, enforced in one place
 

@@ -5036,10 +5036,7 @@ components:
           type: string
           description: The version of the ontology this tag data is contained in.
     SampleRequestInfo:
-      description: >-
-        Summary of a request for material from a Sample. A user deleted since
-        keeps their username in `requester`, `originalOwner` and each
-        `createdBy`, with a null id.
+      description: Summary of a request for material from a Sample.
       properties:
         id:
           type: integer
@@ -6079,24 +6076,29 @@ components:
           example: fbloggs
         email:
           type: string
-          description: Email address for User.
+          nullable: true
+          description: Email address for User. Null where only public details are shown.
           pattern: \S+@\S+
           example: bloggs@uni.edu
         firstName:
           type: string
+          nullable: true
           description: First name of the User.
           example: Fred
         lastName:
           type: string
+          nullable: true
           description: Last name of the User.
           example: Bloggs
         homeFolderId:
           type: number
+          nullable: true
           description: The id of the home ELN folder. May be empty if account has not yet
             been initialised.
           example: 24556
         workbenchId:
           type: number
+          nullable: true
           description: The id of the user's Inventory Workbench. May be empty if account
             has not yet been initialised.
           example: 24557

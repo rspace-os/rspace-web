@@ -252,7 +252,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     return applyOutgoingSampleRules(detail, request, user);
   }
 
-  /** A deleted user is shown by the username kept in the record, without id or name. */
+  /** A deleted user is shown by the id and username kept in the record, without a name. */
   private ApiUser toApiUser(String username, Long userId) {
     return userDao
         .getSafeNull(userId)
@@ -260,6 +260,7 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
         .orElseGet(
             () -> {
               ApiUser deleted = new ApiUser();
+              deleted.setId(userId);
               deleted.setUsername(username);
               return deleted;
             });

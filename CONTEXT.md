@@ -42,6 +42,26 @@ resolved during design. This file is a glossary only — no implementation detai
   note. The description of an ELN record and the content of an Extra text field are
   different things and keep their own, shorter cap for now.
 
+## Inventory access permissions
+
+- **Access permissions** — the setting on an inventory item (sample, container,
+  instrument or template) that says who, besides the owner, may view and edit it.
+  Subsamples have none of their own: they follow their sample.
+  _Avoid_: sharing, sharing mode, sharing settings
+- **Owner's groups** — the default access permission: every member of a lab or
+  collaboration group the owner belongs to has full access.
+- **Explicit access list** — the access permission that names the groups, any in
+  the system, whose members have full access.
+  _Avoid_: whitelist
+- **Only the Owner** — the access permission that restricts the item to its owner;
+  the PI of a group the owner belongs to keeps read access.
+  _Avoid_: private, owner only
+- **Ownership control** — the right to transfer an inventory item to another owner
+  and to change its access permissions. Held by the owner and by a PI or Lab Admin
+  of a group the owner belongs to; never part of the edit access a groupmate gets
+  through Owner's groups or an Explicit access list.
+  _Avoid_: transfer permission, change-owner permission
+
 ## Instrument PID registration (B2INST/PIDINST)
 
 - **PIDINST-mapped field** — a custom field on a concrete Instrument that feeds
