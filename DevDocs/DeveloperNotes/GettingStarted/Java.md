@@ -3,6 +3,8 @@
 First, follow the [GettingStarted.md](GettingStarted.md) doc, which
 describes local Maven/MariaDB setup necessary to run RSpace. At the end
 of that guide you should have RSpace instance running on your localhost.
+Maven's frontend build also requires Node.js 24 and standalone pnpm
+on `PATH`; Maven invokes pnpm from `PATH` and does not install Node.js.
 
 Second, you'll need an IDE of your choice to edit files. Instructions
 below describe setup for Eclipse IDE.
@@ -85,7 +87,7 @@ mvn clean jetty:run -Denvironment=drop-recreate-db -DRS.devlogLevel=INFO \
 When `-DreactDevMode=true` is set, start the Vite dev server in a separate
 terminal for Hot Module Replacement:
 ```bash
-corepack enable pnpm && pnpm install --frozen-lockfile && pnpm run serve
+pnpm install --frozen-lockfile && pnpm run serve
 ```
 
 In all these cases, the DB is wiped and recreated from scratch from

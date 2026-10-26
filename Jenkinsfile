@@ -2,6 +2,35 @@
 
 @Library('rspace-shared') _
 
+def withFrontendTools(Closure body) {
+    withEnv(["FNM_DIR=${env.WORKSPACE}/node/fnm", "PNPM_HOME=${env.WORKSPACE}/node/pnpm"]) {
+        sh '''
+            mkdir -p "$FNM_DIR"
+            if [ ! -x "$FNM_DIR/fnm" ]; then
+                curl -fsSL https://fnm.vercel.app/install -o "$FNM_DIR/install.sh"
+                bash "$FNM_DIR/install.sh" --install-dir "$FNM_DIR" --skip-shell
+            fi
+        '''
+        def frontendPath = sh(returnStdout: true, script: '''
+            export PATH="$FNM_DIR:$PATH"
+            eval "$(fnm env --shell bash)"
+            fnm install >&2
+            fnm use >&2
+            export PATH="$PNPM_HOME/bin:$PATH"
+            if [ ! -x "$PNPM_HOME/bin/pnpm" ]; then
+                mkdir -p "$PNPM_HOME"
+                curl -fsSL https://get.pnpm.io/install.sh -o "$PNPM_HOME/install.sh"
+                PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('+')[0].slice(5)") \
+                    ENV="$PNPM_HOME/shell.sh" SHELL=/bin/sh sh "$PNPM_HOME/install.sh" >&2
+            fi
+            printf '%s' "$PATH"
+        ''').trim()
+        withEnv(["PATH=${frontendPath}"]) {
+            body()
+        }
+    }
+}
+
 echo 'Building rspace-web'
 
 /*
@@ -119,6 +148,9 @@ pipeline {
                             changeset '**/*.jsp'
                             changeset '**/*.css'
                             changeset '**/*.json'
+                            changeset '.node-version'
+                            changeset 'pnpm-lock.yaml'
+                            changeset 'pnpm-workspace.yaml'
                         }
                     }
                 }
@@ -132,12 +164,14 @@ pipeline {
             }
             steps {
                 echo 'Building feature branch'
-                sh '''
-                ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
-                -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-                -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
-                -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
-                '''
+                withFrontendTools {
+                    sh '''
+                    ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
+                    -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
+                    -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
+                    -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
+                    '''
+                }
             }
 
             post {
@@ -159,13 +193,15 @@ pipeline {
             }
             steps {
                 echo "Building prodRelease .war package"
-                 sh '''
-                 ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
-                -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
-                -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
-                -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
-                -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
-                '''
+                withFrontendTools {
+                     sh '''
+                     ./mvnw clean package -DgenerateReactDist -DgenerateStorybook=${STORYBOOK} -DskipTests=true \
+                    -Denvironment=prodRelease -Dspring.profiles.active=prod -DRS.logLevel=WARN -Ddeployment=production \
+                    -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                    -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
+                    -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
+                    '''
+                }
             }
 
             post {
@@ -266,14 +302,16 @@ pipeline {
                 // this is to create a valid datbase name from the branch name
 
                 echo "sanitised DB Name is $SANITIZED_DBNAME"
-                sh "./mvnw clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
-                  -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
-                  -Djavax.xml.accessExternalDTD=all\
-                  -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
-                  -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
-                  -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-db  \
-                  -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
-                  -DenableTestCoverage  ${params.NIGHTLY_BUILD}"
+                withFrontendTools {
+                    sh "./mvnw clean verify -DgenerateReactDist -DgenerateStorybook=${params.STORYBOOK} -Djava-version=${params.MAVEN_TOOLCHAIN_JAVA_VERSION} \
+                      -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
+                      -Djavax.xml.accessExternalDTD=all\
+                      -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
+                      -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
+                      -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-db  \
+                      -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
+                      -DenableTestCoverage  ${params.NIGHTLY_BUILD}"
+                }
             }
 
             post {
