@@ -594,6 +594,61 @@ public class GroupControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void soleGroupOwnerCannotBeDemotedToUser() throws Exception {
+    User owner = createAndSaveUser("owner" + getRandomName(7));
+    User member = createAndSaveUser("member" + getRandomName(7));
+    initUsers(owner, member);
+    Long groupId = createProjectGroupAsSysadmin(owner, member);
+
+    logoutAndLoginAs(owner);
+    MvcResult result =
+        mockMvc
+            .perform(
+                post(CHANGE_ROLE_URL, groupId, owner.getId())
+                    .param("role", RoleInGroup.DEFAULT.name())
+                    .principal(owner::getUsername))
+            .andReturn();
+    assertThat(getErrorListFromAjaxReturnObject(result).getErrorMessages())
+        .anyMatch(msg -> msg.contains("cannot remove the only group owner"));
+    assertEquals(RoleInGroup.GROUP_OWNER, grpMgr.getGroup(groupId).getRoleForUser(owner));
+  }
+
+  @Test
+  public void soleGroupOwnerCannotLeaveTheGroup() throws Exception {
+    User owner = createAndSaveUser("owner" + getRandomName(7));
+    User member = createAndSaveUser("member" + getRandomName(7));
+    initUsers(owner, member);
+    Long groupId = createProjectGroupAsSysadmin(owner, member);
+
+    logoutAndLoginAs(owner);
+    MvcResult result =
+        mockMvc
+            .perform(
+                post("/groups/admin/removeSelf/{groupId}", groupId).principal(owner::getUsername))
+            .andReturn();
+    assertThat(getErrorListFromAjaxReturnObject(result).getErrorMessages())
+        .anyMatch(msg -> msg.contains("cannot remove the only group owner"));
+    assertThat(grpMgr.getGroup(groupId).getMembers()).contains(owner);
+  }
+
+  @Test
+  public void soleGroupOwnerCannotBeRemovedFromTheGroup() throws Exception {
+    User owner = createAndSaveUser("owner" + getRandomName(7));
+    User member = createAndSaveUser("member" + getRandomName(7));
+    initUsers(owner, member);
+    Long groupId = createProjectGroupAsSysadmin(owner, member);
+
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    mockMvc
+        .perform(
+            post("/groups/admin/removeUser/{groupId}/{id}", groupId, owner.getId())
+                .principal(sysadmin::getUsername))
+        .andExpect(viewNameContains("groups/viewGroup"))
+        .andExpect(modelAttributeContains("error", "cannot remove the only group owner"));
+    assertThat(grpMgr.getGroup(groupId).getMembers()).contains(owner);
+  }
+
+  @Test
   public void groupPageMarksGroupOwnerButNotUserRoleMember() throws Exception {
     User owner = createAndSaveUser("owner" + getRandomName(7));
     User member = createAndSaveUser("member" + getRandomName(7));
