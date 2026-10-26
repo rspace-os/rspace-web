@@ -1,11 +1,8 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, test, vi } from "vitest";
-
+import { act, render, screen } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
+import { describe, expect, test, vi } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import { OPEN_PDF_PREVIEW_DIALOG, PdfPreviewDialogWrapper } from "./PdfPreviewDialogEntrypoint";
-
-const { axiosGetMock } = vi.hoisted(() => ({
-  axiosGetMock: vi.fn(),
-}));
 
 vi.mock("react-pdf", () => {
   type DocumentProps = {
@@ -35,17 +32,7 @@ vi.mock("react-pdf", () => {
   };
 });
 
-vi.mock("@/common/axios", () => ({
-  default: {
-    get: axiosGetMock,
-  },
-}));
-
 describe("pdf preview dialog island", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   test("opens the callable PDF preview for PDF files", async () => {
     render(<PdfPreviewDialogWrapper />);
 
@@ -71,12 +58,13 @@ describe("pdf preview dialog island", () => {
     expect(screen.getByTestId("mock-pdf-page-1")).toBeVisible();
   });
 
-  test("opens the callable Aspose preview for convertible files", async () => {
-    axiosGetMock.mockResolvedValue({
-      data: {
-        data: "converted-preview.pdf",
-      },
-    });
+  test("opens the converted document preview for supported files", async () => {
+    server.use(
+      http.get("/Streamfile/ajax/convert/42", ({ request }) => {
+        expect(new URL(request.url).searchParams.get("revision")).toBe("7");
+        return HttpResponse.json({ data: "converted-preview.pdf" });
+      }),
+    );
 
     render(<PdfPreviewDialogWrapper />);
 
@@ -94,13 +82,27 @@ describe("pdf preview dialog island", () => {
       );
     });
 
-    await waitFor(() => {
-      expect(axiosGetMock).toHaveBeenCalledWith("/Streamfile/ajax/convert/42?outputFormat=pdf&revision=7");
-    });
     expect(await screen.findByLabelText("gallery:callablePdfPreview.title")).toBeVisible();
     expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(
       "data-file",
       "/public/publicView/Streamfile/direct/42?fileName=converted-preview.pdf",
     );
+  });
+  test("shows the localized conversion error from an HTTP failure", async () => {
+    server.use(
+      http.get("/Streamfile/ajax/convert/42", () =>
+        HttpResponse.json({ error: { errorMessages: ["Conversion is busy. Try again shortly."] } }, { status: 429 }),
+      ),
+    );
+    render(<PdfPreviewDialogWrapper />);
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent(OPEN_PDF_PREVIEW_DIALOG, {
+          detail: { documentId: 42, fileExtension: "docx" },
+        }),
+      );
+    });
+    expect(await screen.findByText("Conversion is busy. Try again shortly.")).toBeVisible();
+    expect(screen.queryByText("Request failed with status code 429")).not.toBeInTheDocument();
   });
 });

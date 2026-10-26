@@ -23,7 +23,7 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 |---|---|---|
 | `RSPACE_BASE_URL` | `http://localhost:8080` | Target instance URL |
 | `HEADLESS` | `true` | Set `false` to watch browsers |
-| `E2E_BROWSER` | _(all)_ | Select `chromium`, `firefox`, `webkit`, `mobile`, or `api`. Cloud mode defaults to the three desktop browsers. |
+| `E2E_BROWSER` | _(all)_ | Select `chromium`, `firefox`, `webkit`, `mobile`, or `api`. Cloud mode defaults to the three desktop browsers. `conversion` is opt-in and needs the Docker conversion stack. |
 | `E2E_CLOUD` | `false` | Set `true` to select community UI specs against RSpace running with `deployment.cloud=true`. |
 | `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | Sysadmin username |
 | `RSPACE_SYSADMIN_PASSWORD` | `sysWisc23!` | Sysadmin password |
@@ -44,6 +44,9 @@ pnpm run test-e2e
 
 # Single browser
 E2E_BROWSER=chromium pnpm run test-e2e
+
+# Conversion parity tests against the Docker dev stack
+E2E_BROWSER=conversion pnpm run test-e2e
 
 # API tests only
 pnpm run test-e2e:api
@@ -190,6 +193,7 @@ at the provider as well as on RSpace's public preview.
 |---|---|---|
 | `*.e2e.ts` | chromium, firefox, webkit (and mobile if tagged `@mobile`) | UI browser spec |
 | `specs/cloud/**/*.e2e.ts` | chromium, firefox, webkit with `E2E_CLOUD=true` | Community UI spec |
+| `*.conversion.e2e.ts` | conversion (opt-in) | Docker conversion-stack browser spec |
 | `*.api.spec.ts` | api | Node HTTP spec (no browser) |
 
 ## Directory layout
@@ -246,6 +250,7 @@ Each project uses a distinct seed user so parallel shards do not collide:
 | firefox | user3c | PI + USER |
 | webkit | user4d | PI + USER |
 | mobile | user7g | PI + USER |
+| conversion | user6f | USER |
 | api | user2b | USER |
 
 All browser projects use PI+USER accounts. See `users.ts` for the full seed
