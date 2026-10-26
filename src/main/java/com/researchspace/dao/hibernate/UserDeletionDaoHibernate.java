@@ -311,8 +311,8 @@ public class UserDeletionDaoHibernate implements UserDeletionDao {
               table));
     }
 
-    // sample requests against this user's samples, and their status history. The actors are
-    // stored as ids and usernames without foreign keys, so need no clearing.
+    // requests against this user's samples go with them; parties are stored without foreign keys,
+    // so need no clearing
     execute(
         userId,
         session,

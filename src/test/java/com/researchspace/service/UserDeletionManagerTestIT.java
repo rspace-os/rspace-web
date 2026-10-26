@@ -16,6 +16,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
+import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
@@ -49,6 +50,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleRequest;
+import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -1249,6 +1251,27 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     assertEquals(
         fixture.requesterUsername,
         surviving.getStatusChanges().get(0).getCreatedBy().getUsername());
+
+    // the owner's listing names them the same way, and the owner can still close the request
+    logoutAndLoginAs(fixture.owner);
+    ApiSampleRequestInfo listed =
+        sampleRequestApiMgr
+            .getRequestsForUser(
+                PaginationCriteria.createDefaultForClass(SampleRequest.class),
+                SampleRequestRole.OWNER,
+                null,
+                null,
+                fixture.owner)
+            .getRequests()
+            .get(0);
+    assertEquals(fixture.requester.getId(), listed.getRequester().getId());
+    assertEquals(fixture.requesterUsername, listed.getRequester().getUsername());
+    ApiSampleRequestStatusPut reject = new ApiSampleRequestStatusPut();
+    reject.setStatus(SampleRequestStatus.REJECTED);
+    reject.setReason("the requester has left");
+    assertEquals(
+        SampleRequestStatus.REJECTED,
+        sampleRequestApiMgr.updateStatus(fixture.requestId, reject, fixture.owner).getStatus());
   }
 
   @Test
