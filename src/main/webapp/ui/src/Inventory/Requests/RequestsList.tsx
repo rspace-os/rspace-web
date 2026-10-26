@@ -27,7 +27,6 @@ import DropdownButton from "../../components/DropdownButton";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import StyledMenu from "../../components/StyledMenu";
 import { useSampleRequestsListQuery } from "./queries";
-import RequestsParameterChips from "./RequestsParameterChips";
 import RequestsSearchbar from "./RequestsSearchbar";
 import RequestsStatusChip, { requestStatusLabel } from "./RequestsStatusChip";
 import RequestsTableHead, { type ColumnKey, type SortDirection } from "./RequestsTableHead";
@@ -258,9 +257,6 @@ export default function RequestsList({
           </StyledMenu>
         </DropdownButton>
       </Grid>
-      <Box sx={{ pt: 1 }}>
-        <RequestsParameterChips requestsFilter={requestsFilter} statusFilter={statusFilter} />
-      </Box>
       <Divider orientation="horizontal" sx={{ my: 0.75 }} />
       {isError ? (
         <Alert
