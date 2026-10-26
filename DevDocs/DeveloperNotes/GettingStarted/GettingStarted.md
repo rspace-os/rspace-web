@@ -184,8 +184,9 @@ The second grant covers a scratch `hibtest` database used by the
 database themselves on first run and Hibernate builds and drops its schema each
 run, so nothing else is needed, but without the grant those tests skip rather
 than fail and the mappings go unchecked. The `hibtest.db` system property
-overrides the name (a plain identifier of up to 64 characters, otherwise the
-tests fail before touching the database); Jenkins sets it per branch so
+overrides the name. It must start with `hibtest` so it can never point at the
+application database, and be a plain identifier of up to 64 characters;
+otherwise the tests fail before touching the database. Jenkins sets it per branch so
 concurrent builds on its shared MariaDB do not share a schema. A local override
 needs a matching grant, for example ``GRANT ALL ON `hibtest%`.* TO
 'rspacedbuser'@'127.0.0.1';``.

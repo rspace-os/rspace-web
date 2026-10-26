@@ -44,6 +44,12 @@ class HibernateTestDatabaseNameTest {
   }
 
   @Test
+  void rejectsNameWithoutHibtestPrefix() {
+    System.setProperty(HibernateTest.DB_NAME_PROPERTY, "rspace");
+    assertThrows(IllegalArgumentException.class, HibernateTest::scratchDatabaseName);
+  }
+
+  @Test
   void rejectsEmptyName() {
     System.setProperty(HibernateTest.DB_NAME_PROPERTY, "");
     assertThrows(IllegalArgumentException.class, HibernateTest::scratchDatabaseName);
@@ -51,13 +57,13 @@ class HibernateTestDatabaseNameTest {
 
   @Test
   void rejectsNameLongerThanMariaDbAllows() {
-    System.setProperty(HibernateTest.DB_NAME_PROPERTY, "h".repeat(65));
+    System.setProperty(HibernateTest.DB_NAME_PROPERTY, "hibtest" + "h".repeat(58));
     assertThrows(IllegalArgumentException.class, HibernateTest::scratchDatabaseName);
   }
 
   @Test
   void acceptsNameOfExactlySixtyFourCharacters() {
-    String name = "h".repeat(64);
+    String name = "hibtest" + "h".repeat(57);
     System.setProperty(HibernateTest.DB_NAME_PROPERTY, name);
     assertEquals(name, HibernateTest.scratchDatabaseName());
   }
