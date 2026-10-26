@@ -73,7 +73,7 @@ test.describe(`Inventory permissions: edit and transfer rights`, { tag: [tags.IN
   }) => {
     test.fixme(
       true,
-      "Product defect: edits typed straight after entering Edit mode on a Sample are lost, because SampleModel.fetchAdditionalInfo returns before its refetch lands and the refetch overwrites the form. Remove this fixme once it awaits the fetch.",
+      "Sample edits typed straight after clicking Edit are lost when the record reload lands:RSDEV-1615",
     );
     test.slow();
 
