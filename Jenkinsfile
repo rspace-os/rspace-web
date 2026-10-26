@@ -44,6 +44,9 @@ pipeline {
         SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
+        // scratch database for the HibernateTest classes; the hash of the full branch name comes before the readable
+        // part so the 63-char cap can never cut it, keeping names unique even for branches that sanitise or truncate alike
+        HIBTEST_DBNAME = branchToDbName("hibtest_${branchNameHash(BRANCH_NAME)}_${BRANCH_NAME}")
         CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
         AWS_TOMCAT_AMI = 'ami-0a3f8106db17a5218'
         APP_VERSION = readMavenPom().getVersion()
@@ -267,7 +270,7 @@ pipeline {
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
-                  -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME}\
+                  -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
                   -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-db  \
                   -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
                   -DenableTestCoverage  ${params.NIGHTLY_BUILD}"
@@ -288,6 +291,8 @@ pipeline {
                     sh "rm -rf ${RS_FILE_BASE}"
                     echo "dropping test database ${SANITIZED_DBNAME}"
                     sh "mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd  -e 'drop database if exists ${SANITIZED_DBNAME}' "
+                    echo "dropping hibernate scratch database ${HIBTEST_DBNAME}"
+                    sh "mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd  -e 'drop database if exists ${HIBTEST_DBNAME}' "
                 }
 
                 success {
