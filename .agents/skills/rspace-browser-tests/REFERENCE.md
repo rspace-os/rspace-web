@@ -102,6 +102,11 @@ document/page divs, the TinyMCE contenteditable iframe body.
   files serial so only one file uses the shared registration at a time. A spec
   that also imports `browserSetup.ts` starts the worker twice in one iframe;
   `browserSetup.ts` silences that one MSW warning.
+- **Text matching (Vitest 5).** `toHaveTextContent("x")` asserts the whole text
+  is "x"; use `toMatchTextContent("x" | /x/)` for a partial or RegExp match.
+  Locators keep Vitest 4's case-insensitive substring matching through
+  `browser.locators.exact: false` in the config; pass `exact: true` per locator
+  when a name must match in full.
 - **`suppressFireAndForget404([...])`.** Components that fire un-awaited requests
   (folder listings, thumbnails) can 404 after teardown and surface as an
   `unhandledrejection` that fails the run even though every assertion passed.

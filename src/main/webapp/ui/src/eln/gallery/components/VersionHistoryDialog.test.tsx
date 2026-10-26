@@ -201,7 +201,7 @@ describe("VersionHistoryDialog", () => {
     await waitFor(() => {
       expect(screen.getByRole("alert")).toBeInTheDocument();
     });
-    expect(screen.getByRole("alert")).toHaveTextContent(/Could not load version history|Request failed/);
+    expect(screen.getByRole("alert")).toMatchTextContent(/Could not load version history|Request failed/);
   });
 
   test("a 200 carrying an error envelope is shown as an error, not as an empty history", async () => {

@@ -51,26 +51,27 @@ export class MainPanelPage {
   }
 
   /**
-   * Expands a tree item by clicking its inner content `div`, matching the
-   * Playwright spec pattern `treeitem.locator("> div").click()`.
-   *
-   * Uses `.element()` to get the DOM node, then queries its first `div` child.
-   * This is equivalent to Playwright's `locator("> div")` selector.
+   * Clicks a tree item's inner content `div`, matching the Playwright spec
+   * pattern `treeitem.locator("> div").click()`. A real pointer click, not
+   * `HTMLElement.click()`: MUI X registers newly expanded children in an effect,
+   * and a synchronous click before that crashes TreeItem under StrictMode.
    */
-  async expandTreeItem(name: string): Promise<void> {
-    // Ensure the tree item has rendered before reaching into its DOM.
+  private async clickTreeItemContent(name: string): Promise<void> {
     await expect.element(this.treeItem(name)).toBeVisible();
-    const el = this.treeItem(name).element();
-    const inner = el.querySelector<HTMLElement>(":scope > div");
+    const inner = this.treeItem(name).element().querySelector<HTMLElement>(":scope > div");
     if (!inner) throw new Error(`No child div found for treeitem "${name}"`);
-    inner.click();
+    await page.elementLocator(inner).click();
   }
 
-  /**
-   * Selects a tree item by clicking its content row (same as expandTreeItem).
-   */
+  async expandTreeItem(name: string): Promise<void> {
+    await this.clickTreeItemContent(name);
+    await expect.element(this.treeItem(name)).toHaveAttribute("aria-expanded", "true");
+  }
+
+  /** MUI X 9 reports multi-select selection with aria-checked, not aria-selected. */
   async selectTreeItem(name: string): Promise<void> {
-    await this.expandTreeItem(name);
+    await this.clickTreeItemContent(name);
+    await expect.element(this.treeItem(name)).toHaveAttribute("aria-checked", "true");
   }
 
   // ── Copy-to-clipboard button ──────────────────────────────────────────────

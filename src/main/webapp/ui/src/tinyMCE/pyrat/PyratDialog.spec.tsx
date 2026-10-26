@@ -143,8 +143,8 @@ describe("PyratDialog insertion", () => {
 
     await expect
       .element(provenanceCell)
-      .toHaveTextContent(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
-    await expect.element(serverLink).toHaveTextContent(/^fakepyrat \(https:\/\/demo\.pyrat\.example\)$/);
+      .toMatchTextContent(/^Imported from fakepyrat \(https:\/\/demo\.pyrat\.example\) on .+$/);
+    await expect.element(serverLink).toMatchTextContent(/^fakepyrat \(https:\/\/demo\.pyrat\.example\)$/);
     await expect.element(serverLink).toHaveAttribute("href", "https://demo.pyrat.example");
     await expect.element(serverLink).toHaveAttribute("rel", "noreferrer");
   });

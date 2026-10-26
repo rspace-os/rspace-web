@@ -149,7 +149,7 @@ describe("PidinstImportDialog", () => {
     bringToastsIntoView();
     const errorAlert = dialog.errorAlert();
     await expect.element(errorAlert).toBeVisible();
-    await expect.element(errorAlert).toHaveTextContent("This PID is already linked to instrument IN52.");
+    await expect.element(errorAlert).toMatchTextContent("This PID is already linked to instrument IN52.");
   });
 
   test("refuses to import an already-linked record and names the instrument that links it", async () => {

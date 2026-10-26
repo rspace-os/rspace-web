@@ -297,7 +297,7 @@ describe("InventoryInfoDialog", () => {
     );
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/fields\.link\.infoDialog\.versionNotFound/);
+    expect(alert).toMatchTextContent(/fields\.link\.infoDialog\.versionNotFound/);
     expect(alert).not.toHaveTextContent("Request failed");
   });
 

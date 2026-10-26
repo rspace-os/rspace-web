@@ -135,7 +135,7 @@ describe("Stoichiometry Table", () => {
   test("Sets first reactant as default limiting reagent when none is selected", async () => {
     render(<StoichiometryTableWithDataStory />);
     await table.waitForLoad();
-    await expect.element(table.dataRows().first()).toHaveTextContent("Benzene");
+    await expect.element(table.dataRows().first()).toMatchTextContent("Benzene");
     await expect.element(table.limitingReagentRadio("Benzene")).toBeChecked();
   });
 
@@ -180,16 +180,16 @@ describe("Stoichiometry Table", () => {
     render(<StoichiometryTableWithDataStory />);
     await table.waitForLoad();
     await expect.element(table.yieldCell(0)).toHaveTextContent("—");
-    await expect.element(table.yieldCell(1)).toHaveTextContent(/—|\d+%/);
+    await expect.element(table.yieldCell(1)).toMatchTextContent(/—|\d+%/);
   });
 
   test("Changing the limiting reagent to the second row swaps which rows have a yield", async () => {
     render(<StoichiometryTableWithDataStory />);
     await table.waitForLoad();
     await expect.element(table.yieldCell(0)).toHaveTextContent("—");
-    await expect.element(table.yieldCell(1)).toHaveTextContent(/—|\d+%/);
+    await expect.element(table.yieldCell(1)).toMatchTextContent(/—|\d+%/);
     await table.selectLimitingReagent("Cyclopentadiene");
-    await expect.element(table.yieldCell(0)).toHaveTextContent(/—|\d+%/);
+    await expect.element(table.yieldCell(0)).toMatchTextContent(/—|\d+%/);
     await expect.element(table.yieldCell(1)).toHaveTextContent("—");
   });
 
@@ -199,7 +199,7 @@ describe("Stoichiometry Table", () => {
     await table.clickUpdateInventoryStock();
     await expect.element(inventoryUpdateDialog.dialog).toBeVisible();
     for (const name of ["Benzene", "Cyclopentadiene", "Cyclopentane", "Ethanol"]) {
-      await expect.element(inventoryUpdateDialog.dialog).toHaveTextContent(name);
+      await expect.element(inventoryUpdateDialog.dialog).toMatchTextContent(name);
     }
   });
 
@@ -232,7 +232,7 @@ describe("Stoichiometry Table", () => {
     await expect.element(inventoryUpdateDialog.checkbox("Cyclopentadiene")).toBeDisabled();
     await expect.element(metric("Cyclopentadiene", inventoryUpdateHeaders.inStock)).toHaveTextContent("4.0 g");
     await expect.element(metric("Cyclopentadiene", inventoryUpdateHeaders.willUse)).toHaveTextContent("5.0 g");
-    await expect.element(metric("Cyclopentadiene", inventoryUpdateHeaders.remaining)).toHaveTextContent("-1.0 g");
+    await expect.element(metric("Cyclopentadiene", inventoryUpdateHeaders.remaining)).toMatchTextContent("-1.0 g");
     await expect
       .element(metric("Cyclopentadiene", inventoryUpdateHeaders.remaining))
       .toHaveAttribute("data-status", "negative");
@@ -247,8 +247,8 @@ describe("Stoichiometry Table", () => {
       )
       .toBeVisible();
     await expect.element(metric("Ethanol", inventoryUpdateHeaders.inStock)).toHaveTextContent("25.0 mL");
-    await expect.element(metric("Ethanol", inventoryUpdateHeaders.willUse)).toHaveTextContent("—");
-    await expect.element(metric("Ethanol", inventoryUpdateHeaders.remaining)).toHaveTextContent("—");
+    await expect.element(metric("Ethanol", inventoryUpdateHeaders.willUse)).toHaveTextContent("— mL");
+    await expect.element(metric("Ethanol", inventoryUpdateHeaders.remaining)).toHaveTextContent("— mL");
   });
 
   test("The inventory stock update dialog warns when stock has already been deducted while still allowing reselection", async () => {
@@ -327,9 +327,9 @@ describe("Stoichiometry Table", () => {
       await table.insertPubChemResult();
 
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
-      await expect.element(table.table).toHaveTextContent("Caffeine");
-      await expect.element(table.table).toHaveTextContent("194.19");
-      await expect.element(table.table).toHaveTextContent("Reagent");
+      await expect.element(table.table).toMatchTextContent("Caffeine");
+      await expect.element(table.table).toMatchTextContent("194.19");
+      await expect.element(table.table).toMatchTextContent("Reagent");
       await expect.poll(() => table.dataRows().elements().length).toBe(5);
     });
 
@@ -344,9 +344,9 @@ describe("Stoichiometry Table", () => {
       await table.addManualReagent();
 
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
-      await expect.element(table.table).toHaveTextContent("Ethanol");
-      await expect.element(table.table).toHaveTextContent("46.07");
-      await expect.element(table.table).toHaveTextContent("Reagent");
+      await expect.element(table.table).toMatchTextContent("Ethanol");
+      await expect.element(table.table).toMatchTextContent("46.07");
+      await expect.element(table.table).toMatchTextContent("Reagent");
       await expect.poll(() => table.dataRows().elements().length).toBe(5);
     });
 
@@ -361,9 +361,9 @@ describe("Stoichiometry Table", () => {
       await table.addSelectedGalleryFiles();
 
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
-      await expect.element(table.table).toHaveTextContent("ethanol");
-      await expect.element(table.table).toHaveTextContent("46.07");
-      await expect.element(table.table).toHaveTextContent("Reagent");
+      await expect.element(table.table).toMatchTextContent("ethanol");
+      await expect.element(table.table).toMatchTextContent("46.07");
+      await expect.element(table.table).toMatchTextContent("Reagent");
       await expect.poll(() => table.dataRows().elements().length).toBe(5);
     });
 
@@ -385,8 +385,8 @@ describe("Stoichiometry Table", () => {
       await table.insertPubChemResult();
 
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
-      await expect.element(table.table).toHaveTextContent("Ethanol");
-      await expect.element(table.table).toHaveTextContent("Caffeine");
+      await expect.element(table.table).toMatchTextContent("Ethanol");
+      await expect.element(table.table).toMatchTextContent("Caffeine");
       await expect.poll(() => table.dataRows().elements().length).toBe(6);
     });
   });
@@ -396,21 +396,21 @@ describe("Stoichiometry Table", () => {
       render(<StoichiometryTableWithDataStory />);
       await table.waitForLoad();
       await table.editCell({ row: 1, column: columns.actualMass, value: "8" });
-      await expect.element(table.cell("Cyclopentadiene", columns.actualMoles)).toHaveTextContent("8");
+      await expect.element(table.cell("Cyclopentadiene", columns.actualMoles)).toHaveTextContent("8.000");
     });
 
     test("Editing actual moles updates actual mass correctly", async () => {
       render(<StoichiometryTableWithDataStory />);
       await table.waitForLoad();
       await table.editCell({ row: 1, column: columns.actualMoles, value: "6" });
-      await expect.element(table.cell("Cyclopentadiene", columns.actualMass)).toHaveTextContent("6");
+      await expect.element(table.cell("Cyclopentadiene", columns.actualMass)).toHaveTextContent("6.000");
     });
 
     test("Editing actual mass updates yield correctly for non-limiting reactants", async () => {
       render(<StoichiometryTableWithDataStory />);
       await table.waitForLoad();
       await table.editCell({ row: 1, column: columns.actualMass, value: "10" });
-      await expect.element(table.cell("Cyclopentadiene", columns.actualMoles)).toHaveTextContent("10");
+      await expect.element(table.cell("Cyclopentadiene", columns.actualMoles)).toHaveTextContent("10.000");
       await expect.element(table.cell("Cyclopentadiene", columns.yieldExcess)).toHaveTextContent("150%");
     });
 
@@ -418,7 +418,7 @@ describe("Stoichiometry Table", () => {
       render(<StoichiometryTableWithDataStory />);
       await table.waitForLoad();
       await table.editCell({ row: 2, column: columns.actualMass, value: "7" });
-      await expect.element(table.cell("Cyclopentane", columns.actualMoles)).toHaveTextContent("7");
+      await expect.element(table.cell("Cyclopentane", columns.actualMoles)).toHaveTextContent("7.000");
     });
 
     test("Changing limiting reagent adjusts equivalent values", async () => {
@@ -437,7 +437,7 @@ describe("Stoichiometry Table", () => {
       await expect.element(table.cell("Benzene", columns.yieldExcess)).toHaveTextContent("—");
       await expect.element(table.cell("Cyclopentadiene", columns.yieldExcess)).toHaveTextContent("500%");
       await table.selectLimitingReagent("Cyclopentadiene");
-      await expect.element(table.cell("Benzene", columns.yieldExcess)).toHaveTextContent("20%");
+      await expect.element(table.cell("Benzene", columns.yieldExcess)).toHaveTextContent("-20%");
       await expect.element(table.cell("Cyclopentadiene", columns.yieldExcess)).toHaveTextContent("—");
       await expect.element(table.cell("Cyclopentane", columns.yieldExcess)).toHaveTextContent("66.7%");
     });
@@ -447,12 +447,12 @@ describe("Stoichiometry Table", () => {
       await table.waitForLoad();
       // Benzene is the limiting reagent, so its mass is editable.
       await table.editCell({ row: 0, column: columns.mass, value: "15" });
-      await expect.element(table.cell("Benzene", columns.mass)).toHaveTextContent("15");
+      await expect.element(table.cell("Benzene", columns.mass)).toHaveTextContent("15.000");
       // Switch the limiting reagent to Cyclopentadiene and edit its mass.
       await table.selectLimitingReagent("Cyclopentadiene");
       await table.editCell({ row: 1, column: columns.mass, value: "25" });
-      await expect.element(table.cell("Cyclopentadiene", columns.mass)).toHaveTextContent("25");
-      await expect.element(table.cell("Cyclopentadiene", columns.moles)).toHaveTextContent("25");
+      await expect.element(table.cell("Cyclopentadiene", columns.mass)).toHaveTextContent("25.000");
+      await expect.element(table.cell("Cyclopentadiene", columns.moles)).toHaveTextContent("25.000");
     });
 
     test("Yield is computed correctly for products", async () => {

@@ -173,7 +173,7 @@ describe("MainPanel", () => {
       await expect.element(panel.gridCell("Outer folder")).toBeVisible();
 
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(1);
+      await expect.poll(() => items.elements().length).toBe(1);
       await expect.element(items.nth(0)).toHaveTextContent("Images");
     });
 
@@ -183,7 +183,7 @@ describe("MainPanel", () => {
       await expect.element(panel.gridCell("Inner folder")).toBeVisible();
 
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(2);
+      await expect.poll(() => items.elements().length).toBe(2);
       await expect.element(items.nth(0)).toHaveTextContent("Images");
       await expect.element(items.nth(1)).toHaveTextContent("Outer folder");
     });
@@ -204,7 +204,7 @@ describe("MainPanel", () => {
 
       // Breadcrumbs should show Images > Outer folder
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(2);
+      await expect.poll(() => items.elements().length).toBe(2);
       await expect.element(items.nth(0)).toHaveTextContent("Images");
       await expect.element(items.nth(1)).toHaveTextContent("Outer folder");
     });
@@ -218,7 +218,7 @@ describe("MainPanel", () => {
 
       // Root gallery section is returned to
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(1);
+      await expect.poll(() => items.elements().length).toBe(1);
       await expect.element(panel.breadcrumbButton("Images")).toHaveTextContent("Images");
       await expect.element(panel.gridCell("Outer folder")).toBeVisible();
     });
@@ -242,7 +242,7 @@ describe("MainPanel", () => {
 
       // Should be back to outer folder showing two breadcrumb items
       const items = panel.breadcrumbItems();
-      expect(items.elements().length).toBe(2);
+      await expect.poll(() => items.elements().length).toBe(2);
       await expect.element(panel.breadcrumbButton("Images")).toHaveTextContent("Images");
       await expect.element(panel.breadcrumbButton("Outer folder")).toHaveTextContent("Outer folder");
     });

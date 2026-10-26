@@ -49,6 +49,8 @@ function createStorageMock() {
 setup();
 
 expect.extend(jestDomMatchers);
+// Vitest 5's browser matchers split partial/RegExp text checks into toMatchTextContent.
+expect.extend({ toMatchTextContent: jestDomMatchers.toHaveTextContent });
 expect.extend({ toBeAccessible });
 
 // @ts-expect-error Mocking

@@ -145,7 +145,7 @@ describe("ImportDialog", () => {
       name: "workspace:tinymce.pubchem.dialog.searchResults",
     });
     await waitFor(() => {
-      expect(searchResults).toHaveTextContent(/Aspirin/);
+      expect(searchResults).toMatchTextContent(/Aspirin/);
     });
   });
 

@@ -29,17 +29,19 @@ expect(badge).toHaveTextContent('Premium User')
 // Normalizes whitespace automatically
 ```
 
-**Supports partial matching and regex:**
+**Use `toMatchTextContent()` for partial and regex matches:**
+
+The shared types come from Vitest 5's browser matchers, where `toHaveTextContent()`
+takes a string and, in Browser Mode, means the whole text (jest-dom in jsdom still
+matches a string partially). `src/__tests__/setup.ts` registers
+`toMatchTextContent()` for jsdom with the same partial/RegExp meaning.
 
 ```tsx
 // Partial match
-expect(badge).toHaveTextContent('Premium')
+expect(badge).toMatchTextContent('Premium')
 
 // Regex match
-expect(badge).toHaveTextContent(/premium/i)
-
-// Exact match with option
-expect(badge).toHaveTextContent('Premium User', { exact: true })
+expect(badge).toMatchTextContent(/premium/i)
 ```
 
 **For asserting empty text:**

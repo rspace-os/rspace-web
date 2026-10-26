@@ -114,7 +114,7 @@ describe("CallableImagePreview", () => {
        * We verify the caption container is visible and contains the expected text.
        */
       await expect.element(preview.caption).toBeVisible();
-      await expect.element(preview.caption).toHaveTextContent("Test Image Caption");
+      await expect.element(preview.caption).toMatchTextContent("Test Image Caption");
     });
 
     test("Should handle empty captions", async () => {

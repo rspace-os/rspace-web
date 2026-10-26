@@ -501,8 +501,8 @@ describe("ActionsMenu", () => {
       for (const name of [/common:actions\.edit/i, /gallery:actionsMenu\.view/i]) {
         const item = screen.getByRole("menuitem", { name });
         expectMenuItemDisabled(item);
-        expect(item).toHaveTextContent(/gallery:actionsMenu\.validation\.nothingSelected/);
-        expect(item).not.toHaveTextContent(/gallery:actionsMenu\.validation\.tooManyItems/);
+        expect(item).toMatchTextContent(/gallery:actionsMenu\.validation\.nothingSelected/);
+        expect(item).not.toMatchTextContent(/gallery:actionsMenu\.validation\.tooManyItems/);
       }
     });
 
