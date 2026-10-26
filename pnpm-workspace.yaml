@@ -20,13 +20,7 @@ packageExtensions:
   '@replit/codemirror-css-color-picker@6.3.0':
     dependencies:
       '@lezer/common': 1.5.2
-  # These Scalar packages import dependencies published only as devDependencies.
-  '@scalar/api-client@3.16.3':
-    dependencies:
-      posthog-js: 1.418.10
-  '@scalar/api-reference@1.66.1':
-    dependencies:
-      posthog-js: 1.418.10
+  # Scalar imports @scalar/types at runtime but declares it as a devDependency.
   '@scalar/schemas@0.8.3':
     dependencies:
       '@scalar/types': 0.18.2
