@@ -118,6 +118,22 @@ a resource, we should be checking for permissions, even if this is
 configured at the URL path level. If permission check returns false,
 it's generally OK to throw an `AuthorisationException`.
 
+#### System-property feature switches
+
+Some features can be switched off by a sysadmin through a system setting,
+for example self-service Lab Groups (`self_service_labgroups`) or Project
+Groups (`allow_project_groups`).
+
+Hiding a menu entry does not switch a feature off, because a user can
+still send the request directly. The controller that performs the action
+should check the setting itself, using `SystemPropertyPermissionManager`.
+
+Use the variant of the check that takes the user, so that settings made by
+community admins are taken into account as well as the sysadmin's.
+
+When the setting is off, throw an `AuthorizationException`, so that the
+attempt is recorded in the security log.
+
 #### Refreshing permissions
 
 Some permissions are dynamic. For example, sharing a record with a user

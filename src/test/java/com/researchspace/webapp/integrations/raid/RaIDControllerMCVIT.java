@@ -22,10 +22,12 @@ import com.researchspace.model.User;
 import com.researchspace.model.dtos.CreateCloudGroup;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.raid.UserRaid;
 import com.researchspace.model.record.Folder;
 import com.researchspace.raid.model.RaID;
 import com.researchspace.service.RaIDServiceManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.raid.RaIDServerConfigurationDTO;
 import com.researchspace.service.raid.RaIDServiceClientAdapter;
@@ -91,10 +93,15 @@ public class RaIDControllerMCVIT extends MVCTestBase {
   private CreateCloudGroup projectGroupCreationWithRaid;
   private CreateCloudGroup projectGroupCreationWithoutRaid;
   private Long newProjectGroupId;
+  private String previousProjectGroupsSetting;
 
   @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
+    previousProjectGroupsSetting =
+        sysPropMgr.findByName(SystemPropertyName.ALLOW_PROJECT_GROUPS).getValue();
+    sysPropMgr.save(
+        SystemPropertyName.ALLOW_PROJECT_GROUPS, HierarchicalPermission.ALLOWED, getSysAdminUser());
     MockitoAnnotations.openMocks(this);
     this.piUser = createAndSaveUser("pi" + getRandomName(10), Constants.PI_ROLE);
     initUser(this.piUser);
@@ -117,6 +124,10 @@ public class RaIDControllerMCVIT extends MVCTestBase {
 
   @AfterEach
   public void teardown() throws Exception {
+    if (previousProjectGroupsSetting != null) {
+      sysPropMgr.save(
+          SystemPropertyName.ALLOW_PROJECT_GROUPS, previousProjectGroupsSetting, getSysAdminUser());
+    }
     grpMgr.removeGroup(newProjectGroupId, piUser);
   }
 

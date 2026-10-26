@@ -26,10 +26,12 @@ import com.researchspace.model.dto.SharingResult;
 import com.researchspace.model.dtos.CreateCloudGroup;
 import com.researchspace.model.dtos.ShareConfigCommand;
 import com.researchspace.model.dtos.ShareConfigElement;
+import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.cloud.impl.CommunityPostSignupVerification;
 import com.researchspace.testutils.CommunityTestContext;
 import com.researchspace.testutils.RSpaceTestUtils;
@@ -57,16 +59,25 @@ public class CloudInvitedSignupTestMVCIT extends MVCTestBase {
   @Autowired private IPropertyHolder propertyHolder;
 
   private HttpServletRequest mockRequest;
+  private String previousProjectGroupsSetting;
 
   @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
+    previousProjectGroupsSetting =
+        sysPropMgr.findByName(SystemPropertyName.ALLOW_PROJECT_GROUPS).getValue();
+    sysPropMgr.save(
+        SystemPropertyName.ALLOW_PROJECT_GROUPS, HierarchicalPermission.ALLOWED, getSysAdminUser());
     mockRequest = new MockHttpServletRequest();
     assertTrue(propertyHolder.isCloud());
   }
 
   @AfterEach
   public void tearDown() throws Exception {
+    if (previousProjectGroupsSetting != null) {
+      sysPropMgr.save(
+          SystemPropertyName.ALLOW_PROJECT_GROUPS, previousProjectGroupsSetting, getSysAdminUser());
+    }
     super.tearDown();
   }
 

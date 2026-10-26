@@ -30,6 +30,8 @@ public enum SystemPropertyName {
   DROPBOX_LINKING_ENABLED("dropbox.linking.enabled"),
   GOOGLE_DRIVE_AVAILABLE("googledrive.available"),
   GROUP_AUTOSHARING_AVAILABLE("group_autosharing.available"),
+  SELF_SERVICE_LABGROUPS("self_service_labgroups"),
+  ALLOW_PROJECT_GROUPS("allow_project_groups"),
   INVENTORY_AVAILABLE("inventory.available"),
   INVENTORY_OPERATIONS_AVAILABLE("inventory.operations.available"),
   ORCID_AVAILABLE("orcid.available"),

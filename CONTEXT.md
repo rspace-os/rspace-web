@@ -553,3 +553,32 @@ resolved during design. This file is a glossary only — no implementation detai
   (a link field keeps the template's default link, if it has one), unless the field is
   mandatory, which refuses it.
   _Avoid_: empty column, unused column
+
+## Lab Groups and Project Groups
+
+- **Self-service Lab Group** — a Lab Group a PI creates for themselves from the My RSpace
+  menu, becoming its PI and owner, without a sysadmin or community admin creating it for
+  them. It can be created only where the "self-service lab groups" setting
+  (`self_service_labgroups`) is allowed for that PI. While the setting is denied, RSpace
+  refuses to show the creation page and to create such a group, however the request
+  arrives, and records the attempt in the security log. A PI may delete their own
+  self-service Lab Group at any time, even while the setting is denied; a Lab Group
+  created for them by an admin is never deleted this way.
+  _Avoid_: cloud group (that is the RSpace Community sign-up flow), PI group
+
+- **Project Group** — a group with no PI that any user can create for collaboration. It
+  has at least one Group Owner, by default its creator; owners invite members and make
+  other members owners, only the creator may delete the group, and any member but the last
+  owner may leave. It can be created only where the "allow project groups" setting
+  (`allow_project_groups`) is allowed for that user, with the same refusal rule as the
+  self-service Lab Group; deleting one is not affected by the setting.
+  _Avoid_: collaboration group (that is a group of Lab Groups), user group
+
+- **Allowed for a user (setting)** — the state of a sysadmin-controlled setting as it
+  applies to one user: allowed when the sysadmin allows it and none of the user's
+  communities denies it, or when the sysadmin leaves it denied by default and one of the
+  user's communities allows it. A user's communities are those of their Lab Groups plus
+  any they administer, so a user in no Lab Group follows the sysadmin value alone. A
+  sysadmin denial cannot be lifted by anyone. Hiding a menu entry never stands in for
+  this check.
+  _Avoid_: enabled (that is the user's own per-app toggle)
