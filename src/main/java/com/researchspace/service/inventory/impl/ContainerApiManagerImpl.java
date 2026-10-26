@@ -320,6 +320,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
 
     try {
       dbContainer = getIfExists(dbContainer.getId());
+      assertAccessPermissionsChangeAllowed(dbContainer, apiContainer, user);
       Container orgParentContainer = dbContainer.getParentContainer();
       boolean contentChanged =
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseContainer(
