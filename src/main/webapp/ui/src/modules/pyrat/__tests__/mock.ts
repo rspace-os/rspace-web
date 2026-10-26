@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import animalsFixture from "./fixtures/animals.json" with { type: "json" };
 import locationsFixture from "./fixtures/locations.json" with { type: "json" };
 import versionFixture from "./fixtures/version.json" with { type: "json" };

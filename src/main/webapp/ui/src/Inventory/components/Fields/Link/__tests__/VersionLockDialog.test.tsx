@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse } from "msw";
+import { HttpResponse } from "msw/http";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

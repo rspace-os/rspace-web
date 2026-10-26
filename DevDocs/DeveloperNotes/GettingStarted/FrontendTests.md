@@ -45,6 +45,10 @@ The suite uses its own Vite `cacheDir`, so it can run alongside `pnpm test`.
 
 ### Service-worker lifecycle
 
+The `msw/vite` plugin (`worker-only` mode) serves `/mockServiceWorker.js` from
+the installed `msw`, so the worker script always matches the library version;
+there is no committed copy to regenerate.
+
 Each spec file gets a new iframe and its own handlers, but one service-worker
 registration serves the whole origin. Two rules follow:
 

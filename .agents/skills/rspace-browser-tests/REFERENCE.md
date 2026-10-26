@@ -10,9 +10,9 @@ suite under `src/main/webapp/ui/src/tinyMCE/stoichiometry/__tests__/`.
 
 ```tsx
 import { cleanup, render } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
+import { worker } from "@/__tests__/browserMocks";
 import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { SomeStory } from "./Component.story";
 import { ComponentPage } from "./pageObjects/ComponentPage";
@@ -99,9 +99,10 @@ document/page divs, the TinyMCE contenteditable iframe body.
 - **MSW worker lifecycle.** Handlers are file-local; the service-worker
   registration is origin-global in every engine. Skip `worker.stop()` in
   teardown; it only closes the current client and the context cleans up. Keep
-  files serial so only one file uses the shared registration at a time. A spec
-  that also imports `browserSetup.ts` starts the worker twice in one iframe;
-  `browserSetup.ts` silences that one MSW warning.
+  files serial so only one file uses the shared registration at a time. Import
+  `worker` from `browserMocks.ts`, never `browserSetup.ts`: importing the setup
+  file creates a second worker, and MSW 3 throws "Failed to replace a global
+  value at "WebSocket": already replaced".
 - **Text matching (Vitest 5).** `toHaveTextContent("x")` asserts the whole text
   is "x"; use `toMatchTextContent("x" | /x/)` for a partial or RegExp match.
   Locators keep Vitest 4's case-insensitive substring matching through

@@ -56,7 +56,7 @@ expect.extend({ toBeAccessible });
 // @ts-expect-error Mocking
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 
 afterEach(() => {
   cleanup();

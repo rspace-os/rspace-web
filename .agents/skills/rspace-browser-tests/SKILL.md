@@ -32,8 +32,10 @@ semantic queries fail. Captured DOM nodes go stale on rerender.
 
 Paths below are relative to `src/main/webapp/ui/`.
 
-- `src/__tests__/browserSetup.ts`: file-local `worker`, start/reset lifecycle,
-  CDP media reset, `suppressFireAndForget404(...)`.
+- `src/__tests__/browserMocks.ts`: the file-local `worker` and
+  `suppressFireAndForget404(...)`. Specs import these from here.
+- `src/__tests__/browserSetup.ts` (setup file, never imported by specs):
+  starts the worker, resets handlers, storage and CDP media.
 - `src/__tests__/mswAppShellHandlers.ts`: default whoami, navigation, analytics,
   and livechat handlers; survive `resetHandlers()`.
 - `src/__tests__/mocks/inventoryMocks.ts`: `oauthTokenHandler`, `OAUTH_TOKEN`.

@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
+import { msw } from "msw/vite";
 import type { Alias, Plugin } from "vite";
 import { configDefaults, defineConfig } from "vitest/config";
 
@@ -83,7 +84,9 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
   .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
-  plugins: [react(), tinymceAssetsPlugin()],
+  // worker-only: serve /mockServiceWorker.js from the installed msw;
+  // browserSetup.ts calls setupWorker itself.
+  plugins: [react(), tinymceAssetsPlugin(), msw({ mode: "worker-only" })],
   define: {
     global: "globalThis",
     // Real TinyMCE version for cache-busting; assets are served by the
@@ -95,10 +98,6 @@ export default defineConfig({
     tsconfigPaths: true,
     alias: browserAliases,
   },
-  // Serve the MSW service worker from a test-only directory at the server root
-  // (so worker.start({ url: "/mockServiceWorker.js" }) resolves) without
-  // creating an app-level public/ dir that vite build would copy into the WAR.
-  publicDir: resolveFromRoot("src/__tests__/msw"),
   // Use a dedicated optimizer/cache dir distinct from the jsdom config's default
   // (`node_modules/.vite`). Otherwise running `pnpm run test` (jsdom) and
   // `pnpm run test-browser` concurrently would have both Vite servers writing
