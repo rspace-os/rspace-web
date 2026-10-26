@@ -99,15 +99,9 @@ document/page divs, the TinyMCE contenteditable iframe body.
 - **MSW worker lifecycle.** Handlers are file-local; the service-worker
   registration is origin-global in every engine. Skip `worker.stop()` in
   teardown; it only closes the current client and the context cleans up. Keep
-  files serial so Firefox's renewal never overlaps another file. A spec that
-  also imports `browserSetup.ts` starts the worker twice in one iframe;
+  files serial so only one file uses the shared registration at a time. A spec
+  that also imports `browserSetup.ts` starts the worker twice in one iframe;
   `browserSetup.ts` silences that one MSW warning.
-- **Firefox registration renewal.** Firefox can give a new Vitest iframe an
-  active controller that still bypasses MSW, so `browserWorkerRegistration.ts`
-  (a no-op elsewhere) unregisters the old worker first and the new one
-  `clients.claim()`s the iframe. Keep setup files in list order; never patch
-  the generated worker. Remove the workaround only once
-  `src/__tests__/browserLifecycle` and the full Firefox suite pass without it.
 - **`suppressFireAndForget404([...])`.** Components that fire un-awaited requests
   (folder listings, thumbnails) can 404 after teardown and surface as an
   `unhandledrejection` that fails the run even though every assertion passed.

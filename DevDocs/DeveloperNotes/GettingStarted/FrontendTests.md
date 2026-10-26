@@ -45,37 +45,20 @@ The suite uses its own Vite `cacheDir`, so it can run alongside `pnpm test`.
 
 ### Service-worker lifecycle
 
-**All engines.** Each spec file gets a new iframe and its own handlers, but one
-service-worker registration serves the whole origin. Two rules follow:
+Each spec file gets a new iframe and its own handlers, but one service-worker
+registration serves the whole origin. Two rules follow:
 
 - Don't call `worker.stop()` in teardown. It only closes the current iframe's
   client, and closing the browser context already cleans up.
-- Keep `fileParallelism: false`. Firefox's renewal (below) unregisters the
-  origin's worker, so it must not overlap another file. The CI matrix provides
-  engine parallelism instead.
+- Keep `fileParallelism: false`, so only one file uses the shared registration
+  at a time. The CI matrix provides engine parallelism instead.
 
-**Firefox only.** A new iframe can report an active controller yet send
-requests to the real server (reproduced without React, MSW or TinyMCE).
-`browserWorkerRegistration.ts` unregisters the old worker before each Firefox
-file, so the new one activates and `clients.claim()`s the iframe. It is a no-op
-on Chromium and WebKit. Keep setup files in list order, and do not patch the
-generated worker or replace activation with a delay.
+A resolved `start()` or a set `navigator.serviceWorker.controller` does not
+prove interception; assert response bodies when debugging a leaked request.
 
-`src/__tests__/browserLifecycle/` holds a regression pair that
-`BrowserTestSequencer` runs first in every engine, in fixed order, without
-retries. It asserts response bodies, so a leaked request fails immediately:
-
-```sh
-CI=true VITEST_BROWSERS=firefox pnpm test-browser src/__tests__/browserLifecycle
-```
-
-Remove the workaround only when this pair and the full Firefox suite pass
-without it. A resolved `start()` or a set `navigator.serviceWorker.controller`
-does not prove interception.
-
-Optimizer reloads are a separate cause of flakiness: re-registration will not
-fix duplicate React instances. `optimizeDeps.entries` scans every spec, even in
-focused runs, to prevent them.
+Optimizer reloads are a separate cause of flakiness: duplicate React instances
+come from a mid-run reload, not from MSW. `optimizeDeps.entries` scans every
+spec, even in focused runs, to prevent them.
 
 ## Storybook composition examples
 

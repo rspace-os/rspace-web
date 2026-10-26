@@ -84,10 +84,9 @@ export function suppressFireAndForget404(matchers: ReadonlyArray<RegExp | string
 }
 
 /*
- * browserWorkerRegistration.ts clears Firefox's previous registration before
- * this module runs. Every file must still await start() to activate its client.
- * Do not stop the worker in test teardown; the incoming file owns registration
- * renewal and the browser context owns final cleanup.
+ * Every file must await start() to activate its client. Do not stop the worker
+ * in test teardown: the registration is shared by later files, and the browser
+ * context owns final cleanup.
  *
  * MSW shares its network source between setupWorker instances in one iframe.
  * Repeated starts can warn when this setup module is also imported by a spec.
