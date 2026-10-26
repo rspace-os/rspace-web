@@ -33,11 +33,11 @@ jobs:
       matrix:
         java-version: [17]
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.0
         with:
           persist-credentials: false
       - name: Set up JDK
-        uses: actions/setup-java@v6.1.0
+        uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor }}
           java-version: ${{ matrix.java-version }}
@@ -58,7 +58,7 @@ jobs:
       - name: Package WAR (frontend + backend)
         run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
       - name: Upload WAR
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: rspace-war
           path: target/*.war
@@ -133,12 +133,12 @@ jobs:
           MP_SMTP_AUTH_ALLOW_INSECURE: "1"
 
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@v7.0.0
         with:
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v6.1.0
+        uses: actions/setup-java@v5.4.0
         with:
           distribution: ${{ inputs.java_vendor }}
           java-version: ${{ matrix.java-version }}
@@ -168,7 +168,7 @@ jobs:
           fi
 
       - name: Download prebuilt WAR
-        uses: actions/download-artifact@v8.0.2
+        uses: actions/download-artifact@v8.0.1
         with:
           name: rspace-war
           path: target
@@ -398,7 +398,7 @@ jobs:
 
       - name: Upload Jetty log on failure
         if: failure()
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: jetty-log-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
@@ -408,7 +408,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always() && inputs.mode == 'mock'
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: e2e-report-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: |
@@ -420,7 +420,7 @@ jobs:
       # Real mode keeps only JUnit: report steps and traces record filled values, including secret passwords.
       - name: Upload JUnit report
         if: always() && inputs.mode == 'real'
-        uses: actions/upload-artifact@v7.0.2
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: e2e-report-${{ inputs.mode }}-${{ matrix.cloud && 'cloud' || 'standard' }}-${{ matrix.project }}-${{ matrix.shard }}
           path: src/main/webapp/ui/e2e-junit.xml
