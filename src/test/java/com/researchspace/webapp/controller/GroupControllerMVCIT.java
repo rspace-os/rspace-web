@@ -594,6 +594,45 @@ public class GroupControllerMVCIT extends MVCTestBase {
   }
 
   @Test
+  public void groupPageMarksGroupOwnerButNotUserRoleMember() throws Exception {
+    User owner = createAndSaveUser("owner" + getRandomName(7));
+    User member = createAndSaveUser("member" + getRandomName(7));
+    initUsers(owner, member);
+    Long groupId = createProjectGroupAsSysadmin(owner, member);
+
+    logoutAndLoginAs(owner);
+    MvcResult asOwner =
+        mockMvc
+            .perform(get("/groups/view/{id}", groupId).principal(owner::getUsername))
+            .andReturn();
+    assertTrue((Boolean) asOwner.getModelAndView().getModelMap().get("roleGroupOwner"));
+
+    logoutAndLoginAs(member);
+    MvcResult asMember =
+        mockMvc
+            .perform(get("/groups/view/{id}", groupId).principal(member::getUsername))
+            .andReturn();
+    assertFalse((Boolean) asMember.getModelAndView().getModelMap().get("roleGroupOwner"));
+  }
+
+  private Long createProjectGroupAsSysadmin(User owner, User member) throws Exception {
+    User sysadmin = logoutAndLoginAsSysAdmin();
+    MvcResult created =
+        mockMvc
+            .perform(
+                post(NEW_GROUP_PAGE)
+                    .param(Group.DEFAULT_ORDERBY_FIELD, "projectGroup" + getRandomName(7))
+                    .param("groupOwners", owner.getUsername())
+                    .param("memberString", owner.getUsername(), member.getUsername())
+                    .param("groupType", "PROJECT_GROUP")
+                    .principal(sysadmin::getUsername))
+            .andExpect(viewNameContains("redirect:/groups/view/"))
+            .andReturn();
+    String viewName = created.getModelAndView().getViewName();
+    return Long.valueOf(viewName.substring(viewName.lastIndexOf('/') + 1));
+  }
+
+  @Test
   public void cycleUsers() throws Exception {
     TestGroup t1 = createTestGroup(3, new TestGroupConfig(true));
     logoutAndLoginAs(t1.getPi());
