@@ -5,6 +5,9 @@ import "@/__tests__/__mocks__/resizeObserver";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import ApiServiceBase from "../../../common/ApiServiceBase";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -18,7 +21,7 @@ import materialTheme from "../../../theme";
 import { menuIDs } from "../../../util/menuIDs";
 import ResultsTable from "../ResultsTable";
 
-const renderResultsTable = (search: Search) => {
+const resultsTableTree = (search: Search) => {
   const rootStore = makeMockRootStore({
     uiStore: {
       isSmall: false,
@@ -31,7 +34,7 @@ const renderResultsTable = (search: Search) => {
     },
   });
 
-  return render(
+  return (
     <ThemeProvider theme={materialTheme}>
       <storesContext.Provider value={rootStore}>
         <SearchContext.Provider
@@ -44,9 +47,17 @@ const renderResultsTable = (search: Search) => {
           <ResultsTable contextMenuId={menuIDs.RESULTS} />
         </SearchContext.Provider>
       </storesContext.Provider>
-    </ThemeProvider>,
+    </ThemeProvider>
   );
 };
+
+const renderResultsTable = (search: Search) => render(resultsTableTree(search));
+
+const renderResultsTableWithRealI18n = (search: Search) =>
+  renderWithRealI18n(resultsTableTree(search), {
+    resources: { common: commonEn, inventory: inventoryEn },
+    defaultNS: "inventory",
+  });
 
 const setSearchResults = (search: Search, ...results: Array<InventoryRecord>) => {
   search.fetcher.setResults(results);
@@ -245,6 +256,28 @@ describe("Results Table", () => {
       await user.hover(row);
       expect(await screen.findByText("This item is already linked.")).toBeInTheDocument();
       expect(screen.queryByText("inventory:detailedListing.card.requiredPermissions")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("accessible names", () => {
+    test("each checkbox is named after its record", async () => {
+      const search = new Search({ factory: new MemoisedFactory() });
+      const container = makeMockContainer({ globalId: "IC20", id: 20, owner: personAttrs(), name: "Freezer A" });
+
+      setSearchResults(search, container);
+      await renderResultsTableWithRealI18n(search);
+
+      expect(screen.getByRole("checkbox", { name: "Select Freezer A" })).toBeInTheDocument();
+    });
+
+    test("each radio button is named after its record", async () => {
+      const search = new Search({ factory: new MemoisedFactory(), uiConfig: { selectionMode: "SINGLE" } });
+      const container = makeMockContainer({ globalId: "IC21", id: 21, owner: personAttrs(), name: "Freezer B" });
+
+      setSearchResults(search, container);
+      await renderResultsTableWithRealI18n(search);
+
+      expect(screen.getByRole("radio", { name: "Select Freezer B" })).toBeInTheDocument();
     });
   });
 });

@@ -6,6 +6,7 @@ import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.ArchiveResult;
 import com.researchspace.archive.ExportRecordList;
 import com.researchspace.archive.model.ArchiveExportConfig;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.core.util.UnsupportedFileExtensionException;
 import com.researchspace.core.util.progress.ProgressMonitor;
@@ -26,12 +27,12 @@ import com.researchspace.model.dtos.export.ExportArchiveDialogConfigDTO;
 import com.researchspace.model.dtos.export.ExportDialogConfigDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.IGroupPermissionUtils;
+import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DocumentTagManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RaIDServiceManager;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
@@ -630,6 +631,10 @@ public class ExportController extends BaseController {
     if (errorBuffer.length() > 0) {
       return new RepoDepositPreDepositValidation(getExportFailureMessage(errorBuffer.toString()));
     }
+    optionalAppConfig.ifPresent(
+        cfg ->
+            permissionUtils.assertIsPermitted(
+                cfg.getUserAppConfig(), PermissionType.READ, exporter, " use AppConfig "));
 
     App app = userAppConfigMgr.getByAppName(repositoryConfig.getAppName(), exporter).getApp();
     validateAppIsRepository(errorBuffer, app);

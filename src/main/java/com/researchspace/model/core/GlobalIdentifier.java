@@ -3,6 +3,7 @@ package com.researchspace.model.core;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,12 +42,12 @@ public final class GlobalIdentifier implements Serializable, Comparable<GlobalId
   @JsonCreator
   public GlobalIdentifier(@JsonProperty("idString") final String oid) {
     if (StringUtils.isBlank(oid)) {
-      throw new IllegalArgumentException("oid cannot be null or empty");
+      throw new LocalizedIllegalArgumentException("validation.globalIdentifier.required");
     }
     Matcher matcher = OID_PATTERN.matcher(oid);
     if (!matcher.matches()) {
-      throw new IllegalArgumentException(
-          String.format("OID %s did not match pattern %s", oid, OID_PATTERN_STRING));
+      throw new LocalizedIllegalArgumentException(
+          "validation.globalIdentifier.invalidFormat", oid, OID_PATTERN_STRING);
     }
 
     prefix = GlobalIdPrefix.valueOf(matcher.group(1));

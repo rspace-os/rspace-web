@@ -15,7 +15,10 @@ import java.util.List;
  */
 public interface PidinstLookupManager {
 
-  /** Hits per page, for every registry page asked and for the merged page returned (ADR 0011). */
+  /**
+   * Hits per registry page asked, and the most a merged page holds (ADR 0011): a merged page is a
+   * slice of raw registry positions, so it is short when RSpace hid a record on it (RSDEV-1556).
+   */
   int PAGE_SIZE = 50;
 
   /**
@@ -35,7 +38,10 @@ public interface PidinstLookupManager {
    * One merged page of PID lookup hits from the public registries named in {@code providers}
    * ({@code PIDINST_DATACITE}, {@code PIDINST_B2INST}, one or both), ordered by the registry's
    * update time newest first; equal update times keep each registry's own order, the registries in
-   * the order {@code providers} names them (ADR 0011). A DOI or Handle, bare or as a resolver
+   * the order {@code providers} names them, and a hit without a readable update time keeps its
+   * registry position (ADR 0011). The page is a slice of the registries' raw positions, so it holds
+   * up to {@link #PAGE_SIZE} hits, fewer when a record on it is not offered, and paging forward
+   * shows every offered hit exactly once (RSDEV-1556). A DOI or Handle, bare or as a resolver
    * address, is a direct lookup at the registry its shape names and yields nothing at the other.
    * Only PUBLIC records are offered - B2INST {@code accepted}, DataCite {@code findable} - because
    * only those may be linked to an instrument. A hit whose PID an instrument in this deployment

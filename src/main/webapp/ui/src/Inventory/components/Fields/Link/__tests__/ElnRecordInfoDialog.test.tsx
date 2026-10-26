@@ -265,6 +265,14 @@ describe("ElnRecordInfoDialog", () => {
     expect(screen.queryByRole("link", { name: "common:actions.open" })).not.toBeInTheDocument();
   });
 
+  it("hides the Open button when the pinned document version cannot be found", async () => {
+    // the document's version route is only an error page once that version is gone
+    renderDialog({ globalId: "SD123", versionPin: 7, versionNotFound: true });
+
+    await screen.findByRole("button", { name: "common:actions.close" });
+    expect(screen.queryByRole("link", { name: "common:actions.open" })).not.toBeInTheDocument();
+  });
+
   it("renders nothing when closed", () => {
     const { container } = renderDialog({ open: false });
     expect(container).toBeEmptyDOMElement();

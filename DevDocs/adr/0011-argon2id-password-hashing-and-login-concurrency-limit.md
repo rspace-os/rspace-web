@@ -98,7 +98,7 @@ busy, never that the password was wrong. The login page and the SSO emergency ad
 `errors.login.busy`. Every authenticated password prompt (signing, witnessing, API key, email and
 password changes, sysadmin prompts) gets `ReauthenticationResult.BUSY` from `IReauthenticator`
 and shows `errors.reauthentication.busy` where it would show the wrong-password text. The OAuth
-password grant answers HTTP 503 with `Retry-After` set to `waitSeconds`. The login filter
+password grant answers HTTP 503 with `Retry-After` set to `waitSeconds` (at least 1). The login filter
 (`StandaloneShiroFormAuthFilterExt`) and `ReauthenticatorImpl` catch it before any failure is
 recorded, and the OAuth grant gives back the guess it counted, so a flood cannot lock legitimate
 users out or use up their guesses. `SentinelPasswordCheck` lets the exception through as well, so

@@ -49,7 +49,7 @@
       "title": "Unsaved changes?"
     },
     "validation": {
-      "descriptionTooLong": "Description cannot be longer than 250 characters.",
+      "descriptionTooLong": "Description cannot be longer than 2000 characters.",
       "distinctFieldNames": "All field names must be distinct.",
       "editLockExpired": "Edit lock has expired. Please refresh.",
       "nameRequired": "Name cannot be empty.",
@@ -532,7 +532,8 @@
       "ownerOnly": {
         "description": "Accessible to the item's owner, and the PI.",
         "title": "Only the Owner"
-      }
+      },
+      "ownershipControlRequired": "Only the item's owner, or a PI or Lab Admin of one of the owner's groups who can edit the item, can change its access permissions."
     },
     "attachments": {
       "actions": {
@@ -702,7 +703,8 @@
         "pidinst": "PIDINST"
       },
       "formField": {
-        "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
+        "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>.",
+        "pidinstExplanation": "See the Documentation for information on <helpDocs docLink=\"pidinstIdentifiers\">adding and publishing identifiers</helpDocs>."
       },
       "geoLocationField": {
         "addValueToPublish": "Add value to enable publishing.",
@@ -828,8 +830,8 @@
         "inPolygonPointDescription": "Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than the half of the Earth's surface.",
         "inPolygonPointLatitude": "In polygon point latitude",
         "inPolygonPointLongitude": "In polygon point longitude",
-        "pointLatitude": "Point {index} latitude",
-        "pointLongitude": "Point {index} longitude",
+        "pointLatitude": "Point {pointNumber} latitude",
+        "pointLongitude": "Point {pointNumber} longitude",
         "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
         "polygonDescriptionPidinst": "You can add a Polygon to a Geolocation associated with a PIDINST ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
         "removePoint": "Remove point",
@@ -994,7 +996,8 @@
       },
       "infoDialog": {
         "label": "Info for {globalId}",
-        "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
+        "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version.",
+        "versionNotFound": "Version {versionPin} of {globalId} cannot be found. It may never have existed, or its history may have been removed."
       },
       "linkField": {
         "editLink": "Edit link",
@@ -1004,7 +1007,9 @@
         "openLabel": "Open {globalId}",
         "pinVersionLabel": "Pin version for {globalId}",
         "showInfoLabel": "Show info for {globalId}",
-        "targetDeleted": "Target deleted"
+        "targetDeleted": "Target deleted",
+        "versionNotFound": "Version not found",
+        "versionNotFoundDetail": "Version {version} of this item cannot be found: it may never have existed, or its history may have been removed"
       },
       "relatedInventoryItems": {
         "attachment": "Attachment",
@@ -1887,7 +1892,7 @@
       "state": "Registry state"
     },
     "description": "Search the public DataCite and B2INST registries for a published instrument record, by name, manufacturer or owner, or paste its DOI or Handle. Importing creates an Instrument from the \"Instrument (PIDINST 1.0)\" template, fills its fields from the record and links the PID as the instrument's identifier. RSpace never changes the record at the registry.",
-    "descriptionLinks": "See our <helpDocs docLink=\"pidinstIdentifiers\">PIDINST identifiers docs</helpDocs> for more.",
+    "descriptionLinks": "See our <helpDocs docLink=\"pidinstImport\">PIDINST identifiers docs</helpDocs> for more.",
     "helpTitle": "PIDINST help",
     "importError": "Could not import the instrument.",
     "importing": {

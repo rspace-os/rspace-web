@@ -403,13 +403,7 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       InventoryRecord invRec, ApiInventoryRecordInfo apiInvRec) {
     boolean changed = false;
     if (apiInvRec.getSharedWith() != null) {
-      List<String> newSharedWith = new ArrayList<>();
-      for (ApiGroupInfoWithSharedFlag groupShared : apiInvRec.getSharedWith()) {
-        if (groupShared.isShared()) {
-          Group group = groupDao.get(groupShared.getGroupInfo().getId());
-          newSharedWith.add(group.getUniqueName());
-        }
-      }
+      List<String> newSharedWith = getIncomingSharedWithUniqueNames(apiInvRec);
       List<String> currentlySharedWith = invRec.getSharedWithUniqueNames();
       if (!CollectionUtils.isEqualCollection(currentlySharedWith, newSharedWith)) {
         RecordSharingACL newACL = new RecordSharingACL();
@@ -424,6 +418,41 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
       }
     }
     return changed;
+  }
+
+  private List<String> getIncomingSharedWithUniqueNames(ApiInventoryRecordInfo apiInvRec) {
+    List<String> uniqueNames = new ArrayList<>();
+    for (ApiGroupInfoWithSharedFlag groupShared : apiInvRec.getSharedWith()) {
+      if (groupShared.isShared()) {
+        Group group = groupDao.get(groupShared.getGroupInfo().getId());
+        uniqueNames.add(group.getUniqueName());
+      }
+    }
+    return uniqueNames;
+  }
+
+  /**
+   * Access permissions (sharing mode, explicit access list) may only be changed by ownership
+   * control (RSDEV-1520). An update that echoes the stored values passes, so editing other fields
+   * stays open to everyone who may edit the record.
+   */
+  protected void assertAccessPermissionsChangeAllowed(
+      InventoryRecord dbRec, ApiInventoryRecordInfo apiRec, User user) {
+    boolean modeChanges =
+        apiRec.getSharingMode() != null
+            && !apiRec.getSharingMode().toString().equals(dbRec.getSharingMode().toString());
+    // deleting a group leaves it in the stored list, but the UI never receives it, so an unchanged
+    // echo omits it; this filter can go once RSDEV-1605 removes deleted groups from the lists
+    boolean listChanges =
+        apiRec.getSharedWith() != null
+            && !CollectionUtils.isEqualCollection(
+                dbRec.getSharedWithUniqueNames().stream()
+                    .filter(uniqueName -> groupDao.getByUniqueName(uniqueName) != null)
+                    .toList(),
+                getIncomingSharedWithUniqueNames(apiRec));
+    if (modeChanges || listChanges) {
+      invPermissions.assertUserCanChangeAccessPermissions(dbRec, user);
+    }
   }
 
   @Override

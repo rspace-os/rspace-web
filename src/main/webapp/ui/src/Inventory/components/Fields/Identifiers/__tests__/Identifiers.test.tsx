@@ -1,11 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
+import { makeMockRootStore } from "@/stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "@/stores/stores-context";
 import type { PidinstPublishingState } from "../../../../../stores/definitions/Identifier";
 import type { InventoryRecord } from "../../../../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockInstrument } from "../../../../../stores/models/__tests__/InstrumentModel/mocking";
 import { makeMockSample } from "../../../../../stores/models/__tests__/SampleModel/mocking";
-import { IdentifiersList } from "../Identifiers";
+import IdentifiersField, { IdentifiersList } from "../Identifiers";
 import { mockIGSNIdentifier } from "./mocking";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
@@ -39,6 +41,17 @@ describe("Identifiers section", () => {
       );
       expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
       expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+    });
+    test("an IGSN keeps the IGSN article", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={sample1} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("link", { name: "inventory:fields.identifiers.list.igsnDocLink" })).toHaveAttribute(
+        "href",
+        "https://researchspace.helpdocs.io/article/common:help.igsnIdentifiers",
+      );
     });
   });
   describe("When an identifier exists for container", () => {
@@ -91,6 +104,19 @@ describe("Identifiers section", () => {
       );
       expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
       expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
+    });
+    test("a registered PIDINST identifier keeps the registration article", () => {
+      const instrument1: InventoryRecord = makeMockInstrument();
+      instrument1.identifiers = [{ ...mockIGSNIdentifier("instrument"), doiType: "PIDINST_DATACITE" }];
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={instrument1} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("link", { name: "inventory:fields.identifiers.list.pidinstDocLink" })).toHaveAttribute(
+        "href",
+        "https://researchspace.helpdocs.io/article/common:help.pidinstIdentifiers",
+      );
     });
   });
   describe("When viewing a historical version", () => {
@@ -520,5 +546,41 @@ describe("Identifiers section", () => {
         }),
       ).not.toBeInTheDocument();
     });
+
+    test("the help link opens the import article, not the registration one", () => {
+      render(
+        <ThemeProvider theme={materialTheme}>
+          <IdentifiersList activeResult={linkedInstrument()} />
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole("link", { name: "inventory:fields.identifiers.list.pidinstDocLink" })).toHaveAttribute(
+        "href",
+        "https://researchspace.helpdocs.io/article/common:help.pidinstImport",
+      );
+    });
+  });
+
+  test.each([
+    {
+      recordType: "an Instrument",
+      makeRecord: makeMockInstrument,
+      explanation: "inventory:fields.identifiers.formField.pidinstExplanation",
+    },
+    {
+      recordType: "a Sample",
+      makeRecord: makeMockSample,
+      explanation: "inventory:fields.identifiers.formField.explanation",
+    },
+  ])("the field's help text on $recordType is its own explanation", ({ makeRecord, explanation }) => {
+    const record = makeRecord();
+    record.setEditable(new Set(["identifiers"]), true);
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <storesContext.Provider value={makeMockRootStore({ searchStore: { activeResult: record } })}>
+          <IdentifiersField fieldOwner={record} />
+        </storesContext.Provider>
+      </ThemeProvider>,
+    );
+    expect(screen.getByText(explanation)).toBeInTheDocument();
   });
 });

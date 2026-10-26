@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -31,15 +32,18 @@ import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.field.Field;
+import com.researchspace.model.field.NumberFieldForm;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.BaseRecordAdaptable;
 import com.researchspace.model.record.BreadcrumbGenerator;
 import com.researchspace.model.record.Folder;
+import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.MessagedServiceOperationResult;
+import com.researchspace.model.views.RecordCopyResult;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DocumentTagManager;
@@ -255,6 +259,62 @@ public class StructuredDocumentControllerTest {
     verify(auditMgr, never()).restoredDeletedForView(anyLong());
   }
 
+  @Test
+  public void createEntryUsesLocalizedDefaultAndPreservesSuppliedName() throws Exception {
+    String localizedDefault = "Nouvelle entrée";
+    MessageSourceUtils messages = Mockito.mock(MessageSourceUtils.class);
+    when(messages.getMessage("document.create.defaultName")).thenReturn(localizedDefault);
+    strucDocCtrller.setMessageSource(messages);
+
+    Notebook notebook = Mockito.mock(Notebook.class);
+    StructuredDocument defaultEntry = TestFactory.createAnySD();
+    defaultEntry.setId(11L);
+    StructuredDocument namedEntry = TestFactory.createAnySD();
+    namedEntry.setId(12L);
+    WorkspaceHandler workspaceHandler = Mockito.mock(WorkspaceHandler.class);
+    ReflectionTestUtils.setField(strucDocCtrller, "workspaceHandler", workspaceHandler);
+
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(fMgr.getNotebook(5L)).thenReturn(notebook);
+    when(workspaceHandler.createEntry(notebook, localizedDefault, user)).thenReturn(defaultEntry);
+    when(workspaceHandler.createEntry(notebook, "Chosen entry name", user)).thenReturn(namedEntry);
+
+    assertEquals(11L, strucDocCtrller.createEntry(5L, "", mockPrincipal));
+    assertEquals(12L, strucDocCtrller.createEntry(5L, "Chosen entry name", mockPrincipal));
+
+    verify(workspaceHandler).createEntry(notebook, localizedDefault, user);
+    verify(workspaceHandler).createEntry(notebook, "Chosen entry name", user);
+    verify(messages).getMessage("document.create.defaultName");
+  }
+
+  @Test
+  public void createFromTemplateUsesLocalizedDefaultAndPreservesSuppliedName() throws Exception {
+    String localizedDefault = "Nouveau document";
+    MessageSourceUtils messages = Mockito.mock(MessageSourceUtils.class);
+    when(messages.getMessage("document.create.defaultName")).thenReturn(localizedDefault);
+    strucDocCtrller.setMessageSource(messages);
+
+    Folder rootFolder = TestFactory.createAFolder("root", user);
+    rootFolder.setId(55L);
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(fMgr.getRootFolderForUser(user)).thenReturn(rootFolder);
+
+    StructuredDocument copiedDocument = TestFactory.createAnySD();
+    copiedDocument.setId(22L);
+    RecordCopyResult copyResult = new RecordCopyResult(null, false);
+    copyResult.add(TestFactory.createAnySD(), copiedDocument);
+    when(recordMgr.createFromTemplate(anyLong(), anyString(), eq(user), eq(rootFolder.getId())))
+        .thenReturn(copyResult);
+
+    strucDocCtrller.createSDFromTemplate(-1L, 33L, "", null, mockPrincipal);
+    strucDocCtrller.createSDFromTemplate(-1L, 33L, "Chosen document name", null, mockPrincipal);
+    strucDocCtrller.createSDFromTemplate(-1L, 33L, "invalid/name", null, mockPrincipal);
+
+    verify(recordMgr, times(2)).createFromTemplate(33L, localizedDefault, user, rootFolder.getId());
+    verify(recordMgr).createFromTemplate(33L, "Chosen document name", user, rootFolder.getId());
+    verify(messages, times(2)).getMessage("document.create.defaultName");
+  }
+
   @NotNull
   @Test
   public void busyPasswordCheckOnSigningSaysBusyAndSignsNothing() {
@@ -299,6 +359,21 @@ public class StructuredDocumentControllerTest {
     final StructuredDocument sd = TestFactory.createAnySD();
     sd.setId(3L);
     return sd;
+  }
+
+  @Test
+  public void autosaveFieldReturnsResolvedValidationMessages() {
+    NumberFieldForm form = new NumberFieldForm("n");
+    form.setMaxNumberValue(10.0);
+    Field field = form.createNewFieldFromForm();
+    when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
+    when(fieldManager.get(1L, user)).thenReturn(Optional.of(field));
+
+    AjaxReturnObject<Boolean> rc = strucDocCtrller.autosaveField("11", 1L, mockPrincipal);
+
+    assertEquals(
+        List.of("Data [11] greater than maximum [10.0]"), rc.getErrorMsg().getErrorMessages());
+    verify(recordMgr, never()).saveTemporaryDocument(anyLong(), eq(user), anyString());
   }
 
   @Test

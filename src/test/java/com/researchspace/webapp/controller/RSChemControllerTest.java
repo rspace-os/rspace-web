@@ -16,8 +16,11 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.chemistry.ChemistryClientException;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.RSChemController.ChemEditorInputDto;
@@ -55,6 +58,7 @@ public class RSChemControllerTest {
 
   @BeforeEach
   public void setUp() throws IOException {
+    rsChemController.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     user = TestFactory.createAnyUser("user");
     mockPrincipal = () -> user.getUsername();
     InputStream molInput = getClass().getResourceAsStream("/TestResources/Amfetamine.mol");
@@ -133,6 +137,22 @@ public class RSChemControllerTest {
     ResponseEntity<ConvertedStructureDto> cs = rsChemController.convert(input, br);
     assertEquals(HttpStatus.BAD_REQUEST, cs.getStatusCode());
     assertEquals(msg, cs.getBody().getErrorMessage());
+  }
+
+  @Test
+  public void conversionFailureResolvesMessageKey() {
+    ChemConversionInputDto input = new ChemConversionInputDto("invalid", "", "smiles");
+    when(chemicalService.convert(input))
+        .thenThrow(
+            new ChemistryClientException(
+                "errors.chemistry.convertFailed", new RuntimeException("internal")));
+
+    ResponseEntity<ConvertedStructureDto> response =
+        rsChemController.convert(input, new BeanPropertyBindingResult(input, "chem"));
+
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    assertEquals(
+        "Chemistry service couldn't convert the chemical.", response.getBody().getErrorMessage());
   }
 
   @Test

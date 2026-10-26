@@ -2383,9 +2383,9 @@ RS.addPaginationTooltips = function (selector) {
     if ($(this).hasClass("blank_space")) return;
 
     // First and Last page sometimes get textual labels rather than numbers.
-    if ($(this).text().indexOf("First") >= 0) {
+    if ($(this).data("first-page")) {
       title = RS.msg("legacyjs.core.pagination.firstPage");
-    } else if ($(this).text().indexOf("Last") >= 0) {
+    } else if ($(this).data("last-page")) {
       title = RS.msg("legacyjs.core.pagination.lastPage");
     } else {
       title = RS.msg("legacyjs.core.pagination.page", parseInt($(this).html()));

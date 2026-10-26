@@ -27,7 +27,7 @@ function generate$RecordInfoPanel(info) {
   var $newInfoPanel = $('#recordInfoPanelTemplate > .recordInfoPanel').clone();
 
   $newInfoPanel.find('.infoPanel-name').text(info.name);
-  $newInfoPanel.find('.infoPanel-type').text(info.type);
+  $newInfoPanel.find('.infoPanel-type').text(_getInfoPanelTypeDisplayName(info.type));
   $newInfoPanel.find('.infoPanel-owner').text(info.ownerFullName);
   if(isForm){
     $newInfoPanel.find('.infoPanelCreatedByRow').show();
@@ -308,6 +308,43 @@ function generate$RecordInfoPanel(info) {
   }
 
   return $newInfoPanel;
+}
+
+function _getInfoPanelTypeDisplayName(type) {
+  switch (type) {
+    case "Structured Document":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.structuredDocument");
+    case "Folder":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.folder");
+    case "Notebook":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.notebook");
+    case "System Folder":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.systemFolder");
+    case "Template":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.template");
+    case "Image":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.image");
+    case "Video":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.video");
+    case "Audio":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.audio");
+    case "Document":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.document");
+    case "Chemistry":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.chemistry");
+    case "PdfDocuments":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.exports");
+    case "Miscellaneous":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.miscellaneous");
+    case "DMPs":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.dmps");
+    case "Snippet":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.snippet");
+    case "Form":
+      return RS.msg("legacyjs.core.recordInfoPanel.type.form");
+    default:
+      return type;
+  }
 }
 
 function openRecordInfoDialog(recordId) {

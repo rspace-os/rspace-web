@@ -108,6 +108,7 @@ import com.researchspace.service.RepositoryFactory;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserFolderCreator;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ArchiveImporterManager;
@@ -273,7 +274,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
-import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
@@ -960,13 +960,13 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  ExternalMessageSender slackExternalMessageSender() {
-    return new SlackMessageSender();
+  ExternalMessageSender slackExternalMessageSender(UserConnectionManager userConnectionManager) {
+    return new SlackMessageSender(userConnectionManager);
   }
 
   @Bean
-  ExternalMessageSender msteamsExternalMessageSender() {
-    return new MsTeamsMessageSender();
+  ExternalMessageSender msteamsExternalMessageSender(UserConnectionManager userConnectionManager) {
+    return new MsTeamsMessageSender(userConnectionManager);
   }
 
   /**
@@ -1114,14 +1114,8 @@ public abstract class BaseConfig {
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
     LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-    // Inventory constraint messages are ported to the JSON catalogues, the generic templates
-    // stay in ValidationMessages.properties, so chain both. Templates are left unformatted for
-    // the validator to interpolate {max} and ${validatedValue}.
-    ReloadableResourceBundleMessageSource fallback = new ReloadableResourceBundleMessageSource();
-    fallback.setBasename("classpath:ValidationMessages");
-    JsonMessageSource constraintMessages = new JsonMessageSource();
-    constraintMessages.setParentMessageSource(fallback);
-    validator.setValidationMessageSource(constraintMessages);
+    // Return raw JSON templates for Hibernate to interpolate constraint attributes and values.
+    validator.setValidationMessageSource(new JsonMessageSource());
     return validator;
   }
 

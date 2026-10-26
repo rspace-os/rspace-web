@@ -48,7 +48,7 @@ public class InventoryUriField extends InventoryEntityField {
       try {
         new URI(fieldData);
       } catch (URISyntaxException e) {
-        errorList.addErrorMsg("Invalid URI syntax; " + e.getMessage());
+        errorList.addErrorMsgCode("validation.fieldData.invalidUri", e.getMessage());
       }
     }
     return errorList;

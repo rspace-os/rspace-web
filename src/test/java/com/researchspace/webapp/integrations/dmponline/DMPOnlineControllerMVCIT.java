@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @WebAppConfiguration
 public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
@@ -33,11 +34,7 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void testConnect() throws Exception {
-    MvcResult result =
-        mockMvc
-            .perform(post("/apps/dmponline/connect").principal(user::getUsername))
-            .andExpect(status().is(302))
-            .andReturn();
+    MvcResult result = startOAuthFlow();
 
     String actualRedirectedUrl = result.getResponse().getRedirectedUrl();
 
@@ -55,9 +52,14 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
 
   @Test
   public void testCallback() throws Exception {
+    MvcResult connectResult = startOAuthFlow();
     MvcResult result =
         mockMvc
-            .perform(get("/apps/dmponline/callback").principal(user::getUsername))
+            .perform(
+                get("/apps/dmponline/callback")
+                    .principal(user::getUsername)
+                    .param("state", stateFrom(connectResult))
+                    .param("code", "authorization-code"))
             .andExpect(status().is(200)) // end point exists
             .andReturn();
 
@@ -99,6 +101,20 @@ public class DMPOnlineControllerMVCIT extends API_MVC_TestBase {
     connection.setExpireTime(System.currentTimeMillis() + 60L * 60 * 1000);
     connection.setDisplayName("DMPonline access token");
     userConnectionManager.save(connection);
+  }
+
+  private MvcResult startOAuthFlow() throws Exception {
+    return mockMvc
+        .perform(post("/apps/dmponline/connect").principal(user::getUsername))
+        .andExpect(status().is(302))
+        .andReturn();
+  }
+
+  private String stateFrom(MvcResult connectResult) {
+    return UriComponentsBuilder.fromUriString(connectResult.getResponse().getRedirectedUrl())
+        .build()
+        .getQueryParams()
+        .getFirst("state");
   }
 
   @Test

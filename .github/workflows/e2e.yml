@@ -68,7 +68,7 @@ jobs:
     env:
       E2E_CLOUD: ${{ matrix.cloud && 'true' || 'false' }}
 
-    timeout-minutes: 60
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -98,7 +98,7 @@ jobs:
             cloud: true
     services:
       db:
-        image: mariadb:12.3
+        image: mariadb:11.8
         env:
           MARIADB_ROOT_PASSWORD: rspacedbpwd
           MARIADB_DATABASE: rspace
@@ -173,6 +173,7 @@ jobs:
           SET GLOBAL character_set_server = 'utf8mb4';
           SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
           SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          SET GLOBAL innodb_snapshot_isolation = 0;
           GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
           FLUSH PRIVILEGES;
           SQL
@@ -205,6 +206,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ inputs.mode }}" = "mock" ]; then
+            # Keep in sync with E2E_MOCK_ARGS in docker/dev/entrypoint-app.sh.
             INTEGRATION_ARGS=(
               "-Dpubchem.base.url=http://localhost:$E2E_MOCK_PORT"
               "-Dfieldmark.api.url=http://localhost:$E2E_MOCK_PORT"
@@ -245,10 +247,11 @@ jobs:
               "-Dgithub.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/github/oauth/authorize"
               "-Dgithub.oauth.access.token.url=http://localhost:$E2E_MOCK_PORT/github/oauth/token"
               "-Dgithub.api.base.url=http://localhost:$E2E_MOCK_PORT/github-api"
+              "-Dorcid.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/orcid/oauth/authorize"
               "-Dorcid.oauth.token.url=http://localhost:$E2E_MOCK_PORT/orcid/oauth/token"
               "-Dslack.client.id=mock-client"
               "-Dslack.secret=mock-secret"
-              "-Dslack.verification.token=mock-verification-token"
+              "-Dslack.signing.secret=mock-signing-secret"
               "-Dslack.oauth.authorize.url=http://localhost:$E2E_MOCK_PORT/slack/oauth/authorize"
               "-Dslack.api.base.url=http://localhost:$E2E_MOCK_PORT/slack-api"
               "-Dror.api.url=http://localhost:$E2E_MOCK_PORT/ror"

@@ -14,8 +14,12 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryImportInstrumentImportResult;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.model.User;
+import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.inventory.LinkTargetResolver;
+import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.service.inventory.csvexport.InventoryItemCsvExporter;
 import java.util.List;
 import java.util.Map;
@@ -26,19 +30,19 @@ import org.junit.jupiter.api.Test;
 public class CsvInstrumentImporterLinkFieldTest {
 
   private final CsvInstrumentImporter importer = new CsvInstrumentImporter();
+  private final CsvLinkValueParser parser = new CsvLinkValueParser();
   private final ApiInventoryImportInstrumentImportResult result =
       new ApiInventoryImportInstrumentImportResult();
 
   @BeforeEach
   void setUp() {
-    CsvLinkValueParser parser = new CsvLinkValueParser();
     IPropertyHolder properties = mock(IPropertyHolder.class);
     when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
     parser.properties = properties;
-    MessageSourceUtils messages = mock(MessageSourceUtils.class);
-    when(messages.getMessage(eq("errors.inventory.import.linkValueInvalid"), any()))
-        .thenReturn("bad link cell");
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
     parser.messages = messages;
+    parser.linkTargetResolver = mock(LinkTargetResolver.class);
+    parser.snapshotResolver = mock(LinkTargetSnapshotResolver.class);
     importer.linkParser = parser;
     importer.messages = messages;
 
@@ -91,6 +95,29 @@ public class CsvInstrumentImporterLinkFieldTest {
     importer.convertLinesToInstruments(result, lines, Map.of(0, "name"), 2, new User("u"));
 
     assertEquals(1, result.getErrorCount());
-    assertEquals("bad link cell", result.getResults().get(0).getError().getErrors().get(0));
+    assertEquals(
+        "Link value 'nonsense' must be a DataCite relation type followed by a link URL on this "
+            + "server, for example 'IsDerivedFrom https://your-rspace/globalId/SA123v2'",
+        result.getResults().get(0).getError().getErrors().get(0));
+  }
+
+  @Test
+  void aPinnedVersionTheReadableTargetLacksFailsTheRow() {
+    User importingUser = new User("u");
+    when(parser.linkTargetResolver.targetExistsAndIsReadable(any(), eq(importingUser)))
+        .thenReturn(true);
+    when(parser.snapshotResolver.resolveRevisionForVersion(GlobalIdPrefix.SD, 7L, 5L))
+        .thenReturn(null);
+    List<String[]> lines =
+        List.<String[]>of(
+            new String[] {"i1", "IsCalibratedBy https://rspace.example.com/globalId/SD7v5"});
+
+    importer.convertLinesToInstruments(result, lines, Map.of(0, "name"), 2, importingUser);
+
+    assertEquals(1, result.getErrorCount());
+    assertEquals(0, result.getSuccessCount());
+    assertEquals(
+        "Link target 'SD7' has no version 5.",
+        result.getResults().get(0).getError().getErrors().get(0));
   }
 }

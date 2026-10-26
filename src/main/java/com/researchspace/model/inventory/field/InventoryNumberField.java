@@ -28,7 +28,7 @@ public class InventoryNumberField extends InventoryEntityField {
   public ErrorList validate(String fieldData) {
     ErrorList el = super.validate(fieldData);
     if (!StringUtils.isAllBlank(fieldData) && !NumberUtils.isCreatable(fieldData)) {
-      el.addErrorMsg("Invalid number: " + fieldData);
+      el.addErrorMsgCode("validation.inventoryField.invalidNumber", fieldData);
     }
     return el;
   }

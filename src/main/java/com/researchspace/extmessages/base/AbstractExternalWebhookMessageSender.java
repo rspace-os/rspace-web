@@ -80,7 +80,8 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
       }
       return resp;
     } catch (RestClientException rce) {
-      log.warn("Posting  message to URL {} failed", uri.toString());
+      // not the URL: a webhook URL is a credential (RSDEV-1525)
+      log.warn("Posting message to {} webhook failed", getClass().getSimpleName());
       throw rce;
     }
   }
@@ -114,13 +115,6 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
   protected abstract String createMessage(MessageDetails internalMsg);
 
   /**
-   * Gets the name of the AppConfig property that stores the URL to send the message to.
-   *
-   * @return
-   */
-  protected abstract String getPostUrlSetting();
-
-  /**
    * Queries configuration for the name of the URL property saved as a webhook.
    *
    * @param messageConfig
@@ -132,14 +126,12 @@ public abstract class AbstractExternalWebhookMessageSender implements ExternalMe
     try {
       uri = new URI(webhookUrl);
     } catch (URISyntaxException e) {
-      log.error("Couldn't make a URl from webhook URL {}", webhookUrl);
+      log.error("Couldn't make a URI from the webhook URL: {}", e.getReason());
     }
     return Optional.ofNullable(uri);
   }
 
-  String doGetPostUrl(AppConfigElementSet messageConfig) {
-    return messageConfig.findElementByPropertyName(getPostUrlSetting()).getValue();
-  }
+  protected abstract String doGetPostUrl(AppConfigElementSet messageConfig);
 
   // converts <br/> from form into newlines
   static final Pattern BR_TAG = Pattern.compile("<\\s*br\\s*/>");

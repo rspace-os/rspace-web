@@ -28,9 +28,10 @@ type UserDetailsArgs = {
   onOpen?: () => void;
 };
 
+type RoleInGroup = "PI" | "DEFAULT" | "RS_LAB_ADMIN" | "GROUP_OWNER";
 type Group = {
   groupId: number;
-  roleInGroup: "PI" | "User";
+  roleInGroup: RoleInGroup;
   groupName: string;
 };
 type Person = {
@@ -111,12 +112,17 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
     "&:visited": { color: accentColor },
   };
 
+  const roleLabels: Record<RoleInGroup, string> = {
+    PI: t("userDetails.roles.pi"),
+    DEFAULT: t("userDetails.roles.user"),
+    RS_LAB_ADMIN: t("userDetails.roles.labAdmin"),
+    GROUP_OWNER: t("userDetails.roles.groupOwner"),
+  };
+
   const listLabgroups = user?.groups.map((group) => (
     <TableRow key={group.groupId}>
       <TableCell component="th" scope="row">
-        {t("userDetails.roleAt", {
-          role: group.roleInGroup === "PI" ? t("userDetails.roles.pi") : t("userDetails.roles.user"),
-        })}
+        {t("userDetails.roleAt", { role: roleLabels[group.roleInGroup] })}
       </TableCell>
       <TableCell align="right">
         <Link href={`/groups/view/${group.groupId}`} sx={linkSx}>

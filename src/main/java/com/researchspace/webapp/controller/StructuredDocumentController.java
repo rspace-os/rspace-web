@@ -357,7 +357,7 @@ public class StructuredDocumentController extends BaseController {
     User user = userManager.getUserByUsername(principal.getName());
     Notebook notebook = folderManager.getNotebook(notebookId);
     if (StringUtils.isBlank(entryName)) {
-      entryName = StructuredDocument.DEFAULT_NAME;
+      entryName = messages.getMessage("document.create.defaultName");
     }
     StructuredDocument newEntry = workspaceHandler.createEntry(notebook, entryName, user);
     publisher.publishEvent(createGenericEvent(user, newEntry, AuditAction.CREATE));
@@ -397,7 +397,7 @@ public class StructuredDocumentController extends BaseController {
       }
 
       if (StringUtils.isBlank(newname) || newname.contains("/")) {
-        newname = StructuredDocument.DEFAULT_NAME;
+        newname = messages.getMessage("document.create.defaultName");
       }
 
       RecordCopyResult fromTemplate =
@@ -1039,7 +1039,7 @@ public class StructuredDocumentController extends BaseController {
     User user = getUserByUsername(principal.getName());
 
     Field field = fieldManager.get(fieldId, user).get();
-    ErrorList el = field.getFieldForm().validate(data);
+    ErrorList el = messages.resolve(field.getFieldForm().validate(data));
     if (el.hasErrorMessages()) {
       return new AjaxReturnObject<Boolean>(null, el);
     }

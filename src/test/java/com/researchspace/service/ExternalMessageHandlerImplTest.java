@@ -1,12 +1,16 @@
 package com.researchspace.service;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
+import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
+import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.UserAppConfig;
+import com.researchspace.model.oauth.UserConnection;
+import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.testutils.SpringTransactionalTest;
@@ -40,6 +44,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
 
   private @Autowired ExternalMessageHandler handler;
   private @Autowired UserAppConfigManager mgr;
+  private @Autowired UserConnectionManager userConnectionManager;
   private User testUser;
 
   @BeforeEach
@@ -54,7 +59,13 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");
     StructuredDocument doc3 = createBasicDocumentInRootFolderWithText(testUser, "any3");
-    Long cfgSetId = setUpAppConfigForUser(testUser, () -> getSlackDevDfg());
+    Long cfgSetId = setUpAppConfigForUser(testUser, App.APP_SLACK, () -> getSlackDevDfg());
+    UserConnection connection =
+        new UserConnection(
+            new UserConnectionId(testUser.getUsername(), SLACK_APP_NAME, cfgSetId.toString()),
+            "xoxp-123456789");
+    connection.setSecret(slackTestWebhookUrl);
+    userConnectionManager.save(connection);
     logoutAndLoginAs(testUser);
 
     ServiceOperationResult<ResponseEntity<String>> response =
@@ -72,7 +83,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     StructuredDocument doc = createBasicDocumentInRootFolderWithText(testUser, "any");
     StructuredDocument doc2 = createBasicDocumentInRootFolderWithText(testUser, "any2");
     StructuredDocument doc3 = createBasicDocumentInRootFolderWithText(testUser, "any3");
-    Long cfgSetId = setUpAppConfigForUser(testUser, () -> getMsTeamsCfg());
+    Long cfgSetId = setUpAppConfigForUser(testUser, App.APP_MSTEAMS, () -> getMsTeamsCfg());
     logoutAndLoginAs(testUser);
 
     ServiceOperationResult<ResponseEntity<String>> response =
@@ -85,21 +96,28 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     assertTrue(response2.isSucceeded());
   }
 
-  private Long setUpAppConfigForUser(User user, Supplier<Map<String, String>> appConfigSupplier) {
-    Map<String, String> config = appConfigSupplier.get();
-    return saveAndReturnId(user, config);
-  }
-
-  private Long saveAndReturnId(User user, Map<String, String> config) {
-    UserAppConfig appConfig = mgr.saveAppConfigElementSet(config, null, false, user);
+  private Long setUpAppConfigForUser(
+      User user, String appName, Supplier<Map<String, String>> appConfigSupplier) {
+    // trusted, as only Slack's OAuth callback may create a Slack channel
+    Map<String, String> options = appConfigSupplier.get();
+    String teamsWebhook = options.remove("MSTEAMS_WEBHOOK_URL");
+    UserAppConfig appConfig = mgr.saveAppConfigElementSet(options, null, true, user, appName);
     Long cfgSetId = appConfig.getAppConfigElementSets().iterator().next().getId();
+    if (App.APP_MSTEAMS.equals(appName) && teamsWebhook != null) {
+      UserConnection connection =
+          new UserConnection(
+              new UserConnectionId(user.getUsername(), "MSTEAMS", cfgSetId.toString()), "");
+      connection.setSecret(teamsWebhook);
+      userConnectionManager.save(connection);
+    }
     return cfgSetId;
   }
 
   private Long setUpNonMessageAppConfig() {
     Map<String, String> config = new HashMap<>();
     config.put("otherAppConfig", "some value");
-    UserAppConfig appConfig = mgr.saveAppConfigElementSet(config, null, false, testUser);
+    UserAppConfig appConfig =
+        mgr.saveAppConfigElementSet(config, null, false, testUser, "other.app");
     Long cfgSetId = appConfig.getAppConfigElementSets().iterator().next().getId();
     return cfgSetId;
   }
@@ -123,7 +141,7 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
 
   @Test
   public void sendExternalMessagePermissions() throws Exception {
-    Long cfgSetId = setUpAppConfigForUser(testUser, () -> getSlackDevDfg());
+    Long cfgSetId = setUpAppConfigForUser(testUser, App.APP_SLACK, () -> getSlackDevDfg());
     logoutAndLoginAs(testUser);
     // other user can't access u1's apps
     User u2 = createAndSaveRandomUser();
@@ -139,12 +157,10 @@ public class ExternalMessageHandlerImplTest extends SpringTransactionalTest {
     Map<String, String> map = new HashMap<>();
     map.put("SLACK_CHANNEL_NAME", "general");
     map.put("SLACK_TEAM_NAME", "rspacedev");
-    map.put("SLACK_WEBHOOK_URL", slackTestWebhookUrl);
     map.put("SLACK_CHANNEL_LABEL", "general");
     map.put("SLACK_USER_ID", "U123");
     map.put("SLACK_TEAM_ID", "T456");
     map.put("SLACK_CHANNEL_ID", "C789");
-    map.put("SLACK_USER_ACCESS_TOKEN", "xoxp-123456789");
     return map;
   }
 

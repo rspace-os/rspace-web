@@ -249,6 +249,35 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     assertEquals(0, uui5.getTotalHits().intValue());
   }
 
+  @Test
+  public void communityAdminSearchMatchesNameContainingQuote() throws Exception {
+    User pi = createAndSaveUser(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    pi.setLastName("O'Brien");
+    pi = userMgr.save(pi);
+    User pi2 = createAndSaveUser(getRandomAlphabeticString("pi2"), Constants.PI_ROLE);
+    User admin = createAndSaveUser(getRandomAlphabeticString("admin"), Constants.ADMIN_ROLE);
+    initUsers(true, pi, pi2, admin);
+    logoutAndLoginAs(admin);
+    Group g1 = createGroupForUsers(admin, pi.getUsername(), "", pi);
+    Group g2 = createGroupForUsers(admin, pi2.getUsername(), "", pi2);
+    Community comm = createAndSaveCommunity(admin, getRandomAlphabeticString("comm"));
+    communityMgr.addGroupToCommunity(g1.getId(), comm.getId(), admin);
+    communityMgr.addGroupToCommunity(g2.getId(), comm.getId(), admin);
+    MockPrincipal adminPrincipal = new MockPrincipal(admin.getUsername());
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                get("/system/ajax/jsonList")
+                    .param("allFields", "O'Brien")
+                    .principal(adminPrincipal))
+            .andExpect(status().isOk())
+            .andReturn();
+    UserInfoListDTO users = getUserListFromMvcResult(result);
+    assertEquals(1, users.getTotalHits().intValue());
+    assertEquals(pi.getUsername(), users.getResults().get(0).getUserInfo().getUsername());
+  }
+
   private UserInfoListDTO getUserListFromMvcResult(MvcResult result) throws Exception {
     UsageListingDTO responseDTO = getFromJsonResponseBody(result, UsageListingDTO.class);
     return responseDTO.getUserInfo();

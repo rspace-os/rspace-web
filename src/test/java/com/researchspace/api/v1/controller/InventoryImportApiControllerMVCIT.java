@@ -1401,6 +1401,51 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   }
 
   /**
+   * RSDEV-1530: a cell that pins a version its readable target does not have fails its row at
+   * prevalidation, so nothing from the file is saved, and the error names the version. The UI
+   * prefixes the row number.
+   */
+  @Test
+  public void parseAndImportSampleCsvRefusesAPinToAVersionTheReadableTargetLacks()
+      throws Exception {
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(anyUser);
+    String targetGlobalId = "SA" + target.getId();
+    String serverUrl = propertyHolder.getServerUrl();
+    if (serverUrl.endsWith("/")) {
+      serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+    }
+    String csv =
+        "Name,Related\n"
+            + "pinned to a real version,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/"
+            + targetGlobalId
+            + "v1\n"
+            + "pinned to a missing version,IsDerivedFrom "
+            + serverUrl
+            + "/globalId/"
+            + targetGlobalId
+            + "v7\n";
+
+    ApiInventoryImportSampleImportResult sampleResults =
+        importSamplesCsv(csv, buildLinkColumnSampleImportSettings(csv));
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, sampleResults.getStatus());
+    assertEquals(0, sampleResults.getSuccessCount(), "the valid row is not saved either");
+    assertEquals(1, sampleResults.getErrorCount());
+    assertEquals(
+        "Link target '" + targetGlobalId + "' has no version 7.",
+        sampleResults.getResults().get(1).getError().getErrors().get(0));
+
+    // nothing links to the target: the file imports all or nothing
+    List<InventoryLinkField> referencing =
+        doInTransaction(
+            () ->
+                inventoryLinkDao.findReferencingStructuredLinkFields(
+                    GlobalIdPrefix.SA, target.getId()));
+    assertThat(referencing).isEmpty();
+  }
+
+  /**
    * RSDEV-1354: a CSV link whose target exists but is not readable by the importer imports rather
    * than failing its row. Distinguishing "gone" from "not yours" is the disclosure ADR-0002
    * prevents, so import cannot treat the two differently; the summary redacts the target for the
@@ -1718,10 +1763,9 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, selfLinkResult.getStatus());
     assertEquals(0, selfLinkResult.getSuccessCount());
     assertEquals(1, selfLinkResult.getErrorCount());
-    // the API reports the raw message key; the frontend i18n catalogue renders it
     assertApiErrorContainsMessage(
         selfLinkResult.getResults().get(0).getError(),
-        "errors.inventory.field.link.selfLinkForbidden");
+        "An item cannot link to itself: 'SA" + predictedSelfId + "'");
     assertEquals(
         samplesBefore,
         sampleApiMgr.getSamplesForUser(null, null, null, anyUser).getTotalHits().intValue(),

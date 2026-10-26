@@ -30,8 +30,9 @@ public class ApiInventoryLink {
   /**
    * Set only by {@link com.researchspace.service.inventory.csvimport.CsvLinkValueParser}: skips the
    * target check entirely, so CSV import stores the link whatever state its target is in, missing
-   * and unreadable included (RSDEV-1354, ADR-0002). Not settable from JSON, so link create and
-   * update payloads cannot set it; the CSV import endpoint, through the UI or the API, can.
+   * and unreadable included (RSDEV-1354, ADR-0002). The parser checks a pinned version itself, for
+   * targets the importer can read (RSDEV-1530). Not settable from JSON, so link create and update
+   * payloads cannot set it; the CSV import endpoint, through the UI or the API, can.
    */
   // ponytail: a boolean on the DTO instead of threading an "import" flag through three managers;
   // promote to a dedicated createLink variant if a second lenient caller appears

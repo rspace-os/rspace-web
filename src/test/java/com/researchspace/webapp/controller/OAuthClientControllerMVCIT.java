@@ -4,11 +4,13 @@ import static com.researchspace.webapp.controller.MvcTestUtils.parseOAuthTokenRe
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,7 +20,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
+import com.researchspace.api.v1.controller.OAuthClientController;
 import com.researchspace.api.v1.model.NewOAuthTokenResponse;
+import com.researchspace.auth.PasswordGrantGuessLimiter;
 import com.researchspace.auth.password.LoginVerificationBusyException;
 import com.researchspace.auth.password.SentinelPasswordCheck;
 import com.researchspace.model.User;
@@ -32,16 +36,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.bean.override.BeanOverrideTestExecutionListener;
-import org.springframework.test.context.bean.override.mockito.MockitoResetTestExecutionListener;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.AopTestUtils;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 
-@TestExecutionListeners(
-    value = {BeanOverrideTestExecutionListener.class, MockitoResetTestExecutionListener.class},
-    mergeMode = TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS)
 public class OAuthClientControllerMVCIT extends MVCTestBase {
   private static final String CLIENT_ERROR = "OAuth token could not be created.";
   private static final String INVALID_CREDENTIALS = "Invalid user credentials.";
@@ -49,8 +48,38 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
       "The server is busy; retry after the Retry-After interval.";
 
   @Autowired private OAuthAppManager oAuthAppManager;
-  @MockitoSpyBean private IReauthenticator reauthenticator;
-  @MockitoSpyBean private SentinelPasswordCheck sentinelCheck;
+  @Autowired private OAuthClientController oAuthClientController;
+  @Autowired private PasswordGrantGuessLimiter guessLimiter;
+
+  private Object controllerTarget;
+  private Object originalReauthenticator;
+  private Object originalSentinelCheck;
+  private IReauthenticator reauthenticator;
+  private SentinelPasswordCheck sentinelCheck;
+
+  /**
+   * Spies are swapped into the shared beans by hand rather than with {@code @MockitoSpyBean}. A
+   * bean override would give this class its own Spring context, which stays cached for the rest of
+   * the test run and adds to the test JVM's heap use. The originals are restored after each test so
+   * the spies cannot leak into other classes that share the context.
+   */
+  @BeforeEach
+  public void installSpies() {
+    controllerTarget = AopTestUtils.getUltimateTargetObject(oAuthClientController);
+    originalReauthenticator = ReflectionTestUtils.getField(controllerTarget, "reauthenticator");
+    reauthenticator = mock(IReauthenticator.class, delegatesTo(originalReauthenticator));
+    ReflectionTestUtils.setField(controllerTarget, "reauthenticator", reauthenticator);
+
+    originalSentinelCheck = ReflectionTestUtils.getField(guessLimiter, "sentinelCheck");
+    sentinelCheck = mock(SentinelPasswordCheck.class, delegatesTo(originalSentinelCheck));
+    ReflectionTestUtils.setField(guessLimiter, "sentinelCheck", sentinelCheck);
+  }
+
+  @AfterEach
+  public void restoreOriginals() {
+    ReflectionTestUtils.setField(controllerTarget, "reauthenticator", originalReauthenticator);
+    ReflectionTestUtils.setField(guessLimiter, "sentinelCheck", originalSentinelCheck);
+  }
 
   /**
    * OAuth starts disabled on a fresh database, so each test enables it first. Some tests disable it
@@ -425,7 +454,9 @@ public class OAuthClientControllerMVCIT extends MVCTestBase {
           .andExpect(header().string(HttpHeaders.RETRY_AFTER, "5"))
           .andExpect(jsonPath("$.message").value(SERVER_BUSY));
     }
-    doCallRealMethod().when(reauthenticator).reauthenticate(any(), any());
+    doAnswer(delegatesTo(originalReauthenticator))
+        .when(reauthenticator)
+        .reauthenticate(any(), any());
 
     passwordGrant(app, username, password).andExpect(status().isOk());
   }

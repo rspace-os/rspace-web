@@ -343,7 +343,7 @@ The following optional properties allow configuring RSpace integration with Data
 The following optional properties enable RSpace to connect to Slack (if this integration is enabled):
 * **slack.client.id** Client id of Slack App registered for given RSpace instance
 * **slack.secret** Client secret of Slack App registered for given RSpace instance
-* **slack.verification.token** Verification token.
+* **slack.signing.secret** Signing Secret from the Slack app's Basic Information page. Required for slash commands. RSpace verifies the exact request body and rejects signatures older than five minutes. The legacy verification token is no longer accepted.
 
 The following optional property enables RSpace to connect to your PyRAT database instance (if this integration is enabled):
 * **pyrat.server.config** configures the pyrat server alias associated to *server url* and server *access token* (API-Client-Token provided by Scionics - developers of PyRAT).
@@ -504,7 +504,7 @@ These optional settings configure  behaviour of the RSpace application.
 
 #### Login password checks
 * **login.passwordVerification.maxConcurrent** The maximum number of login and reauthentication password checks that run at once. Each check holds about 19 MiB of heap, so this bounds the memory a burst of login attempts can use. Default is 8.
-* **login.passwordVerification.waitSeconds** How long, in seconds, a password check waits for a free slot before it is refused. A refused check tells the user the server is busy and to try again, and does not count toward account lockout. On the OAuth password grant (`/oauth/token`) a refused check answers HTTP 503, and this value is sent as its `Retry-After` header. While it waits the check holds a request thread, so on a busy instance a lower value frees threads sooner at the cost of more refused logins. Default is 5.
+* **login.passwordVerification.waitSeconds** How long, in seconds, a password check waits for a free slot before it is refused. A refused check tells the user the server is busy and to try again, and does not count toward account lockout. On the OAuth password grant (`/oauth/token`) a refused check answers HTTP 503, and this value, or 1 if it is 0, is sent as its `Retry-After` header. While it waits the check holds a request thread, so on a busy instance a lower value frees threads sooner at the cost of more refused logins. Default is 5.
 * **login.passwordVerification.maxQueued** How many password checks may wait for a free slot at once, on top of the checks already running. Further attempts are refused immediately with the same busy answer and do not count toward account lockout. At most one check per account may wait, so a burst of attempts for one username cannot fill the queue. Each waiting check holds a request thread. Default is 32.
 
 #### Archiving and export

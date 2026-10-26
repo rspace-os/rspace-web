@@ -479,8 +479,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     sampleErrorMsg = sampleResult.getResults().get(3).getError().getErrors().get(0);
     assertEquals("Text 'TestData3' could not be parsed at index 0", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(5).getError().getErrors().get(0);
-    assertEquals(
-        "Cannot parse quantity string: Failed to parse number-literal 'ml'.", sampleErrorMsg);
+    assertEquals("Could not parse quantity [ml]", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(6).getError().getErrors().get(0);
     assertEquals(
         "quantity: Sample quantity unit 7 (GRAM) is incompatible with template quantity unit 3"
@@ -1315,7 +1314,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
             InventoryImportException.class,
             () -> importMgr.importContainers(importResult, csvProcessingResult));
     assertEquals(
-        "errors.inventory.move.targetLocation.requiredForGridOrImageContainer", iie.getMessage());
+        "When moving to image/grid type container request has to specify target location",
+        iie.getMessage());
 
     // verify error on saving to container belonging to unrelated user
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("apiImport"));
@@ -1339,7 +1339,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         assertThrows(
             InventoryImportException.class,
             () -> importMgr.importContainers(importResult2, csvProcessingResult2));
-    assertEquals("errors.inventory.move.targetContainer.unavailable", iie.getMessage());
+    assertEquals(
+        "Cannot locate target container from provided target container and location details",
+        iie.getMessage());
   }
 
   @Test

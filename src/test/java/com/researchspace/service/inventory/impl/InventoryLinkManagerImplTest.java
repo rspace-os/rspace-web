@@ -63,21 +63,6 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     assertEquals(doc.getId(), saved.getTargetDbId());
   }
 
-  @Test
-  public void createLinkExtractsVersionPinFromTargetSuffix() {
-    User user = createInitAndLoginAnyUser();
-    ApiSampleWithFullSubSamples target = createBasicSampleForUser(user);
-
-    ApiInventoryLink api = new ApiInventoryLink();
-    api.setRelationType("References");
-    api.setTargetGlobalId(target.getGlobalId() + "v5");
-
-    InventoryLink saved = linkManager.createLink(api, user);
-
-    assertEquals(Long.valueOf(5), saved.getVersionPin());
-    assertEquals(target.getId(), saved.getTargetDbId());
-  }
-
   /**
    * RSDEV-1528: the pre-check the PIDINST import runs must answer exactly as createLink would, and
    * answer false for every failure alike, so a caller learns nothing about why.
@@ -88,9 +73,11 @@ public class InventoryLinkManagerImplTest extends SpringTransactionalTest {
     ApiSampleWithFullSubSamples target = createBasicSampleForUser(owner);
     ApiInventoryLink api = new ApiInventoryLink();
     api.setRelationType("IsCalibratedBy");
-    api.setTargetGlobalId(target.getGlobalId() + "v1");
+    api.setTargetGlobalId(target.getGlobalId());
 
-    assertTrue(linkManager.canCreateLink(api, owner), "a readable target, version suffix and all");
+    // unpinned on purpose: Envers writes audit rows only on commit, which this rolled-back test
+    // never does; the pinned cases live in InventoryLinkManagerImplIT
+    assertTrue(linkManager.canCreateLink(api, owner), "a readable target");
 
     User stranger = createInitAndLoginAnyUser();
     assertFalse(linkManager.canCreateLink(api, stranger), "a target the actor cannot read");

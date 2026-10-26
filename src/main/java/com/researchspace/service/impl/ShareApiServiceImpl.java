@@ -18,6 +18,7 @@ import com.researchspace.api.v1.model.SharePost;
 import com.researchspace.api.v1.model.UserSharePostItem;
 import com.researchspace.auth.PermissionUtils;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
@@ -33,7 +34,6 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
@@ -237,7 +237,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
     if (result.getExceptionCount() > 0 && result.getResultCount() == 0) {
       String exceptionMessages =
           ListFormatUtils.formatList(
-              result.getExceptions().stream().map(Throwable::getMessage).toList());
+              result.getExceptions().stream().map(messages::getExceptionMessage).toList());
       if (result.getExceptions().stream().anyMatch(e -> e instanceof IllegalAddChildOperation)) {
         throw new IllegalArgumentException(
             getMessage("sharing.errors.sharingFailed", new Object[] {exceptionMessages}));

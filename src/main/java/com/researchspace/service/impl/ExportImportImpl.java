@@ -141,7 +141,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
 
   private void logAndNotifyUserAboutExportFailure(String exportName, User exporter, Exception e) {
     log.error("Unable to export.", e);
-    postArchiveExportFailure(exportName, exporter, e.getMessage());
+    postArchiveExportFailure(exportName, exporter, messageSource.getExceptionChainMessage(e));
   }
 
   @Override

@@ -6,9 +6,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiInventoryLink;
+import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.inventory.field.InventoryLink;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.inventory.LinkTargetResolver;
+import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
 import com.researchspace.service.inventory.csvimport.CsvLinkValueParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,10 +36,15 @@ public class CsvLinkRoundTripTest {
 
   private final CsvInstrumentExporter exporter = new CsvInstrumentExporter();
   private final CsvLinkValueParser parser = new CsvLinkValueParser();
+  private final User importer = new User("importer");
 
   @BeforeEach
   void setUp() {
     useServerUrl(SERVER_URL);
+    // unreadable by default, so a pinned cell takes the lenient path and is not version-checked
+    ReflectionTestUtils.setField(parser, "linkTargetResolver", mock(LinkTargetResolver.class));
+    ReflectionTestUtils.setField(
+        parser, "snapshotResolver", mock(LinkTargetSnapshotResolver.class));
   }
 
   @ParameterizedTest
@@ -51,7 +59,7 @@ public class CsvLinkRoundTripTest {
       String relation, GlobalIdPrefix prefix, long dbId, Long versionPin) {
     String cell = exporter.csvValueForLink(link(relation, prefix, dbId, versionPin));
 
-    ApiInventoryLink reimported = parser.parse(cell);
+    ApiInventoryLink reimported = parser.parse(cell, importer);
 
     assertEquals(relation, reimported.getRelationType());
     assertEquals(prefix.name() + dbId, reimported.getTargetGlobalId());
@@ -65,7 +73,8 @@ public class CsvLinkRoundTripTest {
     useServerUrl("https://rspace.example.com//");
 
     ApiInventoryLink reimported =
-        parser.parse(exporter.csvValueForLink(link("Cites", GlobalIdPrefix.SA, 1L, null)));
+        parser.parse(
+            exporter.csvValueForLink(link("Cites", GlobalIdPrefix.SA, 1L, null)), importer);
 
     assertEquals("SA1", reimported.getTargetGlobalId());
     assertNull(reimported.getVersionPin());

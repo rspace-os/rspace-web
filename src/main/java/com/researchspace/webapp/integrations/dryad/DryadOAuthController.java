@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.DRYAD_APP_NAME;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -67,7 +68,7 @@ public class DryadOAuthController extends BaseOAuth2Controller {
         String.format(
             "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=all",
             clientId, redirectUrl);
-    return new RedirectView(baseUrl + redirectPrams);
+    return new RedirectView(baseUrl + redirectPrams + "&state=" + generateState());
   }
 
   /** Deletes any current user connections to Dryad. */
@@ -85,8 +86,24 @@ public class DryadOAuthController extends BaseOAuth2Controller {
    * @return the dryad connected page
    */
   @GetMapping("/callback")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(
       @RequestParam Map<String, String> params, Model model, Principal principal) {
+    try {
+      verifyStateParameter(params.get("state"));
+    } catch (IllegalStateException invalidState) {
+      log.warn("Dryad OAuth state mismatch");
+      OauthAuthorizationError error =
+          OauthAuthorizationError.builder()
+              .appName("Dryad")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"Dryad"}))
+              .errorDetails(invalidState.getMessage())
+              .build();
+      ConnectionResultPage.addError(
+          model, "Dryad", "rspace.apps.dryad.connection", "DRYAD_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
+    }
+
     // Call dryad token endpoint to get access token
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);

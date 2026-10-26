@@ -945,7 +945,9 @@ public class UserProfileController extends BaseController {
     }
 
     List<GroupInfo> groups =
-        profileUser.getGroups().stream().map(g -> new GroupInfo(g, profileUser)).collect(toList());
+        profileUser.getGroups().stream()
+            .map(g -> new GroupInfo(g, g.getRoleForUser(profileUser)))
+            .collect(toList());
     UserProfile up = userProfileManager.getUserProfile(profileUser);
     Long profileImageId = getProfileImageId(up);
     String profileImageLink = String.format(PROFILE_IMAGE_LINK_FMT, up.getId(), profileImageId);
