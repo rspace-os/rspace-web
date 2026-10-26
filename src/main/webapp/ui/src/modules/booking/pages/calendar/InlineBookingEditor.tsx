@@ -1,0 +1,339 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "@tanstack/react-router";
+import { TriangleAlertIcon } from "lucide-react";
+import * as React from "react";
+import { flushSync } from "react-dom";
+import { useTranslation } from "react-i18next";
+import { BOOKING_ERROR_CLASS_NAME } from "@/modules/booking/components/bookingWarningStyles";
+import { useBookableItemConfiguration } from "@/modules/booking/creation/BookableItemPicker";
+import {
+  BookingForm,
+  type BookingFormState,
+  type BookingFormSubmission,
+  type EditableBooking,
+} from "@/modules/booking/creation/BookingForm";
+import { TimelineWindowEditor } from "@/modules/booking/creation/TimelineWindowEditor";
+import { timelinePolicy } from "@/modules/booking/creation/timelineRange";
+import {
+  bookingProblemFeedback,
+  isBookingConflictError,
+  isBookingOutcomeUncertain,
+  withBookingProblemConflict,
+} from "@/modules/booking/creation/useCreateBooking";
+import { bookingConflicts } from "@/modules/booking/domain/availability";
+import {
+  ApiV2ProblemError,
+  type BookingListDocument,
+  type BookingUpdate,
+  updateBooking,
+} from "@/modules/booking/domain/booking";
+import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
+import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
+import { createBookingEventNotice, useBookingNotices } from "@/modules/booking/feedback/BookingNotices";
+import { Alert, AlertDescription } from "@/modules/common/ui/alert";
+import { Button } from "@/modules/common/ui/button";
+import { Skeleton } from "@/modules/common/ui/skeleton";
+import { cn } from "@/modules/common/utils/cn";
+import { calendarAvailabilityRow, useCalendarAvailability } from "./calendarAvailability";
+
+/** A save rejected because the booking changed after the version the draft was saved against. */
+function isStaleEditError(error: unknown): boolean {
+  return (
+    error instanceof ApiV2ProblemError &&
+    (error.status === 412 || error.code === "errors.api.v2.booking.concurrentModification")
+  );
+}
+
+export const BookingEditorsContext = React.createContext<
+  | {
+      setEditors: React.Dispatch<React.SetStateAction<Map<string, BookingListDocument>>>;
+      positions: ReadonlyMap<number, BookingListDocument>;
+    }
+  | undefined
+>(undefined);
+
+export function InlineBookingEditor({
+  event,
+  timezone,
+  timelineDate,
+  token,
+  onClose,
+  timelineEventElement,
+}: {
+  event: BookingListDocument & EditableBooking;
+  timezone: string;
+  timelineDate?: string;
+  token: string;
+  onClose: () => void;
+  timelineEventElement?: HTMLElement | null;
+}) {
+  const { t } = useTranslation(["booking", "common"]);
+  const { t: bookingT } = useTranslation("booking");
+  const queryClient = useQueryClient();
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const notices = useBookingNotices();
+  const configuration = useBookableItemConfiguration(event.target.globalId, token);
+  // The booking the draft started from: the form's defaults and the base of the patch. A refetched `event` (a newer
+  // version) never replaces the draft; only discarding it does.
+  const [base, setBase] = React.useState(event);
+  const editorId = React.useId();
+  const setEditors = React.useContext(BookingEditorsContext)?.setEditors;
+  React.useEffect(() => {
+    setEditors?.((current) => new Map(current).set(editorId, base));
+    return () =>
+      setEditors?.((current) => {
+        const next = new Map(current);
+        next.delete(editorId);
+        return next;
+      });
+  }, [editorId, base, setEditors]);
+  const [formKey, setFormKey] = React.useState(0);
+  // The version a save was rejected against because the booking had changed; set until the draft is saved or discarded.
+  const [rejectedVersion, setRejectedVersion] = React.useState<number>();
+  const staleEdit = rejectedVersion !== undefined;
+  // The version of a save whose response was lost; it may have committed, so a newer loaded version can be ours.
+  const [uncertainVersion, setUncertainVersion] = React.useState<number>();
+  // The rejection refetches the calendar; once it brings a newer version the next save is sent against that version.
+  const latestVersionLoaded =
+    (staleEdit && event.version !== rejectedVersion) ||
+    (uncertainVersion !== undefined && event.version !== uncertainVersion);
+  const editorRef = React.useRef<HTMLDivElement>(null);
+  const staleAlertRef = React.useRef<HTMLDivElement>(null);
+  const [formState, setFormState] = React.useState<BookingFormState | null>(null);
+  const [windowAdjustment, setWindowAdjustment] = React.useState<BookingFormState["draft"]>();
+  const mutation = useMutation({
+    mutationFn: async ({ submission, version }: { submission: BookingFormSubmission; version: number }) => {
+      // Only the fields changed from where the draft started, so saving over a newer version keeps that version's
+      // other changes.
+      const patch: BookingUpdate = {
+        ...(submission.window.start !== base.start ? { start: submission.window.start } : {}),
+        ...(submission.window.end !== base.end ? { end: submission.window.end } : {}),
+        ...(submission.purpose !== base.purpose ? { purpose: submission.purpose } : {}),
+      };
+      return Object.keys(patch).length === 0 ? null : updateBooking(event.id, version, patch, token);
+    },
+    onSuccess: async (updated, { submission }) => {
+      if (updated) {
+        notices.notify(
+          "calendar",
+          createBookingEventNotice({
+            event: updated,
+            message: t(
+              updated.kind === "MAINTENANCE"
+                ? "bookings.feedback.maintenanceUpdated"
+                : "bookings.feedback.eventUpdated",
+              { itemName: submission.target.name },
+            ),
+            timeZone: timezone,
+            searchStr,
+          }),
+        );
+      }
+      await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      onClose();
+    },
+    onError: async (error, { version }) => {
+      if (isStaleEditError(error)) {
+        setRejectedVersion(version);
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+        return;
+      }
+      if (isBookingOutcomeUncertain(error)) {
+        setUncertainVersion(version);
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+        return;
+      }
+      if (
+        error instanceof ApiV2ProblemError &&
+        (error.code === "errors.api.v2.forbidden" || error.code === "errors.api.v2.booking.state.transition")
+      ) {
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      }
+      if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
+        await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+      }
+    },
+  });
+  const resetMutation = mutation.reset;
+  const clearMutationErrorOnChange = React.useCallback(
+    (state: BookingFormState) => {
+      setFormState(state);
+      setWindowAdjustment(undefined);
+      if (!mutation.isError) return;
+      resetMutation();
+    },
+    [mutation.isError, resetMutation],
+  );
+  React.useEffect(() => {
+    if (rejectedVersion !== undefined) staleAlertRef.current?.focus();
+  }, [rejectedVersion]);
+  const discardDraft = () => {
+    // Commit the reloaded form now: the focused discard button leaves with the alert, and focus must move to the
+    // new purpose field before the popover reclaims it.
+    flushSync(() => {
+      resetMutation();
+      setBase(event);
+      setRejectedVersion(undefined);
+      setUncertainVersion(undefined);
+      setFormState(null);
+      setWindowAdjustment(undefined);
+      setFormKey((key) => key + 1);
+    });
+    editorRef.current?.querySelector<HTMLElement>("textarea")?.focus();
+  };
+  // Checked as soon as both endpoints are entered, before the item's rules are met.
+  const enteredWindow = formState?.enteredWindow;
+  const intervalChanged = Boolean(
+    enteredWindow && (enteredWindow.start !== base.start || enteredWindow.end !== base.end),
+  );
+  const availabilityRow = configuration.data
+    ? calendarAvailabilityRow({
+        ...configuration.data,
+        // Opening hours are the form's own check, so closed time must not read as an overlap here.
+        ...ALWAYS_OPEN,
+        // Fetch overlaps even when the configuration permits double booking so the form can explain them.
+        allowDoubleBooking: false,
+      })
+    : undefined;
+  const availabilityInterval = enteredWindow
+    ? {
+        ...enteredWindow,
+        date: formState.draft.startDate,
+        timeZone: configuration.data?.timezone ?? timezone,
+        elapsedMinutes: (Date.parse(enteredWindow.end) - Date.parse(enteredWindow.start)) / 60_000,
+      }
+    : { start: "", end: "", date: "", timeZone: timezone, elapsedMinutes: 0 };
+  const availability = useCalendarAvailability(
+    availabilityRow && intervalChanged ? [availabilityRow] : [],
+    availabilityInterval,
+    token,
+  );
+  const checkingAvailability = Boolean(availabilityRow && intervalChanged && availability.isPending);
+  const availabilityViolation = Boolean(
+    availability.isSuccess &&
+      availability.data.get(event.target.globalId)?.some((interval) => interval.source.id !== `booking:${event.id}`),
+  );
+  const conflicts = availabilityViolation
+    ? bookingConflicts(availability.data?.get(event.target.globalId) ?? [], timezone, event.id)
+    : [];
+  const canOverlapBookings =
+    event.kind === "BOOKING" &&
+    configuration.data?.allowDoubleBooking === true &&
+    conflicts.length > 0 &&
+    conflicts.every(({ kind }) => kind === "BOOKING");
+  const conflictBlocksSubmission = availabilityViolation && !canOverlapBookings;
+
+  if (configuration.isPending) {
+    return (
+      <div className="space-y-4 border-border border-t p-4" aria-busy="true">
+        <p role="status" className="sr-only">
+          {t("bookings.loadingConfiguration")}
+        </p>
+        <Skeleton aria-hidden="true" className="h-12 w-full" />
+        <Skeleton aria-hidden="true" className="h-24 w-full" />
+      </div>
+    );
+  }
+  if (configuration.isError || !configuration.data) {
+    return (
+      <div className="space-y-3 border-border border-t p-4">
+        <p role="alert">{t("bookings.errors.targetUnavailable")}</p>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => void configuration.refetch()}>
+            {t("common:actions.retry")}
+          </Button>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            {t("bookings.form.cancel")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  const timelineDraft =
+    windowAdjustment ?? formState?.draft ?? wallClockDraftFromInstants(base.start, base.end, timezone);
+  // The stale-edit alert below explains a 412 for as long as the draft is kept, so the form does not repeat it.
+  const saveError = isStaleEditError(mutation.error) ? null : mutation.error;
+  // A buffer rejection needs its own sentence; a server-named overlap is listed alongside the local conflicts.
+  const problem = bookingProblemFeedback(saveError, bookingT, {
+    displayTimezone: timezone,
+    target: configuration.data,
+  });
+  return (
+    <>
+      {timelineDate && timelineEventElement ? (
+        <TimelineWindowEditor
+          anchor={timelineEventElement}
+          verticalAnchor={timelineEventElement.closest<HTMLElement>("[data-event-id]") ?? timelineEventElement}
+          date={timelineDate}
+          timezone={timezone}
+          draft={timelineDraft}
+          policy={timelinePolicy(configuration.data, event.kind === "MAINTENANCE" ? "MAINTENANCE" : "BOOKING")}
+          onChange={setWindowAdjustment}
+          tone={event.kind === "MAINTENANCE" ? "maintenance" : "booking"}
+        />
+      ) : null}
+      <div ref={editorRef} className="flex max-h-[min(22rem,45vh)] flex-col border-border border-t">
+        {staleEdit ? (
+          <div className="shrink-0 space-y-2 border-border border-b px-4 py-3">
+            <Alert
+              ref={staleAlertRef}
+              tabIndex={-1}
+              variant="destructive"
+              className={cn(BOOKING_ERROR_CLASS_NAME, "outline-none focus-visible:ring-3 focus-visible:ring-ring/40")}
+            >
+              <TriangleAlertIcon aria-hidden="true" />
+              <AlertDescription>{t("calendar.inlineEditor.staleEdit")}</AlertDescription>
+            </Alert>
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              disabled={!latestVersionLoaded || mutation.isPending}
+              onClick={discardDraft}
+            >
+              {t("calendar.inlineEditor.discardStaleEdit")}
+            </Button>
+          </div>
+        ) : null}
+        <BookingForm
+          key={formKey}
+          mode="edit"
+          density="compact"
+          displayTimezone={timezone}
+          booking={base}
+          configuration={configuration.data}
+          token={token}
+          pending={mutation.isPending}
+          error={
+            isBookingOutcomeUncertain(saveError)
+              ? t("bookings.errors.outcomeUncertain")
+              : (problem.message ??
+                (!saveError && availabilityViolation && conflicts.length === 0
+                  ? t("bookings.errors.overlap")
+                  : undefined))
+          }
+          conflicts={withBookingProblemConflict(conflicts, problem.conflict)}
+          conflictSeverity={canOverlapBookings && !isBookingConflictError(mutation.error) ? "warning" : "error"}
+          submissionBlocked={
+            checkingAvailability ||
+            conflictBlocksSubmission ||
+            isBookingConflictError(mutation.error) ||
+            (staleEdit && !latestVersionLoaded)
+          }
+          windowAdjustment={windowAdjustment}
+          onStateChange={clearMutationErrorOnChange}
+          onCancel={() => {
+            mutation.reset();
+            onClose();
+          }}
+          onSubmit={(submission) =>
+            mutation.mutateAsync({
+              submission,
+              version: latestVersionLoaded ? event.version : base.version,
+            })
+          }
+        />
+      </div>
+    </>
+  );
+}

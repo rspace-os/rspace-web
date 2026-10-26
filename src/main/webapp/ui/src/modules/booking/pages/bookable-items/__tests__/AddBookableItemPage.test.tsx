@@ -1,0 +1,612 @@
+import "@/__tests__/__mocks__/matchMedia";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
+import { Suspense } from "react";
+import { useTranslation } from "react-i18next";
+import { describe, expect, it } from "vitest";
+import { expectAccessible } from "@/__tests__/accessibility";
+import { server } from "@/__tests__/mswServer";
+import {
+  BookingLocalNotices,
+  BookingNoticesProvider,
+  useBookingLocalNotices,
+  useBookingNoticeHost,
+} from "@/modules/booking/feedback/BookingNotices";
+import AddBookableItemPage from "@/modules/booking/pages/bookable-items/AddBookableItemPage";
+import { addBookableItemSearch } from "@/modules/booking/pages/bookable-items/search";
+import { collectionPage } from "../mocks/bookableItemsMocks";
+
+const confocal = { id: 123, name: "Confocal microscope", globalId: "IN123", deleted: false };
+const settings = {
+  slotGranularityMinutes: 5,
+  incrementUnit: "MINUTES",
+  alignToIncrement: true,
+  openingHours: [
+    { dayOfWeek: 1, start: "08:00", end: "17:00" },
+    { dayOfWeek: 2, start: "10:00", end: "16:00" },
+  ],
+
+  bufferBeforeMinutes: 0,
+  bufferAfterMinutes: 0,
+  maxBookingDurationMinutes: 0,
+  allowDoubleBooking: false,
+  availabilityWindowStart: "08:00",
+  availabilityWindowEnd: "18:00",
+  timezoneMode: "BROWSER",
+  customTimezone: null,
+  institutionTimezone: "Etc/UTC",
+};
+
+function targetsHandler(onRequest: (url: URL) => void = () => undefined, targets: readonly unknown[] = [confocal]) {
+  return http.get("/api/v2/booking-configuration-targets", ({ request }) => {
+    onRequest(new URL(request.url));
+    return HttpResponse.json(targets);
+  });
+}
+
+function availabilityHandler(
+  configurations: () => readonly unknown[] = () => [],
+  onRequest: (url: URL) => void = () => undefined,
+) {
+  return http.get("/api/v2/booking-configurations", ({ request }) => {
+    onRequest(new URL(request.url));
+    return HttpResponse.json(collectionPage(configurations()));
+  });
+}
+
+function DestinationPage() {
+  const { t } = useTranslation("booking");
+  const notices = useBookingLocalNotices();
+  useBookingNoticeHost("bookable-items", notices.notify);
+  return (
+    <>
+      <h1>{t("bookableItems.plural")}</h1>
+      <BookingLocalNotices alerts={notices.alerts} onDismiss={notices.dismiss} />
+    </>
+  );
+}
+
+function ExistingConfigurationPage() {
+  const { t } = useTranslation("booking");
+  return <h1>{t("bookableItemDetails.title")}</h1>;
+}
+
+function renderPage(initialEntry = "/booking/bookable-items/add", defaults: object = settings) {
+  server.use(http.get("/api/v2/booking-settings", () => HttpResponse.json(defaults)));
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const rootRoute = createRootRoute({ component: Outlet });
+  const bookingRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/booking",
+    component: () => (
+      <BookingNoticesProvider>
+        <Outlet />
+      </BookingNoticesProvider>
+    ),
+  });
+  const destinationRoute = createRoute({
+    getParentRoute: () => bookingRoute,
+    path: "/config/bookable-items",
+    component: DestinationPage,
+  });
+  const existingConfigurationRoute = createRoute({
+    getParentRoute: () => bookingRoute,
+    path: "/bookable-items/$globalId",
+    component: ExistingConfigurationPage,
+  });
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([
+      bookingRoute.addChildren([
+        destinationRoute,
+        existingConfigurationRoute,
+        createRoute({
+          getParentRoute: () => bookingRoute,
+          path: "/bookable-items/add/",
+          validateSearch: addBookableItemSearch,
+          component: AddBookableItemPage,
+        }),
+      ]),
+    ]),
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
+  });
+
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={null}>
+        <RouterProvider router={router as never} />
+      </Suspense>
+    </QueryClientProvider>,
+  );
+  return { ...view, queryClient };
+}
+
+async function completeForm(user: ReturnType<typeof userEvent.setup>) {
+  const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+  await user.type(search, "Conf");
+  await user.click(await screen.findByRole("option", { name: "Confocal microscope IN123" }));
+  await screen.findByRole("button", { name: "common:relationshipPicker.clear" });
+}
+
+describe("AddBookableItemPage", () => {
+  it("keeps manual edits while retrying a failed initial target lookup", async () => {
+    const user = userEvent.setup();
+    const spare = { id: 456, name: "Spare microscope", globalId: "IN456", deleted: false };
+    let saved: unknown;
+    server.use(
+      http.get("/api/v2/booking-configuration-targets", ({ request }) =>
+        new URL(request.url).searchParams.get("query") === "IN123"
+          ? new HttpResponse(null, { status: 503 })
+          : HttpResponse.json([spare]),
+      ),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        saved = await request.json();
+        return HttpResponse.json({ id: 8 }, { status: 201 });
+      }),
+    );
+    const { queryClient } = renderPage("/booking/bookable-items/add?target=IN123");
+    await user.type(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
+    await user.click(await screen.findByRole("option", { name: "Spare microscope IN456" }));
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
+    const requested = Promise.withResolvers<void>();
+    const response = Promise.withResolvers<void>();
+    server.use(
+      http.get("/api/v2/booking-configuration-targets", async ({ request }) => {
+        if (new URL(request.url).searchParams.get("query") !== "IN123") return HttpResponse.json([spare]);
+        requested.resolve();
+        await response.promise;
+        return new HttpResponse(null, { status: 503 });
+      }),
+    );
+    let refresh: Promise<void> | undefined;
+    try {
+      await act(async () => {
+        refresh = queryClient.refetchQueries({
+          queryKey: ["api-v2", "booking-configuration-targets", "route-target", "IN123"],
+        });
+        await requested.promise;
+      });
+      expect(
+        within(screen.getByRole("group", { name: "Monday" })).getByLabelText("booking:settings.fields.openingStart"),
+      ).toHaveValue("09:00");
+      await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+      await waitFor(() =>
+        expect(saved).toMatchObject({
+          target: { relationTo: "booking-instruments", value: 456 },
+          openingHours: expect.arrayContaining([{ dayOfWeek: 1, start: "09:00", end: "17:00" }]),
+        }),
+      );
+      response.resolve();
+      await refresh;
+      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    } finally {
+      response.resolve();
+      await refresh;
+    }
+  });
+
+  it("uses the route target only as an initial selection", async () => {
+    const user = userEvent.setup();
+    const spare = { id: 456, name: "Spare microscope", globalId: "IN456", deleted: false };
+    let saved: unknown;
+    server.use(
+      targetsHandler(() => undefined, [confocal, spare]),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        saved = await request.json();
+        return HttpResponse.json({ id: 8 }, { status: 201 });
+      }),
+    );
+    renderPage("/booking/bookable-items/add?target=IN123");
+    expect(await screen.findByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();
+
+    await user.click(await screen.findByRole("button", { name: "common:relationshipPicker.clear" }));
+
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toHaveValue("");
+    await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
+    await user.click(await screen.findByRole("option", { name: "Spare microscope IN456" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(saved).toMatchObject({ target: { relationTo: "booking-instruments", value: 456 } });
+  });
+
+  it("lists eligible instruments on open and only sends a query of at least two characters", async () => {
+    const user = userEvent.setup();
+    const requests: URL[] = [];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler((url) => requests.push(url)),
+    );
+    renderPage();
+
+    const picker = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+    expect(await screen.findByRole("option", { name: "Confocal microscope IN123" })).toBeVisible();
+    expect(screen.queryByText("common:relationshipPicker.enterSearchTerm")).not.toBeInTheDocument();
+    expect(requests[0]?.searchParams.has("query")).toBe(false);
+    expect(requests[0]?.searchParams.get("limit")).toBe("20");
+
+    await user.type(picker, "C");
+    // One character is not searched, so the list asks for another rather than reporting no matches.
+    expect(await screen.findByText("common:relationshipPicker.searchTooShort")).toBeVisible();
+    expect(screen.queryByText("common:relationshipPicker.empty")).not.toBeInTheDocument();
+    await user.type(picker, "o");
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get("query")).toBe("Co"));
+    expect(requests.some((url) => url.searchParams.get("query") === "C")).toBe(false);
+  });
+
+  it("explains how to make an instrument eligible when none can be configured", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(undefined, []),
+    );
+    renderPage();
+
+    await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.openOptions" }));
+    expect(await screen.findByText("booking:bookableItems.targetSearch.noEligible")).toBeVisible();
+  });
+
+  it("treats a blank relationship control as an empty selection", async () => {
+    const user = userEvent.setup();
+    server.use(targetsHandler(), availabilityHandler());
+    renderPage();
+
+    await completeForm(user);
+    await user.click(await screen.findByRole("button", { name: "common:relationshipPicker.clear" }));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+  });
+
+  it.each([true, false])(
+    "submits the configuration and gates its calendar action when enabled is %s",
+    async (enabled) => {
+      const user = userEvent.setup();
+      let requestBody: unknown;
+      let authorization: string | null = null;
+      server.use(
+        http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+        targetsHandler(),
+        availabilityHandler(),
+        http.post("/api/v2/booking-configurations", async ({ request }) => {
+          requestBody = await request.json();
+          authorization = request.headers.get("Authorization");
+          return HttpResponse.json({ id: 7 }, { status: 201 });
+        }),
+      );
+      const catalogueQueryKey = ["api-v2", "booking-catalogue"] as const;
+      const { container, queryClient } = renderPage();
+      queryClient.setQueryData(catalogueQueryKey, []);
+
+      expect(await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" })).toBeVisible();
+      expect(screen.queryByRole("combobox", { name: "booking:bookableItems.fields.timezone" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+      await completeForm(user);
+
+      await expectAccessible(container);
+
+      const timezone = screen.getByRole("combobox", { name: "booking:bookableItems.fields.timezone" });
+      expect(timezone).toHaveValue("Etc/UTC");
+      await user.clear(timezone);
+      await user.type(timezone, "Europe/Berl");
+      await user.click(await screen.findByRole("option", { name: "Europe/Berlin" }));
+      if (!enabled) await user.click(screen.getByRole("checkbox", { name: "booking:bookableItems.fields.enabled" }));
+
+      await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+      expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+      expect(queryClient.getQueryState(catalogueQueryKey)?.isInvalidated).toBe(true);
+      expect(await screen.findByText("booking:bookableItems.feedback.added")).toBeVisible();
+      expect(screen.getByRole("link", { name: "booking:bookableItems.feedback.viewDetails" })).toHaveAttribute(
+        "href",
+        "/booking/bookable-items/IN123",
+      );
+      if (enabled) {
+        expect(screen.getByRole("link", { name: "booking:bookableItems.feedback.viewCalendar" })).toHaveAttribute(
+          "href",
+          "/booking/calendar?target=IN123",
+        );
+      } else {
+        expect(
+          screen.queryByRole("link", { name: "booking:bookableItems.feedback.viewCalendar" }),
+        ).not.toBeInTheDocument();
+      }
+      expect(authorization).toBe("Bearer test-token");
+      expect(requestBody).toEqual({
+        target: { relationTo: "booking-instruments", value: 123 },
+        enabled,
+        timezone: "Europe/Berlin",
+        slotGranularityMinutes: 5,
+        incrementUnit: "MINUTES",
+        alignToIncrement: true,
+        openingHours: settings.openingHours,
+
+        bufferBeforeMinutes: 0,
+        bufferAfterMinutes: 0,
+        maxBookingDurationMinutes: 0,
+        allowDoubleBooking: false,
+      });
+    },
+  );
+
+  it.each([
+    { unit: "Hours", value: "2", minutes: 120, incrementUnit: "HOURS" },
+    { unit: "Days", value: "2", minutes: 2880, incrementUnit: "DAYS" },
+  ])("saves a $value $unit increment as $minutes minutes", async ({ unit, value, minutes, incrementUnit }) => {
+    const user = userEvent.setup();
+    let requestBody: unknown;
+    server.use(
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBody = await request.json();
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage(undefined, {
+      ...settings,
+      slotGranularityMinutes: 15,
+      openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+    });
+    await completeForm(user);
+
+    const increment = screen.getByRole("spinbutton", { name: "booking:settings.fields.granularity" });
+    const minuteUnit = screen.getByRole("button", { name: "booking:settings.fields.incrementMinutes" });
+    expect(increment).toHaveValue(15);
+    expect(minuteUnit).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: `booking:settings.fields.increment${unit}` }));
+    await user.clear(increment);
+    await user.type(increment, value);
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(requestBody).toMatchObject({ slotGranularityMinutes: minutes, incrementUnit });
+  });
+
+  it("saves one independently configured Open all day interval and restores that day's previous range when toggled off", async () => {
+    const user = userEvent.setup();
+    let requestBody: unknown;
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBody = await request.json();
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage(undefined, {
+      ...settings,
+      openingHours: settings.openingHours
+        .map((entry) => ({ ...entry, start: "09:00", end: "17:00" }))
+        .map(
+          (entry) =>
+            [{ dayOfWeek: 1, start: "10:00", end: "12:00" }].find((day) => day.dayOfWeek === entry.dayOfWeek) ?? entry,
+        ),
+    });
+    await completeForm(user);
+
+    const list = screen.getByRole("list", { name: "booking:bookableItemDetails.fields.openingHours" });
+    const monday = within(list)
+      .getAllByRole("listitem")
+      .find((item) => within(item).queryByText("Monday", { exact: true })) as HTMLElement;
+
+    const dayHours = within(monday).getByRole("group", { name: "Monday" });
+    const openAllDay = within(dayHours).getByRole("checkbox", {
+      name: "booking:settings.openingHours.openAllDay",
+    });
+    const start = within(dayHours).getByLabelText("booking:settings.fields.openingStart");
+    const end = within(dayHours).getByLabelText("booking:settings.fields.openingEnd");
+    await user.click(openAllDay);
+    expect(start).toBeDisabled();
+    expect(end).toBeDisabled();
+    await user.click(openAllDay);
+    expect(start).toHaveValue("10:00");
+    expect(end).toHaveValue("12:00");
+    expect(start).toBeEnabled();
+    expect(end).toBeEnabled();
+    await user.click(openAllDay);
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(requestBody).toMatchObject({
+      openingHours: settings.openingHours.map((entry) => ({
+        ...entry,
+        start: entry.dayOfWeek === 1 ? "00:00" : "09:00",
+        end: entry.dayOfWeek === 1 ? "24:00" : "17:00",
+      })),
+    });
+  });
+
+  it("copies independent default intervals and changes only the edited weekday", async () => {
+    const user = userEvent.setup();
+    const requestBodies: unknown[] = [];
+    const openingHours = [
+      { dayOfWeek: 1, start: "09:00", end: "17:00" },
+      { dayOfWeek: 2, start: "10:00", end: "16:00" },
+      { dayOfWeek: 5, start: "09:00", end: "14:00" },
+      { dayOfWeek: 6, start: "10:00", end: "16:00" },
+    ];
+    server.use(
+      http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "test-token" })),
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBodies.push(await request.json());
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage(undefined, { ...settings, openingHours });
+    await completeForm(user);
+
+    const monday = screen.getByRole("group", { name: "Monday" });
+    const start = within(monday).getByLabelText("booking:settings.fields.openingStart");
+    await user.clear(start);
+    await user.type(start, "11:00");
+    expect(
+      within(screen.getByRole("group", { name: "Tuesday" })).getByLabelText("booking:settings.fields.openingStart"),
+    ).toHaveValue("10:00");
+    await user.click(screen.getByRole("checkbox", { name: "Friday" }));
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    await waitFor(() => expect(requestBodies).toHaveLength(1));
+    expect(requestBodies[0]).toMatchObject({
+      openingHours: [{ ...openingHours[0], start: "11:00" }, openingHours[1], openingHours[3]],
+    });
+    expect(openingHours[0].start).toBe("09:00");
+  });
+
+  it("keeps the completed form available when creation fails", async () => {
+    const user = userEvent.setup();
+    let requestBody: unknown;
+    const spare = { id: 456, name: "Spare confocal microscope", globalId: "IN456", deleted: false };
+    server.use(
+      targetsHandler(() => undefined, [confocal, spare]),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBody = await request.json();
+        return new HttpResponse(null, { status: 500 });
+      }),
+    );
+    renderPage();
+    await completeForm(user);
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.addError");
+    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeEnabled();
+    expect(screen.getByRole("heading", { name: "booking:bookableItems.addTitle" })).toBeVisible();
+    expect(mondayStart).toHaveValue("09:00");
+    expect(
+      within(screen.getByRole("group", { name: "Tuesday" })).getByLabelText("booking:settings.fields.openingStart"),
+    ).toHaveValue("10:00");
+    expect(requestBody).toMatchObject({
+      openingHours: [{ ...settings.openingHours[0], start: "09:00" }, settings.openingHours[1]],
+    });
+    expect(settings.openingHours[0].start).toBe("08:00");
+
+    await user.click(screen.getByRole("button", { name: "common:relationshipPicker.clear" }));
+    await user.type(screen.getByRole("combobox", { name: "booking:bookableItems.targetSearch.label" }), "Spare");
+    await user.click(await screen.findByRole("option", { name: "Spare confocal microscope IN456" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows a retryable error when creation fails due to a network error", async () => {
+    const user = userEvent.setup();
+    let attempts = 0;
+    const requestBodies: unknown[] = [];
+    server.use(
+      targetsHandler(),
+      availabilityHandler(),
+      http.post("/api/v2/booking-configurations", async ({ request }) => {
+        requestBodies.push(await request.json());
+        if (attempts++ === 0) return HttpResponse.error();
+        return HttpResponse.json({ id: 7 }, { status: 201 });
+      }),
+    );
+    renderPage();
+    await completeForm(user);
+    const mondayStart = within(screen.getByRole("group", { name: "Monday" })).getByLabelText(
+      "booking:settings.fields.openingStart",
+    );
+    await user.clear(mondayStart);
+    await user.type(mondayStart, "09:00");
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("booking:bookableItems.addError");
+    expect(screen.getByRole("button", { name: "common:relationshipPicker.clear" })).toBeVisible();
+    expect(mondayStart).toHaveValue("09:00");
+    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    expect(await screen.findByRole("heading", { name: "booking:bookableItems.plural" })).toBeVisible();
+    expect(attempts).toBe(2);
+    expect(requestBodies[1]).toMatchObject({
+      target: { relationTo: "booking-instruments", value: 123 },
+      openingHours: [{ ...settings.openingHours[0], start: "09:00" }, settings.openingHours[1]],
+    });
+  });
+
+  it("searches only eligible instruments and selects a result", async () => {
+    const user = userEvent.setup();
+    const targetRequests: URL[] = [];
+    const spare = { id: 456, name: "Spare confocal microscope", globalId: "IN456", deleted: false };
+    server.use(targetsHandler((url) => targetRequests.push(url), [spare]));
+    const { container } = renderPage();
+    const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.type(search, "Conf");
+
+    expect(screen.queryByRole("option", { name: "Confocal microscope IN123" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("option", { name: "Spare confocal microscope IN456" }));
+    expect(await screen.findByRole("button", { name: "common:relationshipPicker.clear" })).toBeVisible();
+
+    expect(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" })).toBeVisible();
+    expect(targetRequests.some((request) => request.searchParams.get("query") === "Conf")).toBe(true);
+
+    await expectAccessible(container);
+  });
+
+  it("shows the existing configuration link when creation loses a race", async () => {
+    const user = userEvent.setup();
+    let conflict = false;
+    server.use(
+      targetsHandler(),
+      availabilityHandler(() =>
+        conflict ? [{ id: 9, target: { relationTo: "booking-instruments", value: 123, globalId: "IN123" } }] : [],
+      ),
+      http.post("/api/v2/booking-configurations", () => {
+        conflict = true;
+        return HttpResponse.json(
+          { status: 409, code: "errors.api.v2.bookingConfiguration.target.conflict" },
+          { status: 409 },
+        );
+      }),
+    );
+    renderPage();
+    await completeForm(user);
+
+    await user.click(screen.getByRole("button", { name: "booking:bookableItems.actions.submit" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("booking:bookableItems.availability.alreadyConfigured");
+    expect(
+      within(alert).getByRole("link", { name: "booking:bookableItems.availability.viewExisting" }),
+    ).toHaveAttribute("href", "/booking/bookable-items/IN123");
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+  });
+
+  it("shows an error when eligible instruments cannot be searched", async () => {
+    const user = userEvent.setup();
+    server.use(http.get("/api/v2/booking-configuration-targets", () => new HttpResponse(null, { status: 500 })));
+    renderPage();
+    const search = await screen.findByRole("combobox", { name: "booking:bookableItems.targetSearch.label" });
+    await user.type(search, "Conf");
+
+    expect(await screen.findByText("common:relationshipPicker.failed")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "booking:bookableItems.actions.submit" })).not.toBeInTheDocument();
+  });
+});

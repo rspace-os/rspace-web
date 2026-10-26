@@ -94,10 +94,12 @@ export class InventoryDetailsPanel {
 
   async duplicateControl(): Promise<Locator> {
     const inline = this.action("Duplicate");
-    if ((await inline.count()) > 0) {
+    try {
+      await inline.waitFor({ state: "visible", timeout: 5_000 });
       return inline;
+    } catch {
+      return this.moreActionItem("Duplicate");
     }
-    return this.moreActionItem("Duplicate");
   }
 
   section(name: string): Locator {

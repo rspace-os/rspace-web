@@ -74,7 +74,10 @@ public class ApiUiNavigationData {
     public ApiUiNavigationScheduledMaintenance(ScheduledMaintenance maintenance) {
       setStartDate(maintenance.getStartDate().getTime());
       setEndDate(maintenance.getEndDate().getTime());
-      setStopUserLoginDate(maintenance.getStopUserLoginDate().getTime());
+      setStopUserLoginDate(
+          maintenance.getStopUserLoginDate() == null
+              ? null
+              : maintenance.getStopUserLoginDate().getTime());
       setMessage(maintenance.getMessage());
       setCanUserLoginNow(maintenance.getCanUserLoginNow());
       setActiveNow(maintenance.isActiveNow());

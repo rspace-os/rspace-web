@@ -222,7 +222,34 @@ public enum Preference {
 
   /** Similar to UI_CLIENT_SETTINGS, but for storing arbitrary data in json key-value format */
   UI_JSON_SETTINGS(
-      "", SettingsType.TEXT, PreferenceCategory.UI, "userProfile.preferences.uiJsonSettings");
+      "", SettingsType.TEXT, PreferenceCategory.UI, "userProfile.preferences.uiJsonSettings"),
+
+  BOOKING_DISPLAY_PREFERENCES(
+      "",
+      SettingsType.TEXT,
+      PreferenceCategory.UI,
+      "userProfile.preferences.bookingDisplayPreferences"),
+
+  /** Follows naming convention of {@link NotificationType} name + "_PREF" */
+  NOTIFICATION_BOOKING_CREATED_PREF(
+      Boolean.TRUE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.MESSAGING,
+      "userProfile.message.bookingCreated"),
+
+  /** Follows naming convention of {@link NotificationType} name + "_PREF" */
+  NOTIFICATION_BOOKING_CANCELLED_PREF(
+      Boolean.TRUE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.MESSAGING,
+      "userProfile.message.bookingCancelled"),
+
+  /** Whether newly bookable or newly owned instruments are subscribed by default. */
+  BOOKING_AUTO_SUBSCRIBE_NOTIFICATIONS(
+      Boolean.TRUE.toString(),
+      SettingsType.BOOLEAN,
+      PreferenceCategory.UI,
+      "userProfile.message.bookingAutoSubscribe");
 
   private String defaultValue;
   private SettingsType prefType;

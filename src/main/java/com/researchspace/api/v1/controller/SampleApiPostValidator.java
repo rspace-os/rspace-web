@@ -55,6 +55,7 @@ public class SampleApiPostValidator extends SampleApiValidator implements Valida
         // A null element ("subSamples": [null]) is already a bean-validation error at binding;
         // dereferencing it here would turn that reported 400 into a 500.
         if (ss != null) {
+          validateDescriptionTooLong(ss.getDescription(), errors);
           validateExtraFields(ss, errors);
           InventoryFieldNameUniquenessValidator.rejectDuplicatesInPayload(
               null, ss.getExtraFields(), errors);

@@ -1,0 +1,203 @@
+import { Temporal } from "@js-temporal/polyfill";
+import * as v from "valibot";
+import { bookingDateTimeLocale, bookingLocale, formatWallClockTime } from "@/modules/booking/domain/bookingTime";
+
+/** The absolute booking-duration limit, which also bounds opening-hour date enumeration. */
+export const MAX_BOOKING_DURATION_MINUTES = 527_040;
+
+export const WALL_TIME = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
+
+export const ALL_ISO_WEEKDAYS: readonly number[] = [1, 2, 3, 4, 5, 6, 7];
+
+const IsoWeekdaySchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(7));
+export const OpeningHoursStartSchema = v.pipe(v.string(), v.regex(WALL_TIME));
+export const OpeningHoursEndSchema = v.union([v.pipe(v.string(), v.regex(WALL_TIME)), v.literal("24:00")]);
+
+export const OpeningHoursEntrySchema = v.pipe(
+  v.strictObject({
+    dayOfWeek: IsoWeekdaySchema,
+    start: OpeningHoursStartSchema,
+    end: OpeningHoursEndSchema,
+  }),
+  v.forward(
+    v.check((entry) => validOpeningHours(entry.start, entry.end)),
+    ["end"],
+  ),
+);
+
+/** One independently configured weekday; a missing entry means that weekday is closed. */
+export type OpeningHoursEntry = v.InferOutput<typeof OpeningHoursEntrySchema>;
+
+/** Complete replacement schedule. Input order is accepted; parsed output is canonical weekday order. */
+export const OpeningHoursSchema = v.pipe(
+  v.array(OpeningHoursEntrySchema),
+  v.minLength(1),
+  v.maxLength(7),
+  v.check((entries) => new Set(entries.map((entry) => entry.dayOfWeek)).size === entries.length),
+  v.transform((entries) => entries.toSorted((left, right) => left.dayOfWeek - right.dayOfWeek)),
+);
+
+/** The opening-hour pair used both by schedule entries and absolute intervals. */
+export type OpeningInterval = { start: string; end: string };
+
+/** The opening-hour part of scheduling settings. */
+export type OpeningSchedule = { openingHours: readonly OpeningHoursEntry[] };
+
+/** Every day, all day: the explicit opening-hours bypass for maintenance. */
+export const ALWAYS_OPEN: OpeningSchedule = {
+  openingHours: ALL_ISO_WEEKDAYS.map((dayOfWeek) => ({ dayOfWeek, start: "00:00", end: "24:00" })),
+};
+
+/** A localized weekday name for an ISO weekday; 2024-01-01 is a Monday. */
+export function formatIsoWeekday(
+  dayOfWeek: number,
+  width: "long" | "short" = "long",
+  locale = bookingLocale(),
+): string {
+  return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" }).format(
+    new Date(Date.UTC(2024, 0, dayOfWeek)),
+  );
+}
+
+/** A scheduling-zone opening range as `HH:mm–HH:mm`, printing a closing midnight as `00:00`. */
+/** Each end in the locale's clock; a 24:00 end reads as midnight. */
+export function formatOpeningRange({ start, end }: OpeningInterval, locale = bookingDateTimeLocale()): string {
+  return `${formatWallClockTime(start, locale)}\u2013${formatWallClockTime(end, locale)}`;
+}
+
+/** Whether `start`-`end` is one opening interval. A `24:00` end closes at midnight, so it follows any valid start. */
+export function validOpeningHours(start: string, end: string): boolean {
+  if (!WALL_TIME.test(start)) return false;
+  if (end === "24:00") return true;
+  return WALL_TIME.test(end) && start < end;
+}
+
+/** The complete local day, from midnight to the next midnight, which Open all day selects. */
+export function isOpenAllDay(hours: OpeningInterval | null | undefined): boolean {
+  return hours?.start === "00:00" && hours.end === "24:00";
+}
+
+/** A valid interval shorter than the whole day, as Open all day remembers it; undefined otherwise. */
+export function customOpeningHours(hours: OpeningInterval): OpeningInterval | undefined {
+  return validOpeningHours(hours.start, hours.end) && !isOpenAllDay(hours)
+    ? { start: hours.start, end: hours.end }
+    : undefined;
+}
+
+/** A non-empty schedule with unique weekdays and valid per-day intervals. */
+export function validOpeningHoursSchedule(openingHours: unknown): openingHours is OpeningHoursEntry[] {
+  return v.is(OpeningHoursSchema, openingHours);
+}
+
+/** Closed when no entry exists for the weekday. */
+export function effectiveHours(settings: OpeningSchedule, dayOfWeek: number): OpeningInterval | null {
+  const entry = settings.openingHours.find((candidate) => candidate.dayOfWeek === dayOfWeek);
+  return entry ? { start: entry.start, end: entry.end } : null;
+}
+
+/** The local minute at a wall-time boundary; `24:00` is the next day's 00:00. */
+export function minuteOfWallTime(time: string): number {
+  return time === "24:00" ? 1440 : Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+}
+
+export type OpeningPeriod = { start: number; end: number };
+
+/** Continuous opening periods in two unrolled weeks, so a period crossing Sunday into Monday is whole. */
+export function openingPeriods(settings: OpeningSchedule): OpeningPeriod[] {
+  const periods: OpeningPeriod[] = [];
+  for (let day = 0; day < 14; day++) {
+    const hours = effectiveHours(settings, (day % 7) + 1);
+    if (!hours || !validOpeningHours(hours.start, hours.end)) continue;
+    const start = day * 1440 + minuteOfWallTime(hours.start);
+    const end = day * 1440 + minuteOfWallTime(hours.end);
+    const previous = periods.at(-1);
+    if (previous && previous.end === start) previous.end = end;
+    else periods.push({ start, end });
+  }
+  return periods;
+}
+
+/** Longest continuous weekly opening, including periods touching across the week boundary. */
+export function longestOpeningMinutes(settings: OpeningSchedule): number {
+  return Math.max(
+    0,
+    ...openingPeriods(settings).map(({ start, end }) => {
+      const duration = end - start;
+      return duration >= 10080 ? MAX_BOOKING_DURATION_MINUTES : duration;
+    }),
+  );
+}
+
+/**
+ * A scheduling-zone wall-clock boundary as an instant, matching Java's `LocalDateTime.atZone`: the earlier
+ * offset in a repeated hour, and a nonexistent time shifted forward by the gap. `24:00` is the next date's start.
+ */
+export function resolveSchedulingBoundary(date: string, time: string, timezone: string): Temporal.Instant {
+  const plainDate = Temporal.PlainDate.from(date);
+  const [boundaryDate, boundaryTime] = time === "24:00" ? [plainDate.add({ days: 1 }), "00:00"] : [plainDate, time];
+  return boundaryDate
+    .toPlainDateTime(Temporal.PlainTime.from(boundaryTime))
+    .toZonedDateTime(timezone, { disambiguation: "compatible" })
+    .toInstant();
+}
+
+function laterInstant(first: Temporal.Instant, second: Temporal.Instant): Temporal.Instant {
+  return Temporal.Instant.compare(first, second) >= 0 ? first : second;
+}
+
+function earlierInstant(first: Temporal.Instant, second: Temporal.Instant): Temporal.Instant {
+  return Temporal.Instant.compare(first, second) <= 0 ? first : second;
+}
+
+/**
+ * The opening intervals intersecting `[interval.start, interval.end)`, clipped to it, sorted, and with touching
+ * intervals merged so consecutive all-day openings are continuous. Throws a `RangeError` for a reversed interval
+ * or one longer than the absolute booking limit, rather than truncating it.
+ */
+export function openingIntervals(
+  settings: OpeningSchedule,
+  timezone: string,
+  interval: OpeningInterval,
+): OpeningInterval[] {
+  const start = Temporal.Instant.from(interval.start);
+  const end = Temporal.Instant.from(interval.end);
+  const comparison = Temporal.Instant.compare(start, end);
+  if (comparison > 0) throw new RangeError("Opening-hours interval end must not be before its start");
+  if (end.since(start).total("minutes") > MAX_BOOKING_DURATION_MINUTES) {
+    throw new RangeError(`Opening-hours interval exceeds ${MAX_BOOKING_DURATION_MINUTES} minutes`);
+  }
+  if (comparison === 0) return [];
+
+  const lastDate = end.subtract({ nanoseconds: 1 }).toZonedDateTimeISO(timezone).toPlainDate();
+  const merged: { start: Temporal.Instant; end: Temporal.Instant }[] = [];
+  for (
+    let date = start.toZonedDateTimeISO(timezone).toPlainDate();
+    Temporal.PlainDate.compare(date, lastDate) <= 0;
+    date = date.add({ days: 1 })
+  ) {
+    const hours = effectiveHours(settings, date.dayOfWeek);
+    if (!hours) continue;
+    const opening = laterInstant(resolveSchedulingBoundary(date.toString(), hours.start, timezone), start);
+    const closing = earlierInstant(resolveSchedulingBoundary(date.toString(), hours.end, timezone), end);
+    if (Temporal.Instant.compare(opening, closing) >= 0) continue;
+    const previous = merged.at(-1);
+    if (previous && Temporal.Instant.compare(opening, previous.end) <= 0) {
+      previous.end = laterInstant(previous.end, closing);
+    } else {
+      merged.push({ start: opening, end: closing });
+    }
+  }
+  return merged.map((opening) => ({ start: opening.start.toString(), end: opening.end.toString() }));
+}
+
+/** Whether every instant in the non-empty half-open interval falls within opening hours. */
+export function coversInterval(settings: OpeningSchedule, timezone: string, interval: OpeningInterval): boolean {
+  if (Temporal.Instant.compare(interval.start, interval.end) >= 0) return false;
+  const openings = openingIntervals(settings, timezone, interval);
+  // Openings are clipped to the interval, so full coverage is exactly one opening spanning all of it.
+  return (
+    openings.length === 1 &&
+    Temporal.Instant.compare(openings[0].start, interval.start) === 0 &&
+    Temporal.Instant.compare(openings[0].end, interval.end) === 0
+  );
+}

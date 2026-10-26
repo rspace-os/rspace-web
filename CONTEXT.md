@@ -36,6 +36,11 @@ resolved during design. This file is a glossary only — no implementation detai
   Owner, Manufacturer, etc.).
 - **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
   individual record after creation, outside any template definition.
+- **Description (inventory record)** — the free, formatted text a user writes about
+  a Sample, Subsample, Container, Instrument or template to say what it is. It holds
+  up to 2000 characters counting the formatting markup, the same cap as a subsample
+  note. The description of an ELN record and the content of an Extra text field are
+  different things and keep their own, shorter cap for now.
 
 ## Instrument PID registration (B2INST/PIDINST)
 
@@ -52,7 +57,7 @@ resolved during design. This file is a glossary only — no implementation detai
   record the fact against the instrument. Only the last calibration date is
   documentation-only now: PIDINST's Date vocabulary has no home for it. The
   measurement technique and calibration links were documentation-only until
-  RSDEV-1253 mapped them to RelatedIdentifier entries with a fixed IsDescribedBy
+  they were mapped to RelatedIdentifier entries with a fixed IsDescribedBy
   relation (see ADR 0007); the relation type stored on the link itself still
   never leaves RSpace. A documentation-only field is still an ordinary
   instrument field, so users fill, edit and read it as usual.
@@ -527,3 +532,105 @@ resolved during design. This file is a glossary only — no implementation detai
   (a link field keeps the template's default link, if it has one), unless the field is
   mandatory, which refuses it.
   _Avoid_: empty column, unused column
+
+## Platform configuration
+
+See [Feature flags](DevDocs/DeveloperNotes/FeatureFlags.md) for behavior and the [manifest generator](scripts/generate-feature-flags.mjs) for generated artifacts.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Feature Flag | An internal boolean control for rollout, kill switches or temporary changes. |
+| 2. | Feature Flag Definition | The identity and default state declared for one flag. |
+| 3. | Feature Flag Manifest | The checked-in JSONC source of Feature Flag Definitions. |
+| 4. | Feature Flag Baseline | The instance-wide value used when a user has no override. |
+| 5. | User Feature Flag Override | A stored per-user value replacing the baseline for that user. |
+| 6. | Feature Flag Override Permission | The capability to set one's own Feature Flag overrides. |
+| 7. | Feature Flag Resource | The caller-specific REST API v2 representation of a flag. |
+| 8. | Retired Feature Flag | A flag removed from the manifest. |
+| 9. | Expired Feature Flag | A flag past its declared expiry date. |
+
+## Resource role permissions
+
+See [Security and permissions](DevDocs/DeveloperNotes/SecurityAndPermissions.md#resource-role-permissions) for role semantics.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Role scheme | The roles, ordering, capabilities and assignment rules for one protected resource type. |
+| 2. | Role assignment | A direct grant of one role to one grantee for one protected resource. |
+| 3. | Grantee | A user, group or dynamic audience receiving a role. |
+| 4. | Capability | An action allowed by a role scheme. |
+| 5. | Effective role | The highest role resolved from a user's applicable access sources for one resource. |
+
+## Booking
+
+See [Booking](DevDocs/DeveloperNotes/Booking.md) for domain, scheduling and lifecycle contracts. See [Booking permissions](DevDocs/DeveloperNotes/BookingPermissions.md) for inherited access and run-as behavior.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Booking configuration | The settings that make one Inventory instrument bookable. |
+| 2. | Booking configuration state | Whether a configuration is Active or Archived. |
+| 3. | Active booking configuration | A configuration available for use when enabled. |
+| 4. | Archived booking configuration | A retained configuration unavailable for changes until restored. |
+| 5. | Archive a booking configuration | Move a configuration to Archived while retaining its data. |
+| 6. | Restore a booking configuration | Move an Archived configuration back to Active. |
+| 7. | Permanently delete a booking configuration | Remove a configuration's live data while retaining audit history. |
+| 8. | Booking access assignment | A legacy direct role row retained for migration and audit. |
+| 9. | Effective Booking role | The role derived from the user's current permission on the target Inventory item. |
+| 10. | Booking Owner | The owner role derived from ownership of the target Inventory item. |
+| 11. | Booker | The Booking role derived from Inventory edit permission. |
+| 12. | Viewer | The Booking role derived from full Inventory read permission. |
+| 13. | Own-booking access after role loss | Read-only access to one's retained bookings after losing target-item access. |
+| 14. | Booking ownership transfer | The change in Booking Owner access following target Instrument ownership. |
+| 15. | Booking access | Permissions derived from current access to the target Inventory item. |
+| 16. | System administrator Booking access | Implicit Booking Owner access for a system administrator acting as themselves. |
+| 17. | Booking identity boundary | The separation between the represented subject and the original audit actor. |
+| 18. | Booking defaults | Instance-wide scheduling values copied into a new configuration. |
+| 19. | Scheduling policy | The per-configuration rules for valid booking times. |
+| 20. | Opening interval | A daily wall-clock period when a booking may occur in the configuration's timezone. |
+| 21. | Booking buffer | Unavailable time immediately before or after a confirmed booking. |
+| 22. | Maximum booking duration | The per-configuration elapsed-time limit for one booking. |
+| 23. | Double-booking | Allowing confirmed booking intervals on the same item to overlap. |
+| 24. | Time-slot booking | One persisted reservation for one Booking configuration. |
+| 25. | Booking privacy | The visibility of event details to callers reading a Booking calendar. |
+| 26. | Half-open booking interval | A time interval including its start and excluding its end. |
+| 27. | Booking cancellation | The transition of a booking to the Cancelled state. |
+| 28. | Restore a booking | Return a cancelled booking to Confirmed under the event lifecycle rules. |
+
+## Booking calendar presentation
+
+See [Booking frontend](DevDocs/DeveloperNotes/BookingFrontend.md) for display timezones and rendering behavior.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Day timeline | A horizontal view of one day in the display timezone. |
+| 2. | Wall-clock day | The interval between consecutive local midnights. |
+| 3. | Event | A time-bounded booking or blockout shown on a resource's calendar. |
+| 4. | Event kind | Whether an event is a booking or a blockout. |
+| 5. | Booking event | A reservation displayed in a calendar. |
+| 6. | Blockout event | A non-booking event marking a resource unavailable. |
+| 7. | Event lane | A horizontal track keeping overlapping timeline events visible. |
+| 8. | Calendar card | The visual representation of an event in a calendar. |
+| 9. | Expanded calendar card | A calendar-card state exposing additional event details. |
+| 10. | Availability window | The interval over which resource availability is summarized. |
+| 11. | Availability bar | A visual summary of availability within a window. |
+| 12. | Availability state | Whether a section is available, booked, blocked out or both booked and blocked out. |
+
+## Booking availability filters
+
+See [Booking availability](DevDocs/DeveloperNotes/Booking.md) for filter behavior.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Available now | The current-availability quick filter for items free at the current instant. |
+| 2. | Free later today | The current-availability quick filter for items with free time later in today's preferred display interval. |
+
+## Booking calendar subscriptions
+
+See [Booking calendar subscriptions](DevDocs/DeveloperNotes/BookingCalendarSubscriptions.md) for endpoints, tokens and feed behavior.
+
+| # | Term | Definition |
+|---|---|---|
+| 1. | Bookable-item calendar subscription | One user's revocable, read-only calendar of a Booking configuration's schedule. |
+| 2. | Personal booking calendar subscription | One user's revocable, read-only calendar across their bookable items. |
+| 3. | Subscription link | The bearer URL for a bookable-item or personal booking calendar subscription. |
+| 4. | Calendar cancellation tombstone | A cancelled or deleted calendar event retained with its stable identity and original time range. |

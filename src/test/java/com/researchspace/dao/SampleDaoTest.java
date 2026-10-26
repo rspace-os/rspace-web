@@ -8,9 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -60,5 +63,30 @@ public class SampleDaoTest extends SpringTransactionalTest {
 
     sampleApiMgr.markSampleAsDeleted(created.getId(), false, user);
     assertFalse(sampleDao.entityNameExistsForUser(name, user));
+  }
+
+  @Test
+  public void everyInventoryDescriptionColumnHoldsTheCap() {
+    List<String> tables =
+        Stream.of("Sample", "SubSample", "Container", "InstrumentEntity")
+            .flatMap(table -> Stream.of(table, table + "_AUD"))
+            .toList();
+    List<Object[]> columns =
+        sessionFactory
+            .getCurrentSession()
+            .createNativeQuery(
+                "select table_name, character_maximum_length from information_schema.columns"
+                    + " where table_schema = database() and column_name = 'description'"
+                    + " and table_name in (:tables)",
+                Object[].class)
+            .setParameterList("tables", tables)
+            .getResultList();
+
+    assertThat(columns)
+        .extracting(column -> column[0] + "=" + column[1])
+        .containsExactlyInAnyOrderElementsOf(
+            tables.stream()
+                .map(table -> table + "=" + InventoryRecord.DESCRIPTION_LENGTH)
+                .toList());
   }
 }
