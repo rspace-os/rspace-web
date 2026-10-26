@@ -3,6 +3,7 @@ package com.researchspace.model.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -23,7 +24,7 @@ public class IntegrationInfo implements Serializable {
    * @return
    */
   public static String getAppNameFromIntegrationName(String integrationName) {
-    return "app." + integrationName.toLowerCase();
+    return "app." + integrationName.toLowerCase(Locale.ROOT);
   }
 
   private String name;

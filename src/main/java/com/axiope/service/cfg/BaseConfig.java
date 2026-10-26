@@ -14,7 +14,9 @@ import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.auth.GroupPermissionUtils;
 import com.researchspace.auth.LoginHelper;
 import com.researchspace.auth.ManualLoginHelperImpl;
+import com.researchspace.auth.PasswordGrantGuessLimiter;
 import com.researchspace.auth.PostOAuthLoginHelperImpl;
+import com.researchspace.auth.UsernamePasswordCredentialsMatcher;
 import com.researchspace.auth.WhiteListIPChecker;
 import com.researchspace.auth.WhiteListIPCheckerImpl;
 import com.researchspace.core.util.ResponseUtil;
@@ -106,6 +108,7 @@ import com.researchspace.service.RepositoryFactory;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserFolderCreator;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import com.researchspace.service.archive.ArchiveImporterManager;
@@ -252,6 +255,7 @@ import io.vavr.control.Option;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -270,7 +274,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
-import org.springframework.context.support.ReloadableResourceBundleMessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
@@ -845,6 +848,20 @@ public abstract class BaseConfig {
     return new ReauthenticatorImpl();
   }
 
+  @Bean
+  PasswordGrantGuessLimiter passwordGrantGuessLimiter(
+      @Value("${oauth.passwordGrant.maxFailures:5}") int maxFailures,
+      @Value("${oauth.passwordGrant.failureWindowSeconds:600}") long failureWindowSeconds,
+      UsernamePasswordCredentialsMatcher credentialsMatcher) {
+    // Only real accounts get an entry, so this is a memory backstop far above any user count.
+    final long maxTrackedAccounts = 1_000_000;
+    return new PasswordGrantGuessLimiter(
+        maxFailures,
+        Duration.ofSeconds(failureWindowSeconds),
+        maxTrackedAccounts,
+        credentialsMatcher);
+  }
+
   /** For PDF export */
   @Bean
   @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -946,13 +963,13 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  ExternalMessageSender slackExternalMessageSender() {
-    return new SlackMessageSender();
+  ExternalMessageSender slackExternalMessageSender(UserConnectionManager userConnectionManager) {
+    return new SlackMessageSender(userConnectionManager);
   }
 
   @Bean
-  ExternalMessageSender msteamsExternalMessageSender() {
-    return new MsTeamsMessageSender();
+  ExternalMessageSender msteamsExternalMessageSender(UserConnectionManager userConnectionManager) {
+    return new MsTeamsMessageSender(userConnectionManager);
   }
 
   /**
@@ -1100,14 +1117,8 @@ public abstract class BaseConfig {
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
     LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
-    // Inventory constraint messages are ported to the JSON catalogues, the generic templates
-    // stay in ValidationMessages.properties, so chain both. Templates are left unformatted for
-    // the validator to interpolate {max} and ${validatedValue}.
-    ReloadableResourceBundleMessageSource fallback = new ReloadableResourceBundleMessageSource();
-    fallback.setBasename("classpath:ValidationMessages");
-    JsonMessageSource constraintMessages = new JsonMessageSource();
-    constraintMessages.setParentMessageSource(fallback);
-    validator.setValidationMessageSource(constraintMessages);
+    // Return raw JSON templates for Hibernate to interpolate constraint attributes and values.
+    validator.setValidationMessageSource(new JsonMessageSource());
     return validator;
   }
 

@@ -46,9 +46,9 @@ function renderDescriptionField(initialValue: string, onErrorStateChange: (isErr
   return render(<Wrapper />);
 }
 describe("Description", () => {
-  test("Should not enter an error state when value is shorter than 251.", () => {
+  test("Should not enter an error state when value is shorter than 2001.", () => {
     fc.assert(
-      fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
+      fc.property(fc.string({ maxLength: 2000, size: "max" }), (generatedDescription) => {
         cleanup();
         const onErrorStateChange = vi.fn();
 
@@ -61,9 +61,9 @@ describe("Description", () => {
       }),
     );
   });
-  test("Should enter an error state when value is longer than 250 characters.", () => {
+  test("Should enter an error state when value is longer than 2000 characters.", () => {
     fc.assert(
-      fc.property(fc.string({ minLength: 251 }), (generatedDescription) => {
+      fc.property(fc.string({ minLength: 2001 }), (generatedDescription) => {
         cleanup();
         const onErrorStateChange = vi.fn();
 
@@ -78,7 +78,7 @@ describe("Description", () => {
   });
   test("When the entered text is of a valid length, there should be character count shown.", () => {
     fc.assert(
-      fc.property(fc.string({ maxLength: 250 }), (generatedDescription) => {
+      fc.property(fc.string({ maxLength: 2000, size: "max" }), (generatedDescription) => {
         cleanup();
         const onErrorStateChange = vi.fn();
 
@@ -86,7 +86,7 @@ describe("Description", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
         });
-        expect(container).toHaveTextContent(`${generatedDescription.length} / 250`);
+        expect(container).toHaveTextContent(`${generatedDescription.length} / 2000`);
       }),
     );
   });

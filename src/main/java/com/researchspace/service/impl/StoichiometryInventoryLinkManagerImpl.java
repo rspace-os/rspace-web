@@ -122,7 +122,10 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         }
         resultsById.put(id, new StockDeductionResult.IndividualResult(id, true));
       } catch (NotFoundException | IllegalArgumentException e) {
-        resultsById.put(id, new StockDeductionResult.IndividualResult(id, false, e.getMessage()));
+        resultsById.put(
+            id,
+            new StockDeductionResult.IndividualResult(
+                id, false, messages.getExceptionChainMessage(e)));
       } catch (Exception e) {
         log.error("Unexpected error deducting stock for link {}", id, e);
         resultsById.put(

@@ -2,6 +2,7 @@ package com.researchspace.service.archive.export;
 
 import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.archive.model.IArchiveExportConfig;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -14,7 +15,6 @@ import com.researchspace.netfiles.NfsResourceDetails;
 import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.FilestoreAclChecker;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsFileHandler;
 import java.io.File;

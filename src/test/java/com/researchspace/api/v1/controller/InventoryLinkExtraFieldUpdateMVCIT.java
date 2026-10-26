@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.apiutils.ApiError;
 import com.researchspace.model.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,12 @@ public class InventoryLinkExtraFieldUpdateMVCIT extends API_MVC_InventoryTestBas
 
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(user);
     ApiSampleWithFullSubSamples target = createBasicSampleForUser(user);
+    // edit the target so it has a past version (1) and a current one (2)
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey, "/samples/" + target.getId(), user, "{ \"name\": \"target renamed\" }"))
+        .andExpect(status().isOk());
 
     // first PUT: create the Link extra-field on the source
     String createJson =
@@ -51,10 +58,10 @@ public class InventoryLinkExtraFieldUpdateMVCIT extends API_MVC_InventoryTestBas
     assertNull(createdLinkField.getLink().getVersionPin(), "initial versionPin should be null");
     Long extraFieldId = createdLinkField.getId();
 
-    // second PUT: update only the versionPin
+    // second PUT: pin the current version
     String updateJson =
         buildLinkExtraFieldUpdate(
-            extraFieldId, target.getGlobalId(), "References", /* versionPin */ 7L);
+            extraFieldId, target.getGlobalId(), "References", /* versionPin */ 2L);
     MvcResult updateResult =
         mockMvc
             .perform(
@@ -68,9 +75,9 @@ public class InventoryLinkExtraFieldUpdateMVCIT extends API_MVC_InventoryTestBas
     ApiExtraField updatedField = findLinkExtraField(updated);
     assertNotNull(updatedField);
     assertEquals(
-        Long.valueOf(7L),
+        Long.valueOf(2L),
         updatedField.getLink().getVersionPin(),
-        "versionPin should now be 7 after the update PUT");
+        "versionPin should now be 2 after the update PUT");
 
     // and a fresh GET should also see the new pin
     MvcResult getResult =
@@ -83,7 +90,73 @@ public class InventoryLinkExtraFieldUpdateMVCIT extends API_MVC_InventoryTestBas
         getFromJsonResponseBody(getResult, ApiSampleWithFullSubSamples.class);
     ApiExtraField fetchedField = findLinkExtraField(fetched);
     assertNotNull(fetchedField);
-    assertEquals(Long.valueOf(7L), fetchedField.getLink().getVersionPin());
+    assertEquals(Long.valueOf(2L), fetchedField.getLink().getVersionPin());
+
+    // a past version the target really had is just as valid a pin
+    String pastJson =
+        buildLinkExtraFieldUpdate(
+            extraFieldId, target.getGlobalId(), "References", /* versionPin */ 1L);
+    MvcResult pastResult =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/samples/" + source.getId(), user, pastJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertEquals(
+        Long.valueOf(1L),
+        findLinkExtraField(getFromJsonResponseBody(pastResult, ApiSampleWithFullSubSamples.class))
+            .getLink()
+            .getVersionPin());
+  }
+
+  /** RSDEV-1530: a version the target never had is refused, and the stored link is untouched. */
+  @Test
+  public void rejectsAVersionPinTheTargetDoesNotHave() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(user);
+
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(user);
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(user);
+    String createJson =
+        buildLinkExtraFieldCreate(target.getGlobalId(), "References", /* versionPin */ null);
+    MvcResult createResult =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/samples/" + source.getId(), user, createJson))
+            .andExpect(status().isOk())
+            .andReturn();
+    Long extraFieldId =
+        findLinkExtraField(getFromJsonResponseBody(createResult, ApiSampleWithFullSubSamples.class))
+            .getId();
+
+    String updateJson =
+        buildLinkExtraFieldUpdate(
+            extraFieldId, target.getGlobalId(), "References", /* versionPin */ 7L);
+    MvcResult refused =
+        mockMvc
+            .perform(
+                createBuilderForPutWithJSONBody(
+                    apiKey, "/samples/" + source.getId(), user, updateJson))
+            .andExpect(status().isUnprocessableEntity())
+            .andReturn();
+    ApiError error = getErrorFromJsonResponseBody(refused, ApiError.class);
+    assertEquals("errors.inventory.field.linkTargetVersionNotFound", error.getMessageCode());
+    assertEquals(
+        "Link target '" + target.getGlobalId() + "' has no version 7.", error.getMessage());
+
+    // the link is as it was: unpinned
+    MvcResult getResult =
+        mockMvc
+            .perform(
+                createBuilderForGet(API_VERSION.ONE, apiKey, "/samples/{id}", user, source.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+    assertNull(
+        findLinkExtraField(getFromJsonResponseBody(getResult, ApiSampleWithFullSubSamples.class))
+            .getLink()
+            .getVersionPin());
   }
 
   @Test
@@ -94,9 +167,9 @@ public class InventoryLinkExtraFieldUpdateMVCIT extends API_MVC_InventoryTestBas
     ApiSampleWithFullSubSamples source = createBasicSampleForUser(user);
     ApiSampleWithFullSubSamples target = createBasicSampleForUser(user);
 
-    // create with a versionPin already set
+    // create with a versionPin already set: a fresh sample has exactly one version
     String createJson =
-        buildLinkExtraFieldCreate(target.getGlobalId(), "References", /* versionPin */ 3L);
+        buildLinkExtraFieldCreate(target.getGlobalId(), "References", /* versionPin */ 1L);
     MvcResult createResult =
         mockMvc
             .perform(
@@ -108,7 +181,7 @@ public class InventoryLinkExtraFieldUpdateMVCIT extends API_MVC_InventoryTestBas
         getFromJsonResponseBody(createResult, ApiSampleWithFullSubSamples.class);
     ApiExtraField createdLinkField = findLinkExtraField(created);
     Long extraFieldId = createdLinkField.getId();
-    assertEquals(Long.valueOf(3L), createdLinkField.getLink().getVersionPin());
+    assertEquals(Long.valueOf(1L), createdLinkField.getLink().getVersionPin());
 
     // update with versionPin omitted -> should clear to null
     String updateJson =

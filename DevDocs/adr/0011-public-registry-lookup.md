@@ -73,6 +73,22 @@ Decided with Nico on 2026-10-05.
    all: when a DataCite page is empty with a total of 0 and the query is a bare fragment, the same
    page is asked as `doi:*<query>*`. An exhausted later page of a query that did match is not
    retried, which would fill it from another query.
+
+   *Amended 2026-10-15 (RSDEV-1556, decided with Nico):* the merge works on the registries' raw
+   records, never on the ones RSpace has already filtered. Every record a registry page returns
+   is a candidate that keeps its registry position, hidden or not; the ticked registries' lists
+   are merged head by head, the newest head taken each time, a tie keeping the order asked, and
+   a head without a readable update time counting as newest so that it stays beside its
+   registry neighbours; raw positions 50k to 50k+49 are the page, and only then are the hidden
+   candidates dropped from it (not public, not an instrument DOI, or without a PID). A page is
+   therefore a slice of one and the same list whatever the registries sent, so it can come back
+   short while the registries' own totals stay as they are; a short registry page still ends
+   the fetch for that registry. As first shipped, the manager sorted the filtered candidates and
+   sliced them: a hidden record shifted every later position, so page k+1 repeated hits of page
+   k and skipped others, and an undated record sorted last (`nullsLast`) although its registry
+   had placed it elsewhere (Martin's review of PR 1211, reproduced with a test). Latent on
+   2026-10-08, when none of the 5,907 public records (2,003 DataCite, 3,904 B2INST) was hidden
+   or undated.
 5. **Import names its registry.** `POST /instruments/importPidinst` takes a required `provider`
    alongside `pid`; the dialog passes the hit's. A missing `provider` (400) and an unknown one (422)
    are both refused with the import's own message, not the search's (Nico, 2026-10-05). A PID of
@@ -132,6 +148,10 @@ Decided with Nico on 2026-10-05.
   query runs once per registry per page.
 - Rob's request for admin-editable registry addresses is met by the deployment properties, not by
   a settings panel.
+- A merged page holds *up to* 50 hits (RSDEV-1556): fewer when RSpace hid a record on it. The
+  dialog pages on `totalHits`, so a short page is not taken for the last one, and its summary
+  counts raw positions ("Showing 51 to 90", then "101 to 150"); nothing tells the user a record
+  was hidden, accepted because none was on 2026-10-08.
 - Imported "authoritative" fields stay editable. RSDEV-1518 first asked for them to be read-only,
   which contradicts the import as ADR 0009 decision 4 shipped it and CONTEXT.md's *Instrument
   import* describes it (imported values are ordinary field values, and only the linked identifier
@@ -139,3 +159,13 @@ Decided with Nico on 2026-10-05.
   RSDEV-1545 ("Keep authoritative imported metadata non-editable while allowing users to add
   custom metadata") on 2026-10-05, and on 2026-10-07 the ticket itself moved it under its *Out of
   scope*, handled by RSDEV-1545. Nothing in this ADR or in the code it describes locks a field.
+- The B2INST lookup URL had the `+` gap the DataCite client was written to avoid (RSDEV-1576,
+  2026-10-14). `B2instConnectorImpl.searchPublicRecords` concatenated the term into the builder and
+  encoded the built components, which leaves `+` raw because it is legal in a query, and InvenioRDM
+  decodes a raw `+` as a space: the term built for `G1+G2 Glider` answered 0 of 5 records on
+  b2inst.gwdg.de sent raw and 5 sent as `%2B` (2026-10-13). Since RSDEV-1576 the term goes in as a
+  URI template variable and is encoded on expansion, as `searchDois` does in datacite-java-client,
+  whose `searchDoisEncodesAPlusSoItIsNotReadAsASpace` has pinned `C++` as `C%2B%2B` since 1.3.0.
+  Expansion encodes every character outside the unreserved set, so the regular expression's `/` and
+  `*` now go out as `%2F` and `%2A` too; B2INST decodes them and still answers the 5 records.
+  DataCite was checked for the same gap and is not affected.

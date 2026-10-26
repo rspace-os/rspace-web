@@ -12,6 +12,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -84,7 +85,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
             "/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=code&scope=read_dmps+edit_dmps",
             clientId, URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8));
     String dmptoolAuthUrl = String.valueOf(new URL(baseUrl, pathAndQuery));
-    return new RedirectView(dmptoolAuthUrl);
+    return new RedirectView(dmptoolAuthUrl + "&state=" + generateState());
   }
 
   @DeleteMapping("/connect")
@@ -95,8 +96,23 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
   }
 
   @GetMapping("/callback")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException {
+    try {
+      verifyStateParameter(params.get("state"));
+    } catch (IllegalStateException invalidState) {
+      log.warn("DMPTool OAuth state mismatch");
+      OauthAuthorizationError error =
+          OauthAuthorizationError.builder()
+              .appName("DMPTool")
+              .errorMsg(getText("apps.oauth.errors.connection", new Object[] {"DMPTool"}))
+              .errorDetails(invalidState.getMessage())
+              .build();
+      ConnectionResultPage.addError(
+          model, "DMPTool", "rspace.apps.dmptool.connection", "DMPTOOL_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
+    }
 
     AccessToken accessToken;
     try {
@@ -155,28 +171,6 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
     return restTemplate
         .exchange(baseUrl + "/oauth/token", HttpMethod.POST, request, AccessToken.class)
         .getBody();
-  }
-
-  /**
-   * Returns access token to the UI. Status is {@code}false{@code} if there is no access token
-   * stored.
-   *
-   * @param principal
-   * @return
-   */
-  @GetMapping("/access_token")
-  @ResponseBody
-  public ServiceOperationResult<String> getAccessToken(Principal principal) {
-    Optional<UserConnection> optConn = getUserConnection(principal);
-
-    if (!optConn.isPresent()) {
-      // front-end checks if DMPTool app has OAuth connected before the list_dmps
-      // operation. Hence this is unlikely to happen.
-      log.error("No DMPtool connection found for user {}", principal.getName());
-      return ServiceOperationResult.fromOptionalError(
-          Optional.of("Access token isn't enabled - user must connect in Apps page"));
-    }
-    return new ServiceOperationResult<String>(optConn.get().getAccessToken(), true);
   }
 
   @PostMapping("/jsonById/{id}")

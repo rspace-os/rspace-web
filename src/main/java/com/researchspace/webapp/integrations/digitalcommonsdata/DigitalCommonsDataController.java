@@ -9,6 +9,7 @@ import com.researchspace.dcd.model.DcdAccessToken;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.service.UserConnectionManager;
+import com.researchspace.webapp.controller.IgnoreInLoggingInterceptor;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
@@ -23,7 +24,6 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -124,7 +124,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
   }
 
   private String triggerLoginClient(Principal principal) throws HttpStatusCodeException {
-    String randomWord = UUID.randomUUID().toString();
+    String randomWord = generateState();
     UserConnection conn = createUserConnection(principal);
     conn.setSecret(randomWord);
     conn.setDisplayName("DigitalCommonsData Client Access Secret");
@@ -155,8 +155,10 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
   }
 
   @GetMapping("/callback")
+  @IgnoreInLoggingInterceptor(ignoreAllRequestParams = true)
   public String callback(@RequestParam Map<String, String> params, Model model, Principal principal)
       throws IOException, URISyntaxException, HttpClientErrorException {
+    verifyStateParameter(params.get("state"));
     DcdAccessToken accessToken;
     Optional<UserConnection> optUserConnection = getUserConnection(principal.getName());
     if (optUserConnection.isEmpty()) {
@@ -165,12 +167,14 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
     UserConnection userConnection = optUserConnection.get();
     String clientCodeReturned = params.get("code");
     // now (having the client secret code) get the access TOKEN
-    if (userConnection.getSecret() != null
-        && !userConnection.getSecret().equals(params.get("state"))) {
+    if (userConnection.getSecret() == null
+        || !userConnection.getSecret().equals(params.get("state"))) {
       throw new HttpClientErrorException(
           HttpStatus.UNAUTHORIZED, "User Connection's state is not recognized");
     }
 
+    userConnection.setSecret(null);
+    userConnectionManager.save(userConnection);
     try {
       accessToken = getAccessToken(clientCodeReturned);
     } catch (HttpStatusCodeException e) {
@@ -186,6 +190,7 @@ public class DigitalCommonsDataController extends BaseOAuth2Controller {
       return CONNECTED_VIEW;
     }
 
+    userConnection = getUserConnection(principal.getName()).orElseThrow();
     userConnection.setAccessToken(accessToken.getAccessToken());
     userConnection.setRefreshToken(accessToken.getRefreshToken());
     userConnection.setExpireTime(getExpireTime(accessToken.getExpiresIn()));

@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
+import allIntegrationsAreDisabled from "@/eln/apps/__tests__/allIntegrationsAreDisabled.json";
 import Alerts from "../../../../components/Alerts/Alerts";
 import { Optional } from "../../../../util/optional";
 import type { IntegrationStates } from "../../useIntegrationsEndpoint";
@@ -50,9 +51,7 @@ describe("Slack", () => {
             SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
             SLACK_USER_ID: "U01A48677SP",
             SLACK_CHANNEL_LABEL: "custom label",
-            SLACK_USER_ACCESS_TOKEN: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
             SLACK_TEAM_ID: "T1R89S3MG",
-            SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
           },
         },
       },
@@ -61,29 +60,31 @@ describe("Slack", () => {
       close: () => {},
     } as unknown as Window);
   });
-  test("When the add flow is triggered, the channel details should be shown.", async () => {
-    const channelDetails = {
-      ok: true,
-      access_token: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
-      scope:
-        "identify,commands,incoming-webhook,channels:history,groups:history,im:history,mpim:history,files:read,users:read,users:read.email",
-      user_id: "U01A48677SP",
-      team_id: "T1R89S3MG",
-      enterprise_id: null,
-      team_name: "RSpace Dev",
-      incoming_webhook: {
-        channel: "#rspace-slackpost-test",
-        channel_id: "CQ391L249",
-        configuration_url: "https://rspacedev.slack.com/services/B064623LHHD",
-        url: "https://hooks.slack.com/services/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",
+  test("When Slack connects, the channel the server saved should be shown.", async () => {
+    const mockAxios = new MockAdapter(axios);
+    mockAxios
+      .onGet("slack/oauthUrl")
+      .reply(200, { success: true, data: "https://slack.com/oauth/authorize", error: null });
+    mockAxios.onGet("integration/allIntegrations").reply(200, {
+      success: true,
+      data: {
+        ...allIntegrationsAreDisabled.data,
+        SLACK: {
+          ...allIntegrationsAreDisabled.data.SLACK,
+          options: {
+            "1": {
+              SLACK_TEAM_NAME: "RSpace Dev",
+              SLACK_CHANNEL_ID: "CQ391L249",
+              SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
+              SLACK_USER_ID: "U01A48677SP",
+              SLACK_CHANNEL_LABEL: "#rspace-slackpost-test",
+              SLACK_TEAM_ID: "T1R89S3MG",
+            },
+          },
+        },
       },
-      response_metadata: {
-        messages: [
-          "[WARN] Auth request OAuth redirect url must use https",
-          "[WARN] Registered OAuth redirect url must use https",
-        ],
-      },
-    };
+      error: null,
+    });
     const integrationState = observable<IntegrationStates["SLACK"]>({
       mode: "DISABLED",
       credentials: [],
@@ -99,65 +100,103 @@ describe("Slack", () => {
 
     // Simulate BroadcastChannel message from the OAuth redirect page
     const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
-    bc.postMessage({ type: "SLACK_CONNECTED", response: JSON.stringify(channelDetails) });
+    bc.postMessage({ type: "SLACK_CONNECTED" });
     bc.close();
 
-    await waitFor(() => {
-      expect(screen.getByText("RSpace Dev")).toBeVisible();
-    });
-    fireEvent.change(screen.getByRole("textbox", { name: "apps:integrations.slack.fields.rspaceLabel" }), {
-      target: { value: "custom label" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" })).toBeVisible();
+    expect(screen.getByText("RSpace Dev")).toBeVisible();
     expect(integrationState.credentials.length).toBe(1);
+    expect(mockAxios.history.post.length).toBe(0);
   });
-  test("When the add flow is triggered, there should be a cancel button.", async () => {
-    const channelDetails = {
-      ok: true,
-      access_token: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
-      scope: "identify,commands,incoming-webhook",
-      user_id: "U01A48677SP",
-      team_id: "T1R89S3MG",
-      enterprise_id: null,
-      team_name: "RSpace Dev",
-      incoming_webhook: {
-        channel: "#rspace-slackpost-test",
-        channel_id: "CQ391L249",
-        configuration_url: "https://rspacedev.slack.com/services/B064623LHHD",
-        url: "https://hooks.slack.com/services/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",
-      },
+  describe("Refetching after Slack connects", () => {
+    const channel = (optionsId: string, name: string) => ({
+      SLACK_TEAM_NAME: "RSpace Dev",
+      SLACK_CHANNEL_ID: `C${optionsId}`,
+      SLACK_CHANNEL_NAME: name,
+      SLACK_USER_ID: "U01A48677SP",
+      SLACK_CHANNEL_LABEL: name,
+      SLACK_TEAM_ID: "T1R89S3MG",
+      optionsId,
+    });
+    const mockServerChannels = (mockAxios: MockAdapter, channels: Array<ReturnType<typeof channel>>) =>
+      mockAxios.onGet("integration/allIntegrations").reply(200, {
+        success: true,
+        data: {
+          ...allIntegrationsAreDisabled.data,
+          SLACK: {
+            ...allIntegrationsAreDisabled.data.SLACK,
+            options: Object.fromEntries(channels.map(({ optionsId, ...rest }) => [optionsId, rest])),
+          },
+        },
+        error: null,
+      });
+    const connect = async () => {
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
+      bc.postMessage({ type: "SLACK_CONNECTED" });
+      bc.close();
+      // the Add button comes back once the refetch has finished
+      await screen.findByRole("button", { name: "common:actions.add" });
     };
-    render(
-      <Alerts>
-        <Slack
-          integrationState={{
-            mode: "DISABLED",
-            credentials: [],
-          }}
-          update={() => {}}
-        />
-      </Alerts>,
-    );
 
-    fireEvent.click(screen.getByRole("button"));
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+    test("A refetch that finds no new channel should not duplicate it or show the added toast.", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
+      mockServerChannels(mockAxios, [channel("1", "#one")]);
+      const integrationState = observable<IntegrationStates["SLACK"]>({
+        mode: "DISABLED",
+        credentials: [Optional.present(channel("1", "#one"))],
+      });
+      render(
+        <Alerts>
+          <Slack integrationState={integrationState} update={() => {}} />
+        </Alerts>,
+      );
+      fireEvent.click(screen.getByRole("button"));
 
-    // Simulate BroadcastChannel message from the OAuth redirect page
-    const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
-    bc.postMessage({ type: "SLACK_CONNECTED", response: JSON.stringify(channelDetails) });
-    bc.close();
+      await connect();
 
-    await waitFor(() => {
-      expect(screen.getByText("RSpace Dev")).toBeVisible();
+      expect(mockAxios.history.get.map(({ baseURL, url }) => `${baseURL}/${url}`)).toContain(
+        "/integration/allIntegrations",
+      );
+      expect(screen.getAllByRole("textbox")).toHaveLength(1);
+      expect(
+        screen.queryByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" }),
+      ).not.toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "common:actions.cancel" }));
-    await waitFor(() => {
-      expect(screen.queryByText("RSpace Dev")).not.toBeInTheDocument();
+    test("Remove after the server list changed should remove the channel with the matching optionsId.", async () => {
+      const mockAxios = new MockAdapter(axios);
+      mockAxios.onGet("slack/oauthUrl").reply(200, { success: true, data: "https://slack.com/oauth", error: null });
+      mockAxios.onPost("integration/deleteAppOptions").reply(200, { success: true, data: null });
+      // channel 1 was removed in another tab and channel 3 was just connected
+      mockServerChannels(mockAxios, [channel("2", "#two"), channel("3", "#three")]);
+      const integrationState = observable<IntegrationStates["SLACK"]>({
+        mode: "DISABLED",
+        credentials: [Optional.present(channel("1", "#one")), Optional.present(channel("2", "#two"))],
+      });
+      render(
+        <Alerts>
+          <Slack integrationState={integrationState} update={() => {}} />
+        </Alerts>,
+      );
+      fireEvent.click(screen.getByRole("button"));
+      fireEvent.change(screen.getAllByRole("textbox")[1], { target: { value: "unsaved label" } });
+
+      await connect();
+
+      expect(screen.getByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" })).toBeVisible();
+      expect(screen.getAllByRole("textbox").map((t) => (t as HTMLInputElement).value)).toEqual([
+        "unsaved label",
+        "#three",
+      ]);
+
+      fireEvent.click(screen.getAllByRole("button", { name: "common:actions.remove" })[0]);
+      expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" })).toBeVisible();
+      expect(mockAxios.history.post[0].data.get("optionsId")).toBe("2");
+      expect(integrationState.credentials.map((c) => c.map(({ optionsId }) => optionsId).orElse(null))).toEqual(["3"]);
+      expect(screen.getAllByRole("textbox").map((t) => (t as HTMLInputElement).value)).toEqual(["#three"]);
     });
-    expect(screen.getByRole("button", { name: "common:actions.add" })).toBeVisible();
   });
   test("Should render the existing channels.", () => {
     render(
@@ -172,10 +211,7 @@ describe("Slack", () => {
                 SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
                 SLACK_USER_ID: "U01A48677SP",
                 SLACK_CHANNEL_LABEL: "custom label",
-                SLACK_USER_ACCESS_TOKEN:
-                  "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
                 SLACK_TEAM_ID: "T1R89S3MG",
-                SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
                 optionsId: "1",
               }),
             ],
@@ -205,9 +241,7 @@ describe("Slack", () => {
             SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
             SLACK_USER_ID: "U01A48677SP",
             SLACK_CHANNEL_LABEL: "custom label",
-            SLACK_USER_ACCESS_TOKEN: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
             SLACK_TEAM_ID: "T1R89S3MG",
-            SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
           },
         },
       },
@@ -224,10 +258,7 @@ describe("Slack", () => {
                 SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
                 SLACK_USER_ID: "U01A48677SP",
                 SLACK_CHANNEL_LABEL: "old label",
-                SLACK_USER_ACCESS_TOKEN:
-                  "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
                 SLACK_TEAM_ID: "T1R89S3MG",
-                SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
                 optionsId: "1",
               }),
             ],
@@ -268,9 +299,7 @@ describe("Slack", () => {
             SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
             SLACK_USER_ID: "U01A48677SP",
             SLACK_CHANNEL_LABEL: "custom label",
-            SLACK_USER_ACCESS_TOKEN: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
             SLACK_TEAM_ID: "T1R89S3MG",
-            SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
           },
           "2": {
             SLACK_TEAM_NAME: "RSpace Dev",
@@ -278,9 +307,7 @@ describe("Slack", () => {
             SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
             SLACK_USER_ID: "U01A48677SP",
             SLACK_CHANNEL_LABEL: "custom label",
-            SLACK_USER_ACCESS_TOKEN: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
             SLACK_TEAM_ID: "T1R89S3MG",
-            SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
           },
         },
       },
@@ -297,10 +324,7 @@ describe("Slack", () => {
                 SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
                 SLACK_USER_ID: "U01A48677SP",
                 SLACK_CHANNEL_LABEL: "old label",
-                SLACK_USER_ACCESS_TOKEN:
-                  "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
                 SLACK_TEAM_ID: "T1R89S3MG",
-                SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
                 optionsId: "1",
               }),
               Optional.present({
@@ -309,10 +333,7 @@ describe("Slack", () => {
                 SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
                 SLACK_USER_ID: "U01A48677SP",
                 SLACK_CHANNEL_LABEL: "old label",
-                SLACK_USER_ACCESS_TOKEN:
-                  "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
                 SLACK_TEAM_ID: "T1R89S3MG",
-                SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
                 optionsId: "2",
               }),
             ],
@@ -354,9 +375,7 @@ describe("Slack", () => {
           SLACK_CHANNEL_NAME: "#rspace-slackpost-test",
           SLACK_USER_ID: "U01A48677SP",
           SLACK_CHANNEL_LABEL: "old label",
-          SLACK_USER_ACCESS_TOKEN: "xoxp-59281887730-1344278245907-6168781142897-b182fa0fca1f05b6ed1a3055dae34a18",
           SLACK_TEAM_ID: "T1R89S3MG",
-          SLACK_WEBHOOK_URL: "https://hooks.slack.com/services/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",
           optionsId: "1",
         }),
       ],

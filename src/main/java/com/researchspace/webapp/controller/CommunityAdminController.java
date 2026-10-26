@@ -4,6 +4,7 @@ import static com.researchspace.service.SystemPropertyName.valueOfPropertyName;
 
 import com.researchspace.core.util.DefaultURLPaginator;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.PaginationObject;
 import com.researchspace.core.util.PaginationUtil;
 import com.researchspace.model.Community;
@@ -18,8 +19,8 @@ import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyManager;
+import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.HashMap;
 import java.util.List;
@@ -302,16 +303,23 @@ public class CommunityAdminController extends BaseController {
     Map<String, String> properties = new HashMap<String, String>();
     List<SystemProperty> allProperties = systemPropertyManager.listSystemPropertyDefinitions();
     for (SystemProperty sp : allProperties) {
-      properties.put(sp.getName(), "NOT_SET");
+      if (SystemPropertyName.isClientReadable(sp)) {
+        properties.put(sp.getName(), "NOT_SET");
+      }
     }
     List<SystemPropertyValue> communityProperties =
         systemPropertyManager.getAllByCommunity(communityId);
     for (SystemPropertyValue spv : communityProperties) {
-      properties.put(spv.getProperty().getName(), spv.getValue());
+      if (properties.containsKey(spv.getProperty().getName())) {
+        properties.put(spv.getProperty().getName(), spv.getValue());
+      }
     }
 
     for (SystemPropertyValue systemPropertyValue :
         systemPropertyManager.getAllSysadminProperties()) {
+      if (!properties.containsKey(systemPropertyValue.getProperty().getName())) {
+        continue;
+      }
       String value =
           properties
               .get(systemPropertyValue.getProperty().getName())

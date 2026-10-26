@@ -258,7 +258,7 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
                 // the exporter writes its absent-column sentinel for a row that has no such
                 // column; that is no link, not a malformed one, so it must not fail the row
                 if (!InventoryItemCsvExporter.isAbsentCsvValue(value)) {
-                  sampleField.setLink(linkParser.parse(value));
+                  sampleField.setLink(linkParser.parse(value, user));
                 }
               } else {
                 sampleField.setContent(value);
@@ -269,7 +269,8 @@ public class CsvSampleImporter extends InventoryItemCsvImporter {
         }
         csvProcessingResult.addSuccessResult(apiSample);
       } catch (RuntimeException | InvalidNameException iae) {
-        csvProcessingResult.addError(getBadRequestIllegalArgumentApiError(iae.getMessage()));
+        csvProcessingResult.addError(
+            getBadRequestIllegalArgumentApiError(messages.getExceptionMessage(iae)));
       }
 
       resultCount++;

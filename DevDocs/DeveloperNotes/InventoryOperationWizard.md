@@ -144,7 +144,7 @@ Files:
    `InventoryOperationsErrorCatalogTest` enforces.
 
 6. **Add it to the published OpenAPI spec**
-   (`src/main/webapp/resources/rspace_api_inventory_specs_2_27_0.yaml`, tag
+   (`src/main/webapp/resources/rspace_api_inventory_specs_2_28_0.yaml`, tag
    `Operations`): one path and one request schema, alongside the seven already there.
 
 7. **Test it**: a `*OperationTest` for what it builds and what it rejects, a case in
@@ -231,7 +231,7 @@ All seven answer with one envelope (`ApiInventoryOperationResult`: the created
 `sample`, null for Destroy, and each `origin` as it stands afterwards), 201 with a
 `Location` at the new sample for the six creating operations, 200 for Destroy. All
 seven are in the published OpenAPI spec
-(`src/main/webapp/resources/rspace_api_inventory_specs_2_27_0.yaml`, tag `Operations`).
+(`src/main/webapp/resources/rspace_api_inventory_specs_2_28_0.yaml`, tag `Operations`).
 
 ## Wizard steps
 

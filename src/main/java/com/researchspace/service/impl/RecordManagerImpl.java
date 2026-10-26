@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.AuditDao;
@@ -83,7 +84,6 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentCopyManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.RecordContext;
@@ -372,7 +372,8 @@ public class RecordManagerImpl implements RecordManager {
       return null;
     }
 
-    String recordName = StringUtils.isNotBlank(name) ? name : StructuredDocument.DEFAULT_NAME;
+    String recordName =
+        StringUtils.isNotBlank(name) ? name : messages.getMessage("document.create.defaultName");
     StructuredDocument rc;
     if (override == null) {
       rc = recordFactory.createStructuredDocument(recordName, user, form);

@@ -412,6 +412,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     boolean temporaryLock = lockItemForEdit(dbInstrument, user);
     try {
       dbInstrument = (Instrument) getIfExists(dbInstrument.getId());
+      assertAccessPermissionsChangeAllowed(dbInstrument, apiInstrument, user);
       Container orgParent = dbInstrument.getParentContainer();
       boolean contentChanged =
           extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseInstrument(
@@ -724,6 +725,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     boolean temporaryLock = lockItemForEdit(dbTemplate, user);
     try {
       dbTemplate = (InstrumentTemplate) getIfExists(dbTemplate.getId());
+      assertAccessPermissionsChangeAllowed(dbTemplate, apiTemplate, user);
       boolean contentChanged =
           createDeleteRequestedFieldsInDbInstrumentTemplate(apiTemplate, dbTemplate, user);
       contentChanged |=

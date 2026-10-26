@@ -12,9 +12,11 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
 import jakarta.annotation.PostConstruct;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.Validate;
 import org.apache.shiro.authz.AuthorizationException;
@@ -68,39 +70,67 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
       Map<String, String> appConfigSetData,
       Long appConfigSetDataId,
       boolean trustedOrigin,
-      User user) {
+      User user,
+      String expectedAppName) {
     Validate.isTrue(!appConfigSetData.isEmpty(), "appConfigSetData is empty!");
     String propName = appConfigSetData.keySet().iterator().next();
 
     UserAppConfig cfg = appCfgDao.findByPropertyNameUser(propName, user);
+    App app = cfg == null ? appCfgDao.findAppByPropertyName(propName) : cfg.getApp();
+    if (app == null) {
+      throw new IllegalArgumentException(
+          messages.getMessage("apps.errors.notFoundByProperty", new Object[] {propName}));
+    }
+    if (!app.getName().equalsIgnoreCase(expectedAppName)) {
+      throw new IllegalArgumentException(
+          messages.getMessage("apps.errors.configPropertiesWrongApp"));
+    }
     if (cfg == null) {
       logger.info(
           "No UserAppConfig set for user {} for property {}, setting",
           user.getUsername(),
           propName);
-      App app = appCfgDao.findAppByPropertyName(propName);
-      if (app == null) {
-        throw new IllegalArgumentException(
-            messages.getMessage("apps.errors.notFoundByProperty", new Object[] {propName}));
-      }
       cfg = new UserAppConfig(user, app, true);
       cfg = appCfgDao.save(cfg);
     }
     permUtils.assertIsPermitted(cfg, PermissionType.WRITE, user, " Update AppConfig ");
-    App app = cfg.getApp();
     if (!trustedOrigin) {
       assertAppCanBeUpdatedByUntrustedOrigin(app);
     }
+    boolean untrustedSlack = !trustedOrigin && App.APP_SLACK.equals(app.getName());
     AppConfigElementSet set = null;
     if (appConfigSetDataId == null) {
+      if (untrustedSlack) {
+        throw new AuthorizationException(
+            messages.getMessage("apps.slack.errors.channelsAddedByConnecting"));
+      }
+      // null means "keep the stored secret", and a new set has none (e.g. an OAuth secret held in
+      // a session that expired before the save)
+      if (appConfigSetData.values().stream().anyMatch(Objects::isNull)) {
+        throw new IllegalArgumentException(
+            messages.getMessage("apps.errors.newConfigSetMissingSecret"));
+      }
       set = createAppConfigElementSetFromMap(appConfigSetData, app);
       cfg.addConfigSet(set);
       appCfgDao.save(cfg);
       // Explicitly save the set so it gets an ID immediately
       appCfgDao.saveAppConfigElement(set);
     } else {
-      AppConfigElementSet transientSet = createAppConfigElementSetFromMap(appConfigSetData, app);
       AppConfigElementSet saved = appCfgDao.getAppConfigElementSetById(appConfigSetDataId);
+      if (saved == null || !cfg.getId().equals(saved.getUserAppConfig().getId())) {
+        throw new AuthorizationException(
+            messages.getMessage("apps.errors.updateConfigSetNotPermitted"));
+      }
+      Map<String, String> data = new HashMap<>(appConfigSetData);
+      data.replaceAll(
+          (name, value) -> {
+            AppConfigElement stored = saved.findElementByPropertyName(name);
+            return value == null && stored != null ? stored.getValue() : value;
+          });
+      if (untrustedSlack) {
+        assertOnlySlackLabelChanged(saved, data);
+      }
+      AppConfigElementSet transientSet = createAppConfigElementSetFromMap(data, app);
       Validate.isTrue(transientSet.propertiesMatch(saved), "properties do not match");
       saved.merge(transientSet);
       appCfgDao.saveAppConfigElement(saved);
@@ -110,8 +140,22 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
 
   private void assertAppCanBeUpdatedByUntrustedOrigin(App app) {
     if ("app.orcid".equals(app.getName())) {
-      throw new AuthorizationException("This App cannot be updated this way");
+      throw new AuthorizationException(messages.getMessage("apps.errors.cannotUpdateThisWay"));
     }
+  }
+
+  // a Slack channel's team and user ids route /rspace slash commands to its RSpace user, so only
+  // Slack's OAuth callback (a trusted origin) may set them
+  private void assertOnlySlackLabelChanged(AppConfigElementSet saved, Map<String, String> data) {
+    data.forEach(
+        (name, value) -> {
+          AppConfigElement stored = saved.findElementByPropertyName(name);
+          if (!"SLACK_CHANNEL_LABEL".equals(name)
+              && (stored == null || !Objects.equals(stored.getValue(), value))) {
+            throw new AuthorizationException(
+                messages.getMessage("apps.slack.errors.channelOnlyLabelEditable"));
+          }
+        });
   }
 
   private AppConfigElementSet createAppConfigElementSetFromMap(
@@ -136,10 +180,22 @@ public class AppConfigManagerImpl extends GenericManagerImpl<UserAppConfig, Long
   }
 
   @Override
-  public AppConfigElementSet deleteAppConfigSet(Long appConfigElementSetId, User subject) {
+  public AppConfigElementSet deleteAppConfigSet(
+      Long appConfigElementSetId, User subject, String expectedAppName) {
     AppConfigElementSet set = appCfgDao.getAppConfigElementSetById(appConfigElementSetId);
+    if (set == null) {
+      throw new AuthorizationException(
+          messages.getMessage("apps.errors.deleteConfigSetNotPermitted"));
+    }
     UserAppConfig cfg = set.getUserAppConfig();
     permUtils.assertIsPermitted(cfg, PermissionType.DELETE, subject, " Update AppConfig ");
+    // checked after permission, so another user's set id reveals nothing about its app
+    if (!cfg.getApp().getName().equalsIgnoreCase(expectedAppName)) {
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "apps.errors.configSetWrongApp",
+              new Object[] {appConfigElementSetId, expectedAppName}));
+    }
     cfg.removeConfigSet(set);
     appCfgDao.save(cfg);
     return set;

@@ -10,7 +10,6 @@ import com.researchspace.api.v1.model.ApiPidinstSearchResult;
 import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier;
 import com.researchspace.api.v1.model.ApiPidinstSkippedRelatedIdentifier.Reason;
 import com.researchspace.api.v1.model.ApiTargetLocation;
-import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.b2inst.model.response.B2instSearchResult;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.dao.InstrumentTemplateDao;
@@ -118,25 +117,42 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   private static final Pattern DATACITE_OPERATOR = Pattern.compile("\\b(AND|OR|NOT)\\b");
 
   /**
-   * The query-string syntax B2INST (InvenioRDM, Elasticsearch) would parse inside a wildcard term,
-   * escaped by {@link #containsForB2inst(String)}. Unlike DataCite's set it includes {@code /},
-   * which B2INST answers 400 for unescaped and accepts escaped; it leaves out {@code *} and {@code
-   * ?}, which stay wildcards, and {@link #B2INST_REMOVED}.
+   * Lucene regular-expression syntax, escaped to a literal inside the B2INST term, plus {@code /},
+   * which closes the term itself. {@code *} and {@code ?} are absent: a typed one stays a live
+   * wildcard, as {@code .*} and {@code .}. {@code "}, {@code <} and {@code >} never reach it, being
+   * removed first ({@link #B2INST_REMOVED}); they stay so that the set is Lucene's documented list
+   * and still holds if that removal goes. Nothing else is syntax inside a regular expression,
+   * whatever the query parser would have made of it outside one (ADR 0009 decision 8, amended
+   * 2026-10-12).
    */
-  private static final Pattern B2INST_RESERVED = Pattern.compile("([\\\\+\\-=&|!(){}\\[\\]^~:/])");
+  private static final String B2INST_REGEX_RESERVED = ".+|{}[]()\"\\#@&<>~/";
 
   /**
-   * Removed from a B2INST query rather than escaped: a quote because the whole query is already one
-   * phrase, and {@code <} and {@code >} because Elasticsearch cannot escape them at all
-   * (https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-query-string-query#reserved-characters).
+   * How many code points of a B2INST query the term is built from, and the minimum is checked on.
+   * Sized so that letters of the Basic Multilingual Plane, four characters each in the term, stay
+   * within {@link #B2INST_REGEX_MAX_LENGTH}; that length is the hard limit, enforced while the term
+   * is built (ADR 0009 decision 8).
+   */
+  private static final int B2INST_REGEX_INPUT_LIMIT = 240;
+
+  /**
+   * Elasticsearch refuses a regular expression longer than {@code index.max_regex_length}, 1000 by
+   * default. A cased letter outside the Basic Multilingual Plane is six characters in the term, so
+   * enough of them reach it within {@link #B2INST_REGEX_INPUT_LIMIT} code points; the term then
+   * ends at the last whole piece that fits.
+   */
+  private static final int B2INST_REGEX_MAX_LENGTH = 1000;
+
+  /**
+   * Removed from a B2INST query rather than escaped, so that {@code Instr"1} finds {@code Instr1};
+   * a quote also because the whole query is already one phrase (ADR 0009 decision 8).
    */
   private static final Pattern B2INST_REMOVED = Pattern.compile("[\"<>]");
 
   /**
-   * What Lucene's classic query parser, and so B2INST, splits a query on. Java's {@code \s} misses
-   * U+3000, which the parser lists as whitespace (QueryParser.jj {@code _WHITESPACE}), so an
-   * unescaped one split the query back into clauses: {@code *Instr1<U+3000>OR<U+3000>**} matched
-   * all 810 records on b2inst-test.gwdg.de (2026-09-25).
+   * What Lucene's classic query parser treats as whitespace: Java's {@code \s} misses U+3000, which
+   * QueryParser.jj lists in {@code _WHITESPACE}. Every run of it in the query is one space in the
+   * B2INST term, so extra spacing in what the user typed still matches a name spaced once.
    */
   private static final Pattern LUCENE_WHITESPACE = Pattern.compile("[\\s\\u3000]+");
 
@@ -146,15 +162,15 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           "^(?:https?://hdl\\.handle\\.net/)?(21\\.[A-Za-z0-9.]+/\\S+)$", Pattern.CASE_INSENSITIVE);
 
   /**
-   * Newest update first, the merged order of ADR 0011. Nothing else may break a tie: the registries
-   * sort by update time alone, so a tie-breaker of RSpace's own would reorder a tie that spans two
-   * registry pages, and merged page k+1 would repeat a hit of page k and drop another. The sort is
-   * stable, so a tie keeps each registry's order, the registries in the order they were asked.
+   * Newest update first, judged between the registries' next records only ({@link #mergedPage}, ADR
+   * 0011 decision 4). Never reorder a registry's own list, by a tie-breaker or by moving an undated
+   * record: the registries sort by update time alone, so merged page k+1 would repeat a hit of page
+   * k and drop another. A tie keeps the order the registries were asked in. An undated head counts
+   * as newest, so it stays beside its registry neighbours instead of holding back everything behind
+   * it in its own list (RSDEV-1556).
    */
-  private static final Comparator<ApiPidinstRecord> NEWEST_FIRST =
-      Comparator.comparing(
-          (ApiPidinstRecord record) -> instantOf(record.getUpdated()),
-          Comparator.nullsLast(Comparator.reverseOrder()));
+  private static final Comparator<Candidate> NEWEST_FIRST =
+      Comparator.comparing(Candidate::updated, Comparator.nullsFirst(Comparator.reverseOrder()));
 
   /**
    * B2INST writes "+00:00" offsets, the DataCite mapper writes Instant.toString(): both parse here.
@@ -171,14 +187,24 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
   }
 
   /**
-   * One registry page after RSpace's own filters, with the registry's total and the raw page size.
+   * One raw registry record at its registry position (RSDEV-1556, ADR 0011 decision 4): {@code
+   * shown} when RSpace may offer it, a public instrument record with a PID, hidden otherwise. A
+   * hidden candidate still holds its place, so every merged page is a slice of the same list.
    */
-  private record RegistryPage(List<ApiPidinstRecord> records, int total, int rawCount) {
-    static final RegistryPage EMPTY = new RegistryPage(List.of(), 0, 0);
+  private record Candidate(ApiPidinstRecord record, Instant updated, boolean shown) {
+    static Candidate of(ApiPidinstRecord record, boolean shown) {
+      return new Candidate(
+          record, instantOf(record.getUpdated()), shown && record.getPid() != null);
+    }
   }
 
-  /** The first pages of one registry, concatenated, with its total. */
-  private record RegistryHits(List<ApiPidinstRecord> records, int total) {}
+  /** One raw registry page, every record a candidate, with the registry's total. */
+  private record RegistryPage(List<Candidate> candidates, int total) {
+    static final RegistryPage EMPTY = new RegistryPage(List.of(), 0);
+  }
+
+  /** The first pages of one registry, concatenated in its order, with its total. */
+  private record RegistryHits(List<Candidate> candidates, int total) {}
 
   @Autowired private B2instConnector b2instConnector;
   @Autowired private DataCiteConnector dataCiteConnector;
@@ -209,20 +235,17 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     result.setProviders(registries.stream().map(Enum::name).toList());
     result.setPageNumber(pageNumber);
     // merged page k can only hold items from each registry's first (k+1) pages, so those are
-    // all that is fetched (each page is cached by the connectors), merged, and sliced
-    List<ApiPidinstRecord> candidates = new ArrayList<>();
+    // all that is fetched (each page is cached by the connectors), merged head by head, and sliced
+    List<List<Candidate>> lists = new ArrayList<>();
     int totalHits = 0;
     for (IdentifierType registry : registries) {
       RegistryHits hits = hitsUpTo(q, registry, pageNumber);
       result.getTotalsByProvider().put(registry.name(), hits.total());
       totalHits += hits.total();
-      candidates.addAll(hits.records());
+      lists.add(hits.candidates());
     }
     result.setTotalHits(totalHits);
-    candidates.sort(NEWEST_FIRST);
-    int from = Math.min(pageNumber * PAGE_SIZE, candidates.size());
-    int to = Math.min(from + PAGE_SIZE, candidates.size());
-    result.getHits().addAll(candidates.subList(from, to));
+    result.getHits().addAll(mergedPage(lists, pageNumber));
     for (IdentifierType registry : registries) {
       annotateLinkedInstruments(
           result.getHits().stream()
@@ -232,6 +255,41 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
           user);
     }
     return result;
+  }
+
+  /**
+   * Raw positions {@code pageNumber * PAGE_SIZE} to {@code (pageNumber + 1) * PAGE_SIZE - 1} of the
+   * registries' lists merged head by head with {@link #NEWEST_FIRST}, the hidden candidates dropped
+   * only then (RSDEV-1556, ADR 0011 decision 4). Each list is in its registry's own order and the
+   * merge reads heads only, so the page is a slice of the one list the registries' complete results
+   * would merge into: a list that runs out here has either ended at the registry (a short page) or
+   * contributed {@code (pageNumber + 1) * PAGE_SIZE} candidates, one past the last position this
+   * page reads.
+   */
+  private static List<ApiPidinstRecord> mergedPage(List<List<Candidate>> lists, int pageNumber) {
+    int[] next = new int[lists.size()];
+    List<ApiPidinstRecord> page = new ArrayList<>();
+    int first = pageNumber * PAGE_SIZE;
+    for (int position = 0; position < first + PAGE_SIZE; position++) {
+      int newest = -1;
+      for (int i = 0; i < lists.size(); i++) {
+        if (next[i] < lists.get(i).size()
+            && (newest < 0
+                || NEWEST_FIRST.compare(
+                        lists.get(i).get(next[i]), lists.get(newest).get(next[newest]))
+                    < 0)) {
+          newest = i;
+        }
+      }
+      if (newest < 0) {
+        break;
+      }
+      Candidate taken = lists.get(newest).get(next[newest]++);
+      if (position >= first && taken.shown()) {
+        page.add(taken.record());
+      }
+    }
+    return page;
   }
 
   @Override
@@ -286,7 +344,8 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
 
   /**
    * One registry's share of merged page {@code pageNumber}: its pages 0..pageNumber, stopping at a
-   * short one, or the single hit of a direct PID lookup. Its total is the registry's own.
+   * short one, or the single hit of a direct PID lookup; every record in the registry's own order.
+   * Its total is the registry's own.
    */
   private RegistryHits hitsUpTo(String query, IdentifierType registry, int pageNumber) {
     if (isPidOfTheOtherRegistry(query, registry)) {
@@ -294,10 +353,13 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
     }
     Optional<String> pid = pidOf(query, registry);
     if (pid.isPresent()) {
-      List<ApiPidinstRecord> hit = fetchByPid(pid.get(), registry).map(List::of).orElse(List.of());
+      List<Candidate> hit =
+          fetchByPid(pid.get(), registry)
+              .map(record -> List.of(Candidate.of(record, true)))
+              .orElse(List.of());
       return new RegistryHits(hit, hit.size());
     }
-    List<ApiPidinstRecord> records = new ArrayList<>();
+    List<Candidate> candidates = new ArrayList<>();
     int total = 0;
     for (int page = 0; page <= pageNumber; page++) {
       RegistryPage fetched =
@@ -307,14 +369,14 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
       if (page == 0) {
         total = fetched.total();
       }
-      records.addAll(fetched.records());
-      // judged on what the registry sent, not on what survived RSpace's filters: a page RSpace
-      // thinned is not an exhausted registry
-      if (fetched.rawCount() < PAGE_SIZE) {
+      candidates.addAll(fetched.candidates());
+      // judged on what the registry sent, hidden candidates included: a page RSpace thinned is
+      // not an exhausted registry
+      if (fetched.candidates().size() < PAGE_SIZE) {
         break;
       }
     }
-    return new RegistryHits(records, total);
+    return new RegistryHits(candidates, total);
   }
 
   /**
@@ -322,29 +384,40 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    *
    * <p>The account's own records under {@code /api/user/records} are deliberately not searched.
    * Only a public PID may be linked (RSDEV-1326), so a record still in draft, submitted or declined
-   * is not a candidate, and the published index is exactly the set that is. Hits are filtered on
-   * {@code is_published} as well, so the rule holds in RSpace whatever the index returns, and
-   * {@code total} stays the registry's own.
+   * is not a candidate, and the published index is exactly the set that is. A hit the index reports
+   * as not published is a hidden candidate, so the rule holds in RSpace whatever the index returns,
+   * and {@code total} stays the registry's own.
    */
   private RegistryPage b2instPage(String query, int page) {
     // removed, not replaced by a space, which would cut a word in two: Instr"1 must find Instr1
-    String searchable = B2INST_REMOVED.matcher(query).replaceAll("").strip();
-    // the minimum again, on what is left to match: <<<a would otherwise go out as *a*, which
-    // matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match nothing specific
+    String removed = B2INST_REMOVED.matcher(query).replaceAll("");
+    String stripped = LUCENE_WHITESPACE.matcher(removed).replaceAll(" ").strip();
+    // whitespace collapsed and capped before the minimum, so the minimum judges exactly the text
+    // the term is built from
+    String searchable =
+        stripped.substring(
+            0,
+            stripped.offsetByCodePoints(
+                0,
+                Math.min(B2INST_REGEX_INPUT_LIMIT, stripped.codePointCount(0, stripped.length()))));
+    // the minimum again, on what is left to match: <<<a would otherwise go out as a one-letter
+    // term, which matched all 810 records on b2inst-test.gwdg.de, and typed wildcards match
+    // nothing specific
     if (searchable.replaceAll("[*?]", "").length() < MIN_QUERY_LENGTH) {
       return RegistryPage.EMPTY;
     }
     B2instSearchResult result =
         b2instConnector.searchPublicRecords(containsForB2inst(searchable), page, PAGE_SIZE);
-    List<B2instDraftRecord> raw = result.getHits().getHits();
-    List<ApiPidinstRecord> records =
-        raw.stream()
-            .filter(record -> Boolean.TRUE.equals(record.getIsPublished()))
-            .map(PidinstRecordMapper::fromB2inst)
-            .filter(record -> record.getPid() != null)
+    List<Candidate> candidates =
+        result.getHits().getHits().stream()
+            .map(
+                record ->
+                    Candidate.of(
+                        PidinstRecordMapper.fromB2inst(record),
+                        Boolean.TRUE.equals(record.getIsPublished())))
             .toList();
     Integer total = result.getHits().getTotal();
-    return new RegistryPage(records, total == null ? records.size() : total, raw.size());
+    return new RegistryPage(candidates, total == null ? candidates.size() : total);
   }
 
   /**
@@ -360,8 +433,9 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
    * 0011). An exhausted later page of a query that did match is not retried, which would fill it
    * from another query. The retry carries the raw query rather than the escaped one, because it
    * composes its own clause and {@link #DOI_FRAGMENT} already limits what may go in it; its gate
-   * reads the raw query too, so escaping cannot change which searches retry. Hits are re-checked
-   * for a findable instrument, so the rule holds whatever the index returns (ADR 0009).
+   * reads the raw query too, so escaping cannot change which searches retry. A hit that is not a
+   * findable instrument is a hidden candidate, so the rule holds whatever the index returns (ADR
+   * 0009).
    */
   private RegistryPage dataCitePage(String query, int page) {
     DataCiteDoiSearchResult hits =
@@ -371,42 +445,51 @@ public class PidinstLookupManagerImpl implements PidinstLookupManager {
         && DOI_FRAGMENT.matcher(query).matches()) {
       hits = dataCiteConnector.searchPublicInstrumentDois("doi:*" + query + "*", page, PAGE_SIZE);
     }
-    List<ApiPidinstRecord> records =
+    List<Candidate> candidates =
         hits.getData().stream()
-            .filter(PidinstLookupManagerImpl::isInstrumentDoi)
-            .filter(PidinstLookupManagerImpl::isFindable)
-            .map(PidinstRecordMapper::fromDataCite)
-            .filter(record -> record.getPid() != null)
+            .map(
+                doi ->
+                    Candidate.of(
+                        PidinstRecordMapper.fromDataCite(doi),
+                        isInstrumentDoi(doi) && isFindable(doi)))
             .toList();
-    return new RegistryPage(records, hits.getMeta().getTotal(), hits.getData().size());
+    return new RegistryPage(candidates, hits.getMeta().getTotal());
   }
 
   /**
-   * The B2INST query: the whole of what the user typed as one wildcard term, with its spaces
-   * escaped so Elasticsearch does not split it (RSDEV-1522).
-   *
-   * <p>This is a real "contains", spaces included. Verified 2026-09-22 against b2inst-test.gwdg.de,
-   * where {@code *nstr1\ prova_CO*} finds {@code Instr1 prova_COPY} - both words cut at both ends
-   * and the match spanning the space - while {@code *Instr1\ prova_COPY*} finds only that record
-   * where the unescaped {@code *Instr1 prova_COPY*} also returned {@code Instr1 prova 123}. Without
-   * the escape Elasticsearch parses the query before the wildcards apply and splits it on
-   * whitespace itself, leaving {@code *Instr1} (ends-with) and {@code prova_COPY*} (starts-with),
-   * which B2INST then ORs.
-   *
-   * <p>One leading wildcard however many words the query holds, so it stays fast: 0.2-0.4s.
-   *
-   * <p>The user's query syntax is neutralised first, because the wildcards turn it into operators:
-   * {@code *"Instr1\ prova_COPY"*} is {@code *} OR a phrase OR {@code *} and matched all 810
-   * records on b2inst-test.gwdg.de where the quoted phrase alone matched 1, and {@code (}, {@code
-   * ~} and {@code ^} did the same (2026-09-25). Quotes are dropped, since the whole query is
-   * already one phrase and {@code *Instr1\ prova_COPY*} answers that same 1, and so are {@code <}
-   * and {@code >}, which cannot be escaped; the rest of {@link #B2INST_RESERVED} is escaped to a
-   * literal, which also turns the 400 on a pasted partial Handle such as {@code T11975/97g70-tsv60}
-   * into its one record. {@code *} and {@code ?} stay live.
+   * The B2INST query: what the user typed as one Lucene regular expression with {@code .*} on
+   * either side, every cased letter a class of both its cases, so the match is a "contains" that
+   * ignores case. One term, so B2INST cannot split it on whitespace into OR'ed clauses, and the
+   * only shape that ignores case across a space: a wildcard term holding one matches only the
+   * unanalysed copy of a field, which keeps the record's case. Evidence, cost and the rejected
+   * shapes are in ADR 0009 decision 8 (RSDEV-1522, amended for RSDEV-1542).
    */
   private static String containsForB2inst(String searchable) {
-    String literal = B2INST_RESERVED.matcher(searchable).replaceAll("\\\\$1");
-    return "*" + LUCENE_WHITESPACE.matcher(literal).replaceAll("\\\\ ") + "*";
+    String end = ".*/";
+    StringBuilder regex = new StringBuilder("/.*");
+    for (int cp : searchable.codePoints().toArray()) {
+      String piece;
+      if (cp == '*') {
+        piece = ".*";
+      } else if (cp == '?') {
+        piece = ".";
+      } else if (B2INST_REGEX_RESERVED.indexOf(cp) >= 0) {
+        piece = "\\" + Character.toString(cp);
+      } else if (Character.toUpperCase(cp) != Character.toLowerCase(cp)) {
+        piece =
+            "["
+                + Character.toString(Character.toUpperCase(cp))
+                + Character.toString(Character.toLowerCase(cp))
+                + "]";
+      } else {
+        piece = Character.toString(cp);
+      }
+      if (regex.length() + piece.length() + end.length() > B2INST_REGEX_MAX_LENGTH) {
+        break;
+      }
+      regex.append(piece);
+    }
+    return regex.append(end).toString();
   }
 
   /**

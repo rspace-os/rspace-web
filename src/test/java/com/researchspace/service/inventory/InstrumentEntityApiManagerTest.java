@@ -1,5 +1,6 @@
 package com.researchspace.service.inventory;
 
+import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -10,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.Constants;
 import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiExtraField;
@@ -26,6 +28,7 @@ import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventorySharingMode;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
@@ -1405,5 +1408,43 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertNull(
         findInstrumentLinkField(retrieved.getFields()).getLink(),
         "link should be cleared after update with no link payload");
+  }
+
+  @Test
+  public void groupmateCannotChangeInstrumentAccessPermissions() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
+    initialiseContentWithEmptyContent(pi, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, groupmate);
+    ApiInstrument created = createBasicInstrumentForUser(testUser, "access-permissions");
+
+    ApiInstrument restrict = new ApiInstrument();
+    restrict.setId(created.getId());
+    restrict.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> instrumentApiMgr.updateApiInstrument(restrict, groupmate));
+    assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
+  }
+
+  @Test
+  public void groupmateCannotChangeInstrumentTemplateAccessPermissions() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
+    initialiseContentWithEmptyContent(pi, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, groupmate);
+    ApiInstrumentTemplate created = createBasicInstrumentTemplateForUser(testUser);
+
+    ApiInstrumentTemplate restrict = new ApiInstrumentTemplate();
+    restrict.setId(created.getId());
+    restrict.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> instrumentApiMgr.updateApiInstrumentTemplate(restrict, groupmate));
+    assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
   }
 }

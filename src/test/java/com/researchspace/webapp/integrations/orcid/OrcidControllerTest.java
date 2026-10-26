@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.orcid;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.model.User;
@@ -18,6 +19,8 @@ import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ui.ExtendedModelMap;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class OrcidControllerTest extends SpringTransactionalTest {
 
@@ -33,6 +36,30 @@ public class OrcidControllerTest extends SpringTransactionalTest {
     systemPropertyManager.save(
         SystemPropertyName.ORCID_AVAILABLE, HierarchicalPermission.ALLOWED, sysadmin);
     RSpaceTestUtils.logout();
+  }
+
+  @Test
+  public void oauthStateIsRequiredAndConsumedOnce() {
+    User user = createAndSaveUserIfNotExists(getRandomAlphabeticString("orcidStateUser"));
+    logoutAndLoginAs(user);
+    assertThrows(
+        IllegalStateException.class,
+        () -> controller.onAuthorization(Map.of(), new ExtendedModelMap(), user::getUsername));
+    String state =
+        UriComponentsBuilder.fromUriString(controller.authorize().getUrl())
+            .build()
+            .getQueryParams()
+            .getFirst("state");
+    assertEquals(32, state.length());
+    assertEquals(
+        "connect/orcid/connected",
+        controller.onAuthorization(
+            Map.of("state", state), new ExtendedModelMap(), user::getUsername));
+    assertThrows(
+        IllegalStateException.class,
+        () ->
+            controller.onAuthorization(
+                Map.of("state", state), new ExtendedModelMap(), user::getUsername));
   }
 
   @Test

@@ -15,6 +15,7 @@ import com.researchspace.api.v1.controller.SampleTemplatesApiController;
 import com.researchspace.api.v1.controller.SamplesApiController;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
+import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryEntityField.ApiInventoryFieldDef;
@@ -30,6 +31,7 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.api.v1.model.ApiTagInfo;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
@@ -477,8 +479,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     sampleErrorMsg = sampleResult.getResults().get(3).getError().getErrors().get(0);
     assertEquals("Text 'TestData3' could not be parsed at index 0", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(5).getError().getErrors().get(0);
-    assertEquals(
-        "Cannot parse quantity string: Failed to parse number-literal 'ml'.", sampleErrorMsg);
+    assertEquals("Could not parse quantity [ml]", sampleErrorMsg);
     sampleErrorMsg = sampleResult.getResults().get(6).getError().getErrors().get(0);
     assertEquals(
         "quantity: Sample quantity unit 7 (GRAM) is incompatible with template quantity unit 3"
@@ -905,18 +906,19 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         samplesCsvIS, sampleMapping, processingResult, testUser);
     assertNotNull(processingResult.getSampleResult());
 
-    // csv file with 4 subsamples pointing to two of the samples and containers
+    // csv file with 4 tagged subsamples pointing to two of the samples and containers
     InputStream subSamplesCsvIS =
         IOUtils.toInputStream(
-            "Name, Parent Sample, Parent Container\n"
-                + "TestSubSample1, s1, c1\n"
-                + "TestSubSample2, s3, c1\n"
-                + "TestSubSample3, s1, \n"
-                + "TestSubSample4, s1, c2\n");
+            "Name, Parent Sample, Parent Container, Tags\n"
+                + "TestSubSample1, s1, c1, frozen\n"
+                + "TestSubSample2, s3, c1, frozen\n"
+                + "TestSubSample3, s1, , frozen\n"
+                + "TestSubSample4, s1, c2, frozen\n");
     HashMap<String, String> subSampleMapping = new HashMap<>();
     subSampleMapping.put("Name", "name");
     subSampleMapping.put("Parent Sample", "parent sample import id");
     subSampleMapping.put("Parent Container", "parent container import id");
+    subSampleMapping.put("Tags", "tags");
 
     subSampleCsvImporter.readCsvIntoImportResult(
         subSamplesCsvIS, subSampleMapping, processingResult, testUser);
@@ -998,6 +1000,13 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals(
         "testContainer2",
         subSampleImportResult.getResults().get(3).getRecord().getParentContainer().getName());
+
+    for (ApiInventoryBulkOperationRecordResult imported : subSampleImportResult.getResults()) {
+      ApiSubSample saved =
+          subSampleManager.getApiSubSampleById(imported.getRecord().getId(), testUser);
+      assertEquals(1, saved.getVersion());
+      assertThat(saved.getTags()).extracting(ApiTagInfo::getValue).containsExactly("frozen");
+    }
   }
 
   @Test
@@ -1305,7 +1314,8 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
             InventoryImportException.class,
             () -> importMgr.importContainers(importResult, csvProcessingResult));
     assertEquals(
-        "errors.inventory.move.targetLocation.requiredForGridOrImageContainer", iie.getMessage());
+        "When moving to image/grid type container request has to specify target location",
+        iie.getMessage());
 
     // verify error on saving to container belonging to unrelated user
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("apiImport"));
@@ -1329,7 +1339,9 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
         assertThrows(
             InventoryImportException.class,
             () -> importMgr.importContainers(importResult2, csvProcessingResult2));
-    assertEquals("errors.inventory.move.targetContainer.unavailable", iie.getMessage());
+    assertEquals(
+        "Cannot locate target container from provided target container and location details",
+        iie.getMessage());
   }
 
   @Test

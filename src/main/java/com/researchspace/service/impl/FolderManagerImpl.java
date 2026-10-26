@@ -7,6 +7,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.RecordDao;
@@ -46,7 +47,6 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
-import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -376,7 +376,7 @@ public class FolderManagerImpl implements FolderManager {
     assertUserHasCreatePermission(subject, parent);
 
     if (StringUtils.isBlank(fName)) {
-      fName = Folder.DEFAULT_FOLDER_NAME;
+      fName = messageSourceUtils.getMessage("folder.create.defaultName");
     }
     Folder rc =
         override == null
@@ -397,7 +397,7 @@ public class FolderManagerImpl implements FolderManager {
     Folder parent = folderDao.get(parentId);
     assertUserHasCreatePermission(subject, parent);
     if (StringUtils.isBlank(notebookName)) {
-      notebookName = Notebook.DEFAULT_NOTEBOOK_NAME;
+      notebookName = messageSourceUtils.getMessage("notebook.create.defaultName");
     }
     Notebook n =
         override == null
@@ -478,7 +478,8 @@ public class FolderManagerImpl implements FolderManager {
     } catch (IllegalAddChildOperation e) {
       if (suppressIllegalAddChild) {
         parentFolder = folderDao.get(folderId);
-        return new ServiceOperationResult<Folder>(parentFolder, false, e.getMessage());
+        return new ServiceOperationResult<Folder>(
+            parentFolder, false, messageSourceUtils.getExceptionMessage(e));
       } else {
         throw e;
       }

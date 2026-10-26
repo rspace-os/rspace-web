@@ -1,6 +1,6 @@
 package com.researchspace.service.inventory.csvimport.exception;
 
-import static com.researchspace.service.ListFormatUtils.formatList;
+import static com.researchspace.core.util.ListFormatUtils.formatList;
 
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.apiutils.ApiError;

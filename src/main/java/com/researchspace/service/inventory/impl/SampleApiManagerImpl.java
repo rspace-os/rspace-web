@@ -772,6 +772,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       SampleEntity dbSample,
       boolean alreadyChanged,
       User user) {
+    assertAccessPermissionsChangeAllowed(dbSample, apiSample, user);
     boolean contentChanged = alreadyChanged;
     contentChanged |=
         extraFieldHelper.createDeleteRequestedExtraFieldsInDatabaseSample(

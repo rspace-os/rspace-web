@@ -140,7 +140,7 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): React.ReactNod
             onChange={() => result.toggleSelected()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            slotProps={{ input: { "aria-label": t("search.results.selectResultItem") } }}
+            slotProps={{ input: { "aria-label": t("search.results.selectResultItem", { name: result.name }) } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>
@@ -159,7 +159,7 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): React.ReactNod
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            slotProps={{ input: { "aria-label": t("search.results.selectResultItem") } }}
+            slotProps={{ input: { "aria-label": t("search.results.selectResultItem", { name: result.name }) } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>

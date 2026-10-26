@@ -1,0 +1,19 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <changeSet id="2026-10-21-rsdev1236-inventory-description-2000" context="run" author="nico">
+        <comment>RSDEV-1236: inventory record descriptions hold 2000 characters, the same as the validated cap (see DevDocs/adr/0012). ELN, RSForm and ExtraField keep 250.</comment>
+        <modifyDataType tableName="Sample" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="Sample_AUD" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="SubSample" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="SubSample_AUD" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="Container" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="Container_AUD" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="InstrumentEntity" columnName="description" newDataType="varchar(2000)"/>
+        <modifyDataType tableName="InstrumentEntity_AUD" columnName="description" newDataType="varchar(2000)"/>
+    </changeSet>
+
+</databaseChangeLog>

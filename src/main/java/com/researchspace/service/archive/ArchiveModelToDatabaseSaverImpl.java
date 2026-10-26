@@ -54,7 +54,8 @@ public class ArchiveModelToDatabaseSaverImpl implements ArchiveModelToDatabaseSa
     } catch (Exception e) {
       String msg =
           messages.getMessage(
-              "archiveImport.errors.databaseInsertFailed", new Object[] {e.getMessage()});
+              "archiveImport.errors.databaseInsertFailed",
+              new Object[] {messages.getExceptionChainMessage(e)});
       log.error(msg);
       report.getErrorList().addErrorMsg(msg);
       report.setComplete(true);
