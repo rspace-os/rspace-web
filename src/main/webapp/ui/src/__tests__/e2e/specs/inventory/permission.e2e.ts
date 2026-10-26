@@ -396,7 +396,7 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     await bobSample.close();
   });
 
-  test(`As a groupmate, I can remove myself from an Explicit access list and immediately lose access`, async ({
+  test(`As a groupmate, I cannot change access permissions on an item shared with me, and lose access once the owner removes my group`, async ({
     browser,
     browserContextOptions,
     clientSysadmin,
@@ -423,28 +423,46 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     await aliceContainer.detailsPanel.saveEdit();
     await aliceContainer.close();
 
-    const sharedCharlieContainer = await openRecordAsUser(
+    const charlieContainer = await openRecordAsUser(
       browser,
       browserContextOptions,
       charlie,
       `/inventory/container/${alice.container.id}`,
       alice.container.name,
     );
-    await expectFullAccess(sharedCharlieContainer.detailsPanel);
-    await sharedCharlieContainer.close();
+    await charlieContainer.detailsPanel.enterEditMode();
+    await charlieContainer.detailsPanel.expandSection("Access Permissions");
+    const charliePermissions = charlieContainer.detailsPanel.accessPermissions();
+    await expect(charliePermissions.explanation()).toContainText("Only the item's owner");
+    await expect(charliePermissions.radio("Explicit access list")).toBeDisabled();
+    await expect(charliePermissions.groupCheckbox(group.name)).toBeDisabled();
+    await charlieContainer.detailsPanel.saveEdit();
+    await charlieContainer.close();
 
-    const editableCharlieContainer = await openRecordAsUser(
+    const stillSharedCharlieContainer = await openRecordAsUser(
       browser,
       browserContextOptions,
       charlie,
       `/inventory/container/${alice.container.id}`,
       alice.container.name,
     );
-    await editableCharlieContainer.detailsPanel.enterEditMode();
-    await editableCharlieContainer.detailsPanel.expandSection("Access Permissions");
-    await editableCharlieContainer.detailsPanel.accessPermissions().groupCheckbox(group.name).uncheck();
-    await editableCharlieContainer.detailsPanel.saveEdit();
-    await editableCharlieContainer.close();
+    // the section stays expanded for Charlie (a saved UI preference), and its own alert would count
+    await stillSharedCharlieContainer.detailsPanel.collapseSection("Access Permissions");
+    await expectFullAccess(stillSharedCharlieContainer.detailsPanel);
+    await stillSharedCharlieContainer.close();
+
+    const unsharingAliceContainer = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      alice,
+      `/inventory/container/${alice.container.id}`,
+      alice.container.name,
+    );
+    await unsharingAliceContainer.detailsPanel.enterEditMode();
+    await unsharingAliceContainer.detailsPanel.expandSection("Access Permissions");
+    await unsharingAliceContainer.detailsPanel.accessPermissions().groupCheckbox(group.name).uncheck();
+    await unsharingAliceContainer.detailsPanel.saveEdit();
+    await unsharingAliceContainer.close();
 
     const unsharedCharlieContainer = await openRecordAsUser(
       browser,

@@ -297,10 +297,8 @@ public class SubSampleApiManagerTest extends SpringTransactionalTest {
     ApiSubSample fullOtherUserSubSample =
         subSampleApiMgr.getApiSubSampleById(otherUserSubSample.getId(), sysadmin);
     assertEquals(otherUserSubSample.getName(), fullOtherUserSubSample.getName());
-    // system admin have only read/transfer access to any subsample
-    assertThat(fullOtherUserSubSample.getPermittedActions()).hasSize(2);
-    assertEquals(READ, fullOtherUserSubSample.getPermittedActions().get(0));
-    assertEquals(CHANGE_OWNER, fullOtherUserSubSample.getPermittedActions().get(1));
+    // system admin have only read access to any subsample
+    assertThat(fullOtherUserSubSample.getPermittedActions()).containsExactly(READ);
   }
 
   @Test
