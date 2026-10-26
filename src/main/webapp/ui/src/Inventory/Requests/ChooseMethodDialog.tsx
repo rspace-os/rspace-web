@@ -69,7 +69,13 @@ export default function ChooseMethodDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
-        <Button variant="contained" disabled={preparationMethod === null} onClick={onProceed}>
+        <Button
+          variant="contained"
+          color="callToAction"
+          disableElevation
+          disabled={preparationMethod === null}
+          onClick={onProceed}
+        >
           {t("requestsManagement.detail.chooseMethodDialog.proceedButton")}
         </Button>
       </DialogActions>

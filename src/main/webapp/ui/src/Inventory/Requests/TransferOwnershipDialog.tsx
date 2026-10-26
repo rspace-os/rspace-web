@@ -6,7 +6,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import { darken, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
@@ -53,7 +52,6 @@ export default function TransferOwnershipDialog({
   onSubmit: () => void;
 }): React.ReactNode {
   const { t, i18n } = useTranslation(["inventory", "common"]);
-  const theme = useTheme();
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -133,6 +131,8 @@ export default function TransferOwnershipDialog({
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
         <Button
           variant="contained"
+          color="callToAction"
+          disableElevation
           // transferRequesterPerson === null also disables this: until the requester lookup
           // in openTransferDialog resolves, PeopleField's restrictToUser is unset and the field
           // searches every user, not just the requester - submitting before then could hand
@@ -141,13 +141,6 @@ export default function TransferOwnershipDialog({
           // the same transfer twice.
           disabled={transferRecipient === null || transferRequesterPerson === null || isProcessingAction}
           onClick={onSubmit}
-          sx={{
-            backgroundColor: darken(theme.palette.primary.main, 0.5),
-            color: "white",
-            "&:hover": {
-              backgroundColor: darken(theme.palette.primary.main, 0.55),
-            },
-          }}
         >
           {t("common:actions.transfer")}
         </Button>
