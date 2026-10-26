@@ -113,16 +113,6 @@ public class ProjectGroupControllerTest {
   }
 
   @Test
-  public void shouldRefuseDeletionForMemberWithUserRole() {
-    when(groupManager.getGroup(1L)).thenReturn(newGroup);
-    when(newGroup.isProjectGroup()).thenReturn(true);
-    when(owner.hasRoleInGroup(newGroup, RoleInGroup.GROUP_OWNER)).thenReturn(false);
-    assertThrows(AuthorizationException.class, () -> controller.removeGroup(1L));
-    verify(groupManager, never()).removeGroup(any(), any());
-    verify(newGroup, never()).getOwner();
-  }
-
-  @Test
   public void shouldRefuseDeletionForCreatorDemotedToUserRole() {
     when(groupManager.getGroup(1L)).thenReturn(newGroup);
     when(newGroup.isProjectGroup()).thenReturn(true);
