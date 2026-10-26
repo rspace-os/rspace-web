@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiTagInfo;
 import com.researchspace.core.util.ListFormatUtils;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.units.RSUnitDef;
@@ -106,7 +107,7 @@ abstract class InventoryRecordValidator {
   }
 
   void validateDescriptionTooLong(String value, Errors errors) {
-    validateTooLong("description", value, EditInfo.DESCRIPTION_LENGTH, errors);
+    validateTooLong("description", value, InventoryRecord.DESCRIPTION_LENGTH, errors);
   }
 
   void validateNotNullAndBlank(String fieldName, String fieldValue, Errors errors) {

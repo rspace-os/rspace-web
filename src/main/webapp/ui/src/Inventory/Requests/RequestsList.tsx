@@ -163,6 +163,11 @@ export default function RequestsList({
   const [pageNumber, setPageNumber] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_REQUEST_PAGE_SIZE);
 
+  function selectRequestsFilter(filter: RequestsFilter): void {
+    setRequestsFilter(filter);
+    setFromDropdown(null);
+  }
+
   // Refetches on its own whenever a mutation elsewhere invalidates sampleRequestsQueryKeys (e.g.
   // approved/rejected from the detail pane), since the active filters may mean it should appear,
   // disappear, or just show a different status - no manual refresh-counter/event wiring needed.
@@ -244,31 +249,13 @@ export default function RequestsList({
           onClick={({ target }) => setFromDropdown(target as HTMLElement)}
         >
           <StyledMenu anchorEl={fromDropdown} open={Boolean(fromDropdown)} onClose={() => setFromDropdown(null)}>
-            <MenuItem
-              selected={requestsFilter === "all"}
-              onClick={() => {
-                setRequestsFilter("all");
-                setFromDropdown(null);
-              }}
-            >
+            <MenuItem selected={requestsFilter === "all"} onClick={() => selectRequestsFilter("all")}>
               <ListItemText primary={t("requestsManagement.filters.requests.all")} />
             </MenuItem>
-            <MenuItem
-              selected={requestsFilter === "sent"}
-              onClick={() => {
-                setRequestsFilter("sent");
-                setFromDropdown(null);
-              }}
-            >
+            <MenuItem selected={requestsFilter === "sent"} onClick={() => selectRequestsFilter("sent")}>
               <ListItemText primary={t("requestsManagement.filters.requests.sent")} />
             </MenuItem>
-            <MenuItem
-              selected={requestsFilter === "received"}
-              onClick={() => {
-                setRequestsFilter("received");
-                setFromDropdown(null);
-              }}
-            >
+            <MenuItem selected={requestsFilter === "received"} onClick={() => selectRequestsFilter("received")}>
               <ListItemText primary={t("requestsManagement.filters.requests.received")} />
             </MenuItem>
           </StyledMenu>

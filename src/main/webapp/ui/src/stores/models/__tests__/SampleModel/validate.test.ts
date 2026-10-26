@@ -18,4 +18,16 @@ describe("method: validate", () => {
       expect(sample.validate().isOk).toBe(false);
     });
   });
+  describe("Asserts description length.", () => {
+    test("Returns true when the description is 2000 characters.", () => {
+      const sample = makeMockSample({ description: "x".repeat(2000) });
+      sample.currentlyEditableFields.add("description");
+      expect(sample.validate().isOk).toBe(true);
+    });
+    test("Returns false when the description is 2001 characters.", () => {
+      const sample = makeMockSample({ description: "x".repeat(2001) });
+      sample.currentlyEditableFields.add("description");
+      expect(sample.validate().isOk).toBe(false);
+    });
+  });
 });

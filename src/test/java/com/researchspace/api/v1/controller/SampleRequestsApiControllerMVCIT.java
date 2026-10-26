@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.Constants;
-import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleInfo;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
@@ -35,6 +34,10 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     super.setUp();
     originalSampleRequestsAvailable =
         sysPropMgr.findByName(SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE).getValue();
+    sysPropMgr.save(
+        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
+        HierarchicalPermission.ALLOWED,
+        getSysAdminUser());
   }
 
   @AfterEach
@@ -53,13 +56,8 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     createGroupForUsersWithDefaultPi(owner, requester);
 
     String requesterApiKey = createNewApiKeyForUser(requester);
-    sysPropMgr.save(
-        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
-        HierarchicalPermission.ALLOWED,
-        getSysAdminUser());
-
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
-    markRequestable(sample, owner);
+    markSampleRequestable(sample, owner);
 
     // raise one while the feature is on, so there is something for GET /{id} to find
     MvcResult postResult =
@@ -118,13 +116,8 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
 
     String requesterApiKey = createNewApiKeyForUser(requester);
     String ownerApiKey = createNewApiKeyForUser(owner);
-    sysPropMgr.save(
-        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
-        HierarchicalPermission.ALLOWED,
-        getSysAdminUser());
-
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
-    markRequestable(sample, owner);
+    markSampleRequestable(sample, owner);
 
     MvcResult postResult =
         this.mockMvc
@@ -217,13 +210,8 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     createGroupForUsersWithDefaultPi(owner, requester);
 
     String requesterApiKey = createNewApiKeyForUser(requester);
-    sysPropMgr.save(
-        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
-        HierarchicalPermission.ALLOWED,
-        getSysAdminUser());
-
     ApiSampleWithFullSubSamples sample = createBasicSampleForUser(owner);
-    markRequestable(sample, owner);
+    markSampleRequestable(sample, owner);
     Long first = raiseRequest(requesterApiKey, requester, sample, "first");
     Long second = raiseRequest(requesterApiKey, requester, sample, "second");
 
@@ -247,13 +235,9 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     User stranger = createAndSaveUser(getRandomName(10));
     initUsers(owner, stranger);
     String strangerApiKey = createNewApiKeyForUser(stranger);
-    sysPropMgr.save(
-        SystemPropertyName.SAMPLE_REQUESTS_AVAILABLE,
-        HierarchicalPermission.ALLOWED,
-        getSysAdminUser());
     ApiSampleWithFullSubSamples wanted = createBasicSampleForUser(owner, "glycerol stock");
-    markRequestable(wanted, owner);
-    markRequestable(createBasicSampleForUser(owner, "water"), owner);
+    markSampleRequestable(wanted, owner);
+    markSampleRequestable(createBasicSampleForUser(owner, "water"), owner);
     createBasicSampleForUser(owner, "glycerol, not offered");
 
     // a user outside the owner's group finds the requestable sample by name
@@ -285,13 +269,6 @@ public class SampleRequestsApiControllerMVCIT extends API_MVC_InventoryTestBase 
     MvcResult result = this.mockMvc.perform(request).andReturn();
     assertNull(result.getResolvedException());
     return mvcUtils.getFromJsonResponseBody(result, ApiSampleRequestSearchResult.class);
-  }
-
-  private void markRequestable(ApiSampleWithFullSubSamples target, User owner) {
-    ApiSample update = new ApiSample();
-    update.setId(target.getId());
-    update.setRequestable(true);
-    sampleApiMgr.updateApiSample(update, owner);
   }
 
   private Long raiseRequest(

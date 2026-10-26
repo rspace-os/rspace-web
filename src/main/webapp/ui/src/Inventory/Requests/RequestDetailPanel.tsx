@@ -1,47 +1,25 @@
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Collapse from "@mui/material/Collapse";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import Divider from "@mui/material/Divider";
-import FormControl from "@mui/material/FormControl";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import IconButton from "@mui/material/IconButton";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import { darken, useTheme } from "@mui/material/styles";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ApiService from "@/common/InvApiService";
-import CustomTooltip from "@/components/CustomTooltip";
-import { Heading, HeadingContext } from "@/components/DynamicHeadingLevel";
-import GlobalId from "@/components/GlobalId";
-import NoValue from "@/components/NoValue";
-import UserDetails from "@/components/UserDetails";
 import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
 import useWhoAmI from "@/hooks/api/useWhoAmI";
-import { formatList } from "@/modules/common/i18n/listFormat";
-import TransRichText from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
-import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import type PersonModel from "@/stores/models/PersonModel";
 import SubSampleModel, { type SubSampleAttrs } from "@/stores/models/SubSampleModel";
 import useStores from "@/stores/use-stores";
 import { getErrorMessage } from "@/util/error";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
-import { isoToLocale } from "@/util/Util";
-import PeopleField from "../components/Inputs/PeopleField";
 import type { OperationResult } from "../components/Operations/operationsApi";
 import { useOperationWizardLauncher } from "../components/Operations/useOperationWizardLauncher";
+import ApprovalResultFields from "./ApprovalResultFields";
+import ChooseMethodDialog from "./ChooseMethodDialog";
+import CollapsibleSection from "./CollapsibleSection";
+import FulfilRequestDialog from "./FulfilRequestDialog";
 import {
   SampleOwnershipTransferError,
   useApproveSampleRequestMutation,
@@ -50,15 +28,20 @@ import {
   useRejectSampleRequestMutation,
   useTransferSampleOwnershipMutation,
 } from "./mutations";
+import OwnerActionsPanel from "./OwnerActionsPanel";
 import {
   useOtherActiveSampleRequestsQuery,
   useSampleRequestDetailQuery,
   useSampleWithSubSamplesQuery,
 } from "./queries";
+import RejectRequestDialog from "./RejectRequestDialog";
+import RequestDetailHeader from "./RequestDetailHeader";
+import RequestDetailsFields from "./RequestDetailsFields";
+import RequesterCancelPanel from "./RequesterCancelPanel";
 import RequestHistoryTable, { type ApiSampleRequestStatusChangeItem } from "./RequestHistoryTable";
 import RequestSampleLocations from "./RequestSampleLocations";
 import { type ApiSampleRequestListItem, userDisplayName } from "./RequestsList";
-import RequestsStatusChip, { STATUS_BACKGROUND } from "./RequestsStatusChip";
+import TransferOwnershipDialog from "./TransferOwnershipDialog";
 
 // Preparing a sample for a request always ends in transferring it to the requester, so
 // destroying the origin has no sensible place in this flow; Pool requires multiple origins,
@@ -75,48 +58,13 @@ function statusHelpKey(status: string): (typeof STATUS_HELP_KEY)[keyof typeof ST
   return status in STATUS_HELP_KEY ? STATUS_HELP_KEY[status as keyof typeof STATUS_HELP_KEY] : null;
 }
 
-function DetailField({
-  label,
-  tooltip,
-  children,
-}: {
-  label: string;
-  tooltip?: string;
-  children: React.ReactNode;
-}): React.ReactNode {
-  const labelId = useId();
-  const heading = (
-    <Heading sx={{ mt: 0 }} id={labelId}>
-      {label}
-    </Heading>
-  );
-  return (
-    <FormControl fullWidth role="group" aria-labelledby={labelId}>
-      {tooltip ? <CustomTooltip title={tooltip}>{heading}</CustomTooltip> : heading}
-      {/* break-word only splits a word that's too long to fit on its own line (e.g. a long
-          global id), rather than break-all's every-line mid-word wrapping of ordinary text
-          like the requester's note or the approver's comment. */}
-      <Box sx={{ overflowWrap: "break-word" }}>{children}</Box>
-    </FormControl>
-  );
-}
-
 /**
  * The right-hand detail pane for the Requests page: the header shows the
  * request id and the requested sample's name, and the "Details" section
  * shows the requester, submission date, requested sample, and any note.
  */
 export default function RequestDetailPanel({ request }: { request: ApiSampleRequestListItem | null }): React.ReactNode {
-  const { t, i18n } = useTranslation(["inventory", "common"]);
-  const theme = useTheme();
-  const reasonFieldId = useId();
-  // Content region ids for the collapsible sections' aria-controls below - each toggle button's
-  // aria-label also names its own section (rather than the four sharing one generic "Collapse
-  // section"/"Expand section" name, indistinguishable from each other to a screen reader user).
-  const detailsSectionId = useId();
-  const approvalResultSectionId = useId();
-  const sampleLocationsSectionId = useId();
-  const requestHistorySectionId = useId();
+  const { t } = useTranslation(["inventory", "common"]);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [approvalResultExpanded, setApprovalResultExpanded] = useState(true);
   const [requestHistoryExpanded, setRequestHistoryExpanded] = useState(true);
@@ -463,11 +411,8 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   // selected first.
   const prepareSampleEnabled =
     isActionableState && (skipChooseMethodDialog || selectedSubsampleId !== null) && !isProcessingAction;
-  const rejectColors = { color: "#C62828", borderColor: "#C4726B", backgroundColor: "white" };
-  const approveColors = { backgroundColor: "#0B72A3", borderColor: "#0B72A3", color: "white" };
-  const approvedDisabledColors = { color: "#4F6E7C", borderColor: "#C2D6E0", backgroundColor: "#EDF4F8" };
-  const markAsFulfilledColors = { color: "#3A4A52", borderColor: "#7D8D95", backgroundColor: "white" };
   const statusHelpTranslationKey = status ? statusHelpKey(status) : null;
+  const statusHelpText = statusHelpTranslationKey ? t(statusHelpTranslationKey) : null;
   const infoBoxText =
     status === "PENDING"
       ? skipChooseMethodDialog
@@ -529,585 +474,117 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", flexGrow: 1, width: "100%", height: "100%", minWidth: 0 }}>
-      <Box
-        sx={{
-          p: 2,
-          backgroundColor: theme.palette.grey[200],
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 1.5,
-        }}
-      >
-        <Typography variant="h5">
-          {t("requestsManagement.detail.title", { id: request.id, sampleName: request.sample.name })}
-        </Typography>
-        {status && <RequestsStatusChip status={status} />}
-      </Box>
+      <RequestDetailHeader id={request.id} sampleName={request.sample.name} status={status} />
       <Box sx={{ overflow: "auto", flexGrow: 1 }}>
-        <Box
-          sx={{
-            p: 1,
-            backgroundColor: theme.palette.grey[100],
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            cursor: "pointer",
-          }}
-          onClick={() => setDetailsExpanded(!detailsExpanded)}
+        <CollapsibleSection
+          title={t("requestsManagement.detail.sections.details")}
+          expanded={detailsExpanded}
+          onToggle={() => setDetailsExpanded(!detailsExpanded)}
         >
-          <Typography variant="subtitle1">{t("requestsManagement.detail.sections.details")}</Typography>
-          <IconButton
-            size="small"
-            aria-label={
-              detailsExpanded
-                ? t("formSections.collapseSectionNamed", { section: t("requestsManagement.detail.sections.details") })
-                : t("formSections.expandSectionNamed", { section: t("requestsManagement.detail.sections.details") })
-            }
-            aria-expanded={detailsExpanded}
-            aria-controls={detailsSectionId}
-            sx={{
-              transform: detailsExpanded ? "rotate(180deg)" : "rotate(0deg)",
-              transition: theme.transitions.create("transform"),
-            }}
-          >
-            <ExpandMoreIcon />
-          </IconButton>
-        </Box>
-        <Divider />
-        <Collapse in={detailsExpanded} id={detailsSectionId}>
-          <HeadingContext level={4}>
-            <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-              <DetailField label={t("requestsManagement.detail.fields.requester")}>
-                {request.requester.id === null ? (
-                  requesterFullName
-                ) : (
-                  <UserDetails
-                    userId={request.requester.id}
-                    fullName={requesterFullName}
-                    position={["bottom", "right"]}
-                  />
-                )}
-              </DetailField>
-              <DetailField label={t("requestsManagement.detail.fields.submitted")}>
-                {isoToLocale(request.created)}
-              </DetailField>
-              <DetailField label={t("requestsManagement.detail.fields.sampleRequested")}>
-                <GlobalId record={new LinkableRecordFromGlobalId(request.sample.globalId)} onClick={() => {}} />
-              </DetailField>
-              <DetailField label={t("requestsManagement.detail.fields.additionalNotes")}>
-                {request.note ? request.note : <NoValue label={t("requestsManagement.detail.fields.noNotes")} />}
-              </DetailField>
-            </Box>
-          </HeadingContext>
-        </Collapse>
-        <Box
-          sx={{
-            p: 1,
-            backgroundColor: theme.palette.grey[100],
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            cursor: "pointer",
-          }}
-          onClick={() => setApprovalResultExpanded(!approvalResultExpanded)}
+          <RequestDetailsFields request={request} />
+        </CollapsibleSection>
+        <CollapsibleSection
+          title={t("requestsManagement.detail.sections.approvalResult")}
+          expanded={approvalResultExpanded}
+          onToggle={() => setApprovalResultExpanded(!approvalResultExpanded)}
         >
-          <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approvalResult")}</Typography>
-          <IconButton
-            size="small"
-            aria-label={
-              approvalResultExpanded
-                ? t("formSections.collapseSectionNamed", {
-                    section: t("requestsManagement.detail.sections.approvalResult"),
-                  })
-                : t("formSections.expandSectionNamed", {
-                    section: t("requestsManagement.detail.sections.approvalResult"),
-                  })
-            }
-            aria-expanded={approvalResultExpanded}
-            aria-controls={approvalResultSectionId}
-            sx={{
-              transform: approvalResultExpanded ? "rotate(180deg)" : "rotate(0deg)",
-              transition: theme.transitions.create("transform"),
-            }}
-          >
-            <ExpandMoreIcon />
-          </IconButton>
-        </Box>
-        <Divider />
-        <Collapse in={approvalResultExpanded} id={approvalResultSectionId}>
-          <HeadingContext level={4}>
-            <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-              <DetailField label={t("requestsManagement.detail.fields.status")}>
-                <RequestsStatusChip status={status ?? request.status} />
-                {status === "APPROVED" && sampleOwnerName && !isSampleOwner && (
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    {t("requestsManagement.detail.fields.approvedMessage", { owner: sampleOwnerName })}
-                  </Typography>
-                )}
-              </DetailField>
-              {status === "FULFILLED" ? (
-                <DetailField label={t("requestsManagement.detail.fields.transferredSample")}>
-                  <GlobalId record={new LinkableRecordFromGlobalId(transferredSampleGlobalId)} onClick={() => {}} />
-                </DetailField>
-              ) : (
-                <DetailField label={t("requestsManagement.detail.fields.commentFromApprover")}>
-                  {comment ? comment : <NoValue label={t("requestsManagement.detail.fields.noComment")} />}
-                </DetailField>
-              )}
-            </Box>
-          </HeadingContext>
-        </Collapse>
+          <ApprovalResultFields
+            status={status ?? request.status}
+            isSampleOwner={isSampleOwner}
+            sampleOwnerName={sampleOwnerName}
+            comment={comment}
+            transferredSampleGlobalId={transferredSampleGlobalId}
+          />
+        </CollapsibleSection>
         {isSampleOwner && (
-          <>
-            <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
-              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
-            </Box>
-            <Divider />
-            <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-              {isActionableState && infoBoxText && <Alert severity="info">{infoBoxText}</Alert>}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  disabled={!isActionableState}
-                  sx={
-                    isActionableState
-                      ? {
-                          "&&": {
-                            ...rejectColors,
-                            "&:hover": {
-                              borderColor: darken(rejectColors.borderColor, 0.2),
-                              backgroundColor: STATUS_BACKGROUND.REJECTED,
-                            },
-                          },
-                        }
-                      : undefined
-                  }
-                  onClick={() => setRejectDialogOpen(true)}
-                >
-                  {t("requestsManagement.detail.rejectButton")}
-                </Button>
-                <Button
-                  variant="contained"
-                  disabled={status !== "PENDING" || isProcessingAction}
-                  sx={
-                    status === "PENDING"
-                      ? {
-                          "&&": {
-                            ...approveColors,
-                            "&:hover": { backgroundColor: darken(approveColors.backgroundColor, 0.15) },
-                          },
-                        }
-                      : status === "APPROVED"
-                        ? { "&&": approvedDisabledColors }
-                        : undefined
-                  }
-                  onClick={approveRequest}
-                >
-                  {status === "APPROVED"
-                    ? t("requestsManagement.detail.approvedButton")
-                    : t("requestsManagement.detail.approveButton")}
-                </Button>
-                <Button
-                  variant="contained"
-                  disabled={!prepareSampleEnabled}
-                  sx={
-                    prepareSampleEnabled
-                      ? {
-                          "&&": {
-                            ...approveColors,
-                            "&:hover": { backgroundColor: darken(approveColors.backgroundColor, 0.15) },
-                          },
-                        }
-                      : undefined
-                  }
-                  onClick={() => (skipChooseMethodDialog ? openTransferDialog() : setChooseMethodDialogOpen(true))}
-                >
-                  {skipChooseMethodDialog
-                    ? t("requestsManagement.detail.transferSampleButton")
-                    : t("requestsManagement.detail.prepareSampleButton")}
-                </Button>
-                <Button
-                  variant="outlined"
-                  disabled={status !== "APPROVED"}
-                  sx={
-                    status === "APPROVED"
-                      ? {
-                          "&&": {
-                            ...markAsFulfilledColors,
-                            "&:hover": {
-                              borderColor: darken(markAsFulfilledColors.borderColor, 0.2),
-                              backgroundColor: STATUS_BACKGROUND.FULFILLED,
-                            },
-                          },
-                        }
-                      : undefined
-                  }
-                  onClick={() => setFulfilDialogOpen(true)}
-                >
-                  {t("requestsManagement.detail.markAsFulfilledButton")}
-                </Button>
-              </Box>
-              {statusHelpTranslationKey && (
-                <Typography variant="body2" color="text.secondary">
-                  {t(statusHelpTranslationKey)}
-                </Typography>
-              )}
-            </Box>
-          </>
+          <OwnerActionsPanel
+            status={status}
+            isActionableState={isActionableState}
+            prepareSampleEnabled={prepareSampleEnabled}
+            skipChooseMethodDialog={skipChooseMethodDialog}
+            isProcessingAction={isProcessingAction}
+            infoBoxText={infoBoxText}
+            statusHelpText={statusHelpText}
+            onReject={() => setRejectDialogOpen(true)}
+            onApprove={approveRequest}
+            onPrepareOrTransfer={() =>
+              skipChooseMethodDialog ? openTransferDialog() : setChooseMethodDialogOpen(true)
+            }
+            onMarkFulfilled={() => setFulfilDialogOpen(true)}
+          />
         )}
         {!isSampleOwner && status === "PENDING" && (
-          <>
-            <Box sx={{ p: 1, backgroundColor: theme.palette.grey[100] }}>
-              <Typography variant="subtitle1">{t("requestsManagement.detail.sections.approveReject")}</Typography>
-            </Box>
-            <Divider />
-            <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-              <Typography variant="body2">{t("requestsManagement.detail.cancelRequestHint")}</Typography>
-              <Box sx={{ display: "flex", gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  disabled={isProcessingAction}
-                  sx={{
-                    "&&": {
-                      color: theme.palette.grey[700],
-                      borderColor: theme.palette.grey[500],
-                      "&:hover": {
-                        borderColor: theme.palette.grey[700],
-                        backgroundColor: theme.palette.grey[100],
-                      },
-                    },
-                  }}
-                  onClick={cancelRequest}
-                >
-                  {t("common:actions.cancel")}
-                </Button>
-              </Box>
-            </Box>
-          </>
+          <RequesterCancelPanel isProcessingAction={isProcessingAction} onCancel={cancelRequest} />
         )}
         {isSampleOwner && (
-          <>
-            <Box
-              sx={{
-                p: 1,
-                backgroundColor: theme.palette.grey[100],
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
-              }}
-              onClick={() => setSampleLocationsExpanded(!sampleLocationsExpanded)}
-            >
-              <CustomTooltip title={t("requestsManagement.detail.fields.sampleLocationTooltip")}>
-                <Typography variant="subtitle1">{t("requestsManagement.detail.fields.sampleLocation")}</Typography>
-              </CustomTooltip>
-              <IconButton
-                size="small"
-                aria-label={
-                  sampleLocationsExpanded
-                    ? t("formSections.collapseSectionNamed", {
-                        section: t("requestsManagement.detail.fields.sampleLocation"),
-                      })
-                    : t("formSections.expandSectionNamed", {
-                        section: t("requestsManagement.detail.fields.sampleLocation"),
-                      })
-                }
-                aria-expanded={sampleLocationsExpanded}
-                aria-controls={sampleLocationsSectionId}
-                sx={{
-                  transform: sampleLocationsExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: theme.transitions.create("transform"),
+          <CollapsibleSection
+            title={t("requestsManagement.detail.fields.sampleLocation")}
+            tooltip={t("requestsManagement.detail.fields.sampleLocationTooltip")}
+            expanded={sampleLocationsExpanded}
+            onToggle={() => setSampleLocationsExpanded(!sampleLocationsExpanded)}
+          >
+            <Box sx={{ p: 2 }}>
+              <RequestSampleLocations
+                sampleId={request.sample.id}
+                selectable={status === "PENDING" || status === "APPROVED"}
+                selectedSubsampleId={selectedSubsampleId}
+                onSelectSubsample={(subSample) => {
+                  setSelectedSubsampleId(subSample.id);
+                  setSelectedSubsampleName(subSample.name);
                 }}
-              >
-                <ExpandMoreIcon />
-              </IconButton>
+              />
             </Box>
-            <Divider />
-            <Collapse in={sampleLocationsExpanded} id={sampleLocationsSectionId}>
-              <Box sx={{ p: 2 }}>
-                <RequestSampleLocations
-                  sampleId={request.sample.id}
-                  selectable={status === "PENDING" || status === "APPROVED"}
-                  selectedSubsampleId={selectedSubsampleId}
-                  onSelectSubsample={(subSample) => {
-                    setSelectedSubsampleId(subSample.id);
-                    setSelectedSubsampleName(subSample.name);
-                  }}
-                />
-              </Box>
-            </Collapse>
-          </>
+          </CollapsibleSection>
         )}
-        <Box
-          sx={{
-            p: 1,
-            backgroundColor: theme.palette.grey[100],
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            cursor: "pointer",
-          }}
-          onClick={() => setRequestHistoryExpanded(!requestHistoryExpanded)}
+        <CollapsibleSection
+          title={t("requestsManagement.detail.history.sectionTitle")}
+          expanded={requestHistoryExpanded}
+          onToggle={() => setRequestHistoryExpanded(!requestHistoryExpanded)}
         >
-          <Typography variant="subtitle1">{t("requestsManagement.detail.history.sectionTitle")}</Typography>
-          <IconButton
-            size="small"
-            aria-label={
-              requestHistoryExpanded
-                ? t("formSections.collapseSectionNamed", {
-                    section: t("requestsManagement.detail.history.sectionTitle"),
-                  })
-                : t("formSections.expandSectionNamed", {
-                    section: t("requestsManagement.detail.history.sectionTitle"),
-                  })
-            }
-            aria-expanded={requestHistoryExpanded}
-            aria-controls={requestHistorySectionId}
-            sx={{
-              transform: requestHistoryExpanded ? "rotate(180deg)" : "rotate(0deg)",
-              transition: theme.transitions.create("transform"),
-            }}
-          >
-            <ExpandMoreIcon />
-          </IconButton>
-        </Box>
-        <Divider />
-        <Collapse in={requestHistoryExpanded} id={requestHistorySectionId}>
           <RequestHistoryTable statusChanges={statusChanges} />
-        </Collapse>
+        </CollapsibleSection>
       </Box>
-      <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t("requestsManagement.detail.rejectDialog.title")}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-            {/* component="label" + htmlFor makes this a real, programmatically linked label for
-                the TextField below, rather than inert text sitting above it - with no visual
-                change, since Typography's variant/styling applies regardless of the rendered tag. */}
-            <Typography component="label" htmlFor={reasonFieldId} variant="body2">
-              {t("requestsManagement.detail.rejectDialog.reasonLabel")}
-            </Typography>
-            <TextField
-              id={reasonFieldId}
-              multiline
-              minRows={3}
-              fullWidth
-              value={rejectReason}
-              onChange={({ target: { value } }) => setRejectReason(value)}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setRejectDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button
-            variant="outlined"
-            disabled={!rejectReason.trim() || isProcessingAction}
-            sx={
-              rejectReason.trim()
-                ? {
-                    "&&": {
-                      ...rejectColors,
-                      "&:hover": {
-                        borderColor: darken(rejectColors.borderColor, 0.2),
-                        backgroundColor: STATUS_BACKGROUND.REJECTED,
-                      },
-                    },
-                  }
-                : undefined
-            }
-            onClick={rejectRequest}
-          >
-            {t("requestsManagement.detail.rejectDialog.rejectRequestButton")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Dialog open={fulfilDialogOpen} onClose={() => setFulfilDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t("requestsManagement.detail.fulfilDialog.title")}</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2">{t("requestsManagement.detail.fulfilDialog.message")}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setFulfilDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button
-            variant="outlined"
-            disabled={isProcessingAction}
-            sx={{
-              "&&": {
-                ...markAsFulfilledColors,
-                "&:hover": {
-                  borderColor: darken(markAsFulfilledColors.borderColor, 0.2),
-                  backgroundColor: STATUS_BACKGROUND.FULFILLED,
-                },
-              },
-            }}
-            onClick={fulfilRequest}
-          >
-            {t("requestsManagement.detail.fulfilDialog.fulfilButton")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      <Dialog
+      <RejectRequestDialog
+        open={rejectDialogOpen}
+        reason={rejectReason}
+        onReasonChange={setRejectReason}
+        isProcessingAction={isProcessingAction}
+        onClose={() => setRejectDialogOpen(false)}
+        onConfirm={rejectRequest}
+      />
+      <FulfilRequestDialog
+        open={fulfilDialogOpen}
+        isProcessingAction={isProcessingAction}
+        onClose={() => setFulfilDialogOpen(false)}
+        onConfirm={fulfilRequest}
+      />
+      <ChooseMethodDialog
         open={chooseMethodDialogOpen}
+        preparationMethod={preparationMethod}
+        onMethodChange={setPreparationMethod}
+        warnings={chooseMethodTransferWarnings}
         onClose={() => {
           setChooseMethodDialogOpen(false);
           setPreparationMethod(null);
         }}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle>{t("requestsManagement.detail.chooseMethodDialog.title")}</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {t("requestsManagement.detail.chooseMethodDialog.body")}
-          </Typography>
-          <RadioGroup
-            value={preparationMethod ?? ""}
-            onChange={(_, value) => setPreparationMethod(value as "wizard" | "transfer")}
-          >
-            <FormControlLabel
-              value="wizard"
-              control={<Radio />}
-              label={t("requestsManagement.detail.chooseMethodDialog.wizardOption")}
-            />
-            <FormControlLabel
-              value="transfer"
-              control={<Radio />}
-              label={t("requestsManagement.detail.chooseMethodDialog.transferOption")}
-            />
-          </RadioGroup>
-          {chooseMethodTransferWarnings.length > 0 && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              {chooseMethodTransferWarnings.map((warning) => (
-                <Typography key={warning} variant="body2">
-                  {warning}
-                </Typography>
-              ))}
-            </Alert>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setChooseMethodDialogOpen(false);
-              setPreparationMethod(null);
-            }}
-          >
-            {t("common:actions.cancel")}
-          </Button>
-          <Button
-            variant="contained"
-            color="callToAction"
-            disableElevation
-            disabled={preparationMethod === null}
-            onClick={proceedWithPreparationMethod}
-          >
-            {t("requestsManagement.detail.chooseMethodDialog.proceedButton")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onProceed={proceedWithPreparationMethod}
+      />
       {operationWizard}
-      <Dialog open={transferDialogOpen} onClose={() => setTransferDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>
-          {t("requestsManagement.detail.transferDialog.heading", {
-            sampleName: wizardCreatedSample?.name ?? request.sample.name,
-            requester: requesterFullName,
-          })}
-        </DialogTitle>
-        <DialogContent>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            {wizardCreatedSample ? (
-              // Reached via the "wizard" radio: the sample being offered up didn't exist before
-              // this flow started, so the usual ownership warning (which presumes an existing
-              // sample the owner is giving up) doesn't apply - this explains what the new sample
-              // is and where it stays if the transfer is cancelled instead.
-              t("requestsManagement.detail.transferDialog.newSampleHint", { sampleName: wizardCreatedSample.name })
-            ) : (
-              <TransRichText
-                i18nKey="inventory:requestsManagement.detail.transferDialog.warning"
-                values={{ requester: requesterFullName }}
-              />
-            )}
-          </Alert>
-          <Typography component="p" variant="body1" sx={{ mb: 1 }}>
-            {t("requestsManagement.detail.transferDialog.whatWillHappen")}
-          </Typography>
-          <Box component="ul" sx={{ mt: 0, mb: 2, pl: 3 }}>
-            {/* Both of these describe what happens to the originally requested sample - its
-            subsamples moving with it, and its other active requests being auto-rejected - neither
-            of which applies once the wizard has created a brand new sample to transfer instead:
-            that sample's ownership change leaves the original sample, its subsamples, and any
-            other requests still open against it untouched. */}
-            {!wizardCreatedSample && subSampleCount !== null && subSampleCount > 1 && (
-              <Typography component="li" variant="body2">
-                {subSampleCount === 2
-                  ? t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferredBoth", {
-                      requester: requesterFullName,
-                    })
-                  : t("requestsManagement.detail.transferDialog.bullets.subsamplesTransferred", {
-                      count: subSampleCount,
-                      requester: requesterFullName,
-                    })}
-              </Typography>
-            )}
-            <Typography component="li" variant="body2">
-              {wizardCreatedSample
-                ? t("requestsManagement.detail.transferDialog.bullets.newSampleMoved", {
-                    requester: requesterFullName,
-                  })
-                : t("requestsManagement.detail.transferDialog.bullets.subsamplesMoved", {
-                    requester: requesterFullName,
-                  })}
-            </Typography>
-            <Typography component="li" variant="body2">
-              {t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: request.id })}
-            </Typography>
-            {!wizardCreatedSample && otherActiveRequests !== null && otherActiveRequests.length > 0 && (
-              <Typography component="li" variant="body2">
-                {t("requestsManagement.detail.transferDialog.bullets.otherRequestsRejected", {
-                  count: otherActiveRequests.length,
-                  names: formatList(
-                    otherActiveRequests.map((r) => r.requesterName),
-                    i18n.resolvedLanguage ?? i18n.language,
-                  ),
-                })}
-              </Typography>
-            )}
-          </Box>
-          <FormControl component="fieldset" fullWidth>
-            <PeopleField
-              onSelection={(person) => setTransferRecipient(person as PersonModel | null)}
-              label={t("contextMenu.transfer.dialog.recipientLabel")}
-              recipient={transferRecipient}
-              restrictToUser={transferRequesterPerson ?? undefined}
-              // Kept separate from transferRecipient (see its declaration): clearing the field
-              // back to an unrestricted search must not lift this restriction. The requester is
-              // looked up asynchronously (see openTransferDialog), so restrictToUser above is
-              // only set on a later render. disableAutoOpen is true from this dialog's very
-              // first render, avoiding a race against the field's autoFocus where openOnFocus
-              // would still read as unrestricted.
-              disableAutoOpen
-            />
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setTransferDialogOpen(false)}>{t("common:actions.cancel")}</Button>
-          <Button
-            variant="contained"
-            // transferRequesterPerson === null also disables this: until the requester lookup
-            // in openTransferDialog resolves, PeopleField's restrictToUser is unset and the field
-            // searches every user, not just the requester - submitting before then could hand
-            // the sample to whoever was picked during that window instead. isProcessingAction
-            // disables it while the transfer itself is in flight, so a double-click can't submit
-            // the same transfer twice.
-            disabled={transferRecipient === null || transferRequesterPerson === null || isProcessingAction}
-            color="callToAction"
-            disableElevation
-            onClick={submitTransfer}
-          >
-            {t("common:actions.transfer")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <TransferOwnershipDialog
+        open={transferDialogOpen}
+        requestId={request.id}
+        sampleName={wizardCreatedSample?.name ?? request.sample.name}
+        requesterFullName={requesterFullName}
+        isNewlyCreatedSample={wizardCreatedSample !== null}
+        subSampleCount={subSampleCount}
+        otherActiveRequests={otherActiveRequests}
+        transferRecipient={transferRecipient}
+        transferRequesterPerson={transferRequesterPerson}
+        isProcessingAction={isProcessingAction}
+        onRecipientChange={setTransferRecipient}
+        onClose={() => setTransferDialogOpen(false)}
+        onSubmit={submitTransfer}
+      />
     </Box>
   );
 }

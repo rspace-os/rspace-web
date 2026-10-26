@@ -14,8 +14,10 @@ type HelpIconProps = {
   /**
    * Overrides the icon's rendered size to track the font-size of wherever it's placed (e.g.
    * "inherit" to exactly match surrounding text) instead of one of MUI's fixed `size` presets.
+   * Forwarded directly to HelpIcon's own `fontSize` prop (an ordinary MUI SvgIcon sizing token),
+   * rather than reimplemented as a one-off CSS override.
    */
-  fontSize?: string;
+  fontSize?: React.ComponentProps<typeof HelpIcon>["fontSize"];
 };
 
 type AnchorLinkProps = {
@@ -27,12 +29,13 @@ type AnchorLinkProps = {
 
 function IconLink({
   color,
-  fontSize,
+  flushWithText,
   ...rest
 }: Omit<React.ComponentProps<typeof IconButton>, "color"> &
   AnchorLinkProps & {
     color: React.ComponentProps<typeof IconButton>["color"] | "white";
-    fontSize?: string;
+    /** Collapses the button's own padding so a font-size-tracking icon sits flush inline with text. */
+    flushWithText: boolean;
   }): React.ReactNode {
   const theme = useTheme();
   const resolvedColor = color === "primary" ? theme.palette.primary.dark : color;
@@ -44,7 +47,7 @@ function IconLink({
         cursor: "pointer",
         transition: "all .15s ease",
         transform: "translateY(-2px)",
-        ...(fontSize ? { padding: 0 } : {}),
+        ...(flushWithText ? { padding: 0 } : {}),
         "&:hover": {
           filter: "brightness(0.9)",
           // have to re-state to prevent ELN's a:hover red style from taking effect
@@ -52,7 +55,6 @@ function IconLink({
         },
         [`& .${svgIconClasses.root}`]: {
           color: `${resolvedColor} !important`,
-          ...(fontSize ? { fontSize } : {}),
         },
       }}
     />
@@ -78,10 +80,10 @@ export default function HelpLinkIcon({
         rel="noreferrer"
         size={size}
         color={color}
-        fontSize={fontSize}
+        flushWithText={Boolean(fontSize)}
         aria-label={title}
       >
-        <HelpIcon />
+        <HelpIcon fontSize={fontSize} />
       </IconLink>
     </CustomTooltip>
   );

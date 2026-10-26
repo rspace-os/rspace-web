@@ -17,7 +17,11 @@ public class EditInfo implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  /** Max length of description field (RA - why is this constraint in DB 250 and not 255??) */
+  /**
+   * Max length of description field (RA - why is this constraint in DB 250 and not 255??).
+   * Inventory records override it with {@link
+   * com.researchspace.model.inventory.InventoryRecord#DESCRIPTION_LENGTH} (ADR 0012).
+   */
   public static final int DESCRIPTION_LENGTH = 250;
 
   private String name;
