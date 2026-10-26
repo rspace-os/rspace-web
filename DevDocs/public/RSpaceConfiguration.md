@@ -26,7 +26,6 @@ The unzipped release should contain:
 
 * RSpace installation notes.
 * Server pre-requisite installation notes.
-* An example server log file illustrating successful server startup logs.
 * The RSpace web application .war file
 * A configuration file, deployment.properties
 * A folder for 3rd party licenses
