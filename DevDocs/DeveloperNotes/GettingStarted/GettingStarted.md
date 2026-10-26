@@ -18,7 +18,11 @@ Our build toolchain requires Java 17. Currently using a different Java version t
 
 -   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
--   Install MariaDB 10.11 (the version supported in production). For local development, newer versions (MariaDB 11.x or 12.x) should also work fine (the dockerized RSpace dev stack uses MariaDB 12.3).
+-   Install MariaDB 10.11 or 11.8, the versions tested in CI and supported for production RSpace. The Docker dev stack
+    defaults to 11.8, as does [rspace-docker](https://github.com/rspace-os/rspace-docker). For native installs, follow
+    [rspace-docker's database settings][db-config], especially `innodb_snapshot_isolation=0`, adapting filesystem paths.
+
+[db-config]: https://github.com/rspace-os/rspace-docker/blob/main/configs/db-config.cnf
 
 Historically we were running RSpace on MySQL database, so some docs may still mention MySQL, but go with MariaDB.
 Database installation can be skipped if your only goal is to compile/build the project.
@@ -179,7 +183,13 @@ The second grant covers a scratch `hibtest` database used by the
 `HibernateTest` classes, which check the Hibernate mappings. They create that
 database themselves on first run and Hibernate builds and drops its schema each
 run, so nothing else is needed, but without the grant those tests skip rather
-than fail and the mappings go unchecked.
+than fail and the mappings go unchecked. The `hibtest.db` system property
+overrides the name. It must start with `hibtest` so it can never point at the
+application database, and be a plain identifier of up to 64 characters;
+otherwise the tests fail before touching the database. Jenkins sets it per branch so
+concurrent builds on its shared MariaDB do not share a schema. A local override
+needs a matching grant, for example ``GRANT ALL ON `hibtest%`.* TO
+'rspacedbuser'@'127.0.0.1';``.
 
 **NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
 from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. (Or you may need to just use `'rspacedbuser'` with no host)

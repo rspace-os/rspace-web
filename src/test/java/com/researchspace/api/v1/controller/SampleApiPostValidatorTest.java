@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
@@ -87,12 +88,35 @@ public class SampleApiPostValidatorTest extends InventoryRecordValidationTestBas
   public void validateSampleDesc() {
     ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
     full.setName("s1");
-    full.setDescription(randomAlphabetic(BaseRecord.DEFAULT_VARCHAR_LENGTH + 1));
+    full.setDescription(randomAlphabetic(InventoryRecord.DESCRIPTION_LENGTH + 1));
     Errors e = new BeanPropertyBindingResult(full, "fullpost");
     validator.validate(full, e);
     assertEquals(1, e.getErrorCount());
     assertMaxLengthMsg(e);
     assertFieldNameIs(e, "description");
+  }
+
+  @Test
+  public void validateSubSampleDescInNewSample() {
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("s1");
+    ApiSubSample subSample = new ApiSubSample();
+    subSample.setDescription(randomAlphabetic(InventoryRecord.DESCRIPTION_LENGTH + 1));
+    full.getSubSamples().add(subSample);
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+    assertEquals(1, e.getErrorCount());
+    assertEquals("subSamples[0].description", e.getFieldError().getField());
+  }
+
+  @Test
+  public void validateSampleDescAtTheCapIsAccepted() {
+    ApiSampleWithFullSubSamples full = new ApiSampleWithFullSubSamples();
+    full.setName("s1");
+    full.setDescription(randomAlphabetic(InventoryRecord.DESCRIPTION_LENGTH));
+    Errors e = new BeanPropertyBindingResult(full, "fullpost");
+    validator.validate(full, e);
+    assertEquals(0, e.getErrorCount());
   }
 
   @Test

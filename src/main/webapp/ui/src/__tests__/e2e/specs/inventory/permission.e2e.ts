@@ -396,7 +396,7 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     await bobSample.close();
   });
 
-  test(`As a groupmate, I can remove myself from an Explicit access list and immediately lose access`, async ({
+  test(`As a groupmate, I cannot change access permissions on an item shared with me, and lose access once the owner removes my group`, async ({
     browser,
     browserContextOptions,
     clientSysadmin,
@@ -423,28 +423,46 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     await aliceContainer.detailsPanel.saveEdit();
     await aliceContainer.close();
 
-    const sharedCharlieContainer = await openRecordAsUser(
+    const charlieContainer = await openRecordAsUser(
       browser,
       browserContextOptions,
       charlie,
       `/inventory/container/${alice.container.id}`,
       alice.container.name,
     );
-    await expectFullAccess(sharedCharlieContainer.detailsPanel);
-    await sharedCharlieContainer.close();
+    await charlieContainer.detailsPanel.enterEditMode();
+    await charlieContainer.detailsPanel.expandSection("Access Permissions");
+    const charliePermissions = charlieContainer.detailsPanel.accessPermissions();
+    await expect(charliePermissions.explanation()).toContainText("Only the item's owner");
+    await expect(charliePermissions.radio("Explicit access list")).toBeDisabled();
+    await expect(charliePermissions.groupCheckbox(group.name)).toBeDisabled();
+    await charlieContainer.detailsPanel.saveEdit();
+    await charlieContainer.close();
 
-    const editableCharlieContainer = await openRecordAsUser(
+    const stillSharedCharlieContainer = await openRecordAsUser(
       browser,
       browserContextOptions,
       charlie,
       `/inventory/container/${alice.container.id}`,
       alice.container.name,
     );
-    await editableCharlieContainer.detailsPanel.enterEditMode();
-    await editableCharlieContainer.detailsPanel.expandSection("Access Permissions");
-    await editableCharlieContainer.detailsPanel.accessPermissions().groupCheckbox(group.name).uncheck();
-    await editableCharlieContainer.detailsPanel.saveEdit();
-    await editableCharlieContainer.close();
+    // the section stays expanded for Charlie (a saved UI preference), and its own alert would count
+    await stillSharedCharlieContainer.detailsPanel.collapseSection("Access Permissions");
+    await expectFullAccess(stillSharedCharlieContainer.detailsPanel);
+    await stillSharedCharlieContainer.close();
+
+    const unsharingAliceContainer = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      alice,
+      `/inventory/container/${alice.container.id}`,
+      alice.container.name,
+    );
+    await unsharingAliceContainer.detailsPanel.enterEditMode();
+    await unsharingAliceContainer.detailsPanel.expandSection("Access Permissions");
+    await unsharingAliceContainer.detailsPanel.accessPermissions().groupCheckbox(group.name).uncheck();
+    await unsharingAliceContainer.detailsPanel.saveEdit();
+    await unsharingAliceContainer.close();
 
     const unsharedCharlieContainer = await openRecordAsUser(
       browser,
@@ -455,6 +473,139 @@ test.describe(`Inventory permissions`, { tag: [tags.INVENTORY, tags.MOBILE] }, (
     );
     await expectPublicAccess(unsharedCharlieContainer.detailsPanel);
     await unsharedCharlieContainer.close();
+  });
+
+  test(`As a group member, I lose access to items shared with my group once its PI removes me`, async ({
+    browser,
+    browserContextOptions,
+    clientSysadmin,
+    apiContext,
+    flowUserSession,
+  }) => {
+    test.slow();
+
+    const bob = await createInventoryActor(clientSysadmin, apiContext, "Bob", "ROLE_PI");
+    const charlie = await createActor(clientSysadmin, "Charlie", "ROLE_USER");
+    const group = await createGroup(clientSysadmin, bob, charlie);
+    const bobContainer = await createContainer(bob);
+    const alice = await createInventoryActor(clientSysadmin, apiContext, "Alice", "ROLE_PI");
+    const aliceContainer = await createContainer(alice);
+    await alice.client.updateContainer(aliceContainer.id, {
+      sharingMode: "WHITELIST",
+      sharedWith: [{ group: { id: group.id }, shared: true }],
+    });
+
+    const sharedByGroup = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${bobContainer.id}`,
+      bobContainer.name,
+    );
+    await expectFullAccess(sharedByGroup.detailsPanel);
+    await sharedByGroup.close();
+    const sharedByList = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${aliceContainer.id}`,
+      aliceContainer.name,
+    );
+    await expectFullAccess(sharedByList.detailsPanel);
+    await sharedByList.close();
+
+    const bobSession = await flowUserSession(bob.username, bob.password);
+    await bobSession.groupDetails.openGroup(group.id);
+    await bobSession.groupDetails.removeMember(charlie.username);
+
+    const unsharedByGroup = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${bobContainer.id}`,
+      bobContainer.name,
+    );
+    await expectPublicAccess(unsharedByGroup.detailsPanel);
+    await unsharedByGroup.close();
+    const unsharedByList = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${aliceContainer.id}`,
+      aliceContainer.name,
+    );
+    await expectPublicAccess(unsharedByList.detailsPanel);
+    await unsharedByList.close();
+  });
+
+  test(`As a Project Group member, I lose access to items shared with the group once I leave it`, async ({
+    browser,
+    browserContextOptions,
+    clientSysadmin,
+    apiContext,
+    flowUserSession,
+  }) => {
+    test.slow();
+
+    const bob = await createInventoryActor(clientSysadmin, apiContext, "Bob", "ROLE_USER");
+    const charlie = await createActor(clientSysadmin, "Charlie", "ROLE_USER");
+    const group = await clientSysadmin.createGroup({
+      displayName: alphaNumericUnique("e2ePermProjectGroup"),
+      type: "PROJECT_GROUP",
+      users: [
+        { username: bob.username, roleInGroup: "GROUP_OWNER" },
+        { username: charlie.username, roleInGroup: "DEFAULT" },
+      ],
+    });
+    const bobContainer = await createContainer(bob);
+    const alice = await createInventoryActor(clientSysadmin, apiContext, "Alice", "ROLE_PI");
+    const aliceContainer = await createContainer(alice);
+    await alice.client.updateContainer(aliceContainer.id, {
+      sharingMode: "WHITELIST",
+      sharedWith: [{ group: { id: group.id }, shared: true }],
+    });
+
+    const sharedByGroup = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${bobContainer.id}`,
+      bobContainer.name,
+    );
+    await expectFullAccess(sharedByGroup.detailsPanel);
+    await sharedByGroup.close();
+    const sharedByList = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${aliceContainer.id}`,
+      aliceContainer.name,
+    );
+    await expectFullAccess(sharedByList.detailsPanel);
+    await sharedByList.close();
+
+    const charlieSession = await flowUserSession(charlie.username, charlie.password);
+    await charlieSession.groupDetails.openGroup(group.id);
+    await charlieSession.groupDetails.leaveGroup();
+
+    const unsharedByGroup = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${bobContainer.id}`,
+      bobContainer.name,
+    );
+    await expectPublicAccess(unsharedByGroup.detailsPanel);
+    await unsharedByGroup.close();
+    const unsharedByList = await openRecordAsUser(
+      browser,
+      browserContextOptions,
+      charlie,
+      `/inventory/container/${aliceContainer.id}`,
+      aliceContainer.name,
+    );
+    await expectPublicAccess(unsharedByList.detailsPanel);
+    await unsharedByList.close();
   });
 
   test(`As a user, I can see owner-group access change when an item is transferred to a new owner`, async ({

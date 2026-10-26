@@ -183,7 +183,7 @@ public class MessageAndRequestController extends BaseController implements Appli
           ErrorList.of(
               getText(
                   "messaging.errors.noRecipients.emptyRecipientList",
-                  new Object[] {messageType.getLabel()}));
+                  new Object[] {getText(messageType.getLabelKey())}));
       return new AjaxReturnObject<>(null, errors);
     }
     return new AjaxReturnObject<>(userInfos, null);
@@ -232,7 +232,11 @@ public class MessageAndRequestController extends BaseController implements Appli
     response.setHeader("Content-Disposition", "attachment; filename=rspace.ics");
     ICSEventGenerator icalGenerator = new ICSEventGenerator();
 
-    net.fortuna.ical4j.model.Calendar ical = icalGenerator.createICalEventFor(mor);
+    net.fortuna.ical4j.model.Calendar ical =
+        icalGenerator.createICalEventFor(
+            mor,
+            getText(
+                "messages.calendar.requestFrom", new Object[] {mor.getOriginator().getFullName()}));
     CalendarOutputter outputter = new CalendarOutputter();
     try {
       ical.validate();

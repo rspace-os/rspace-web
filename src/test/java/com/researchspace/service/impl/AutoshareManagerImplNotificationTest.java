@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.RecordGroupSharing;
+import com.researchspace.model.record.LocalizedIllegalAddChildOperation;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
@@ -69,6 +70,22 @@ public class AutoshareManagerImplNotificationTest {
     assertEquals(
         "Setting automatic sharing to disabled may have failed. Some of your previously shared"
             + " work is still shared - boom.",
+        message);
+  }
+
+  @Test
+  public void mayHaveFailedDisabledResolvesLocalizedException() {
+    ServiceOperationResultCollection<RecordGroupSharing, RecordGroupSharing> result =
+        new ServiceOperationResultCollection<>();
+    result.addException(
+        new LocalizedIllegalAddChildOperation("folder.addChild.errors.cycle", "A", "B"));
+
+    String message = manager.createNotificationMessage(false, result);
+
+    assertEquals(
+        "Setting automatic sharing to disabled may have failed. Some of your previously shared"
+            + " work is still shared - Addition of [A] to  folder[B]  would produce a cycle in the"
+            + " folder tree, which currently is not permitted..",
         message);
   }
 

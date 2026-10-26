@@ -431,7 +431,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(1, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, bulkOpResult.getStatus());
     assertThat(bulkOpResult.getResults().get(0).getError().getErrors().get(0))
-        .contains("is already taken by the record");
+        .contains("is already occupied by record");
 
     // confirm subsamples not moved
     retrievedSubSample1 = subSampleApiMgr.getApiSubSampleById(subSample1.getId(), anyUser);
@@ -532,7 +532,10 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(1, bulkOpResult.getErrorCount());
     assertEquals(InventoryBulkOperationStatus.REVERTED_ON_ERROR, bulkOpResult.getStatus());
     errorMsg = bulkOpResult.getResults().get(0).getError().getErrors().get(0);
-    assertThat(errorMsg).as(errorMsg).contains("errors.inventory.move.targetContainer.unavailable");
+    assertThat(errorMsg)
+        .as(errorMsg)
+        .contains(
+            "Cannot locate target container from provided target container and location details");
 
     // confirm container not moved
     retrievedContainer = containerApiMgr.getApiContainerById(testUserContainer.getId(), testUser);
@@ -578,7 +581,7 @@ public class InventoryBulkOperationsApiControllerMVCIT extends API_MVC_Inventory
     assertEquals(
         otherUsername, bulkOpResult.getResults().get(0).getRecord().getOwner().getUsername());
     assertEquals(
-        "bulk owner change doesn't support records of type: SUBSAMPLE",
+        "Bulk owner change does not support records of type: SUBSAMPLE",
         bulkOpResult.getResults().get(1).getError().getErrors().get(0));
     assertEquals(
         otherUsername, bulkOpResult.getResults().get(2).getRecord().getOwner().getUsername());

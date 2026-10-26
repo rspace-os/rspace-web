@@ -13,6 +13,8 @@ import com.researchspace.model.dtos.CreateCloudGroupValidator;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.RaIDServiceManager;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.cloud.CloudGroupManager;
 import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
@@ -47,10 +49,11 @@ public class ProjectGroupController extends BaseController {
   private @Autowired RaIDServiceManager raidServiceManager;
   private @Autowired CloudNotificationManager cloudNotificationManager;
   private @Autowired CreateCloudGroupValidator cloudGroupValidator;
+  private @Autowired SystemPropertyPermissionManager systemPropertyPermissionManager;
 
   @RequestMapping(method = RequestMethod.GET, value = "/newGroupForm")
   public String projectGroupForm(Model model) {
-
+    assertProjectGroupsAllowed(userManager.getAuthenticatedUserInSession());
     CreateCloudGroup createCloudGroupConfig = new CreateCloudGroup();
     model.addAttribute("createCloudGroupConfig", createCloudGroupConfig);
     model.addAttribute("isProjectGroup", true);
@@ -63,6 +66,7 @@ public class ProjectGroupController extends BaseController {
       BindingResult errors,
       HttpServletRequest request) {
     User creator = userManager.getAuthenticatedUserInSession();
+    assertProjectGroupsAllowed(creator);
     createCloudGroup.setSessionUser(creator); // the PI
     cloudGroupValidator.validate(createCloudGroup, errors);
     List<Group> groups = groupManager.listGroupsForOwner(creator);
@@ -101,6 +105,13 @@ public class ProjectGroupController extends BaseController {
     publisher.publishEvent(new GenericEvent(creator, newLabGroup, AuditAction.CREATE));
     response.put("newGroup", "" + newLabGroup.getId());
     return new AjaxReturnObject<>(response, null);
+  }
+
+  private void assertProjectGroupsAllowed(User user) {
+    if (!systemPropertyPermissionManager.isPropertyAllowed(
+        user, SystemPropertyName.ALLOW_PROJECT_GROUPS)) {
+      throw new AuthorizationException(getText("common:profile.groups.manager.contactAdmin"));
+    }
   }
 
   private static void validateRaidInput(RaIDReferenceDTO raidReference) {

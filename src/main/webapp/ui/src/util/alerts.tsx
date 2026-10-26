@@ -82,9 +82,9 @@ export const handleDetailedSuccesses = (
   );
 };
 
-// Keyed by the literal error code the API returns (a message-bundle key from
-// ../../../../resources/bundles/inventory/inventory.properties). These are
-// flat dot-delimited strings, so a direct lookup beats any tree traversal.
+// Keyed by the error's messageCode (a server catalogue key). The server sends
+// the resolved text in errors, so the code is the only stable thing to match.
+// These are flat dot-delimited strings, so a direct lookup beats any tree traversal.
 const messages: Record<string, (record: { name?: string }) => { title: string; help: string }> = {
   "errors.inventory.container.deletion.notEmpty": ({ name }) => ({
     title: i18n.t("inventory:bulkAlerts.error.containerNotEmpty.title", { name }),
@@ -109,6 +109,7 @@ export const handleDetailedErrors = (
   data: Array<{
     response: {
       error: {
+        messageCode?: string | null;
         errors: Array<string>;
       };
     };
@@ -129,7 +130,7 @@ export const handleDetailedErrors = (
         details: errorData.flatMap(({ record, response }) =>
           response.error.errors.map((error) => {
             const resolve =
-              messages[error] ??
+              messages[response.error.messageCode ?? error] ??
               (() => ({
                 title: error,
                 help: defaultHelp ?? i18n.t("inventory:bulkAlerts.error.refreshAndTryAgain"),

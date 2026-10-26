@@ -1,5 +1,6 @@
 package com.researchspace.core.util;
 
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -53,14 +54,11 @@ public class DateRange implements Comparable<DateRange>, Serializable {
       }
     }
     if (from == null && to == null) {
-      throw new IllegalArgumentException(
-          "could not parse ["
-              + fromTodateString
-              + "]. Argument"
-              + " must match one or both of "
-              + fromOnly
-              + ", or "
-              + toOnly);
+      throw new LocalizedIllegalArgumentException(
+          "validation.dateRange.invalidFormat",
+          fromTodateString,
+          fromOnly.toString(),
+          toOnly.toString());
     }
     return new DateRange(from, to);
   }
@@ -72,7 +70,7 @@ public class DateRange implements Comparable<DateRange>, Serializable {
    */
   public DateRange(Long from, Long to) {
     if (from != null && to != null && from > to) {
-      throw new IllegalArgumentException("From must be earlier than to");
+      throw new LocalizedIllegalArgumentException("validation.dateRange.fromAfterTo");
     }
     this.from = from;
     this.to = to;
@@ -93,7 +91,7 @@ public class DateRange implements Comparable<DateRange>, Serializable {
    */
   public DateRange(Date fromDate, Date toDate) {
     if (fromDate != null && toDate != null && fromDate.getTime() > toDate.getTime()) {
-      throw new IllegalArgumentException("From must be earlier than to");
+      throw new LocalizedIllegalArgumentException("validation.dateRange.fromAfterTo");
     }
     if (fromDate == null) {
       from = 0L;

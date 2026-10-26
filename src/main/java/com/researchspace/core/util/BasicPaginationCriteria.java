@@ -1,10 +1,10 @@
 package com.researchspace.core.util;
 
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 
 /**
  * POJO to hold pagination criteria. If not configured otherwise, will return 10 results from page1
@@ -143,7 +143,8 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
   @Override
   public void setPageNumber(Long pageNumber) {
     if (pageNumber < 0) {
-      throw new IllegalArgumentException("Page number cannot be -ve, was [" + pageNumber + "]");
+      throw new LocalizedIllegalArgumentException(
+          "validation.pagination.negativePageNumber", pageNumber);
     }
     this.pageNumber = pageNumber;
   }
@@ -175,8 +176,8 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
   @Override
   public void setResultsPerPage(Integer resultsPerPage) {
     if (resultsPerPage != null && resultsPerPage < 0) {
-      throw new IllegalArgumentException(
-          "Results per page cannot be -ve, was [" + resultsPerPage + "]");
+      throw new LocalizedIllegalArgumentException(
+          "validation.pagination.negativeResultsPerPage", resultsPerPage);
     }
     this.resultsPerPage = resultsPerPage;
   }
@@ -237,7 +238,9 @@ public class BasicPaginationCriteria<T> implements Serializable, IPagination<T> 
    */
   @Override
   public void setSortOrder(SortOrder sortOrder) {
-    Validate.isTrue(sortOrder != null, "sort order cannot be null!");
+    if (sortOrder == null) {
+      throw new LocalizedIllegalArgumentException("validation.pagination.sortOrderRequired");
+    }
     this.sortOrder = sortOrder;
   }
 

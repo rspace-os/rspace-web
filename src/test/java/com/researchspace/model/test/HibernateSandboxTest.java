@@ -68,6 +68,7 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.TestFactory;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.RSUnitDef;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -574,7 +575,13 @@ class HibernateSandboxTest extends HibernateTest {
     sample.setStorageTempMin(QuantityInfo.of(BigDecimal.valueOf(5), RSUnitDef.GRAM));
     Container container = sample.getSubSamples().get(0).getParentContainer();
     dao.update(container, Container.class);
-    assertThrows(ConstraintViolationException.class, () -> dao.save(sample, Sample.class));
+    ConstraintViolationException cve =
+        assertThrows(ConstraintViolationException.class, () -> dao.save(sample, Sample.class));
+    // persist-time constraint messages must resolve from the JSON catalogues
+    assertThat(cve.getConstraintViolations())
+        .extracting(ConstraintViolation::getMessage)
+        .contains(
+            "Invalid temperature - must be a temperature measurement greater than absolute zero");
 
     sample.setStorageTempMin(QuantityInfo.of(BigDecimal.valueOf(5), RSUnitDef.KELVIN));
     assertNotNull(sample.getId());

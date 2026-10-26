@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
@@ -46,7 +47,7 @@ public class SampleApiPutValidatorTest extends InventoryRecordValidationTestBase
   public void validateSampleDesc() {
     ApiSampleWithFullSubSamples apiSample = new ApiSampleWithFullSubSamples();
     apiSample.setName("s1");
-    apiSample.setDescription(randomAlphabetic(BaseRecord.DEFAULT_VARCHAR_LENGTH + 1));
+    apiSample.setDescription(randomAlphabetic(InventoryRecord.DESCRIPTION_LENGTH + 1));
     assertDescriptionValidation(apiSample);
   }
 

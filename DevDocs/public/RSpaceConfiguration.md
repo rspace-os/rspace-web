@@ -26,7 +26,6 @@ The unzipped release should contain:
 
 * RSpace installation notes.
 * Server pre-requisite installation notes.
-* An example server log file illustrating successful server startup logs.
 * The RSpace web application .war file
 * A configuration file, deployment.properties
 * A folder for 3rd party licenses
@@ -504,8 +503,10 @@ These optional settings configure  behaviour of the RSpace application.
 #### Archiving and export
 * **archive.folder.location** (default = $TOMCAT_HOME/archive) Path to a directory where exports will be assembled and stored. Must be readable and writable by Tomcat.
 * **archive.folder.storagetime** Time, in hours, that an exported archive will be available for download before it is considered for physical deletion from the server. Default is 24.
-* **archive.minSpaceRequiredToStartMB** Minimum available disk space on temp folder partition required for RSpace to start/continue archive export process. In megabytes, default is 1000 (1 GB).
-* **archive.maxExpandedSizeMB** Maximum size of constructed archive export. In megabytes, default is 10000 (10 GB).
+* **archive.minSpaceRequiredToStartMB** Minimum available disk space on temp folder partition required for RSpace to start/continue archive export process. Archive import also stops if extracting an uploaded archive would leave less than this free. In megabytes, default is 2000 (2 GB).
+* **archive.maxExpandedSizeMB** Maximum size of constructed archive export. Also the maximum size an imported archive may expand to when extracted. In megabytes, default is 10000 (10 GB). 0 removes the limit.
+* **archive.import.maxEntries** Maximum number of files and folders an imported archive may contain. Default is 500000. 0 removes the limit.
+* **archive.import.maxCompressionRatio** Maximum number of times an imported archive may expand relative to its compressed size, judged once more than 10 MB has been extracted. Raise it if archives holding large, mostly blank files (such as uncompressed image masks) are rejected. Default is 100. 0 removes the limit.
 * **importArchiveFromServer.enabled**. true/false.  If true, enhances import of RSpace XML archives by being able to specify a file path on the server. This enables archives stored on the server to be re-imported without tedious download and re-upload through web interface. Default is false.
 * **pdf.defaultPageSize** Default PDF export page size . Valid values are UNKNOWN,A4,LETTER. Default is A4.
 

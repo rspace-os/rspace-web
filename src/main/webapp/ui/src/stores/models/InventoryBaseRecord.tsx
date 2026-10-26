@@ -612,7 +612,7 @@ export default class InventoryBaseRecord
     const validateDescription = () => {
       if (!this.isFieldEditable("description")) return IsValid();
       if (typeof this.description === "undefined" || this.description === null) return IsValid();
-      if (this.description.length <= 250) return IsValid();
+      if (this.description.length <= 2000) return IsValid();
       return IsInvalid(i18n.t("inventory:baseRecord.validation.descriptionTooLong"));
     };
 
@@ -1242,6 +1242,7 @@ export default class InventoryBaseRecord
   }
 
   isFieldEditable(field: string): boolean {
+    if ((field === "sharingMode" || field === "sharedWith") && !this.canTransfer) return false;
     return !this.loading && !this.deleted && !this.historicalVersion && this.currentlyEditableFields.has(field);
   }
 
