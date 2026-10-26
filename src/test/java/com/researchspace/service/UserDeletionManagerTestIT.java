@@ -16,6 +16,7 @@ import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiMaterialUsage;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
+import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusChange;
 import com.researchspace.api.v1.model.ApiSampleRequestStatusPut;
@@ -49,6 +50,7 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleRequest;
+import com.researchspace.model.inventory.SampleRequestRole;
 import com.researchspace.model.inventory.SampleRequestStatus;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.netfiles.NfsFileStore;
@@ -1244,10 +1246,32 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ApiSampleRequest surviving =
         sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.owner);
     assertEquals(fixture.requesterUsername, surviving.getRequester().getUsername());
-    assertNull(surviving.getRequester().getId(), "a deleted requester has no id to resolve");
+    assertEquals(fixture.requester.getId(), surviving.getRequester().getId());
+    assertNull(surviving.getRequester().getFirstName(), "a deleted requester has no name to show");
     assertEquals(
         fixture.requesterUsername,
         surviving.getStatusChanges().get(0).getCreatedBy().getUsername());
+
+    // the owner's listing names them the same way, and the owner can still close the request
+    logoutAndLoginAs(fixture.owner);
+    ApiSampleRequestInfo listed =
+        sampleRequestApiMgr
+            .getRequestsForUser(
+                PaginationCriteria.createDefaultForClass(SampleRequest.class),
+                SampleRequestRole.OWNER,
+                null,
+                null,
+                fixture.owner)
+            .getRequests()
+            .get(0);
+    assertEquals(fixture.requester.getId(), listed.getRequester().getId());
+    assertEquals(fixture.requesterUsername, listed.getRequester().getUsername());
+    ApiSampleRequestStatusPut reject = new ApiSampleRequestStatusPut();
+    reject.setStatus(SampleRequestStatus.REJECTED);
+    reject.setReason("the requester has left");
+    assertEquals(
+        SampleRequestStatus.REJECTED,
+        sampleRequestApiMgr.updateStatus(fixture.requestId, reject, fixture.owner).getStatus());
   }
 
   @Test
@@ -1330,7 +1354,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ApiSampleRequest surviving =
         sampleRequestApiMgr.getRequestById(fixture.requestId, fixture.requester);
     assertEquals(ownerUsername, surviving.getOriginalOwner().getUsername());
-    assertNull(surviving.getOriginalOwner().getId(), "a deleted original owner has no id");
+    assertEquals(fixture.owner.getId(), surviving.getOriginalOwner().getId());
   }
 
   @Test
@@ -1362,7 +1386,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ApiSampleRequestStatusChange fulfilment = surviving.getStatusChanges().get(1);
     assertEquals(SampleRequestStatus.FULFILLED, fulfilment.getStatus());
     assertEquals(labAdminUsername, fulfilment.getCreatedBy().getUsername());
-    assertNull(fulfilment.getCreatedBy().getId(), "a deleted actor has no id");
+    assertEquals(labAdmin.getId(), fulfilment.getCreatedBy().getId());
   }
 
   @Test
