@@ -6,6 +6,9 @@ These instructions are for anyone wanting to run RSpace from source code, on the
 
 ## Initial Setup
 
+For agent-driven browser testing, see [Browser MCP quick setup](BrowserMCP.md)
+for Playwright Chrome/Firefox and Chrome DevTools commands for Codex and Claude Code.
+
 ### Recommended hardware
 
 For production setup we recommend a Linux-based server with at least 8GB RAM. More details: 
@@ -416,3 +419,4 @@ Developer docs on specific subjects are as follows:
 |[AddingANewMessageType.md](../AddingANewMessageType.md)    | How to add a new message type. |
 |[SecureConnectionConfig.md](../SecureConnectionConfig.md)  | How to set up Jetty to use HTTPS. |
 |[SecurityAndPermissions.md](../SecurityAndPermissions.md)  | How permissions and roles work. |
+|[FeatureFlags.md](../FeatureFlags.md)                      | Feature-flag evaluation, storage, API access, and frontend controls. |

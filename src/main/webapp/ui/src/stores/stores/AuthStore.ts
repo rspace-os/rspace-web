@@ -1,6 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
+import { isPublicDocumentView } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -18,9 +19,6 @@ import {
   type SystemSettings,
   systemSettingsFromApiResponse,
 } from "./systemSettingsMapping";
-
-/* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
-const publicView = document.getElementById("public_document_view") !== null;
 
 export type {
   B2InstSettings,
@@ -48,7 +46,7 @@ export default class AuthStore {
       pidinstEnabled: observable,
       authenticate: action,
       signOut: action,
-      synchronizeWithSessionStorage: action,
+      refreshAuthentication: action,
       getSystemSettings: action,
       setSystemSettings: action,
       fetchPidinstEnabled: action,
@@ -61,13 +59,14 @@ export default class AuthStore {
       clearTimeout(this.timeoutId);
     }
     this.isAuthenticated = false;
-    const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
-    return axios
-      .get<{ data: string }>(oAuthUrl)
+    const tokenRequest = isPublicDocumentView()
+      ? axios
+          .get<{ data: string }>("/public/publicView/userform/ajax/inventoryOauthToken")
+          .then((response) => response.data.data)
+      : axios.post<{ accessToken: string }>("/api/v2/oauth/tokens").then((response) => response.data.accessToken);
+    return tokenRequest
       .then(
-        action((response) => {
-          const token = response.data.data;
-
+        action((token) => {
           if (typeof token === "undefined") {
             // Usually this means that backend returned login.html in response.data
             window.location.href = "/login";
@@ -100,24 +99,8 @@ export default class AuthStore {
     await ElnApiService.get<void>("status");
   }
 
-  synchronizeWithSessionStorage(): Promise<void> {
-    if (this.timeoutId) {
-      clearTimeout(this.timeoutId);
-    }
+  refreshAuthentication(): Promise<void> {
     this.isSynchronizing = true;
-    const token = JwtService.getToken();
-
-    if (token && !JwtService.isExpiringSoon(token)) {
-      this.isAuthenticated = true;
-      InvApiService.setAuthorizationHeader();
-      ElnApiService.setAuthorizationHeader();
-      this.isSynchronizing = false;
-
-      // Reauthenticate few minutes before token expiry
-      this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
-      return Promise.resolve();
-    }
-
     return this.authenticate();
   }
 

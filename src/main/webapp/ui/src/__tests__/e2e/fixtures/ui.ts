@@ -1,5 +1,7 @@
 import type { BrowserContext, BrowserContextOptions, Page, TestFixture } from "@playwright/test";
 import { test as base } from "@playwright/test";
+import { BookableItemPage } from "@/modules/booking/__tests__/pageObjects/BookableItemPage";
+import { BookableItemsFilterPage } from "@/modules/booking/__tests__/pageObjects/BookableItemsFilterPage";
 import { GitHubAppsCardComponent } from "@/modules/github/__tests__/pageObjects/GitHubAppsCardComponent";
 import { MsTeamsShareDialogComponent } from "@/modules/msteams/__tests__/pageObjects/MsTeamsShareDialogComponent";
 import { OrcidProfilePage } from "@/modules/orcid/__tests__/pageObjects/OrcidProfilePage";
@@ -48,6 +50,8 @@ type UiFixtures = {
   pageRequestUsernameReminder: RequestUsernameReminderPage;
   pageSignup: SignupPage;
   pageApps: AppsPage;
+  pageBookableItem: BookableItemPage;
+  pageBookableItemsFilter: BookableItemsFilterPage;
   pageWorkspace: WorkspacePage;
   pageDocument: DocumentPage;
   pageDocumentRevisions: DocumentRevisionsPage;
@@ -102,6 +106,8 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageRequestUsernameReminder: pageFixture(RequestUsernameReminderPage),
   pageSignup: pageFixture(SignupPage),
   pageApps: pageFixture(AppsPage),
+  pageBookableItem: pageFixture(BookableItemPage),
+  pageBookableItemsFilter: pageFixture(BookableItemsFilterPage),
   pageWorkspace: pageFixture(WorkspacePage),
   pageDocument: pageFixture(DocumentPage),
   pageDocumentRevisions: pageFixture(DocumentRevisionsPage),

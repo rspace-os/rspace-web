@@ -49,7 +49,7 @@
       "title": "Unsaved changes?"
     },
     "validation": {
-      "descriptionTooLong": "Description cannot be longer than 250 characters.",
+      "descriptionTooLong": "Description cannot be longer than 2000 characters.",
       "distinctFieldNames": "All field names must be distinct.",
       "editLockExpired": "Edit lock has expired. Please refresh.",
       "nameRequired": "Name cannot be empty.",
@@ -1444,6 +1444,27 @@
     "setAsTarget": "Set as Target"
   },
   "instrument": {
+    "booking": {
+      "archived": {
+        "description": "This instrument's booking configuration is archived, so it cannot be booked. Open Booking to view it.",
+        "title": "Booking archived"
+      },
+      "configured": {
+        "book": "Book",
+        "description": "Open Booking to view this instrument's calendar and booking configuration.",
+        "open": "Open booking page",
+        "title": "Booking configured"
+      },
+      "disabled": {
+        "description": "Booking is turned off for this instrument, so it cannot be booked. Open Booking to view its configuration.",
+        "title": "Booking disabled"
+      },
+      "notConfigured": {
+        "action": "Set up booking",
+        "description": "Set up booking to make this instrument available in Booking.",
+        "title": "Booking has not been set up"
+      }
+    },
     "createOptions": {
       "location": {
         "label": "Location",
@@ -1507,6 +1528,7 @@
     },
     "showRightPanel": "Show right panel",
     "sidebar": {
+      "bookingSystem": "Booking System",
       "exportData": "Export Data",
       "igsnIds": "IGSN IDs",
       "itemsListLabel": "List existing Inventory items",
@@ -1536,6 +1558,7 @@
         "alreadyOnBench": "All items are already on your bench.",
         "confirmOnBench": {
           "itemsLabel": "The items are:",
+          "message": "The items are: <itemList/> Do you want to move them to your bench?",
           "prompt": "Do you want to move them to your bench?",
           "title": "Some items are in containers that are already on your bench."
         },
@@ -1853,7 +1876,8 @@
   "peopleField": {
     "errors": {
       "couldNotGetGroupMembers": "Could not get group members."
-    }
+    },
+    "loading": "Loading people"
   },
   "permalink": {
     "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -2447,6 +2471,12 @@
       }
     },
     "controls": {
+      "bookable": {
+        "any": "Any",
+        "label": "Bookable",
+        "no": "Not bookable",
+        "yes": "Bookable"
+      },
       "nameDialog": {
         "duplicateName": "This name is already taken. Please modify it.",
         "helperText": "Please enter a unique name, no longer than 32 characters.",
@@ -2551,6 +2581,7 @@
     "parameterChips": {
       "basket": "Basket: {basket}",
       "benchOwner": "Bench Owner: {owner}",
+      "bookable": "Bookable: {value}",
       "contentsOf": "Contents of: {globalId}",
       "owner": "Owner: {owner}",
       "requestable": "Requestable only",

@@ -1,0 +1,1220 @@
+package com.researchspace.api.v2.openapi;
+
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.mutableObjectMap;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
+import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
+
+import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
+import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
+import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
+import com.researchspace.api.v2.resource.ResourceOperation;
+import com.researchspace.booking.service.BookingConfigurationTarget;
+import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.model.collection.AccessDocumentation;
+import com.researchspace.model.collection.AccessPolicy;
+import com.researchspace.model.collection.AccessPolicySchema;
+import com.researchspace.model.collection.CollectionDescription;
+import com.researchspace.model.collection.CollectionFieldType;
+import com.researchspace.model.collection.FieldSchema;
+import com.researchspace.model.collection.Operator;
+import com.researchspace.model.collection.ResourceRegistry;
+import com.researchspace.model.collection.ResourceSchema;
+import io.swagger.v3.core.util.Json31;
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+public final class ApiV2OpenApiGenerator {
+
+  private static final String JSON = "application/json";
+  private static final String PROBLEM_JSON = "application/problem+json";
+  static final List<Map<String, List<String>>> AUTHENTICATED_SECURITY =
+      List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of()));
+  private static final Map<String, String> STANDARD_RESPONSE_NAMES =
+      Map.of(
+          "400", "BadRequest",
+          "401", "Unauthenticated",
+          "403", "Forbidden",
+          "404", "NotFound",
+          "406", "NotAcceptable",
+          "415", "UnsupportedMediaType",
+          "422", "BulkLimit",
+          "429", "TooManyRequests",
+          "500", "UnexpectedError");
+
+  private final ApiV2ResourceCatalog catalog;
+  private final String title;
+  private final String version;
+  private final String serverUrl;
+  private final ApiV2OpenApiQueryParameters queryParameters;
+
+  public ApiV2OpenApiGenerator(ApiV2ResourceCatalog catalog, String title, String version) {
+    this(catalog, title, version, "/");
+  }
+
+  public ApiV2OpenApiGenerator(
+      ApiV2ResourceCatalog catalog, String title, String version, String serverUrl) {
+    this.catalog = Objects.requireNonNull(catalog, "Resource catalog");
+    this.title = requireText(title, "OpenAPI title");
+    this.version = requireText(version, "OpenAPI version");
+    this.serverUrl = requireText(serverUrl, "OpenAPI server URL");
+    this.queryParameters = new ApiV2OpenApiQueryParameters(catalog);
+  }
+
+  public OpenAPI generate() {
+    Map<String, Object> paths = new LinkedHashMap<>();
+    Map<String, Object> schemas = new LinkedHashMap<>();
+    Map<String, String> componentNames = componentNames(catalog.allSchemas());
+    Map<String, ResourceSchema> resourceSchemas = new LinkedHashMap<>();
+    catalog
+        .allSchemas()
+        .forEach(
+            description -> resourceSchemas.put(description.resourceName(), description.schema()));
+    Set<String> routableNames =
+        catalog.routableResources().stream()
+            .map(ApiV2ResourceRegistration::resourceName)
+            .collect(Collectors.toUnmodifiableSet());
+
+    addStandardSchemas(schemas);
+    addCalendarSubscriptionSchemas(schemas);
+    addResourceAccessSchemas(schemas);
+    ApiV2OpenApiSchemas.schemaFor(BookingConfigurationTarget.class, schemas);
+
+    catalog
+        .allSchemas()
+        .forEach(
+            description ->
+                addSchemas(
+                    schemas,
+                    description.schema(),
+                    componentNames,
+                    routableNames.contains(description.resourceName())));
+    Set<String> declaredComponents = new LinkedHashSet<>();
+    catalog
+        .routableResources()
+        .forEach(
+            resource ->
+                applyRegisteredAccessFieldSchemas(
+                    schemas,
+                    resource,
+                    componentNames.get(resource.resourceName()),
+                    declaredComponents));
+    catalog
+        .routableResources()
+        .forEach(
+            resource ->
+                applyRuntimeProjectionSchemas(
+                    schemas, resource, componentNames.get(resource.resourceName())));
+    catalog
+        .routableResources()
+        .forEach(resource -> addPaths(paths, resource, componentNames, resourceSchemas));
+    addCalendarSubscriptionPath(paths);
+    addCalendarFilePath(paths);
+    addBookingDirectoryPaths(paths);
+
+    schemas.replaceAll((name, schema) -> withNullableReferenceProperties(schema));
+    Map<String, Object> components = new LinkedHashMap<>();
+    components.put("schemas", schemas);
+    components.put("responses", standardResponses());
+    components.put("headers", standardHeaders());
+    components.put("securitySchemes", securitySchemes());
+
+    List<Tag> tags = new ArrayList<>();
+    catalog
+        .routableResources()
+        .forEach(
+            resource ->
+                tags.add(
+                    new Tag()
+                        .name(resource.resourceName())
+                        .description(
+                            "Operations on the " + resource.resourceName() + " collection.")));
+    tags.add(
+        new Tag()
+            .name("booking-calendar-subscriptions")
+            .description("Manage one caller's bookable-item calendar subscription."));
+    tags.add(
+        new Tag()
+            .name("booking-directories")
+            .description("Search bounded Booking access principals and creation targets."));
+    return new OpenAPI()
+        .openapi("3.1.0")
+        .info(
+            new Info()
+                .title(title)
+                .version(version)
+                .description(
+                    "Generated contract for RSpace REST API v2. Resource operations and schemas "
+                        + "are derived from the same definitions used at runtime."))
+        .servers(
+            List.of(
+                new Server()
+                    .url(serverUrl)
+                    .description("RSpace deployment root for this generated document.")))
+        .tags(tags)
+        .paths(Json31.mapper().convertValue(paths, Paths.class))
+        .components(Json31.mapper().convertValue(components, Components.class));
+  }
+
+  private static void addCalendarSubscriptionSchemas(Map<String, Object> schemas) {
+    Map<String, Object> statusProperties =
+        ordered(
+            "active",
+            ordered("type", "boolean"),
+            "updatedAt",
+            ordered("type", List.of("string", "null"), "format", "date-time"),
+            "subscriptionUrl",
+            ordered(
+                "type",
+                List.of("string", "null"),
+                "format",
+                "uri",
+                "description",
+                "The current subscription URL, or null when inactive."));
+    schemas.put(
+        "BookingCalendarSubscriptionStatus",
+        ordered(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("active", "updatedAt", "subscriptionUrl"),
+            "properties",
+            statusProperties));
+    Map<String, Object> createdProperties = new LinkedHashMap<>(statusProperties);
+    createdProperties.put(
+        "subscriptionUrl",
+        ordered(
+            "type",
+            "string",
+            "format",
+            "uri",
+            "description",
+            "The caller's current subscription URL."));
+    schemas.put(
+        "BookingCalendarSubscriptionCreated",
+        ordered(
+            "type",
+            "object",
+            "additionalProperties",
+            false,
+            "required",
+            List.of("active", "updatedAt", "subscriptionUrl"),
+            "properties",
+            createdProperties));
+  }
+
+  private static void addBookingDirectoryPaths(Map<String, Object> paths) {
+    ApiV2OpenApiBookingPaths.addBookingDirectoryPaths(paths);
+  }
+
+  private static void addCalendarSubscriptionPath(Map<String, Object> paths) {
+    String path = "/api/v2/booking-configurations/{configurationId}/calendar-subscription";
+    paths.put(
+        path,
+        ordered(
+            "get",
+            calendarSubscriptionOperation("get"),
+            "post",
+            calendarSubscriptionOperation("post"),
+            "delete",
+            calendarSubscriptionOperation("delete")));
+    paths.put(path + "/rotate", ordered("post", calendarSubscriptionOperation("rotate")));
+  }
+
+  private static void addCalendarFilePath(Map<String, Object> paths) {
+    paths.put(
+        "/api/v2/bookings/{bookingId}/calendar-file", ordered("get", calendarFileOperation()));
+  }
+
+  private static Map<String, Object> calendarFileOperation() {
+    Map<String, Object> operation = new LinkedHashMap<>();
+    operation.put("operationId", "downloadBookingCalendarFile");
+    operation.put("summary", "Download a booking as a calendar file");
+    operation.put(
+        "description",
+        "Returns one confirmed booking as an iCalendar attachment, shaped by the caller's"
+            + " visibility of it. No subscription is created or changed.");
+    operation.put("tags", List.of("booking-calendar-subscriptions"));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated active callers with Booking enabled and read access to the bookable"
+                + " item; the booking must be confirmed.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    operation.put(
+        "parameters",
+        List.of(
+            parameter(
+                "bookingId",
+                "path",
+                true,
+                ordered("type", "integer", "format", "int64"),
+                "Booking identifier.")));
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            "The generated calendar file.",
+            "headers",
+            privateNoStoreHeaders(),
+            "content",
+            Map.of("text/calendar", ordered("schema", ordered("type", "string")))));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    operation.put("responses", responses);
+    operation.put("x-rspace-operation", "CALENDAR_DOWNLOAD");
+    return operation;
+  }
+
+  private static Map<String, Object> calendarSubscriptionOperation(String method) {
+    Map<String, Object> operation = new LinkedHashMap<>();
+    switch (method) {
+      case "get" -> {
+        operation.put("operationId", "getBookingCalendarSubscription");
+        operation.put("summary", "Get calendar subscription status");
+        operation.put(
+            "description", "Returns the caller's current subscription URL when one exists.");
+      }
+      case "post" -> {
+        operation.put("operationId", "createBookingCalendarSubscription");
+        operation.put("summary", "Create a calendar subscription");
+        operation.put(
+            "description",
+            "Returns the caller's existing subscription URL unchanged, or issues one when none"
+                + " exists. Repeating the request is safe.");
+      }
+      case "rotate" -> {
+        operation.put("operationId", "rotateBookingCalendarSubscription");
+        operation.put("summary", "Replace a calendar subscription URL");
+        operation.put(
+            "description",
+            "Issues a new subscription URL when If-Match carries the current status ETag."
+                + " Calendars using the old URL stop updating.");
+      }
+      default -> {
+        operation.put("operationId", "revokeBookingCalendarSubscription");
+        operation.put("summary", "Revoke a calendar subscription");
+        operation.put(
+            "description", "Revokes only the caller's subscription for this bookable item.");
+      }
+    }
+    operation.put("tags", List.of("booking-calendar-subscriptions"));
+    operation.put(
+        "security", List.of(Map.of("apiKey", List.of()), Map.of("bearerAuth", List.of())));
+    operation.put(
+        "x-rspace-access",
+        ordered(
+            "description",
+            "Authenticated active callers with Booking enabled and read access to the"
+                + " bookable item.",
+            "denialReasonCodes",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    List<Map<String, Object>> parameters = new ArrayList<>();
+    parameters.add(
+        parameter(
+            "configurationId",
+            "path",
+            true,
+            ordered("type", "integer", "format", "int64"),
+            "Booking configuration identifier."));
+    if ("rotate".equals(method)) {
+      parameters.add(
+          parameter(
+              "If-Match",
+              "header",
+              true,
+              ordered("type", "string"),
+              "Strong ETag from the latest subscription status."));
+    }
+    operation.put("parameters", parameters);
+    operation.put("responses", calendarSubscriptionResponses(method));
+    operation.put(
+        "x-rspace-operation",
+        switch (method) {
+          case "get" -> "CALENDAR_STATUS";
+          case "post" -> "CALENDAR_CREATE";
+          case "rotate" -> "CALENDAR_ROTATE";
+          default -> "CALENDAR_REVOKE";
+        });
+    return operation;
+  }
+
+  private static Map<String, Object> calendarSubscriptionResponses(String method) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    if ("delete".equals(method)) {
+      responses.put(
+          "204",
+          ordered(
+              "description", "The subscription is inactive.", "headers", privateNoStoreHeaders()));
+    } else {
+      boolean get = "get".equals(method);
+      String schema =
+          get ? "BookingCalendarSubscriptionStatus" : "BookingCalendarSubscriptionCreated";
+      responses.put(
+          "200",
+          subscriptionDocument(
+              switch (method) {
+                case "get" -> "Current subscription status and URL.";
+                case "post" -> "The existing subscription URL, unchanged.";
+                default -> "The new subscription URL.";
+              },
+              schema));
+      if ("post".equals(method)) {
+        responses.put("201", subscriptionDocument("A newly issued subscription URL.", schema));
+      }
+    }
+    if ("rotate".equals(method)) {
+      responses.put("400", responseRef("BadRequest"));
+    }
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    if ("post".equals(method)) {
+      responses.put(
+          "409",
+          problemResponse(
+              "The bookable item is archived.",
+              409,
+              "errors.api.v2.bookingConfiguration.lifecycleConflict"));
+    }
+    if ("rotate".equals(method)) {
+      responses.put(
+          "409",
+          problemResponse(
+              "The bookable item is archived or the subscription is missing or changed since it was"
+                  + " read.",
+              409,
+              Map.of(
+                  "errors.api.v2.bookingConfiguration.lifecycleConflict",
+                  "The bookable item is archived.",
+                  "errors.api.v2.bookingCalendar.subscriptionConflict",
+                  "The subscription is missing or changed since it was read.")));
+      responses.put(
+          "428",
+          problemResponse(
+              "A strong If-Match header is required.",
+              428,
+              "errors.api.v2.bookingCalendar.ifMatchRequired"));
+    }
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    return responses;
+  }
+
+  private static Map<String, Object> subscriptionDocument(String description, String schema) {
+    Map<String, Object> headers = new LinkedHashMap<>(privateNoStoreHeaders());
+    headers.put("ETag", headerRef("ETag"));
+    return ordered(
+        "description",
+        description,
+        "headers",
+        headers,
+        "content",
+        Map.of(JSON, ordered("schema", ref(schema))));
+  }
+
+  private static Map<String, Object> privateNoStoreHeaders() {
+    return ordered(
+        "Cache-Control",
+        ordered(
+            "description",
+            "Prevents storage of caller-specific subscription state.",
+            "schema",
+            ordered("type", "string", "const", "private, no-store")));
+  }
+
+  private void addPaths(
+      Map<String, Object> paths,
+      ApiV2ResourceRegistration<?, ?> resource,
+      Map<String, String> componentNames,
+      Map<String, ResourceSchema> resourceSchemas) {
+    String collectionPath = "/api/v2/" + resource.resourceName();
+    String itemPath = collectionPath + "/{id}";
+    String countPath = collectionPath + "/count";
+    String bulkPath = collectionPath + "/bulk";
+    String component = componentNames.get(resource.resourceName());
+    for (ResourceOperation operation : resource.exposedOperations()) {
+      String path =
+          switch (operation) {
+            case COUNT -> countPath;
+            case BULK_CREATE -> bulkPath;
+            case READ, UPDATE, DELETE -> itemPath;
+            default -> collectionPath;
+          };
+      Map<String, Object> pathItem =
+          mutableObjectMap(paths.computeIfAbsent(path, ignored -> new LinkedHashMap<>()));
+      String method = operation.httpMethod().toLowerCase(Locale.ROOT);
+      if (pathItem.containsKey(method)) {
+        throw new IllegalArgumentException("Duplicate OpenAPI operation " + method + " " + path);
+      }
+      pathItem.put(method, operation(resource, operation, component, resourceSchemas));
+    }
+    addAuditPaths(paths, resource, component);
+    addResourceAccessPaths(paths, resource, component);
+  }
+
+  private static void addResourceAccessSchemas(Map<String, Object> schemas) {
+    ApiV2OpenApiResourceAccessDocs.addResourceAccessSchemas(schemas);
+  }
+
+  private static void applyRegisteredAccessFieldSchemas(
+      Map<String, Object> schemas,
+      ApiV2ResourceRegistration<?, ?> resource,
+      String component,
+      Set<String> declaredComponents) {
+    ApiV2OpenApiResourceAccessDocs.applyRegisteredAccessFieldSchemas(
+        schemas, resource, component, declaredComponents);
+  }
+
+  private void addResourceAccessPaths(
+      Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    new ApiV2OpenApiResourceAccessDocs().addResourceAccessPaths(paths, resource, component);
+  }
+
+  private Map<String, Object> operation(
+      ApiV2ResourceRegistration<?, ?> resource,
+      ResourceOperation operation,
+      String component,
+      Map<String, ResourceSchema> resourceSchemas) {
+    ResourceSchema schema = resource.description().schema();
+    OpenApiOperationDocumentation documentation = resource.operationDocumentation(operation);
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("operationId", operationId(operation, component));
+    result.put(
+        "summary",
+        documentation.summary() == null ? summary(resource, operation) : documentation.summary());
+    result.put(
+        "description",
+        documentation.description() == null
+            ? description(resource, operation)
+            : documentation.description());
+    result.put(
+        "tags",
+        documentation.tags().isEmpty() ? List.of(resource.resourceName()) : documentation.tags());
+    if (documentation.deprecated()) {
+      result.put("deprecated", true);
+    }
+
+    AccessDocumentation access = access(schema.access(), operation);
+    applyAccess(result, access);
+    List<Map<String, Object>> parameters =
+        parameters(
+            operation,
+            schema,
+            resourceSchemas,
+            resource.registry(),
+            runtimeFieldsExtension(resource));
+    if ((operation == ResourceOperation.UPDATE && resource.ifMatchRequiredCode().isPresent())
+        || (operation == ResourceOperation.DELETE && resource.deleteRequiresIfMatch())) {
+      parameters.add(
+          parameter(
+              "If-Match",
+              "header",
+              true,
+              ordered("type", "string", "pattern", "^\\\"[0-9]+\\\"$"),
+              "Strong entity tag containing the current resource version."));
+    }
+    if (operation == ResourceOperation.DELETE && resource.supportsPermanentDelete()) {
+      parameters.add(
+          parameter(
+              "permanent",
+              "query",
+              false,
+              ordered("type", "boolean", "default", false),
+              "When true, permanently removes the resource. This is restricted to"
+                  + " a direct sysadmin and returns 204. The default false performs the ordinary"
+                  + " retry-safe archive transition."));
+    }
+    if (!parameters.isEmpty()) {
+      result.put("parameters", parameters);
+    }
+    if (operation == ResourceOperation.CREATE
+        || operation == ResourceOperation.BULK_CREATE
+        || operation == ResourceOperation.UPDATE
+        || operation == ResourceOperation.BULK_UPDATE) {
+      Map<String, Object> media = new LinkedHashMap<>();
+      if (operation == ResourceOperation.BULK_CREATE) {
+        media.put(
+            "schema",
+            ordered(
+                "type",
+                "object",
+                "required",
+                List.of("docs"),
+                "additionalProperties",
+                false,
+                "properties",
+                Map.of(
+                    "docs",
+                    ordered("type", "array", "minItems", 1, "items", ref(component + "Create")))));
+      } else {
+        String requestComponent =
+            component + (operation == ResourceOperation.CREATE ? "Create" : "Update");
+        media.put("schema", ref(requestComponent));
+      }
+      putIfNotNull(media, "example", documentation.requestExample());
+      result.put("requestBody", ordered("required", true, "content", Map.of(JSON, media)));
+    }
+    result.put("responses", responses(resource, operation, component, documentation));
+    result.put("x-rspace-operation", operation.name());
+    result.putAll(documentation.extensions());
+    return result;
+  }
+
+  private static AccessDocumentation access(
+      AccessPolicySchema access, ResourceOperation operation) {
+    return ApiV2OpenApiResourceAccessDocs.access(access, operation);
+  }
+
+  private static void applyAccess(Map<String, Object> operation, AccessDocumentation access) {
+    ApiV2OpenApiResourceAccessDocs.applyAccess(operation, access);
+  }
+
+  private void applyRuntimeProjectionSchemas(
+      Map<String, Object> schemas, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    queryParameters.applyRuntimeProjectionSchemas(schemas, resource, component);
+  }
+
+  private List<Map<String, Object>> runtimeFieldsExtension(
+      ApiV2ResourceRegistration<?, ?> resource) {
+    return queryParameters.runtimeFieldsExtension(resource);
+  }
+
+  private static List<Map<String, Object>> parameters(
+      ResourceOperation operation,
+      ResourceSchema schema,
+      Map<String, ResourceSchema> resourceSchemas,
+      ResourceRegistry registry,
+      List<Map<String, Object>> runtimeFields) {
+    return ApiV2OpenApiQueryParameters.parameters(
+        operation, schema, resourceSchemas, registry, runtimeFields);
+  }
+
+  private static Map<String, Object> parameter(
+      String name,
+      String location,
+      boolean required,
+      Map<String, Object> schema,
+      String description) {
+    return ApiV2OpenApiQueryParameters.parameter(name, location, required, schema, description);
+  }
+
+  private static Map<String, Object> responses(
+      ApiV2ResourceRegistration<?, ?> resource,
+      ResourceOperation operation,
+      String component,
+      OpenApiOperationDocumentation documentation) {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    String successStatus =
+        operation == ResourceOperation.CREATE || operation == ResourceOperation.BULK_CREATE
+            ? "201"
+            : "200";
+    Map<String, Object> successSchema =
+        switch (operation) {
+          case LIST -> listResult(ref(component + "Read"));
+          case COUNT -> ref("ApiV2CountResult");
+          case BULK_CREATE, BULK_UPDATE, BULK_DELETE -> bulkResult(ref(component + "Read"));
+          default -> ref(component + "Read");
+        };
+    Map<String, Object> successMedia = new LinkedHashMap<>();
+    successMedia.put("schema", successSchema);
+    putIfNotNull(successMedia, "example", documentation.responseExample());
+    responses.put(
+        successStatus,
+        ordered(
+            "description",
+            documentation
+                .responses()
+                .getOrDefault(
+                    Integer.valueOf(successStatus),
+                    new OpenApiOperationDocumentation.Response(
+                        "Successful " + operation.name().toLowerCase(Locale.ROOT) + ".", Map.of()))
+                .description(),
+            "headers",
+            rateLimitHeaders(),
+            "content",
+            Map.of(JSON, successMedia)));
+    if (operation == ResourceOperation.DELETE && resource.supportsPermanentDelete()) {
+      responses.put(
+          "204",
+          ordered(
+              "description",
+              "The resource and its dependent live data were permanently removed.",
+              "headers",
+              rateLimitHeaders()));
+    }
+    responses.put("400", responseRef("BadRequest"));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    if (operation == ResourceOperation.READ
+        || operation == ResourceOperation.UPDATE
+        || operation == ResourceOperation.DELETE) {
+      responses.put("404", responseRef("NotFound"));
+    }
+    if (operation == ResourceOperation.CREATE
+        || operation == ResourceOperation.BULK_CREATE
+        || operation == ResourceOperation.UPDATE
+        || operation == ResourceOperation.BULK_UPDATE) {
+      responses.put("415", responseRef("UnsupportedMediaType"));
+    }
+    responses.put("406", responseRef("NotAcceptable"));
+    if (operation == ResourceOperation.BULK_UPDATE || operation == ResourceOperation.BULK_DELETE) {
+      responses.put("422", responseRef("BulkLimit"));
+    }
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    documentation.responses().entrySet().stream()
+        .filter(entry -> !entry.getValue().errors().isEmpty())
+        .forEach(
+            entry ->
+                responses.put(
+                    String.valueOf(entry.getKey()),
+                    problemResponse(
+                        entry.getValue().description(),
+                        entry.getKey(),
+                        entry.getValue().errors())));
+    documentation
+        .responses()
+        .forEach(
+            (status, responseDocumentation) -> {
+              Object existing = responses.get(String.valueOf(status));
+              if (existing instanceof Map<?, ?> response) {
+                Map<String, Object> mutable = objectMap(response);
+                mutable.put("description", responseDocumentation.description());
+                responses.put(String.valueOf(status), mutable);
+              }
+            });
+    return responses;
+  }
+
+  private static void addSchemas(
+      Map<String, Object> components,
+      ResourceSchema resource,
+      Map<String, String> names,
+      boolean routable) {
+    ApiV2OpenApiResourceDocumentBuilder.addSchemas(components, resource, names, routable);
+  }
+
+  private static void addStandardSchemas(Map<String, Object> schemas) {
+    ApiV2OpenApiResourceDocumentBuilder.addStandardSchemas(schemas);
+  }
+
+  private static void putIfNotNull(Map<String, Object> target, String name, Object value) {
+    ApiV2OpenApiResourceDocumentBuilder.putIfNotNull(target, name, value);
+  }
+
+  private static Map<String, Object> scalarSchema(
+      CollectionFieldType.Schema type, boolean nullable) {
+    return ApiV2OpenApiResourceDocumentBuilder.scalarSchema(type, nullable);
+  }
+
+  private static FieldSchema field(ResourceSchema resource, String name) {
+    return ApiV2OpenApiResourceDocumentBuilder.field(resource, name);
+  }
+
+  private static Map<String, Object> limitParameter(String description) {
+    return ApiV2OpenApiQueryParameters.limitParameter(description);
+  }
+
+  static Map<String, Object> listResult(Map<String, Object> item) {
+    return ordered(
+        "type",
+        "object",
+        "required",
+        List.of("docs", "totalDocs", "limit", "page", "totalPages"),
+        "properties",
+        ordered(
+            "docs",
+            ordered("type", "array", "items", item),
+            "totalDocs",
+            ordered("type", "integer", "format", "int64"),
+            "limit",
+            ordered("type", "integer"),
+            "page",
+            ordered("type", "integer"),
+            "pagingCounter",
+            ordered("type", "integer", "format", "int64"),
+            "totalPages",
+            ordered("type", "integer"),
+            "hasPrevPage",
+            ordered("type", "boolean"),
+            "hasNextPage",
+            ordered("type", "boolean"),
+            "prevPage",
+            ordered("type", List.of("integer", "null")),
+            "nextPage",
+            ordered("type", List.of("integer", "null"))));
+  }
+
+  private static Map<String, Object> auditPage(Map<String, Object> item) {
+    return ApiV2OpenApiAuditDocs.auditPage(item);
+  }
+
+  private static Map<String, Object> bulkResult(Map<String, Object> item) {
+    return ordered(
+        "type",
+        "object",
+        "required",
+        List.of("docs"),
+        "properties",
+        ordered("docs", ordered("type", "array", "items", item)));
+  }
+
+  private void addAuditPaths(
+      Map<String, Object> paths, ApiV2ResourceRegistration<?, ?> resource, String component) {
+    String itemAuditPath = "/api/v2/" + resource.resourceName() + "/{id}/audit";
+    paths.put(itemAuditPath, ordered("get", auditOperation(resource, component)));
+  }
+
+  private Map<String, Object> auditOperation(
+      ApiV2ResourceRegistration<?, ?> resource, String component) {
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("operationId", "list" + component + "AuditEvents");
+    result.put("summary", "List audit events for one " + resource.resourceName() + " resource");
+    result.put(
+        "description",
+        "Returns events from the existing RSpace audit trail. The caller must be authenticated "
+            + "and must be able to read the resource. A resource without audit metadata returns "
+            + "an empty result. The search range is limited to 183 elapsed days. List requests "
+            + "use one-based pagination and a daily bounded-consistency snapshot over the exact "
+            + "half-open interval from dateFrom through midnight after snapshotDate in UTC. The "
+            + "first page selects the latest completed UTC day. Send snapshotDate and "
+            + "snapshotFingerprint together on every later page. A 409 means the result set "
+            + "changed and pagination must restart; a 503 means the server refused to return "
+            + "partial audit data. eventId is deterministic response identity, not a source-log "
+            + "signature.");
+    result.put("tags", List.of(resource.resourceName()));
+    result.put("security", AUTHENTICATED_SECURITY);
+    result.put(
+        "x-rspace-access",
+        operationAccessExtension(
+            "Authenticated callers who can read the resource.",
+            List.of(AccessPolicy.AUTHENTICATION_REQUIRED, AccessPolicy.FORBIDDEN)));
+    result.put("parameters", auditParameters(resource.description().schema()));
+    result.put("responses", auditResponses());
+    result.put("x-rspace-operation", "AUDIT_LIST");
+    return result;
+  }
+
+  private static List<Map<String, Object>> auditParameters(ResourceSchema schema) {
+    List<Map<String, Object>> parameters = new ArrayList<>();
+    FieldSchema id = field(schema, schema.idField());
+    parameters.add(
+        parameter("id", "path", true, scalarSchema(id.type(), false), "Resource identifier."));
+    parameters.add(
+        parameter(
+            "dateFrom",
+            "query",
+            false,
+            ordered("type", "string", "format", "date-time"),
+            "Earliest event time. The server limits the range to 183 days."));
+    parameters.add(
+        parameter(
+            "dateTo",
+            "query",
+            false,
+            ordered("type", "string", "format", "date-time"),
+            "Latest event time."));
+    parameters.add(
+        parameter(
+            "search",
+            "query",
+            false,
+            ordered("type", "string", "maxLength", 255),
+            "Case-insensitive text contained in the actor, action, description, target, or "
+                + "recorded values."));
+    Map<String, Object> actions =
+        parameter(
+            "actions",
+            "query",
+            false,
+            ordered(
+                "type",
+                "array",
+                "items",
+                ordered(
+                    "type",
+                    "string",
+                    "enum",
+                    Arrays.stream(AuditAction.values()).map(Enum::name).toList())),
+            "Audit actions to include.");
+    actions.put("style", "form");
+    actions.put("explode", true);
+    parameters.add(actions);
+    parameters.add(
+        parameter(
+            "snapshotDate",
+            "query",
+            false,
+            ordered("type", "string", "format", "date"),
+            "Completed UTC snapshot day returned by page one. Supply it together with"
+                + " snapshotFingerprint on later pages."));
+    parameters.add(
+        parameter(
+            "snapshotFingerprint",
+            "query",
+            false,
+            ordered(
+                "type", "string", "pattern", "^[0-9a-f]{64}$", "minLength", 64, "maxLength", 64),
+            "Fingerprint returned by page one. Supply it unchanged together with snapshotDate"
+                + " on later pages."));
+    parameters.add(pageParameter());
+    parameters.add(limitParameter("Maximum events per page."));
+    return parameters;
+  }
+
+  private static Map<String, Object> auditResponses() {
+    Map<String, Object> responses = new LinkedHashMap<>();
+    responses.put(
+        "200",
+        ordered(
+            "description",
+            "Audit event page.",
+            "headers",
+            rateLimitHeaders(),
+            "content",
+            Map.of(JSON, ordered("schema", auditPage(ref("ApiV2AuditEvent"))))));
+    responses.put(
+        "400",
+        problemResponse(
+            "The range or snapshot parameters are invalid, or the result exceeds the"
+                + " configured ceiling and requires a narrower date range.",
+            400,
+            "errors.api.v2.audit.results.tooMany"));
+    responses.put("401", responseRef("Unauthenticated"));
+    responses.put("403", responseRef("Forbidden"));
+    responses.put("404", responseRef("NotFound"));
+    responses.put("406", responseRef("NotAcceptable"));
+    responses.put(
+        "409",
+        problemResponse(
+            "The bounded audit result changed; restart pagination.",
+            409,
+            "errors.api.v2.audit.snapshot.changed"));
+    responses.put("429", responseRef("TooManyRequests"));
+    responses.put("500", responseRef("UnexpectedError"));
+    responses.put(
+        "503",
+        problemResponse(
+            "The server could not read a consistent audit snapshot and returned no partial"
+                + " data.",
+            503,
+            "errors.api.v2.audit.unavailable"));
+    return responses;
+  }
+
+  static Map<String, Object> standardResponses() {
+    return createStandardResponses();
+  }
+
+  private static Map<String, Object> createStandardResponses() {
+    return ordered(
+        STANDARD_RESPONSE_NAMES.get("400"),
+        problemResponse("The request is invalid.", 400, "BAD_REQUEST"),
+        STANDARD_RESPONSE_NAMES.get("401"),
+        problemResponse("Authentication is required.", 401, "AUTHENTICATION_REQUIRED"),
+        STANDARD_RESPONSE_NAMES.get("403"),
+        problemResponse("The caller is not authorized.", 403, "FORBIDDEN"),
+        STANDARD_RESPONSE_NAMES.get("404"),
+        problemResponse("The resource was not found or is not visible.", 404, "NOT_FOUND"),
+        STANDARD_RESPONSE_NAMES.get("406"),
+        problemResponse(
+            "No acceptable response representation is available.", 406, "NOT_ACCEPTABLE"),
+        STANDARD_RESPONSE_NAMES.get("415"),
+        problemResponse("The request media type is unsupported.", 415, "UNSUPPORTED_MEDIA_TYPE"),
+        STANDARD_RESPONSE_NAMES.get("422"),
+        problemResponse("The bulk operation exceeds the configured limit.", 422, "BULK_LIMIT"),
+        STANDARD_RESPONSE_NAMES.get("429"),
+        ordered(
+            "description",
+            "The request was throttled.",
+            "content",
+            problemContent("The request was throttled.", 429, "TOO_MANY_REQUESTS"),
+            "headers",
+            rateLimitHeaders()),
+        STANDARD_RESPONSE_NAMES.get("500"),
+        problemResponse("An unexpected server error occurred.", 500, "INTERNAL_SERVER_ERROR"));
+  }
+
+  static Map<String, Object> standardResponseReference(String status) {
+    String name = STANDARD_RESPONSE_NAMES.get(status);
+    return name == null ? null : Map.of("$ref", "#/components/responses/" + name);
+  }
+
+  static Map<String, Object> problemResponse(String description, int status, String code) {
+    return ordered(
+        "description", description, "content", problemContent(description, status, code));
+  }
+
+  static Map<String, Object> problemResponse(
+      String description, int status, Map<String, String> errors) {
+    if (errors.size() == 1) {
+      Map.Entry<String, String> error = errors.entrySet().iterator().next();
+      return problemResponse(description, status, error.getKey());
+    }
+    Map<String, Object> examples = new LinkedHashMap<>();
+    errors.forEach(
+        (code, errorDescription) ->
+            examples.put(
+                code,
+                ordered(
+                    "summary",
+                    errorDescription,
+                    "value",
+                    ordered(
+                        "title",
+                        errorDescription,
+                        "status",
+                        status,
+                        "code",
+                        code,
+                        "detail",
+                        errorDescription))));
+    return ordered(
+        "description",
+        description,
+        "content",
+        Map.of(PROBLEM_JSON, ordered("schema", ref("ApiV2Problem"), "examples", examples)));
+  }
+
+  private static Map<String, Object> problemContent(String description, int status, String code) {
+    Map<String, Object> media = new LinkedHashMap<>();
+    media.put("schema", ref("ApiV2Problem"));
+    media.put(
+        "example",
+        ordered("title", description, "status", status, "code", code, "detail", description));
+    return Map.of(PROBLEM_JSON, media);
+  }
+
+  private static Map<String, Object> standardHeaders() {
+    return ordered(
+        "ETag",
+        ordered(
+            "description",
+            "Strong entity tag for the returned representation.",
+            "schema",
+            ordered("type", "string", "pattern", "^\\\"[^\\\"\\x00-\\x20]+\\\"$")),
+        "RateLimitLimit",
+        integerHeader("Configured request limit for the shortest throttle interval."),
+        "RateLimitRemaining",
+        integerHeader("Requests remaining in the shortest throttle interval."),
+        "RateLimitWait",
+        integerHeader("Minimum wait before another request, in milliseconds."),
+        "RateLimitMinWait",
+        integerHeader("Configured minimum interval between requests, in milliseconds."));
+  }
+
+  private static Map<String, Object> integerHeader(String description) {
+    return ordered(
+        "description", description, "schema", ordered("type", "integer", "format", "int64"));
+  }
+
+  private static Map<String, Object> rateLimitHeaders() {
+    Map<String, Object> headers =
+        ordered(
+            "X-Rate-Limit-Limit",
+            headerRef("RateLimitLimit"),
+            "X-Rate-Limit-Remaining",
+            headerRef("RateLimitRemaining"),
+            "X-Rate-Limit-WaitTimeMillis",
+            headerRef("RateLimitWait"),
+            "X-Rate-Limit-MinWaitIntervalMillis",
+            headerRef("RateLimitMinWait"));
+    for (String interval : List.of("quarter_min", "hour", "day")) {
+      headers.put("X-Rate-Limit-Limit-" + interval, headerRef("RateLimitLimit"));
+      headers.put("X-Rate-Limit-Remaining-" + interval, headerRef("RateLimitRemaining"));
+      headers.put(
+          "X-Rate-Limit-WaitTimeTillNextRequestMillis-" + interval, headerRef("RateLimitWait"));
+    }
+    return headers;
+  }
+
+  private static Map<String, Object> securitySchemes() {
+    return ordered(
+        "apiKey",
+        ordered("type", "apiKey", "in", "header", "name", "apiKey"),
+        "bearerAuth",
+        ordered("type", "http", "scheme", "bearer"),
+        "browserSession",
+        ordered(
+            "type",
+            "apiKey",
+            "in",
+            "cookie",
+            "name",
+            "JSESSIONID",
+            "description",
+            "Authenticated browser session. A deployment can rename this cookie."));
+  }
+
+  static Map<String, Object> responseRef(String name) {
+    return Map.of("$ref", "#/components/responses/" + name);
+  }
+
+  static Map<String, Object> headerRef(String name) {
+    return Map.of("$ref", "#/components/headers/" + name);
+  }
+
+  private static Map<String, String> componentNames(
+      Collection<CollectionDescription<?>> resources) {
+    Map<String, String> result = new LinkedHashMap<>();
+    Set<String> used = new LinkedHashSet<>();
+    for (CollectionDescription<?> resource : resources) {
+      String component = pascalCase(resource.resourceName());
+      if (!used.add(component)) {
+        throw new IllegalArgumentException("OpenAPI component name collision: " + component);
+      }
+      result.put(resource.resourceName(), component);
+    }
+    return Map.copyOf(result);
+  }
+
+  private static String pascalCase(String value) {
+    StringBuilder result = new StringBuilder();
+    for (String part : value.split("[^A-Za-z0-9]+")) {
+      if (!part.isEmpty()) {
+        result.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+      }
+    }
+    if (result.isEmpty() || Character.isDigit(result.charAt(0))) {
+      throw new IllegalArgumentException("Invalid OpenAPI component name for " + value);
+    }
+    return result.toString();
+  }
+
+  private static String operationId(ResourceOperation operation, String component) {
+    String prefix =
+        switch (operation) {
+          case LIST -> "list";
+          case COUNT -> "count";
+          case READ -> "get";
+          case CREATE -> "create";
+          case BULK_CREATE -> "createMany";
+          case UPDATE -> "update";
+          case BULK_UPDATE -> "updateMany";
+          case DELETE -> "delete";
+          case BULK_DELETE -> "deleteMany";
+        };
+    return prefix + component;
+  }
+
+  private static String summary(
+      ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
+    String resource = registration.resourceName();
+    return switch (operation) {
+      case LIST -> "List " + resource;
+      case COUNT -> "Count " + resource;
+      case READ -> "Get one " + resource;
+      case CREATE -> "Create one " + resource;
+      case BULK_CREATE -> "Create many " + resource;
+      case UPDATE -> "Update one " + resource;
+      case BULK_UPDATE -> "Update matching " + resource;
+      case DELETE -> (registration.deleteIsSoft() ? "Archive one " : "Delete one ") + resource;
+      case BULK_DELETE ->
+          (registration.deleteIsSoft() ? "Archive matching " : "Delete matching ") + resource;
+    };
+  }
+
+  private static String description(
+      ApiV2ResourceRegistration<?, ?> registration, ResourceOperation operation) {
+    String resource = registration.resourceName();
+    return switch (operation) {
+      case LIST ->
+          "Returns a paginated view of "
+              + resource
+              + ". Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are"
+              + " applied before rendering.";
+      case COUNT -> "Counts " + resource + " matching the optional bounded filter.";
+      case READ ->
+          "Returns one visible "
+              + resource
+              + ". A resource that is absent or not readable is reported as not found.";
+      case CREATE -> "Creates one " + resource + " from the documented create schema.";
+      case BULK_CREATE ->
+          "Creates the supplied "
+              + resource
+              + " documents in input order. The batch is handled as one service-layer mutation;"
+              + " validation failure prevents the entire batch from being created.";
+      case UPDATE -> "Partially updates one " + resource + " and returns the updated document.";
+      case BULK_UPDATE ->
+          "Updates every "
+              + resource
+              + " matching the required filter. The operation is handled as one service-layer"
+              + " mutation; resource-specific limits are reported with status 422.";
+      case DELETE ->
+          registration.deleteIsSoft()
+              ? "Archives one "
+                  + resource
+                  + " and returns the archived document. Repeating ordinary DELETE is a no-op."
+                  + (registration.supportsPermanentDelete()
+                      ? " The explicit permanent=true option permanently removes the resource for"
+                          + " a direct sysadmin and returns no document."
+                      : "")
+              : "Deletes one " + resource + " and returns the deleted document.";
+      case BULK_DELETE ->
+          (registration.deleteIsSoft() ? "Archives every " : "Deletes every ")
+              + resource
+              + " matching the required filter. The operation is handled as one service-layer"
+              + " mutation; resource-specific limits are reported with status 422.";
+    };
+  }
+
+  public static String operatorToken(Operator operator) {
+    return ApiV2OpenApiQueryParameters.operatorToken(operator);
+  }
+
+  static String escapeEcmaRegex(String value) {
+    return ApiV2OpenApiResourceDocumentBuilder.escapeEcmaRegex(value);
+  }
+
+  private static String requireText(String value, String label) {
+    if (value == null || value.isBlank()) {
+      throw new IllegalArgumentException(label + " must not be blank");
+    }
+    return value;
+  }
+
+  private static Map<String, Object> operationAccessExtension(
+      String description, Collection<String> denialReasonCodes) {
+    return ApiV2OpenApiResourceAccessDocs.operationAccessExtension(description, denialReasonCodes);
+  }
+
+  private static Map<String, Object> pageParameter() {
+    return ApiV2OpenApiQueryParameters.pageParameter();
+  }
+
+  private static Object withNullableReferenceProperties(Object schema) {
+    return ApiV2OpenApiResourceDocumentBuilder.withNullableReferenceProperties(schema);
+  }
+
+  static boolean isNullableReference(Object property) {
+    return ApiV2OpenApiResourceDocumentBuilder.isNullableReference(property);
+  }
+}

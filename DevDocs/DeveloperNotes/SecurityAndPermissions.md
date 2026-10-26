@@ -130,6 +130,63 @@ active in the application.
 **You only need to call this if writing code that manipulates a user's
 permissions** .
 
+### Resource-role permissions
+
+New domain resources that need Owner/Manager-style collaboration can use the generic
+resource-access module instead of adding another Shiro wildcard-permission dialect. This does not
+replace Shiro: Shiro still authenticates the request and supplies the effective subject and, for
+run-as, the originating actor. The resource-role service is the authority for the protected
+resource operation.
+
+The protected entity owns a non-null foreign key to one versioned `ResourceAccess` aggregate.
+Each resource type registers a `ResourceRoleScheme` and a service-layer
+`ProtectedResourceAccess<T, ID>` adapter. A valid scheme has
+Owner as its highest role, Manager immediately below Owner, and monotonic capabilities: every
+higher role includes every lower role's capabilities. One highest effective role is selected from
+direct, active-group, dynamic-audience, and implicit sources; a lower direct role is not a deny.
+
+Each role declares its accepted grantee kinds. Self-removal deletes only the caller's direct
+assignment and must preserve the scheme's required persisted roles.
+
+Every aggregate retains at least one persisted Owner assignment. Only the manage-owners capability
+can alter that set, so Manager cannot add or remove Owners. Implicit sysadmin access does not count
+toward the persisted-Owner invariant. A transaction that replaces access locks the protected
+resource and re-resolves the represented subject from current identity, membership, and assignment
+state before it mutates. A controller check is not mutation authority.
+
+Collection authorization uses a server-created `ResourceRoleMembershipConstraint`, a trusted query constraint. It restricts list,
+count, item, and bulk queries before pagination and uses correlated membership checks that cannot
+duplicate rows. Page-level access and capability fields are batch-resolved. Do not expose this
+constraint as client query syntax, filter unauthorized rows in memory, or add one permission query
+per result. Direct lookup must not reveal an unreadable resource.
+
+The assignment directory matches usernames, individual name parts, and the displayed
+first-name/last-name combination. These searches retain the same assignable-principal
+scope and literal wildcard escaping used by the shared directory.
+
+Access replacement changes the complete direct-assignment set atomically and checks the
+aggregate version for optimistic concurrency. Assignment snapshots retain enough identity text
+for audit after a principal is hard-deleted, but snapshots never grant access. Availability,
+disabled-user status, group membership, and effective Owner health are derived from live identity
+state. Consequently, required Owner rows may remain while no effective Owner exists; a sysadmin
+can locate and repair this state. User and group lifecycle changes do not fan out to rewrite every
+resource aggregate or fabricate resource-level audit events.
+
+Disabled users and groups with no enabled members grant no effective access. Hard-deleting a
+group sets its assignment's foreign key to null; the retained grantee key and identity snapshot
+keep it visible and auditable. An unavailable Owner row still satisfies the persisted-Owner
+invariant.
+
+Access audit deltas cover assignment, audience, self-removal, and coordinated ownership changes.
+They record both the original actor and represented subject. A no-op replacement emits no delta.
+
+Generic changes must continue to pass a second test-only role scheme whose lower roles have
+domain-neutral names. This keeps resource-specific role names and conditions out of the reusable module. A new production adopter also needs a reviewed migration plan for
+all existing rows and their previous permission semantics before its schema or registration is
+enabled.
+
+For REST registration, see [Resource-role protected collections](RestApiV2QueriesAndAccess.md#resource-role-protected-collections).
+
 ## Logging security errors
 
 Security events and exceptions should be logged by a security logger

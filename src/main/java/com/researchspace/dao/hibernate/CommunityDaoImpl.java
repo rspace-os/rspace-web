@@ -7,6 +7,7 @@ import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.CommunityDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.Community;
+import com.researchspace.model.CommunityPermissionsChangedEvent;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.sort.CommunitySort;
@@ -25,10 +26,27 @@ import org.hibernate.Session;
 import org.hibernate.graph.GraphParser;
 import org.hibernate.graph.RootGraph;
 import org.hibernate.query.Query;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Repository;
 
 @Repository("communityDao")
 public class CommunityDaoImpl extends GenericDaoHibernate<Community, Long> implements CommunityDao {
+
+  @org.springframework.beans.factory.annotation.Autowired private ApplicationEventPublisher events;
+
+  @Override
+  public Community save(Community value) {
+    Community saved = super.save(value);
+    events.publishEvent(new CommunityPermissionsChangedEvent(saved));
+    return saved;
+  }
+
+  @Override
+  public void remove(Long id) {
+    Community removed = get(id);
+    super.remove(id);
+    events.publishEvent(new CommunityPermissionsChangedEvent(removed));
+  }
 
   public CommunityDaoImpl() {
     super(Community.class);

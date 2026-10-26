@@ -1,0 +1,268 @@
+import { DEFAULT_SCHEDULING_SETTINGS } from "@/modules/booking/configuration/schedulingSettings";
+
+export const ownerBookingAccess = {
+  effectiveRole: "OWNER",
+  roleSources: [],
+  capabilities: {
+    canEditConfiguration: true,
+    canViewAudit: true,
+    canViewAccess: true,
+    canManageAssignments: true,
+    canManageOwners: true,
+    canCreateBooking: true,
+    canManageOwnBookings: true,
+    canManageAllEvents: true,
+    canCreateBlockout: true,
+    canSubscribeCalendar: true,
+    canLeaveConfiguration: false,
+    canManageNotificationSubscription: true,
+  },
+  ownerHealth: { hasEffectiveOwner: true },
+} as const;
+
+export const bookerBookingAccess = {
+  effectiveRole: "BOOKER",
+  roleSources: [],
+  capabilities: {
+    canEditConfiguration: false,
+    canViewAudit: false,
+    canViewAccess: false,
+    canManageAssignments: false,
+    canManageOwners: false,
+    canCreateBooking: true,
+    canManageOwnBookings: true,
+    canManageAllEvents: false,
+    canCreateBlockout: false,
+    canSubscribeCalendar: true,
+    canLeaveConfiguration: false,
+    canManageNotificationSubscription: false,
+  },
+} as const;
+
+export const bookableItemFixtures = [
+  {
+    id: 7,
+    configurationVersion: 0,
+    state: "ACTIVE",
+    ...ownerBookingAccess,
+    target: {
+      relationTo: "booking-instruments",
+      value: {
+        id: 123,
+        name: "Confocal microscope",
+        deleted: false,
+        parentContainerName: "Imaging lab",
+        parentContainerGlobalId: "IC456",
+      },
+      globalId: "IN123",
+    },
+    enabled: true,
+    timezone: "Europe/Berlin",
+    ...DEFAULT_SCHEDULING_SETTINGS,
+    openingHours: DEFAULT_SCHEDULING_SETTINGS.openingHours.map((entry) => ({ ...entry, start: "08:00", end: "17:00" })),
+
+    createdAt: "2026-08-01T09:00:00Z",
+    createdByName: "Grace Hopper (grace)",
+    updatedAt: "2026-08-10T10:00:00Z",
+    "target.customFields": { SF152: "BSL-2", SF160: "yes" },
+  },
+  {
+    id: 8,
+    configurationVersion: 0,
+    state: "ACTIVE",
+    ...ownerBookingAccess,
+    target: {
+      relationTo: "booking-instruments",
+      value: {
+        id: 124,
+        name: "Electron microscope",
+        deleted: false,
+        parentContainerName: "Workbench",
+        parentContainerGlobalId: "BE457",
+      },
+      globalId: "IN124",
+    },
+    enabled: true,
+    timezone: "America/New_York",
+    ...DEFAULT_SCHEDULING_SETTINGS,
+    updatedAt: "2026-08-11T11:00:00Z",
+  },
+  {
+    id: 9,
+    configurationVersion: 0,
+    state: "ACTIVE",
+    ...ownerBookingAccess,
+    target: {
+      relationTo: "booking-instruments",
+      value: {
+        id: 125,
+        name: "Mass spectrometer",
+        deleted: false,
+        parentContainerName: "Mass spectrometry lab",
+        parentContainerGlobalId: "IC458",
+      },
+      globalId: "IN125",
+    },
+    enabled: true,
+    timezone: "UTC",
+    ...DEFAULT_SCHEDULING_SETTINGS,
+    updatedAt: "2026-08-12T12:00:00Z",
+  },
+  {
+    id: 10,
+    configurationVersion: 0,
+    state: "ACTIVE",
+    ...ownerBookingAccess,
+    target: {
+      relationTo: "booking-instruments",
+      value: {
+        id: 126,
+        name: "Flow cytometer",
+        deleted: false,
+        // The API uses the same null pair for an unreadable parent as it does
+        // for a parent that has since been deleted.
+        parentContainerName: null,
+        parentContainerGlobalId: null,
+      },
+      globalId: "IN126",
+    },
+    enabled: true,
+    timezone: "Asia/Singapore",
+    ...DEFAULT_SCHEDULING_SETTINGS,
+    updatedAt: "2026-08-13T13:00:00Z",
+  },
+  {
+    id: 11,
+    configurationVersion: 0,
+    state: "ACTIVE",
+    ...ownerBookingAccess,
+    target: {
+      relationTo: "booking-instruments",
+      value: {
+        id: 127,
+        name: "Microplate reader",
+        deleted: false,
+        parentContainerName: "Screening lab",
+        parentContainerGlobalId: "IC459",
+      },
+      globalId: "IN127",
+    },
+    enabled: true,
+    timezone: "Europe/Berlin",
+    ...DEFAULT_SCHEDULING_SETTINGS,
+    updatedAt: "2026-08-14T14:00:00Z",
+  },
+] as const;
+
+export function allDayBookableItemCandidates() {
+  return bookableItemFixtures.slice(0, 2).map((item) => ({
+    ...item,
+    timezone: "UTC",
+    openingHours: [1, 2, 3, 4, 5, 6, 7].map((dayOfWeek) => ({
+      dayOfWeek,
+      start: "00:00",
+      end: "24:00",
+    })),
+  }));
+}
+
+/**
+ * How a booking renders its item: the privacy-safe target, with the readable parent Container as
+ * `location` (configuration rows carry it on the target instead).
+ */
+function bookedItem(item: (typeof bookableItemFixtures)[number]) {
+  const { parentContainerName, parentContainerGlobalId, ...value } = item.target.value;
+  const id = parentContainerGlobalId ? Number(parentContainerGlobalId.slice(2)) : null;
+  return {
+    target: { ...item.target, value },
+    location:
+      parentContainerName && parentContainerGlobalId && id !== null
+        ? {
+            relationTo: "booking-locations" as const,
+            value: { id, globalId: parentContainerGlobalId, name: parentContainerName },
+            globalId: `IC${id}`,
+          }
+        : null,
+  };
+}
+
+export const sampleBookingEvents = [
+  {
+    id: 41,
+    version: 0,
+    ...bookedItem(bookableItemFixtures[0]),
+    timezone: bookableItemFixtures[0].timezone,
+    start: "2026-08-17T06:00:00Z",
+    end: "2026-08-17T07:30:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    cancellationReason: null,
+    purpose: "Calibrate the objective",
+    bookedBy: "Ada Lovelace (ada)",
+  },
+  {
+    id: 42,
+    version: 0,
+    ...bookedItem(bookableItemFixtures[0]),
+    timezone: bookableItemFixtures[0].timezone,
+    start: "2026-08-17T12:00:00Z",
+    end: "2026-08-17T13:00:00Z",
+    state: "CONFIRMED",
+    privacy: "busy",
+    cancellationReason: null,
+    purpose: null,
+    bookedBy: null,
+  },
+  {
+    id: 43,
+    version: 0,
+    ...bookedItem(bookableItemFixtures[1]),
+    timezone: bookableItemFixtures[1].timezone,
+    start: "2026-08-17T08:00:00Z",
+    end: "2026-08-17T10:00:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    cancellationReason: null,
+    purpose: "Cryo-grid screening",
+    bookedBy: "Grace Hopper (grace)",
+  },
+  {
+    id: 44,
+    version: 0,
+    ...bookedItem(bookableItemFixtures[2]),
+    timezone: bookableItemFixtures[2].timezone,
+    start: "2026-08-17T00:00:00Z",
+    end: "2026-08-18T00:00:00Z",
+    state: "CONFIRMED",
+    privacy: "busy",
+    cancellationReason: null,
+    purpose: null,
+    bookedBy: null,
+  },
+  {
+    id: 45,
+    version: 0,
+    ...bookedItem(bookableItemFixtures[3]),
+    timezone: bookableItemFixtures[3].timezone,
+    start: "2026-08-17T02:00:00Z",
+    end: "2026-08-17T03:30:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    cancellationReason: null,
+    purpose: "Cell-cycle panel",
+    bookedBy: "Katherine Johnson (katherine)",
+  },
+  {
+    id: 46,
+    version: 0,
+    ...bookedItem(bookableItemFixtures[0]),
+    timezone: bookableItemFixtures[0].timezone,
+    start: "2026-08-16T21:30:00Z",
+    end: "2026-08-17T00:30:00Z",
+    state: "CONFIRMED",
+    privacy: "full",
+    cancellationReason: null,
+    purpose: "Overnight acquisition",
+    bookedBy: "Marie Curie (marie)",
+  },
+] as const;

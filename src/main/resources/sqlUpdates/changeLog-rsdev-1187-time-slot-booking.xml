@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.17.xsd">
+
+  <changeSet id="rsdev-1187-time-slot-booking" author="researchspace" context="run">
+    <comment>Create one-off time-slot bookings</comment>
+    <createTable tableName="TimeSlotBooking">
+      <column name="id" type="BIGINT" autoIncrement="true">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+      <column name="bookingConfiguration_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="requester_id" type="BIGINT">
+        <constraints nullable="false"/>
+      </column>
+      <column name="startTime" type="DATETIME(6)"><constraints nullable="false"/></column>
+      <column name="endTime" type="DATETIME(6)"><constraints nullable="false"/></column>
+      <column name="state" type="VARCHAR(32)"><constraints nullable="false"/></column>
+      <column name="purpose" type="VARCHAR(1000)"/>
+      <column name="deleted" type="BIT(1)" defaultValueBoolean="false">
+        <constraints nullable="false"/>
+      </column>
+      <column name="createdAt" type="DATETIME(6)"/>
+      <column name="updatedAt" type="DATETIME(6)"/>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
+    </createTable>
+    <createIndex tableName="TimeSlotBooking" indexName="IX_TimeSlotBooking_overlap">
+      <column name="bookingConfiguration_id"/>
+      <column name="deleted"/>
+      <column name="state"/>
+      <column name="startTime"/>
+      <column name="endTime"/>
+    </createIndex>
+    <createIndex tableName="TimeSlotBooking" indexName="IX_TimeSlotBooking_requester">
+      <column name="requester_id"/>
+    </createIndex>
+    <addForeignKeyConstraint constraintName="FK_TimeSlotBooking_configuration"
+        baseTableName="TimeSlotBooking" baseColumnNames="bookingConfiguration_id"
+        referencedTableName="BookingConfiguration" referencedColumnNames="id"/>
+    <addForeignKeyConstraint constraintName="FK_TimeSlotBooking_requester"
+        baseTableName="TimeSlotBooking" baseColumnNames="requester_id"
+        referencedTableName="User" referencedColumnNames="id"/>
+    <addForeignKeyConstraint constraintName="FK_TimeSlotBooking_createdBy"
+        baseTableName="TimeSlotBooking" baseColumnNames="createdBy_id"
+        referencedTableName="User" referencedColumnNames="id" onDelete="SET NULL"/>
+    <addForeignKeyConstraint constraintName="FK_TimeSlotBooking_updatedBy"
+        baseTableName="TimeSlotBooking" baseColumnNames="updatedBy_id"
+        referencedTableName="User" referencedColumnNames="id" onDelete="SET NULL"/>
+    <sql>
+      ALTER TABLE TimeSlotBooking ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+
+  <changeSet id="rsdev-1187-time-slot-booking-audit" author="researchspace" context="run">
+    <comment>Create Envers history for time-slot bookings</comment>
+    <createTable tableName="TimeSlotBooking_AUD">
+      <column name="id" type="BIGINT"><constraints nullable="false"/></column>
+      <column name="REV" type="INT"><constraints nullable="false"/></column>
+      <column name="REVTYPE" type="TINYINT"/>
+      <column name="bookingConfiguration_id" type="BIGINT"/>
+      <column name="requester_id" type="BIGINT"/>
+      <column name="startTime" type="DATETIME(6)"/>
+      <column name="endTime" type="DATETIME(6)"/>
+      <column name="state" type="VARCHAR(32)"/>
+      <column name="purpose" type="VARCHAR(1000)"/>
+      <column name="deleted" type="BIT(1)"/>
+      <column name="createdAt" type="DATETIME(6)"/>
+      <column name="updatedAt" type="DATETIME(6)"/>
+      <column name="createdBy_id" type="BIGINT"/>
+      <column name="updatedBy_id" type="BIGINT"/>
+    </createTable>
+    <addPrimaryKey tableName="TimeSlotBooking_AUD" columnNames="id, REV"
+        constraintName="PK_TimeSlotBooking_AUD"/>
+    <addForeignKeyConstraint constraintName="FK_TimeSlotBooking_AUD_REV"
+        baseTableName="TimeSlotBooking_AUD" baseColumnNames="REV"
+        referencedTableName="REVINFO" referencedColumnNames="REV"/>
+    <sql>
+      ALTER TABLE TimeSlotBooking_AUD ENGINE=InnoDB,
+      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    </sql>
+  </changeSet>
+</databaseChangeLog>

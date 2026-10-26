@@ -83,6 +83,7 @@ import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.DocumentHTMLPreviewHandler;
 import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.FolderDeletionOrderPolicy;
 import com.researchspace.service.IApplicationInitialisor;
 import com.researchspace.service.IAsyncArchiveDepositor;
@@ -186,6 +187,7 @@ import com.researchspace.service.impl.ExportImportImpl;
 import com.researchspace.service.impl.ExportUtils;
 import com.researchspace.service.impl.ExternalMessageHandlerImpl;
 import com.researchspace.service.impl.ExternalOauthUserSignupPolicy;
+import com.researchspace.service.impl.FeatureFlagInitialisor;
 import com.researchspace.service.impl.FieldLinksEntitySyncImpl;
 import com.researchspace.service.impl.FileStoreRootDetector;
 import com.researchspace.service.impl.GroupSharedSnippetsFolderAppInitialiser;
@@ -544,6 +546,11 @@ public abstract class BaseConfig {
   @Bean
   public IApplicationInitialisor integrationsHandlerInitialisor() {
     return new IntegrationsHandlerInitialisor();
+  }
+
+  @Bean
+  public IApplicationInitialisor featureFlagInitialisor(FeatureFlagManager featureFlagManager) {
+    return new FeatureFlagInitialisor(featureFlagManager);
   }
 
   @Bean
