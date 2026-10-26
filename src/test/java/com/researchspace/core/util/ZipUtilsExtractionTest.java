@@ -287,6 +287,16 @@ class ZipUtilsExtractionTest {
   }
 
   @Test
+  void acceptsArchiveExpandingExactlyToTotalSizeLimit() throws IOException {
+    File zip = makeZip(file("a.txt", bytes(4096)), file("b.txt", bytes(4096)));
+    File dest = newDestination();
+
+    ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(8192, 0, 0, 0, 0));
+
+    assertEquals(4096, new File(dest, "b.txt").length());
+  }
+
+  @Test
   void acceptsHighRatioEntryWhenWholeArchiveIsWithinRatio() throws IOException {
     // like an uncompressed image mask among ordinary attachments: the zeros inflate about 1000:1,
     // the archive as a whole about 30:1
@@ -464,6 +474,16 @@ class ZipUtilsExtractionTest {
 
     assertEquals(ZipExtractionLimitException.Limit.ENTRY_COUNT, e.getLimit());
     assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void acceptsArchiveWithExactlyMaxEntries() throws IOException {
+    File zip = makeZip(dir("a/b/c/d/e/"));
+    File dest = newDestination();
+
+    ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(0, 5, 0, 0, 0));
+
+    assertTrue(new File(dest, "a/b/c/d/e").isDirectory());
   }
 
   private static int indexOfLocalHeader(byte[] raw, int occurrence) {
