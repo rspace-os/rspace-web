@@ -13,6 +13,8 @@ function refreshTokenHash(token: string): string | undefined {
 }
 
 export function isUiApiUrl(url: string): boolean {
+  // A timer can still send a request after a test's page has been torn down.
+  if (!globalThis.location) return false;
   const target = new URL(url, globalThis.location.href);
   return target.origin === globalThis.location.origin && target.pathname.startsWith("/api/");
 }

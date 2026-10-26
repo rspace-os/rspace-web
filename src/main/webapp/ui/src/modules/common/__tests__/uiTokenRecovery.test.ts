@@ -3,7 +3,7 @@ import { afterEach, expect, test, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { getStoredToken, saveStoredToken } from "@/modules/common/utils/auth";
-import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
+import { fetchWithUiToken, isUiApiUrl } from "@/modules/common/utils/fetchWithUiToken";
 
 afterEach(() => {
   document.getElementById("public_document_view")?.remove();
@@ -609,4 +609,10 @@ test("a valid-token identity check in flight does not suppress another token's r
   expect(tokenRequests).toBe(1);
   expect(getStoredToken()).toBe(freshToken);
   expect(reload).not.toHaveBeenCalled();
+});
+
+test("a request made after the page is gone is not treated as a UI API request", () => {
+  vi.stubGlobal("location", undefined);
+
+  expect(isUiApiUrl("/api/v1/test-read")).toBe(false);
 });
