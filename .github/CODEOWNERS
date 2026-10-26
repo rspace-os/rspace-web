@@ -5,3 +5,8 @@
 *.css @tchoi-rs
 *.jsp @tchoi-rs
 *.html @tchoi-rs
+
+# Translation catalogs and their generated types change independently of the
+# front-end, so they have no owner. Later rules override earlier ones.
+/src/main/webapp/ui/src/modules/common/i18n/locales/
+/src/main/webapp/ui/src/modules/common/i18n/resources.d.ts
