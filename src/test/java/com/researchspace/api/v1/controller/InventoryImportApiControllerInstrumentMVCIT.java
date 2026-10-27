@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
@@ -292,6 +293,30 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
     assertThrows(
         NotFoundException.class,
         () -> instrumentApiMgr.assertUserCanReadInstrumentTemplate(templateId, anyUser));
+  }
+
+  @Test
+  public void importInstrumentsRefusesBlankNameAndUnavailableNumber() throws Exception {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("number-tmpl");
+    templatePost.getFields().add(createBasicApiSampleField("reading", ApiFieldType.NUMBER, "1"));
+    ApiInstrumentTemplate template =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, anyUser);
+    String settingsJson =
+        "{ \"instrumentSettings\": { \"fieldMappings\": { \"Name\": \"name\" }, \"templateId\": "
+            + template.getId()
+            + " } }";
+
+    MvcResult result = importInstruments(settingsJson, "Name,reading\n,2\nMicroscope-NA,#N/A\n");
+
+    assertNull(result.getResolvedException());
+    ApiInventoryImportInstrumentImportResult instrumentResult =
+        getFromJsonResponseBody(result, ApiInventoryImportResult.class).getInstrumentResult();
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, instrumentResult.getStatus());
+    assertEquals(2, instrumentResult.getErrorCount());
+    assertThat(instrumentResult.getResults().get(0).getError().getErrors())
+        .anyMatch(e -> e.contains("name is a required field"));
+    assertNotNull(instrumentResult.getResults().get(1).getError());
   }
 
   private MvcResult importInstruments(String settingsJson, String csv) throws Exception {
