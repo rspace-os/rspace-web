@@ -2,6 +2,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import type { Either } from "purify-ts/Either";
 import { type RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
 import { parse, parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { type ShareSearchResponse, ShareSearchResponseSchema } from "@/modules/share/schema";
 import { getCommonGroupsInShares } from "@/modules/share/services/shareGroups";
 
@@ -61,7 +62,7 @@ export async function getShareListing(
 ): Promise<ShareSearchResponse> {
   const searchParams = buildShareListingSearchParams(params);
   const url = searchParams.toString() ? `${API_BASE_URL}/share?${searchParams.toString()}` : `${API_BASE_URL}/share`;
-  const response = await fetch(url, {
+  const response = await fetchWithUiToken(url, {
     method: "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",
