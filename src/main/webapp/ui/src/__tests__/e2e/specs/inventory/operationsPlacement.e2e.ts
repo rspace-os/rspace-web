@@ -679,6 +679,27 @@ test.describe("Inventory operation placement", { tag: tags.INVENTORY }, () => {
       await grid.expectSelected(["B2", "B3"]);
     });
 
+    test.describe("on a short screen", () => {
+      test.use({ viewport: { width: 1192, height: 738 } });
+
+      test("As a keyboard user, the grid's hint never covers the wizard's buttons", async ({
+        flowOperationsEnabled: _,
+        pageInventory,
+        clientInventory,
+      }) => {
+        const { wizard, grid } = await pickedGrid(pageInventory, clientInventory, { count: 1 });
+
+        await expect(grid.tips()).toBeVisible();
+        const hint = await grid.tips().boundingBox();
+        const next = await wizard.nextButton.boundingBox();
+        if (!hint || !next) throw new Error("The hint and the Next button must both be rendered.");
+        expect(hint.y + hint.height).toBeLessThanOrEqual(next.y);
+
+        await grid.press("ArrowRight");
+        await expect(grid.tips()).toBeHidden();
+      });
+    });
+
     test("As a keyboard user, the tips describe selecting, not drag-and-drop", async ({
       flowOperationsEnabled: _,
       pageInventory,
@@ -688,7 +709,7 @@ test.describe("Inventory operation placement", { tag: tags.INVENTORY }, () => {
 
       await grid.press("Space");
 
-      await expect(grid.tips()).toHaveText(
+      await expect(grid.root).toHaveAccessibleDescription(
         "Use the arrow keys to move. Press Space to select or deselect a location. Hold Shift to select a range. Press Escape to clear selection.",
       );
     });

@@ -89,10 +89,7 @@ export class ContentGridComponent {
     throw new Error("Tabbing from the preceding control did not reach a grid cell.");
   }
 
-  /**
-   * Tabs out of the grid. Once a key has been pressed in the grid, the keyboard tips Snackbar covers
-   * the buttons at the foot of a dialog until focus leaves it, so a click on them lands on the Snackbar.
-   */
+  /** Tabs out of the grid, which hides the keyboard hint. */
   async leave(): Promise<void> {
     if ((await this.root.count()) === 0) return;
     for (let i = 0; i < 10 && (await this.focusedLabel()) !== null; i++) {
@@ -113,8 +110,8 @@ export class ContentGridComponent {
     return this.scope.getByRole("status").filter({ hasText: ANNOUNCEMENT });
   }
 
-  /** The keyboard tips Snackbar shown while the grid has focus. */
+  /** The keyboard hint shown briefly when the grid gains keyboard focus, and throughout keyboard drag mode. */
   tips(): Locator {
-    return this.page.getByRole("alert").filter({ hasText: TIPS });
+    return this.scope.getByRole("note").filter({ hasText: TIPS });
   }
 }

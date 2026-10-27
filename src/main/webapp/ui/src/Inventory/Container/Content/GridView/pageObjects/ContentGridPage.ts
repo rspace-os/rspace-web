@@ -17,12 +17,6 @@ export class ContentGridPage {
     return region ? region.getBoundingClientRect().width : Number.NaN;
   }
 
-  /** The keyboard tips Snackbar's opacity as it fades in. MUI exposes no accessible handle for the transition, so this reads its class. */
-  tipsOpacity(): string {
-    const tips = document.querySelector(".MuiSnackbarContent-root");
-    return tips ? getComputedStyle(tips).opacity : "0";
-  }
-
   /** The nth (0-based, row-major) location cell. */
   cell(n: number): Locator {
     return page.getByRole("gridcell").nth(n);

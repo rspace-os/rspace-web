@@ -163,7 +163,7 @@ test.describe("Grid keyboard selection", { tag: tags.INVENTORY }, () => {
 
       await expect(move.grid.announcement()).toHaveText("This location is not empty.");
       await move.grid.expectSelected([]);
-      await expect(move.grid.tips()).toContainText("Press Space to select or deselect a location.");
+      await expect(move.grid.root).toHaveAccessibleDescription(/Press Space to select or deselect a location\./);
     });
 
     test("As a keyboard user, Escape clears my picks without closing the Move dialog", async ({
@@ -268,7 +268,7 @@ test.describe("Grid keyboard selection", { tag: tags.INVENTORY }, () => {
       await grid.expectSelected(["A1"]);
       await grid.press("ArrowRight");
       await grid.expectSelected(["A2"]);
-      await expect(grid.tips()).toContainText("Press Space to enter drag-and-drop mode.");
+      await expect(grid.root).toHaveAccessibleDescription(/Press Space to enter drag-and-drop mode\./);
     });
   });
 

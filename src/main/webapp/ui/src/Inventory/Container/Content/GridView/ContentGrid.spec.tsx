@@ -31,8 +31,6 @@ describe("ContentGrid", () => {
     await grid.press("{ArrowLeft} ");
     await expect.element(grid.announcement).toBeInTheDocument();
     expect(grid.announcementWidth()).toBeLessThanOrEqual(1);
-    // axe measures the tips' contrast mid-fade otherwise.
-    await expect.poll(() => grid.tipsOpacity()).toBe("1");
     await expectNoAxeViolations();
   });
 

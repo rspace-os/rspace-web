@@ -109,7 +109,6 @@ describe("ContentGrid", () => {
       await user.tab();
       await user.keyboard("{ArrowRight}");
       expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
-      expect(screen.getByText("inventory:container.content.keyboard.tips")).toBeVisible();
       await user.keyboard("{ArrowLeft} {ArrowDown}");
       expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "false"]);
       expect(screen.getByText("inventory:container.content.keyboard.dragTips")).toBeVisible();
@@ -215,7 +214,6 @@ describe("ContentGrid", () => {
         await user.tab();
         await user.keyboard(" {ArrowRight}{ArrowDown} ");
         expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "true"]);
-        expect(screen.getByText("inventory:container.content.keyboard.selectionTips")).toBeVisible();
       });
 
       it("keeps focus on the first location when the arrows push past the grid's top-left edge", async () => {
@@ -420,17 +418,7 @@ describe("ContentGrid", () => {
           prepareContainer(box, 1);
           renderGrid(box);
           await user.click(cells()[3]);
-          expect(screen.queryByText("inventory:container.content.keyboard.selectionTips")).not.toBeInTheDocument();
-        });
-
-        it("shows the keyboard tips once a key is pressed", async () => {
-          const user = userEvent.setup();
-          const box = emptyBox();
-          prepareContainer(box, 1);
-          renderGrid(box);
-          await user.click(cells()[3]);
-          await user.keyboard("{ArrowLeft}");
-          expect(screen.getByText("inventory:container.content.keyboard.selectionTips")).toBeVisible();
+          expect(screen.queryByRole("note")).not.toBeInTheDocument();
         });
 
         it("keeps Escape inside the grid", async () => {
@@ -446,6 +434,52 @@ describe("ContentGrid", () => {
           expect(selectedCount()).toBe(0);
         });
       });
+    });
+  });
+  describe("keyboard hint", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("shows when the grid gains keyboard focus and hides on the first arrow key", async () => {
+      const user = userEvent.setup();
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      expect(screen.getByRole("note")).toHaveTextContent("inventory:container.content.keyboard.tips");
+      await user.keyboard("{ArrowRight}");
+      expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    });
+
+    it("hides after a few seconds", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      expect(screen.getByRole("note")).toBeInTheDocument();
+      act(() => {
+        vi.advanceTimersByTime(6000);
+      });
+      expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    });
+
+    it("keeps the drop line visible through arrow presses in keyboard drag mode", async () => {
+      const user = userEvent.setup();
+      // jsdom lacks scrollIntoView, which dnd-kit calls when a keyboard drag starts.
+      HTMLElement.prototype.scrollIntoView = () => {};
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      await user.keyboard(" {ArrowRight}{ArrowDown}");
+      expect(screen.getByRole("note")).toHaveTextContent("inventory:container.content.keyboard.dragTips");
+      await user.keyboard("{Escape}");
+    });
+
+    it("leaves the full instructions in the grid's accessible description", () => {
+      const box = emptyBox();
+      prepareContainer(box, 1);
+      renderGrid(box);
+      expect(screen.getByRole("grid")).toHaveAccessibleDescription(
+        "inventory:container.content.keyboard.selectionTips",
+      );
     });
   });
 });

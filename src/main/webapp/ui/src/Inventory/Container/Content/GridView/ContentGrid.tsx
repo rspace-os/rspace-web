@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
-import Snackbar from "@mui/material/Snackbar";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell, { tableCellClasses } from "@mui/material/TableCell";
@@ -156,8 +155,15 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const { disabled } = useContext(SearchContext);
 
   const [keyboardTips, setKeyboardTips] = useState(false);
-  // A click focuses the cell too, but the tips are for keyboard users and would cover a dialog's buttons.
+  // A click focuses the cell too, but the tips are for keyboard users.
   const focusFromPointer = useRef(false);
+  const tipsTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const hideKeyboardTips = () => {
+    clearTimeout(tipsTimeout.current);
+    setKeyboardTips(false);
+  };
+  useEffect(() => () => clearTimeout(tipsTimeout.current), []);
+  const instructionsId = React.useId();
 
   /*
    * When DndKit's keyboard-driven drag-and-drop mode is active, we don't want
@@ -207,13 +213,19 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           sx={tableSx}
           padding="normal"
           size="small"
-          onFocus={() => {
-            if (!focusFromPointer.current) setKeyboardTips(true);
+          aria-describedby={instructionsId}
+          onFocus={(e) => {
+            if (!focusFromPointer.current && !e.currentTarget.contains(e.relatedTarget)) {
+              setKeyboardTips(true);
+              clearTimeout(tipsTimeout.current);
+              tipsTimeout.current = setTimeout(() => setKeyboardTips(false), 6000);
+            }
             setFocusCoord((current) => current ?? tabIndexCoord);
           }}
           onBlur={(e) => {
-            setKeyboardTips(false);
-            if (!e.currentTarget.contains(e.relatedTarget)) focusFromPointer.current = false;
+            if (e.currentTarget.contains(e.relatedTarget)) return;
+            hideKeyboardTips();
+            focusFromPointer.current = false;
           }}
           onMouseDown={(e) => {
             if (e.currentTarget === tableRef.current) return; // ignore taps to scrollbar
@@ -253,7 +265,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
           }}
           onKeyDown={(e: KeyboardEvent) => {
             focusFromPointer.current = false;
-            setKeyboardTips(true);
+            if (e.key === " " || e.key.startsWith("Arrow")) hideKeyboardTips();
             /*
              * A grid without drag-and-drop is used only to choose locations, so
              * it follows the WAI-ARIA grid multi-select model: arrows move focus,
@@ -438,16 +450,33 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
       <Box role="status" sx={visuallyHidden}>
         {announcement && <span key={announcement.id}>{announcement.text}</span>}
       </Box>
-      <Snackbar
-        open={keyboardTips}
-        message={
-          inKeyboardDragAndDropMode
+      <Box id={instructionsId} sx={visuallyHidden}>
+        {search.uiConfig.dragAndDropDisabled
+          ? t("container.content.keyboard.selectionTips")
+          : t("container.content.keyboard.tips")}
+      </Box>
+      {/* Sticky inside the scrolling content, so in a dialog it sits above the footer's buttons. */}
+      {(keyboardTips || inKeyboardDragAndDropMode) && (
+        <Box
+          role="note"
+          sx={{
+            position: "sticky",
+            bottom: 0,
+            px: 1,
+            py: 0.5,
+            typography: "body2",
+            bgcolor: "background.paper",
+            borderTop: 1,
+            borderColor: "divider",
+          }}
+        >
+          {inKeyboardDragAndDropMode
             ? t("container.content.keyboard.dragTips")
             : search.uiConfig.dragAndDropDisabled
               ? t("container.content.keyboard.selectionTips")
-              : t("container.content.keyboard.tips")
-        }
-      />
+              : t("container.content.keyboard.tips")}
+        </Box>
+      )}
     </>
   );
 });
