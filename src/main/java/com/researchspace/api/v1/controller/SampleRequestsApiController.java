@@ -2,6 +2,7 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.SampleRequestsApi;
 import com.researchspace.api.v1.model.ApiSampleRequest;
+import com.researchspace.api.v1.model.ApiSampleRequestFulfilByTransferPut;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
 import com.researchspace.api.v1.model.ApiSampleRequestSearchResult;
@@ -80,6 +81,23 @@ public class SampleRequestsApiController extends BaseApiInventoryController
 
     throwBindExceptionIfErrors(errors);
     ApiSampleRequest updated = sampleRequestMgr.updateStatus(id, status, user);
+    buildAndAddSelfLink(updated);
+    return updated;
+  }
+
+  @Override
+  public ApiSampleRequest fulfilByTransfer(
+      @PathVariable Long id,
+      @RequestBody(required = false) @Valid ApiSampleRequestFulfilByTransferPut transfer,
+      BindingResult errors,
+      @RequestAttribute(name = "user") User user)
+      throws BindException {
+
+    throwBindExceptionIfErrors(errors);
+    String sampleToTransferGlobalId =
+        transfer == null ? null : transfer.getSampleToTransferGlobalId();
+    ApiSampleRequest updated =
+        sampleRequestMgr.fulfilByTransfer(id, sampleToTransferGlobalId, user);
     buildAndAddSelfLink(updated);
     return updated;
   }

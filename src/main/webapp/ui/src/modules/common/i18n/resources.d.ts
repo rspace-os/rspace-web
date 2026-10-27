@@ -7414,9 +7414,11 @@ export default interface Resources {
           "notEnabled": "Sample requests are not enabled on this RSpace instance (or in your community).",
           "notRequestable": "Sample {0} is not available to request.",
           "ownSample": "You cannot request material from a sample that you own.",
+          "ownedByRequester": "The requester already owns sample {0}.",
           "reasonNotAllowed": "A reason cannot be given when setting a request to {0}.",
           "reasonRequired": "A reason is required when rejecting a request.",
           "requestableNotPermitted": "Only the sample's owner, or a PI or Lab Admin of their group, can change whether it is requestable.",
+          "requesterDeleted": "The requester's account no longer exists, so a sample cannot be transferred to them.",
           "role": {
             "invalid": "Requested role must be one of: REQUESTER or OWNER"
           },
@@ -7524,7 +7526,7 @@ export default interface Resources {
         "label": "List of materials"
       },
       "sampleRequest": {
-        "autoFulfilledReason": "This request was fulfilled by transferring the sample to the requester.",
+        "autoFulfilledReason": "This request was fulfilled by transferring a sample to the requester.",
         "autoRejectedReason": "This request was rejected because the sample was transferred to {0}. If you still need it, make a new request to the new owner."
       }
     }
