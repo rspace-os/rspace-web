@@ -39,6 +39,8 @@ public class GroupListResultTest {
     // malformed items are skipped, well-formed ones still parsed
     assertEquals(
         Set.of(5L), GroupListResult.getGroupIdsfromMultiGroupAutocomplete("name <1abc>, x<5>"));
+    assertTrue(GroupListResult.getGroupIdsfromMultiGroupAutocomplete("x<5").isEmpty());
+    assertEquals(Set.of(1L), GroupListResult.getGroupIdsfromMultiGroupAutocomplete("a<1>b<2"));
     assertTrue(GroupListResult.validateMultiGroupAutocompleteInput("Alpha > Beta<123>"));
     assertEquals(
         Set.of(123L), GroupListResult.getGroupIdsfromMultiGroupAutocomplete("Alpha > Beta<123>"));

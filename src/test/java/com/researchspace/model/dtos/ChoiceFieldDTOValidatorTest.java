@@ -86,7 +86,7 @@ public class ChoiceFieldDTOValidatorTest {
   public void testOverlongChoiceOptionsRejectedAsTooLong() {
     Errors errors = new BeanPropertyBindingResult(VALID, "MyObject");
     ChoiceFieldDTO<ChoiceFieldForm> dto = createValid();
-    dto.setChoiceValues("a=" + "b".repeat(FieldUtils.MAX_OPTIONS_LENGTH));
+    dto.setChoiceValues("x".repeat(FieldUtils.MAX_OPTIONS_LENGTH + 1));
     validator.validate(dto, errors);
     assertTrue(ValidationTestUtils.hasError("errors.maxLength", errors));
     assertFalse(ValidationTestUtils.hasError("form.choiceOptions.invalidFormat", errors));

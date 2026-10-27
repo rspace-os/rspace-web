@@ -17,8 +17,10 @@ final class AutocompleteIdList {
     if (input == null) {
       return ids;
     }
-    for (String item : input.trim().split(">")) {
-      String id = idOf(item);
+    // the last piece is the text after the final '>', so it never holds a closed item
+    String[] items = input.trim().split(">", -1);
+    for (int i = 0; i < items.length - 1; i++) {
+      String id = idOf(items[i]);
       if (isId(id, allowNegative)) {
         ids.add(Long.parseLong(id));
       }
@@ -43,7 +45,6 @@ final class AutocompleteIdList {
     }
     int itemStart = 0;
     int open = -1;
-    boolean foundItem = false;
     for (int i = 0; i < items.length(); i++) {
       char current = items.charAt(i);
       if (current == '<') {
@@ -59,14 +60,11 @@ final class AutocompleteIdList {
             return false;
           }
           itemStart = i + 1;
-          open = -1;
-          foundItem = true;
-        } else {
-          open = -1;
         }
+        open = -1;
       }
     }
-    return foundItem && itemStart == items.length();
+    return itemStart == items.length();
   }
 
   private static String idOf(String item) {
@@ -75,15 +73,8 @@ final class AutocompleteIdList {
   }
 
   private static boolean isId(String text, boolean allowNegative) {
-    int start = allowNegative && text.startsWith("-") ? 1 : 0;
-    if (text.length() == start) {
+    if (!text.matches(allowNegative ? "-?[0-9]+" : "[0-9]+")) {
       return false;
-    }
-    for (int i = start; i < text.length(); i++) {
-      char c = text.charAt(i);
-      if (c < '0' || c > '9') {
-        return false;
-      }
     }
     try {
       Long.parseLong(text);
