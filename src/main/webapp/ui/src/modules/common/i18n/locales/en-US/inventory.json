@@ -2217,7 +2217,6 @@
         "warning": "<strong>You will no longer own this sample.</strong> Only {requester} or their PI can transfer it back.",
         "whatWillHappen": "What will happen:"
       },
-      "transferFailedAfterFulfilMessage": "Request {id} was marked as fulfilled, but transferring sample {sampleName} to {requester} failed. Please transfer ownership of the sample manually.",
       "transferSampleButton": "Transfer Sample",
       "transferSuccessMessage": "Request {id} has been successfully fulfilled, and sample {sampleName} has been transferred to {requester}."
     },

@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -926,6 +927,149 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void fulfilByTransfer_givesTheRequestedSampleToTheRequesterAndClosesOtherRequests() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User otherRequester = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    ApiSampleRequest others = raiseRequestAs(otherRequester);
+
+    ApiSampleRequest fulfilled = sampleRequestApiMgr.fulfilByTransfer(raised.getId(), null, owner);
+
+    assertEquals(SampleRequestStatus.FULFILLED, fulfilled.getStatus());
+    // fulfilled once, not again by the transfer's closing of open requests
+    assertEquals(2, fulfilled.getStatusChanges().size());
+    ApiSampleRequestStatusChange latest = fulfilled.getStatusChanges().get(1);
+    assertEquals(owner.getUsername(), latest.getCreatedBy().getUsername());
+    assertEquals(sample.getGlobalId(), latest.getTransferredSample().getGlobalId());
+    assertTrue(StringUtils.isNotBlank(latest.getReason()), "a transfer should say so");
+    assertEquals(requester.getUsername(), ownerOf(sample));
+    assertEquals(
+        SampleRequestStatus.REJECTED,
+        sampleRequestApiMgr.getRequestById(others.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void fulfilByTransfer_withAnotherSample_transfersOnlyThatSample() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User otherRequester = createAndSaveUserIfNotExists(getRandomAlphabeticString("other"));
+    ApiSampleRequest others = raiseRequestAs(otherRequester);
+    ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(owner);
+
+    ApiSampleRequest fulfilled =
+        sampleRequestApiMgr.fulfilByTransfer(raised.getId(), aliquot.getGlobalId(), owner);
+
+    assertEquals(
+        aliquot.getGlobalId(),
+        fulfilled.getStatusChanges().get(1).getTransferredSample().getGlobalId());
+    assertEquals(requester.getUsername(), ownerOf(aliquot));
+    assertEquals(owner.getUsername(), ownerOf(sample));
+    assertEquals(
+        SampleRequestStatus.PENDING,
+        sampleRequestApiMgr.getRequestById(others.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void fulfilByTransfer_publishesTheFulfilmentForAuditing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApplicationEventPublisher mockPublisher = Mockito.mock(ApplicationEventPublisher.class);
+
+    managerPublishingTo(mockPublisher).fulfilByTransfer(raised.getId(), null, owner);
+
+    ArgumentCaptor<SampleRequestStatusEvent> published =
+        ArgumentCaptor.forClass(SampleRequestStatusEvent.class);
+    Mockito.verify(mockPublisher).publishEvent(published.capture());
+    assertEquals(raised.getId(), published.getValue().getRequest().getId());
+    assertEquals(SampleRequestStatus.FULFILLED, published.getValue().getRequest().getStatus());
+  }
+
+  @Test
+  public void fulfilByTransfer_ofACancelledRequest_isRefusedAndTransfersNothing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleRequestApiMgr.updateStatus(
+        raised.getId(), statusPost(SampleRequestStatus.CANCELLED, null), requester);
+
+    assertRefusedWith(
+        "errors.inventory.sampleRequest.illegalTransition",
+        () -> sampleRequestApiMgr.fulfilByTransfer(raised.getId(), null, owner));
+    assertEquals(owner.getUsername(), ownerOf(sample));
+  }
+
+  @Test
+  public void fulfilByTransfer_byTheRequester_isRefusedAndTransfersNothing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+
+    assertRefusedWith(
+        "errors.inventory.sampleRequest.wrongActor",
+        () -> sampleRequestApiMgr.fulfilByTransfer(raised.getId(), null, requester));
+    assertEquals(owner.getUsername(), ownerOf(sample));
+  }
+
+  @Test
+  public void fulfilByTransfer_ofASampleTheCallerCannotTransfer_isRefusedAndChangesNothing() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    User pi = createAndSaveUserIfNotExists(getRandomAlphabeticString("pi"), Constants.PI_ROLE);
+    User member = createAndSaveUserIfNotExists(getRandomAlphabeticString("member"));
+    initialiseContentWithEmptyContent(pi, member);
+    Group group = createGroup("membersGroup", pi);
+    addUsersToGroup(pi, group, owner, member);
+    ApiSampleWithFullSubSamples membersSample = createBasicSampleForUser(member);
+    // the premise: the owner can read the member's sample, but not transfer it
+    List<ApiInventoryRecordPermittedAction> ownersActions =
+        sampleApiMgr.getApiSampleById(membersSample.getId(), owner).getPermittedActions();
+    assertTrue(ownersActions.contains(ApiInventoryRecordPermittedAction.READ));
+    assertFalse(ownersActions.contains(ApiInventoryRecordPermittedAction.CHANGE_OWNER));
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            sampleRequestApiMgr.fulfilByTransfer(
+                raised.getId(), membersSample.getGlobalId(), owner));
+    assertEquals(member.getUsername(), ownerOf(membersSample));
+    assertEquals(
+        SampleRequestStatus.PENDING,
+        sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void fulfilByTransfer_ofASampleTheRequesterOwns_isRefused() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    ApiSampleWithFullSubSamples aliquot = createBasicSampleForUser(owner);
+    ApiSample toRequester = new ApiSample();
+    toRequester.setId(aliquot.getId());
+    toRequester.setOwner(new ApiUser(requester));
+    sampleApiMgr.changeApiSampleOwner(toRequester, owner);
+
+    assertRefusedWith(
+        "errors.inventory.sampleRequest.ownedByRequester",
+        () -> sampleRequestApiMgr.fulfilByTransfer(raised.getId(), aliquot.getGlobalId(), owner));
+    assertEquals(
+        SampleRequestStatus.PENDING,
+        sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void fulfilByTransfer_ofATrashedRequestedSample_isNotFound() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    sampleApiMgr.markSampleAsDeleted(sample.getId(), false, owner);
+
+    assertThrows(
+        NotFoundException.class,
+        () -> sampleRequestApiMgr.fulfilByTransfer(raised.getId(), null, owner));
+    assertEquals(
+        SampleRequestStatus.PENDING,
+        sampleRequestApiMgr.getRequestById(raised.getId(), owner).getStatus());
+  }
+
+  @Test
+  public void fulfilByTransfer_afterTheRequestersUsernameWasTakenOver_transfersToTheRequester() {
+    ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
+    takeOverUsername(requester);
+
+    sampleRequestApiMgr.fulfilByTransfer(raised.getId(), null, owner);
+
+    assertEquals(requester.getUsername(), ownerOf(sample));
+  }
+
+  @Test
   public void accountReusingTheRequestersUsername_cannotSeeListOrCancelTheRequest() {
     User original = requester;
     ApiSampleRequest raised = raiseRequest("Need 2ml for the binding assay");
@@ -1038,6 +1182,10 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
     transfer.setId(sample.getId());
     transfer.setOwner(new ApiUser(newOwner));
     sampleApiMgr.changeApiSampleOwner(transfer, transferredBy);
+  }
+
+  private String ownerOf(ApiSampleWithFullSubSamples target) {
+    return sampleDao.get(target.getId()).getOwner().getUsername();
   }
 
   private static void assertRefusedWith(String messageKey, Executable call) {

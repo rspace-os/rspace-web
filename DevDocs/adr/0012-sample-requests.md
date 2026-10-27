@@ -143,11 +143,18 @@ table's transitions (D7), in the same transaction as the transfer:
   would be wrong.
 
 Fulfilling by transfer came late: the original idea was that a request asks for something
-to be done with the sample, with the target sample itself rarely changing hands. Closing
-the recipient's request inside the transfer lets a client hand the sample over with a
-single change-owner call, so the transfer and the fulfilment succeed or fail together. A
-request already marked FULFILLED before the transfer is no longer open and is untouched, so
-the older fulfil-then-transfer sequence still works.
+to be done with the sample, with the target sample itself rarely changing hands. A
+change-owner call does not say which request it is for, so it goes ahead even if the
+requester has just cancelled. A client acting on a request therefore uses
+`PUT /sampleRequests/{id}/actions/fulfilByTransfer`, which fulfils that request and
+transfers a sample to its requester in one transaction: the requested sample, or another
+one, such as a new sample made from it. Only the requested sample's current owner may
+call it, while the request is open; if the request or the transfer is refused, nothing
+changes. A FULFILLED request is no longer open, so a transfer leaves it untouched:
+fulfilByTransfer relies on this by saving the fulfilment before transferring, and
+fulfilling through the status endpoint before a separate transfer still works. The status
+endpoint on its own records a fulfilment without a transfer, e.g. for material handed over
+outside RSpace.
 
 ### D10 Concurrency: the row lock first, a constraint behind it, 409 for the rest
 
@@ -170,6 +177,10 @@ Where 1020 still occurs, for example a transfer racing a fulfilment, the API ret
 409 `EDIT_CONFLICT` ("changed by someone else at the same time"), not 500. Deadlocks
 (1213) are mapped the same way: a fulfilment naming the request's own sample can deadlock
 with a transfer of it, because saving the history row checks its foreign key to the sample.
+Fulfilling by transfer locks the request before it changes the sample's owner, the
+opposite order to a plain transfer, so the two can deadlock on one sample, as can two
+fulfilments by transfer of different requests for one sample. Only the same user's calls
+can meet like this: another user's transfer is refused first by the in-memory edit lock.
 MariaDB rolls the loser back, so nothing is saved and the client can retry. Lock wait
 timeouts stay 500 for now. The mapping is in `ApiControllerAdvice`, so it applies to every
 API endpoint, not only sample requests: for example, one user creating samples in parallel
@@ -185,7 +196,9 @@ must name a sample (422), and must be fully readable by the fulfiller and not in
 (404), so a request's history cannot be made to carry a stranger's sample. Limited read,
 as granted by a shared container or a List of Materials, is not enough. It is stored as a
 foreign key, not a global id string, and nulled when that sample's owner is deleted.
-Responses show it limited to what the viewer may read.
+Responses show it limited to what the viewer may read. `sampleToTransferGlobalId` on
+fulfilByTransfer is checked the same way, and the caller must also be allowed to transfer
+that sample.
 
 ### D12 The request has no global id of its own
 

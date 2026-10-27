@@ -130,8 +130,8 @@ const apiUpdate = vi.fn();
 const SAMPLE_REQUEST_DETAIL_URL = "/api/inventory/v1/sampleRequests/:id";
 const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
 const SAMPLE_REQUEST_STATUS_URL = "/api/inventory/v1/sampleRequests/:id/status";
+const SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL = "/api/inventory/v1/sampleRequests/:id/actions/fulfilByTransfer";
 const SAMPLE_URL = "/api/inventory/v1/samples/:id";
-const SAMPLE_CHANGE_OWNER_URL = "/api/inventory/v1/samples/:id/actions/changeOwner";
 
 /**
  * The happy-path handler set re-registered before every test, matching what apiGet/apiQuery/
@@ -161,32 +161,21 @@ function defaultHandlers() {
       apiUpdate("sampleRequests", `${params.id}/status`, body);
       return HttpResponse.json({ status: body.status });
     }),
-    http.put(SAMPLE_CHANGE_OWNER_URL, async ({ params, request }) => {
+    http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
       const body = await request.json();
-      apiUpdate("samples", `${params.id}/actions/changeOwner`, body);
-      return HttpResponse.json({ id: 999 });
+      apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
+      return HttpResponse.json({ status: "FULFILLED" });
     }),
   ];
 }
 
-/** Makes every sampleRequests status PUT for the rest of this test fail with the given status. */
-function failSampleRequestStatusUpdate(status = 500) {
+/** Makes every fulfilByTransfer PUT for the rest of this test fail with the given status. */
+function failFulfilByTransfer(status = 500) {
   server.use(
-    http.put(SAMPLE_REQUEST_STATUS_URL, async ({ params, request }) => {
+    http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
       const body = await request.json();
-      apiUpdate("sampleRequests", `${params.id}/status`, body);
+      apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
       return HttpResponse.json({ message: "Backend unavailable" }, { status });
-    }),
-  );
-}
-
-/** Makes every samples/:id/actions/changeOwner PUT for the rest of this test fail. */
-function failChangeOwner() {
-  server.use(
-    http.put(SAMPLE_CHANGE_OWNER_URL, async ({ params, request }) => {
-      const body = await request.json();
-      apiUpdate("samples", `${params.id}/actions/changeOwner`, body);
-      return HttpResponse.json({ message: "Edit lock held" }, { status: 500 });
     }),
   );
 }
@@ -248,34 +237,30 @@ describe("RequestDetailPanel transfer", () => {
     await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
 
     await waitFor(() =>
-      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "FULFILLED" }),
-    );
-    await waitFor(() =>
-      expect(apiUpdate).toHaveBeenCalledWith("samples", "55/actions/changeOwner", {
-        owner: { username: REQUESTER.username },
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/actions/fulfilByTransfer", {
+        sampleToTransferGlobalId: undefined,
       }),
     );
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(addAlert).toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
-    // Replaces the old "two window-event notifications" assertion: invalidateAndSeedDetailStatus
-    // (../mutations.ts) invalidates every sampleRequests query once the whole fulfil-then-transfer
-    // chain completes, which both refreshes this panel's own detail query and leaves the status
-    // chip showing the mutation's own authoritative response.
+    // fulfilByTransfer (../mutations.ts) invalidates every sampleRequests query once it succeeds,
+    // which both refreshes this panel's own detail query and leaves the status chip showing the
+    // mutation's own authoritative response.
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.fulfilled").length).toBeGreaterThan(0),
     );
   });
 
-  it("does not transfer ownership, closes the dialog, and shows an error when the fulfil call is rejected", async () => {
+  it("does not transfer ownership, closes the dialog, and shows an error when the transfer is rejected", async () => {
     const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership"]);
     const user = userEvent.setup();
     // Neither property gates this route toward skipping the dialog.
     deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
     deploymentProperties["inventory.operations.available"] = "ALLOWED";
-    // A 409 here is exactly the scenario the fix guards against: someone else already rejected
-    // or cancelled the request before this fulfil call reached the backend. changeOwner must
-    // never run off the back of it.
-    failSampleRequestStatusUpdate(409);
+    // fulfilByTransfer is a single atomic backend call, so any failure here - a 409 because
+    // someone else already rejected or cancelled the request before this call reached the
+    // backend, an edit lock, etc. - means nothing was committed at all.
+    failFulfilByTransfer(409);
     // The request is still APPROVED when the panel mounts (matching the prop below) - that's what
     // makes the Prepare Sample button clickable in the first place - but has been CANCELLED by the
     // time the failed transfer's invalidation triggers this query's refetch, simulating someone
@@ -320,9 +305,8 @@ describe("RequestDetailPanel transfer", () => {
     await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
 
     await waitFor(() =>
-      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "FULFILLED" }),
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/actions/fulfilByTransfer", expect.anything()),
     );
-    expect(apiUpdate).not.toHaveBeenCalledWith("samples", "55/actions/changeOwner", expect.anything());
     await waitFor(() =>
       expect(
         screen.queryByRole("dialog", { name: "inventory:requestsManagement.detail.transferDialog.heading" }),
@@ -341,72 +325,6 @@ describe("RequestDetailPanel transfer", () => {
     // up too without needing a test of their own to prove it here.
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.cancelled").length).toBeGreaterThan(0),
-    );
-    restoreConsole();
-  });
-
-  it("marks the request fulfilled but shows an accurate error when the sample transfer itself fails", async () => {
-    const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership"]);
-    const user = userEvent.setup();
-    // Neither property gates this route toward skipping the dialog.
-    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
-    deploymentProperties["inventory.operations.available"] = "ALLOWED";
-    // The fulfil half succeeds; only the changeOwner half fails (e.g. an edit lock, a permissions
-    // error, a network blip) - distinct from the fulfil-itself-failed scenario covered by the test
-    // above, and the reason SampleOwnershipTransferError tags which step actually failed.
-    failChangeOwner();
-    renderPanel(baseRequest({ status: "APPROVED" }));
-    await waitForInitialFetches();
-
-    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
-    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
-
-    const chooseDialog = screen.getByRole("dialog", {
-      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
-    });
-    await user.click(
-      within(chooseDialog).getByRole("radio", {
-        name: "inventory:requestsManagement.detail.chooseMethodDialog.transferOption",
-      }),
-    );
-    await user.click(
-      within(chooseDialog).getByRole("button", {
-        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
-      }),
-    );
-
-    const transferDialog = await screen.findByRole("dialog", {
-      name: "inventory:requestsManagement.detail.transferDialog.heading",
-    });
-    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
-    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
-
-    await waitFor(() =>
-      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/status", { status: "FULFILLED" }),
-    );
-    await waitFor(() =>
-      expect(apiUpdate).toHaveBeenCalledWith("samples", "55/actions/changeOwner", {
-        owner: { username: REQUESTER.username },
-      }),
-    );
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("dialog", { name: "inventory:requestsManagement.detail.transferDialog.heading" }),
-      ).toBeNull(),
-    );
-    expect(addAlert).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
-    // Not the same "already cancelled" message the fulfil-fails test above gets - that would be
-    // false here, since the request genuinely was fulfilled.
-    expect(addAlert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        variant: "error",
-        message: "inventory:requestsManagement.detail.transferFailedAfterFulfilMessage",
-      }),
-    );
-    // The fulfil half DID succeed and can't be rolled back (FULFILLED is terminal server-side) -
-    // the status chip must reflect that truth, not the stale pre-attempt APPROVED status.
-    await waitFor(() =>
-      expect(screen.getAllByText("inventory:requestsManagement.status.fulfilled").length).toBeGreaterThan(0),
     );
     restoreConsole();
   });
@@ -492,15 +410,15 @@ describe("RequestDetailPanel transfer", () => {
 
     it("disables the Transfer button while the transfer is in flight, preventing a duplicate submission", async () => {
       const user = userEvent.setup();
-      let resolveFulfil: (() => void) | undefined;
+      let resolveTransfer: (() => void) | undefined;
       server.use(
-        http.put(SAMPLE_REQUEST_STATUS_URL, async ({ params, request }) => {
-          const body = (await request.json()) as { status: string };
-          apiUpdate("sampleRequests", `${params.id}/status`, body);
+        http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
+          const body = await request.json();
+          apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
           await new Promise<void>((resolve) => {
-            resolveFulfil = resolve;
+            resolveTransfer = resolve;
           });
-          return HttpResponse.json({ status: body.status });
+          return HttpResponse.json({ status: "FULFILLED" });
         }),
       );
       const dialog = await openTransferDialog(user);
@@ -515,16 +433,11 @@ describe("RequestDetailPanel transfer", () => {
       // while disabled" here.
       fireEvent.click(transferButton);
 
+      // Exactly the one fulfilByTransfer call - not a second from the blocked click.
       expect(apiUpdate).toHaveBeenCalledTimes(1);
-      resolveFulfil?.();
-      await waitFor(() =>
-        expect(apiUpdate).toHaveBeenCalledWith("samples", "55/actions/changeOwner", {
-          owner: { username: "manual-pick" },
-        }),
-      );
-      // Exactly the fulfil call plus the one changeOwner call - not a third from the blocked
-      // second click.
-      expect(apiUpdate).toHaveBeenCalledTimes(2);
+      resolveTransfer?.();
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+      expect(apiUpdate).toHaveBeenCalledTimes(1);
     });
 
     it("adds the multiple-subsamples bullet when the sample has more than one subsample", async () => {

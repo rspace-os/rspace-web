@@ -3,6 +3,7 @@ package com.researchspace.service.inventory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
@@ -21,6 +22,7 @@ import com.researchspace.model.preference.HierarchicalPermission;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.service.inventory.impl.InventoryEditLockTracker;
 import com.researchspace.service.inventory.impl.SampleRequestApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import java.sql.SQLException;
@@ -56,6 +58,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   private @Autowired InventoryPermissionUtils invPermissions;
   private @Autowired SystemPropertyPermissionManager systemPropertyPermissions;
   private @Autowired ApplicationEventPublisher publisher;
+  private @Autowired InventoryEditLockTracker editLockTracker;
 
   private String originalSampleRequestsAvailable;
   private User owner;
@@ -154,6 +157,63 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     } finally {
       pool.shutdownNow();
     }
+  }
+
+  @Test
+  public void concurrentCancelAndFulfilByTransferLeaveExactlyOneWinner() throws Exception {
+    CountDownLatch startLine = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      ApiSampleRequestStatusPut cancel = new ApiSampleRequestStatusPut();
+      cancel.setStatus(SampleRequestStatus.CANCELLED);
+      Future<String> cancelling =
+          pool.submit(
+              attempt(
+                  startLine, () -> sampleRequestApiMgr.updateStatus(requestId, cancel, requester)));
+      Future<String> fulfilling =
+          pool.submit(
+              attempt(
+                  startLine, () -> sampleRequestApiMgr.fulfilByTransfer(requestId, null, owner)));
+
+      startLine.countDown();
+      String cancelOutcome = cancelling.get(30, TimeUnit.SECONDS);
+      String fulfilOutcome = fulfilling.get(30, TimeUnit.SECONDS);
+
+      // whichever commits first makes the other illegal
+      assertTrue(
+          WON.equals(cancelOutcome) != WON.equals(fulfilOutcome),
+          "exactly one must win: cancel " + cancelOutcome + ", fulfil " + fulfilOutcome);
+      String loser = WON.equals(cancelOutcome) ? fulfilOutcome : cancelOutcome;
+      assertEquals(ApiRuntimeException.class.getSimpleName(), loser);
+
+      String expectedOwner = (WON.equals(fulfilOutcome) ? requester : owner).getUsername();
+      assertEquals(
+          expectedOwner, sampleApiMgr.getApiSampleById(sampleId, owner).getOwner().getUsername());
+      assertEquals(
+          2, sampleRequestApiMgr.getRequestById(requestId, owner).getStatusChanges().size());
+    } finally {
+      pool.shutdownNow();
+    }
+  }
+
+  @Test
+  public void fulfilByTransferWhoseTransferFailsLeavesTheRequestOpen() {
+    // the fulfilment is recorded before the transfer runs, so only a rollback undoes it
+    editLockTracker.attemptToLockForEdit(sampleGlobalId, requester);
+    try {
+      assertThrows(
+          InventoryEditLockHeldException.class,
+          () -> sampleRequestApiMgr.fulfilByTransfer(requestId, null, owner));
+    } finally {
+      editLockTracker.attemptToUnlock(sampleGlobalId, requester);
+    }
+
+    ApiSampleRequest afterwards = sampleRequestApiMgr.getRequestById(requestId, owner);
+    assertEquals(SampleRequestStatus.PENDING, afterwards.getStatus());
+    assertEquals(1, afterwards.getStatusChanges().size());
+    assertEquals(
+        owner.getUsername(),
+        sampleApiMgr.getApiSampleById(sampleId, owner).getOwner().getUsername());
   }
 
   @Test
@@ -357,16 +417,20 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   private static final String WON = "won";
 
-  /** Returns WON, or the simple name of whatever refused this transition. */
   private Callable<String> transition(
       CountDownLatch startLine, SampleRequestStatus target, String reason) {
+    ApiSampleRequestStatusPut put = new ApiSampleRequestStatusPut();
+    put.setStatus(target);
+    put.setReason(reason);
+    return attempt(startLine, () -> sampleRequestApiMgr.updateStatus(requestId, put, owner));
+  }
+
+  /** Returns WON, or the simple name of whatever refused the change. */
+  private static Callable<String> attempt(CountDownLatch startLine, Runnable change) {
     return () -> {
       startLine.await();
-      ApiSampleRequestStatusPut put = new ApiSampleRequestStatusPut();
-      put.setStatus(target);
-      put.setReason(reason);
       try {
-        sampleRequestApiMgr.updateStatus(requestId, put, owner);
+        change.run();
         return WON;
       } catch (Exception refused) {
         return refused.getClass().getSimpleName();

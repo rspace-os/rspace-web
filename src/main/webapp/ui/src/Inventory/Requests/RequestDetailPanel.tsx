@@ -21,7 +21,6 @@ import ChooseMethodDialog from "./ChooseMethodDialog";
 import CollapsibleSection from "./CollapsibleSection";
 import FulfilRequestDialog from "./FulfilRequestDialog";
 import {
-  SampleOwnershipTransferError,
   useApproveSampleRequestMutation,
   useCancelSampleRequestMutation,
   useFulfilSampleRequestMutation,
@@ -321,15 +320,10 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   };
 
   // A SubSample has no owner of its own (it always derives from its parent Sample), so
-  // "preparing" a subsample for transfer means transferring ownership of a whole Sample: either
-  // the originally requested one (the "transfer" radio), or the new one the Operations Wizard
-  // just created (the "wizard" radio) - wizardCreatedSample names which.
-  //
-  // The request is marked fulfilled BEFORE the transfer, not after: the backend authorises
-  // the fulfil transition against the transferred sample's current owner, and that's still the
-  // caller here. Doing the transfer first would change that sample's owner away from the caller,
-  // so the follow-up fulfil call would then fail as the caller no longer being party to
-  // the request (reported back as 404, to avoid disclosing the request's existence).
+  // "preparing" a subsample for transfer means transferring ownership of the whole Sample.
+  // Fulfilling the request and transferring the sample are a single atomic backend call (see
+  // useTransferSampleOwnershipMutation's doc comment in ./mutations.ts) - there is no
+  // half-succeeded state to account for here.
   const submitTransfer = () => {
     // transferRequesterPerson also gates the button below, but is re-checked here too: until it
     // has loaded, PeopleField's restrictToUser is unset and so searches everyone (see
@@ -342,12 +336,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     // above, which names the same sample the same way.
     const transferredSampleName = wizardCreatedSample?.name ?? request.sample.name;
     transferMutation.mutate(
-      {
-        requestId: request.id,
-        sampleId: wizardCreatedSample?.id ?? request.sample.id,
-        newOwnerUsername: transferRecipient.username,
-        transferredSampleGlobalId: wizardCreatedSample?.globalId,
-      },
+      { requestId: request.id },
       {
         onSuccess: () => {
           setTransferDialogOpen(false);
@@ -364,28 +353,20 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
         },
         onError: (error) => {
           console.error("Failed to transfer sample ownership", error);
-          // Closing the dialog rather than leaving it open avoids a retry that, in either case
-          // below, can only fail (or succeed-but-mislead) the same way again; the mutation's own
-          // onError (see ./mutations.ts) has already invalidated every query above, so the status
-          // chip, history, and action buttons pick up whatever the request's real state now is on
-          // their own, without a bespoke refetch-and-resync here.
+          // Closing the dialog rather than leaving it open avoids a retry that can only fail the
+          // same way again; the mutation's own onError (see ./mutations.ts) has already
+          // invalidated every query above, so the status chip, history, and action buttons pick
+          // up whatever the request's real state now is on their own, without a bespoke
+          // refetch-and-resync here. The backend call is a single transaction, so a failure here
+          // means nothing was committed - most likely because the request was closed by someone
+          // else in the meantime.
           setTransferDialogOpen(false);
-          // Which half of the mutation failed changes what actually happened, and so what's true
-          // to tell the user - see SampleOwnershipTransferError's definition in ./mutations.ts.
-          const sampleTransferItselfFailed =
-            error instanceof SampleOwnershipTransferError && error.step === "changeOwner";
           uiStore.addAlert(
             mkAlert({
               variant: "error",
-              message: sampleTransferItselfFailed
-                ? t("requestsManagement.detail.transferFailedAfterFulfilMessage", {
-                    id: request.id,
-                    sampleName: transferredSampleName,
-                    requester: requesterFullName,
-                  })
-                : t("requestsManagement.detail.transferCancelledErrorMessage", {
-                    sampleName: transferredSampleName,
-                  }),
+              message: t("requestsManagement.detail.transferCancelledErrorMessage", {
+                sampleName: request.sample.name,
+              }),
             }),
           );
         },
