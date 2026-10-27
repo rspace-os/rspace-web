@@ -6,10 +6,6 @@ import materialTheme from "../theme";
 import Snackbars from "./ToastMessage";
 import { bufferPreMountToast } from "./toastMessageBuffer";
 
-/*
- * Start buffering toasts straight away: Snackbars only listens once mounted,
- * and drains this buffer on mount.
- */
 document.addEventListener("show-toast-message", bufferPreMountToast);
 
 // render the snackbar wrapper component

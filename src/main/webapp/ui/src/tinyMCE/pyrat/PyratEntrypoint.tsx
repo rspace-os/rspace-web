@@ -5,18 +5,19 @@ import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import PyratDialog, { type PyratDialogProps, type PyratEditor } from "./PyratDialog";
+import type { TinyMcePluginEditor } from "../types";
+import PyratDialog, { type PyratDialogProps } from "./PyratDialog";
 
 type PyratDialogUpdates = Partial<Pick<PyratDialogProps, "open" | "onClose">>;
 
 declare const tinymce: {
   PluginManager: {
-    add: (name: string, plugin: new (editor: PyratEditor) => unknown) => void;
+    add: (name: string, plugin: new (editor: TinyMcePluginEditor) => unknown) => void;
   };
 };
 
 class PyratPlugin {
-  constructor(editor: PyratEditor) {
+  constructor(editor: TinyMcePluginEditor) {
     function* renderPyrat(domContainer: HTMLElement): Generator<void, void, PyratDialogUpdates> {
       const root = createRoot(domContainer);
       while (true) {

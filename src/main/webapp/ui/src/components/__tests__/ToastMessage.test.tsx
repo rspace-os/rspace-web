@@ -21,8 +21,6 @@ describe("Snackbars", () => {
   });
 
   test("shows toasts dispatched before mount", async () => {
-    // legacy scripts can dispatch from document-ready, before the listener mounts;
-    // ToastMessageEntrypoint registers this buffer at load
     document.addEventListener("show-toast-message", bufferPreMountToast);
     dispatchToast("pre-mount toast 1");
     dispatchToast("pre-mount toast 2");
