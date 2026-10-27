@@ -1068,7 +1068,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     assertEquals(
         List.of("description: description cannot be greater than 2000 characters."),
         subSampleResult.getResults().get(1).getError().getErrors());
-    // joins a Sample from this import: checked with that Sample at creation, as today
+    // joins a Sample from this import: checked with that Sample at creation
     assertNull(subSampleResult.getResults().get(2).getError());
   }
 

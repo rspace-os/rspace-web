@@ -316,7 +316,8 @@ public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_Invento
     assertEquals(2, instrumentResult.getErrorCount());
     assertThat(instrumentResult.getResults().get(0).getError().getErrors())
         .anyMatch(e -> e.contains("name is a required field"));
-    assertNotNull(instrumentResult.getResults().get(1).getError());
+    assertThat(instrumentResult.getResults().get(1).getError().getErrors())
+        .anyMatch(e -> e.contains("Invalid number: #N/A"));
   }
 
   private MvcResult importInstruments(String settingsJson, String csv) throws Exception {

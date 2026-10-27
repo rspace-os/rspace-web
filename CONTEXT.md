@@ -559,8 +559,8 @@ resolved during design. This file is a glossary only — no implementation detai
   must pass the rules of creating it through the API (a name, the length caps on name and
   description, tag format, quantity, template fields). A row that fails is reported with its
   row number and reason, the whole import is refused, and nothing is created, not even a new
-  template. A Subsample row that joins a Sample from the same import is checked together with
-  that Sample.
+  template. A Subsample row that joins a Sample from the same import is not prevalidated: it
+  is checked when that Sample is created, and a failure there rolls the whole import back.
   _Avoid_: validation error (that is one row's outcome, not the step), dry run
 
 ## Lab Groups and Project Groups

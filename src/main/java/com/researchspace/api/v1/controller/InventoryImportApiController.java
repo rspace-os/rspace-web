@@ -177,7 +177,7 @@ public class InventoryImportApiController extends BaseApiInventoryController
     } catch (IOException e) {
       throw new IllegalStateException(e);
     } catch (DataIntegrityViolationException e) {
-      // the row-level checks should have caught it; the user gets a sentence, the log the cause
+      // raised at commit, after the manager returns; the user gets a sentence, the log the cause
       LocalizedIllegalStateException refused =
           new LocalizedIllegalStateException("errors.inventory.import.databaseError");
       refused.initCause(e);
