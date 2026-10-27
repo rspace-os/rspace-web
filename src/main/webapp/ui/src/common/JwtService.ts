@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import { TOKEN_EXPIRY_BUFFER_SECONDS } from "@/modules/common/utils/auth";
 
 /**
  * @deprecated Use the functions in `src/modules/common/utils/auth.ts` instead.
@@ -55,7 +56,7 @@ class JwtService {
   }
 
   static isExpiringSoon(token: string): boolean {
-    return JwtService.secondsToExpiry(token) < 300;
+    return JwtService.secondsToExpiry(token) < TOKEN_EXPIRY_BUFFER_SECONDS;
   }
 }
 

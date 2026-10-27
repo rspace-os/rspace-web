@@ -1,6 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
+import { TOKEN_EXPIRY_BUFFER_SECONDS } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -23,13 +24,12 @@ import {
 const publicView = document.getElementById("public_document_view") !== null;
 
 /*
- * Refresh while the token is still valid, at the same margin as JwtService.isExpiringSoon. Expiry is measured
- * against the client clock, so the floor stops a clock running ~an hour fast from refreshing in a tight loop.
+ * Refresh while the token is still valid, at the margin isExpiringSoon uses. Expiry is measured against the
+ * client clock, so the floor stops a clock running ~an hour fast from refreshing in a tight loop.
  */
-const REFRESH_MARGIN_SECONDS = 300;
 const MIN_REFRESH_DELAY_SECONDS = 60;
 const refreshDelayMs = (token: string) =>
-  Math.max(MIN_REFRESH_DELAY_SECONDS, JwtService.secondsToExpiry(token) - REFRESH_MARGIN_SECONDS) * 1000;
+  Math.max(MIN_REFRESH_DELAY_SECONDS, JwtService.secondsToExpiry(token) - TOKEN_EXPIRY_BUFFER_SECONDS) * 1000;
 
 export type {
   B2InstSettings,
@@ -93,7 +93,10 @@ export default class AuthStore {
           this.isAuthenticated = true;
           this.isSynchronizing = false;
 
-          // Reauthenticate few minutes before token expiry
+          // overlapping authenticate() calls (the 401 retry and a scheduled refresh) must leave one timer
+          if (this.timeoutId) {
+            clearTimeout(this.timeoutId);
+          }
           this.timeoutId = setTimeout(() => void this.authenticate(), refreshDelayMs(token));
         }),
       )
@@ -129,8 +132,6 @@ export default class AuthStore {
       InvApiService.setAuthorizationHeader();
       ElnApiService.setAuthorizationHeader();
       this.isSynchronizing = false;
-
-      // Reauthenticate few minutes before token expiry
       this.timeoutId = setTimeout(() => void this.authenticate(), refreshDelayMs(token));
       return Promise.resolve();
     }
