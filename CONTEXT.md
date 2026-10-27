@@ -567,9 +567,11 @@ resolved during design. This file is a glossary only — no implementation detai
   _Avoid_: cloud group (that is the RSpace Community sign-up flow), PI group
 
 - **Project Group** — a group with no PI that any user can create for collaboration. It
-  has at least one Group Owner, by default its creator; owners invite members and make
-  other members owners, only the creator may delete the group, and any member but the last
-  owner may leave. It can be created only where the "allow project groups" setting
+  has at least one Group Owner: its creator by default, or the owners a sysadmin names when
+  creating it for others. Owners invite members, make other members owners and may delete
+  the group; any member but the last owner may leave. The creator is an owner like any
+  other: changed to the User role, they can no longer delete the group. It can be created
+  only where the "allow project groups" setting
   (`allow_project_groups`) is allowed for that user, with the same refusal rule as the
   self-service Lab Group; deleting one is not affected by the setting.
   _Avoid_: collaboration group (that is a group of Lab Groups), user group
