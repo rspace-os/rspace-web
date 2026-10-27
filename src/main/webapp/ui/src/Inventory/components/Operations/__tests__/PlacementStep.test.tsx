@@ -335,6 +335,13 @@ describe("PlacementStep", () => {
       expect(await screen.findByRole("button", { name: "Change container" })).toHaveFocus();
     });
 
+    it("moves focus from Change container to the reopened search box", async () => {
+      const { user } = await pick(gridBox());
+      expect(await screen.findByRole("button", { name: "Change container" })).toHaveFocus();
+      await user.keyboard("{Enter}");
+      expect(screen.getByRole("searchbox")).toHaveFocus();
+    });
+
     it("leaves focus alone when the step opens with a container already picked", () => {
       const box = gridBox();
       prepareContainer(box, 1);

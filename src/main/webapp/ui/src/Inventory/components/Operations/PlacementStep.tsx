@@ -56,6 +56,9 @@ function PlacementStep({
   const changeButtonRef = React.useRef<HTMLButtonElement>(null);
   // The picker unmounts when a pick lands, which would drop focus to the page.
   const pickedFromPicker = React.useRef(false);
+  // Change container unmounts itself, which would likewise drop focus to the page.
+  const changeRequested = React.useRef(false);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Step-local, not the global moveStore: ContainerModel's move checks read moveStore's selection.
   const [search] = React.useState(() => {
@@ -96,6 +99,11 @@ function PlacementStep({
     if (!picked || !pickedFromPicker.current) return;
     pickedFromPicker.current = false;
     changeButtonRef.current?.focus();
+  }, [picked]);
+  React.useEffect(() => {
+    if (picked || !changeRequested.current) return;
+    changeRequested.current = false;
+    searchInputRef.current?.focus();
   }, [picked]);
 
   const blockerMessage = (b: PlacementBlocker, containerName: string): string => {
@@ -179,6 +187,7 @@ function PlacementStep({
             ref={changeButtonRef}
             size="small"
             onClick={() => {
+              changeRequested.current = true;
               runInAction(() => {
                 search.activeResult = null;
               });
@@ -202,6 +211,7 @@ function PlacementStep({
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                 <Box sx={{ flexGrow: 1 }}>
                   <Searchbar
+                    inputRef={searchInputRef}
                     handleSearch={(query) =>
                       void search.fetcher.performInitialSearch({ query, resultType: "CONTAINER" })
                     }

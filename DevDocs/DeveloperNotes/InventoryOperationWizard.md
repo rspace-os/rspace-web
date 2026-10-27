@@ -300,7 +300,9 @@ enforced there too (Perform is blocked with the reason shown).
    contents. In the tree view Space selects the focused container, and Enter selects a leaf
    and expands a container that has sub-containers. Once a
    container that can be used is picked, the search gives way to its name and a "Change
-   container" button, so the grid follows directly on a short screen. One destination per run. A grid container also shows its content grid,
+   container" button, so the grid follows directly on a short screen. A pick made from the
+   search moves focus to Change container, and Change container moves it back to the search
+   box. One destination per run. A grid container also shows its content grid,
    in which the user picks one empty location per new subsample (the selection limit is
    the count; lowering the count on the Amounts step drops surplus locations from the
    end). The grid is selection-only: drag-and-drop is off while the wizard uses it
