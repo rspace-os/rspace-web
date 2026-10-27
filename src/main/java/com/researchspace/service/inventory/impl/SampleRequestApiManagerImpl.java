@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestInfo;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
@@ -158,18 +159,8 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
 
   @Override
   public ApiSampleRequest updateStatus(Long id, ApiSampleRequestStatusPut post, User user) {
-    // locked as the transaction's first read, so concurrent transitions serialise
-    SampleRequest request = sampleRequestDao.getForUpdate(id);
-    assertSampleRequestsEnabled(user);
-    if (request == null) {
-      throw requestNotFound(id);
-    }
-    assertUserIsPartyToRequest(request, user);
-
-    List<Transition> toTarget = transitionsToSettableStatusOrThrow(post.getStatus());
-    // every transition to one target shares its actor, so who may act is checked first
-    assertPermittedActor(request, user, toTarget.get(0).actor());
-    Transition transition = legalTransitionFromOrThrow(toTarget, request.getStatus());
+    SampleRequest request = lockRequestForParty(id, user);
+    Transition transition = permittedTransitionOrThrow(request, post.getStatus(), user);
     String reason = validatedReason(post, transition);
     Sample transferredSample = resolveTransferredSample(post, user);
 
@@ -177,6 +168,57 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
     SampleRequest saved = sampleRequestDao.save(request);
     publisher.publishEvent(new SampleRequestStatusEvent(saved, user));
     return toDetail(saved, user);
+  }
+
+  @Override
+  public ApiSampleRequest fulfilByTransfer(Long id, String sampleToTransferGlobalId, User user) {
+    SampleRequest request = lockRequestForParty(id, user);
+    permittedTransitionOrThrow(request, SampleRequestStatus.FULFILLED, user);
+    Sample sample =
+        StringUtils.isBlank(sampleToTransferGlobalId)
+            ? sampleNotInTrashOrThrow(request.getSample(), request.getSample().getOid())
+            : readableSampleOrThrow(sampleToTransferGlobalId, user);
+    // by id, as the requester's username may since have passed to another account
+    User requester =
+        userDao
+            .getSafeNull(request.getRequesterId())
+            .orElseThrow(
+                () -> new ApiRuntimeException("errors.inventory.sampleRequest.requesterDeleted"));
+    if (request.isRequester(sample.getOwner())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.sampleRequest.ownedByRequester", sample.getOid().getIdString());
+    }
+    invPermissions.assertUserCanTransferInventoryRecord(sample, user);
+
+    // recorded before the transfer, so its closing of open requests leaves this one alone
+    String reason = messages.getMessage("inventory.sampleRequest.autoFulfilledReason");
+    request.recordStatus(user, SampleRequestStatus.FULFILLED, reason, sample);
+    SampleRequest saved = sampleRequestDao.save(request);
+    publisher.publishEvent(new SampleRequestStatusEvent(saved, user));
+    ApiSample transfer = new ApiSample();
+    transfer.setId(sample.getId());
+    transfer.setOwner(new ApiUser(requester));
+    sampleApiManager.changeApiSampleOwner(transfer, user);
+    return toDetail(saved, user);
+  }
+
+  /** Locks the request as the transaction's first read, so concurrent transitions serialise. */
+  private SampleRequest lockRequestForParty(Long id, User user) {
+    SampleRequest request = sampleRequestDao.getForUpdate(id);
+    assertSampleRequestsEnabled(user);
+    if (request == null) {
+      throw requestNotFound(id);
+    }
+    assertUserIsPartyToRequest(request, user);
+    return request;
+  }
+
+  private Transition permittedTransitionOrThrow(
+      SampleRequest request, SampleRequestStatus target, User user) {
+    List<Transition> toTarget = transitionsToSettableStatusOrThrow(target);
+    // every transition to one target shares its actor, so who may act is checked first
+    assertPermittedActor(request, user, toTarget.get(0).actor());
+    return legalTransitionFromOrThrow(toTarget, request.getStatus());
   }
 
   private void assertPermittedActor(SampleRequest request, User user, Actor actor) {
@@ -309,6 +351,11 @@ public class SampleRequestApiManagerImpl implements SampleRequestApiManager {
       throw new ApiRuntimeException(
           "errors.inventory.sampleRequest.transferredSampleNotAllowed", post.getStatus());
     }
+    return readableSampleOrThrow(globalId, user);
+  }
+
+  /** A sample the user can fully read and that is not in the trash. */
+  private Sample readableSampleOrThrow(String globalId, User user) {
     GlobalIdentifier oid = sampleOid(globalId);
     Sample sample = sampleNotInTrashOrThrow(sampleDao.getSafeNull(oid.getDbId()).orElse(null), oid);
     if (!invPermissions.canUserReadInventoryRecord(sample, user)) {
