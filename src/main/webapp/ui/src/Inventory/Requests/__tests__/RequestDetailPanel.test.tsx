@@ -291,7 +291,7 @@ describe("RequestDetailPanel", () => {
     // the interpolated copy - asserting on rendered text alone can't tell a correct username from
     // a dropped or wrong one, so this spies on the real t() call itself to check what was passed.
     const tSpy = vi.spyOn(i18n, "t");
-    renderPanel(baseRequest({ requester: { ...REQUESTER, id: null } }));
+    renderPanel(baseRequest({ requester: { ...REQUESTER, firstName: null, lastName: null } }));
     await waitForInitialFetches();
 
     // Not the firstName/lastName lookup chip used for a live account (no account exists any
@@ -315,7 +315,7 @@ describe("RequestDetailPanel", () => {
               id: 1,
               status: "APPROVED",
               created: "2026-01-02T10:00:00Z",
-              createdBy: { id: null, username: "old-owner", firstName: "Olive", lastName: "Owner" },
+              createdBy: { id: 999, username: "old-owner", firstName: null, lastName: null },
               reason: null,
               transferredSample: null,
             },

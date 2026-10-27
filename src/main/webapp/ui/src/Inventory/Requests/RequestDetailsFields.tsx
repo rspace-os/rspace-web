@@ -21,7 +21,7 @@ export default function RequestDetailsFields({ request }: { request: ApiSampleRe
     <HeadingContext level={4}>
       <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
         <DetailField label={t("requestsManagement.detail.fields.requester")}>
-          {request.requester.id === null ? (
+          {request.requester.firstName === null && request.requester.lastName === null ? (
             userDisplayName(request.requester, t)
           ) : (
             <UserDetails

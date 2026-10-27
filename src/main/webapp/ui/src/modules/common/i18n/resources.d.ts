@@ -4413,7 +4413,7 @@ export default interface Resources {
           "proceedButton": "Proceed",
           "title": "Choose Sample to Prepare",
           "transferOption": "Transfer the existing sample and all subsamples",
-          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to user {requester}.",
+          "transferWarning": "This sample has {count} subsamples. Transferring this sample will transfer all subsamples to {requester}.",
           "wizardOption": "Create a new sample derived from the existing sample"
         },
         "fields": {

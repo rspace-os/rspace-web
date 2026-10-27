@@ -300,7 +300,7 @@ describe("RequestsList Requester column sorting", () => {
         status: "PENDING",
         created: "2026-01-01T10:00:00Z",
         note: null,
-        requester: { id: null, username: "del-zed", firstName: "", lastName: "" },
+        requester: { id: 10, username: "del-zed", firstName: null, lastName: null },
         sample: { id: 1, globalId: "SA1", name: "Sample One", owner: { id: 99 } },
       },
       {
@@ -316,7 +316,7 @@ describe("RequestsList Requester column sorting", () => {
         status: "PENDING",
         created: "2026-01-03T10:00:00Z",
         note: null,
-        requester: { id: null, username: "del-ann", firstName: "", lastName: "" },
+        requester: { id: 11, username: "del-ann", firstName: null, lastName: null },
         sample: { id: 3, globalId: "SA3", name: "Sample Three", owner: { id: 99 } },
       },
       {

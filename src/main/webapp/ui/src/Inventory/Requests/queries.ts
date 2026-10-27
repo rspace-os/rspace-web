@@ -113,7 +113,7 @@ export function useOtherActiveSampleRequestsQuery(sampleId: number | null, exclu
         requests: Array<{
           id: number;
           status: string;
-          requester: { id: number | null; username: string; firstName: string; lastName: string };
+          requester: { id: number; username: string; firstName: string | null; lastName: string | null };
         }>;
       }>("sampleRequests", params).then(
         ({ data }): Array<OtherActiveSampleRequest> =>

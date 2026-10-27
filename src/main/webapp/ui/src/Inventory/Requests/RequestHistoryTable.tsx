@@ -23,7 +23,7 @@ export type ApiSampleRequestStatusChangeItem = {
   id: number;
   status: string;
   created: string;
-  createdBy: { id: number | null; username: string; firstName: string; lastName: string };
+  createdBy: { id: number; username: string; firstName: string | null; lastName: string | null };
   reason: string | null;
   transferredSample: { id: number; globalId: string; name: string } | null;
 };
@@ -105,7 +105,7 @@ export default function RequestHistoryTable({
                 <RequestsStatusChip status={change.status} />
               </TableCell>
               <TableCell>
-                {change.createdBy.id === null ? (
+                {change.createdBy.firstName === null && change.createdBy.lastName === null ? (
                   userDisplayName(change.createdBy, t)
                 ) : (
                   <UserDetails
