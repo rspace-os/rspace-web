@@ -99,7 +99,7 @@ export default function TransferOwnershipDialog({
           <Typography component="li" variant="body2">
             {t("requestsManagement.detail.transferDialog.bullets.requestFulfilled", { id: requestId })}
           </Typography>
-          {otherActiveRequests !== null && otherActiveRequests.length > 0 && (
+          {!isNewlyCreatedSample && otherActiveRequests !== null && otherActiveRequests.length > 0 && (
             <Typography component="li" variant="body2">
               {t("requestsManagement.detail.transferDialog.bullets.otherRequestsRejected", {
                 count: otherActiveRequests.length,
