@@ -25,6 +25,7 @@ import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
 import { parseInteger } from "@/util/parsers";
 import Result from "@/util/result";
+import type { TinyMcePluginEditor } from "../types";
 import ColumnVisibilitySettings from "./ColumnVisibilitySettings";
 import ColumnVisibilitySettingsButton from "./ColumnVisibilitySettingsButton";
 import { AnimalState, AnimalType, ErrorReason, Order, Sex } from "./Enums";
@@ -33,19 +34,8 @@ import Filter from "./Filter";
 import FilterButton from "./FilterButton";
 import ResultsTable from "./ResultsTable";
 
-export type PyratEditor = {
-  id: string;
-  execCommand: (command: string, ui: boolean, value?: string) => void;
-  ui: {
-    registry: {
-      addButton: (name: string, config: { tooltip: string; icon: string; onAction: () => void }) => void;
-      addMenuItem: (name: string, config: { text: string; icon: string; onAction: () => void }) => void;
-    };
-  };
-};
-
 export type PyratDialogProps = {
-  editor: PyratEditor;
+  editor: TinyMcePluginEditor;
   open: boolean;
   onClose: () => void;
 };

@@ -2,8 +2,8 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
 import AnalyticsContext from "@/stores/contexts/Analytics";
+import type { TinyMcePluginEditor } from "../types";
 import CompoundSearchDialog from "./CompoundSearchDialog";
-import type { Editor } from "./PubchemEntrypoint";
 
 /**
  * This dialog is opened by the TinyMCE plugin, allowing the users to browse
@@ -16,7 +16,7 @@ export default function ImportDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  editor: Editor;
+  editor: TinyMcePluginEditor;
 }): React.ReactNode {
   const { t } = useTranslation("common");
   const { trackEvent } = React.useContext(AnalyticsContext);
