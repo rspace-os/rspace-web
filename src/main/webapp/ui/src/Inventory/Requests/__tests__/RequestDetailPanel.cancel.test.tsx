@@ -185,7 +185,7 @@ describe("RequestDetailPanel cancel", () => {
   });
 
   it("shows an error alert and leaves the status unchanged when cancelling fails", async () => {
-    const restoreConsole = silenceConsole(["error"], ["Failed to cancel sample request"]);
+    const restoreConsole = silenceConsole(["error"], ["inventory:requestsManagement.detail.actionErrors.cancel"]);
     const user = userEvent.setup();
     currentUser.value = REQUESTER;
     failSampleRequestStatusUpdate();

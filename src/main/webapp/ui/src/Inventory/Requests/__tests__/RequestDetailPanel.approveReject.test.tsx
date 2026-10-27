@@ -192,7 +192,7 @@ describe("RequestDetailPanel approve/reject", () => {
   });
 
   it("shows an error alert, leaves the status unchanged, and re-enables the button when approving fails", async () => {
-    const restoreConsole = silenceConsole(["error"], ["Failed to approve sample request"]);
+    const restoreConsole = silenceConsole(["error"], ["inventory:requestsManagement.detail.actionErrors.approve"]);
     const user = userEvent.setup();
     failSampleRequestStatusUpdate();
     renderPanel(baseRequest());
@@ -287,7 +287,7 @@ describe("RequestDetailPanel approve/reject", () => {
   });
 
   it("shows an error alert and keeps the dialog open with the typed reason when rejecting fails", async () => {
-    const restoreConsole = silenceConsole(["error"], ["Failed to reject sample request"]);
+    const restoreConsole = silenceConsole(["error"], ["inventory:requestsManagement.detail.actionErrors.reject"]);
     const user = userEvent.setup();
     failSampleRequestStatusUpdate();
     renderPanel(baseRequest());

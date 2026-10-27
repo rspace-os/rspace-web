@@ -197,7 +197,7 @@ describe("RequestDetailPanel fulfil", () => {
   });
 
   it("keeps the Mark as Fulfilled dialog open, and does not notify listeners, when the fulfil call is rejected", async () => {
-    const restoreConsole = silenceConsole(["error"], ["Failed to fulfil sample request"]);
+    const restoreConsole = silenceConsole(["error"], ["inventory:requestsManagement.detail.actionErrors.fulfil"]);
     const user = userEvent.setup();
     // A 409 here is exactly the scenario the fix guards against: someone else already rejected
     // or cancelled the request before this fulfil call reached the backend.

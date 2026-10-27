@@ -169,13 +169,13 @@ function defaultHandlers() {
   ];
 }
 
-/** Makes every fulfilByTransfer PUT for the rest of this test fail with the given status. */
-function failFulfilByTransfer(status = 500) {
+/** Makes every fulfilByTransfer PUT for the rest of this test fail with the given status/message. */
+function failFulfilByTransfer(status = 500, message = "Backend unavailable") {
   server.use(
     http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
       const body = await request.json();
       apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
-      return HttpResponse.json({ message: "Backend unavailable" }, { status });
+      return HttpResponse.json({ message }, { status });
     }),
   );
 }
@@ -251,21 +251,21 @@ describe("RequestDetailPanel transfer", () => {
     );
   });
 
-  it("does not transfer ownership, closes the dialog, and shows an error when the transfer is rejected", async () => {
-    const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership"]);
+  it("does not transfer ownership, closes the dialog, and shows the cancelled-specific error when the requester cancelled the request first", async () => {
+    const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership: request was cancelled"]);
     const user = userEvent.setup();
     // Neither property gates this route toward skipping the dialog.
     deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
     deploymentProperties["inventory.operations.available"] = "ALLOWED";
-    // fulfilByTransfer is a single atomic backend call, so any failure here - a 409 because
-    // someone else already rejected or cancelled the request before this call reached the
-    // backend, an edit lock, etc. - means nothing was committed at all.
-    failFulfilByTransfer(409);
+    // The error itself carries no distinct code for "the requester cancelled it first" (see
+    // RequestDetailPanel.tsx's submitTransfer) - any failure does, so long as the request has
+    // actually moved to CANCELLED by the time onError re-fetches it below.
+    failFulfilByTransfer(422, "A sample request cannot move from CANCELLED to FULFILLED.");
     // The request is still APPROVED when the panel mounts (matching the prop below) - that's what
     // makes the Prepare Sample button clickable in the first place - but has been CANCELLED by the
-    // time the failed transfer's invalidation triggers this query's refetch, simulating someone
-    // else closing it in between. The panel should pick that up rather than carry on showing the
-    // stale APPROVED status this attempt started from.
+    // time submitTransfer's onError re-fetches it, simulating someone else cancelling it in
+    // between. The panel should pick that up rather than carry on showing the stale APPROVED
+    // status this attempt started from.
     let sampleRequestsGetCalls = 0;
     server.use(
       http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
@@ -325,6 +325,64 @@ describe("RequestDetailPanel transfer", () => {
     // up too without needing a test of their own to prove it here.
     await waitFor(() =>
       expect(screen.getAllByText("inventory:requestsManagement.status.cancelled").length).toBeGreaterThan(0),
+    );
+    restoreConsole();
+  });
+
+  it("closes the dialog and shows the generic action error when the transfer fails for a reason other than cancellation", async () => {
+    const restoreConsole = silenceConsole(["error"], ["inventory:requestsManagement.detail.actionErrors.transfer"]);
+    const user = userEvent.setup();
+    deploymentProperties["inventory.sampleRequests.available"] = "DENIED";
+    deploymentProperties["inventory.operations.available"] = "ALLOWED";
+    failFulfilByTransfer(422, "You are not permitted to make this change to the request.");
+    // Unlike the previous test, the request is still APPROVED once submitTransfer's onError
+    // re-fetches it - nobody cancelled it, so the generic error should show instead.
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet("sampleRequests", Number(params.id));
+        return HttpResponse.json({
+          status: "APPROVED",
+          statusChanges: [],
+          sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
+        });
+      }),
+    );
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.transferOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "inventory:requestsManagement.detail.transferDialog.heading" }),
+      ).toBeNull(),
+    );
+    expect(addAlert).not.toHaveBeenCalledWith(expect.objectContaining({ variant: "success" }));
+    expect(addAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variant: "error",
+        message: "inventory:errors.genericActionError",
+      }),
     );
     restoreConsole();
   });
