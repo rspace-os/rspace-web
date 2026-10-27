@@ -139,12 +139,12 @@ out of a controller will be logged correctly using the
 
 ## ZAP pull request scans
 
-The workflow in `.github/workflows/zap-pr.yml` uses the development deployment
-template for its temporary instance and seeded accounts. It overrides
-`csrf.filters.enabled=true` and `api.permissiveCors.enabled=false` when starting
-Jetty so the scan exercises production-default CSRF and CORS behavior. Keep
-these overrides when changing the scan setup, and verify that the authenticated
-scan completes with both settings in place.
+`.github/workflows/zap-pr.yml` builds each PR's WAR without secrets.
+`.github/workflows/zap-pr-scan.yml` then scans it from the default branch, so
+changes to the scan take effect only after they merge.
+
+The scan enables production CSRF and CORS settings over the development `csrf.filters.enabled=true` and `api.permissiveCors.enabled=false`
+template. Keep them when changing the scan setup.
 
 ## Sorting paginated listings
 
