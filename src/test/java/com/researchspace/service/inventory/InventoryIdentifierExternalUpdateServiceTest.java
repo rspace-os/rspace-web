@@ -369,7 +369,8 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
-    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    verifyNoInteractions(
+        b2instConnector, dataCiteConnector, rspaceToExternalProviderAdapter, auditer);
     assertNull(doi.getExternalMetadataUpdate());
   }
 
@@ -479,9 +480,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     assertThrows(NotFoundException.class, () -> service.pushMetadataUpdates(saved, user));
 
-    // not verifyNoInteractions: the enablement gate legitimately asks the connector first
-    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
-    verifyNoInteractions(auditer);
+    verifyNoInteractions(b2instConnector, auditer);
   }
 
   /**
@@ -776,8 +775,7 @@ class InventoryIdentifierExternalUpdateServiceTest {
 
     service.pushMetadataUpdates(savedInstrumentWith(doi), user);
 
-    verify(b2instConnector, never()).updateDraftDoi(anyString(), any(B2instDoi.class));
-    verifyNoInteractions(rspaceToExternalProviderAdapter, auditer);
+    verifyNoInteractions(b2instConnector, rspaceToExternalProviderAdapter, auditer);
     assertNull(
         doi.getExternalMetadataUpdate(),
         "skipped silently, like an identifier of a disabled provider");

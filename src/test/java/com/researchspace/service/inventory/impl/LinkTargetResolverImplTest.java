@@ -139,8 +139,7 @@ class LinkTargetResolverImplTest {
         .thenReturn(record);
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
-    verify(inventoryPermissionUtils, never())
-        .canUserLimitedReadInventoryRecord(any(GlobalIdentifier.class), eq(user));
+    verify(inventoryPermissionUtils, never()).canUserLimitedReadInventoryRecord(record, user);
   }
 
   @Test
