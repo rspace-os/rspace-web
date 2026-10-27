@@ -297,7 +297,8 @@ enforced there too (Perform is blocked with the reason shown).
    type, status, owner and basket controls and parameter chips are not wanted here. The tree
    view's "Navigate to container" button is hidden (`uiConfig.hideNavigateToContents`): the
    results are the containers on offer, and drilling into one would replace them with its
-   contents. Once a
+   contents. In the tree view Space selects the focused container, and Enter selects a leaf
+   and expands a container that has sub-containers. Once a
    container that can be used is picked, the search gives way to its name and a "Change
    container" button, so the grid follows directly on a short screen. One destination per run. A grid container also shows its content grid,
    in which the user picks one empty location per new subsample (the selection limit is
