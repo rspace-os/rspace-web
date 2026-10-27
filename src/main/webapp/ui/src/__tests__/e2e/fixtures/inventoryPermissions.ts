@@ -80,6 +80,19 @@ export async function createSampleSharedWithGroupmate(clientSysadmin: SysadminCl
   return { bob: { ...bob, sample: await createSample(bob, 2) }, charlie };
 }
 
+/** Sets the Container's Explicit access list to just `groupId`, shared or not. */
+export async function shareContainerWithGroup(
+  owner: InventoryActor,
+  containerId: number,
+  groupId: number,
+  { shared = true }: { shared?: boolean } = {},
+) {
+  await owner.client.updateContainer(containerId, {
+    sharingMode: "WHITELIST",
+    sharedWith: [{ group: { id: groupId }, shared }],
+  });
+}
+
 /** Bob can only store into Alice's Container while it's shared with his group, so share it just for the move. */
 export async function storeSubSampleInContainer(
   containerOwner: InventoryActor,
@@ -88,18 +101,12 @@ export async function storeSubSampleInContainer(
   subSampleId: number,
   groupId: number,
 ) {
-  await containerOwner.client.updateContainer(containerId, {
-    sharingMode: "WHITELIST",
-    sharedWith: [{ group: { id: groupId }, shared: true }],
-  });
+  await shareContainerWithGroup(containerOwner, containerId, groupId);
   await subSampleOwner.client.moveSubSample(subSampleId, {
     parentContainers: [{ id: containerId }],
     parentLocation: { coordX: 2, coordY: 3 },
   });
-  await containerOwner.client.updateContainer(containerId, {
-    sharingMode: "WHITELIST",
-    sharedWith: [{ group: { id: groupId }, shared: false }],
-  });
+  await shareContainerWithGroup(containerOwner, containerId, groupId, { shared: false });
 }
 
 export async function createPermissionScenario(clientSysadmin: SysadminClient, apiContext: APIRequestContext) {

@@ -118,8 +118,12 @@ export class GroupDetailsPage extends BasePage {
       .getByRole("dialog", { name: "Confirm Leave Group" })
       .getByRole("button", { name: "Leave Group", exact: true })
       .click();
+    const response = await left;
+    if (!response.ok()) {
+      throw new Error(`Leaving the group failed: ${response.status()} ${await response.text()}`);
+    }
     // A refused leave still answers 200, with the reason in errorMsg and no data.
-    const { data, errorMsg } = await (await left).json();
+    const { data, errorMsg } = await response.json();
     if (data == null) throw new Error(`Leaving the group failed: ${JSON.stringify(errorMsg)}`);
   }
 

@@ -73,7 +73,7 @@ test.describe(`Inventory permissions: edit and transfer rights`, { tag: [tags.IN
   }) => {
     test.fixme(
       true,
-      "Sample edits typed straight after clicking Edit are lost when the record reload lands:RSDEV-1615",
+      "Sample edits typed straight after clicking Edit are lost when the record reload lands: RSDEV-1615",
     );
     test.slow();
 

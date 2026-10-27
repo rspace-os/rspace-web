@@ -4,21 +4,11 @@ import {
   createContainer,
   createGroup,
   createInventoryActor,
-  type InventoryActor,
+  shareContainerWithGroup,
   inventoryPermissionTest as test,
 } from "@/__tests__/e2e/fixtures/inventoryPermissions";
 import { tags } from "@/__tests__/e2e/tags";
 import { alphaNumericUnique } from "@/__tests__/e2e/testData";
-
-/** Alice's Container, shared with the group through an Explicit access list. */
-async function createContainerSharedWithGroup(alice: InventoryActor, groupId: number) {
-  const container = await createContainer(alice);
-  await alice.client.updateContainer(container.id, {
-    sharingMode: "WHITELIST",
-    sharedWith: [{ group: { id: groupId }, shared: true }],
-  });
-  return container;
-}
 
 test.describe(`Inventory permissions: group membership`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
   test(`As a group member, I lose access to items shared with my group once its PI removes me`, async ({
@@ -37,7 +27,9 @@ test.describe(`Inventory permissions: group membership`, { tag: [tags.INVENTORY,
 
     const records = await test.step("And Bob and Alice each own a Container shared with the group", async () => {
       const alice = await createInventoryActor(clientSysadmin, apiContext, "Alice", "ROLE_PI");
-      return [await createContainer(bob), await createContainerSharedWithGroup(alice, group.id)];
+      const aliceContainer = await createContainer(alice);
+      await shareContainerWithGroup(alice, aliceContainer.id, group.id);
+      return [await createContainer(bob), aliceContainer];
     });
 
     for (const { id, name } of records) {
@@ -77,7 +69,9 @@ test.describe(`Inventory permissions: group membership`, { tag: [tags.INVENTORY,
 
     const records = await test.step("And Bob and Alice each own a Container shared with the group", async () => {
       const alice = await createInventoryActor(clientSysadmin, apiContext, "Alice", "ROLE_PI");
-      return [await createContainer(bob), await createContainerSharedWithGroup(alice, group.id)];
+      const aliceContainer = await createContainer(alice);
+      await shareContainerWithGroup(alice, aliceContainer.id, group.id);
+      return [await createContainer(bob), aliceContainer];
     });
 
     for (const { id, name } of records) {
