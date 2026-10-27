@@ -34,6 +34,7 @@ import com.researchspace.model.dtos.fieldmark.FieldmarkNotebookDTO;
 import com.researchspace.model.dtos.fieldmark.FieldmarkRecordDTO;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
 import com.researchspace.service.fieldmark.FieldmarkServiceManager;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -78,6 +79,7 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
   private @Autowired SampleApiPostValidator sampleApiPostValidator;
   private @Autowired SampleApiPostFullValidator sampleApiPostFullValidator;
   private @Autowired InventoryFilePostValidator invFilePostValidator;
+  private @Autowired MessageSourceUtils messages;
 
   private @Autowired InventoryIdentifierApiManager inventoryIdentifierApiManager;
   private @Autowired InventoryFileApiManager inventoryFileManager;
@@ -161,7 +163,7 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
     } catch (FieldmarkImportException ex) {
       throw ex;
     } catch (Exception ex) {
-      throw new FieldmarkImportException(ex.getMessage());
+      throw new FieldmarkImportException(messages.getExceptionChainMessage(ex));
     }
     return importResult;
   }

@@ -5,7 +5,7 @@ import TextField from "../../../components/Inputs/TextField";
 import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import BatchFormField from "../Inputs/BatchFormField";
 
-const MAX_LENGTH = 250;
+const MAX_LENGTH = 2000;
 
 /*
  * The fact that the description can be null results in a rare bug. If a record

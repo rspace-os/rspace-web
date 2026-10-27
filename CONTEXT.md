@@ -36,6 +36,32 @@ resolved during design. This file is a glossary only — no implementation detai
   Owner, Manufacturer, etc.).
 - **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
   individual record after creation, outside any template definition.
+- **Description (inventory record)** — the free, formatted text a user writes about
+  a Sample, Subsample, Container, Instrument or template to say what it is. It holds
+  up to 2000 characters counting the formatting markup, the same cap as a subsample
+  note. The description of an ELN record and the content of an Extra text field are
+  different things and keep their own, shorter cap for now.
+
+## Inventory access permissions
+
+- **Access permissions** — the setting on an inventory item (sample, container,
+  instrument or template) that says who, besides the owner, may view and edit it.
+  Subsamples have none of their own: they follow their sample.
+  _Avoid_: sharing, sharing mode, sharing settings
+- **Owner's groups** — the default access permission: every member of a group
+  the owner belongs to, lab, collaboration or project, has full access. Leaving or
+  being removed from the group ends that access.
+- **Explicit access list** — the access permission that names the groups, any in
+  the system, whose members have full access.
+  _Avoid_: whitelist
+- **Only the Owner** — the access permission that restricts the item to its owner;
+  the PI of a group the owner belongs to keeps read access.
+  _Avoid_: private, owner only
+- **Ownership control** — the right to transfer an inventory item to another owner
+  and to change its access permissions. Held by the owner and by a PI or Lab Admin
+  of a group the owner belongs to; never part of the edit access a groupmate gets
+  through Owner's groups or an Explicit access list.
+  _Avoid_: transfer permission, change-owner permission
 
 ## Instrument PID registration (B2INST/PIDINST)
 
@@ -52,7 +78,7 @@ resolved during design. This file is a glossary only — no implementation detai
   record the fact against the instrument. Only the last calibration date is
   documentation-only now: PIDINST's Date vocabulary has no home for it. The
   measurement technique and calibration links were documentation-only until
-  RSDEV-1253 mapped them to RelatedIdentifier entries with a fixed IsDescribedBy
+  they were mapped to RelatedIdentifier entries with a fixed IsDescribedBy
   relation (see ADR 0007); the relation type stored on the link itself still
   never leaves RSpace. A documentation-only field is still an ordinary
   instrument field, so users fill, edit and read it as usual.
@@ -527,3 +553,32 @@ resolved during design. This file is a glossary only — no implementation detai
   (a link field keeps the template's default link, if it has one), unless the field is
   mandatory, which refuses it.
   _Avoid_: empty column, unused column
+
+## Lab Groups and Project Groups
+
+- **Self-service Lab Group** — a Lab Group a PI creates for themselves from the My RSpace
+  menu, becoming its PI and owner, without a sysadmin or community admin creating it for
+  them. It can be created only where the "self-service lab groups" setting
+  (`self_service_labgroups`) is allowed for that PI. While the setting is denied, RSpace
+  refuses to show the creation page and to create such a group, however the request
+  arrives, and records the attempt in the security log. A PI may delete their own
+  self-service Lab Group at any time, even while the setting is denied; a Lab Group
+  created for them by an admin is never deleted this way.
+  _Avoid_: cloud group (that is the RSpace Community sign-up flow), PI group
+
+- **Project Group** — a group with no PI that any user can create for collaboration. It
+  has at least one Group Owner, by default its creator; owners invite members and make
+  other members owners, only the creator may delete the group, and any member but the last
+  owner may leave. It can be created only where the "allow project groups" setting
+  (`allow_project_groups`) is allowed for that user, with the same refusal rule as the
+  self-service Lab Group; deleting one is not affected by the setting.
+  _Avoid_: collaboration group (that is a group of Lab Groups), user group
+
+- **Allowed for a user (setting)** — the state of a sysadmin-controlled setting as it
+  applies to one user: allowed when the sysadmin allows it and none of the user's
+  communities denies it, or when the sysadmin leaves it denied by default and one of the
+  user's communities allows it. A user's communities are those of their Lab Groups plus
+  any they administer, so a user in no Lab Group follows the sysadmin value alone. A
+  sysadmin denial cannot be lifted by anyone. Hiding a menu entry never stands in for
+  this check.
+  _Avoid_: enabled (that is the user's own per-app toggle)

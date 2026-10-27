@@ -14,6 +14,7 @@ import { getLinkedByRecords } from "@/modules/workspace/linkedRecords";
 import { getPublicLink } from "@/modules/workspace/publicLink";
 import type { LinkedRecords, WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import { GlobalIdLink, MetaRow } from "./MetaTable";
+import RecordTypeLabel from "./RecordTypeLabel";
 import RelatedInventoryItems from "./RelatedInventoryItems";
 
 export interface DocumentSectionsProps {
@@ -259,7 +260,9 @@ export default function DocumentSections({
             <MetaRow label={t("fields.link.documentSections.meta.uniqueId")}>
               <GlobalIdLink globalId={isVersionView ? `${unversionedGlobalId}v${pinnedVersion}` : info.oid.idString} />
             </MetaRow>
-            <MetaRow label={t("fields.link.documentSections.meta.type")}>{info.type}</MetaRow>
+            <MetaRow label={t("fields.link.documentSections.meta.type")}>
+              <RecordTypeLabel type={info.type} />
+            </MetaRow>
             {info.path ? <MetaRow label={t("fields.link.documentSections.meta.path")}>{info.path}</MetaRow> : null}
             {isStructuredDocument && info.version != null ? (
               <MetaRow label={t("fields.link.documentSections.meta.version")}>{info.version}</MetaRow>

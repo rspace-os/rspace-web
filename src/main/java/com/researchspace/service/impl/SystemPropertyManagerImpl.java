@@ -20,6 +20,7 @@ import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyName;
 import java.util.List;
@@ -51,6 +52,8 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
   @Autowired private CommunityServiceManager communityMgr;
 
   @Autowired private IPermissionUtils permissionUtils;
+
+  @Autowired private MessageSourceUtils messages;
 
   public void setCommunityMgr(CommunityServiceManager communityMgr) {
     this.communityMgr = communityMgr;
@@ -124,11 +127,13 @@ public class SystemPropertyManagerImpl extends GenericManagerImpl<SystemProperty
   private void assertMayChange(SystemPropertyValue spv, User subject) {
     boolean global = spv == null || spv.getCommunity() == null;
     if (global && subject != null && !subject.hasSysadminRole()) {
-      throw new AuthorizationException("Only a sysadmin can change a global system setting");
+      throw new AuthorizationException(
+          messages.getMessage("system.settings.errors.globalRequiresSysadmin"));
     }
     if (!global
         && !permissionUtils.isPermitted(spv.getCommunity(), PermissionType.WRITE, subject)) {
-      throw new AuthorizationException("Cannot change settings without community write permission");
+      throw new AuthorizationException(
+          messages.getMessage("system.settings.errors.communityWriteRequired"));
     }
   }
 

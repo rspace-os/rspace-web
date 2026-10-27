@@ -498,6 +498,10 @@
     "settings": {
       "additionalPropertiesInfo": "Some settings can only be adjusted by IT staff with with access to the server environment, for more information about additional settings see: {0}",
       "additionalPropertiesLink": "Additional Server Properties / Settings",
+      "errors": {
+        "communityWriteRequired": "Cannot change settings without community write permission",
+        "globalRequiresSysadmin": "Only a sysadmin can change a global system setting"
+      },
       "header": {
         "info": "Click on a setting name for additional description, or on a setting value to start editing."
       },

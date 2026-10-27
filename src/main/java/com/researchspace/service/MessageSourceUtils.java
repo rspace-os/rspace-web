@@ -1,5 +1,7 @@
 package com.researchspace.service;
 
+import com.researchspace.model.field.ErrorList;
+import com.researchspace.model.field.LocalizedException;
 import java.util.List;
 import java.util.Locale;
 import lombok.NoArgsConstructor;
@@ -29,6 +31,34 @@ public class MessageSourceUtils {
     return messages.getMessage(resolvable);
   }
 
+  public String getMessage(LocalizedException exception) {
+    return exception.resolve(this::getMessage);
+  }
+
+  /** Resolves coded model exceptions and leaves ordinary exception messages unchanged. */
+  public String getExceptionMessage(Throwable exception) {
+    if (exception instanceof LocalizedException localizedException) {
+      return getMessage(localizedException);
+    }
+    if (exception instanceof MessageSourceResolvable resolvable) {
+      return getMessage(resolvable);
+    }
+    return exception.getMessage();
+  }
+
+  /**
+   * Resolves the first coded exception in the cause chain, for exceptions that arrive wrapped.
+   * Falls back to the top-level message when nothing in the chain is coded.
+   */
+  public String getExceptionChainMessage(Throwable exception) {
+    for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+      if (cause instanceof LocalizedException || cause instanceof MessageSourceResolvable) {
+        return getExceptionMessage(cause);
+      }
+    }
+    return exception.getMessage();
+  }
+
   public String getMessage(String key, Object[] args) {
     return messages.getMessage(key, args);
   }
@@ -43,6 +73,12 @@ public class MessageSourceUtils {
 
   public String getMessage(MessageSourceResolvable resolvable, Locale locale) {
     return messages.getMessage(resolvable, locale);
+  }
+
+  /** Resolves message codes held by model validation errors. */
+  public ErrorList resolve(ErrorList errors) {
+    errors.resolveMessageCodes(this::getMessage);
+    return errors;
   }
 
   /** Accepts Velocity array literals, which are passed as {@link List Lists}. */

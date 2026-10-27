@@ -26,7 +26,10 @@ import com.researchspace.fieldmark.model.utils.FieldmarkDoiIdentifierExtractor;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.dtos.fieldmark.FieldmarkNotebookDTO;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.service.ApiAvailabilityHandler;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
 import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
@@ -50,6 +53,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
@@ -78,6 +82,7 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
   private @Mock SampleApiPostValidator sampleApiPostValidator;
   private @Mock SampleApiPostFullValidator sampleApiPostFullValidator;
   private @Mock InventoryFilePostValidator invFilePostValidator;
+  private @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   private @Mock InventoryIdentifierApiManager inventoryIdentifierApiManager;
   private @Mock InventoryFileApiManager inventoryFileManager;
@@ -204,6 +209,17 @@ public class FieldmarkServiceManagerTest extends SpringTransactionalTest {
         .contains(
             "The notebookID \"" + GOOD_NOTEBOOK_REQ.getNotebookId() + "\" has not being imported");
     assertThat(thrown.getMessage()).contains("No disk space left");
+  }
+
+  @Test
+  public void testImportNotebookReportsInvalidFieldDataAsText() {
+    when(sampleApiMgr.createNewApiSample(any(), any()))
+        .thenThrow(new LocalizedIllegalArgumentException("validation.quantity.incomparableUnits"));
+    FieldmarkImportException thrown =
+        assertThrows(
+            FieldmarkImportException.class,
+            () -> fieldmarkServiceManagerImpl.importNotebook(GOOD_NOTEBOOK_REQ, goodUser));
+    assertThat(thrown.getMessage()).contains("items to sum are not commensurate");
   }
 
   @Test

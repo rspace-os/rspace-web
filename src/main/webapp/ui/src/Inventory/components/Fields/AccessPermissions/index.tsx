@@ -14,6 +14,7 @@ import { OptionExplanation, OptionHeading } from "../../../../components/Inputs/
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
 import type { Group, SharedWithGroup } from "../../../../stores/definitions/Group";
 import type { SharingMode } from "../../../../stores/definitions/InventoryRecord";
+import InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
 import InventoryBaseRecordCollection from "../../../../stores/models/InventoryBaseRecordCollection";
 import AccessListTable from "./AccessListTable";
 import OwnersGroupsTable from "./OwnersGroupsTable";
@@ -57,10 +58,18 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
 
   const notEditable =
     !fieldOwner.isFieldEditable("sharingMode") && !(fieldOwner instanceof InventoryBaseRecordCollection);
+  const ownershipControlMissing =
+    fieldOwner instanceof InventoryBaseRecordCollection
+      ? fieldOwner.records.some((r) => !r.canTransfer)
+      : fieldOwner instanceof InventoryBaseRecord && !(fieldOwner.canTransfer && fieldOwner.canEdit);
 
   return (
     <>
-      {notEditable && <Alert severity="info">{t("fields.accessPermissions.editFirst")}</Alert>}
+      {ownershipControlMissing ? (
+        <Alert severity="info">{t("fields.accessPermissions.ownershipControlRequired")}</Alert>
+      ) : (
+        notEditable && <Alert severity="info">{t("fields.accessPermissions.editFirst")}</Alert>
+      )}
       <FormControl
         aria-label={t("fields.accessPermissions.label")}
         label=""
@@ -72,7 +81,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
           </>
         }
         actions={
-          fieldOwner.canChooseWhichToEdit ? (
+          fieldOwner.canChooseWhichToEdit && !ownershipControlMissing ? (
             <ChooseToEdit
               checked={fieldOwner.isFieldEditable("sharingMode")}
               onChange={(checked) => {

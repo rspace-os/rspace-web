@@ -348,7 +348,7 @@ public class GalleryController extends BaseController {
           ErrorList.of(getText("gallery.errors.saveFailed", new Object[] {e.getMessage()}));
       return new AjaxReturnObject<>(null, errorList);
     } catch (MediaContentMismatchException e) {
-      return new AjaxReturnObject<>(null, ErrorList.of(getText(e.getErrorCode(), e.getArgs())));
+      return new AjaxReturnObject<>(null, ErrorList.of(messages.getExceptionMessage(e)));
     }
   }
 

@@ -310,9 +310,38 @@
       "uploadImage": "Change Image"
     },
     "preferences": {
+      "box": "Box",
+      "boxLinkType": "Box Link Type",
+      "chemistry": "Chemistry",
+      "defaultPdfPageSize": "Default PDF page size",
+      "deletedRecordsPerPage": "Number of deleted items per page",
+      "directoryResultsPerPage": "Number of Directory items per page",
+      "documentShared": "A document is shared with me",
+      "documentUnshared": "A document is unshared with me",
+      "dropbox": "Dropbox",
+      "ecat": "Ecat",
+      "ecatServer": "eCAT Server",
+      "formsPerPage": "Number of Forms per page",
+      "googleDrive": "GoogleDrive",
+      "guidedTours": "Show guided tours",
+      "initialWorkspaceView": "Whether Workspace page opens up as list view or tree view initially",
+      "mendeley": "Mendeley",
+      "notificationsByEmail": "Send notifications by email",
+      "oneDrive": "OneDrive",
+      "piCanEditAllWork": "PI can edit all work in lab group",
+      "processCompleted": "A background process finishes",
+      "processFailed": "A background process fails",
+      "requestsByEmail": "Send requests by email",
+      "requestStatusChanged": "A request status changes",
+      "sharedDocumentDeleted": "A shared document is deleted",
+      "sharedDocumentEdited": "A shared document is edited",
+      "sharedRecordsPerPage": "Number of shared items per page",
+      "uiClientSettings": "UI client-side settings",
+      "uiJsonSettings": "UI client-side settings, in json format",
       "updateButton": {
         "label": "Update Preferences"
-      }
+      },
+      "workspaceResultsPerPage": "Number of Workspace items per page"
     },
     "sectionLabel": {
       "collaborationGroups": "Collaboration Groups:",

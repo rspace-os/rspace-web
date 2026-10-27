@@ -13,6 +13,7 @@ import { getLinkedDocuments } from "@/modules/workspace/linkedRecords";
 import type { LinkedRecords, WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import { formatFileSize } from "@/util/files";
 import { GlobalIdLink, MetaRow } from "./MetaTable";
+import RecordTypeLabel from "./RecordTypeLabel";
 import RelatedInventoryItems from "./RelatedInventoryItems";
 
 export interface GallerySectionsProps {
@@ -87,7 +88,9 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
               <MetaRow label={t("fields.link.gallerySections.labels.uniqueId")}>
                 <GlobalIdLink globalId={info.oid.idString} />
               </MetaRow>
-              <MetaRow label={t("fields.link.gallerySections.labels.type")}>{info.type}</MetaRow>
+              <MetaRow label={t("fields.link.gallerySections.labels.type")}>
+                <RecordTypeLabel type={info.type} />
+              </MetaRow>
               {info.version != null && (info.version > 1 || isRevisionView) ? (
                 <MetaRow label={t("fields.link.gallerySections.labels.version")}>{info.version}</MetaRow>
               ) : null}

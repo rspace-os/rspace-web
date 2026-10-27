@@ -85,6 +85,9 @@ function loadRecordInfoPanelFunctions() {
       },
       isNotebook: boolean,
     ) => string,
+    displayType: (sandbox as unknown as Record<string, unknown>)._getInfoPanelTypeDisplayName as (
+      type: string,
+    ) => string,
   };
 }
 
@@ -138,5 +141,34 @@ describe("record info panel internal links", () => {
       "This notebook is shared: <ul><li>with Example group (group) for read</li>" +
         "<li>with Example user (user) for write</li></ul>",
     );
+  });
+});
+
+describe("record info panel type display names", () => {
+  it("translates every known record type while preserving unknown values", () => {
+    const { displayType } = loadRecordInfoPanelFunctions();
+
+    const recordTypes = [
+      ["Structured Document", "Structured Document"],
+      ["Folder", "Folder"],
+      ["Notebook", "Notebook"],
+      ["System Folder", "System Folder"],
+      ["Template", "Template"],
+      ["Image", "Image"],
+      ["Video", "Video"],
+      ["Audio", "Audio"],
+      ["Document", "Document"],
+      ["Chemistry", "Chemistry"],
+      ["PdfDocuments", "Exports"],
+      ["Miscellaneous", "Miscellaneous"],
+      ["DMPs", "DMPs"],
+      ["Snippet", "Snippet"],
+      ["Form", "Form"],
+    ];
+
+    for (const [type, displayName] of recordTypes) {
+      expect(displayType(type)).toBe(displayName);
+    }
+    expect(displayType("Future Record Type")).toBe("Future Record Type");
   });
 });

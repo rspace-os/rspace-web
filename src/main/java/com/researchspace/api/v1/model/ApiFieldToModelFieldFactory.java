@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.model;
 
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.inventory.field.InventoryChoiceField;
 import com.researchspace.model.inventory.field.InventoryChoiceFieldDef;
 import com.researchspace.model.inventory.field.InventoryEntityField;
@@ -33,7 +34,8 @@ public class ApiFieldToModelFieldFactory {
       case CHOICE:
         InventoryChoiceFieldDef def = new InventoryChoiceFieldDef();
         if (definitionIsEmpty(field)) {
-          throw new IllegalArgumentException("Choice field must supply a definition");
+          throw new LocalizedIllegalArgumentException(
+              "errors.inventory.template.choiceDefinitionRequired");
         }
         def.setChoiceOptionsList(field.getDefinition().getOptions());
         def.setMultipleChoice(field.getDefinition().isMultiple());
@@ -42,7 +44,8 @@ public class ApiFieldToModelFieldFactory {
       case RADIO:
         InventoryRadioFieldDef radioDef = new InventoryRadioFieldDef();
         if (definitionIsEmpty(field)) {
-          throw new IllegalArgumentException("Radio field must supply a definition");
+          throw new LocalizedIllegalArgumentException(
+              "errors.inventory.template.radioDefinitionRequired");
         }
         radioDef.setRadioOptionsList(field.getDefinition().getOptions());
         toAdd = new InventoryRadioField(radioDef, field.getName());

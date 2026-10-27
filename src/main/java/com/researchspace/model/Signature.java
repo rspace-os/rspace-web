@@ -1,6 +1,7 @@
 package com.researchspace.model;
 
 import com.researchspace.model.comms.MessageOrRequest;
+import com.researchspace.model.field.LocalizedUnsupportedOperationException;
 import com.researchspace.model.record.Record;
 import com.researchspace.model.record.StructuredDocument;
 import jakarta.persistence.CascadeType;
@@ -221,9 +222,10 @@ public class Signature implements Serializable {
     this.hashes = hashes;
   }
 
+  /** Generates the signature content hash; only structured documents support signing. */
   public void generateRecordContentHash() {
     if (!recordSigned.isStructuredDocument()) {
-      throw new UnsupportedOperationException("only structured documents can be signed");
+      throw new LocalizedUnsupportedOperationException("errors.signing.structuredDocumentRequired");
     }
 
     StructuredDocument doc = (StructuredDocument) recordSigned;
