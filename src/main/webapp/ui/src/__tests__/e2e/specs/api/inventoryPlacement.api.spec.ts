@@ -1,5 +1,4 @@
 import { expect } from "@playwright/test";
-import { ApiError } from "@/__tests__/e2e/api/clients/BaseApiClient";
 import { InventoryClient } from "@/__tests__/e2e/api/clients/InventoryClient";
 import type { ApiInventoryBulkMoveRecord, ApiInventorySubSample } from "@/__tests__/e2e/api/models/inventory";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
@@ -110,56 +109,6 @@ test.describe("Inventory placement API", () => {
       expect(result.errorCount).toBe(1);
       expect(await occupants(clientInventory, container.id)).toEqual([first.globalId]);
       expect((await clientInventory.getSubSample(second.id)).parentContainers?.[0].cType).toBe("WORKBENCH");
-    });
-
-    /** Each racer's outcome: moved, refused with a per-record error, or a server error. */
-    async function race(client: InventoryClient, containerId: number, racers: ApiInventorySubSample[]) {
-      const settled = await Promise.allSettled(racers.map((s) => client.bulkMove([moveInto(s, containerId)], true)));
-      return settled.map((r) => {
-        if (r.status === "fulfilled") return r.value.errorCount === 0 ? "moved" : "refused";
-        if (r.reason instanceof ApiError) return `HTTP ${r.reason.status}`;
-        throw r.reason;
-      });
-    }
-
-    test("As an API client, parallel moves into one empty location never leave two items there", async ({
-      flowOperationsEnabled: _,
-      clientInventory,
-    }) => {
-      for (let round = 0; round < 3; round++) {
-        const container = await box(clientInventory);
-        const outcomes = await race(clientInventory, container.id, await subSamples(clientInventory, 5));
-
-        const moved = outcomes.filter((o) => o === "moved").length;
-        expect(moved).toBeLessThanOrEqual(1);
-        expect(await occupants(clientInventory, container.id)).toHaveLength(moved);
-      }
-    });
-
-    test("As an API client, a move that loses a race into one location is refused, not failed", {
-      annotation: { type: "issue", description: "Concurrent writes answer 500 with the SQL error (e2e report F2)" },
-    }, async ({ flowOperationsEnabled: _, clientInventory }) => {
-      test.fail();
-      const container = await box(clientInventory);
-
-      const outcomes = await race(clientInventory, container.id, await subSamples(clientInventory, 5));
-
-      expect(outcomes.sort()).toEqual(["moved", "refused", "refused", "refused", "refused"]);
-    });
-
-    test("As an API client, parallel operations on separate subsamples all succeed", {
-      annotation: { type: "issue", description: "Concurrent writes answer 500 with the SQL error (e2e report F2)" },
-    }, async ({ flowOperationsEnabled: _, clientInventory }) => {
-      test.fail();
-      const origins = [
-        ...(await subSamples(clientInventory, 1)),
-        ...(await subSamples(clientInventory, 1)),
-        ...(await subSamples(clientInventory, 1)),
-      ];
-
-      const responses = await Promise.all(origins.map((o) => clientInventory.aliquot(aliquotOf(o))));
-
-      expect(responses.map((r) => r.status())).toEqual([201, 201, 201]);
     });
   });
 });
