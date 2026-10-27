@@ -2,11 +2,13 @@ package com.researchspace.model.views;
 
 import java.util.Set;
 import java.util.TreeSet;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Parses the "Name &lt;id&gt;, Other name &lt;id&gt;," strings produced by the group and community
  * autocomplete boxes without a regular expression, so the cost stays linear in the input length.
  */
+@Slf4j
 final class AutocompleteIdList {
 
   private AutocompleteIdList() {}
@@ -17,12 +19,18 @@ final class AutocompleteIdList {
     if (input == null) {
       return ids;
     }
-    // the last piece is the text after the final '>', so it never holds a closed item
+    // Keep unmatched pieces as part of the next name, including a leading <number>.
     String[] items = input.trim().split(">", -1);
+    int itemStart = 0;
     for (int i = 0; i < items.length - 1; i++) {
-      String id = idOf(items[i]);
-      if (isId(id, allowNegative)) {
+      int open = items[i].lastIndexOf('<');
+      if (open < 0) {
+        continue;
+      }
+      String id = items[i].substring(open + 1);
+      if (isId(id, allowNegative) && (i > itemStart || hasName(items[i], 0, open))) {
         ids.add(Long.parseLong(id));
+        itemStart = i + 1;
       }
     }
     return ids;
@@ -51,14 +59,7 @@ final class AutocompleteIdList {
         open = i;
       } else if (current == '>' && open >= itemStart) {
         String id = items.substring(open + 1, i);
-        if (isId(id, allowNegative)) {
-          String name = items.substring(itemStart, open);
-          if (name.startsWith(",")) {
-            name = name.substring(1);
-          }
-          if (name.isBlank()) {
-            return false;
-          }
+        if (isId(id, allowNegative) && hasName(items, itemStart, open)) {
           itemStart = i + 1;
         }
         open = -1;
@@ -67,9 +68,13 @@ final class AutocompleteIdList {
     return itemStart == items.length();
   }
 
-  private static String idOf(String item) {
-    int open = item.lastIndexOf('<');
-    return open < 0 ? "" : item.substring(open + 1);
+  private static boolean hasName(String input, int start, int end) {
+    String name = input.substring(start, end);
+    if (name.startsWith(",")) {
+      name = name.substring(1);
+    }
+    // A leading <number> is part of the name, not an id with an empty name.
+    return !name.isBlank();
   }
 
   private static boolean isId(String text, boolean allowNegative) {
@@ -80,6 +85,7 @@ final class AutocompleteIdList {
       Long.parseLong(text);
       return true;
     } catch (NumberFormatException e) {
+      log.warn("Autocomplete id is outside the supported numeric range");
       return false;
     }
   }

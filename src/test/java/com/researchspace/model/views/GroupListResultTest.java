@@ -47,6 +47,13 @@ public class GroupListResultTest {
   }
 
   @Test
+  public void preservesNumericBracketPrefixesInNames() {
+    String input = "<2024> Lab<123>, <567><890>";
+    assertTrue(GroupListResult.validateMultiGroupAutocompleteInput(input));
+    assertEquals(Set.of(123L, 890L), GroupListResult.getGroupIdsfromMultiGroupAutocomplete(input));
+  }
+
+  @Test
   public void parsingFinishesQuicklyOnPathologicalInput() {
     String spaces = " ".repeat(100_000);
     String unclosed = "<".repeat(100_000) + "1>";
