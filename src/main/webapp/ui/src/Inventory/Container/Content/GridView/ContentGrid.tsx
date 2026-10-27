@@ -15,8 +15,10 @@ import { visuallyHidden } from "@/util/visuallyHidden";
 import SearchContext from "../../../../stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import ContainerModel from "../../../../stores/models/ContainerModel";
+import useStores from "../../../../stores/use-stores";
 import { preventEventBubbling } from "../../../../util/Util";
 import * as DragAndDrop from "../DragAndDrop";
+import { canStartDrag } from "../DragAndDrop/Draggable";
 import Dragger from "../Dragger";
 import LocationContent from "../LocationContent";
 import GridCell, { type GridCellArgs } from "./GridCell";
@@ -94,6 +96,7 @@ interface LoadedContentProps {
 const LoadedContent = observer(({ container }: LoadedContentProps) => {
   const { t } = useTranslation("inventory");
   const { search } = React.useContext(SearchContext);
+  const { moveStore } = useStores();
   const columnsUnderHover = useLocalObservable(() => new Set<number>());
 
   /*
@@ -257,8 +260,14 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
              * Space toggles the focused location, Escape clears the selection.
              */
             const selectionOnly = search.uiConfig.dragAndDropDisabled;
-            if (e.key === " " && !selectionOnly) {
-              setInKeyboardDragAndDropMode(true);
+            if (e.key === " " && !selectionOnly && !inKeyboardDragAndDropMode) {
+              const focused = focusCoord && container.findLocation(focusCoord.x, focusCoord.y);
+              if (focused && canStartDrag(container, focused, search, moveStore)) {
+                setInKeyboardDragAndDropMode(true);
+              } else {
+                e.preventDefault();
+                announce(t("container.content.keyboard.nothingToMove"));
+              }
               return;
             }
             if (inKeyboardDragAndDropMode && (e.key === "Enter" || e.key === "Return" || e.key === "Escape")) {

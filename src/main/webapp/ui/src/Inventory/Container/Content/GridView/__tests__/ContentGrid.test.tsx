@@ -103,14 +103,46 @@ describe("ContentGrid", () => {
 
     it("on the container page, the arrow keys move the selection, and Space enters the grid's keyboard drag mode, after which the arrows stop moving it", async () => {
       const user = userEvent.setup();
+      // jsdom lacks scrollIntoView, which dnd-kit calls when a keyboard drag starts.
+      HTMLElement.prototype.scrollIntoView = () => {};
       renderGrid(boxWithA1Taken());
       await user.tab();
       await user.keyboard("{ArrowRight}");
       expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
       expect(screen.getByText("inventory:container.content.keyboard.tips")).toBeVisible();
-      await user.keyboard(" {ArrowDown}");
-      expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "true", "false", "false"]);
+      await user.keyboard("{ArrowLeft} {ArrowDown}");
+      expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["true", "false", "false", "false"]);
       expect(screen.getByText("inventory:container.content.keyboard.dragTips")).toBeVisible();
+      // Ends dnd-kit's keyboard drag, whose document listeners would otherwise outlive the test.
+      await user.keyboard("{Escape}");
+    });
+
+    it("on the container page, Space on an empty location leaves the arrows working and says there is nothing to move", async () => {
+      const user = userEvent.setup();
+      renderGrid(boxWithA1Taken());
+      await user.tab();
+      await user.keyboard("{ArrowRight} ");
+      expect(screen.getByText("inventory:container.content.keyboard.nothingToMove").parentElement).toHaveAttribute(
+        "role",
+        "status",
+      );
+      expect(screen.queryByText("inventory:container.content.keyboard.dragTips")).not.toBeInTheDocument();
+      await user.keyboard("{ArrowDown}");
+      expect(cells().map((c) => c.getAttribute("aria-selected"))).toEqual(["false", "false", "false", "true"]);
+    });
+
+    it("on the container page, Space does not start a drag while the selection includes an empty location", async () => {
+      const user = userEvent.setup();
+      const box = boxWithA1Taken();
+      renderGrid(box);
+      await user.tab();
+      act(() => {
+        box.findLocation(2, 1)?.toggleSelected(true);
+      });
+      await user.keyboard(" ");
+      expect(screen.queryByText("inventory:container.content.keyboard.dragTips")).not.toBeInTheDocument();
+      await user.keyboard("{ArrowDown}");
+      expect(cells()[2]).toHaveAttribute("aria-selected", "true");
     });
 
     it("lets Escape reach the dialog around a container's own grid", async () => {
