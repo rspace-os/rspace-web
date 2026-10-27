@@ -4399,6 +4399,13 @@ export default interface Resources {
       },
       "deepLinkError": "This request could not be found, or you do not have permission to view it.",
       "detail": {
+        "actionErrors": {
+          "approve": "Failed to approve sample request",
+          "cancel": "Failed to cancel sample request",
+          "fulfil": "Failed to fulfil sample request",
+          "reject": "Failed to reject sample request",
+          "transfer": "Failed to transfer sample ownership"
+        },
         "approveButton": "Approve",
         "approvedButton": "✓ Approved",
         "cancelRequestHint": "Cancel this request if you no longer require this material.",
@@ -4643,6 +4650,10 @@ export default interface Resources {
       "newImageAlt": "What the new sample looks like",
       "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
       "requestMaterialSection": {
+        "actionErrors": {
+          "cancel": "Failed to cancel sample request",
+          "send": "Failed to send sample request"
+        },
         "compactDescription": "{owner} reviews each request before producing material.",
         "compactTitle": "Request this sample",
         "dialogTitle": "Request {sampleName}",

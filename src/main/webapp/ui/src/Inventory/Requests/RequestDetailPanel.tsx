@@ -240,7 +240,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const approveRequest = () => {
     if (isProcessingAction) return;
     approveMutation.mutate(request.id, {
-      onError: (error) => showActionError("Failed to approve sample request", error),
+      onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.approve"), error),
     });
   };
 
@@ -253,7 +253,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           setRejectDialogOpen(false);
           setRejectReason("");
         },
-        onError: (error) => showActionError("Failed to reject sample request", error),
+        onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.reject"), error),
       },
     );
   };
@@ -262,7 +262,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     if (isProcessingAction) return;
     fulfilMutation.mutate(request.id, {
       onSuccess: () => setFulfilDialogOpen(false),
-      onError: (error) => showActionError("Failed to fulfil sample request", error),
+      onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.fulfil"), error),
     });
   };
 
@@ -351,24 +351,28 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
             }),
           );
         },
-        onError: (error) => {
-          console.error("Failed to transfer sample ownership", error);
+        onError: async (error) => {
           // Closing the dialog rather than leaving it open avoids a retry that can only fail the
-          // same way again; the mutation's own onError (see ./mutations.ts) has already
-          // invalidated every query above, so the status chip, history, and action buttons pick
-          // up whatever the request's real state now is on their own, without a bespoke
-          // refetch-and-resync here. The backend call is a single transaction, so a failure here
-          // means nothing was committed - most likely because the request was closed by someone
-          // else in the meantime.
+          // same way again. The backend call is a single transaction, so a failure here means
+          // nothing was committed - but the error itself carries no distinct code for "the
+          // requester cancelled it first" versus every other way this can fail (wrong actor, the
+          // requester's account having been deleted, an edit lock, etc. - see ./mutations.ts), so
+          // re-fetching the request directly is the only reliable way to tell those apart.
           setTransferDialogOpen(false);
-          uiStore.addAlert(
-            mkAlert({
-              variant: "error",
-              message: t("requestsManagement.detail.transferCancelledErrorMessage", {
-                sampleName: request.sample.name,
+          const refetched = await detailQuery.refetch();
+          if (refetched.data?.status === "CANCELLED") {
+            console.error("Failed to transfer sample ownership: request was cancelled", error);
+            uiStore.addAlert(
+              mkAlert({
+                variant: "error",
+                message: t("requestsManagement.detail.transferCancelledErrorMessage", {
+                  sampleName: request.sample.name,
+                }),
               }),
-            }),
-          );
+            );
+          } else {
+            showActionError(t("requestsManagement.detail.actionErrors.transfer"), error);
+          }
         },
       },
     );
@@ -379,7 +383,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
   const cancelRequest = () => {
     if (isProcessingAction) return;
     cancelMutation.mutate(request.id, {
-      onError: (error) => showActionError("Failed to cancel sample request", error),
+      onError: (error) => showActionError(t("requestsManagement.detail.actionErrors.cancel"), error),
     });
   };
 

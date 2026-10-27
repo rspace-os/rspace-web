@@ -210,7 +210,7 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
           setDialogOpen(false);
           setRequestText("");
         },
-        onError: (error) => showActionError("Failed to send sample request", error),
+        onError: (error) => showActionError(t("sample.requestMaterialSection.actionErrors.send"), error),
       },
     );
   };
@@ -219,7 +219,7 @@ export const RequestMaterialSection = observer(({ activeResult }: { activeResult
   const cancelRequest = () => {
     if (!existingRequest || isProcessingAction) return;
     cancelRequestMutation.mutate(existingRequest.id, {
-      onError: (error) => showActionError("Failed to cancel sample request", error),
+      onError: (error) => showActionError(t("sample.requestMaterialSection.actionErrors.cancel"), error),
     });
   };
 
