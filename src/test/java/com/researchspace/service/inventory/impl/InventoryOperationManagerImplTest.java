@@ -104,7 +104,8 @@ class InventoryOperationManagerImplTest {
 
   @BeforeEach
   void setUp() {
-    // with no messages defined, a label resolves to its key, so assertions name the key
+    // LabelResolver passes each key as its own default, so with no messages defined
+    // assertions name the key
     manager =
         new InventoryOperationManagerImpl(
             sampleApiMgr,
