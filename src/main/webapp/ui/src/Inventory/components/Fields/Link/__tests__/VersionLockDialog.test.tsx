@@ -376,11 +376,11 @@ describe("VersionLockDialog (ELN targets: SD documents, GL gallery files)", () =
 
     // SD is a supported target, so this is NOT the cannot-resolve fallback...
     expect(screen.queryByText("inventory:fields.link.versionLock.cannotResolve")).not.toBeInTheDocument();
-    // ...the picker still renders with the Latest option and no version rows...
-    expect(await screen.findByText("common:versionLockPicker.latest")).toBeInTheDocument();
+    // ...it says so, rather than presenting an empty history as the truth...
+    expect(await screen.findByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
+    // ...and the picker still renders with the Latest option and no version rows.
+    expect(screen.getByText("common:versionLockPicker.latest")).toBeInTheDocument();
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "1")).toHaveLength(0);
-    // ...but says so, rather than presenting an empty history as the truth.
-    expect(screen.getByText("common:versionLockPicker.loadFailed")).toBeInTheDocument();
   });
 
   it("skips SD revisions that carry no version, rather than offering an unlabelled row", async () => {
