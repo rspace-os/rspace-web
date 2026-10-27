@@ -59,6 +59,17 @@ test.describe("Project Group creation", { tag: tags.SYSTEM }, () => {
 });
 
 test.describe("Project Group deletion", { tag: tags.SYSTEM }, () => {
+  test("As the Group Owner who created the Project Group, I can delete it", async ({ flowSelfServicePi }) => {
+    const creator = await flowSelfServicePi();
+    await creator.projectGroup.open();
+    const groupId = await creator.projectGroup.createGroup(uniqueName("e2eCreatorDeletesProjectGroup"));
+
+    await creator.groupDetails.openGroup(groupId);
+    await expect(creator.groupDetails.memberRow(creator.username)).toContainText("Group Owner");
+    await expect(creator.groupDetails.deleteGroupButton).toBeVisible();
+    await creator.groupDetails.deleteGroup();
+  });
+
   test("As a Group Owner who did not create the Project Group, I can delete it", async ({
     clientSysadmin,
     flowUserSession,
