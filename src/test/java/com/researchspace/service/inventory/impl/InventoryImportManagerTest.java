@@ -13,6 +13,7 @@ import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.api.v1.controller.ContainersApiController;
 import com.researchspace.api.v1.controller.SampleTemplatesApiController;
 import com.researchspace.api.v1.controller.SamplesApiController;
+import com.researchspace.api.v1.controller.SubSampleApiPutValidator;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.ApiInventoryBulkOperationRecordResult;
@@ -36,6 +37,7 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
@@ -87,6 +89,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
   @Autowired private CsvContainerImporter containerCsvImporter;
   @Autowired private CsvSampleImporter sampleCsvImporter;
   @Autowired private CsvSubSampleImporter subSampleCsvImporter;
+  @Autowired private SubSampleApiPutValidator subSampleApiPutValidator;
   @Autowired private InventoryIdentifierApiManager inventoryIdentifierManager;
 
   @Autowired private DigitalObjectIdentifierDao doiDao;
@@ -115,6 +118,7 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
     importMgr.setContainerCsvImporter(containerCsvImporter);
     importMgr.setSampleCsvImporter(sampleCsvImporter);
     importMgr.setSubSampleCsvImporter(subSampleCsvImporter);
+    importMgr.setSubSampleApiPutValidator(subSampleApiPutValidator);
     importMgr.setInventoryIdentifierManager(inventoryIdentifierManager);
 
     when(apiHandler.isInventoryAndDataciteEnabled(testUser)).thenReturn(true);
@@ -1007,6 +1011,65 @@ public class InventoryImportManagerTest extends SpringTransactionalTest {
       assertEquals(1, saved.getVersion());
       assertThat(saved.getTags()).extracting(ApiTagInfo::getValue).containsExactly("frozen");
     }
+  }
+
+  @Test
+  public void subSampleIntoExistingSampleRefusesDescriptionOverTheCap() throws IOException {
+    ApiInventoryImportResult processingResult = new ApiInventoryImportResult(testUser);
+    ApiSampleWithFullSubSamples preexistingSample = createBasicSampleForUser(testUser);
+
+    // a sample from the same import, so the third row can join it
+    InputStream samplesCsvIS = IOUtils.toInputStream("Name,Import Identifier\nTestSample1,s1\n");
+    HashMap<String, String> sampleMapping = new HashMap<>();
+    sampleMapping.put("Name", "name");
+    sampleMapping.put("Import Identifier", "import identifier");
+    ApiSampleTemplate templateInfo = new ApiSampleTemplate();
+    templateInfo.setName("TestTemplate");
+    ApiInventoryImportSampleImportResult sampleResult = new ApiInventoryImportSampleImportResult();
+    sampleResult.addCreatedTemplateResult(templateInfo);
+    processingResult.setSampleResult(sampleResult);
+    sampleCsvImporter.readCsvIntoImportResult(
+        samplesCsvIS, sampleMapping, processingResult, testUser);
+
+    String atCap = "x".repeat(InventoryRecord.DESCRIPTION_LENGTH);
+    String overCap = atCap + "x";
+    InputStream subSamplesCsvIS =
+        IOUtils.toInputStream(
+            "Name,Description,Parent Sample,Parent Sample Global Id\n"
+                + "AtCap,"
+                + atCap
+                + ",,"
+                + preexistingSample.getGlobalId()
+                + "\n"
+                + "OverCap,"
+                + overCap
+                + ",,"
+                + preexistingSample.getGlobalId()
+                + "\n"
+                + "OverCapWithSample,"
+                + overCap
+                + ",s1,\n");
+    HashMap<String, String> subSampleMapping = new HashMap<>();
+    subSampleMapping.put("Name", "name");
+    subSampleMapping.put("Description", "description");
+    subSampleMapping.put("Parent Sample", "parent sample import id");
+    subSampleMapping.put("Parent Sample Global Id", "parent sample global id");
+    subSampleCsvImporter.readCsvIntoImportResult(
+        subSamplesCsvIS, subSampleMapping, processingResult, testUser);
+
+    importMgr.prevalidateSubSamples(processingResult);
+
+    ApiInventoryImportSubSampleImportResult subSampleResult = processingResult.getSubSampleResult();
+    assertEquals(InventoryBulkOperationStatus.PREVALIDATION_ERROR, subSampleResult.getStatus());
+    assertEquals(1, subSampleResult.getErrorCount());
+    assertEquals(
+        InventoryRecord.DESCRIPTION_LENGTH,
+        subSampleResult.getResults().get(0).getRecord().getDescription().length());
+    assertEquals(
+        List.of("description: description cannot be greater than 2000 characters."),
+        subSampleResult.getResults().get(1).getError().getErrors());
+    // joins a Sample from this import: checked with that Sample at creation, as today
+    assertNull(subSampleResult.getResults().get(2).getError());
   }
 
   @Test
