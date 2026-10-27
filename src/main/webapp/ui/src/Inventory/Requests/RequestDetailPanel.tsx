@@ -336,7 +336,7 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
     // above, which names the same sample the same way.
     const transferredSampleName = wizardCreatedSample?.name ?? request.sample.name;
     transferMutation.mutate(
-      { requestId: request.id },
+      { requestId: request.id, sampleToTransferGlobalId: wizardCreatedSample?.globalId },
       {
         onSuccess: () => {
           setTransferDialogOpen(false);

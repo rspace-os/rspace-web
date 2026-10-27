@@ -167,7 +167,7 @@ const SAMPLE_REQUEST_DETAIL_URL = "/api/inventory/v1/sampleRequests/:id";
 const SAMPLE_REQUESTS_URL = "/api/inventory/v1/sampleRequests";
 const SAMPLE_REQUEST_STATUS_URL = "/api/inventory/v1/sampleRequests/:id/status";
 const SAMPLE_URL = "/api/inventory/v1/samples/:id";
-const SAMPLE_CHANGE_OWNER_URL = "/api/inventory/v1/samples/:id/actions/changeOwner";
+const SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL = "/api/inventory/v1/sampleRequests/:id/actions/fulfilByTransfer";
 const SUBSAMPLE_URL = "/api/inventory/v1/subSamples/:id";
 
 /**
@@ -198,10 +198,10 @@ function defaultHandlers() {
       apiUpdate("sampleRequests", `${params.id}/status`, body);
       return HttpResponse.json({ status: body.status });
     }),
-    http.put(SAMPLE_CHANGE_OWNER_URL, async ({ params, request }) => {
+    http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
       const body = await request.json();
-      apiUpdate("samples", `${params.id}/actions/changeOwner`, body);
-      return HttpResponse.json({ id: 999 });
+      apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
+      return HttpResponse.json({ status: "FULFILLED" });
     }),
   ];
 }
@@ -428,5 +428,50 @@ describe("RequestDetailPanel", () => {
       expect.objectContaining({ sampleName: "New Sample From Wizard" }),
     );
     tSpy.mockRestore();
+  });
+
+  it("transfers the sample the Operations Wizard created, not the originally requested one", async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get(SUBSAMPLE_URL, () =>
+        HttpResponse.json(subsampleAttrs({ id: 42, globalId: "SS42", sample: sampleAttrs() })),
+      ),
+    );
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+    await screen.findByTestId("mock-operation-wizard");
+    act(() => {
+      lastOnPerformed?.({ id: 999, globalId: "SA999", name: "New Sample From Wizard" });
+    });
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
+
+    // Not the originally requested sample's global id ("SA55") - the Operations Wizard created a
+    // new sample, and that is the one the backend must actually hand to the requester.
+    await waitFor(() =>
+      expect(apiUpdate).toHaveBeenCalledWith("sampleRequests", "101/actions/fulfilByTransfer", {
+        sampleToTransferGlobalId: "SA999",
+      }),
+    );
   });
 });
