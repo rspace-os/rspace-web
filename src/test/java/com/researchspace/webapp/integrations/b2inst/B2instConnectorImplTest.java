@@ -7,9 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
@@ -50,7 +47,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -69,7 +68,9 @@ class B2instConnectorImplTest {
   private static final String DRAFT_URL = RECORD_URL + "/draft";
 
   @Mock private SystemPropertyManager mockSysPropMgr;
-  @Mock private MessageSourceUtils messages;
+  // With no messages defined, every code resolves to itself, which lets the assertions below pin
+  // which message was asked for rather than today's English.
+  @Spy private MessageSourceUtils messages = new MessageSourceUtils(codeEchoingMessageSource());
   @InjectMocks private B2instConnectorImpl connector;
 
   private Map<String, SystemPropertyValue> props;
@@ -82,12 +83,12 @@ class B2instConnectorImplTest {
     addProperty("pidinst.b2inst.community.id", "2cd7e6c2-comm");
     addProperty("pidinst.b2inst.token", "TOK123");
     when(mockSysPropMgr.getAllSysadminPropertiesAsMap()).thenReturn(props);
-    // Lenient: most tests never reach a reason RSpace authors. Echoing the code back is what lets
-    // the assertions below pin which message was asked for rather than today's English.
-    lenient().when(messages.getMessage(anyString())).thenAnswer(code -> code.getArgument(0));
-    lenient()
-        .when(messages.getMessage(anyString(), any(Object[].class)))
-        .thenAnswer(code -> code.getArgument(0));
+  }
+
+  private static StaticMessageSource codeEchoingMessageSource() {
+    StaticMessageSource source = new StaticMessageSource();
+    source.setUseCodeAsDefaultMessage(true);
+    return source;
   }
 
   private void addProperty(String name, String value) {
