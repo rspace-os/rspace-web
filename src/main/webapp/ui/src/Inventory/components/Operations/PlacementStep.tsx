@@ -62,7 +62,12 @@ function PlacementStep({
     const s: Search = new Search({
       fetcherParams: { resultType: "CONTAINER" },
       treeArgs: { filteredTypes: ["container"] },
-      uiConfig: { allowedTypeFilters: new Set(["CONTAINER"]), selectionMode: "SINGLE" },
+      uiConfig: {
+        allowedTypeFilters: new Set(["CONTAINER"]),
+        selectionMode: "SINGLE",
+        // The results are the containers on offer; drilling into one would replace them with its contents.
+        hideNavigateToContents: true,
+      },
       factory: new MemoisedFactory(),
       callbacks: {
         // A pick resolves only after the container loads, by which time the user may have picked

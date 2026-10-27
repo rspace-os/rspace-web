@@ -150,6 +150,13 @@ export type UiConfig = {
    * `onlyAllowSelectingEmptyLocations`, as every caller does.
    */
   dragAndDropDisabled: boolean;
+
+  /**
+   * Hides the tree view's "Navigate to container" button, which replaces the results with the
+   * contents of that container. A search whose results are the choices on offer, such as one that
+   * picks a single destination container, has nothing to show by drilling into one.
+   */
+  hideNavigateToContents: boolean;
 };
 
 export type PermalinkType =

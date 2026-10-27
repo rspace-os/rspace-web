@@ -294,7 +294,10 @@ enforced there too (Perform is blocked with the reason shown).
    "Leave on my workbench" is always one click and is the step's skip. "Choose a
    location" shows a search box, a list/tree view toggle and the results over the step's
    own `Search`, never the global `moveStore` and not the shared `InventoryPicker`, whose
-   type, status, owner and basket controls and parameter chips are not wanted here. Once a
+   type, status, owner and basket controls and parameter chips are not wanted here. The tree
+   view's "Navigate to container" button is hidden (`uiConfig.hideNavigateToContents`): the
+   results are the containers on offer, and drilling into one would replace them with its
+   contents. Once a
    container that can be used is picked, the search gives way to its name and a "Change
    container" button, so the grid follows directly on a short screen. One destination per run. A grid container also shows its content grid,
    in which the user picks one empty location per new subsample (the selection limit is
