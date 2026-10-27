@@ -1,6 +1,6 @@
 # AGENTS.md
 
-RSpace is a Java 17/Spring application with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
+RSpace is a Java/Spring application (built for Java 17, runs on 17 or 21) with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
 
 Applies repository-wide; nested `AGENTS.md` files take precedence.
 
