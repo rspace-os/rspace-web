@@ -12,9 +12,9 @@ function makeFile(): File {
 }
 
 describe("uploadNewGalleryVersion", () => {
-  // The body is asserted as the FormData handed to fetch: Node's fetch cannot
-  // serialise a jsdom File (content-length mismatch), so the handler must not
-  // read the request body in this environment.
+  // These tests check the FormData passed to fetch. Node's fetch fails with a
+  // content-length mismatch when it serialises a jsdom File, so the handler must
+  // not read the request body here.
   it("posts multipart form data with the file and selectedMediaId to the upload endpoint", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     let contentType: string | null = null;

@@ -84,8 +84,8 @@ const browsers = (process.env.VITEST_BROWSERS ?? "chromium,firefox,webkit")
   .filter(Boolean) as PlaywrightBrowser[];
 
 export default defineConfig({
-  // worker-only: serve /mockServiceWorker.js from the installed msw;
-  // browserSetup.ts calls setupWorker itself.
+  // worker-only serves /mockServiceWorker.js from the installed msw.
+  // browserMocks.ts calls setupWorker itself.
   plugins: [react(), tinymceAssetsPlugin(), msw({ mode: "worker-only" })],
   define: {
     global: "globalThis",
@@ -150,7 +150,7 @@ export default defineConfig({
       headless: true,
       screenshotFailures: false,
       // Vitest 5 defaults to exact, case-sensitive locator text. Keep Vitest 4's
-      // substring matching until the specs are migrated deliberately.
+      // substring matching until a follow-up moves the specs to exact matching.
       locators: { exact: false },
       instances: browsers.map((browser) => ({ browser })),
     },

@@ -52,9 +52,10 @@ export class MainPanelPage {
 
   /**
    * Clicks a tree item's inner content `div`, matching the Playwright spec
-   * pattern `treeitem.locator("> div").click()`. A real pointer click, not
-   * `HTMLElement.click()`: MUI X registers newly expanded children in an effect,
-   * and a synchronous click before that crashes TreeItem under StrictMode.
+   * pattern `treeitem.locator("> div").click()`. It uses a real pointer click,
+   * not `HTMLElement.click()`. MUI X registers newly expanded children in an
+   * effect, and a synchronous click before that effect runs crashes TreeItem
+   * under StrictMode.
    */
   private async clickTreeItemContent(name: string): Promise<void> {
     await expect.element(this.treeItem(name)).toBeVisible();

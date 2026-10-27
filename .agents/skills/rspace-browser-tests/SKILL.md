@@ -34,8 +34,8 @@ Paths below are relative to `src/main/webapp/ui/`.
 
 - `src/__tests__/browserMocks.ts`: the file-local `worker` and
   `suppressFireAndForget404(...)`. Specs import these from here.
-- `src/__tests__/browserSetup.ts` (setup file, never imported by specs):
-  starts the worker, resets handlers, storage and CDP media.
+- `src/__tests__/browserSetup.ts`: the setup file. Starts the worker and resets
+  handlers, storage and CDP media. Specs never import it.
 - `src/__tests__/mswAppShellHandlers.ts`: default whoami, navigation, analytics,
   and livechat handlers; survive `resetHandlers()`.
 - `src/__tests__/mocks/inventoryMocks.ts`: `oauthTokenHandler`, `OAUTH_TOKEN`.

@@ -4,9 +4,9 @@ import { oauthTokenHandler } from "./mocks/oauthTokenMocks";
 import { appShellHandlers } from "./mswAppShellHandlers";
 
 /*
- * The single MSW client for a test file's iframe. browserSetup.ts starts it;
- * specs import it from here to add handlers with worker.use(). MSW 3 refuses a
- * second started setupWorker in one iframe, so never create another.
+ * The single MSW client for a test file's iframe. browserSetup.ts starts it,
+ * and specs import it from here to add handlers with worker.use(). MSW 3 throws
+ * when a second setupWorker starts in the same iframe, so never create another.
  */
 export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler(), ...galleryAppShellHandlers());
 

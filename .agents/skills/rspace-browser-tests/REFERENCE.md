@@ -100,13 +100,13 @@ document/page divs, the TinyMCE contenteditable iframe body.
   registration is origin-global in every engine. Skip `worker.stop()` in
   teardown; it only closes the current client and the context cleans up. Keep
   files serial so only one file uses the shared registration at a time. Import
-  `worker` from `browserMocks.ts`, never `browserSetup.ts`: importing the setup
-  file creates a second worker, and MSW 3 throws "Failed to replace a global
+  `worker` from `browserMocks.ts`, never `browserSetup.ts`. Importing the setup
+  file starts a second worker, and MSW 3 throws "Failed to replace a global
   value at "WebSocket": already replaced".
 - **Text matching (Vitest 5).** `toHaveTextContent("x")` asserts the whole text
-  is "x"; use `toMatchTextContent("x" | /x/)` for a partial or RegExp match.
+  is "x". Use `toMatchTextContent("x" | /x/)` for a partial or RegExp match.
   Locators keep Vitest 4's case-insensitive substring matching through
-  `browser.locators.exact: false` in the config; pass `exact: true` per locator
+  `browser.locators.exact: false` in the config. Pass `exact: true` to a locator
   when a name must match in full.
 - **`suppressFireAndForget404([...])`.** Components that fire un-awaited requests
   (folder listings, thumbnails) can 404 after teardown and surface as an

@@ -40,7 +40,7 @@ expect(button).toBeInTheDocument()
 | `toBeDisabled()` | Form element is disabled |
 | `toBeEnabled()` | Form element is enabled |
 | `toBeVisible()` | Element is visible to user |
-| `toHaveTextContent()` | Whole text in Browser Mode (jsdom still matches a string partially) |
+| `toHaveTextContent()` | Element text equals a string in Browser Mode, or contains it in jsdom |
 | `toMatchTextContent()` | Element text contains a string or matches a RegExp |
 | `toHaveValue()` | Input has specific value |
 | `toHaveClass()` | Element has CSS class |

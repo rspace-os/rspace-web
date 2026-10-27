@@ -31,10 +31,10 @@ expect(badge).toHaveTextContent('Premium User')
 
 **Use `toMatchTextContent()` for partial and regex matches:**
 
-The shared types come from Vitest 5's browser matchers, where `toHaveTextContent()`
-takes a string and, in Browser Mode, means the whole text (jest-dom in jsdom still
-matches a string partially). `src/__tests__/setup.ts` registers
-`toMatchTextContent()` for jsdom with the same partial/RegExp meaning.
+In Browser Mode, Vitest 5's `toHaveTextContent()` takes a string and matches the
+whole text. jest-dom's `toHaveTextContent()` in jsdom still matches part of the
+text. `src/__tests__/setup.ts` adds `toMatchTextContent()` to jsdom, so partial
+and RegExp checks use the same matcher in both environments.
 
 ```tsx
 // Partial match

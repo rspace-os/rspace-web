@@ -33,8 +33,8 @@ i18n.services.i18nFormat.options.parseErrorHandler = throwOnIcuFormatError;
 
 /*
  * Every file must await start() to activate its client. Do not stop the worker
- * in test teardown: the registration is shared by later files, and the browser
- * context owns final cleanup.
+ * in test teardown. Later files share the registration, and closing the browser
+ * context cleans it up.
  */
 beforeAll(async () => {
   await worker.start({

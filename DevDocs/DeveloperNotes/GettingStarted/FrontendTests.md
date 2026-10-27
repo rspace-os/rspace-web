@@ -45,9 +45,10 @@ The suite uses its own Vite `cacheDir`, so it can run alongside `pnpm test`.
 
 ### Service-worker lifecycle
 
-The `msw/vite` plugin (`worker-only` mode) serves `/mockServiceWorker.js` from
-the installed `msw`, so the worker script always matches the library version;
-there is no committed copy to regenerate.
+The `msw/vite` plugin runs in `worker-only` mode and serves
+`/mockServiceWorker.js` from the installed `msw` package. The worker script
+always matches the library version, and there is no committed copy to
+regenerate.
 
 Each spec file gets a new iframe and its own handlers, but one service-worker
 registration serves the whole origin. Two rules follow:
@@ -58,11 +59,12 @@ registration serves the whole origin. Two rules follow:
   at a time. The CI matrix provides engine parallelism instead.
 
 A resolved `start()` or a set `navigator.serviceWorker.controller` does not
-prove interception; assert response bodies when debugging a leaked request.
+prove that MSW intercepts requests. When you debug a leaked request, assert on
+response bodies.
 
-Optimizer reloads are a separate cause of flakiness: duplicate React instances
-come from a mid-run reload, not from MSW. `optimizeDeps.entries` scans every
-spec, even in focused runs, to prevent them.
+Vite optimizer reloads are a separate cause of flakiness. A reload during a run
+leaves duplicate React instances, and MSW changes cannot fix that.
+`optimizeDeps.entries` scans every spec, even in focused runs, to prevent them.
 
 ## Storybook composition examples
 
