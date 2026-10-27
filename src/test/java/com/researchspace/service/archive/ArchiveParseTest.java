@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.archive.AllArchiveExternalWorkFlowMetaData;
@@ -15,16 +16,28 @@ import com.researchspace.archive.ArchiveExternalWorkFlow;
 import com.researchspace.archive.ArchiveManifest;
 import com.researchspace.archive.ArchiveModel;
 import com.researchspace.archive.IArchiveModel;
+import com.researchspace.core.util.ZipExtractionLimitException;
 import com.researchspace.core.util.version.SemanticVersion;
 import com.researchspace.model.ArchivalCheckSum;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.ImportArchiveReport.ValidationResult;
+import com.researchspace.service.impl.DiskSpaceCheckerImpl;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.context.support.StaticMessageSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class ArchiveParseTest {
 
@@ -41,6 +54,7 @@ public class ArchiveParseTest {
 
     ArchiveModelTSS model;
     boolean isZip;
+    ZipExtractionLimitException extractionFailure;
     SemanticVersion appversion;
 
     protected Optional<ArchivalCheckSum> getCheckSum(String uid) {
@@ -70,7 +84,10 @@ public class ArchiveParseTest {
       return isZip;
     }
 
-    protected File extractZipFolder(File zipFile, File outFolder) {
+    protected File extractZipFolder(File zipFile, File outFolder) throws IOException {
+      if (extractionFailure != null) {
+        throw extractionFailure;
+      }
       return anyFolder;
     }
 
@@ -105,6 +122,80 @@ public class ArchiveParseTest {
     assertFalse(report.isValidationSuccessful());
     assertRuleValidationResult(
         report, ImportValidationRule.ZIP_FILE_CAN_UNZIP, ValidationTestResult.FAIL);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "EXPANDED_SIZE, 10485760000, extractionExpandedSizeExceeded, 10000",
+    "FREE_DISK_SPACE, 2097152000, extractionInsufficientDiskSpace, 2000",
+    "ENTRY_COUNT, 500000, extractionEntryCountExceeded, 500000",
+    "COMPRESSION_RATIO, 100, extractionCompressionRatioExceeded, 100"
+  })
+  public void extractionLimitFailureReportsWhichLimitTripped(
+      ZipExtractionLimitException.Limit limit,
+      long limitValue,
+      String messageKey,
+      long expectedArgument) {
+    parser.isZip = true;
+    parser.extractionFailure = new ZipExtractionLimitException(limit, limitValue, "test");
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage("archiveImport.errors." + messageKey, Locale.getDefault(), "limit {0}");
+    MessageSourceUtils messages = new MessageSourceUtils();
+    messages.setMessageSource(source);
+    ReflectionTestUtils.setField(parser, "messages", messages);
+    ImportArchiveReport report = new ImportArchiveReport();
+
+    loadArchive(report, new File("any"));
+
+    assertFalse(report.isValidationSuccessful());
+    assertRuleValidationResult(
+        report, ImportValidationRule.ZIP_FILE_CAN_UNZIP, ValidationTestResult.FAIL);
+    assertEquals(
+        List.of(MessageFormat.format("limit {0}", expectedArgument)),
+        report.getErrorList().getErrorMessages());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "1, 0, 0, 0, EXPANDED_SIZE, 1048576",
+    "0, 1, 0, 0, ENTRY_COUNT, 1",
+    "0, 0, 2147483647, 0, FREE_DISK_SPACE, 2251799812636672",
+    "0, 0, 0, 50, COMPRESSION_RATIO, 50"
+  })
+  public void extractionUsesDeploymentLimits(
+      int maxExpandedSizeMB,
+      int maxEntries,
+      int minFreeSpaceMB,
+      int maxCompressionRatio,
+      ZipExtractionLimitException.Limit expectedLimit,
+      long expectedLimitValue,
+      @TempDir File tempDir)
+      throws IOException {
+    File zip = new File(tempDir, "big.zip");
+    try (ZipArchiveOutputStream out = new ZipArchiveOutputStream(zip)) {
+      // past the 10 MiB floor, so the ratio is judged
+      out.putArchiveEntry(new ZipArchiveEntry("big.bin"));
+      out.write(new byte[12 * 1024 * 1024]);
+      out.closeArchiveEntry();
+      out.putArchiveEntry(new ZipArchiveEntry("small.txt"));
+      out.closeArchiveEntry();
+    }
+    DiskSpaceCheckerImpl diskSpaceChecker = new DiskSpaceCheckerImpl();
+    diskSpaceChecker.setMaxArchiveSizeMB(Integer.toString(maxExpandedSizeMB));
+    diskSpaceChecker.setSpaceRequiredToStartArchiveExportMB(Integer.toString(minFreeSpaceMB));
+    ArchiveParserImpl realParser = new ArchiveParserImpl();
+    ReflectionTestUtils.setField(realParser, "diskSpaceChecker", diskSpaceChecker);
+    ReflectionTestUtils.setField(realParser, "importMaxEntries", maxEntries);
+    ReflectionTestUtils.setField(realParser, "importMaxCompressionRatio", maxCompressionRatio);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () -> realParser.extractZipFolder(zip, new File(tempDir, "out")));
+
+    assertEquals(expectedLimit, e.getLimit());
+    assertEquals(expectedLimitValue, e.getLimitValue());
+    assertEquals(0, new File(tempDir, "out").list().length);
   }
 
   @Test

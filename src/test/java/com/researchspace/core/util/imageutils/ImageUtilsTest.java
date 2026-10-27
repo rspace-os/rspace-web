@@ -21,7 +21,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.researchspace.core.util.RSpaceCoreTestUtils;
 import com.researchspace.model.field.LocalizedIOException;
@@ -53,7 +53,7 @@ public class ImageUtilsTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    initMocks(this);
+    openMocks(this);
   }
 
   @AfterEach
