@@ -679,6 +679,23 @@ test.describe("Inventory operation placement", { tag: tags.INVENTORY }, () => {
       await grid.expectSelected(["B2", "B3"]);
     });
 
+    test("As a keyboard user, I can pick a container in Tree View and go back to the search", async ({
+      flowOperationsEnabled: _,
+      pageInventory,
+      clientInventory,
+    }) => {
+      const sample = await origin(clientInventory);
+      const box = await gridContainer(clientInventory, 2, 2);
+      const wizard = await aliquotToLocation(pageInventory, sample, 1);
+
+      await wizard.location.pickWithKeyboard(box.name);
+      await expect(wizard.location.changeContainerButton).toBeFocused();
+      await wizard.location.changeContainerButton.press("Enter");
+
+      await expect(wizard.location.searchInput).toBeFocused();
+      await expect(wizard.location.placingIn).toBeHidden();
+    });
+
     test.describe("on a short screen", () => {
       test.use({ viewport: { width: 1192, height: 738 } });
 

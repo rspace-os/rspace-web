@@ -385,6 +385,21 @@ test.describe("Grid keyboard selection", { tag: tags.INVENTORY }, () => {
       await expect.poll(() => grid.selectedLabels()).toHaveLength(1);
     });
 
+    test("As a keyboard user, Space on an empty location says there is nothing to move and the arrows keep working", async ({
+      pageInventory,
+      clientInventory,
+    }) => {
+      const box = await gridContainer(clientInventory, 3, ["A1"]);
+      const grid = await openGrid(pageInventory, box.name);
+
+      await grid.press("ArrowRight", "Space");
+
+      await expect(grid.announcement()).toHaveText("Nothing to move here.");
+      await expect(grid.tips()).toBeHidden();
+      await grid.press("ArrowDown");
+      await grid.expectSelected(["B2"]);
+    });
+
     test("As a keyboard user, Escape leaves only the focused location selected", async ({
       pageInventory,
       clientInventory,

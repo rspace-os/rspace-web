@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-const ANNOUNCEMENT = /This location is not empty\.|Selection limit reached/;
+const ANNOUNCEMENT = /This location is not empty\.|Selection limit reached|Nothing to move here\./;
 // The cells carry the implicit gridcell role of a td, and the row header is a td too.
 const LOCATION_CELL = 'td:not([role="rowheader"])';
 const TIPS = /Use the arrow keys to move|Press Enter to drop items|Expand selection by holding Shift/;

@@ -67,6 +67,15 @@ export class PlacementStepComponent {
     await expect(this.placingIn).toContainText(name);
   }
 
+  /** Searches for the container, then focuses its row in Tree View and presses Space. */
+  async pickWithKeyboard(name: string): Promise<void> {
+    if (!(await this.searchInput.isVisible())) await this.chooseContainer();
+    await this.search(name);
+    await this.root.getByRole("treeitem", { name }).focus();
+    await this.page.keyboard.press("Space");
+    await expect(this.placingIn).toContainText(name);
+  }
+
   async changeContainer(): Promise<void> {
     await this.changeContainerButton.click();
     await this.searchInput.waitFor({ state: "visible" });
