@@ -924,12 +924,6 @@ class InventoryOperationManagerImplTest {
   void theOriginsAfterComeBackInRequestOrderRegardlessOfProcessingOrder() throws Exception {
     serverBuiltOriginHolds(200L, "5");
     serverBuiltOriginHolds(100L, "5");
-    ApiSubSample after200 = new ApiSubSample();
-    after200.setId(200L);
-    ApiSubSample after100 = new ApiSubSample();
-    after100.setId(100L);
-    when(subSampleApiMgr.getApiSubSampleById(200L, user)).thenReturn(after200);
-    when(subSampleApiMgr.getApiSubSampleById(100L, user)).thenReturn(after100);
     when(sampleApiMgr.createNewApiSample(any(), eq(user)))
         .thenReturn(new ApiSampleWithFullSubSamples("Pooled"));
     ApiInventoryOperationRequests.Pool request =

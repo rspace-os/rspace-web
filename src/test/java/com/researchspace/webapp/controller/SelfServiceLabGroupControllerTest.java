@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -253,15 +252,11 @@ public class SelfServiceLabGroupControllerTest {
 
   @Test
   public void shouldDeleteOwnSelfServiceLabGroupWhileSelfServiceLabGroupsDenied() {
-    lenient()
-        .when(
-            systemPropertyPermissionManager.isPropertyAllowed(
-                piUser, SystemPropertyName.SELF_SERVICE_LABGROUPS))
-        .thenReturn(false);
     when(groupManager.getGroup(1L)).thenReturn(newLabGroup);
     when(newLabGroup.isSelfService()).thenReturn(true);
     when(newLabGroup.getOwner()).thenReturn(piUser);
     assertEquals("redirect:/userform", controller.removeGroup(1L));
     verify(groupManager).removeGroup(1L, piUser);
+    verifyNoInteractions(systemPropertyPermissionManager);
   }
 }

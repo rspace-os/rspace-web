@@ -208,6 +208,14 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: maven
 
+      # Backend tests keep MockitoExtension's strict stubs (see AGENTS.md).
+      - name: No lenient Mockito stubs
+        run: |
+          if git grep -nE 'lenient\(|Strictness\.LENIENT|strictness *= *LENIENT' -- src/test/java; then
+            echo "::error::Do not use lenient Mockito stubs; see the backend tests section of AGENTS.md."
+            exit 1
+          fi
+
       # Fail the build if any Java file is not Spotless-formatted. This is an
       # independent job from frontend-checks, so it runs in parallel and a
       # Spotless failure here fails the overall CI run without stopping the

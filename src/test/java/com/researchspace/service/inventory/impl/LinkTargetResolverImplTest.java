@@ -127,22 +127,6 @@ class LinkTargetResolverImplTest {
   }
 
   @Test
-  void inventoryLinkingRequiresFullReadNotLimitedRead() {
-    // the inventory API grants any logged-in user a redacted "limited read"
-    // view of items, but that must never be enough to link to them: the
-    // resolver consults the full READ check only, so an unreadable target is
-    // rejected exactly like a missing one and existence is not disclosed
-    InventoryRecord record = mock(InventoryRecord.class);
-    when(record.getOid()).thenReturn(new GlobalIdentifier("SA42"));
-    when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
-            any(GlobalIdentifier.class)))
-        .thenReturn(record);
-
-    assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA42"), user));
-    verify(inventoryPermissionUtils, never()).canUserLimitedReadInventoryRecord(record, user);
-  }
-
-  @Test
   void inventoryTargetNotFoundResolvesFalse() {
     when(inventoryPermissionUtils.getInvRecByGlobalIdOrThrowNotFoundException(
             any(GlobalIdentifier.class)))
@@ -387,6 +371,10 @@ class LinkTargetResolverImplTest {
 
   @Test
   void limitedReadIsNotEnoughToLinkToATarget() {
+    // the inventory API grants any logged-in user a redacted "limited read"
+    // view of items, but that must never be enough to link to them: the
+    // resolver consults the full READ check only, so an unreadable target is
+    // rejected exactly like a missing one and existence is not disclosed
     InventoryRecord rec = withoutFullRead("SA90");
 
     assertFalse(resolver.targetExistsAndIsReadable(new GlobalIdentifier("SA90"), user));

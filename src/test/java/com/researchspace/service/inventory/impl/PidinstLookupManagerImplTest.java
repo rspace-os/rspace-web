@@ -508,7 +508,6 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: the refusal still refuses, and still says why, without naming anything. */
   @Test
   void importRefusesAPidLinkedByAnInstrumentTheCallerCannotOpenWithoutNamingIt() {
-    userCanOpenAnyInstrument();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(Optional.of(publishedRecord()));
     DigitalObjectIdentifier existing =
@@ -574,7 +573,6 @@ class PidinstLookupManagerImplTest {
   /** RSDEV-1505: the registry record is public, so the PID is; the RSpace instrument is not. */
   @Test
   void searchMarksAHitLinkedWithoutNamingAnInstrumentTheCallerCannotOpen() {
-    userCanOpenAnyInstrument();
     when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
