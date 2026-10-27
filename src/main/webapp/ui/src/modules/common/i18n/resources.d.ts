@@ -7291,6 +7291,7 @@ export default interface Resources {
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
           "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
+          "databaseError": "The database refused the import and nothing was imported. Check the rows for values longer than their fields allow, then try again.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
           "importIdentifierAlreadyUsed": "Import identifier {0} was already used in row {1}",
           "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
