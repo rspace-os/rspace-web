@@ -933,9 +933,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
       containerApiMgr.createNewApiContainer(otherSubContainer, testUser);
       fail("was able to save into occupied location");
     } catch (IllegalArgumentException iae) {
-      assertThat(iae.getMessage())
-          .as(iae.getMessage())
-          .contains("is already taken by the record: IC");
+      assertEquals("errors.inventory.location.occupied", iae.getMessage());
     }
   }
 
@@ -1085,7 +1083,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(updateRequest, testUser));
-    assertEquals("Cannot move container into itself", iae.getMessage());
+    assertEquals("errors.inventory.move.containerIntoItself", iae.getMessage());
 
     // moving parent to its child is rejected
     updateRequest.setId(topLevelContainer.getId());
@@ -1094,7 +1092,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(updateRequest, testUser));
-    assertEquals("Cannot move container into its subcontainer", iae.getMessage());
+    assertEquals("errors.inventory.move.containerIntoSubcontainer", iae.getMessage());
 
     // cannot move into deleted container
     ApiContainer deletedContainer =
@@ -1113,7 +1111,7 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> containerApiMgr.updateApiContainer(updateRequest, testUser));
-    assertEquals("Cannot move into deleted container", iae.getMessage());
+    assertEquals("errors.inventory.move.containerDeleted", iae.getMessage());
 
     // cannot move into other user's container
     User otherUser = createAndSaveUserIfNotExists(getRandomAlphabeticString("api"));
@@ -1633,5 +1631,27 @@ public class ContainerApiManagerTest extends SpringTransactionalTest {
     // can be read by test user fine
     containerAsSeenByTestUser = containerApiMgr.getApiContainerById(apiContainer.getId(), testUser);
     assertThat(containerAsSeenByTestUser.getPermittedActions()).hasSize(3);
+  }
+
+  @Test
+  public void groupmateCannotChangeContainerAccessPermissions() {
+    User pi = createAndSaveUserIfNotExists(getRandomName(10), Constants.PI_ROLE);
+    User groupmate = createAndSaveUserIfNotExists(getRandomName(10));
+    initialiseContentWithEmptyContent(pi, groupmate);
+    Group group = createGroup("group-" + getRandomName(5), pi);
+    addUsersToGroup(pi, group, testUser, groupmate);
+    ApiContainer created = createBasicContainerForUser(testUser);
+
+    ApiContainer restrict = new ApiContainer();
+    restrict.setId(created.getId());
+    restrict.setSharingMode(ApiInventorySharingMode.OWNER_ONLY);
+    IllegalArgumentException iae =
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> containerApiMgr.updateApiContainer(restrict, groupmate));
+    assertThat(iae.getMessage()).endsWith("access permissions cannot be changed by current User");
+    assertEquals(
+        ApiInventorySharingMode.OWNER_GROUPS,
+        containerApiMgr.getApiContainerById(created.getId(), testUser).getSharingMode());
   }
 }

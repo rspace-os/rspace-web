@@ -16,6 +16,7 @@ import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.LinkTargetResolver;
 import com.researchspace.service.inventory.LinkTargetSnapshotResolver;
@@ -38,11 +39,7 @@ public class CsvInstrumentImporterLinkFieldTest {
     IPropertyHolder properties = mock(IPropertyHolder.class);
     when(properties.getServerUrl()).thenReturn("https://rspace.example.com");
     parser.properties = properties;
-    MessageSourceUtils messages = mock(MessageSourceUtils.class);
-    when(messages.getMessage(eq("errors.inventory.import.linkValueInvalid"), any()))
-        .thenReturn("bad link cell");
-    when(messages.getMessage(eq("errors.inventory.field.linkTargetVersionNotFound"), any()))
-        .thenReturn("no such version");
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
     parser.messages = messages;
     parser.linkTargetResolver = mock(LinkTargetResolver.class);
     parser.snapshotResolver = mock(LinkTargetSnapshotResolver.class);
@@ -98,7 +95,10 @@ public class CsvInstrumentImporterLinkFieldTest {
     importer.convertLinesToInstruments(result, lines, Map.of(0, "name"), 2, new User("u"));
 
     assertEquals(1, result.getErrorCount());
-    assertEquals("bad link cell", result.getResults().get(0).getError().getErrors().get(0));
+    assertEquals(
+        "Link value 'nonsense' must be a DataCite relation type followed by a link URL on this "
+            + "server, for example 'IsDerivedFrom https://your-rspace/globalId/SA123v2'",
+        result.getResults().get(0).getError().getErrors().get(0));
   }
 
   @Test
@@ -116,6 +116,8 @@ public class CsvInstrumentImporterLinkFieldTest {
 
     assertEquals(1, result.getErrorCount());
     assertEquals(0, result.getSuccessCount());
-    assertEquals("no such version", result.getResults().get(0).getError().getErrors().get(0));
+    assertEquals(
+        "Link target 'SD7' has no version 5.",
+        result.getResults().get(0).getError().getErrors().get(0));
   }
 }

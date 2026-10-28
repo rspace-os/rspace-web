@@ -99,7 +99,7 @@ public class RadioFieldForm extends FieldForm {
   public ErrorList validate(String data) {
     ErrorList el = new ErrorList();
     if (data.length() > 0 && !getRadioOptionAsList().contains(data)) {
-      el.addErrorMsg("Invalid data for Radio Field [" + data + "]");
+      el.addErrorMsgCode("validation.fieldData.invalidRadio", data);
     }
     return el;
   }

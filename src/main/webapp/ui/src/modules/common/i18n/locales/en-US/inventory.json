@@ -49,7 +49,7 @@
       "title": "Unsaved changes?"
     },
     "validation": {
-      "descriptionTooLong": "Description cannot be longer than 250 characters.",
+      "descriptionTooLong": "Description cannot be longer than 2000 characters.",
       "distinctFieldNames": "All field names must be distinct.",
       "editLockExpired": "Edit lock has expired. Please refresh.",
       "nameRequired": "Name cannot be empty.",
@@ -532,7 +532,8 @@
       "ownerOnly": {
         "description": "Accessible to the item's owner, and the PI.",
         "title": "Only the Owner"
-      }
+      },
+      "ownershipControlRequired": "Only the item's owner, or a PI or Lab Admin of one of the owner's groups who can edit the item, can change its access permissions."
     },
     "attachments": {
       "actions": {

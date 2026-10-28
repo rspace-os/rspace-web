@@ -223,7 +223,8 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
         }
         csvProcessingResult.addSuccessResult(apiInstrument);
       } catch (RuntimeException iae) {
-        csvProcessingResult.addError(getBadRequestIllegalArgumentApiError(iae.getMessage()));
+        csvProcessingResult.addError(
+            getBadRequestIllegalArgumentApiError(messages.getExceptionMessage(iae)));
       }
 
       resultCount++;

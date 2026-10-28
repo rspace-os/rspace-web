@@ -65,9 +65,14 @@ public class DateRangeTest {
     DateRange toOnly = DateRange.parse(",1900-01-23");
     assertTrue(toOnly.getFrom() == 0L);
 
-    assertThrows(
-        IllegalArgumentException.class,
-        () -> DateRange.parse(",1900/01/23")); // illegal format throws IAE
+    IllegalArgumentException invalidFormat =
+        assertThrows(IllegalArgumentException.class, () -> DateRange.parse(",1900/01/23"));
+    assertEquals("validation.dateRange.invalidFormat", invalidFormat.getMessage());
+
+    IllegalArgumentException reversedRange =
+        assertThrows(
+            IllegalArgumentException.class, () -> new DateRange(new Date(20), new Date(10)));
+    assertEquals("validation.dateRange.fromAfterTo", reversedRange.getMessage());
   }
 
   @Test

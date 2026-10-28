@@ -2,6 +2,7 @@ package com.researchspace.export.pdf;
 
 import com.researchspace.model.User;
 import com.researchspace.model.UserPreference;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.preference.ExportPageSize;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.service.UserManager;
@@ -51,9 +52,13 @@ public class ExportConfigurerImpl implements ExportConfigurer {
 
   ExportPageSize getUserDefault(User user) {
     UserPreference up = userManager.getPreferenceForUser(user, Preference.UI_PDF_PAGE_SIZE);
-    String errorMsg = Preference.UI_PDF_PAGE_SIZE.getInvalidErrorMessageForValue(up.getValue());
-    if (!StringUtils.isEmpty(errorMsg)) {
-      log.error(errorMsg);
+    LocalizedIllegalArgumentException validationException =
+        Preference.UI_PDF_PAGE_SIZE.getInvalidExceptionForValue(up.getValue());
+    if (validationException != null) {
+      log.error(
+          "Invalid {} preference value: {}",
+          Preference.UI_PDF_PAGE_SIZE,
+          validationException.getMessage());
       return ExportPageSize.UNKNOWN;
     } else {
       return ExportPageSize.valueOf(up.getValue());

@@ -4,6 +4,7 @@ import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.AuditTrailData;
 import com.researchspace.model.audittrail.AuditTrailIdentifier;
 import com.researchspace.model.audittrail.AuditTrailProperty;
+import com.researchspace.model.field.LocalizedIllegalArgumentException;
 import com.researchspace.model.permissions.AbstractEntityPermissionAdapter;
 import com.researchspace.model.permissions.CommunityPermissionsAdapter;
 import com.researchspace.model.record.PermissionsAdaptable;
@@ -333,7 +334,7 @@ public class Community implements Serializable, PermissionsAdaptable {
 
   private void assertAdminHasAdminRole(User admin) {
     if (!admin.hasRole(Role.ADMIN_ROLE, Role.SYSTEM_ROLE)) {
-      throw new IllegalArgumentException("A community admin must have  an admin role");
+      throw new LocalizedIllegalArgumentException("validation.community.adminRoleRequired");
     }
   }
 

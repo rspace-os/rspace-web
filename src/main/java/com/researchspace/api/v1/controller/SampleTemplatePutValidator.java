@@ -26,6 +26,7 @@ public class SampleTemplatePutValidator extends SampleTemplateValidator {
   @Override
   public void validate(Object target, Errors errors) {
     ApiSampleTemplate incomingTemplate = (ApiSampleTemplate) target;
+    validateDescriptionTooLong(incomingTemplate.getDescription(), errors);
     validateDefaultUnit(errors, incomingTemplate.getDefaultUnitId());
     validateSubSampleAlias(errors, incomingTemplate.getSubSampleAlias());
     validateFields(errors, incomingTemplate.getFields());

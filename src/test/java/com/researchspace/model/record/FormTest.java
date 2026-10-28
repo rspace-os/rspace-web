@@ -287,7 +287,9 @@ public class FormTest {
     setUpFormWith3Fields();
     // too few args
     List<Long> fieldIds = toList(1L);
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
+    assertEquals("validation.form.fieldCountMismatch", exception.getMessage());
   }
 
   @Test
@@ -295,7 +297,9 @@ public class FormTest {
     setUpFormWith3Fields();
     // 4L is not in form
     List<Long> fieldIds = toList(1L, 2L, 4L);
-    assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> form.reorderFields(fieldIds));
+    assertEquals("validation.form.inactiveFieldId", exception.getMessage());
   }
 
   @Test

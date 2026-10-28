@@ -1,5 +1,6 @@
 import { faExternalLinkAlt } from "@fortawesome/free-solid-svg-icons/faExternalLinkAlt";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
@@ -88,6 +89,10 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
       }}
       sx={{
         maxWidth: 500,
+        // The tooltip closes when the page scrolls, so the card scrolls instead; see ADR 0012.
+        maxHeight: "40vh",
+        display: "flex",
+        flexDirection: "column",
         /*
          * This stops the text content of the card from becoming selected when
          * the user taps and holds on the display to open the info popup on
@@ -99,10 +104,12 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
         userSelect: "none",
       }}
     >
-      <CardHeader title={record.name} subheader={record.cardTypeLabel} sx={{ paddingBottom: "4px" }} />
-      <CardContent sx={{ overflowY: "auto" }}>
-        <RecordDetails record={record} hideName />
-      </CardContent>
+      <Box sx={{ overflowY: "auto" }}>
+        <CardHeader title={record.name} subheader={record.cardTypeLabel} sx={{ paddingBottom: "4px" }} />
+        <CardContent>
+          <RecordDetails record={record} hideName />
+        </CardContent>
+      </Box>
       {record instanceof InventoryBaseRecord && (
         <CardActions sx={{ justifyContent: "flex-end" }}>
           {moveStore.isMoving ? (

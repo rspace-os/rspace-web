@@ -19,6 +19,8 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class FolderManagerTest {
@@ -40,6 +43,8 @@ public class FolderManagerTest {
 
   @BeforeEach
   public void before() {
+    ReflectionTestUtils.setField(
+        folderManagerImpl, "messageSourceUtils", new MessageSourceUtils(new JsonMessageSource()));
     parent = TestFactory.createAFolder("parent", anyUser);
     parent.setId(1L);
     child = TestFactory.createAFolder("child", anyUser);
@@ -78,6 +83,10 @@ public class FolderManagerTest {
             child.getId(), parent, anyUser, ACLPropagationPolicy.DEFAULT_POLICY, true);
     assertEquals(Boolean.FALSE, result.isSucceeded());
     assertEquals(child, result.getEntity()); // returns the intended parent
+    assertEquals(
+        "Addition of [parent] to  folder[child]  would produce a cycle in the folder tree,"
+            + " which currently is not permitted.",
+        result.getMessage());
     assertChildNotAddedtoParent(parent);
   }
 

@@ -2,6 +2,7 @@ import { useQueries } from "@tanstack/react-query";
 import React from "react";
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const INVENTORY_API_BASE_URL = "/api/inventory/v1";
 const SUBSAMPLE_GLOBAL_ID_PATTERN = /^SS(?<id>\d+)$/;
@@ -69,7 +70,7 @@ export async function getSubSampleQuantity({
     };
   }
 
-  const response = await fetch(`${INVENTORY_API_BASE_URL}/subSamples/${subSampleId}`, {
+  const response = await fetchWithUiToken(`${INVENTORY_API_BASE_URL}/subSamples/${subSampleId}`, {
     method: "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",

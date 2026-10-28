@@ -35,7 +35,7 @@ import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
 import { UserProfilePage } from "../pageObjects/myrspace/UserProfilePage";
 import { NotebookPage } from "../pageObjects/notebook/NotebookPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
-import { freshStorageState, savedLoginAccount } from "../savedSessions";
+import { type Credentials, freshStorageState, savedLoginAccount, storageStateFor } from "../savedSessions";
 import { type AppUser, USERS } from "../users";
 
 export type E2EOptions = { appUser: AppUser };
@@ -56,7 +56,8 @@ type UiFixtures = {
   pageGallery: GalleryPage;
   pageGroupView: GroupViewPage;
   pageInventory: InventoryPage;
-  pageInventoryForUser: (user: AppUser) => Promise<InventoryPage>;
+  /** Inventory in a fresh browser context logged in as `user`, closed at teardown. */
+  pageInventoryForUser: (user: Credentials) => Promise<InventoryPage>;
   pageInventoryImport: InventoryImportPage;
   pageIdentifiers: IdentifiersPage;
   pageMyRSpace: MyRSpacePage;
@@ -116,7 +117,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
       await use(async (user) => {
         const context = await browser.newContext({
           ...browserContextOptions,
-          storageState: await freshStorageState(user),
+          storageState: await storageStateFor(user),
         });
         contexts.push(context);
         return new InventoryPage(await context.newPage());

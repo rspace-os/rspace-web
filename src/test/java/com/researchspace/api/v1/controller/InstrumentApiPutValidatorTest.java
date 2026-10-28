@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +57,7 @@ public class InstrumentApiPutValidatorTest extends InventoryRecordValidationTest
   public void tooLongDescriptionRejected() {
     ApiInstrument apiInstrument = new ApiInstrument();
     apiInstrument.setName("instr");
-    apiInstrument.setDescription(randomAlphabetic(BaseRecord.DEFAULT_VARCHAR_LENGTH + 1));
+    apiInstrument.setDescription(randomAlphabetic(InventoryRecord.DESCRIPTION_LENGTH + 1));
     assertDescriptionValidation(apiInstrument);
   }
 
