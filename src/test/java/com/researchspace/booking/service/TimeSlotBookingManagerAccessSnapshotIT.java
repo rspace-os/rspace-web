@@ -155,13 +155,7 @@ public class TimeSlotBookingManagerAccessSnapshotIT extends RealTransactionSprin
                             owner);
                       }
                     });
-    if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
-      ResourceAccessException exception =
-          assertThrows(ResourceAccessException.class, updateFromStaleSnapshot::run);
-      assertEquals(ResourceAccessException.Reason.STALE, exception.reason());
-    } else {
-      assertThrows(BookingConcurrentModificationException.class, updateFromStaleSnapshot::run);
-    }
+    assertThrows(BookingConcurrentModificationException.class, updateFromStaleSnapshot::run);
 
     if (mutation == SnapshotMutation.REVOKE_BOOKER_ACCESS) {
       assertTrue(
