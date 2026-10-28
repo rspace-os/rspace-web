@@ -23,6 +23,7 @@ import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { Separator } from "@/modules/common/ui/separator";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Heading } from "@/modules/common/ui/typography";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import {
   type BookingConfigurationInput,
   BookingConfigurationInputSchema,
@@ -33,7 +34,7 @@ const TARGET_CONFLICT = "errors.api.v2.bookingConfiguration.target.conflict";
 const detailFields = bookingConfigurationFields.filter((field) => field.name !== "target");
 
 async function createBookingConfiguration(input: BookingConfigurationInput, token: string): Promise<void> {
-  const response = await fetch("/api/v2/booking-configurations", {
+  const response = await fetchWithUiToken("/api/v2/booking-configurations", {
     method: "POST",
     headers: apiV2JsonHeaders(token),
     body: JSON.stringify(input),
@@ -53,7 +54,7 @@ const BookingTargetSchema = v.object({
 
 async function searchBookingTargets(query: string, token: string | undefined, signal?: AbortSignal) {
   const parameters = new URLSearchParams({ query, limit: "20" });
-  const response = await fetch(`/api/v2/booking-configuration-targets?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configuration-targets?${parameters}`, {
     headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     signal,
   });

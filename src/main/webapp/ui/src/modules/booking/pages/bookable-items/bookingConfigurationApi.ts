@@ -3,6 +3,7 @@ import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { type BookingConfiguration, BookingConfigurationSchema } from "./bookingConfigurationSchema";
 
 const InstrumentLocationSchema = v.object({
@@ -42,7 +43,7 @@ async function withLocation(
   });
   let response: Response;
   try {
-    response = await fetch(`/api/v2/instruments/${target.id}?${parameters}`, {
+    response = await fetchWithUiToken(`/api/v2/instruments/${target.id}?${parameters}`, {
       headers: apiV2Headers(token),
       signal,
     });
@@ -109,7 +110,7 @@ async function readBookingConfigurationsByTarget(
     limit: "2",
     where,
   });
-  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });

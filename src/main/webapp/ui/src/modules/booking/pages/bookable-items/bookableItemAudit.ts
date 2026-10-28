@@ -3,6 +3,7 @@ import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SNAPSHOT_FINGERPRINT = /^[0-9a-f]{64}$/;
@@ -117,10 +118,13 @@ export async function fetchBookingConfigurationAudit(input: {
     parameters.set("snapshotFingerprint", input.snapshot.snapshotFingerprint);
   }
 
-  const response = await fetch(`/api/v2/booking-configurations/${input.configurationId}/audit?${parameters}`, {
-    headers: apiV2Headers(input.token),
-    signal: input.signal,
-  });
+  const response = await fetchWithUiToken(
+    `/api/v2/booking-configurations/${input.configurationId}/audit?${parameters}`,
+    {
+      headers: apiV2Headers(input.token),
+      signal: input.signal,
+    },
+  );
   if (!response.ok) throw await parseApiV2Problem(response);
 
   const result = parseOrThrow(AuditPageSchema, (await response.json()) as unknown);
