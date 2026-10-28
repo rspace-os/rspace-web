@@ -49,7 +49,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
       - name: Seed dev deployment.properties
         run: |
           cp -f src/main/resources/deployments/dev/deployment.properties.example \
@@ -151,7 +151,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
 
       - name: Resolve project matrix
         run: |

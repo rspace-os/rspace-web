@@ -61,7 +61,6 @@ jobs:
               - 'package.json'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
-              - '.node-version'
               - '.github/workflows/**'
             java:
               - 'src/main/java/**'
@@ -151,7 +150,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -254,7 +253,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -324,7 +323,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -381,7 +380,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -452,7 +451,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -501,11 +500,17 @@ jobs:
             echo "Base branch lacks pnpm bundle-stats tooling; skipping base build."
           fi
 
-      # Older base revisions may have pnpm bundle tooling without .node-version.
-      # Keep their Node version aligned with the current frontend workflow.
-      - name: Ensure Node.js version file
+      # Older base revisions may have pnpm bundle tooling without a Node.js pin
+      # in package.json. Keep their Node major aligned with the current workflow.
+      - name: Resolve Node.js version
+        id: base-node
         if: steps.base-support.outputs.supported == 'true'
-        run: test -f .node-version || echo 24 > .node-version
+        run: |
+          if grep -q '"devEngines"' package.json; then
+            echo "file=package.json" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=24" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup pnpm
         if: steps.base-support.outputs.supported == 'true'
@@ -517,7 +522,8 @@ jobs:
         if: steps.base-support.outputs.supported == 'true'
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version: ${{ steps.base-node.outputs.version }}
+          node-version-file: ${{ steps.base-node.outputs.file }}
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
@@ -892,7 +898,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7.1.0
         with:
-          node-version-file: .node-version
+          node-version-file: package.json
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 

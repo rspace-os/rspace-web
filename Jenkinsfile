@@ -2,32 +2,20 @@
 
 @Library('rspace-shared') _
 
+// Standalone pnpm needs no Node.js; it downloads the runtime pinned in package.json devEngines.
 def withFrontendTools(Closure body) {
-    withEnv(["FNM_DIR=${env.WORKSPACE}/node/fnm", "PNPM_HOME=${env.WORKSPACE}/node/pnpm"]) {
+    def pnpmHome = "${env.WORKSPACE}/node/pnpm"
+    withEnv(["PNPM_HOME=${pnpmHome}", "PATH+PNPM=${pnpmHome}/bin"]) {
         sh '''
-            mkdir -p "$FNM_DIR"
-            if [ ! -x "$FNM_DIR/fnm" ]; then
-                curl -fsSL https://fnm.vercel.app/install -o "$FNM_DIR/install.sh"
-                bash "$FNM_DIR/install.sh" --install-dir "$FNM_DIR" --skip-shell
-            fi
-        '''
-        def frontendPath = sh(returnStdout: true, script: '''
-            export PATH="$FNM_DIR:$PATH"
-            eval "$(fnm env --shell bash)"
-            fnm install >&2
-            fnm use >&2
-            export PATH="$PNPM_HOME/bin:$PATH"
             if [ ! -x "$PNPM_HOME/bin/pnpm" ]; then
+                PNPM_VERSION=$(grep -o '"pnpm@[0-9][^"+]*' package.json | cut -d@ -f2)
+                test -n "$PNPM_VERSION"
                 mkdir -p "$PNPM_HOME"
                 curl -fsSL https://get.pnpm.io/install.sh -o "$PNPM_HOME/install.sh"
-                PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('+')[0].slice(5)") \
-                    ENV="$PNPM_HOME/shell.sh" SHELL=/bin/sh sh "$PNPM_HOME/install.sh" >&2
+                PNPM_VERSION="$PNPM_VERSION" ENV="$PNPM_HOME/shell.sh" SHELL=/bin/sh sh "$PNPM_HOME/install.sh"
             fi
-            printf '%s' "$PATH"
-        ''').trim()
-        withEnv(["PATH=${frontendPath}"]) {
-            body()
-        }
+        '''
+        body()
     }
 }
 
@@ -148,7 +136,6 @@ pipeline {
                             changeset '**/*.jsp'
                             changeset '**/*.css'
                             changeset '**/*.json'
-                            changeset '.node-version'
                             changeset 'pnpm-lock.yaml'
                             changeset 'pnpm-workspace.yaml'
                         }
