@@ -244,6 +244,15 @@ describe("BookableItemPage", () => {
     expect(restoreRequest?.headers.get("If-Match")).toBe('"1"');
     await expect(restoreRequest?.json()).resolves.toEqual({ state: "ACTIVE" });
     await expect.element(pageObj.lifecycleActions).toHaveFocus();
+    const enabled = page.getByText("Enabled", { exact: true });
+    await expect.element(enabled).toBeVisible();
+    // Measure contrast after the Archived-to-Enabled color transition finishes.
+    await Promise.all(
+      enabled
+        .element()
+        .getAnimations()
+        .map((animation) => animation.finished),
+    );
     await expectNoAxeViolations();
   });
 
