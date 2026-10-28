@@ -3,6 +3,7 @@ package com.researchspace.model.dtos;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.researchspace.model.field.FieldUtils;
 import com.researchspace.model.field.RadioFieldForm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +66,14 @@ public class RadioFieldDTOValidatorTest {
 
     validator.validate(dto, errors);
     assertTrue(ValidationTestUtils.hasError("form.choiceOptions.invalidFormat", errors));
+  }
+
+  @Test
+  public void testLongRadioOptionsAllowed() {
+    Errors errors = new BeanPropertyBindingResult(validInstance, "MyObject");
+    validInstance.setRadioValues("a=" + "b".repeat(FieldUtils.MAX_OPTIONS_LENGTH));
+    validator.validate(validInstance, errors);
+    assertFalse(errors.hasErrors());
   }
 
   @Test
