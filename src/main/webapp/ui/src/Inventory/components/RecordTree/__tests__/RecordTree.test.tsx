@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import SearchContext from "../../../../stores/contexts/Search";
@@ -37,9 +37,10 @@ function containerWith(children: Array<ContainerModel>, globalId: string): Conta
   return container;
 }
 
-function renderTree(results: Array<ContainerModel>) {
+function renderTree(results: Array<ContainerModel>, { greyedOut = false } = {}) {
   const search = new Search({ factory: mockFactory() });
   search.fetcher.setResults(results);
+  if (greyedOut) search.alwaysFilterOut = () => true;
   const setActiveResult = vi.spyOn(search, "setActiveResult").mockImplementation(() => Promise.resolve());
   render(
     <ThemeProvider theme={materialTheme}>
@@ -95,6 +96,29 @@ describe("RecordTree", () => {
     // biome-ignore lint/style/noNonNullAssertion: the row has children, so the expand arrow is rendered
     await user.click(row.querySelector<HTMLElement>(`.${treeItemClasses.iconContainer}`)!);
 
+    expect(setActiveResult).not.toHaveBeenCalled();
+  });
+
+  test("Space on a greyed-out row does not select it and does not scroll", async () => {
+    const user = userEvent.setup();
+    const { setActiveResult } = renderTree([containerWith([], "IC1")], { greyedOut: true });
+
+    await user.tab();
+    const notPrevented = fireEvent.keyDown(screen.getByRole("treeitem"), { key: " " });
+
+    expect(notPrevented).toBe(false);
+    expect(setActiveResult).not.toHaveBeenCalled();
+  });
+
+  test("Enter on a greyed-out row with children still expands it", async () => {
+    const user = userEvent.setup();
+    const container = containerWith([containerWith([], "IC2")], "IC1");
+    const { setActiveResult } = renderTree([container], { greyedOut: true });
+
+    await user.tab();
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByTestId("recordTreeNode_IC2")).toBeInTheDocument();
     expect(setActiveResult).not.toHaveBeenCalled();
   });
 });
