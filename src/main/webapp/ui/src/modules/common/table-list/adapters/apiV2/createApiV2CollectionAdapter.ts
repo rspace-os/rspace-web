@@ -21,7 +21,7 @@ import {
   type RuntimeFieldCatalogForNamespace,
 } from "./apiV2FilterFields";
 import { collectionQueryParams, selectedFields } from "./collectionQueryParams";
-import { type ApiV2DocumentSchema, createApiV2ResponseSchema } from "./schemas";
+import { type ApiV2DocumentSchema, createApiV2ResponseSchema, objectInput } from "./schemas";
 
 export type { RuntimeFieldCatalogForNamespace } from "./apiV2FilterFields";
 
@@ -204,8 +204,8 @@ function runtimeValue<TDocument>(
   language: string | undefined,
 ): string {
   const values = row[responseField];
-  if (typeof values !== "object" || values === null || Array.isArray(values)) return "";
-  const value = (values as Record<string, unknown>)[id];
+  if (!v.is(objectInput, values)) return "";
+  const value = values[id];
   if (value === null || value === undefined) return "";
   const format = (item: unknown) => (numeric && typeof item === "number" ? formatNumber(item, language) : String(item));
   return Array.isArray(value) ? formatList(value.map(format), language, VALUE_LIST) : format(value);
@@ -239,11 +239,11 @@ function withExpandedTargetFields<TDocument>(
   });
 }
 
+const expandedTargetSchema = v.pipe(objectInput, v.object({ value: objectInput }));
+
 function expandedTarget(relationship: unknown): Record<string, unknown> | null {
-  if (typeof relationship !== "object" || relationship === null || Array.isArray(relationship)) return null;
-  const value = (relationship as Record<string, unknown>).value;
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
+  const result = v.safeParse(expandedTargetSchema, relationship);
+  return result.success ? result.output.value : null;
 }
 
 function targetValue<TDocument>(

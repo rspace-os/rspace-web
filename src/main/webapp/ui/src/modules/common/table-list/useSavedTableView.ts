@@ -1,8 +1,10 @@
 import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import * as v from "valibot";
 import { columnSelectors } from "./queryStringState";
 import { rsqlSelectors } from "./rsql/rsqlCodec";
 import type { TableListQueryStringOptions } from "./tableListState";
+import { tableViewStateSchema } from "./tableViewState";
 import { readStoredTableView, removeStoredTableView, tableViewStorageKey } from "./tableViewStorage";
 import { parameterNames, tableIdFor } from "./useTableListQueryString";
 
@@ -12,26 +14,17 @@ type RawView = {
   columns: string | null;
   sort: string | null;
 };
+const rawViewSchema = v.omit(tableViewStateSchema, ["defaults"]);
 const emptyView: RawView = { search: null, where: null, columns: null, sort: null };
 
 function storedView(key: string): RawView & { malformed?: boolean } {
   const serialized = readStoredTableView(key);
   if (serialized === null) return emptyView;
   try {
-    const value: unknown = JSON.parse(serialized);
-    if (typeof value !== "object" || value === null || !("v" in value) || value.v !== 1) {
-      return { ...emptyView, malformed: true };
-    }
-    const raw: RawView = { ...emptyView };
-    for (const name of ["search", "where", "columns", "sort"] as const) {
-      if (!(name in value)) {
-        return { ...emptyView, malformed: true };
-      }
-      const entry: unknown = Reflect.get(value, name);
-      if (entry !== null && typeof entry !== "string") return { ...emptyView, malformed: true };
-      raw[name] = entry;
-    }
-    return raw;
+    const result = v.safeParse(rawViewSchema, JSON.parse(serialized));
+    if (!result.success) return { ...emptyView, malformed: true };
+    const { search, where, columns, sort } = result.output;
+    return { search, where, columns, sort };
   } catch {
     return { ...emptyView, malformed: true };
   }

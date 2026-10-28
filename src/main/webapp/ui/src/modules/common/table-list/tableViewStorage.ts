@@ -1,3 +1,4 @@
+import * as v from "valibot";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { columnSelectors } from "./queryStringState";
 import { rsqlSelectors } from "./rsql/rsqlCodec";
@@ -7,6 +8,11 @@ import {
   serializeTableViewState,
   type TableViewValues,
 } from "./tableViewState";
+
+const storedSelectorsSchema = v.object({
+  where: v.fallback(v.string(), ""),
+  columns: v.fallback(v.string(), ""),
+});
 
 export function tableViewStorageKey(tableId: string): string {
   return `rspace.tableList.${tableId}.view`;
@@ -32,13 +38,10 @@ export function storedTableViewSelectors(key: string): readonly string[] {
   try {
     const serialized = readStoredTableView(key);
     if (serialized === null) return [];
-    const state: unknown = JSON.parse(serialized);
-    if (typeof state !== "object" || state === null) return [];
-    const { where, columns } = state as { where?: unknown; columns?: unknown };
-    return [
-      ...(typeof where === "string" ? rsqlSelectors(where) : []),
-      ...(typeof columns === "string" ? columnSelectors(columns) : []),
-    ];
+    const result = v.safeParse(storedSelectorsSchema, JSON.parse(serialized));
+    if (!result.success) return [];
+    const { where, columns } = result.output;
+    return [...rsqlSelectors(where), ...columnSelectors(columns)];
   } catch {
     return [];
   }

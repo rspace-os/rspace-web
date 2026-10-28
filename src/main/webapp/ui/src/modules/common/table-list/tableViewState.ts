@@ -1,20 +1,23 @@
+import * as v from "valibot";
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/collectionConfig";
 import { columnSelectors, parseColumns, parseSorting, serializeColumns, serializeSorting } from "./queryStringState";
 import { parseRsqlExpression, type StaleFieldPolicy, serializeRsqlExpression } from "./rsql/rsqlCodec";
 import type { FilterExpression } from "./tableListState";
 
-export type TableViewState = {
-  v: 1;
-  search: string | null;
-  where: string | null;
-  columns: string | null;
+export const tableViewStateSchema = v.object({
+  v: v.literal(1),
+  search: v.nullable(v.string()),
+  where: v.nullable(v.string()),
+  columns: v.nullable(v.string()),
   /**
    * The configured default columns when `columns` was saved. A default added to the configuration later is
    * missing from this list, so loading shows it instead of silently hiding it behind the saved selection.
    */
-  defaults?: string;
-  sort: string | null;
-};
+  defaults: v.optional(v.string()),
+  sort: v.nullable(v.string()),
+});
+
+export type TableViewState = v.InferOutput<typeof tableViewStateSchema>;
 
 export type TableViewValues<TDocument> = {
   search: string | null;
@@ -22,10 +25,6 @@ export type TableViewValues<TDocument> = {
   columns: readonly FieldName<TDocument>[];
   sort: readonly SortRule<TDocument>[];
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 export function serializeTableViewState<TDocument>(
   values: TableViewValues<TDocument>,
@@ -59,21 +58,12 @@ export function parseTableViewState<TDocument>(
   stale?: StaleViewFields,
 ): TableViewValues<TDocument> | null {
   try {
-    const state: unknown = JSON.parse(serialized);
-    if (
-      !isRecord(state) ||
-      state.v !== 1 ||
-      !(typeof state.search === "string" || state.search === null) ||
-      !(typeof state.where === "string" || state.where === null) ||
-      !(typeof state.columns === "string" || state.columns === null) ||
-      !(state.defaults === undefined || typeof state.defaults === "string") ||
-      !(typeof state.sort === "string" || state.sort === null)
-    ) {
-      return null;
-    }
+    const result = v.safeParse(tableViewStateSchema, JSON.parse(serialized));
+    if (!result.success) return null;
+    const state = result.output;
     let columns = config.defaultColumns;
     if (state.columns !== null) {
-      if (typeof state.defaults !== "string") return null;
+      if (state.defaults === undefined) return null;
       columns = savedColumns(state.columns, state.defaults, config, stale);
     }
     return {
