@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import type { FeatureFlagName } from "./generatedFeatureFlags";
 import { featureFlagQueryKeys } from "./queries";
 import { FEATURE_FLAGS_API_BASE_URL, FeatureFlagRequestError, featureFlagRequestHeaders } from "./utils";
@@ -10,7 +11,7 @@ type PatchFeatureFlagParams = {
 };
 
 export async function patchFeatureFlag({ flagName, document }: PatchFeatureFlagParams, token: string): Promise<void> {
-  const response = await fetch(`${FEATURE_FLAGS_API_BASE_URL}/${flagName}`, {
+  const response = await fetchWithUiToken(`${FEATURE_FLAGS_API_BASE_URL}/${flagName}`, {
     method: "PATCH",
     headers: {
       ...featureFlagRequestHeaders(token),

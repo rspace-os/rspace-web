@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import type { FeatureFlagName } from "./generatedFeatureFlags";
 import {
   disabledFeatureFlags,
@@ -20,7 +21,7 @@ export async function getFeatureFlags(token: string): Promise<FeatureFlagRespons
   const documents: unknown[] = [];
   let page = 1;
   while (true) {
-    const response = await fetch(`${FEATURE_FLAGS_API_BASE_URL}?limit=100&page=${page}`, {
+    const response = await fetchWithUiToken(`${FEATURE_FLAGS_API_BASE_URL}?limit=100&page=${page}`, {
       method: "GET",
       headers: featureFlagRequestHeaders(token),
     });
