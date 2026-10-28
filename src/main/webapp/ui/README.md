@@ -105,6 +105,11 @@ or `pnpm storybook:build` to produce a static build. The attributed MUI v9
 stories live in `src/modules/common/ui/material-ui`; see its `UPSTREAM.md` for
 provenance. `pnpm storybook:test` runs the stories in Chromium.
 
+The preview supplies a fresh in-memory root router for each story. The TanStack
+framework still supplies its navigation mocks, but its built-in router preview
+is excluded because Storybook 10.6 calls an older Router Core interpolation API.
+Stories that need application routes can provide their own router.
+
 To review the built catalog inside a local RSpace development server, run
 `pnpm run storybook:build`, set `dev.storybook.preview.enabled=true` in
 `deployment.properties`, and open `/public/storybook` on that instance.
