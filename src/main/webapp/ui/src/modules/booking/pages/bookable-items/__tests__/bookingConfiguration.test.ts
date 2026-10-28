@@ -3,7 +3,7 @@ import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
-import { parseTableViewState } from "@/modules/common/table-list/tableViewState";
+import { parseTableViewState } from "@/modules/common/table-list/state/tableViewState";
 import {
   BookingConfigurationInputSchema,
   BookingConfigurationUpdateInputSchema,
