@@ -96,7 +96,7 @@ export async function searchBookingSettingsGrantees(
   signal?: AbortSignal,
 ): Promise<readonly ResourceGranteeDirectoryEntry[]> {
   const parameters = new URLSearchParams({ query, limit: "20" });
-  const response = await fetch(`/api/v2/booking-settings/access-grantees?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-settings/access-grantees?${parameters}`, {
     headers: headers(token),
     signal,
   });

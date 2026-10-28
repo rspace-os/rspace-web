@@ -1,6 +1,7 @@
 import * as v from "valibot";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const BookingTimestampEntries = {
   start: v.pipe(v.string(), v.isoTimestamp()),
@@ -223,7 +224,7 @@ export async function requestBooking<TSchema extends v.BaseSchema<unknown, unkno
   init?: RequestInit,
 ): Promise<v.InferOutput<TSchema>> {
   const response = await requireSuccess(
-    await fetch(url, {
+    await fetchWithUiToken(url, {
       ...init,
       headers: init?.body ? apiV2JsonHeaders(token, init.headers) : apiV2Headers(token, init?.headers),
     }),

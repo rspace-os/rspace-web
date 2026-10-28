@@ -3,6 +3,7 @@ import * as v from "valibot";
 import { apiV2Headers, apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { parseApiV2Problem, requireSuccess } from "./booking";
 import { OpeningHoursEndSchema, OpeningHoursStartSchema } from "./bookingOpeningHours";
 
@@ -71,7 +72,7 @@ export async function fetchBookingDisplayPreferences(
   token: string,
   signal?: AbortSignal,
 ): Promise<BookingDisplayPreferencesDocument> {
-  const response = await requireSuccess(await fetch(path, { headers: apiV2Headers(token), signal }));
+  const response = await requireSuccess(await fetchWithUiToken(path, { headers: apiV2Headers(token), signal }));
   return parseOrThrow(BookingDisplayPreferencesDocumentSchema, (await response.json()) as unknown);
 }
 
@@ -81,7 +82,7 @@ export async function replaceBookingDisplayPreferences(
 ): Promise<BookingDisplayPreferencesDocument> {
   const parsed = v.parse(BookingDisplayPreferencesInputSchema, input);
   const response = await requireSuccess(
-    await fetch(path, {
+    await fetchWithUiToken(path, {
       method: "PUT",
       headers: apiV2JsonHeaders(token),
       body: JSON.stringify(parsed),
@@ -91,7 +92,7 @@ export async function replaceBookingDisplayPreferences(
 }
 
 export async function resetBookingDisplayPreferences(token: string): Promise<void> {
-  const response = await fetch(path, { method: "DELETE", headers: apiV2Headers(token) });
+  const response = await fetchWithUiToken(path, { method: "DELETE", headers: apiV2Headers(token) });
   if (response.status !== 204) throw await parseApiV2Problem(response);
 }
 
