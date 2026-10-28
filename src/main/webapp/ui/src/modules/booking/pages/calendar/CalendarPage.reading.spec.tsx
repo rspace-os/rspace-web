@@ -1,4 +1,5 @@
 import "@/modules/common/styles/index.css";
+import { createMemoryHistory, type RouterHistory } from "@tanstack/react-router";
 import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -24,20 +25,26 @@ import { calendar, registerHandlers } from "./calendarPageBrowserTestUtils";
 // otherwise race the first runtime handler update when this spec follows another file.
 registerHandlers();
 
+let history: RouterHistory;
+let browserUrl: string;
+
 beforeEach(() => {
+  history = createMemoryHistory({ initialEntries: ["/booking/calendar?date=2026-08-17"] });
+  browserUrl = window.location.href;
   resetBookingPageRequests();
   registerHandlers();
 });
 
 afterEach(() => {
   cleanup();
+  expect(window.location.href).toBe(browserUrl);
   vi.useRealTimers();
 });
 
 describe("Calendar page", () => {
   test("fills each resource row with its timeline and places locations below IDs", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     await expect
       .element(page.getByRole("region", { name: "Resources", exact: true }))
       .toHaveAttribute("aria-busy", "false");
@@ -62,8 +69,8 @@ describe("Calendar page", () => {
   test.each(["date", "layout", "period"])("resets an isolated %s change to Calendar defaults", async (control) => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-18T00:30:00Z"));
-    window.history.replaceState({}, "", "/booking/calendar?calendar-resources.q=Confocal");
-    render(<CalendarPageStory preferences={customNewYorkBookingPreferences} />);
+    history.replace("/booking/calendar?calendar-resources.q=Confocal");
+    render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
     await expect.element(calendar.timeZone).toHaveTextContent("America/New_York");
     await expect.element(calendar.reset).not.toBeInTheDocument();
 
@@ -77,8 +84,8 @@ describe("Calendar page", () => {
     await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
     await expect.element(calendar.mine).toHaveAttribute("aria-pressed", "false");
     await expect.element(calendar.reset).not.toBeInTheDocument();
-    await expect.poll(() => new URLSearchParams(window.location.search).has("date")).toBe(false);
-    expect(new URLSearchParams(window.location.search).get("calendar-resources.q")).toBe("Confocal");
+    await expect.poll(() => new URLSearchParams(history.location.search).has("date")).toBe(false);
+    expect(new URLSearchParams(history.location.search).get("calendar-resources.q")).toBe("Confocal");
     await expect
       .element(calendar.resourceSchedule.getByRole("heading", { name: "Monday, August 17, 2026" }).first())
       .toBeVisible();
@@ -87,8 +94,8 @@ describe("Calendar page", () => {
   test("resets event filters and My calendar while preserving resource search", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-19T00:30:00Z"));
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17&calendar-resources.q=Confocal");
-    render(<CalendarPageStory preferences={customNewYorkBookingPreferences} />);
+    history.replace("/booking/calendar?date=2026-08-17&calendar-resources.q=Confocal");
+    render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
     await calendar.search.fill("no matching event");
     await calendar.mine.click();
     await calendar.filters.click();
@@ -107,7 +114,7 @@ describe("Calendar page", () => {
     await expect.element(calendar.day).toHaveAttribute("aria-pressed", "true");
     await expect.element(calendar.filters).toHaveAccessibleName("Filters, none applied");
     await expect.element(calendar.reset).not.toBeInTheDocument();
-    expect(new URLSearchParams(window.location.search).get("calendar-resources.q")).toBe("Confocal");
+    expect(new URLSearchParams(history.location.search).get("calendar-resources.q")).toBe("Confocal");
     await expect
       .poll(() =>
         bookingPageRequests.calendarBookingRequests
@@ -119,7 +126,7 @@ describe("Calendar page", () => {
 
   test.each([390, 1279, 1280, 1440])("keeps integrated Calendar controls reachable at %s px", async (width) => {
     await withViewport(width, async () => {
-      render(<CalendarPageStory />);
+      render(<CalendarPageStory history={history} />);
       await expect.element(calendar.toolbar).toBeVisible();
       await document.fonts.ready;
       for (const control of [
@@ -180,7 +187,7 @@ describe("Calendar page", () => {
       );
       try {
         await withViewport(width, async () => {
-          render(<CalendarPageStory />);
+          render(<CalendarPageStory history={history} />);
           await calendar.week.click();
           const pending = page.getByRole("region", { name: "Loading", exact: true });
           await expect.element(pending).toHaveAttribute("aria-busy", "true");
@@ -224,8 +231,8 @@ describe("Calendar page", () => {
       );
       try {
         await withViewport(width, async () => {
-          window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-          render(<CalendarPageStory />);
+          history.replace("/booking/calendar?date=2026-08-17");
+          render(<CalendarPageStory history={history} />);
           await calendar.timeGridLayout.click();
           await calendar[view].click();
           await expect.element(calendar.timeGrid).toHaveAttribute("aria-busy", "true");
@@ -257,8 +264,8 @@ describe("Calendar page", () => {
     );
     try {
       await withViewport(width, async () => {
-        window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-        render(<CalendarPageStory />);
+        history.replace("/booking/calendar?date=2026-08-17");
+        render(<CalendarPageStory history={history} />);
         await calendar.resources.click();
         await calendar.day.click();
         const resources = page.getByRole("region", { name: "Resources", exact: true });
@@ -283,8 +290,8 @@ describe("Calendar page", () => {
   });
 
   test("renders visible booking identities as user badges without leaking busy identities", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     await calendar.timeGridLayout.click();
     await calendar.week.click();
 
@@ -317,8 +324,8 @@ describe("Calendar page", () => {
   });
 
   test("uses live booking events across every calendar layout and period", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
 
     await expect.element(calendar.heading).toBeVisible();
     await expect.element(calendar.resourceSchedule).toBeVisible();
@@ -374,8 +381,8 @@ describe("Calendar page", () => {
   });
 
   test("keeps a drag-created booking attached to its first resource and blocks a second drag", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     await calendar.resources.click();
     await calendar.day.click();
     await expect.poll(() => page.getByTestId("day-timeline-canvas").all().length).toBe(5);
@@ -412,18 +419,16 @@ describe("Calendar page", () => {
   });
 
   test("ends pristine creation when leaving Calendar so resource dragging works after returning", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     await calendar.newBooking.click();
     await expect.element(calendar.bookingDialog).toBeVisible();
 
-    window.history.pushState({}, "", "/booking/bookable-items/IN124");
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    history.push("/booking/bookable-items/IN124");
     await expect.element(calendar.bookableItemDetailsHeading).toBeVisible();
     await expect.element(calendar.bookingDialog).not.toBeInTheDocument();
 
-    window.history.pushState({}, "", "/booking/calendar?date=2026-08-17");
-    window.dispatchEvent(new PopStateEvent("popstate"));
+    history.push("/booking/calendar?date=2026-08-17");
     await expect.element(calendar.heading).toBeVisible();
     await calendar.resources.click();
     await calendar.day.click();
@@ -434,8 +439,8 @@ describe("Calendar page", () => {
   });
 
   test("starts a resource booking from the keyboard with a proposed free hour", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     await calendar.resources.click();
     await calendar.day.click();
     await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
@@ -466,8 +471,8 @@ describe("Calendar page", () => {
         );
       }),
     );
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     await calendar.resources.click();
     await calendar.day.click();
     await expect.poll(() => calendar.resourceCanvases.length).toBe(5);
@@ -478,8 +483,8 @@ describe("Calendar page", () => {
   test("creates a booking through the targetless compact form and restores trigger focus", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-08-01T00:00:00Z"));
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     const trigger = page.getByRole("button", { name: "New Booking" });
     const dialog = await calendar.openTargetlessBookingDialog();
     expect(getComputedStyle(dialog.element()).borderRadius).toBe("8px");
@@ -506,8 +511,8 @@ describe("Calendar page", () => {
   });
 
   test("opens the full booking form from compact More options", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory preferences={customNewYorkBookingPreferences} />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} preferences={customNewYorkBookingPreferences} />);
     const dialog = await calendar.openTargetlessBookingDialog();
     await expect.element(dialog.getByText("Open: 08:00 - 17:00 (Europe/Berlin)")).toBeVisible();
     expect(dialog.element().querySelectorAll('input[type="date"]')).toHaveLength(1);
@@ -526,8 +531,8 @@ describe("Calendar page", () => {
     await dialog.getByRole("textbox", { name: "Purpose" }).fill("Carry this draft into the full form");
 
     await dialog.getByRole("button", { name: "More options" }).click();
-    await expect.poll(() => window.location.pathname).toBe("/booking/calendar/bookings/add");
-    await expect.poll(() => new URLSearchParams(window.location.search).get("target")).toBe("IN123");
+    await expect.poll(() => history.location.pathname).toBe("/booking/calendar/bookings/add");
+    await expect.poll(() => new URLSearchParams(history.location.search).get("target")).toBe("IN123");
     await expect.element(page.getByRole("heading", { name: "Add Booking" })).toBeVisible();
     await expect.element(page.getByRole("button", { name: "Booking rules" })).toBeVisible();
     const fullStart = page.getByRole("group", { name: "Start" });
@@ -541,11 +546,16 @@ describe("Calendar page", () => {
       .toHaveValue("Carry this draft into the full form");
   });
 
-  test("keeps the popover open after outside press and confirms dirty browser navigation", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-16");
-    window.history.pushState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+  test("keeps the popover open after outside press and confirms dirty history navigation", async () => {
+    history.replace("/booking/calendar?date=2026-08-16");
+    history.push("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     const trigger = page.getByRole("button", { name: "New Booking" });
+    await expect.element(trigger).toBeVisible();
+    history.back();
+    await expect.poll(() => history.location.search).toContain("date=2026-08-16");
+    history.forward();
+    await expect.poll(() => history.location.search).toContain("date=2026-08-17");
 
     await trigger.click();
     const cleanDialog = page.getByRole("dialog", { name: "New Booking" });
@@ -558,18 +568,19 @@ describe("Calendar page", () => {
 
     const dirtyDialog = await calendar.openTargetlessBookingDialog();
     await dirtyDialog.getByRole("textbox", { name: "Purpose" }).fill("Keep this draft");
-    window.history.back();
+    // TanStack memory history runs blockers for push/replace, not back/forward.
+    history.push("/booking/calendar?date=2026-08-16");
     const confirmation = page.getByRole("alertdialog", { name: "Discard this event?" });
     await expect.element(confirmation).toBeVisible();
     await confirmation.getByRole("button", { name: "Keep editing" }).click();
     await expect.element(dirtyDialog.getByRole("textbox", { name: "Purpose" })).toHaveValue("Keep this draft");
-    await expect.poll(() => window.location.search).toContain("date=2026-08-17");
+    await expect.poll(() => history.location.search).toContain("date=2026-08-17");
 
-    window.history.back();
+    history.push("/booking/calendar?date=2026-08-16");
     await expect.element(confirmation).toBeVisible();
     await confirmation.getByRole("button", { name: "Discard changes" }).click();
     await expect.element(dirtyDialog).not.toBeInTheDocument();
-    await expect.poll(() => window.location.search).toContain("date=2026-08-16");
+    await expect.poll(() => history.location.search).toContain("date=2026-08-16");
   });
 
   test("preserves a compact draft across recoverable server conflicts", async () => {
@@ -581,8 +592,8 @@ describe("Calendar page", () => {
         HttpResponse.json({ status: 409, code, detail: "private server detail" }, { status: 409 }),
       ),
     );
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-    render(<CalendarPageStory />);
+    history.replace("/booking/calendar?date=2026-08-17");
+    render(<CalendarPageStory history={history} />);
     const dialog = await calendar.openTargetlessBookingDialog();
     const startTime = dialog.getByLabelText("Start time");
     const endTime = dialog.getByLabelText("End time");
@@ -614,9 +625,10 @@ describe("Calendar page", () => {
   });
 
   test("does not expose maintenance creation to a run-as sysadmin", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+    history.replace("/booking/calendar?date=2026-08-17");
     render(
       <CalendarPageStory
+        history={history}
         user={{
           ...currentUser,
           hasSysAdminRole: true,
@@ -630,9 +642,10 @@ describe("Calendar page", () => {
   });
 
   test("confirms dirty dismissal and keeps maintenance type immutable for a direct sysadmin", async () => {
-    window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
+    history.replace("/booking/calendar?date=2026-08-17");
     render(
       <CalendarPageStory
+        history={history}
         user={{
           ...currentUser,
           hasSysAdminRole: true,
@@ -701,8 +714,8 @@ describe("Calendar page", () => {
     await withViewport(
       390,
       async () => {
-        window.history.replaceState({}, "", "/booking/calendar?date=2026-08-17");
-        render(<CalendarPageStory />);
+        history.replace("/booking/calendar?date=2026-08-17");
+        render(<CalendarPageStory history={history} />);
         await page.getByRole("button", { name: "New Booking" }).click();
         const dialog = page.getByRole("dialog", { name: "New Booking" });
         await expect.element(dialog).toBeVisible();
