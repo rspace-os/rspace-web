@@ -163,7 +163,7 @@ class ResourceAccessManagerAuthorizationIT extends RealTransactionSpringTestBase
                       staleSubject,
                       staleSubject));
 
-      assertEquals(ResourceAccessException.Reason.STALE, error.reason());
+      assertAuthorizationRejected(error);
       assertEquals(before, roles(access));
     } finally {
       getTxMger().rollback(authorizationTransaction);
