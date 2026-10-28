@@ -190,6 +190,13 @@ describe("CalendarPage", () => {
         ),
       );
       const { queryClient } = await renderCalendar();
+      act(() => {
+        queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
+          ...inheritedBrowserBookingPreferences,
+          timezoneMode: "CUSTOM",
+          customTimezone: "Europe/Berlin",
+        });
+      });
       await chooseLayout(user, layout);
       await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
       const card = screen.getByRole("dialog");
