@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { Person } from "../../stores/definitions/Person";
 import InstrumentModel from "../../stores/models/InstrumentModel";
 import useStores from "../../stores/use-stores";
+import AccessPermissions from "../components/Fields/AccessPermissions";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
 import BarcodesField from "../components/Fields/Barcodes/FormField";
 import DescriptionField from "../components/Fields/Description";
@@ -172,6 +173,14 @@ function InstrumentForm(): ReactNode {
             recordType="instrument"
           >
             <AttachmentsField fieldOwner={activeResult} />
+          </StepperPanel>
+          <StepperPanel
+            icon="instrument"
+            title={t("formSections.accessPermissions")}
+            sectionName="permissions"
+            recordType="instrument"
+          >
+            <AccessPermissions fieldOwner={activeResult} />
           </StepperPanel>
           <CustomFieldSection activeResult={activeResult} />
         </>
