@@ -10,7 +10,7 @@ export type ApiV2FilterOperator = (typeof apiV2FilterOperators)[number];
 const positiveInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(1));
 const nonNegativeInteger = v.pipe(v.number(), v.finite(), v.integer(), v.minValue(0));
 const strings = v.array(v.string());
-const objectInput = v.custom<Record<string, unknown>>(
+export const objectInput = v.custom<Record<string, unknown>>(
   (input) => typeof input === "object" && input !== null && !Array.isArray(input),
   "Expected an object",
 );

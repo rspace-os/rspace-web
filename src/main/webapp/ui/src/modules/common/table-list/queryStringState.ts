@@ -1,11 +1,11 @@
+import * as v from "valibot";
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/collectionConfig";
 import type { FilterExpression, FilterState, FilterValue } from "./tableListState";
 
 type SerializedDate = { readonly $date: string };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const columnSelectorsSchema = v.union([v.array(v.unknown()), v.object({ fields: v.array(v.unknown()) })]);
+const columnsSchema = v.union([v.array(v.string()), v.object({ fields: v.array(v.string()) })]);
 
 function serializeValue(value: FilterValue): unknown {
   if (value instanceof Date) return { $date: value.toISOString() } satisfies SerializedDate;
@@ -40,8 +40,9 @@ export function parseColumns<TDocument>(
 ): readonly FieldName<TDocument>[] | null {
   try {
     const serializedValue: unknown = JSON.parse(serialized);
-    const raw = isRecord(serializedValue) ? serializedValue.fields : serializedValue;
-    if (!Array.isArray(raw) || !raw.every((field) => typeof field === "string")) return null;
+    const result = v.safeParse(columnsSchema, serializedValue);
+    if (!result.success) return null;
+    const raw = Array.isArray(result.output) ? result.output : result.output.fields;
     const listableFields = new Set(config.fields.filter((field) => field.list !== false).map((field) => field.name));
     let dropped = false;
     const value = stale
@@ -98,8 +99,10 @@ export function sortRuleFromToken<TDocument>(value: string): SortRule<TDocument>
 export function columnSelectors(serialized: string): readonly string[] {
   try {
     const value: unknown = JSON.parse(serialized);
-    const raw = isRecord(value) ? value.fields : value;
-    return Array.isArray(raw) ? raw.filter((name): name is string => typeof name === "string") : [];
+    const result = v.safeParse(columnSelectorsSchema, value);
+    if (!result.success) return [];
+    const raw = Array.isArray(result.output) ? result.output : result.output.fields;
+    return raw.filter((name): name is string => typeof name === "string");
   } catch {
     return [];
   }
