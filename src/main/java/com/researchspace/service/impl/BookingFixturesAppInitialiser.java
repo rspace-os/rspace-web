@@ -213,7 +213,7 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
       return;
     }
     initialDeployment = false;
-    AfterCommit.run(this::createFixturesInCommittedStages);
+    AfterCommit.runAfterCompletion(this::createFixturesInCommittedStages);
   }
 
   // Start only after committed completion has cleared the startup transaction's booking state.
