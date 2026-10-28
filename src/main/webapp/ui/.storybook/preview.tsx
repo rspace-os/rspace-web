@@ -3,6 +3,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { ArgTypes, Description, Markdown, Stories, Title } from "@storybook/addon-docs/blocks";
 import type { Preview } from "@storybook/tanstack-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from "@tanstack/react-router";
+import { createContext, type ReactNode, useContext } from "react";
 import "../src/modules/common/styles/index.css";
 import I18nRoot from "../src/modules/common/i18n/I18nRoot";
 import theme from "../src/theme";
@@ -19,7 +21,24 @@ const queryClient = new QueryClient({
   },
 });
 
+const StoryContentContext = createContext<ReactNode>(null);
+
+function StoryContent() {
+  return useContext(StoryContentContext);
+}
+
 const preview: Preview = {
+  loaders: [
+    async () => {
+      const router = createRouter({
+        routeTree: createRootRoute({ component: StoryContent }),
+        history: createMemoryHistory({ initialEntries: ["/"] }),
+        context: { queryClient },
+      });
+      await router.load();
+      return { storybookRouter: router };
+    },
+  ],
   beforeEach: () => {
     queryClient.clear();
   },
@@ -43,11 +62,6 @@ const preview: Preview = {
     controls: {
       expanded: true,
     },
-    tanstack: {
-      router: {
-        context: { queryClient },
-      },
-    },
   },
   globalTypes: {
     theme: {
@@ -66,6 +80,7 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => {
+      const router = context.loaded.storybookRouter as ReturnType<typeof createRouter>;
       const selectedTheme = context.globals.theme as string | undefined;
       document.documentElement.classList.toggle("dark", selectedTheme === "dark");
       const content = context.title.startsWith("Material UI/") ? (
@@ -78,7 +93,11 @@ const preview: Preview = {
       );
       return (
         <QueryClientProvider client={queryClient}>
-          <I18nRoot>{content}</I18nRoot>
+          <I18nRoot>
+            <StoryContentContext.Provider value={content}>
+              <RouterProvider router={router} />
+            </StoryContentContext.Provider>
+          </I18nRoot>
         </QueryClientProvider>
       );
     },
