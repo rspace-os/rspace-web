@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useBookingCalendarFileDownload } from "@/modules/booking/components/BookingCalendarFileButton";
 import { bookingProblemMessage } from "@/modules/booking/creation/useCreateBooking";
 import { type BookingListDocument, restoreBooking } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import type { BookingTimeFormat } from "@/modules/booking/domain/bookingTime";
 import { formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import type { CollectionRow } from "@/modules/common/collection/config";
@@ -151,6 +152,7 @@ export function BookingRowActions({
                 run: async () => {
                   await restoreBooking(row.id, cancelled.version ?? 0, token);
                   await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+                  await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
                 },
                 focusRowId: String(row.id),
                 describeError: (error) =>
