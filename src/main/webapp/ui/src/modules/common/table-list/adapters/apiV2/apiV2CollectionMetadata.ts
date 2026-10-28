@@ -1,7 +1,7 @@
 import type { GenericSchema, InferOutput } from "valibot";
 import type { FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { sortRuleFromToken } from "../../queryStringState";
+import { sortRuleFromToken } from "../../state/queryStringState";
 import { validateRuntimeFieldCatalogUrl } from "./runtimeFieldCatalog";
 import {
   type ApiV2ParsedFilterMetadata,

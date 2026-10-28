@@ -1,9 +1,9 @@
 import { useState } from "react";
 import type { FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
 import { TableListCardGrid } from "./components/TableListCardView";
+import type { FilterState, PageState } from "./state/tableListState";
 import { TableList } from "./TableList";
 import { type ResearchRecord, storyConfig, storyRecords } from "./TableList.stories";
-import type { FilterState, PageState } from "./tableListState";
 
 const initialFilters: FilterState<ResearchRecord> = { search: "", expression: null };
 

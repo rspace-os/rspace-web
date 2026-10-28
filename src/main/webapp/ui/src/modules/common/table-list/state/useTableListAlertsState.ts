@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { AlertEntry, TableListAlert, TableListAlertsApi } from "./TableListAlerts";
+import type { AlertEntry, TableListAlert, TableListAlertsApi } from "../components/TableListAlerts";
 
 const focusableSelector = "a[href], button:not(:disabled), input:not(:disabled), [tabindex]:not([tabindex='-1'])";
 

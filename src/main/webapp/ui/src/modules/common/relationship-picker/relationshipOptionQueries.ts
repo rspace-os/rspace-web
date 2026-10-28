@@ -3,7 +3,7 @@ import type {
   RelationshipOption,
   RelationshipOptionAvailabilitySource,
   UnavailableRelationshipOption,
-} from "@/modules/common/collection-form/RenderFields.types";
+} from "@/modules/common/relationship-picker/relationshipOptions";
 import { cacheScope, canonicalValue, optionCacheKey, sourceList } from "./relationshipOptionCache";
 import type {
   RelationshipOptionContext,

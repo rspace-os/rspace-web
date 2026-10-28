@@ -2,7 +2,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { Button } from "@/modules/common/ui/button";
-import type { PageState } from "../../tableListState";
+import type { PageState } from "../state/tableListState";
 
 const defaultLimits = [10, 20, 30, 40, 50] as const;
 

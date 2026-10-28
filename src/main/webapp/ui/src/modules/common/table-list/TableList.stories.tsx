@@ -4,9 +4,9 @@ import { useState } from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import type { FilterState, PageState, TableListVariant } from "./state/tableListState";
+import { useTableList } from "./state/useTableList";
 import { TableList } from "./TableList";
-import type { FilterState, PageState, TableListVariant } from "./tableListState";
-import { useTableList } from "./useTableList";
 
 export type ResearchRecord = {
   id: string;

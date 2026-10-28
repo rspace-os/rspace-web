@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import type { TableListRestoredViewIssue } from "../tableListState";
+import type { TableListRestoredViewIssue } from "../state/tableListState";
 
 export function RestoredViewIssue({
   issue,

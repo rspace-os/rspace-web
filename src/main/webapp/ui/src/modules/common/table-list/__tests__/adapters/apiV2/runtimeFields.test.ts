@@ -5,7 +5,7 @@ import { createApiV2FilterFields, enrichApiV2FilterConfig } from "../../../adapt
 import { createApiV2CollectionAdapter, staleRuntimeFields } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
 import type { RuntimeFieldDefinition } from "../../../adapters/apiV2/runtimeFieldCatalog";
-import type { CollectionQueryState } from "../../../tableListState";
+import type { CollectionQueryState } from "../../../state/tableListState";
 import { runtimeDocumentSchema as documentSchema } from "../../fixtures/schemas";
 
 type Instrument = {

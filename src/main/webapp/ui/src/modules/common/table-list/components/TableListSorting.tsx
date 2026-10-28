@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next";
 import type { ResolvedCollectionConfig, SortDirection, SortRule } from "@/modules/common/collection/collectionConfig";
 import { fieldLabel } from "@/modules/common/collection/collectionConfig";
 import { Button } from "@/modules/common/ui/button";
-import { SortableControlRow } from "../SortableControlRow";
+import { SortableControlRow } from "./SortableControlRow";
 
 function SortableSortingRow({
   id,

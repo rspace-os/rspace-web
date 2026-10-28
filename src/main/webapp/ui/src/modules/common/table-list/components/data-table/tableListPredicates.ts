@@ -1,5 +1,5 @@
 import type { SearchSelector } from "@/modules/common/collection/collectionConfig";
-import type { FilterExpression, FilterState, TableListProps } from "../tableListState";
+import type { FilterExpression, FilterState, TableListProps } from "../../state/tableListState";
 
 function comparable(value: unknown, dateTime = false): string | number | boolean {
   if (value instanceof Date) return value.getTime();

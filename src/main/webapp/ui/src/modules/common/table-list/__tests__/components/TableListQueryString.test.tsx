@@ -6,8 +6,8 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryHistoryNuqsAdapter as NuqsAdapter } from "@/__tests__/MemoryHistoryNuqsAdapter";
 import type { SortRule } from "@/modules/common/collection/collectionConfig";
+import type { FilterState, TableListQueryStringOptions } from "../../state/tableListState";
 import { TableList } from "../../TableList";
-import type { FilterState, TableListQueryStringOptions } from "../../tableListState";
 import { config, emptyFilters, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 function persistedView(

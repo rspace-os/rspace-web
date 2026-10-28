@@ -1,7 +1,7 @@
-import { normalizeRsqlList, normalizeRsqlScalar } from "../../../rsql/filterValue";
-import { rsqlOperatorToken, serializeRsqlExpression } from "../../../rsql/rsqlCodec";
-import type { FilterExpression } from "../../../tableListState";
-import type { ApiV2FilterLimits, ApiV2FilterOperator } from "../apiV2CollectionMetadata";
+import { rsqlOperatorToken, serializeRsqlExpression } from "../../rsql/rsqlCodec";
+import { normalizeRsqlList, normalizeRsqlScalar } from "../../rsql/rsqlValue";
+import type { FilterExpression } from "../../state/tableListState";
+import type { ApiV2FilterLimits, ApiV2FilterOperator } from "./apiV2CollectionMetadata";
 
 type SelectorContract = Readonly<
   Record<string, { operators: readonly ApiV2FilterOperator[]; wildcards: boolean } | undefined>

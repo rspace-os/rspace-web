@@ -1,5 +1,5 @@
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
-import type { FilterState, PageState } from "../../tableListState";
+import type { FilterState, PageState } from "../../state/tableListState";
 
 export type TestRecord = {
   id: string;

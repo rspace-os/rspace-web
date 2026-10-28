@@ -1,5 +1,5 @@
 import type { FieldName } from "@/modules/common/collection/collectionConfig";
-import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "../../tableListState";
+import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "../../state/tableListState";
 import type { ApiV2CollectionAdapter } from "./createApiV2CollectionAdapter";
 
 export type ApiV2CollectionProjection<TDocument> = "visible" | { fixed: readonly FieldName<TDocument>[] };

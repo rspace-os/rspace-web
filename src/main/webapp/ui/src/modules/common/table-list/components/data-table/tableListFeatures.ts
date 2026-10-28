@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
-import type { TableListCardFieldLayout } from "../tableListState";
+import type { TableListCardFieldLayout } from "../../state/tableListState";
 
 export type ColumnMeta = {
   labelKey: string;

@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import { rsqlSelectors } from "../rsql/rsqlCodec";
 import { columnSelectors } from "./queryStringState";
-import { rsqlSelectors } from "./rsql/rsqlCodec";
 import {
   parseTableViewState,
   type StaleViewFields,

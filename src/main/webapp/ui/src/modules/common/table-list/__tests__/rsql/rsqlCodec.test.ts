@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "../rsql/rsqlCodec";
-import type { FilterExpression } from "../tableListState";
-import { config, type TestRecord } from "./fixtures/tableListFixtures";
+import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "../../rsql/rsqlCodec";
+import type { FilterExpression } from "../../state/tableListState";
+import { config, type TestRecord } from "../fixtures/tableListFixtures";
 
 describe("table-list RSQL query state", () => {
   it("round-trips nested expressions, typed lists, and dates", () => {

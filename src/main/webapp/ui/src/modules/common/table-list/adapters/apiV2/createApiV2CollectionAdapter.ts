@@ -13,7 +13,7 @@ import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
-import type { CollectionPage, CollectionQueryState } from "../../tableListState";
+import type { CollectionPage, CollectionQueryState } from "../../state/tableListState";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
 import {
   createApiV2FilterFields,

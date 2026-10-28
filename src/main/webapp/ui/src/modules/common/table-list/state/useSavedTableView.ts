@@ -1,8 +1,8 @@
 import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import * as v from "valibot";
+import { rsqlSelectors } from "../rsql/rsqlCodec";
 import { columnSelectors } from "./queryStringState";
-import { rsqlSelectors } from "./rsql/rsqlCodec";
 import type { TableListQueryStringOptions } from "./tableListState";
 import { tableViewStateSchema } from "./tableViewState";
 import { readStoredTableView, removeStoredTableView, tableViewStorageKey } from "./tableViewStorage";

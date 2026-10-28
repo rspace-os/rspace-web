@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FilterOperator } from "@/modules/common/collection/collectionConfig";
-import { serializeRsql } from "../../../adapters/apiV2/rsql/serializeRsql";
-import type { FilterExpression } from "../../../tableListState";
+import { serializeRsql } from "../../../adapters/apiV2/serializeRsql";
+import type { FilterExpression } from "../../../state/tableListState";
 
 type Row = { name: string; id: number; enabled: boolean };
 

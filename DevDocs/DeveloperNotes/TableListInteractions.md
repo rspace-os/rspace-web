@@ -106,7 +106,7 @@ Remote tables (`clientSide={false}`) show an offline notice using React Query's 
 Cached rows remain visible; paused queries resume automatically when the connection returns.
 Do not add per-page browser connectivity listeners or force retries while offline.
 
-See [`UseTableListResult`](../../src/main/webapp/ui/src/modules/common/table-list/useTableList.ts)
+See [`UseTableListResult`](../../src/main/webapp/ui/src/modules/common/table-list/state/useTableList.ts)
 for the hook's state, update functions and table props.
 
 Any component in the same React owner can read these values. Pass only the required value and function to a child.

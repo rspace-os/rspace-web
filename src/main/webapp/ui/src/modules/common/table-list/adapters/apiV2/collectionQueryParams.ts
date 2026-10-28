@@ -8,10 +8,10 @@ import { relationshipSourceForPicker } from "@/modules/common/relationship-picke
 import type { RelationshipSource } from "@/modules/common/relationship-picker/relationshipSources";
 import { relationshipSources as builtInRelationshipSources } from "@/modules/common/relationship-picker/relationshipSources";
 import { LocalizedTableListError } from "../../LocalizedTableListError";
-import { serializeSorting } from "../../queryStringState";
-import type { CollectionQueryState, FilterExpression } from "../../tableListState";
+import { serializeSorting } from "../../state/queryStringState";
+import type { CollectionQueryState, FilterExpression } from "../../state/tableListState";
 import type { ApiV2CollectionMetadata } from "./apiV2CollectionMetadata";
-import { serializeRsql } from "./rsql/serializeRsql";
+import { serializeRsql } from "./serializeRsql";
 
 function compatiblePickerSource<TDocument>(
   config: ResolvedCollectionConfig<TDocument>,

@@ -7,8 +7,8 @@ import { server } from "@/__tests__/mswServer";
 import { queryKeys } from "@/modules/common/hooks/auth";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
 import { TableListControlPanel } from "../../components/TableListControlPanel";
+import type { TableListFeatures } from "../../state/tableListState";
 import { TableList } from "../../TableList";
-import type { TableListFeatures } from "../../tableListState";
 import { config, emptyFilters, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 function tableWithFeatures(features: TableListFeatures<TestRecord>) {

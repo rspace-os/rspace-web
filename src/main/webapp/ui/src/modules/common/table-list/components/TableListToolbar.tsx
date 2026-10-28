@@ -5,7 +5,7 @@ import type { ResolvedCollectionConfig } from "@/modules/common/collection/colle
 import { Button } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
-import type { TableListFeatures, TableListFilterButtons } from "../tableListState";
+import type { TableListFeatures, TableListFilterButtons } from "../state/tableListState";
 
 export type TableListControlPanel = "filters" | "sorting" | "columns";
 

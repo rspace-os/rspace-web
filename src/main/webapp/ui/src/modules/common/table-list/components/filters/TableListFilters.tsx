@@ -28,7 +28,7 @@ import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import type { RuntimeFieldDefinition } from "../../adapters/apiV2/runtimeFieldCatalog";
 import { serializeRsqlExpression } from "../../rsql/rsqlCodec";
-import type { FilterExpression } from "../../tableListState";
+import type { FilterExpression } from "../../state/tableListState";
 import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 import { FilterSelect, type FilterSelectOption } from "./FilterSelect";
 import { FilterValueInput } from "./FilterValueInput";

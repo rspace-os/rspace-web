@@ -7,8 +7,8 @@ import type {
   ResolvedFieldConfig,
 } from "@/modules/common/collection/collectionConfig";
 import { filterOperatorsByToken, filterOperatorTokens as tokens } from "@/modules/common/collection/filterOperators";
-import type { FilterExpression } from "../tableListState";
-import { normalizeRsqlList, normalizeRsqlScalar } from "./filterValue";
+import type { FilterExpression } from "../state/tableListState";
+import { normalizeRsqlList, normalizeRsqlScalar } from "./rsqlValue";
 import { booleanScalar, dateTimeScalar, numberScalar, stringScalar } from "./schemas";
 
 const operators = new Map<string, FilterOperator>([

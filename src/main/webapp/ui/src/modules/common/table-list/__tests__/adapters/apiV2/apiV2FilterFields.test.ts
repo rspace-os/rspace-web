@@ -11,7 +11,7 @@ import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2Colle
 import { enrichApiV2FilterConfig } from "../../../adapters/apiV2/apiV2FilterFields";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
 import { apiV2CollectionRequestParams } from "../../../adapters/apiV2/createApiV2CollectionFetcher";
-import type { FilterExpression } from "../../../tableListState";
+import type { FilterExpression } from "../../../state/tableListState";
 import {
   bookingRelationshipsSchema as documentSchema,
   ownerlessDocumentSchema as ownerlessSchema,
