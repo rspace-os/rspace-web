@@ -52,7 +52,10 @@ the fixture initializes missing user content and creates only the lab-group
 relationship required for `user1a` to be PI of `user2b`, if that relationship is
 absent. It does not run the broader developer group setup in production. Existing databases are not reseeded
 on restart, even with the flag enabled. After the outer startup transaction
-commits, it creates inventory and booking data in two new transactions.
+completes successfully and its booking state is cleared, it creates inventory
+and booking data in two new transactions. Rollback does not schedule fixtures.
+A fixture failure is logged but does not stop startup, and later restarts do not
+retry it, so rebuild the database if seeding fails part-way.
 
 `BookingFixturesProductionPermissionsIT` exercises the real production-profile
 startup and its viewer permissions. Run it only against a fresh, isolated database
