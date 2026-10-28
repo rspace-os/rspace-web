@@ -24,13 +24,6 @@ packageExtensions:
   '@scalar/schemas@0.8.3':
     dependencies:
       '@scalar/types': 0.18.2
-  # posthog-js/react imports React without declaring it in the published package.
-  posthog-js:
-    peerDependencies:
-      react: '*'
-    peerDependenciesMeta:
-      react:
-        optional: true
   # The gallery imports createPortal without declaring its react-dom peer.
   react-photoswipe-gallery:
     peerDependencies:
