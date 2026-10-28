@@ -232,7 +232,6 @@ class OAuthTokenAuthenticatorTest {
   @Test
   void rejectsSessionBoundUiTokenWithoutItsBrowserSessionContext() {
     User subject = mock(User.class);
-    when(subject.getId()).thenReturn(42L);
     MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/inventory");
     request.addHeader("Authorization", "Bearer v2-ui-token");
     RecordingOAuthTokenAuthenticator authenticator =
@@ -252,7 +251,6 @@ class OAuthTokenAuthenticatorTest {
   @Test
   void rejectsUiTokenCopiedFromAnotherBrowserSession() {
     User subject = mock(User.class);
-    when(subject.getId()).thenReturn(42L);
     MockHttpServletRequest request = requestWithCurrentBrowserContext();
     RecordingOAuthTokenAuthenticator authenticator =
         authenticatorForUiToken(
@@ -270,17 +268,16 @@ class OAuthTokenAuthenticatorTest {
 
   @Test
   void rejectsSignedUiTokenWhenAnApiKeyWouldTakePrecedenceInApiV2() {
-    User subject = mock(User.class);
-    when(subject.getId()).thenReturn(42L);
     MockHttpServletRequest request = requestWithCurrentBrowserContext();
     request.addHeader("apiKey", "another-users-api-key");
     String context = BrowserSessionAuthContext.current(request.getSession()).orElseThrow();
-    RecordingOAuthTokenAuthenticator authenticator =
-        authenticatorForUiToken(
-            request,
-            subject,
-            Optional.of(ApiV2Caller.direct(subject)),
-            new UiTokenContext(42L, Optional.empty(), context));
+    OAuthTokenManager tokenManager = mock(OAuthTokenManager.class);
+    when(tokenManager.validateToken("v2-ui-token"))
+        .thenReturn(new ServiceOperationResult<>(null, true, "valid"));
+    when(tokenManager.getUiTokenContext("v2-ui-token"))
+        .thenReturn(Optional.of(new UiTokenContext(42L, Optional.empty(), context)));
+    RecordingOAuthTokenAuthenticator authenticator = new RecordingOAuthTokenAuthenticator();
+    ReflectionTestUtils.setField(authenticator, "tokenManager", tokenManager);
 
     ApiAuthenticationException exception =
         assertThrows(ApiAuthenticationException.class, () -> authenticator.authenticate(request));
