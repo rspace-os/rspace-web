@@ -42,41 +42,37 @@ function PlacementStep({
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const descriptionId = React.useId();
-  const onChangeRef = React.useRef(onChange);
-  onChangeRef.current = onChange;
-  const mounted = React.useRef(true);
-  React.useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
   const pickerRef = React.useRef<HTMLDivElement>(null);
   const changeButtonRef = React.useRef<HTMLButtonElement>(null);
   // The picker unmounts when a pick lands, which would drop focus to the page.
   const pickedFromPicker = React.useRef(false);
 
   // Step-local, not the global moveStore: ContainerModel's move checks read moveStore's selection.
-  const [search] = React.useState(() => {
-    const s: Search = new Search({
-      fetcherParams: { resultType: "CONTAINER" },
-      treeArgs: { filteredTypes: ["container"] },
-      uiConfig: { allowedTypeFilters: new Set(["CONTAINER"]), selectionMode: "SINGLE" },
-      factory: new MemoisedFactory(),
-      callbacks: {
-        // A pick resolves only after the container loads, by which time the user may have picked
-        // another, switched to the workbench (which clears activeResult) or left the step.
-        setActiveResult: (record) => {
-          if (!(record instanceof ContainerModel) || !mounted.current || record !== s.activeResult) return;
-          record.refreshAssociatedSearch();
-          pickedFromPicker.current = pickerRef.current?.contains(document.activeElement) ?? false;
-          onChangeRef.current({ mode: "container", container: record });
-        },
+  const [search] = React.useState(
+    () =>
+      new Search({
+        fetcherParams: { resultType: "CONTAINER" },
+        treeArgs: { filteredTypes: ["container"] },
+        uiConfig: { allowedTypeFilters: new Set(["CONTAINER"]), selectionMode: "SINGLE" },
+        factory: new MemoisedFactory(),
+      }),
+  );
+  React.useEffect(() => {
+    search.callbacks = {
+      // A pick resolves only after the container loads, by which time the user may have picked
+      // another or switched to the workbench (which clears activeResult); a load that finishes
+      // after this step is gone finds no callback.
+      setActiveResult: (record) => {
+        if (!(record instanceof ContainerModel) || record !== search.activeResult) return;
+        record.refreshAssociatedSearch();
+        pickedFromPicker.current = pickerRef.current?.contains(document.activeElement) ?? false;
+        onChange({ mode: "container", container: record });
       },
-    });
-    return s;
-  });
+    };
+    return () => {
+      search.callbacks = undefined;
+    };
+  }, [search, onChange]);
   const choosingContainer = value.mode === "container";
   React.useEffect(() => {
     if (choosingContainer && search.searchView !== "TREE") void search.setSearchView("TREE");
