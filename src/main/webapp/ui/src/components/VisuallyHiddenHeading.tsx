@@ -1,6 +1,6 @@
 import Typography from "@mui/material/Typography";
+import visuallyHidden from "@mui/utils/visuallyHidden";
 import type React from "react";
-import { visuallyHidden } from "@/util/visuallyHidden";
 
 type VisuallyHiddenHeadingArgs = {
   variant: "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
