@@ -98,7 +98,14 @@ describe("booking API", () => {
   });
 
   it("rejects malformed success data and exposes stable problem codes", async () => {
-    server.use(http.get("/api/v2/bookings/41", () => HttpResponse.json({ ...document, target: null })));
+    server.use(
+      http.get("/api/v2/bookings/41", () =>
+        HttpResponse.json({
+          ...document,
+          target: { relationTo: "wrong-resource", value: 12, globalId: "IN12" },
+        }),
+      ),
+    );
     await expect(fetchBooking(41, "token")).rejects.toThrow();
 
     server.use(
