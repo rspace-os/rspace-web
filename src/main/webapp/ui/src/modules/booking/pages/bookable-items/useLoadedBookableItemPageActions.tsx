@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ApiV2ProblemError, parseApiV2Problem } from "@/modules/booking/domain/booking";
-import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
+import { bookingConfigurationKeys, bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { apiV2JsonHeaders } from "@/modules/common/api/apiV2Headers";
 import { leaveResource } from "@/modules/common/resource-access/resourceAccess";
 import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
@@ -93,6 +93,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
         invalidateBookingCatalogueQueries(queryClient),
       ]);
       setSaveAnnouncement("saved");
@@ -115,6 +116,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
         queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
@@ -136,6 +138,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] }),
         queryClient.invalidateQueries({ queryKey: bookingKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-catalogue"] }),
@@ -158,6 +161,7 @@ export function useLoadedBookableItemPageActions({
       // The deleted configuration's instrument becomes an eligible target again.
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configuration-targets"] }),
       ]);
       setPermanentDeleteOpen(false);
@@ -176,6 +180,7 @@ export function useLoadedBookableItemPageActions({
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] }),
+        queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all }),
         invalidateBookingCatalogueQueries(queryClient),
       ]);
       void navigate({ to: "/booking", ignoreBlocker: true });
