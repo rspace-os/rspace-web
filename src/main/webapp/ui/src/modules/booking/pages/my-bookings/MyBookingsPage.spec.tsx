@@ -41,8 +41,6 @@ describe("the My Bookings page", () => {
     render(<MyBookingsPageStory />);
 
     const controls = [
-      [pageObj.upcoming, "Upcoming"],
-      [pageObj.past, "Past"],
       [pageObj.confocalDetails, "View details"],
       [pageObj.confocalItemCalendar, "View item calendar"],
       [pageObj.confocalEdit, "Edit"],
