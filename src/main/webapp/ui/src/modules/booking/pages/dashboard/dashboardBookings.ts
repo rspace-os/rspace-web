@@ -9,6 +9,7 @@ import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { upcomingBookingWhere } from "../my-bookings/bookingCountFilter";
 
 const DASHBOARD_BOOKING_FIELDS = `${BOOKING_READ_FIELDS},requesterId`;
@@ -61,7 +62,7 @@ async function fetchDashboardBookingPage(
     depth: "1",
     "fields[bookings]": DASHBOARD_BOOKING_FIELDS,
   });
-  const response = await fetch(`/api/v2/bookings?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/bookings?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });
