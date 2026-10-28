@@ -1,12 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
-import { fetchOauthToken, getStoredToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
-
-const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
-
-function refreshDelayMs(token: string): number {
-  return Math.min(secondsToExpiry(token) * 1000, MAX_SET_TIMEOUT_DELAY_MS);
-}
+import { fetchOauthToken, getStoredToken, saveStoredToken, tokenRefreshDelayMs } from "@/modules/common/utils/auth";
 
 /**
  * This custom hook allows us to get a token for making calls to the API
@@ -35,11 +29,11 @@ function refreshDelayMs(token: string): number {
  * whilst an initial network request is in flight then multiple API calls will
  * be made but this isn't generally an issue.
  *
- * This hook also automatically refreshes the token when it expires, so be sure
+ * This hook also automatically refreshes the token shortly before it expires, so be sure
  * to not cache the value returned by `getToken` in the components or hooks
  * that use this hook as otherwise they will fail to work when the token
  * elapses.  If the page is loaded and there is a valid token in the session
- * storage then it is used and a timer is set up to refresh the token when it
+ * storage then it is used and a timer is set up to refresh the token before it
  * expires just as if the token and been fetched directly.
  */
 export default function useOauthToken(): { getToken: () => Promise<string> } {
@@ -82,7 +76,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
     tokenRef.current = newToken;
     setTimeout(() => {
       void refreshToken();
-    }, refreshDelayMs(newToken));
+    }, tokenRefreshDelayMs(newToken));
   }
 
   const getToken = React.useCallback(async () => {
@@ -106,13 +100,13 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      * storage, we set up a timer to trigger the continuous refreshing of the
      * token. As the user navigates around and refreshes the page throughout
      * the window in which the token is valid, we want to keep setting up the
-     * refresh logic so that when the token expires we get a new one, put it
+     * refresh logic so that before the token expires we get a new one, put it
      * in session storage, and the current page and all subsequent ones in
      * the next temporal window will continue to work.
      */
     setTimeout(() => {
       void refreshToken();
-    }, refreshDelayMs(savedToken));
+    }, tokenRefreshDelayMs(savedToken));
     return savedToken;
   }, []);
 
