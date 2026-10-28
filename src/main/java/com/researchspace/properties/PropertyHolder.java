@@ -331,6 +331,22 @@ public class PropertyHolder implements IMutablePropertyHolder {
     this.analyticsEnabled = analyticsEnabled;
   }
 
+  @Value("${rs.otel.web.enabled:false}")
+  private String otelWebEnabled;
+
+  @Value("${rs.otel.web.traceSamplingRatio:1.0}")
+  private String otelWebTraceSamplingRatio;
+
+  @Override
+  public String getOtelWebEnabled() {
+    return otelWebEnabled;
+  }
+
+  @Override
+  public String getOtelWebTraceSamplingRatio() {
+    return otelWebTraceSamplingRatio;
+  }
+
   @Override
   public String getCustomLoginContent() {
     return customLoginContent;

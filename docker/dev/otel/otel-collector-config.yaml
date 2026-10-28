@@ -1,0 +1,90 @@
+# Development Collector: receive OTLP and export it to Elastic APM Server.
+
+receivers:
+  otlp/backend:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+  otlp/browser:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4319
+        max_request_body_size: 524288
+
+processors:
+  memory_limiter/backend:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  memory_limiter/browser:
+    check_interval: 1s
+    limit_mib: 128
+    spike_limit_mib: 32
+  batch/backend:
+    send_batch_size: 512
+    timeout: 5s
+  batch/browser:
+    send_batch_size: 256
+    timeout: 5s
+  # Query strings can carry secrets such as password-reset tokens.
+  transform/backend_redaction:
+    error_mode: ignore
+    trace_statements:
+      - context: span
+        statements:
+          - delete_key(span.attributes, "url.query")
+          - replace_pattern(span.attributes["url.full"], "[?#].*", "")
+          - replace_pattern(span.attributes["http.url"], "[?#].*", "")
+          - replace_pattern(span.attributes["http.target"], "[?#].*", "")
+  transform/browser_identity:
+    error_mode: propagate
+    trace_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], "rspace-frontend")
+          - set(resource.attributes["service.namespace"], "rspace-browser")
+          - delete_key(resource.attributes, "service.instance.id")
+          - delete_key(resource.attributes, "deployment.environment")
+          - delete_key(resource.attributes, "deployment.environment.name")
+          - 'delete_matching_keys(resource.attributes, "^(host|process)\\.")'
+    metric_statements:
+      - context: resource
+        statements:
+          - set(resource.attributes["service.name"], "rspace-frontend")
+          - set(resource.attributes["service.namespace"], "rspace-browser")
+          - delete_key(resource.attributes, "service.instance.id")
+          - delete_key(resource.attributes, "deployment.environment")
+          - delete_key(resource.attributes, "deployment.environment.name")
+          - 'delete_matching_keys(resource.attributes, "^(host|process)\\.")'
+
+exporters:
+  otlp_grpc:
+    endpoint: http://apm-server:8200
+    tls:
+      insecure: true
+  # Uncomment to log received telemetry summaries.
+  # debug:
+  #   verbosity: normal
+
+service:
+  pipelines:
+    traces/backend:
+      receivers: [otlp/backend]
+      processors: [memory_limiter/backend, transform/backend_redaction, batch/backend]
+      exporters: [otlp_grpc]
+    metrics/backend:
+      receivers: [otlp/backend]
+      processors: [memory_limiter/backend, batch/backend]
+      exporters: [otlp_grpc]
+    logs/backend:
+      receivers: [otlp/backend]
+      processors: [memory_limiter/backend, batch/backend]
+      exporters: [otlp_grpc]
+    traces/browser:
+      receivers: [otlp/browser]
+      processors: [memory_limiter/browser, transform/browser_identity, batch/browser]
+      exporters: [otlp_grpc]
+    metrics/browser:
+      receivers: [otlp/browser]
+      processors: [memory_limiter/browser, transform/browser_identity, batch/browser]
+      exporters: [otlp_grpc]
