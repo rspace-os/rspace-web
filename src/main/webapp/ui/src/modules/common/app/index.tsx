@@ -10,14 +10,12 @@ import { baseUiRichTextComponents } from "@/modules/common/i18n/TransRichText";
 import { UIStoreProvider } from "@/modules/common/stores/uiStore";
 import { TooltipProvider } from "@/modules/common/ui/tooltip";
 import { createAppRouter } from "./router";
-import { withStaleOauthTokenRedirect } from "./staleOauthTokenRedirect";
 
 const queryClient: QueryClient = new QueryClient({
   defaultOptions: { queries: { retry: retryUnlessClientError, staleTime: 30_000 } },
   mutationCache: createApiV2MutationCache(() => queryClient),
 });
 const router = createAppRouter(queryClient);
-globalThis.fetch = withStaleOauthTokenRedirect(globalThis.fetch);
 
 const appElement = document.getElementById("app");
 if (appElement) {
