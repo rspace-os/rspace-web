@@ -36,6 +36,11 @@ const document = {
     },
     globalId: "IN123",
   },
+  location: {
+    relationTo: "booking-locations",
+    value: { id: 456, globalId: "IC456", name: "Imaging lab" },
+    globalId: "IC456",
+  },
   canViewConfiguration: true,
   timezone: "Europe/Berlin",
   start: "2026-08-17T08:00:00Z",
