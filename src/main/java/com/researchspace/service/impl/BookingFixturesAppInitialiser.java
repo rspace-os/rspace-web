@@ -100,11 +100,11 @@ public class BookingFixturesAppInitialiser extends AbstractAppInitializor {
 
   @Override
   public void onAppStartup(ApplicationContext applicationContext) {
-    AfterCommit.run(this::createFixturesInCommittedStages);
+    AfterCommit.runAfterCompletion(this::createFixturesInCommittedStages);
   }
 
-  // GlobalInitManager is transactional. Run only after it commits so its locks cannot deadlock the
-  // two independent fixture stages.
+  // Start only after committed completion has cleared the startup transaction's booking state.
+  // Each fixture stage still needs its own transaction.
   private void createFixturesInCommittedStages() {
     FixtureIds fixtureIds = fixtureTransaction.execute(ignored -> createInventoryFixtures());
     if (fixtureIds == null) {
