@@ -12,7 +12,7 @@ export type CollectionTranslationKey =
   | ParseKeys<"common">;
 
 export function isIdLikeField(name: string): boolean {
-  return /(?:Id|Ids)$/.test(name);
+  return /Ids?$/.test(name);
 }
 
 export type FieldName<TDocument> = Extract<keyof TDocument, string>;
@@ -48,11 +48,7 @@ export type FieldCapabilities = {
   supportsWildcards?: boolean;
 };
 
-export type ResolvedFieldCapabilities = {
-  sortable: boolean;
-  filterOperators: readonly FilterOperator[];
-  supportsWildcards: boolean;
-};
+export type ResolvedFieldCapabilities = Required<FieldCapabilities>;
 
 export type FieldListConfig<TDocument> = {
   align?: "start" | "center" | "end";
