@@ -42,7 +42,7 @@ describe("the bookable items table", () => {
     await expect.element(pageObj.fieldSelect).toBeVisible();
     await userEvent.click(pageObj.fieldSelect);
     await expect.element(page.getByRole("option", { name: "Custom field…" })).toBeVisible();
-    await expect.element(page.getByRole("group", { name: "Related record fields" })).toBeVisible();
+    await expect.element(page.getByRole("group", { name: "Bookable item" })).toBeVisible();
     await expect.element(page.getByRole("option", { name: "Bookable item → Name" })).toBeVisible();
     await expect.element(page.getByRole("option", { name: "Hazard class", exact: false })).not.toBeInTheDocument();
 
