@@ -299,7 +299,7 @@ public class InventoryPermissionUtils {
   public void assertUserCanTransferInventoryRecord(
       InventoryRecord record, User user, boolean hasCurrentGroupAuthority) {
     boolean ownsRecord = user.getUsername().equals(record.getOwner().getUsername());
-    boolean hasTransferAuthority = ownsRecord || user.hasSysadminRole() || hasCurrentGroupAuthority;
+    boolean hasTransferAuthority = ownsRecord || hasCurrentGroupAuthority;
     boolean canRead = hasTransferAuthority || canUserReadInventoryRecord(record, user);
     if (!canRead) {
       throwNotFoundException(record.getId());
