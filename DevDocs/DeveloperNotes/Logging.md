@@ -31,9 +31,8 @@ archive-triggered changes retain the entity's annotated audit fields.
 
 Booking changes use the shared audit trail and appear under Bookings in My
 RSpace. Audit resource IDs are `bookings:<id>`,
-`booking-configurations:<id>`, and `booking-settings:<id>`. The audit readers
-also classify historical `UNKNOWN` events with those exact top-level IDs as
-booking events. Cancellation, archive, and permanent deletion keep their stored
+`booking-configurations:<id>`, and `booking-settings:<id>`. Booking events use
+the `BOOKING` domain. Cancellation, archive, and permanent deletion keep their stored
 audit actions; the audit page and CSV export show more specific labels from the
 recorded state and permanent-deletion marker.
 

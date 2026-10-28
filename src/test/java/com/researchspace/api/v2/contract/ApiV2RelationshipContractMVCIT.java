@@ -602,7 +602,7 @@ class ApiV2RelationshipContractMVCIT {
             .withZoneSameInstant(ZoneId.systemDefault())
             .toLocalDateTime();
     String line =
-        "%s - domain:UNKNOWN action:CREATE [{\"data\":{\"id\":\"booking-configurations:%d\",\"enabled\":true}}] sysadmin1(System Admin)%n"
+        "%s - domain:BOOKING action:CREATE [{\"data\":{\"id\":\"booking-configurations:%d\",\"enabled\":true}}] sysadmin1(System Admin)%n"
             .formatted(AUDIT_TIMESTAMP.format(localTimestamp), configurationId);
     Files.writeString(AUDIT_DIRECTORY.resolve("RSLogs.txt"), line, StandardCharsets.UTF_8);
   }
