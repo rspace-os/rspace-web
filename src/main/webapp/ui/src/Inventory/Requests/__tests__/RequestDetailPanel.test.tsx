@@ -6,6 +6,7 @@ import { HttpResponse, http } from "msw";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
 // Constructing SubSampleModel/SampleModel instances (for the Operations Wizard launch tests)
@@ -473,5 +474,80 @@ describe("RequestDetailPanel", () => {
         sampleToTransferGlobalId: "SA999",
       }),
     );
+  });
+
+  it("names the wizard-created sample (not the originally requested one) in the cancelled-transfer error", async () => {
+    // cimode rendering (see src/__tests__/setup.ts) shows only the bare translation key, never the
+    // interpolated copy - asserting on rendered text alone can't tell which message key was used,
+    // or which sample name it was given, so this spies on the real t() call instead.
+    const tSpy = vi.spyOn(i18n, "t");
+    const restoreConsole = silenceConsole(["error"], ["Failed to transfer sample ownership: request was cancelled"]);
+    const user = userEvent.setup();
+    server.use(
+      http.get(SUBSAMPLE_URL, () =>
+        HttpResponse.json(subsampleAttrs({ id: 42, globalId: "SS42", sample: sampleAttrs() })),
+      ),
+      http.put(SAMPLE_REQUEST_FULFIL_BY_TRANSFER_URL, async ({ params, request }) => {
+        const body = await request.json();
+        apiUpdate("sampleRequests", `${params.id}/actions/fulfilByTransfer`, body);
+        return HttpResponse.json(
+          { message: "A sample request cannot move from CANCELLED to FULFILLED." },
+          { status: 422 },
+        );
+      }),
+    );
+    // The request is still APPROVED when the panel mounts, but has been CANCELLED by the time
+    // submitTransfer's onError re-fetches it, simulating someone else cancelling it in between.
+    let sampleRequestsGetCalls = 0;
+    server.use(
+      http.get(SAMPLE_REQUEST_DETAIL_URL, ({ params }) => {
+        apiGet("sampleRequests", Number(params.id));
+        sampleRequestsGetCalls += 1;
+        return HttpResponse.json({
+          status: sampleRequestsGetCalls === 1 ? "APPROVED" : "CANCELLED",
+          statusChanges: [],
+          sample: { owner: { firstName: OWNER.firstName, lastName: OWNER.lastName } },
+        });
+      }),
+    );
+    renderPanel(baseRequest({ status: "APPROVED" }));
+    await waitForInitialFetches();
+
+    await user.click(screen.getByRole("button", { name: "mock-select-subsample" }));
+    await user.click(screen.getByRole("button", { name: "inventory:requestsManagement.detail.prepareSampleButton" }));
+    const chooseDialog = screen.getByRole("dialog", {
+      name: "inventory:requestsManagement.detail.chooseMethodDialog.title",
+    });
+    await user.click(
+      within(chooseDialog).getByRole("radio", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.wizardOption",
+      }),
+    );
+    await user.click(
+      within(chooseDialog).getByRole("button", {
+        name: "inventory:requestsManagement.detail.chooseMethodDialog.proceedButton",
+      }),
+    );
+    await screen.findByTestId("mock-operation-wizard");
+    act(() => {
+      lastOnPerformed?.({ id: 999, globalId: "SA999", name: "New Sample From Wizard" });
+    });
+
+    const transferDialog = await screen.findByRole("dialog", {
+      name: "inventory:requestsManagement.detail.transferDialog.heading",
+    });
+    await waitFor(() => expect(getUser).toHaveBeenCalledWith(REQUESTER.username));
+    await user.click(within(transferDialog).getByRole("button", { name: "common:actions.transfer" }));
+
+    await waitFor(() => expect(addAlert).toHaveBeenCalled());
+    expect(tSpy).toHaveBeenCalledWith(
+      "requestsManagement.detail.transferCancelledWizardSampleErrorMessage",
+      expect.objectContaining({ sampleName: "New Sample From Wizard" }),
+    );
+    // The generic (non-wizard) cancelled message names the originally requested sample instead -
+    // it must not have been used here.
+    expect(tSpy).not.toHaveBeenCalledWith("requestsManagement.detail.transferCancelledErrorMessage", expect.anything());
+    tSpy.mockRestore();
+    restoreConsole();
   });
 });

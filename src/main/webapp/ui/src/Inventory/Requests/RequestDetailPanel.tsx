@@ -362,12 +362,20 @@ export default function RequestDetailPanel({ request }: { request: ApiSampleRequ
           const refetched = await detailQuery.refetch();
           if (refetched.data?.status === "CANCELLED") {
             console.error("Failed to transfer sample ownership: request was cancelled", error);
+            // A wizard-created sample has already been created in the current owner's own
+            // Inventory (see launchOperationsWizardForSelectedSubsample's onCreate above) - unlike
+            // the originally requested sample, it never belonged to the request itself, so it
+            // simply stays put rather than needing any manual follow-up to relocate it.
             uiStore.addAlert(
               mkAlert({
                 variant: "error",
-                message: t("requestsManagement.detail.transferCancelledErrorMessage", {
-                  sampleName: request.sample.name,
-                }),
+                message: wizardCreatedSample
+                  ? t("requestsManagement.detail.transferCancelledWizardSampleErrorMessage", {
+                      sampleName: wizardCreatedSample.name,
+                    })
+                  : t("requestsManagement.detail.transferCancelledErrorMessage", {
+                      sampleName: request.sample.name,
+                    }),
               }),
             );
           } else {

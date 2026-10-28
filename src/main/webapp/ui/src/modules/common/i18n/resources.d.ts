@@ -4482,6 +4482,7 @@ export default interface Resources {
         },
         "title": "Request {id}: {sampleName}",
         "transferCancelledErrorMessage": "Sample {sampleName} could not be transferred as the request has already been cancelled.",
+        "transferCancelledWizardSampleErrorMessage": "Newly created sample {sampleName} could not be transferred as the request has been cancelled. This newly created sample will remain where it was created in your inventory.",
         "transferDialog": {
           "bullets": {
             "newSampleMoved": "The new sample and subsamples will be moved to {requester}'s bench",
