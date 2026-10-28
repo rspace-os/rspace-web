@@ -4,6 +4,13 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      java_version:
+        description: 'Java version for the build and the app'
+        type: choice
+        options: ['17', '21']
+        default: '17'
 
 permissions:
   contents: read
@@ -13,4 +20,5 @@ jobs:
     uses: ./.github/workflows/e2e.yml
     with:
       mode: mock
+      java_version: ${{ inputs.java_version || '17' }}
     secrets: inherit

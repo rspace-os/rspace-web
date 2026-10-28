@@ -9,8 +9,11 @@ echo 'Building rspace-web'
  In Jenkins, it is called from 'rspace-web' project as a multi branch build
  For the main branch, it runs 'quick' JUnit tests
  When FULL_JAVA_TESTS is set, it runs full Java tests (i.e. with IT tests) instead.
- The script takes several parameters; there are other Jenkins jobs to run nightly test-suites using JDK 11 and also
+ The script takes several parameters; there are other Jenkins jobs to run nightly test-suites on other JDKs and also
  with 'nightly' tests which are more long running tests.
+ Java 17 and 21 are both supported. The defaults below stay on 17 until Java 21 is installed on the agents,
+ then flip MAVEN_TOOLCHAIN_JAVA_VERSION to 21. MAVEN_TOOLCHAIN_JAVA_VENDOR must match the <vendor> label of
+ the agent's toolchains.xml entry (openjdk today), whatever distribution is installed.
 */
 
 pipeline {
@@ -19,7 +22,7 @@ pipeline {
     options { disableConcurrentBuilds() }
 
     parameters {
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain')
+        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain (17 or 21)')
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
@@ -44,6 +47,9 @@ pipeline {
         SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
+        // scratch database for the HibernateTest classes; the hash of the full branch name comes before the readable
+        // part so the 63-char cap can never cut it, keeping names unique even for branches that sanitise or truncate alike
+        HIBTEST_DBNAME = branchToDbName("hibtest_${branchNameHash(BRANCH_NAME)}_${BRANCH_NAME}")
         CHEMISTRY_CONTAINER_NAME = "rspace-chemistry-${SAFE_BRANCH_NAME}-${BUILD_ID}"
         AWS_TOMCAT_AMI = 'ami-0a3f8106db17a5218'
         APP_VERSION = readMavenPom().getVersion()
@@ -267,7 +273,7 @@ pipeline {
                   -Djava-vendor=${params.MAVEN_TOOLCHAIN_JAVA_VENDOR} \
                   -Djavax.xml.accessExternalDTD=all\
                   -Dlog4j2.configurationFile=log4j2-dev.xml -Dsurefire.rerunFailingTestsCount=2\
-                  -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME}\
+                  -Djdbc.db.maven=${SANITIZED_DBNAME} -Djdbc.url=jdbc:mysql://localhost:3306/${SANITIZED_DBNAME} -Dhibtest.db=${HIBTEST_DBNAME}\
                   -Dmaven.test.failure.ignore=false   -Denvironment=drop-recreate-db  \
                   -DRS.devlogLevel=INFO  -DRS_FILE_BASE=${RS_FILE_BASE} \
                   -DenableTestCoverage  ${params.NIGHTLY_BUILD}"
@@ -288,6 +294,8 @@ pipeline {
                     sh "rm -rf ${RS_FILE_BASE}"
                     echo "dropping test database ${SANITIZED_DBNAME}"
                     sh "mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd  -e 'drop database if exists ${SANITIZED_DBNAME}' "
+                    echo "dropping hibernate scratch database ${HIBTEST_DBNAME}"
+                    sh "mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd  -e 'drop database if exists ${HIBTEST_DBNAME}' "
                 }
 
                 success {

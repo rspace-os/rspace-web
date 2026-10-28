@@ -12,6 +12,8 @@ import com.researchspace.model.dto.UserBasicInfo;
 import com.researchspace.model.dtos.CreateCloudGroup;
 import com.researchspace.model.dtos.CreateCloudGroupValidator;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.cloud.CloudGroupManager;
 import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
@@ -42,10 +44,11 @@ public class SelfServiceLabGroupController extends BaseController {
   private @Autowired CloudGroupManager cloudGroupManager;
   private @Autowired CloudNotificationManager cloudNotificationManager;
   private @Autowired CreateCloudGroupValidator cloudGroupValidator;
+  private @Autowired SystemPropertyPermissionManager systemPropertyPermissionManager;
 
   @RequestMapping(method = RequestMethod.GET, value = "/group/new")
   public String selfServiceLabGroupForm(Model model) {
-
+    assertSelfServiceLabGroupsAllowed(userManager.getAuthenticatedUserInSession());
     CreateCloudGroup createCloudGroupConfig = new CreateCloudGroup();
     model.addAttribute("createCloudGroupConfig", createCloudGroupConfig);
     return "admin/cloud/createCloudGroupForm";
@@ -58,6 +61,7 @@ public class SelfServiceLabGroupController extends BaseController {
       HttpServletRequest request) {
 
     User creator = userManager.getAuthenticatedUserInSession();
+    assertSelfServiceLabGroupsAllowed(creator);
     createCloudGroup.setSessionUser(creator);
     cloudGroupValidator.validate(createCloudGroup, errors);
     List<Group> groups = groupManager.listGroupsForOwner(creator);
@@ -88,6 +92,13 @@ public class SelfServiceLabGroupController extends BaseController {
     publisher.publishEvent(new GenericEvent(creator, newLabGroup, AuditAction.CREATE));
     response.put("newGroup", "" + newLabGroup.getId());
     return new AjaxReturnObject<>(response, null);
+  }
+
+  private void assertSelfServiceLabGroupsAllowed(User user) {
+    if (!systemPropertyPermissionManager.isPropertyAllowed(
+        user, SystemPropertyName.SELF_SERVICE_LABGROUPS)) {
+      throw new AuthorizationException(getText("common:profile.groups.manager.contactAdmin"));
+    }
   }
 
   private void sendInvites(

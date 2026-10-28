@@ -6,6 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -20,6 +23,8 @@ import org.slf4j.LoggerFactory;
 /** Utility class for high-level manipulation of Zip files */
 public class ZipUtils {
   private static final Logger log = LoggerFactory.getLogger(ZipUtils.class);
+
+  private static final int MAX_ENTRY_DEPTH = 64;
 
   /**
    * @see ZipUtils#createZip(String, File...)
@@ -103,11 +108,13 @@ public class ZipUtils {
    * folder containing everything else.
    *
    * <p>Extraction is safe against archives that originate from user uploads: an absolute entry name
-   * is rejected, and each entry's canonical destination must resolve inside the extraction
-   * directory (covering {@code ..} traversal and backslash variants). A rejection or I/O failure
-   * aborts and removes everything the extraction created; it does not restore pre-existing files
-   * that a failed run has already overwritten, so extract into a fresh directory when the
-   * destination may hold content worth keeping.
+   * is rejected, as is one nested too deep, and each entry's canonical destination must resolve
+   * inside the extraction directory (covering {@code ..} traversal and backslash variants).
+   * Extraction also stops once the archive exceeds {@link ZipExtractionLimits#DEFAULTS} (bytes
+   * written, entry count, compression ratio, free disk space), so a zip bomb cannot fill the
+   * partition. A rejection or I/O failure aborts and removes everything the extraction created; it
+   * does not restore pre-existing files that a failed run has already overwritten, so extract into
+   * a fresh directory when the destination may hold content worth keeping.
    *
    * @param archivePath path to zip file, e.g., a/b/c/d.archive.zip
    * @param destinationPath The folder into which the zip archive will be extracted.
@@ -124,13 +131,23 @@ public class ZipUtils {
    * @return The name of top-level folder or <code>null</code> if no top-level folder in zip
    */
   public static String extractZip(File archiveFile, File destinationFolder) throws IOException {
+    return extractZip(archiveFile, destinationFolder, ZipExtractionLimits.DEFAULTS);
+  }
+
+  /**
+   * Extracts with caller-supplied limits instead of {@link ZipExtractionLimits#DEFAULTS}.
+   *
+   * @throws ZipExtractionLimitException if a limit is exceeded; anything written is removed first
+   */
+  public static String extractZip(
+      File archiveFile, File destinationFolder, ZipExtractionLimits limits) throws IOException {
     if (!destinationFolder.exists()) {
       boolean dirMade = destinationFolder.mkdir();
       if (!dirMade) {
         throw new IllegalStateException("Couldn't make folder to unzip into");
       }
     }
-    return unzipFolder(archiveFile, destinationFolder);
+    return unzipFolder(archiveFile, destinationFolder, limits);
   }
 
   /**
@@ -141,8 +158,8 @@ public class ZipUtils {
    *
    * @return The name of top-level folder or <code>null</code> if no top-level folder
    */
-  private static String unzipFolder(File archiveFile, File zipDestinationFolder)
-      throws IOException {
+  private static String unzipFolder(
+      File archiveFile, File zipDestinationFolder, ZipExtractionLimits limits) throws IOException {
 
     final int bufferSize = 65536;
     File topLevelDir = null;
@@ -150,17 +167,24 @@ public class ZipUtils {
     String rootPrefix = rootPath.endsWith(File.separator) ? rootPath : rootPath + File.separator;
     // paths this extraction created, so a rejection can remove exactly what it wrote
     Set<File> created = new LinkedHashSet<>();
+    ExtractionBudget budget = new ExtractionBudget(limits, archiveFile, zipDestinationFolder);
 
     try (ZipFile zipFile = new ZipFile(archiveFile)) {
       byte[] buf = new byte[bufferSize];
+      budget.checkFreeDiskSpace();
 
       Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
       while (entries.hasMoreElements()) {
         ZipArchiveEntry zipEntry = entries.nextElement();
+        budget.countEntries(1, zipEntry);
         String name = zipEntry.getName();
         name = name.replace('\\', '/');
         if (name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
           throw new InvalidArchiveException("absolute entry name: " + zipEntry.getName());
+        }
+        if (name.chars().filter(c -> c == '/').count() > MAX_ENTRY_DEPTH) {
+          throw new InvalidArchiveException(
+              "entry nested more than " + MAX_ENTRY_DEPTH + " levels: " + zipEntry.getName());
         }
 
         File destinationFile = new File(zipDestinationFolder, name);
@@ -172,14 +196,20 @@ public class ZipUtils {
         }
         if (name.endsWith("/")) {
           if (!destinationFile.isDirectory()) {
-            File topmostMissingDir = topmostMissingAncestor(destinationFile, rootPrefix);
-            if (!destinationFile.mkdirs()) {
+            Path dir = Path.of(canonical);
+            Path topmostMissing = topmostMissingDirectory(Path.of(rootPath), dir);
+            // one entry can create many directories; each counts as an entry
+            if (topmostMissing != null) {
+              budget.countEntries(dir.getNameCount() - topmostMissing.getNameCount(), zipEntry);
+              created.add(topmostMissing.toFile());
+            }
+            // unlike File.mkdirs, this does not re-resolve the canonical path at every level
+            try {
+              Files.createDirectories(dir);
+            } catch (FileAlreadyExistsException e) {
               // typically a file entry earlier in the archive already claimed this path
               throw new InvalidArchiveException(
                   "could not create directory for entry: " + zipEntry.getName());
-            }
-            if (topmostMissingDir != null) {
-              created.add(topmostMissingDir);
             }
           }
           if (topLevelDir == null) {
@@ -198,10 +228,12 @@ public class ZipUtils {
           while ((n = entryStream.read(buf)) != -1) {
             if (n > 0) {
               fos.write(buf, 0, n);
+              budget.countWritten(n);
             }
           }
         }
       }
+      budget.checkFreeDiskSpace();
 
     } catch (InvalidArchiveException e) {
       log.warn("Rejected archive {}: {}", archiveFile.getName(), e.getMessage());
@@ -216,6 +248,74 @@ public class ZipUtils {
     return (topLevelDir != null) ? topLevelDir.getAbsolutePath() : null;
   }
 
+  /** Tracks what an extraction has written against its {@link ZipExtractionLimits}. */
+  private static final class ExtractionBudget {
+    private static final long DISK_CHECK_INTERVAL_BYTES = 16L * 1024 * 1024;
+    // directories and tiny files take a disk block each but add little or nothing to the bytes
+    private static final int DISK_CHECK_INTERVAL_ENTRIES = 1024;
+
+    private final ZipExtractionLimits limits;
+    private final long archiveCompressedBytes;
+    private final File destination;
+    private int entries;
+    private long totalWritten;
+    private String entryName = "";
+
+    ExtractionBudget(ZipExtractionLimits limits, File archiveFile, File destination) {
+      this.limits = limits;
+      this.archiveCompressedBytes = Math.max(1, archiveFile.length());
+      this.destination = destination;
+    }
+
+    void countEntries(int count, ZipArchiveEntry entry) throws ZipExtractionLimitException {
+      entryName = entry.getName();
+      int before = entries;
+      entries += count;
+      if (limits.maxEntries() > 0 && entries > limits.maxEntries()) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.ENTRY_COUNT,
+            limits.maxEntries(),
+            "more than " + limits.maxEntries() + " entries, at " + entryName);
+      }
+      if (entries / DISK_CHECK_INTERVAL_ENTRIES != before / DISK_CHECK_INTERVAL_ENTRIES) {
+        checkFreeDiskSpace();
+      }
+    }
+
+    void countWritten(int bytes) throws ZipExtractionLimitException {
+      long before = totalWritten;
+      totalWritten += bytes;
+      if (limits.maxExpandedBytes() > 0 && totalWritten > limits.maxExpandedBytes()) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.EXPANDED_SIZE,
+            limits.maxExpandedBytes(),
+            "expands past " + limits.maxExpandedBytes() + " bytes at entry " + entryName);
+      }
+      long ratio = limits.maxCompressionRatio();
+      if (ratio > 0
+          && totalWritten > limits.ratioFloorBytes()
+          && totalWritten > ratio * archiveCompressedBytes) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.COMPRESSION_RATIO,
+            ratio,
+            "archive inflates more than " + ratio + " times, at entry " + entryName);
+      }
+      if (totalWritten / DISK_CHECK_INTERVAL_BYTES != before / DISK_CHECK_INTERVAL_BYTES) {
+        checkFreeDiskSpace();
+      }
+    }
+
+    void checkFreeDiskSpace() throws ZipExtractionLimitException {
+      if (limits.minFreeDiskBytes() > 0
+          && destination.getUsableSpace() < limits.minFreeDiskBytes()) {
+        throw new ZipExtractionLimitException(
+            ZipExtractionLimitException.Limit.FREE_DISK_SPACE,
+            limits.minFreeDiskBytes(),
+            "under " + limits.minFreeDiskBytes() + " bytes free on the destination partition");
+      }
+    }
+  }
+
   private static void deleteAll(Set<File> created) {
     for (File file : created) {
       FileUtils.deleteQuietly(file);
@@ -223,19 +323,18 @@ public class ZipUtils {
   }
 
   /**
-   * Returns the highest ancestor of {@code dir} (itself included) that does not yet exist, staying
-   * inside the extraction root; deleting it recursively after a {@code mkdirs} removes every
-   * directory that call created and nothing that existed before.
+   * Returns the first directory on the way down from {@code root} to {@code dir} (both canonical)
+   * that does not exist yet, or null if none is missing; deleting it recursively after creating
+   * {@code dir} removes every directory created and nothing that existed before.
    */
-  private static File topmostMissingAncestor(File dir, String rootPrefix) throws IOException {
-    File topmostMissing = null;
-    for (File d = dir;
-        d != null && d.getCanonicalPath().startsWith(rootPrefix);
-        d = d.getParentFile()) {
-      if (!d.exists()) {
-        topmostMissing = d;
+  private static Path topmostMissingDirectory(Path root, Path dir) {
+    Path relative = root.relativize(dir);
+    for (int i = 1; i <= relative.getNameCount(); i++) {
+      Path candidate = root.resolve(relative.subpath(0, i));
+      if (!Files.exists(candidate)) {
+        return candidate;
       }
     }
-    return topmostMissing;
+    return null;
   }
 }

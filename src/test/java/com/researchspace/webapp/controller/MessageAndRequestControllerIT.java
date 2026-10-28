@@ -176,6 +176,19 @@ public class MessageAndRequestControllerIT extends MVCTestBase {
                 .param("recordId", sd.getId() + ""))
         .andExpect(model().attributeHasFieldErrors("request", "recipientnames"));
 
+    // a recipient list far longer than the form can produce is rejected before parsing
+    this.mockMvc
+        .perform(
+            post("/messaging/ajax/create")
+                .principal(mockPrincipal)
+                .sessionAttr("request", new MsgOrReqstCreationCfg())
+                .param("messageType", MessageType.SIMPLE_MESSAGE.toString())
+                .param("targetFinderPolicy", "ALL")
+                .param("recipientnames", (piUser.getUsername() + "<Bob>,").repeat(1000))
+                .param("recordId", sd.getId() + ""))
+        .andExpect(
+            model().attributeHasFieldErrorCode("request", "recipientnames", "errors.maxLength"));
+
     // invalid record id
     this.mockMvc
         .perform(

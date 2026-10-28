@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 import { createDynamicUser } from "@/__tests__/e2e/createDynamicUser";
 import { test } from "@/__tests__/e2e/fixtures/flows";
 import { tags } from "@/__tests__/e2e/tags";
-import { uniqueName } from "@/__tests__/e2e/testData";
+import { alphaNumericUnique, uniqueName } from "@/__tests__/e2e/testData";
 
 test.describe("Project Group creation", { tag: tags.SYSTEM }, () => {
   test("As a sysadmin, I can create a Project Group with a Group Owner", async ({
@@ -55,5 +55,57 @@ test.describe("Project Group creation", { tag: tags.SYSTEM }, () => {
 
     await expect(outsider.groupDetails.heading).toBeVisible();
     await expect(outsider.groupDetails.deleteGroupButton).toHaveCount(0);
+  });
+});
+
+test.describe("Project Group deletion", { tag: tags.SYSTEM }, () => {
+  test("As the Group Owner who created the Project Group, I can delete it", async ({ flowSelfServicePi }) => {
+    const creator = await flowSelfServicePi();
+    await creator.projectGroup.open();
+    const groupId = await creator.projectGroup.createGroup(uniqueName("e2eCreatorDeletesProjectGroup"));
+
+    await creator.groupDetails.openGroup(groupId);
+    await expect(creator.groupDetails.memberRow(creator.username)).toContainText("Group Owner");
+    await expect(creator.groupDetails.deleteGroupButton).toBeVisible();
+    await creator.groupDetails.deleteGroup();
+  });
+
+  test("As a Group Owner who did not create the Project Group, I can delete it", async ({
+    clientSysadmin,
+    flowUserSession,
+  }) => {
+    const owner = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2ePromotedOwner");
+    const group = await clientSysadmin.createGroup({
+      displayName: alphaNumericUnique("e2eOwnerDeletesProjectGroup"),
+      type: "PROJECT_GROUP",
+      users: [{ username: owner.username, roleInGroup: "GROUP_OWNER" }],
+    });
+
+    const session = await flowUserSession(owner.username, owner.password);
+    await session.groupDetails.openGroup(group.id);
+    await expect(session.groupDetails.memberRow(owner.username)).toContainText("Group Owner");
+    await expect(session.groupDetails.deleteGroupButton).toBeVisible();
+    await session.groupDetails.deleteGroup();
+  });
+
+  test("As a Project Group member with the User role, I cannot delete the group", async ({
+    clientSysadmin,
+    flowUserSession,
+  }) => {
+    const owner = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eProjectGroupOwner");
+    const member = await createDynamicUser(clientSysadmin, "ROLE_USER", "e2eProjectGroupMember");
+    const group = await clientSysadmin.createGroup({
+      displayName: alphaNumericUnique("e2eMemberCannotDeleteProjectGroup"),
+      type: "PROJECT_GROUP",
+      users: [
+        { username: owner.username, roleInGroup: "GROUP_OWNER" },
+        { username: member.username, roleInGroup: "DEFAULT" },
+      ],
+    });
+
+    const session = await flowUserSession(member.username, member.password);
+    await session.groupDetails.openGroup(group.id);
+    await expect(session.groupDetails.memberRow(member.username)).toContainText("User");
+    await expect(session.groupDetails.deleteGroupButton).toHaveCount(0);
   });
 });
