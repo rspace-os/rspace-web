@@ -11,8 +11,8 @@ import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import commonMessages from "@/modules/common/i18n/locales/en-US/common.json";
 import { createApiV2FilterFields } from "./adapters/apiV2/apiV2FilterFields";
 import type { RuntimeFieldDefinition } from "./adapters/apiV2/runtimeFieldCatalog";
+import type { FilterState } from "./state/tableListState";
 import { TableList } from "./TableList";
-import type { FilterState } from "./tableListState";
 
 // Storybook fixtures exercise the production filter panel and runtime catalog picker.
 type Booking = {

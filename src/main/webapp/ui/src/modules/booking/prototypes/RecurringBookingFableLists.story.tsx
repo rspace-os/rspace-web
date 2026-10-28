@@ -12,8 +12,8 @@ import { useBookingTimeFormat } from "@/modules/booking/domain/bookingDisplayPre
 import { bookingHourCycle } from "@/modules/booking/domain/bookingTime";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { useTableList } from "@/modules/common/table-list/state/useTableList";
 import { TableList, type TableListRowActions } from "@/modules/common/table-list/TableList";
-import { useTableList } from "@/modules/common/table-list/useTableList";
 import { buttonVariants } from "@/modules/common/ui/button";
 import { Heading } from "@/modules/common/ui/typography";
 import { UserBadge } from "@/modules/common/ui/user-badge";
