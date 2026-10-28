@@ -96,6 +96,23 @@ export class BasketsMenuComponent {
     }).toPass({ timeout: 10_000 });
   }
 
+  /** Opens the basket's listing and waits for its contents to load. */
+  async openBasket(name: string): Promise<void> {
+    const [response] = await Promise.all([
+      this.page.waitForResponse((res) => {
+        const url = new URL(res.url());
+        return (
+          url.pathname.endsWith("/api/inventory/v1/search") &&
+          (url.searchParams.get("parentGlobalId") ?? "").startsWith("BA")
+        );
+      }),
+      this.basketItem(name).click(),
+    ]);
+    if (!response.ok()) {
+      throw new Error(`Loading basket "${name}" failed: ${response.status()} ${await response.text()}`);
+    }
+  }
+
   async renameBasket(name: string, newName: string): Promise<void> {
     await this.basketItem(name).getByRole("button", { name: "edit saved item" }).click();
     const dialog = new RenameBasketDialogComponent(this.page);

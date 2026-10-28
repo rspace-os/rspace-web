@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.Group;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
@@ -13,6 +14,8 @@ import com.researchspace.model.dtos.CreateCloudGroupValidator;
 import com.researchspace.model.dtos.RaidGroupAssociationDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.RaIDServiceManager;
+import com.researchspace.service.SystemPropertyName;
+import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.cloud.CloudGroupManager;
 import com.researchspace.service.cloud.CloudNotificationManager;
 import com.researchspace.service.cloud.CommunityUserManager;
@@ -47,10 +50,11 @@ public class ProjectGroupController extends BaseController {
   private @Autowired RaIDServiceManager raidServiceManager;
   private @Autowired CloudNotificationManager cloudNotificationManager;
   private @Autowired CreateCloudGroupValidator cloudGroupValidator;
+  private @Autowired SystemPropertyPermissionManager systemPropertyPermissionManager;
 
   @RequestMapping(method = RequestMethod.GET, value = "/newGroupForm")
   public String projectGroupForm(Model model) {
-
+    assertProjectGroupsAllowed(userManager.getAuthenticatedUserInSession());
     CreateCloudGroup createCloudGroupConfig = new CreateCloudGroup();
     model.addAttribute("createCloudGroupConfig", createCloudGroupConfig);
     model.addAttribute("isProjectGroup", true);
@@ -63,6 +67,7 @@ public class ProjectGroupController extends BaseController {
       BindingResult errors,
       HttpServletRequest request) {
     User creator = userManager.getAuthenticatedUserInSession();
+    assertProjectGroupsAllowed(creator);
     createCloudGroup.setSessionUser(creator); // the PI
     cloudGroupValidator.validate(createCloudGroup, errors);
     List<Group> groups = groupManager.listGroupsForOwner(creator);
@@ -103,6 +108,13 @@ public class ProjectGroupController extends BaseController {
     return new AjaxReturnObject<>(response, null);
   }
 
+  private void assertProjectGroupsAllowed(User user) {
+    if (!systemPropertyPermissionManager.isPropertyAllowed(
+        user, SystemPropertyName.ALLOW_PROJECT_GROUPS)) {
+      throw new AuthorizationException(getText("common:profile.groups.manager.contactAdmin"));
+    }
+  }
+
   private static void validateRaidInput(RaIDReferenceDTO raidReference) {
     Validate.isTrue(
         StringUtils.isNotBlank(raidReference.getRaidIdentifier()), "raidIdentifier is missing");
@@ -136,7 +148,8 @@ public class ProjectGroupController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     Group targetGroup = groupManager.getGroup(groupId);
-    if (!(targetGroup.isProjectGroup() && targetGroup.getOwner().equals(subject))) {
+    if (!(targetGroup.isProjectGroup()
+        && subject.hasRoleInGroup(targetGroup, RoleInGroup.GROUP_OWNER))) {
       throw new AuthorizationException(
           "Unauthorized attempt to delete a project group by [" + subject.getFullName() + "]");
     }

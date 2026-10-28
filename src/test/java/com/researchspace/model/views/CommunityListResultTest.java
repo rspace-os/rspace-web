@@ -1,8 +1,12 @@
 package com.researchspace.model.views;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,5 +37,29 @@ public class CommunityListResultTest {
       assertThat(ids2).hasSize(2);
       assertThat(ids2).contains(567L);
     }
+    assertEquals(
+        Set.of(-1L), CommunityListResult.getCommunityIdsfromMultiGroupAutocomplete("All <-1>"));
+    assertFalse(CommunityListResult.validateMultiCommunityAutocompleteInput("All <->"));
+    assertFalse(CommunityListResult.validateMultiCommunityAutocompleteInput("All <--1>"));
+    assertFalse(
+        CommunityListResult.validateMultiCommunityAutocompleteInput("All <-9223372036854775809>"));
+    assertFalse(CommunityListResult.validateMultiCommunityAutocompleteInput("INVALID"));
+    assertFalse(CommunityListResult.validateMultiCommunityAutocompleteInput("All <-1>, <2>"));
+  }
+
+  @Test
+  public void parsingFinishesQuicklyOnPathologicalInput() {
+    String spaces = " ".repeat(100_000);
+    String innerSpaces = "a" + spaces + "b";
+    assertTimeoutPreemptively(
+        Duration.ofSeconds(1),
+        () -> {
+          assertFalse(CommunityListResult.validateMultiCommunityAutocompleteInput(spaces));
+          assertTrue(
+              CommunityListResult.getCommunityIdsfromMultiGroupAutocomplete(spaces).isEmpty());
+          assertFalse(CommunityListResult.validateMultiCommunityAutocompleteInput(innerSpaces));
+          assertTrue(
+              CommunityListResult.getCommunityIdsfromMultiGroupAutocomplete(innerSpaces).isEmpty());
+        });
   }
 }

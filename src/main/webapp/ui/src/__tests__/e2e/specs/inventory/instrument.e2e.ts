@@ -83,7 +83,7 @@ test.describe(`Instrument`, { tag: [tags.INVENTORY, tags.MOBILE] }, () => {
     await expect(pageInventory.detailsPanel.section("Custom Fields").getByText("Serial Number")).toBeVisible();
 
     await test.step("And duplicating it carries the custom field over", async () => {
-      await (await pageInventory.detailsPanel.duplicateControl()).click();
+      await pageInventory.detailsPanel.duplicate();
       await expect(pageInventory.detailsPanel.heading).toContainText(`${instrumentName}_COPY`);
       await pageInventory.detailsPanel.expandSection("Custom Fields");
       await expect(pageInventory.detailsPanel.section("Custom Fields").getByText("Serial Number")).toBeVisible();

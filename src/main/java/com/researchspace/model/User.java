@@ -47,8 +47,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -117,8 +115,6 @@ public class User extends AbstractUserOrGroupImpl
 
   public static final String ALLOWED_PWD_CHARS_REGEX =
       "^[ -~]{" + MIN_PWD_LENGTH + "," + MAX_PWD_LENGTH + "}$";
-
-  private static final Pattern multiUserPattern = Pattern.compile(",?\\s*([^<,]+)(<.+?>)?");
 
   private Date loginFailure;
   private Date lastLogin;
@@ -317,15 +313,44 @@ public class User extends AbstractUserOrGroupImpl
    * @return extracted usernames
    */
   public static String[] getUsernamesFromMultiUser(String multiuserString) {
-    Matcher m = multiUserPattern.matcher(multiuserString);
     Set<String> uname = new TreeSet<>();
-    while (m.find()) {
-      if (m.group(1) != null && !StringUtils.isBlank(m.group(1))) {
-        uname.add(m.group(1).trim());
+    if (multiuserString == null) {
+      return new String[0];
+    }
+    String s = multiuserString;
+    boolean closeAhead = true;
+    int itemStart = 0;
+    int i = 0;
+    while (i <= s.length()) {
+      if (i == s.length() || s.charAt(i) == ',') {
+        addUsername(uname, s.substring(itemStart, i));
+        itemStart = ++i;
+      } else if (s.charAt(i) == '<') {
+        addUsername(uname, s.substring(itemStart, i));
+        // the display name may contain commas, so skip past its closing '>' and keep reading, so
+        // text after it is still a username; once no '>' is left, an unclosed '<' runs to the
+        // next comma
+        int close = closeAhead ? s.indexOf('>', i + 1) : -1;
+        closeAhead = close >= 0;
+        if (closeAhead) {
+          i = close + 1;
+        } else {
+          int comma = s.indexOf(',', i + 1);
+          i = comma < 0 ? s.length() : comma;
+        }
+        itemStart = i;
+      } else {
+        i++;
       }
     }
-    String[] names = new String[uname.size()];
-    return uname.toArray(names);
+    return uname.toArray(new String[0]);
+  }
+
+  private static void addUsername(Set<String> usernames, String candidate) {
+    String name = candidate.trim();
+    if (!name.isEmpty()) {
+      usernames.add(name);
+    }
   }
 
   /**

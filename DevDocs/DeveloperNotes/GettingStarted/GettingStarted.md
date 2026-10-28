@@ -14,9 +14,9 @@ https://documentation.researchspace.com/article/q5dl9e6oz6-system-requirements-f
 For development you should be able to run all the code and tests fine with Linux/MacOS.  
 
 ### Install required software
-Our build toolchain requires Java 17. Currently using a different Java version to run Maven is not supported because of [spotless not supporting the Maven toolchains plugin](https://github.com/diffplug/spotless/issues/1857).
+Java 17 is the supported version. RSpace also builds and runs on Java 21; the code is compiled for 17 (`release 17`), so a WAR built on either JDK runs on both. Maven itself must run on 17 or 21, not just the toolchain JDK, because [Spotless does not use the Maven toolchains plugin](https://github.com/diffplug/spotless/issues/1857); the build fails fast otherwise.
 
--   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
+-   Install Java JDK 17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17). Add JDK 21 if you want to run on 21 (see toolchains below).
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
 -   Install MariaDB 10.11 or 11.8, the versions tested in CI and supported for production RSpace. The Docker dev stack
     defaults to 11.8, as does [rspace-docker](https://github.com/rspace-os/rspace-docker). For native installs, follow
@@ -55,10 +55,22 @@ path to your java installation.
        <jdkHome>/usr/lib/jvm/java-17-openjdk-amd64</jdkHome>   <!-- path to your local installation -->
      </configuration>
    </toolchain>
+   <toolchain>
+     <type>jdk</type>
+     <provides>
+       <version>21</version>
+       <vendor>openjdk</vendor>
+     </provides>
+     <configuration>
+       <jdkHome>/usr/lib/jvm/java-21-openjdk-amd64</jdkHome>
+     </configuration>
+   </toolchain>
 </toolchains>
 ```
 
-**NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>
+**NOTE:** to use a specific toolchain with maven specify the java properties -Djava-vendor=<vendor> -Djava-version=<version>. The default is 17. Surefire forks the toolchain JDK, not the Maven JVM, so to run the tests on Java 21 you need the 21 toolchain entry above and `-Djava-version=21`; setting only `JAVA_HOME` runs them on 17.
+
+To run a branch on Java 21 in CI, start the "Lint and Test" or "e2e (mocked)" workflow from the Actions tab and pick Java 21. For "Lint and Test", also tick the jobs you want, such as the fast or full Java tests.
 
 ### Enable git hooks (recommended)
 
@@ -183,7 +195,13 @@ The second grant covers a scratch `hibtest` database used by the
 `HibernateTest` classes, which check the Hibernate mappings. They create that
 database themselves on first run and Hibernate builds and drops its schema each
 run, so nothing else is needed, but without the grant those tests skip rather
-than fail and the mappings go unchecked.
+than fail and the mappings go unchecked. The `hibtest.db` system property
+overrides the name. It must start with `hibtest` so it can never point at the
+application database, and be a plain identifier of up to 64 characters;
+otherwise the tests fail before touching the database. Jenkins sets it per branch so
+concurrent builds on its shared MariaDB do not share a schema. A local override
+needs a matching grant, for example ``GRANT ALL ON `hibtest%`.* TO
+'rspacedbuser'@'127.0.0.1';``.
 
 **NOTE:** depending on OS and DB used, your may need to change the username in creation/grant commands
 from `'rspacedbuser'@'127.0.0.1'` to `'rspacedbuser'@'localhost'`. (Or you may need to just use `'rspacedbuser'` with no host)

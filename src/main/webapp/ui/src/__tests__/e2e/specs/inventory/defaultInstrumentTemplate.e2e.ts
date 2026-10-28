@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
+import { expectActionsEnabled } from "@/__tests__/e2e/assertions/inventoryAccess";
 import { test } from "@/__tests__/e2e/fixtures/flows";
 import type { InventoryPage } from "@/__tests__/e2e/pageObjects/inventory/InventoryPage";
 import { tags } from "@/__tests__/e2e/tags";
@@ -24,7 +25,7 @@ test.describe(`Default PIDINST Instrument Template`, { tag: [tags.INVENTORY, tag
 
     await expect(pageInventory.detailsPanel.heading).toContainText(DEFAULT_TEMPLATE_NAME);
     await expect(pageInventory.detailsPanel.action("Edit")).toBeDisabled();
-    await expect(await pageInventory.detailsPanel.duplicateControl()).toBeEnabled();
+    await expectActionsEnabled(pageInventory.detailsPanel, ["Duplicate"]);
   });
 
   test.describe(`duplication`, () => {
@@ -41,7 +42,7 @@ test.describe(`Default PIDINST Instrument Template`, { tag: [tags.INVENTORY, tag
       clientInventory,
     }) => {
       await openDefaultTemplate(page, pageInventory);
-      await (await pageInventory.detailsPanel.duplicateControl()).click();
+      await pageInventory.detailsPanel.duplicate();
       await expect(pageInventory.detailsPanel.heading).toContainText(`${DEFAULT_TEMPLATE_NAME}_COPY`);
       await expect(pageInventory.detailsPanel.action("Edit")).toBeEnabled();
 

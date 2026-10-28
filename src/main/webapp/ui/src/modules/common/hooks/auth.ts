@@ -7,6 +7,7 @@ import {
   secondsToExpiry,
   TOKEN_EXPIRY_BUFFER_SECONDS,
 } from "@/modules/common/utils/auth";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const queryKeys = {
   all: ["rspace.common.auth"] as const,
@@ -61,7 +62,7 @@ async function fetchToken(): Promise<string> {
  *   const { data: token, error } = useOauthTokenQuery();
  *
  *   // Use the token in fetch requests
- *   const response = await fetch(`/api/v1/inventory/samples`, {
+ *   const response = await fetchWithUiToken(`/api/v1/inventory/samples`, {
  *     headers: {
  *       Authorization: "Bearer " + token,
  *     },
@@ -105,7 +106,7 @@ export function useOauthTokenQuery() {
 }
 
 async function getWhoami(token?: string) {
-  const response = await fetch(`${API_BASE_URL}/userDetails/whoami`, {
+  const response = await fetchWithUiToken(`${API_BASE_URL}/userDetails/whoami`, {
     method: "GET",
     headers: {
       "X-Requested-With": "XMLHttpRequest",

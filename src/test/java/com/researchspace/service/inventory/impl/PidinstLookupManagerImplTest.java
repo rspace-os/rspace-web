@@ -15,7 +15,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -72,7 +71,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -117,22 +115,22 @@ class PidinstLookupManagerImplTest {
 
   private final User user = new User("jane");
 
-  @BeforeEach
-  void setUp() {
-    // nothing is linked unless a test says so; search annotates every page through this one query
-    lenient().when(doiDao.findActiveByIdentifiersAndType(any(), any())).thenReturn(List.of());
-    lenient()
-        .when(messages.getMessage(anyString(), any(Object[].class)))
+  private void expectMessages() {
+    when(messages.getMessage(anyString(), any(Object[].class)))
         .thenAnswer(
             invocation ->
                 invocation.getArgument(0) + " " + invocation.getArgument(1, Object[].class)[0]);
+  }
+
+  private void userCanOpenAnyInstrument() {
     // eq(user) is deliberate: a permission check made with any other user must not match here
-    lenient()
-        .when(
-            invPermissions.canUserReadOrLimitedReadInventoryRecord(
-                any(InventoryRecord.class), eq(user)))
+    when(invPermissions.canUserReadOrLimitedReadInventoryRecord(
+            any(InventoryRecord.class), eq(user)))
         .thenReturn(true);
-    lenient().when(properties.getServerUrl()).thenReturn(SERVER);
+  }
+
+  private void expectServerUrl() {
+    when(properties.getServerUrl()).thenReturn(SERVER);
   }
 
   private static B2instDraftRecord publishedRecord() {
@@ -376,6 +374,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void freeTextSearchGoesToTheTickedRegistryOnlyAndFlagsAlreadyLinkedPids() {
+    userCanOpenAnyInstrument();
     when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 3));
     DigitalObjectIdentifier existing =
@@ -455,6 +454,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void importRefusesAPidThatIsAlreadyLinkedNamingTheInstrument() {
+    userCanOpenAnyInstrument();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(Optional.of(publishedRecord()));
     DigitalObjectIdentifier existing =
@@ -482,6 +482,7 @@ class PidinstLookupManagerImplTest {
    */
   @Test
   void importRefusesAHandleWhosePidThisDeploymentMintedItself() {
+    userCanOpenAnyInstrument();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(Optional.of(publishedRecord()));
     // the row as the register path writes it: identifier is the RID, the Handle is not stored here
@@ -492,8 +493,7 @@ class PidinstLookupManagerImplTest {
     owner.addIdentifier(existing);
     when(doiDao.findActiveByIdentifierAndType(HANDLE, IdentifierType.PIDINST_B2INST))
         .thenReturn(Optional.empty());
-    lenient()
-        .when(doiDao.findActiveByIdentifierAndType("abcde-12345", IdentifierType.PIDINST_B2INST))
+    when(doiDao.findActiveByIdentifierAndType("abcde-12345", IdentifierType.PIDINST_B2INST))
         .thenReturn(Optional.of(existing));
 
     PidinstAlreadyLinkedException ex =
@@ -533,6 +533,7 @@ class PidinstLookupManagerImplTest {
   /** The same gap on the search path: the hit must come back already flagged as linked. */
   @Test
   void searchFlagsAHitWhosePidThisDeploymentMintedItself() {
+    userCanOpenAnyInstrument();
     when(b2instConnector.searchPublicRecords(MICROSCOPE_TERM, 0, 50))
         .thenReturn(searchResultOf(publishedRecord(), 1));
     DigitalObjectIdentifier existing =
@@ -592,6 +593,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void importIs404WhenTheRegistryHasNoPublishedRecordOrTheValueIsNotAPidOfIt() {
+    expectMessages();
     when(b2instConnector.getPublicRecordByHandle(HANDLE)).thenReturn(Optional.empty());
 
     assertThrows(
@@ -605,6 +607,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void aRecordThatIsNotPublishedIsNeitherFoundNorImportable() {
+    expectMessages();
     // only a public PID may be linked: B2INST accepted (published), DataCite findable
     B2instDraftRecord unpublished = publishedRecord();
     unpublished.setIsPublished(false);
@@ -676,6 +679,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void entriesNamingThisServersItemsBecomeLinksWithTheFieldsRelationAndThePinKept() {
+    expectServerUrl();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(
             Optional.of(
@@ -708,6 +712,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void entriesNamingAnotherServerAreSkippedWithItsHostAndNeverCheckedForReadability() {
+    expectServerUrl();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(
             Optional.of(
@@ -743,6 +748,7 @@ class PidinstLookupManagerImplTest {
    */
   @Test
   void anEntryOfThisServerTheUserCannotLinkIsSkippedAsNotAvailableWithoutSayingWhy() {
+    expectServerUrl();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(
             Optional.of(publishedRecordWith(entry("Calibration", SERVER + "/globalId/SA999"))));
@@ -766,6 +772,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void anEntryThatIsNotAnAddressInThisRSpaceIsSkippedWithoutAHost() {
+    expectServerUrl();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(Optional.of(publishedRecordWith(entry("Calibration", "10.1000/manual"))));
     stubImportCollaborators();
@@ -782,6 +789,7 @@ class PidinstLookupManagerImplTest {
   /** Our own host is never named as another server; host names ignore case. */
   @Test
   void anEntryOnThisServersHostThatIsNotAnItemPageIsSkippedWithoutAHost() {
+    expectServerUrl();
     String ownPage = "https://RSpace.Example.com/public/inventory/abc";
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(Optional.of(publishedRecordWith(entry("Calibration", ownPage))));
@@ -799,6 +807,7 @@ class PidinstLookupManagerImplTest {
   /** An installation fault reaches the user as a translated sentence, not developer detail. */
   @Test
   void aMissingLockedTemplateRefusesTheImportWithATranslatedMessage() {
+    expectMessages();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(Optional.of(publishedRecord()));
     when(instrumentTemplateDao.findLockedTemplateByName("Instrument (PIDINST 1.0)"))
@@ -818,6 +827,7 @@ class PidinstLookupManagerImplTest {
   /** URI.create refuses an address with a space, and the entry is still reported, not a failure. */
   @Test
   void anEntryThatIsNotEvenAUriIsSkippedWithoutAHost() {
+    expectServerUrl();
     String notAUri = "https://example.org/my manual.pdf";
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(Optional.of(publishedRecordWith(entry("Calibration", notAUri))));
@@ -853,6 +863,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void withSeveralEntriesForOneFieldTheFirstThatLinksWinsAndOtherwiseEachIsReported() {
+    expectServerUrl();
     when(b2instConnector.getPublicRecordByHandle(HANDLE))
         .thenReturn(
             Optional.of(
@@ -897,6 +908,7 @@ class PidinstLookupManagerImplTest {
   /** The DataCite half of the same rule: relationTypeInformation is the label (ADR 0007). */
   @Test
   void aDataCiteRecordsEntriesAreResolvedTheSameWay() {
+    expectServerUrl();
     DataCiteDoi doi = dataCiteInstrument(DOI, "findable", "Instrument");
     // the locked template's mandatory Owner and Manufacturer: publisher fallback and a creator
     doi.getAttributes().setPublisher("ESRF");
@@ -1151,6 +1163,7 @@ class PidinstLookupManagerImplTest {
 
   @Test
   void dataCiteFreeTextSearchReturnsFindableInstrumentsAndFlagsLinkedOnes() {
+    userCanOpenAnyInstrument();
     when(dataCiteConnector.searchPublicInstrumentDois("Zeiss", 0, 50))
         .thenReturn(dataCitePage(7, dataCiteInstrument(DOI, "findable", "Instrument")));
     DigitalObjectIdentifier existing =
@@ -1242,6 +1255,7 @@ class PidinstLookupManagerImplTest {
   /** A whole page of hits costs one link-status query, not one per hit. */
   @Test
   void everyHitOnAPageIsAnnotatedWithASingleQuery() {
+    userCanOpenAnyInstrument();
     B2instDraftRecord second = publishedRecord();
     second.setId("fghij-67890");
     second.getMetadata().setName("Another microscope");
