@@ -8,6 +8,7 @@ import { useBookableItemConfiguration } from "@/modules/booking/creation/Bookabl
 import { BookingItemInformationCard } from "@/modules/booking/creation/BookingItemInformation";
 import { ApiV2ProblemError, BookingUnavailableError, fetchBooking } from "@/modules/booking/domain/booking";
 import { useBookingDisplayPreferences } from "@/modules/booking/domain/bookingDisplayPreferences";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { currentWallClock, formatAgendaPeriod, formatBookingPeriod } from "@/modules/booking/domain/bookingTime";
 import { detailColumnsClassName, detailPageClassName } from "@/modules/common/app/detailPageLayout";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
@@ -101,6 +102,7 @@ export function BookingEventContent() {
   const canViewItem = document.canViewConfiguration && target !== null;
   const refreshBooking = async () => {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+    await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
   };
   const _location = target?.value.parentContainer;
   const eventName = target?.value.name ?? t("common:values.unknownItem");

@@ -3,6 +3,7 @@ import type { TFunction } from "i18next";
 import * as v from "valibot";
 import type { BookingConflict } from "@/modules/booking/domain/availability";
 import { ApiV2ProblemError, BookingEventKindSchema, createBooking } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { MAX_BOOKING_DURATION_MINUTES } from "@/modules/booking/domain/bookingOpeningHours";
 import { formatDurationMinutes } from "@/modules/booking/domain/bookingTime";
 import type { BookingFormSubmission } from "./BookingForm";
@@ -189,6 +190,7 @@ export function useCreateBooking(token: string) {
       ),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
     },
     onError: (error) => {
       if (
@@ -197,6 +199,7 @@ export function useCreateBooking(token: string) {
         (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.concurrentModification")
       ) {
         void queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+        void queryClient.invalidateQueries({ queryKey: bookingKeys.all });
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         void queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });

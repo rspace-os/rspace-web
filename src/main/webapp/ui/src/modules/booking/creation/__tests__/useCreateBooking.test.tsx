@@ -5,6 +5,7 @@ import { expect, it } from "vitest";
 import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import { server } from "@/__tests__/mswServer";
 import { ApiV2ProblemError } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { upcomingBooking } from "@/modules/booking/pages/my-bookings/mocks/bookingMocks";
 import bookingEnglish from "@/modules/common/i18n/locales/en-US/booking.json";
 import type { BookingFormSubmission } from "../BookingForm";
@@ -59,7 +60,7 @@ it("invalidates every booking view after creation, including the item list and a
   const queryClient = new QueryClient();
   const keys = [
     ["api-v2", "bookings", "calendar-events"],
-    ["api-v2", "bookings", "calendar-availability"],
+    bookingKeys.calendarAvailability(),
     ["api-v2", "bookings", "bookable-item-events", 123],
     ["api-v2", "bookings", "availability-quick-index"],
   ];
@@ -217,7 +218,7 @@ it("refreshes bookings after a buffer rejection", async () => {
     ),
   );
   const queryClient = new QueryClient();
-  const key = ["api-v2", "bookings", "calendar-availability"];
+  const key = bookingKeys.calendarAvailability();
   queryClient.setQueryData(key, []);
   const { result } = renderHook(() => useCreateBooking("token"), {
     wrapper: ({ children }) => <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,

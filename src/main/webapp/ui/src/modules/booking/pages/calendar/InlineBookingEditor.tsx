@@ -24,6 +24,7 @@ import {
   type BookingUpdate,
   updateBooking,
 } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { ALWAYS_OPEN } from "@/modules/booking/domain/bookingOpeningHours";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { Alert, AlertDescription } from "@/modules/common/ui/alert";
@@ -107,17 +108,20 @@ export function InlineBookingEditor({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+      await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
       onClose();
     },
     onError: async (error, { version }) => {
       if (isStaleEditError(error)) {
         setRejectedVersion(version);
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+        await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
         return;
       }
       if (isBookingOutcomeUncertain(error)) {
         setUncertainVersion(version);
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+        await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
         return;
       }
       if (
@@ -125,6 +129,7 @@ export function InlineBookingEditor({
         (error.code === "errors.api.v2.forbidden" || error.code === "errors.api.v2.booking.state.transition")
       ) {
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+        await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
