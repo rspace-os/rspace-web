@@ -6,7 +6,7 @@ import { todayInTimeZone, useBookingDisplayPreferences } from "@/modules/booking
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
-import { useTableList } from "@/modules/common/table-list/useTableList";
+import { useTableList } from "@/modules/common/table-list/state/useTableList";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { type BookingConfiguration, bookingConfigurationConfig } from "../bookable-items/bookingConfiguration";
 import {

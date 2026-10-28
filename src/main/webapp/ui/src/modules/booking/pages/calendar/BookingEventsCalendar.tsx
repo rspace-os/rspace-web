@@ -14,8 +14,8 @@ import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferen
 import { addCalendarDays, sliceAcrossZonedDay, zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import i18n from "@/modules/common/i18n";
+import { useTableList } from "@/modules/common/table-list/state/useTableList";
 import { TableList, type TableListProps } from "@/modules/common/table-list/TableList";
-import { useTableList } from "@/modules/common/table-list/useTableList";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
