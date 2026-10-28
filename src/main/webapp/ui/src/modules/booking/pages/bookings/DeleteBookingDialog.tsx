@@ -8,6 +8,7 @@ import {
   type BookingMutation,
   cancelBooking,
 } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -118,6 +119,7 @@ export function DeleteBookingDialog({
 
   const invalidateBookingQueries = async () => {
     await queryClient.invalidateQueries({ queryKey: ["api-v2", "bookings"] });
+    await queryClient.invalidateQueries({ queryKey: bookingKeys.all });
   };
 
   const handleDelete = async () => {
