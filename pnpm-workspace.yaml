@@ -6,36 +6,34 @@ virtualStoreType: global
 addMissingPeerTypes: true
 
 overrides:
-  # Force miew-react 0.12.0 (ketcher-react pulls 0.11.0 transitively). 0.12.0
-  # declares a react/react-dom peer of >=18.2.0, so it supports React 19 without
-  # the allowedVersions workaround that 0.11.0 (peer ^18.2.0) needed.
+  # ketcher-react pins miew-react 0.11.0, whose React peer stops at 18. 0.12.0
+  # accepts React 19 but was published with "miew": "workspace:^", so point it
+  # at the published miew. Drop both when epam/miew#708 is fixed and ketcher
+  # picks up the release.
   miew-react: 0.12.0
-  # miew-react@0.12.0 was published with a broken "miew": "workspace:^"
-  # dependency (the workspace protocol only resolves inside miew's own
-  # monorepo). Redirect it to the published miew 0.12.0 on npm.
   miew-react>miew: 0.12.0
 
+# Each entry declares a dependency the package imports but doesn't declare.
+# Version-pinned keys stop matching silently after an upgrade; retarget them.
 packageExtensions:
-  # The color picker imports Lezer without declaring the dependency.
+  # replit/codemirror-css-color-picker#28; Scalar pulls it in (scalar/scalar discussion #10766).
   '@replit/codemirror-css-color-picker@6.3.0':
     dependencies:
       '@lezer/common': ^1.5.2
-  # Scalar imports @scalar/types at runtime but declares it as a devDependency.
+  # scalar/scalar#10765
   '@scalar/schemas@0.14.0':
     dependencies:
       '@scalar/types': 0.24.0
-  # The gallery imports createPortal without declaring its react-dom peer.
+  # dromru/react-photoswipe-gallery#1495
   react-photoswipe-gallery:
     peerDependencies:
       react-dom: '*'
-  # The published toast component imports Vue without declaring its peer.
+  # xiaoluoboding/vue-sonner#167
   vue-sonner@1.3.2:
     peerDependencies:
       vue: ^3.0.0
-  # ketcher 3.18.0 imports Node's `events` without declaring it, so the editor
-  # dies with "EventEmitter is not a constructor". `overrides` can't add an
-  # undeclared dep. Expected fixed in ketcher 4.x. Drop when
-  # epam/ketcher#11911 lands.
+  # epam/ketcher#11911: without `events` the editor fails with
+  # "EventEmitter is not a constructor".
   ketcher-core:
     dependencies:
       events: 3.3.0
@@ -65,9 +63,3 @@ allowBuilds:
 # Stricter than pnpm 11's 1440-minute (1 day) default.
 minimumReleaseAge: 10080
 strictPeerDependencies: true
-
-peerDependencyRules:
-  allowedVersions:
-    # @sa11y/vitest pulls an older vitest, which wants the matching UI+browser packages.
-    'vitest>@vitest/ui': 4.1.10
-    'vitest>@vitest/browser': 4.1.10
