@@ -6,10 +6,10 @@ virtualStoreType: global
 addMissingPeerTypes: true
 
 overrides:
-  # ketcher-react pins miew-react 0.11.0, whose React peer stops at 18. 0.12.0
-  # accepts React 19 but was published with "miew": "workspace:^", so point it
-  # at the published miew. Drop both when epam/miew#708 is fixed and ketcher
-  # picks up the release.
+  # Pin miew-react 0.12.0, the first release whose React peer accepts 19.
+  # ketcher-react pins 0.11.0: epam/ketcher#10288 bumped it, but #10324 reverted
+  # that (epam/ketcher#12519). 0.12.0 was published with "miew": "workspace:^"
+  # (epam/miew#708), so point it at the published miew.
   miew-react: 0.12.0
   miew-react>miew: 0.12.0
 
