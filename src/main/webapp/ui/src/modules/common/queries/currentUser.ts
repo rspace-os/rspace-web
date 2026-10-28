@@ -3,6 +3,7 @@ import * as React from "react";
 import * as v from "valibot";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const CurrentUserOrcidSchema = v.object({
   available: v.boolean(),
@@ -53,7 +54,7 @@ export const currentUserQueryKeys = {
 };
 
 export async function getCurrentUser(token: string): Promise<CurrentUser> {
-  const response = await fetch("/api/v2/users/me", {
+  const response = await fetchWithUiToken("/api/v2/users/me", {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
