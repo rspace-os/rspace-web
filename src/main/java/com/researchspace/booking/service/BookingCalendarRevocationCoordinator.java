@@ -7,6 +7,7 @@ import java.util.Set;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.orm.hibernate5.HibernateExceptionTranslator;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -21,6 +22,7 @@ public class BookingCalendarRevocationCoordinator {
   private static final Logger LOG =
       LoggerFactory.getLogger(BookingCalendarRevocationCoordinator.class);
   private static final Object RESOURCE_KEY = BookingCalendarRevocationCoordinator.class;
+  private static final HibernateExceptionTranslator EXCEPTIONS = new HibernateExceptionTranslator();
 
   private final BookingCalendarPermissionGateDao permissionGate;
   private final BookingCalendarCurrentAccessDao currentAccess;
@@ -90,6 +92,11 @@ public class BookingCalendarRevocationCoordinator {
     } catch (RuntimeException failure) {
       permissionGate.markRollbackOnly();
       LOG.warn("Booking calendar revocation finalization failed", failure);
+      // flush() bypasses the DAO translation proxy; JPA lock exceptions need translating too.
+      RuntimeException translated = EXCEPTIONS.translateExceptionIfPossible(failure);
+      if (translated != null) {
+        throw translated;
+      }
       throw failure;
     }
   }
