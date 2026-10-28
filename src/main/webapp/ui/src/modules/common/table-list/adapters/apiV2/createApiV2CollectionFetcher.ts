@@ -1,4 +1,5 @@
 import type { FieldName } from "@/modules/common/collection/collectionConfig";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import type { CollectionFetcher, CollectionQueryState, FilterExpression } from "../../state/tableListState";
 import type { ApiV2CollectionAdapter } from "./createApiV2CollectionAdapter";
 
@@ -55,7 +56,7 @@ export function createApiV2CollectionFetcher<TDocument>(
   options: ApiV2CollectionFetchOptions<TDocument> = {},
 ): CollectionFetcher<TDocument> {
   const endpoint = options.endpoint ?? `/api/v2/${adapter.metadata.resourceName}`;
-  const request = options.fetch ?? globalThis.fetch;
+  const request = options.fetch ?? fetchWithUiToken;
   return async (state, { signal }) => {
     const headers = new Headers(await resolveValue(options.headers));
     headers.set("X-Requested-With", "XMLHttpRequest");

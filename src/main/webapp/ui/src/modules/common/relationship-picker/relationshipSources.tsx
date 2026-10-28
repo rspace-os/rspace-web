@@ -3,6 +3,7 @@ import { is } from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import type { RelationshipOption } from "@/modules/common/relationship-picker/relationshipOptions";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { GranteeSchema, InstrumentSchema, RelationshipSearchResponseSchema } from "./schemas";
 
 /**
@@ -60,7 +61,7 @@ async function instrumentRequest(
   signal: AbortSignal,
   allowNotFound = false,
 ): Promise<Response> {
-  const response = await fetch(url, {
+  const response = await fetchWithUiToken(url, {
     headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     signal,
   });
@@ -169,7 +170,7 @@ export function granteeRelationshipSource(resource: string, resourceId: number):
       const query = term.trim();
       if (query.length < 2) return [];
       const params = new URLSearchParams({ query, limit: "20" });
-      const response = await fetch(`/api/v2/${resource}/${resourceId}/access/grantees?${params}`, {
+      const response = await fetchWithUiToken(`/api/v2/${resource}/${resourceId}/access/grantees?${params}`, {
         headers: { "X-Requested-With": "XMLHttpRequest", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         signal,
       });

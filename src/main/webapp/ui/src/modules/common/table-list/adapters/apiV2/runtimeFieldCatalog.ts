@@ -1,5 +1,6 @@
 import type * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import type { ApiV2RuntimeFieldNamespace } from "./apiV2CollectionMetadata";
 import { catalogSchema, type runtimeFieldSchema, type runtimeFieldValuesSchema } from "./schemas";
 
@@ -41,7 +42,7 @@ export async function fetchRuntimeFieldCatalog(
   if (request.page !== undefined) parameters.set("page", String(request.page));
   if (request.limit !== undefined) parameters.set("limit", String(request.limit));
   const query = parameters.toString();
-  const response = await (request.fetch ?? globalThis.fetch)(
+  const response = await (request.fetch ?? fetchWithUiToken)(
     query === "" ? namespace.catalog : `${namespace.catalog}?${query}`,
     { headers, signal: request.signal, redirect: "error" },
   );

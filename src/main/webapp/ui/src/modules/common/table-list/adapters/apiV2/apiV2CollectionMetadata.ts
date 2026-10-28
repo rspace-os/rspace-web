@@ -1,6 +1,7 @@
 import type { GenericSchema, InferOutput } from "valibot";
 import type { FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { sortRuleFromToken } from "../../state/queryStringState";
 import { validateRuntimeFieldCatalogUrl } from "./runtimeFieldCatalog";
 import {
@@ -143,7 +144,7 @@ export async function fetchApiV2CollectionMetadata<TDocument>(
   resourceName: string,
   options: { fetch?: typeof globalThis.fetch; signal?: AbortSignal } = {},
 ): Promise<ApiV2CollectionMetadata<TDocument>> {
-  const response = await (options.fetch ?? globalThis.fetch)("/api/v2/openapi.json", {
+  const response = await (options.fetch ?? fetchWithUiToken)("/api/v2/openapi.json", {
     headers: { "X-Requested-With": "XMLHttpRequest" },
     signal: options.signal,
   });
