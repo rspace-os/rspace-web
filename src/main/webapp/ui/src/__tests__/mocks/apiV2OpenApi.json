@@ -1286,6 +1286,10 @@
               "description" : "A logged-in session is required."
             }
           },
+          "target.customFields" : {
+            "additionalProperties" : true,
+            "type" : "object"
+          },
           "timezone" : {
             "description" : "Read-only scheduling timezone used for opening hours and booking policy.",
             "example" : "Europe/Berlin",
@@ -1948,6 +1952,10 @@
               "denialReasonCodes" : [ "errors.api.v2.authenticationRequired" ],
               "description" : "A logged-in session is required."
             }
+          },
+          "target.customFields" : {
+            "additionalProperties" : true,
+            "type" : "object"
           },
           "timezone" : {
             "maxLength" : 255,
@@ -2906,7 +2914,7 @@
         "description" : "Archives every booking-configurations matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
         "operationId" : "deleteManyBookingConfigurations",
         "parameters" : [ {
-          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
+          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
           "required" : true,
@@ -3186,7 +3194,38 @@
                 "wildcards" : false
               }
             }
-          }
+          },
+          "x-rspace-runtime-fields" : [ {
+            "catalog" : "/api/v2/instruments/fields/customFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : true,
+            "filterable" : true,
+            "maximumProjections" : 50,
+            "namespace" : "target.customFields",
+            "responseField" : "target.customFields",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          }, {
+            "catalog" : "/api/v2/instruments/fields/extraFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : false,
+            "filterable" : true,
+            "maximumProjections" : 0,
+            "namespace" : "target.extraFields",
+            "responseField" : "",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          } ]
         } ],
         "responses" : {
           "200" : {
@@ -3288,7 +3327,7 @@
         "description" : "Returns a paginated view of booking-configurations. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
         "operationId" : "listBookingConfigurations",
         "parameters" : [ {
-          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
+          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
           "required" : false,
@@ -3568,7 +3607,38 @@
                 "wildcards" : false
               }
             }
-          }
+          },
+          "x-rspace-runtime-fields" : [ {
+            "catalog" : "/api/v2/instruments/fields/customFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : true,
+            "filterable" : true,
+            "maximumProjections" : 50,
+            "namespace" : "target.customFields",
+            "responseField" : "target.customFields",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          }, {
+            "catalog" : "/api/v2/instruments/fields/extraFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : false,
+            "filterable" : true,
+            "maximumProjections" : 0,
+            "namespace" : "target.extraFields",
+            "responseField" : "",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          } ]
         }, {
           "description" : "Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields.",
           "in" : "query",
@@ -3799,7 +3869,7 @@
         "description" : "Updates every booking-configurations matching the required filter. The operation is handled as one service-layer mutation; resource-specific limits are reported with status 422.",
         "operationId" : "updateManyBookingConfigurations",
         "parameters" : [ {
-          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
+          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
           "required" : true,
@@ -4079,7 +4149,38 @@
                 "wildcards" : false
               }
             }
-          }
+          },
+          "x-rspace-runtime-fields" : [ {
+            "catalog" : "/api/v2/instruments/fields/customFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : true,
+            "filterable" : true,
+            "maximumProjections" : 50,
+            "namespace" : "target.customFields",
+            "responseField" : "target.customFields",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          }, {
+            "catalog" : "/api/v2/instruments/fields/extraFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : false,
+            "filterable" : true,
+            "maximumProjections" : 0,
+            "namespace" : "target.extraFields",
+            "responseField" : "",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          } ]
         } ],
         "requestBody" : {
           "content" : {
@@ -4522,7 +4623,7 @@
         "description" : "Counts booking-configurations matching the optional bounded filter.",
         "operationId" : "countBookingConfigurations",
         "parameters" : [ {
-          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
+          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
           "required" : false,
@@ -4802,7 +4903,38 @@
                 "wildcards" : false
               }
             }
-          }
+          },
+          "x-rspace-runtime-fields" : [ {
+            "catalog" : "/api/v2/instruments/fields/customFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : true,
+            "filterable" : true,
+            "maximumProjections" : 50,
+            "namespace" : "target.customFields",
+            "responseField" : "target.customFields",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          }, {
+            "catalog" : "/api/v2/instruments/fields/extraFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : false,
+            "filterable" : true,
+            "maximumProjections" : 0,
+            "namespace" : "target.extraFields",
+            "responseField" : "",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          } ]
         } ],
         "responses" : {
           "200" : {
@@ -6094,7 +6226,7 @@
         "description" : "Returns a paginated view of bookings. Filtering, sorting, sparse fieldsets, exclusions, and relationship depth are applied before rendering.",
         "operationId" : "listBookings",
         "parameters" : [ {
-          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
+          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
           "required" : false,
@@ -6236,7 +6368,38 @@
                 "wildcards" : false
               }
             }
-          }
+          },
+          "x-rspace-runtime-fields" : [ {
+            "catalog" : "/api/v2/instruments/fields/customFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : true,
+            "filterable" : true,
+            "maximumProjections" : 50,
+            "namespace" : "target.customFields",
+            "responseField" : "target.customFields",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          }, {
+            "catalog" : "/api/v2/instruments/fields/extraFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : false,
+            "filterable" : true,
+            "maximumProjections" : 0,
+            "namespace" : "target.extraFields",
+            "responseField" : "",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          } ]
         }, {
           "description" : "Comma-separated sortable fields; prefix descending fields with '-'. At most 5 fields.",
           "in" : "query",
@@ -6636,7 +6799,7 @@
         "description" : "Counts bookings matching the optional bounded filter.",
         "operationId" : "countBookings",
         "parameters" : [ {
-          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me.",
+          "description" : "Bounded RSQL filter expression. Available selectors and operators are provided in x-rspace-filter. For ID selectors on relationships whose targets are all users, exact me resolves to the authenticated effective subject's numeric ID; for example, createdBy.value==me. Further per-caller selectors are listed by the catalog named in x-rspace-runtime-fields.",
           "in" : "query",
           "name" : "where",
           "required" : false,
@@ -6778,7 +6941,38 @@
                 "wildcards" : false
               }
             }
-          }
+          },
+          "x-rspace-runtime-fields" : [ {
+            "catalog" : "/api/v2/instruments/fields/customFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : true,
+            "filterable" : true,
+            "maximumProjections" : 50,
+            "namespace" : "target.customFields",
+            "responseField" : "target.customFields",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          }, {
+            "catalog" : "/api/v2/instruments/fields/extraFields",
+            "catalogDefaultLimit" : 50,
+            "catalogIdsParameter" : "ids",
+            "catalogMaximumIds" : 50,
+            "catalogMaximumLimit" : 200,
+            "catalogSearchParameter" : "search",
+            "columnSelectable" : false,
+            "filterable" : true,
+            "maximumProjections" : 0,
+            "namespace" : "target.extraFields",
+            "responseField" : "",
+            "sortable" : false,
+            "via" : "target",
+            "viaResource" : "booking-instruments"
+          } ]
         } ],
         "responses" : {
           "200" : {
