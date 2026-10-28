@@ -95,7 +95,8 @@ const MaterialsLauncher = observer(
                   setAnchorEl(currentTarget);
                 }}
                 size="medium"
-                sx={{ zIndex: "initial", pointerEvents: "auto" }}
+                // zIndex 1 so it appears above the TinyMCE Editor's header
+                sx={{ position: "sticky", top: FAB_SIZE, zIndex: 1, pointerEvents: "auto" }}
                 aria-label={t("materialsListing.launcher.showAssociatedLists")}
                 aria-haspopup="menu"
               >
