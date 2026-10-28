@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+import static com.researchspace.testutils.BookingResourceTestFixtures.useSnapshotIsolation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -244,6 +245,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                 new TransactionTemplate(getTxMger())
                     .execute(
                         ignored -> {
+                          useSnapshotIsolation(jdbcTemplate, true);
                           ApiInstrument permissionSource =
                               instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
                           jdbcTemplate.queryForObject(
@@ -286,6 +288,7 @@ public class BookingCalendarManagerIT extends RealTransactionSpringTestBase {
                 new TransactionTemplate(getTxMger())
                     .execute(
                         ignored -> {
+                          useSnapshotIsolation(jdbcTemplate, true);
                           ApiInstrument permissionSource =
                               instrumentApiMgr.getApiInstrumentById(setup.instrumentId(), owner);
                           assertEquals(
