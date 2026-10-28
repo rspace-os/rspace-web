@@ -2,6 +2,7 @@ import * as v from "valibot";
 import { schedulingSettingsEntries } from "@/modules/booking/configuration/schedulingSettings";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 export const BookingCatalogueLocationSchema = v.object({
   globalId: v.string(),
@@ -110,7 +111,7 @@ export async function fetchBookingCatalogue(
   if (search.target) parameters.set("target", search.target);
   appendAll(parameters, "type", search.types);
   appendAll(parameters, "location", search.locations);
-  const response = await fetch(`/api/v2/booking-catalogue?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-catalogue?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });
@@ -129,7 +130,7 @@ export async function fetchBookingCatalogueLocations(
   });
   if (search.q?.trim()) parameters.set("q", search.q.trim());
   appendAll(parameters, "type", search.types);
-  const response = await fetch(`/api/v2/booking-catalogue/locations?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-catalogue/locations?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });

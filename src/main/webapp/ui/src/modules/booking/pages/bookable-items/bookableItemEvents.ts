@@ -4,6 +4,7 @@ import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 export type BookingEventPeriod = "upcoming" | "past";
 
@@ -41,7 +42,7 @@ export async function fetchBookableItemEvents(input: {
     depth: "1",
     "fields[bookings]": BOOKING_READ_FIELDS,
   });
-  const response = await fetch(`/api/v2/bookings?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/bookings?${parameters}`, {
     headers: apiV2Headers(input.token),
     signal: input.signal,
   });
