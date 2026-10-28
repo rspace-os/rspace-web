@@ -6,8 +6,8 @@ import type {
   SearchSelector,
   SortRule,
 } from "@/modules/common/collection/collectionConfig";
-import type { RuntimeFieldDefinition } from "./adapters/apiV2/runtimeFieldCatalog";
-import type { TableListAlertsApi } from "./components/TableListAlerts";
+import type { RuntimeFieldDefinition } from "../adapters/apiV2/runtimeFieldCatalog";
+import type { TableListAlertsApi } from "../components/TableListAlerts";
 
 export type FilterValue = string | number | boolean | Date | readonly (string | number | boolean | Date)[];
 

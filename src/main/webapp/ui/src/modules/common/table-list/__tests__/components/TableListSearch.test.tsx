@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import type { FilterState, TableListFeatures } from "../../state/tableListState";
 import { TableList } from "../../TableList";
-import type { FilterState, TableListFeatures } from "../../tableListState";
 import { config, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 function renderRemoteSearch(filters: FilterState<TestRecord>, onFiltersChange = vi.fn(), onPageChange = vi.fn()) {

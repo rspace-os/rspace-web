@@ -1,7 +1,7 @@
 import { type FocusEventHandler, type Ref, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { RelationshipOptionAvailabilitySource } from "@/modules/common/collection-form/RenderFields.types";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import type { RelationshipOptionAvailabilitySource } from "@/modules/common/relationship-picker/relationshipOptions";
 import {
   Combobox,
   ComboboxChip,

@@ -5,7 +5,7 @@ import type {
   ResolvedFieldConfig,
   SearchSelector,
 } from "@/modules/common/collection/collectionConfig";
-import type { FilterExpression, FilterValue } from "../../tableListState";
+import type { FilterExpression, FilterValue } from "../../state/tableListState";
 import { listValue, scalarValue } from "./filterValue";
 
 export type DraftRule<TDocument> = {

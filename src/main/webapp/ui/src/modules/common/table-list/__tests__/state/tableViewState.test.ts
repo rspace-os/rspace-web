@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { parseTableViewState, serializeTableViewState } from "../tableViewState";
-import { tableViewStorageKey } from "../tableViewStorage";
-import { savedViewSelectors } from "../useTableListQueryString";
-import { config } from "./fixtures/tableListFixtures";
+import { parseTableViewState, serializeTableViewState } from "../../state/tableViewState";
+import { tableViewStorageKey } from "../../state/tableViewStorage";
+import { savedViewSelectors } from "../../state/useTableListQueryString";
+import { config } from "../fixtures/tableListFixtures";
 
 describe("saved view field names", () => {
   const key = tableViewStorageKey("records");

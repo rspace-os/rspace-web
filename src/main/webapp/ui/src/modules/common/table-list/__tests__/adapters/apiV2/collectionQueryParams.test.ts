@@ -3,7 +3,7 @@ import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import type { ApiV2CollectionMetadata } from "../../../adapters/apiV2/apiV2CollectionMetadata";
 import { createApiV2CollectionAdapter } from "../../../adapters/apiV2/createApiV2CollectionAdapter";
-import type { CollectionQueryState } from "../../../tableListState";
+import type { CollectionQueryState } from "../../../state/tableListState";
 import { testRecordSchema as documentSchema } from "../../fixtures/schemas";
 import type { TestRecord } from "../../fixtures/tableListFixtures";
 

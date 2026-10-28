@@ -12,8 +12,8 @@ selection.
 ## Design summary
 
 Every remote table, REST API v2 or not, loads its rows through a
-[`CollectionFetcher`](../../src/main/webapp/ui/src/modules/common/table-list/tableListState.ts).
-[`useTableList`](../../src/main/webapp/ui/src/modules/common/table-list/useTableList.ts) keeps the
+[`CollectionFetcher`](../../src/main/webapp/ui/src/modules/common/table-list/state/tableListState.ts).
+[`useTableList`](../../src/main/webapp/ui/src/modules/common/table-list/state/useTableList.ts) keeps the
 table and query state and returns `tableProps` plus functions that change that state.
 
 The OpenAPI reader validates the current generated contract with Valibot. Selector and runtime

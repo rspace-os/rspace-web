@@ -34,7 +34,7 @@ import type { RuntimeFieldDefinition } from "@/modules/common/table-list/adapter
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import { CustomFieldPicker, groupRuntimeFieldSources } from "../filters/CustomFieldPicker";
+import { CustomFieldPicker, groupRuntimeFieldSources } from "./filters/CustomFieldPicker";
 
 type Section = "shown" | "hidden";
 type Layout<TDocument> = Record<Section, readonly FieldName<TDocument>[]>;

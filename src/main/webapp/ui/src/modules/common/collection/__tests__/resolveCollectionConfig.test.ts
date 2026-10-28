@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
-import { config, type TestRecord } from "../fixtures/tableListFixtures";
+import { config, type TestRecord } from "@/modules/common/table-list/__tests__/fixtures/tableListFixtures";
 
 function input(): CollectionConfig<TestRecord> {
   return {

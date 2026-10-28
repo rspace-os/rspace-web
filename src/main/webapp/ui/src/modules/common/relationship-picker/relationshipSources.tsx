@@ -1,7 +1,7 @@
 import { cmp, eq, escapeValue, Operation } from "rsql-builder";
 import { is } from "valibot";
-import type { RelationshipOption } from "@/modules/common/collection-form/RenderFields.types";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import type { RelationshipOption } from "@/modules/common/relationship-picker/relationshipOptions";
 import { InventoryItem } from "@/modules/common/ui/inventory-item";
 import { GranteeSchema, InstrumentSchema, RelationshipSearchResponseSchema } from "./schemas";
 

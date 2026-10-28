@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedFieldConfig } from "@/modules/common/collection/collectionConfig";
 import { fieldLabel, isIdLikeField } from "@/modules/common/collection/collectionConfig";
-import type { TableListProps, TableListUiColumn } from "../tableListState";
+import type { TableListProps, TableListUiColumn } from "../../state/tableListState";
 import { displayValue, selectionColumnId, type tableListFeatures } from "./tableListFeatures";
 
 /** The table's column definitions: an optional selection column, the listed fields, then the UI columns. */

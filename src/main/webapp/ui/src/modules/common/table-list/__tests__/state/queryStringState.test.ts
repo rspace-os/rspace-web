@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseColumns, parseSorting, serializeColumns, serializeSorting } from "../queryStringState";
-import { config, type TestRecord } from "./fixtures/tableListFixtures";
+import { parseColumns, parseSorting, serializeColumns, serializeSorting } from "../../state/queryStringState";
+import { config, type TestRecord } from "../fixtures/tableListFixtures";
 
 describe("table-list query string state", () => {
   it("round-trips only unique, listable columns", () => {

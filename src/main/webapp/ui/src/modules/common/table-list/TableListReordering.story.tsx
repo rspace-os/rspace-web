@@ -2,8 +2,8 @@ import { NuqsAdapter } from "nuqs/adapters/react";
 import { useState } from "react";
 import type { FieldName, SortRule } from "@/modules/common/collection/collectionConfig";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import type { FilterExpression, FilterState } from "./state/tableListState";
 import { TableList } from "./TableList";
-import type { FilterExpression, FilterState } from "./tableListState";
 
 type ReorderingRecord = {
   id: string;

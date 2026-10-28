@@ -1,7 +1,7 @@
 import * as v from "valibot";
 import type { FieldName, ResolvedCollectionConfig, SortRule } from "@/modules/common/collection/collectionConfig";
+import { parseRsqlExpression, type StaleFieldPolicy, serializeRsqlExpression } from "../rsql/rsqlCodec";
 import { columnSelectors, parseColumns, parseSorting, serializeColumns, serializeSorting } from "./queryStringState";
-import { parseRsqlExpression, type StaleFieldPolicy, serializeRsqlExpression } from "./rsql/rsqlCodec";
 import type { FilterExpression } from "./tableListState";
 
 export const tableViewStateSchema = v.object({

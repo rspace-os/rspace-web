@@ -4,10 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { describe, expect, it, vi } from "vitest";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
-import { TableList } from "../TableList";
-import type { CollectionFetcher } from "../tableListState";
-import { useTableList } from "../useTableList";
-import { config, records, type TestRecord } from "./fixtures/tableListFixtures";
+import type { CollectionFetcher } from "../../state/tableListState";
+import { useTableList } from "../../state/useTableList";
+import { TableList } from "../../TableList";
+import { config, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 function testQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });

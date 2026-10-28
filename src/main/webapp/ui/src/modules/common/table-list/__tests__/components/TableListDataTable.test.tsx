@@ -8,8 +8,8 @@ import type { CollectionConfig } from "@/modules/common/collection/collectionCon
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
 import commonEnglish from "@/modules/common/i18n/locales/en-US/common.json";
 import { parseRsqlExpression, serializeRsqlExpression } from "../../rsql/rsqlCodec";
+import type { FilterExpression, FilterState } from "../../state/tableListState";
 import { TableList } from "../../TableList";
-import type { FilterExpression, FilterState } from "../../tableListState";
 import { config, firstPage, records, type TestRecord } from "../fixtures/tableListFixtures";
 
 const checkboxForRow = (title: string) =>

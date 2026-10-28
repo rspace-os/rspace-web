@@ -1,9 +1,9 @@
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
 import type { RuntimeFieldDefinition } from "../adapters/apiV2/runtimeFieldCatalog";
-import type { TableListFeatures } from "../tableListState";
-import { TableListColumns } from "./columns/TableListColumns";
+import type { TableListFeatures } from "../state/tableListState";
 import { TableListFilters } from "./filters/TableListFilters";
-import { TableListSorting } from "./sorting/TableListSorting";
+import { TableListColumns } from "./TableListColumns";
+import { TableListSorting } from "./TableListSorting";
 import type { TableListControlPanel as ControlPanel } from "./TableListToolbar";
 
 export function TableListControlPanel<TDocument>({

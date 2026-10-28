@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import type { FilterState } from "../../state/tableListState";
 import { TableList } from "../../TableList";
-import type { FilterState } from "../../tableListState";
 import { chooseFilterField } from "./chooseFilterField";
 
 vi.mock("@/modules/common/hooks/auth", () => ({

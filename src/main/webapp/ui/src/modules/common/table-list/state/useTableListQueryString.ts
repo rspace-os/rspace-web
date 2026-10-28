@@ -2,6 +2,7 @@ import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
+import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "../rsql/rsqlCodec";
 import {
   columnSelectors,
   parseColumns,
@@ -10,7 +11,6 @@ import {
   serializeFilters,
   serializeSorting,
 } from "./queryStringState";
-import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "./rsql/rsqlCodec";
 import type { TableListFeatures, TableListQueryStringOptions } from "./tableListState";
 import {
   loadStoredTableView,
