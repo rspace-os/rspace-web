@@ -19,7 +19,7 @@ import {
   type TableListProps,
   type TableListRowActions,
 } from "@/modules/common/table-list/TableList";
-import type { FilterExpression, FilterState } from "@/modules/common/table-list/tableListState";
+import type { FilterExpression, FilterState } from "@/modules/common/table-list/types";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";
 import { Skeleton } from "@/modules/common/ui/skeleton";

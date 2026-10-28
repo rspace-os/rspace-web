@@ -7,8 +7,8 @@ import { describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import type { BookingCatalogueItem } from "@/modules/booking/domain/bookingCatalogue";
 import { displayInterval } from "@/modules/booking/domain/bookingTime";
-import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
-import type { FilterExpression } from "@/modules/common/table-list/tableListState";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
+import type { FilterExpression } from "@/modules/common/table-list/types";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import {
   type AllBookableItem,

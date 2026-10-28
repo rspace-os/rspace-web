@@ -13,11 +13,11 @@ import {
 import { type AbsoluteDisplayInterval, currentWallClock, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { useAlignedMinute } from "@/modules/common/hooks/useAlignedMinute";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
-import { serializeRsqlExpression } from "@/modules/common/table-list/rsql/rsqlCodec";
-import type { FilterExpression, FilterValue } from "@/modules/common/table-list/tableListState";
+import { serializeRsqlExpression } from "@/modules/common/table-list/rsql";
+import type { FilterExpression, FilterValue } from "@/modules/common/table-list/types";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import type { BookingConfiguration } from "../bookable-items/bookingConfiguration";
 import { loadCalendarAvailability } from "../calendar/calendarAvailability";
-import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 type CurrentDayAvailability = ReturnType<typeof classifyCurrentDayAvailability>;
 type BookingCataloguePage = Awaited<ReturnType<typeof fetchAllBookingCataloguePages>>;
