@@ -1,6 +1,7 @@
 package com.researchspace.booking.service;
 
 import static com.researchspace.core.testutil.CoreTestUtils.getRandomName;
+import static com.researchspace.testutils.BookingResourceTestFixtures.useSnapshotIsolation;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -134,6 +136,7 @@ class BookingCurrentAccessIT extends RealTransactionSpringTestBase {
 
     TransactionStatus staleTransaction = openTransaction();
     try {
+      useSnapshotIsolation(new JdbcTemplate(dataSource), true);
       Instrument stale = instrumentDao.get(created.getId());
       Hibernate.initialize(stale.getOwner());
       assertEquals(originalOwner.getId(), stale.getOwner().getId());
