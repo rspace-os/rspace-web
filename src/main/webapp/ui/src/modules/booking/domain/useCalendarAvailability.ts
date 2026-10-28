@@ -10,6 +10,7 @@ import {
 import { BOOKING_READ_FIELDS, type Booking, BookingSchema } from "@/modules/booking/domain/booking";
 import { type AbsoluteDisplayInterval, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const PageSchema = v.object({
   docs: v.array(BookingSchema),
@@ -42,7 +43,7 @@ async function fetchPage(
     depth: "1",
     "fields[bookings]": BOOKING_READ_FIELDS,
   });
-  const response = await fetch(`/api/v2/bookings?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/bookings?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
     signal,
   });

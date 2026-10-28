@@ -4,6 +4,7 @@ import { type BookingListDocument, BookingListDocumentSchema } from "@/modules/b
 import { zonedDayBounds } from "@/modules/booking/domain/bookingTime";
 import { navigationProgressQueryMeta } from "@/modules/common/queries/navigationProgress";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const PageSchema = v.object({
   docs: v.array(BookingListDocumentSchema),
@@ -31,7 +32,7 @@ async function fetchPage(
     depth: "1",
     "fields[bookings]": CALENDAR_BOOKING_FIELDS,
   });
-  const response = await fetch(`/api/v2/bookings?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/bookings?${parameters}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
     signal,
   });
