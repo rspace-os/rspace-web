@@ -7,6 +7,7 @@ import java.util.Set;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.orm.hibernate5.HibernateExceptionTranslator;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -142,6 +143,12 @@ public class BookingCalendarRevocationCoordinator {
     @Override
     public void beforeCommit(boolean readOnly) {
       finalizeRevocation(owner);
+    }
+
+    // Clear completed booking state before after-completion work opens a new transaction.
+    @Override
+    public int getOrder() {
+      return Ordered.LOWEST_PRECEDENCE - 1;
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.Ordered;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -154,6 +155,12 @@ public class BookingCalendarPermissionGateDaoHibernate implements BookingCalenda
 
     private GateSynchronization(State owner) {
       this.owner = owner;
+    }
+
+    // Clear completed booking state before after-completion work opens a new transaction.
+    @Override
+    public int getOrder() {
+      return Ordered.LOWEST_PRECEDENCE - 1;
     }
 
     @Override
