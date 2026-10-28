@@ -780,9 +780,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     Validate.notNull(apiSample.getOwner(), "'owner' field not present");
     Validate.notNull(apiSample.getOwner().getUsername(), "'owner.username' field not present");
 
-    invPermissions.assertUserCanTransferInventoryRecord(getIfExists(apiSample.getId()), user);
-
     SampleEntity dbSample = getIfExists(apiSample.getId());
+    // a transfer committed since the sample was read must be seen, and none may overtake this one
+    sampleDao.refreshForUpdate(dbSample);
+    invPermissions.assertUserCanTransferInventoryRecord(dbSample, user);
+
     boolean temporaryLock = lockItemForEdit(dbSample, user);
 
     try {

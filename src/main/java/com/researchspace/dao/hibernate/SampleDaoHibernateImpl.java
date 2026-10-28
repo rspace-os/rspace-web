@@ -311,4 +311,11 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
         .setLockMode(LockModeType.PESSIMISTIC_READ)
         .uniqueResult();
   }
+
+  @Override
+  public void refreshForUpdate(SampleEntity sample) {
+    // refresh would drop unflushed changes, and fails for a sample not yet inserted
+    sessionFactory.getCurrentSession().flush();
+    sessionFactory.getCurrentSession().refresh(sample, LockModeType.PESSIMISTIC_WRITE);
+  }
 }
