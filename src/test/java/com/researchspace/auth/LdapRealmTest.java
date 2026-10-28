@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -59,12 +58,11 @@ public class LdapRealmTest {
     user1sid2.setSid("1-2-3-4");
     user1sid2.setId(1L);
     token = new UsernamePasswordToken(testUsername, "anypass");
-    lenient().when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
   }
 
   @Test
   public void testSidVerification() throws Exception {
-
+    when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
     when(userManager.userExists(any())).thenReturn(true);
 
     // user should be allowed to login if no sid saved in db
@@ -101,6 +99,7 @@ public class LdapRealmTest {
 
   @Test
   public void testWhitespaceOnlyPasswordStillVerifiedAgainstLdap() throws Exception {
+    when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
     when(userManager.userExists(any())).thenReturn(true);
     when(userManager.getUserByUsername(testUsername)).thenReturn(user1noSid);
 
@@ -112,6 +111,7 @@ public class LdapRealmTest {
 
   @Test
   public void testUserNotExistsReturnsNullIfUserSignupNotEnabled() throws Exception {
+    when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
     when(userManager.userExists(any())).thenReturn(false);
     when(properties.isUserSignup()).thenReturn(false);
     assertNull(ldapRealm.doGetAuthenticationInfo(token));
@@ -119,6 +119,7 @@ public class LdapRealmTest {
 
   @Test
   public void testUserNotExistsCreatesNewUserIfUserSignupIsEnabled() throws Exception {
+    when(userLdapRepo.authenticate(anyString(), anyString())).thenReturn(user1sid2);
     when(userManager.userExists(any())).thenReturn(false);
     when(userLdapRepo.signupLdapUser(eq(user1sid2))).thenReturn(user1sid2);
     when(properties.isUserSignup()).thenReturn(true);

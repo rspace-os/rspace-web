@@ -1,5 +1,6 @@
 package com.researchspace.core.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,6 +14,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
@@ -63,6 +68,22 @@ class ZipUtilsExtractionTest {
 
   private static byte[] bytes(int length) {
     return new byte[length];
+  }
+
+  /** A destination whose reported free space the test controls. */
+  private static File withUsableSpace(File dir, LongSupplier usableSpace) {
+    return new File(dir.getPath()) {
+      @Override
+      public long getUsableSpace() {
+        return usableSpace.getAsLong();
+      }
+    };
+  }
+
+  private static byte[] randomBytes(int length) {
+    byte[] content = new byte[length];
+    new Random(42).nextBytes(content);
+    return content;
   }
 
   private static String readAfterExtract(File zip, File dest, String relativePath)
@@ -228,6 +249,241 @@ class ZipUtilsExtractionTest {
     assertThrows(InvalidArchiveException.class, () -> ZipUtils.extractZip(zip, dest));
 
     assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void rejectsArchiveWithTooManyEntriesAndRemovesPartialExtraction() throws IOException {
+    File zip =
+        makeZip(
+            dir("root/"),
+            file("root/a.txt", bytes(10)),
+            file("root/b.txt", bytes(10)),
+            file("root/c.txt", bytes(10)));
+    File dest = newDestination();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 3, 0, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class, () -> ZipUtils.extractZip(zip, dest, limits));
+
+    assertEquals(ZipExtractionLimitException.Limit.ENTRY_COUNT, e.getLimit());
+    assertEquals(3, e.getLimitValue());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void rejectsArchiveExpandingPastTotalSizeLimit() throws IOException {
+    File zip = makeZip(file("a.txt", bytes(4096)), file("b.txt", bytes(4096)));
+    File dest = newDestination();
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () -> ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(6000, 0, 0, 0, 0)));
+
+    assertEquals(ZipExtractionLimitException.Limit.EXPANDED_SIZE, e.getLimit());
+    assertEquals(6000, e.getLimitValue());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void acceptsArchiveExpandingExactlyToTotalSizeLimit() throws IOException {
+    File zip = makeZip(file("a.txt", bytes(4096)), file("b.txt", bytes(4096)));
+    File dest = newDestination();
+
+    ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(8192, 0, 0, 0, 0));
+
+    assertEquals(4096, new File(dest, "b.txt").length());
+  }
+
+  @Test
+  void acceptsHighRatioEntryWhenWholeArchiveIsWithinRatio() throws IOException {
+    // like an uncompressed image mask among ordinary attachments: the zeros inflate about 1000:1,
+    // the archive as a whole about 30:1
+    File zip =
+        makeZip(
+            file("photo.jpg", randomBytes(64 * 1024)), file("mask.tif", bytes(2 * 1024 * 1024)));
+    File dest = newDestination();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 0, 100, 1024);
+
+    ZipUtils.extractZip(zip, dest, limits);
+
+    assertEquals(2 * 1024 * 1024, new File(dest, "mask.tif").length());
+  }
+
+  @Test
+  void acceptsHighRatioArchiveBelowTheFloor() throws IOException {
+    File zip = makeZip(file("small.bin", bytes(64 * 1024)));
+    File dest = newDestination();
+    // floor above the archive's content, so the ratio is never judged
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 0, 100, 1024 * 1024);
+
+    ZipUtils.extractZip(zip, dest, limits);
+
+    assertEquals(64 * 1024, new File(dest, "small.bin").length());
+  }
+
+  @Test
+  void rejectsArchiveWhoseWholeContentCompressesBeyondRatio() throws IOException {
+    // no single entry passes the floor; the running total across entries does
+    EntrySpec[] specs = new EntrySpec[64];
+    for (int i = 0; i < specs.length; i++) {
+      specs[i] = file("part" + i + ".bin", bytes(16 * 1024));
+    }
+    File zip = makeZip(specs);
+    File dest = newDestination();
+    // 1 MiB of zeros packs to roughly 9 KB, so a 50:1 bound leaves a wide margin
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 0, 50, 64 * 1024);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class, () -> ZipUtils.extractZip(zip, dest, limits));
+
+    assertEquals(ZipExtractionLimitException.Limit.COMPRESSION_RATIO, e.getLimit());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void zeroDisablesEachLimit() throws IOException {
+    File zip = makeZip(file("bomb.bin", bytes(1024 * 1024)), file("b.txt", bytes(10)));
+    File dest = newDestination();
+
+    ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(0, 0, 0, 0, 0));
+
+    assertEquals(1024 * 1024, new File(dest, "bomb.bin").length());
+  }
+
+  @Test
+  void rejectsExtractionWhenDestinationPartitionLacksFreeSpace() throws IOException {
+    File zip = makeZip(file("a.txt", bytes(10)));
+    File dest = newDestination();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, Long.MAX_VALUE, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class, () -> ZipUtils.extractZip(zip, dest, limits));
+
+    assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void rejectsShortExtractionThatFinishesBelowDiskReserve() throws IOException {
+    File zip = makeZip(file("a.txt", bytes(4096)));
+    File dest = newDestination();
+    AtomicInteger diskChecks = new AtomicInteger();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 1, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () ->
+                ZipUtils.extractZip(
+                    zip,
+                    withUsableSpace(
+                        dest, () -> diskChecks.getAndIncrement() == 0 ? Long.MAX_VALUE : 0),
+                    limits));
+
+    assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void rejectsExtractionWhenPartitionFillsPartWay() throws IOException {
+    File zip = makeZip(file("a.bin", bytes(20 * 1024 * 1024)));
+    File dest = newDestination();
+    AtomicInteger diskChecks = new AtomicInteger();
+    AtomicLong writtenWhenFull = new AtomicLong();
+    // plenty of space at the start, none by the first re-check after 16 MiB written
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 1, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () ->
+                ZipUtils.extractZip(
+                    zip,
+                    withUsableSpace(
+                        dest,
+                        () -> {
+                          if (diskChecks.getAndIncrement() == 0) {
+                            return Long.MAX_VALUE;
+                          }
+                          writtenWhenFull.set(new File(dest, "a.bin").length());
+                          return 0;
+                        }),
+                    limits));
+
+    assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertThat(writtenWhenFull.get()).isBetween(16L * 1024 * 1024, 20L * 1024 * 1024 - 1);
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void rejectsExtractionWhenPartitionFillsDuringEmptyEntries() throws IOException {
+    EntrySpec[] specs = new EntrySpec[1100];
+    for (int i = 0; i < specs.length; i++) {
+      specs[i] = file("empty" + i + ".txt", bytes(0));
+    }
+    File zip = makeZip(specs);
+    File dest = newDestination();
+    AtomicInteger diskChecks = new AtomicInteger();
+    AtomicInteger extractedWhenFull = new AtomicInteger();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 0, 1, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class,
+            () ->
+                ZipUtils.extractZip(
+                    zip,
+                    withUsableSpace(
+                        dest,
+                        () -> {
+                          if (diskChecks.getAndIncrement() == 0) {
+                            return Long.MAX_VALUE;
+                          }
+                          extractedWhenFull.set(dest.list().length);
+                          return 0;
+                        }),
+                    limits));
+
+    assertEquals(ZipExtractionLimitException.Limit.FREE_DISK_SPACE, e.getLimit());
+    assertEquals(1023, extractedWhenFull.get(), "must stop at the 1024th entry");
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void rejectsEntryNestedTooDeep() throws IOException {
+    File zip = makeZip(dir("a/".repeat(65)));
+    File dest = newDestination();
+
+    assertThrows(InvalidArchiveException.class, () -> ZipUtils.extractZip(zip, dest));
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void countsEachDirectoryADeepEntryCreates() throws IOException {
+    File zip = makeZip(dir("a/b/c/d/e/"));
+    File dest = newDestination();
+    ZipExtractionLimits limits = new ZipExtractionLimits(0, 4, 0, 0, 0);
+
+    ZipExtractionLimitException e =
+        assertThrows(
+            ZipExtractionLimitException.class, () -> ZipUtils.extractZip(zip, dest, limits));
+
+    assertEquals(ZipExtractionLimitException.Limit.ENTRY_COUNT, e.getLimit());
+    assertEquals(0, dest.list().length, "failed extraction must leave nothing behind");
+  }
+
+  @Test
+  void acceptsArchiveWithExactlyMaxEntries() throws IOException {
+    File zip = makeZip(dir("a/b/c/d/e/"));
+    File dest = newDestination();
+
+    ZipUtils.extractZip(zip, dest, new ZipExtractionLimits(0, 5, 0, 0, 0));
+
+    assertTrue(new File(dest, "a/b/c/d/e").isDirectory());
   }
 
   private static int indexOfLocalHeader(byte[] raw, int occurrence) {

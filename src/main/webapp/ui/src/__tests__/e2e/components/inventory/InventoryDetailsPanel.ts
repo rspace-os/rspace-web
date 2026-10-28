@@ -1,5 +1,7 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+import { ToastsComponent } from "../shared/ToastsComponent";
 import { AccessPermissionsEditor } from "./AccessPermissionsEditor";
+import { AddToBasketDialogComponent } from "./AddToBasketDialogComponent";
 import { AttachmentsEditor } from "./AttachmentsEditor";
 import { CollapsibleSections } from "./CollapsibleSections";
 import { CreateNewItemDialog } from "./CreateNewItemDialog";
@@ -23,7 +25,11 @@ const IDENTIFIER_CREATE_BUTTON_LABEL: Record<InventoryIdentifierType, string> = 
   PIDINST: "Create new PIDINST",
 };
 
+/** Per-attempt budget when acting on a toolbar action, so a reflow is retried rather than waited out. */
+const ACTION_ATTEMPT_TIMEOUT = 2_000;
+
 export type InventoryMoreAction =
+  | "Edit"
   | "Duplicate"
   | "Move"
   | "Transfer"
@@ -38,14 +44,16 @@ export class InventoryDetailsPanel {
 
   readonly permissionAlert: Locator;
   private readonly sections: CollapsibleSections;
+  private readonly moreActionsButton: Locator;
   private readonly moreActions: MoreActionsMenu<InventoryMoreAction>;
 
   constructor(private readonly page: Page) {
     this.root = page.getByRole("main");
     this.sections = new CollapsibleSections(this.root);
     this.heading = this.root.getByRole("heading", { level: 2 });
-    this.permissionAlert = this.root.getByRole("alert");
-    this.moreActions = new MoreActionsMenu(page, this.root.getByRole("button", { name: "More actions" }).first());
+    this.permissionAlert = this.root.getByRole("alert").filter({ hasText: "You do not have permission to see" });
+    this.moreActionsButton = this.root.getByRole("button", { name: "More actions" }).first();
+    this.moreActions = new MoreActionsMenu(page, this.moreActionsButton);
   }
 
   /** The record title heading, matched by its name so another level-2 heading on the page can't stand in. */
@@ -66,38 +74,56 @@ export class InventoryDetailsPanel {
   }
 
   async openMoveDialog(): Promise<MoveDialogComponent> {
-    return openDialog(
-      () => this.moreActions.clickDirectOrFallback(this.action("Move"), "Move"),
-      new MoveDialogComponent(this.page),
-    );
+    return openDialog(() => this.chooseAction("Move"), new MoveDialogComponent(this.page));
   }
 
   async openTransferDialog(): Promise<TransferDialogComponent> {
-    return openDialog(
-      () => this.moreActions.clickDirectOrFallback(this.action("Transfer"), "Transfer"),
-      new TransferDialogComponent(this.page),
-    );
+    return openDialog(() => this.chooseAction("Transfer"), new TransferDialogComponent(this.page));
   }
 
   async openCreateItemDialog(): Promise<CreateNewItemDialog> {
     return openDialog(() => this.clickAction("Create"), new CreateNewItemDialog(this.page));
   }
 
+  async openAddToBasketDialog(): Promise<AddToBasketDialogComponent> {
+    return openDialog(() => this.chooseAction("Add to Basket"), new AddToBasketDialogComponent(this.page));
+  }
+
   async openExportDialog(): Promise<ExportDialogComponent> {
-    return openDialog(() => this.moreActions.click("Export"), new ExportDialogComponent(this.page));
+    return openDialog(() => this.chooseAction("Export"), new ExportDialogComponent(this.page));
   }
 
-  async moreActionItem(name: InventoryMoreAction): Promise<Locator> {
-    await this.moreActions.open();
-    return this.moreActions.item(name);
+  async duplicate(): Promise<void> {
+    await this.chooseAction("Duplicate");
   }
 
-  async duplicateControl(): Promise<Locator> {
-    const inline = this.action("Duplicate");
+  /**
+   * Runs `use` against the action's current control, retrying when the toolbar moves the action
+   * between inline and More actions in the meantime.
+   */
+  async withActionControl(
+    name: InventoryMoreAction,
+    use: (control: Locator, timeout: number) => Promise<void>,
+  ): Promise<void> {
+    await expect(async () => {
+      await use(await this.actionControl(name), ACTION_ATTEMPT_TIMEOUT);
+    }).toPass({ timeout: 15_000 });
+  }
+
+  private async chooseAction(name: InventoryMoreAction): Promise<void> {
+    await this.withActionControl(name, (control, timeout) => control.click({ timeout }));
+  }
+
+  private async actionControl(name: InventoryMoreAction): Promise<Locator> {
+    const timeout = ACTION_ATTEMPT_TIMEOUT;
+    await this.moreActions.close({ timeout });
+    await this.moreActionsButton.waitFor({ state: "visible", timeout });
+    const inline = this.root.getByRole("button", { name, exact: true });
     if ((await inline.count()) > 0) {
       return inline;
     }
-    return this.moreActionItem("Duplicate");
+    await this.moreActions.open({ timeout });
+    return this.moreActions.item(name);
   }
 
   section(name: string): Locator {
@@ -178,7 +204,21 @@ export class InventoryDetailsPanel {
   }
 
   async saveEdit(): Promise<void> {
+    const cancel = this.root.getByRole("button", { name: "Cancel", exact: true });
+    const errorToasts = new ToastsComponent(this.page).root.getByRole("group", { name: "error alert" });
+    const errorsBefore = await errorToasts.allInnerTexts();
     await clickAndWaitDetached(this.root.getByRole("button", { name: "Save", exact: true }));
+
+    let failure: string | undefined;
+    await expect(async () => {
+      if ((await cancel.count()) === 0) return;
+      const errors = await errorToasts.allInnerTexts();
+      failure = errors.find((text) => !errorsBefore.includes(text));
+      if (failure === undefined && errors.length > errorsBefore.length) failure = errors.at(-1);
+      if (failure !== undefined) return;
+      throw new Error("The record is still saving");
+    }).toPass({ timeout: 30_000 });
+    if (failure !== undefined) throw new Error(`Saving the record failed: ${failure}`);
   }
 
   async emptyLocationCount(): Promise<number> {

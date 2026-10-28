@@ -111,6 +111,22 @@ export class GroupDetailsPage extends BasePage {
     await this.heading.waitFor({ state: "visible" });
   }
 
+  async leaveGroup(): Promise<void> {
+    await this.page.getByRole("button", { name: "Leave Group", exact: true }).click();
+    const left = this.page.waitForResponse((res) => res.url().includes("/groups/admin/removeSelf/"));
+    await this.page
+      .getByRole("dialog", { name: "Confirm Leave Group" })
+      .getByRole("button", { name: "Leave Group", exact: true })
+      .click();
+    const response = await left;
+    if (!response.ok()) {
+      throw new Error(`Leaving the group failed: ${response.status()} ${await response.text()}`);
+    }
+    // A refused leave still answers 200, with the reason in errorMsg and no data.
+    const { data, errorMsg } = await response.json();
+    if (data == null) throw new Error(`Leaving the group failed: ${JSON.stringify(errorMsg)}`);
+  }
+
   async leaveCollaboration(): Promise<void> {
     await this.page.getByRole("button", { name: "Leave Collaboration", exact: true }).click();
     await this.page.waitForURL((url) => url.pathname === "/userform");

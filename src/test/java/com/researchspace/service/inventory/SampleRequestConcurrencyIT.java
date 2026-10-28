@@ -1,12 +1,12 @@
 package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.api.v1.auth.ApiRuntimeException;
+import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSampleRequest;
 import com.researchspace.api.v1.model.ApiSampleRequestPost;
@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,8 +44,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataAccessException;
-import org.springframework.test.util.AopTestUtils;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Concurrent changes to a request, or to its sample, must leave a consistent result. */
@@ -66,7 +65,6 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   private Long requestId;
   private Long sampleId;
   private String sampleGlobalId;
-  private SampleRequestApiManager realTransferRequestsMgr;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -100,12 +98,6 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
 
   @AfterEach
   public void tearDown() throws Exception {
-    if (realTransferRequestsMgr != null) {
-      Object transferringMgr = AopTestUtils.getUltimateTargetObject(sampleApiMgr);
-      ReflectionTestUtils.setField(
-          transferringMgr, "sampleRequestApiManager", realTransferRequestsMgr);
-      realTransferRequestsMgr = null;
-    }
     if (originalSampleRequestsAvailable != null) {
       logoutAndLoginAsSysAdmin();
       systemPropertyMgr.save(
@@ -160,38 +152,46 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void concurrentCancelAndFulfilByTransferLeaveExactlyOneWinner() throws Exception {
-    CountDownLatch startLine = new CountDownLatch(1);
+  public void fulfilByTransferWaitsForACancellationAndIsThenRefused() throws Exception {
+    CountDownLatch cancelHeld = new CountDownLatch(1);
+    CountDownLatch releaseCancel = new CountDownLatch(1);
     ExecutorService pool = Executors.newFixedThreadPool(2);
     try {
-      ApiSampleRequestStatusPut cancel = new ApiSampleRequestStatusPut();
-      cancel.setStatus(SampleRequestStatus.CANCELLED);
-      Future<String> cancelling =
+      // the cancellation has locked the request but not yet committed
+      Future<?> cancelling =
           pool.submit(
-              attempt(
-                  startLine, () -> sampleRequestApiMgr.updateStatus(requestId, cancel, requester)));
-      Future<String> fulfilling =
-          pool.submit(
-              attempt(
-                  startLine, () -> sampleRequestApiMgr.fulfilByTransfer(requestId, null, owner)));
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          tx -> {
+                            ApiSampleRequestStatusPut cancel = new ApiSampleRequestStatusPut();
+                            cancel.setStatus(SampleRequestStatus.CANCELLED);
+                            sampleRequestApiMgr.updateStatus(requestId, cancel, requester);
+                            cancelHeld.countDown();
+                            awaitQuietly(releaseCancel);
+                          }));
+      assertTrue(cancelHeld.await(30, TimeUnit.SECONDS));
 
-      startLine.countDown();
-      String cancelOutcome = cancelling.get(30, TimeUnit.SECONDS);
-      String fulfilOutcome = fulfilling.get(30, TimeUnit.SECONDS);
+      Future<?> fulfilling =
+          pool.submit(() -> sampleRequestApiMgr.fulfilByTransfer(requestId, null, owner));
+      assertThrows(
+          TimeoutException.class,
+          () -> fulfilling.get(2, TimeUnit.SECONDS),
+          "the fulfilment must wait for the cancellation");
+      releaseCancel.countDown();
+      cancelling.get(30, TimeUnit.SECONDS);
 
-      // whichever commits first makes the other illegal
-      assertTrue(
-          WON.equals(cancelOutcome) != WON.equals(fulfilOutcome),
-          "exactly one must win: cancel " + cancelOutcome + ", fulfil " + fulfilOutcome);
-      String loser = WON.equals(cancelOutcome) ? fulfilOutcome : cancelOutcome;
-      assertEquals(ApiRuntimeException.class.getSimpleName(), loser);
-
-      String expectedOwner = (WON.equals(fulfilOutcome) ? requester : owner).getUsername();
+      ExecutionException refused =
+          assertThrows(ExecutionException.class, () -> fulfilling.get(30, TimeUnit.SECONDS));
+      assertInstanceOf(ApiRuntimeException.class, refused.getCause());
       assertEquals(
-          expectedOwner, sampleApiMgr.getApiSampleById(sampleId, owner).getOwner().getUsername());
-      assertEquals(
-          2, sampleRequestApiMgr.getRequestById(requestId, owner).getStatusChanges().size());
+          owner.getUsername(),
+          sampleApiMgr.getApiSampleById(sampleId, owner).getOwner().getUsername());
+      ApiSampleRequest afterwards = sampleRequestApiMgr.getRequestById(requestId, owner);
+      assertEquals(SampleRequestStatus.CANCELLED, afterwards.getStatus());
+      assertEquals(2, afterwards.getStatusChanges().size());
     } finally {
+      releaseCancel.countDown();
       pool.shutdownNow();
     }
   }
@@ -273,6 +273,53 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   }
 
   @Test
+  public void transferUsesTheOwnerCommittedByAnEarlierTransfer() throws Exception {
+    User outsider = createAndSaveUser(getRandomAlphabeticString("cOut"));
+    initUsers(outsider);
+    // in a container, since moving a workbench subsample makes a stale transfer fail anyway
+    ApiContainer shelf = createBasicContainerForUser(owner);
+    Long subSampleId =
+        sampleApiMgr.getApiSampleById(sampleId, owner).getSubSamples().get(0).getId();
+    moveSubSampleIntoListContainer(subSampleId, shelf.getId(), owner);
+    CountDownLatch sampleRead = new CountDownLatch(1);
+    CountDownLatch releaseSecond = new CountDownLatch(1);
+    ExecutorService pool = Executors.newFixedThreadPool(1);
+    try {
+      // the second transfer read the sample while the owner still owned it
+      Future<?> second =
+          pool.submit(
+              () ->
+                  new TransactionTemplate(getTxMger())
+                      .executeWithoutResult(
+                          tx -> {
+                            sampleDao.get(sampleId);
+                            sampleRead.countDown();
+                            awaitQuietly(releaseSecond);
+                            ApiSample toRequester = new ApiSample();
+                            toRequester.setId(sampleId);
+                            toRequester.setOwner(new ApiUser(requester));
+                            sampleApiMgr.changeApiSampleOwner(toRequester, owner);
+                          }));
+      assertTrue(sampleRead.await(30, TimeUnit.SECONDS));
+
+      ApiSample toOutsider = new ApiSample();
+      toOutsider.setId(sampleId);
+      toOutsider.setOwner(new ApiUser(outsider));
+      sampleApiMgr.changeApiSampleOwner(toOutsider, owner);
+      releaseSecond.countDown();
+
+      // the owner gave the sample away, so may no longer transfer it
+      assertThrows(ExecutionException.class, () -> second.get(60, TimeUnit.SECONDS));
+      assertEquals(
+          outsider.getUsername(),
+          sampleApiMgr.getApiSampleById(sampleId, outsider).getOwner().getUsername());
+    } finally {
+      releaseSecond.countDown();
+      pool.shutdownNow();
+    }
+  }
+
+  @Test
   public void requestRaisedDuringATransferIsNotLeftWithThePreviousOwner() throws Exception {
     User newOwner = createAndSaveUser(getRandomAlphabeticString("cNew"));
     initUsers(newOwner);
@@ -280,9 +327,6 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
     CountDownLatch releaseCreate = new CountDownLatch(1);
     SampleRequestApiManager pausingManager =
         managerPausingAfterItsLock(createPaused, releaseCreate);
-    CountDownLatch transferClosing = new CountDownLatch(1);
-    CountDownLatch transferClosed = new CountDownLatch(1);
-    watchTransferClosingRequests(transferClosing, transferClosed);
     ExecutorService pool = Executors.newFixedThreadPool(2);
     try {
       // the new request has read the sample, and still holds its lock, but is not saved yet
@@ -305,11 +349,10 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
                 toNewOwner.setOwner(new ApiUser(newOwner));
                 sampleApiMgr.changeApiSampleOwner(toNewOwner, owner);
               });
-      // the transfer has reached the step that competes with the new request, and the request's
-      // lock holds it there until the request is saved
-      assertTrue(transferClosing.await(30, TimeUnit.SECONDS));
-      assertFalse(
-          transferClosed.await(2, TimeUnit.SECONDS),
+      // the request's share lock on the sample holds the transfer until the request is saved
+      assertThrows(
+          TimeoutException.class,
+          () -> transfer.get(2, TimeUnit.SECONDS),
           "the transfer must wait for the request being raised");
       releaseCreate.countDown();
       Long raisedId = create.get(30, TimeUnit.SECONDS);
@@ -372,28 +415,6 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
         pausing,
         userDao,
         publisher);
-  }
-
-  /** Counts the transfer into and out of closing the sample's open requests. */
-  private void watchTransferClosingRequests(CountDownLatch entered, CountDownLatch finished) {
-    Object transferringMgr = AopTestUtils.getUltimateTargetObject(sampleApiMgr);
-    SampleRequestApiManager real =
-        (SampleRequestApiManager)
-            ReflectionTestUtils.getField(transferringMgr, "sampleRequestApiManager");
-    SampleRequestApiManager watching =
-        Mockito.mock(SampleRequestApiManager.class, AdditionalAnswers.delegatesTo(real));
-    Mockito.doAnswer(
-            call -> {
-              entered.countDown();
-              real.closeActiveRequestsForTransferredSample(
-                  call.getArgument(0), call.getArgument(1), call.getArgument(2));
-              finished.countDown();
-              return null;
-            })
-        .when(watching)
-        .closeActiveRequestsForTransferredSample(Mockito.any(), Mockito.any(), Mockito.any());
-    realTransferRequestsMgr = real;
-    ReflectionTestUtils.setField(transferringMgr, "sampleRequestApiManager", watching);
   }
 
   /** MariaDB's "record has changed since last read" (1020) or "deadlock found" (1213). */

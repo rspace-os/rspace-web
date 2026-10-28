@@ -2,11 +2,13 @@ package com.researchspace.model;
 
 import static com.researchspace.model.permissions.ConstraintBasedPermissionTest.createPermissonActionSet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -19,6 +21,7 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.PropertyConstraint;
 import com.researchspace.model.preference.Preference;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -227,6 +230,29 @@ public class UserTest {
     String singleUser = " user1<Bob Jones>, "; // ignore blank suffix
     String[] parsed = User.getUsernamesFromMultiUser(singleUser);
     assertThat(parsed).hasSize(1);
+
+    // text after a closing bracket is still a username, so a typo fails lookup instead of
+    // being dropped; an unclosed bracket runs to the next comma
+    parsed = User.getUsernamesFromMultiUser("user1<Bob Jones>extra,user2<Simon,user3");
+    assertArrayEquals(new String[] {"extra", "user1", "user2", "user3"}, parsed);
+    parsed = User.getUsernamesFromMultiUser("user1<Bob> user2<Al>\nuser3<Ann>");
+    assertArrayEquals(new String[] {"user1", "user2", "user3"}, parsed);
+    parsed = User.getUsernamesFromMultiUser("user1<Smith, Jane>,user2<Jones, Bob>");
+    assertArrayEquals(new String[] {"user1", "user2"}, parsed);
+    assertThat(User.getUsernamesFromMultiUser(null)).isEmpty();
+    assertThat(User.getUsernamesFromMultiUser(" , <Bob>,")).isEmpty();
+  }
+
+  @Test
+  public void parseMultiuserFinishesQuicklyOnUnclosedBrackets() {
+    String attack = "+<".repeat(200_000);
+    String unclosedItems = "a<,".repeat(300_000);
+    assertTimeoutPreemptively(
+        Duration.ofSeconds(1),
+        () -> {
+          assertArrayEquals(new String[] {"+"}, User.getUsernamesFromMultiUser(attack));
+          assertArrayEquals(new String[] {"a"}, User.getUsernamesFromMultiUser(unclosedItems));
+        });
   }
 
   @Test
