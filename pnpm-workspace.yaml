@@ -19,7 +19,7 @@ packageExtensions:
   # The color picker imports Lezer without declaring the dependency.
   '@replit/codemirror-css-color-picker@6.3.0':
     dependencies:
-      '@lezer/common': 1.5.2
+      '@lezer/common': ^1.5.2
   # Scalar imports @scalar/types at runtime but declares it as a devDependency.
   '@scalar/schemas@0.8.3':
     dependencies:
