@@ -385,7 +385,7 @@ describe("AvailabilityBar", () => {
 
   it("expands full-privacy maintenance details from a blockout source", async () => {
     const user = userEvent.setup();
-    await renderAvailabilityBar({
+    await renderRoutedAvailabilityBar({
       intervals: [
         sourced(
           "maintenance:42",
@@ -406,7 +406,7 @@ describe("AvailabilityBar", () => {
       ],
     });
 
-    await user.click(screen.getByRole("button"));
+    await user.click(await screen.findByRole("button"));
     const dialog = await screen.findByRole("dialog");
     const disclosure = within(dialog).getByLabelText("Show details for Maintenance blockout, 09:00–10:00");
     await user.click(disclosure);
