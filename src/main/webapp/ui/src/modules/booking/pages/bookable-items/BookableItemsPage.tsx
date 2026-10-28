@@ -16,7 +16,7 @@ import {
   type TableListRowActions,
   type TableListSelectionContext,
 } from "@/modules/common/table-list/TableList";
-import type { FilterExpression } from "@/modules/common/table-list/tableListState";
+import type { FilterExpression } from "@/modules/common/table-list/types";
 import {
   AlertDialog,
   AlertDialogAction,
