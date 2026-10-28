@@ -55,11 +55,11 @@ class BookingEventReadAccessTest {
   }
 
   @Test
-  void implicitSysadminRoleNeedsNoOwnBookingDisjunction() {
+  void sysadminStillUsesCurrentTargetReadPredicate() {
     when(subject.hasSysadminRole()).thenReturn(true);
 
     assertInstanceOf(
-        AccessResult.Allowed.class,
+        AccessResult.AllowedWhere.class,
         access.check(new AccessContext(subject, Operation.READ, "bookings")));
   }
 }
