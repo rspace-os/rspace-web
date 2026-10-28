@@ -345,6 +345,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
                       columnIndex={index}
                       onPointerFocus={(coord) => {
                         setTabIndexCoord(coord);
+                        setFocusCoord(coord);
                         setShiftOrigin(null);
                       }}
                     >

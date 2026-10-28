@@ -183,6 +183,19 @@ describe("ContentGrid", () => {
           expect(selectedCount()).toBe(1);
         });
 
+        it("starts the arrow keys from a clicked location that already had focus", async () => {
+          const user = userEvent.setup();
+          const box = emptyBox();
+          prepareContainer(box, 1);
+          renderGrid(box);
+          await user.click(cells()[0]);
+          await user.keyboard("{ArrowRight}");
+          await user.click(cells()[0]);
+          await user.keyboard("{ArrowDown}");
+          expect(box.selectedLocations).toHaveLength(1);
+          expect(box.selectedLocations?.[0]).toMatchObject({ coordX: 1, coordY: 2 });
+        });
+
         it("keeps Escape inside the grid", async () => {
           const user = userEvent.setup();
           const box = emptyBox();
