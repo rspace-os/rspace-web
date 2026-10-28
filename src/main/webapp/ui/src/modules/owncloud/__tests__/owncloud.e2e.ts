@@ -15,6 +15,7 @@ async function connectToOwnCloudViaLogin(popup: Page): Promise<void> {
 }
 
 test.describe(`ownCloud integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
+  test.skip(INTEGRATION_MODE === "real", "Known issue: RSOPS-707");
   test.skip(
     INTEGRATION_MODE === "real" && !(env.ownCloudUsername && env.ownCloudPassword),
     "real mode needs OWNCLOUD_USERNAME/OWNCLOUD_PASS in .env / CI secrets",

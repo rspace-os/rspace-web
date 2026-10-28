@@ -7,6 +7,7 @@ import type {
   ApiInventorySampleUpdateRequest,
   ApiInventorySubSample,
   ApiInventorySubSampleMoveRequest,
+  ApiListOfMaterialsCreateRequest,
 } from "../models/inventory";
 import type {
   ApiInventoryBasket,
@@ -25,11 +26,16 @@ import type {
   ApiInventoryInstrumentTemplate,
   ApiInventoryInstrumentTemplateCreateRequest,
 } from "../models/inventoryInstrument";
+import type { ApiInventoryRecordInfo, ApiInventoryResultType } from "../models/inventoryRecordInfo";
 import { BaseApiClient } from "./BaseApiClient";
 
 export class InventoryClient extends BaseApiClient {
   async createSample(sample: ApiInventorySampleCreateRequest): Promise<ApiInventorySample> {
     return this.requestJson("post", "/api/inventory/v1/samples", { data: sample, action: "createInventorySample" });
+  }
+
+  async getSample(sampleId: number): Promise<ApiInventorySample> {
+    return this.requestJson("get", `/api/inventory/v1/samples/${sampleId}`, { action: "getInventorySample" });
   }
 
   async renameSample(sampleId: number, update: ApiInventorySampleUpdateRequest): Promise<ApiInventorySample> {
@@ -81,6 +87,13 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  async moveContainerToTopLevel(containerId: number): Promise<ApiInventoryContainer> {
+    return this.requestJson("put", `/api/inventory/v1/containers/${containerId}`, {
+      data: { removeFromParentContainerRequest: true },
+      action: "moveInventoryContainerToTopLevel",
+    });
+  }
+
   async getSubSample(subSampleId: number): Promise<ApiInventorySubSample> {
     return this.requestJson("get", `/api/inventory/v1/subSamples/${subSampleId}`, {
       action: "getInventorySubSample",
@@ -109,6 +122,10 @@ export class InventoryClient extends BaseApiClient {
       data: { globalIds },
       action: "addItemsToInventoryBasket",
     });
+  }
+
+  async getBaskets(): Promise<ApiInventoryBasketInfo[]> {
+    return this.requestJson("get", "/api/inventory/v1/baskets", { action: "getInventoryBaskets" });
   }
 
   async deleteBasket(basketId: number): Promise<void> {
@@ -183,19 +200,32 @@ export class InventoryClient extends BaseApiClient {
     });
   }
 
+  async createListOfMaterials(request: ApiListOfMaterialsCreateRequest): Promise<{ id: number }> {
+    return this.requestJson("post", "/api/inventory/v1/listOfMaterials", {
+      data: request,
+      action: "createListOfMaterials",
+    });
+  }
+
   async getListOfMaterialsForInventoryItem(globalId: string): Promise<Array<{ id: number; name: string }>> {
     return this.requestJson("get", `/api/inventory/v1/listOfMaterials/forInventoryItem/${globalId}`, {
       action: "getListOfMaterialsForInventoryItem",
     });
   }
 
-  async findInstrumentTemplateIdByExactName(name: string): Promise<number | undefined> {
-    const result = await this.requestJson<{ records: Array<{ id: number; name: string }> }>(
+  /** The same search the Inventory search box runs, as this client's user. */
+  async search(query: string, resultType: ApiInventoryResultType): Promise<ApiInventoryRecordInfo[]> {
+    const params = new URLSearchParams({ query, resultType });
+    const result = await this.requestJson<{ records: ApiInventoryRecordInfo[] }>(
       "get",
-      `/api/inventory/v1/search?query=${encodeURIComponent(name)}&resultType=INSTRUMENT_TEMPLATE`,
-      { action: "searchInstrumentTemplates" },
+      `/api/inventory/v1/search?${params}`,
+      { action: "searchInventory" },
     );
-    return result.records.find((r) => r.name === name)?.id;
+    return result.records;
+  }
+
+  async findInstrumentTemplateIdByExactName(name: string): Promise<number | undefined> {
+    return (await this.search(name, "INSTRUMENT_TEMPLATE")).find((r) => r.name === name)?.id;
   }
 
   async importInstruments(

@@ -1,6 +1,7 @@
 package com.researchspace.model.dtos;
 
 import com.researchspace.model.field.FieldUtils;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
@@ -26,7 +27,16 @@ public class ChoiceFieldDTOValidator extends AbstractFieldFormValidator implemen
       rejectTooLong(errors);
     }
     String vals = dto.getChoiceValues();
-    if (!FieldUtils.isValidRadioOrChoiceString(vals)) {
+    if (FieldUtils.isTooLong(vals)) {
+      errors.rejectValue(
+          "choiceValues",
+          "errors.maxLength",
+          new Object[] {
+            new DefaultMessageSourceResolvable("form.choiceOptions.label"),
+            FieldUtils.MAX_OPTIONS_LENGTH
+          },
+          null);
+    } else if (!FieldUtils.isValidRadioOrChoiceString(vals)) {
       errors.rejectValue("choiceValues", "form.choiceOptions.invalidFormat");
     }
   }

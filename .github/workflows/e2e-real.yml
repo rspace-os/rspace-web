@@ -15,4 +15,6 @@ jobs:
     uses: ./.github/workflows/e2e.yml
     with:
       mode: real
+      # Per-PR e2e stays on Java 17; this nightly run is where the real app runs on 21.
+      java_version: "21"
     secrets: inherit

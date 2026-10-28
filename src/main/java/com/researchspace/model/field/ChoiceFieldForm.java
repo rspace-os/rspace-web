@@ -40,7 +40,7 @@ public class ChoiceFieldForm extends FieldForm {
     this.multipleChoice = multipleChoice;
   }
 
-  @Column(length = 1000)
+  @Column(length = FieldUtils.MAX_OPTIONS_LENGTH)
   @NotBlank(message = "{validation.errors.choiceOptionsRequired}")
   public String getChoiceOptions() {
     return choiceOptions;
