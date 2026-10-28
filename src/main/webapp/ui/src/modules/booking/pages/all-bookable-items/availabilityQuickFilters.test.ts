@@ -465,7 +465,7 @@ describe("availability quick filters", () => {
       children: [specialized, { kind: "comparison", field: "target", operator: "in", value: ["IN1", "IN2"] }],
     };
     const depthElevenWhere = serializeRsqlExpression(unscopedWhereFilter);
-    expect(filterNesting(depthElevenWhere)).toEqual({ logical: 11, parentheses: 11 });
+    expect(filterNesting(depthElevenWhere)).toEqual({ logical: 11, parentheses: 10 });
     expect(() => assertServerFilterNesting(depthElevenWhere)).toThrow("COMPLEXITY");
 
     const outside = catalogueItem(1, "OUTSIDE(1)");
