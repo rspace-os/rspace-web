@@ -1,5 +1,6 @@
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import {
   type ResourceAccessDocument,
   ResourceAccessDocumentSchema,
@@ -41,7 +42,7 @@ export async function fetchResourceAccess(
   token: string,
   signal?: AbortSignal,
 ): Promise<ResourceAccessDocument> {
-  const response = await fetch(`/api/v2/${resource}/${id}/access`, { headers: headers(token), signal });
+  const response = await fetchWithUiToken(`/api/v2/${resource}/${id}/access`, { headers: headers(token), signal });
   if (!response.ok) throw await requestError(response);
   return parseOrThrow(ResourceAccessDocumentSchema, (await response.json()) as unknown);
 }
@@ -53,7 +54,7 @@ export async function replaceResourceAccess(
   assignments: ReadonlyArray<{ granteeKey: string; role: string }>,
   token: string,
 ): Promise<ResourceAccessDocument> {
-  const response = await fetch(`/api/v2/${resource}/${id}/access`, {
+  const response = await fetchWithUiToken(`/api/v2/${resource}/${id}/access`, {
     method: "PUT",
     headers: { ...headers(token, true), "If-Match": `"${version}"` },
     body: JSON.stringify({ assignments }),
@@ -63,7 +64,7 @@ export async function replaceResourceAccess(
 }
 
 export async function leaveResource(resource: string, id: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/${resource}/${id}/access/me`, {
+  const response = await fetchWithUiToken(`/api/v2/${resource}/${id}/access/me`, {
     method: "DELETE",
     headers: headers(token),
   });
@@ -78,7 +79,7 @@ export async function searchResourceGrantees(
   signal?: AbortSignal,
 ): Promise<readonly ResourceGranteeDirectoryEntry[]> {
   const parameters = new URLSearchParams({ query, limit: "20" });
-  const response = await fetch(`/api/v2/${resource}/${id}/access/grantees?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/${resource}/${id}/access/grantees?${parameters}`, {
     headers: headers(token),
     signal,
   });
