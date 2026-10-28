@@ -21,9 +21,9 @@ packageExtensions:
     dependencies:
       '@lezer/common': ^1.5.2
   # Scalar imports @scalar/types at runtime but declares it as a devDependency.
-  '@scalar/schemas@0.8.3':
+  '@scalar/schemas@0.14.0':
     dependencies:
-      '@scalar/types': 0.18.2
+      '@scalar/types': 0.24.0
   # The gallery imports createPortal without declaring its react-dom peer.
   react-photoswipe-gallery:
     peerDependencies:
