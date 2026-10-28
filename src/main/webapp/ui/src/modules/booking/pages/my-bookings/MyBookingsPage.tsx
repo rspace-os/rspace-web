@@ -21,6 +21,7 @@ import { Badge } from "@/modules/common/ui/badge";
 import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/modules/common/ui/tooltip";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import { DeleteBookingDialog } from "../bookings/DeleteBookingDialog";
 import { bookingListConfig } from "./bookingList";
 import { type MyBookingsPeriod, myBookingsPeriodParser } from "./search";
@@ -63,7 +64,7 @@ export async function fetchUpcomingBookingCount(
   const parameters = new URLSearchParams({
     where: `requesterId==${requesterId};kind==BOOKING;state==CONFIRMED;end=gt=${asOf.toISOString()}`,
   });
-  const response = await fetch(`/api/v2/bookings/count?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/bookings/count?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });
