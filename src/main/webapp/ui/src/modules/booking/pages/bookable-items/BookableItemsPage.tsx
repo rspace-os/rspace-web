@@ -31,6 +31,7 @@ import { Button, buttonVariants } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
 import { Skeleton } from "@/modules/common/ui/skeleton";
 import { cn } from "@/modules/common/utils/cn";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 import {
   BookingConfigurationActionsMenu,
   type BookingConfigurationLifecycleAction,
@@ -78,7 +79,7 @@ async function fetchOwnerAttentionPage(page: number, token: string, signal: Abor
     limit: "100",
     "fields[booking-configurations]": "id,ownerHealth",
   });
-  const response = await fetch(`/api/v2/booking-configurations?${search}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations?${search}`, {
     headers: { Authorization: `Bearer ${token}`, "X-Requested-With": "XMLHttpRequest" },
     signal,
   });
@@ -123,7 +124,7 @@ export async function mutateBookableItems(
   });
   const search = new URLSearchParams({ where });
   const isDelete = action === "archive";
-  const response = await fetch(`/api/v2/booking-configurations?${search}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations?${search}`, {
     method: isDelete ? "DELETE" : "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -136,7 +137,7 @@ export async function mutateBookableItems(
 }
 
 async function archiveBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -148,7 +149,7 @@ async function archiveBookingConfiguration(id: number, version: number, token: s
 }
 
 async function restoreBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations/${id}`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -162,7 +163,7 @@ async function restoreBookingConfiguration(id: number, version: number, token: s
 }
 
 async function permanentlyDeleteBookingConfiguration(id: number, version: number, token: string): Promise<void> {
-  const response = await fetch(`/api/v2/booking-configurations/${id}?permanent=true`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations/${id}?permanent=true`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
