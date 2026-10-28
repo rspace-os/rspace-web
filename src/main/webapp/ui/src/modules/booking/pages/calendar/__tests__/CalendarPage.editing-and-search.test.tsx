@@ -1,5 +1,5 @@
 import "@/__tests__/__mocks__/matchMedia";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HttpResponse, http } from "msw";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
@@ -7,7 +7,9 @@ import { currentUser } from "@/__tests__/helpers/currentUserFixture";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
 import { server } from "@/__tests__/mswServer";
 import type { BookingListDocument } from "@/modules/booking/domain/booking";
+import { bookingDisplayPreferencesQueryKey } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { collectionResponse, ownBooking } from "../../mocks/bookingCalendarFixtures";
+import { inheritedBrowserBookingPreferences } from "../../preferences/bookingPreferencesFixtures";
 import {
   renderCalendar,
   restoreCalendarScrollTo,
@@ -66,6 +68,13 @@ describe("CalendarPage", () => {
         }),
       );
       const { queryClient } = await renderCalendar();
+      act(() => {
+        queryClient.setQueryData(bookingDisplayPreferencesQueryKey, {
+          ...inheritedBrowserBookingPreferences,
+          timezoneMode: "CUSTOM",
+          customTimezone: "Europe/Berlin",
+        });
+      });
       await user.click(await screen.findByRole("button", { name: layout }));
       await user.click(await screen.findByRole("button", { name: /Show details for Confocal microscope/ }));
       const card = screen.getByRole("dialog");
