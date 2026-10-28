@@ -17,6 +17,12 @@ Item create and rotate read current inherited Inventory permissions in
 writer registration and mixed source-transaction requirements, see
 [Booking permissions](BookingPermissions.md).
 
+MariaDB supports these operations with `innodb_snapshot_isolation` either off or
+on. With it on, an old repeatable-read snapshot can reject a current locking
+read with error 1020 and roll back the source transaction. Tests specifically
+covering that database error enable it for their transaction and restore the
+connection's previous session setting after completion.
+
 Calendar feed responses use `Cache-Control: private, no-store`,
 `Referrer-Policy: no-referrer`, and `X-Content-Type-Options: nosniff`, including
 empty error responses.

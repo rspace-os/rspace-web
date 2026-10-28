@@ -1,6 +1,7 @@
 package com.researchspace.booking.api.v2;
 
 import static com.researchspace.featureflags.FeatureFlags.BOOKING_ENABLED;
+import static com.researchspace.testutils.BookingResourceTestFixtures.useSnapshotIsolation;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -464,6 +465,7 @@ class BookingCalendarSubscriptionControllerMVCIT {
                   new TransactionTemplate(transactionManager)
                       .execute(
                           ignored -> {
+                            useSnapshotIsolation(jdbcTemplate, true);
                             jdbcTemplate.queryForObject(
                                 "select count(*) from BookingConfiguration", Long.class);
                             snapshotRead.countDown();

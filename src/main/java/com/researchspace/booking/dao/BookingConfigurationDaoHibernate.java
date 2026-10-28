@@ -164,8 +164,8 @@ public class BookingConfigurationDaoHibernate
     if (target == null || target.type() != BookableTargetType.INSTRUMENT) {
       return;
     }
-    // MariaDB before 11.6 lets a locking read return a row changed after the transaction's
-    // snapshot, so compare the snapshot and current permission columns like later releases do.
+    // With snapshot isolation disabled, locking reads can return rows changed after the
+    // transaction's snapshot, so compare snapshot and current permission columns explicitly.
     String permissionColumns =
         "select owner_id, sharingMode, acl, deleted from InstrumentEntity where id = :id";
     List<?> snapshot =
