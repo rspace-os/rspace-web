@@ -104,7 +104,7 @@ export async function fetchBookingOwnershipCandidates(
     limit: String(Math.min(globalIds.length, 100)),
     where,
   });
-  const response = await fetch(`/api/v2/booking-configurations?${parameters}`, {
+  const response = await fetchWithUiToken(`/api/v2/booking-configurations?${parameters}`, {
     headers: apiV2Headers(token),
     signal,
   });

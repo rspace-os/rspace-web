@@ -1,5 +1,6 @@
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 /**
  * A one-off calendar file for a single booking. Nothing is stored and no subscription is created:
@@ -10,7 +11,7 @@ async function fetchBookingCalendarFile(
   token: string,
   signal?: AbortSignal,
 ): Promise<{ blob: Blob; filename: string }> {
-  const response = await fetch(`/api/v2/bookings/${bookingId}/calendar-file`, {
+  const response = await fetchWithUiToken(`/api/v2/bookings/${bookingId}/calendar-file`, {
     headers: apiV2Headers(token),
     signal,
   });

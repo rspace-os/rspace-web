@@ -2,6 +2,7 @@ import * as v from "valibot";
 import { parseApiV2Problem } from "@/modules/booking/domain/booking";
 import { apiV2Headers } from "@/modules/common/api/apiV2Headers";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
+import { fetchWithUiToken } from "@/modules/common/utils/fetchWithUiToken";
 
 const HttpUrlSchema = v.pipe(
   v.string(),
@@ -66,7 +67,7 @@ export async function fetchCalendarSubscriptionStatus(
   signal?: AbortSignal,
 ): Promise<UserCalendarSubscriptionStatus> {
   const response = await requireSuccess(
-    await fetch(calendarSubscriptionPath(configurationId), {
+    await fetchWithUiToken(calendarSubscriptionPath(configurationId), {
       headers: apiV2Headers(token),
       signal,
     }),
@@ -81,7 +82,7 @@ export async function createOrReplaceCalendarSubscription(
   etag: string,
 ): Promise<UserCalendarSubscriptionCreated> {
   const response = await requireSuccess(
-    await fetch(calendarSubscriptionPath(configurationId), {
+    await fetchWithUiToken(calendarSubscriptionPath(configurationId), {
       method: "POST",
       headers: apiV2Headers(token, { "If-Match": etag }),
     }),
@@ -91,7 +92,7 @@ export async function createOrReplaceCalendarSubscription(
 }
 
 export async function revokeCalendarSubscription(configurationId: number, token: string): Promise<void> {
-  const response = await fetch(calendarSubscriptionPath(configurationId), {
+  const response = await fetchWithUiToken(calendarSubscriptionPath(configurationId), {
     method: "DELETE",
     headers: apiV2Headers(token),
   });
@@ -103,7 +104,7 @@ export async function fetchUserCalendarSubscriptionStatus(
   signal?: AbortSignal,
 ): Promise<UserCalendarSubscriptionStatus> {
   const response = await requireSuccess(
-    await fetch(userCalendarSubscriptionPath, {
+    await fetchWithUiToken(userCalendarSubscriptionPath, {
       headers: apiV2Headers(token),
       signal,
     }),
@@ -117,7 +118,7 @@ export async function createOrReplaceUserCalendarSubscription(
   etag: string,
 ): Promise<UserCalendarSubscriptionCreated> {
   const response = await requireSuccess(
-    await fetch(userCalendarSubscriptionPath, {
+    await fetchWithUiToken(userCalendarSubscriptionPath, {
       method: "POST",
       headers: apiV2Headers(token, { "If-Match": etag }),
     }),
@@ -127,7 +128,7 @@ export async function createOrReplaceUserCalendarSubscription(
 }
 
 export async function revokeUserCalendarSubscription(token: string): Promise<void> {
-  const response = await fetch(userCalendarSubscriptionPath, {
+  const response = await fetchWithUiToken(userCalendarSubscriptionPath, {
     method: "DELETE",
     headers: apiV2Headers(token),
   });
