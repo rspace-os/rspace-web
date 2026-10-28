@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { server } from "@/__tests__/mswServer";
 import { type BookingDetails, fetchBooking } from "@/modules/booking/domain/booking";
+import { bookingKeys } from "@/modules/booking/domain/bookingKeys";
 import { DeleteBookingDialog } from "../DeleteBookingDialog";
 
 const cancelledBooking = {
@@ -174,7 +175,8 @@ describe("DeleteBookingDialog", () => {
     expect(requests[0].headers.get("Authorization")).toBe("Bearer token");
     expect(requests[0].headers.get("If-Match")).toBe('"0"');
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
-    expect(invalidate).toHaveBeenCalledOnce();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
+    expect(invalidate).toHaveBeenCalledTimes(2);
     expect(onDeleted).toHaveBeenCalledOnce();
   });
 
@@ -277,7 +279,8 @@ describe("DeleteBookingDialog", () => {
     expect(screen.getByRole("alertdialog")).toBeVisible();
     if (status !== 403) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: ["api-v2", "bookings"] });
-      expect(invalidate).toHaveBeenCalledOnce();
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: bookingKeys.all });
+      expect(invalidate).toHaveBeenCalledTimes(2);
     }
   });
 
