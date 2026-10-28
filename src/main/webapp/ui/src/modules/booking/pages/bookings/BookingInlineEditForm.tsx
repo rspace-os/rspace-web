@@ -19,6 +19,7 @@ import {
   type BookingUpdate,
   updateBooking,
 } from "@/modules/booking/domain/booking";
+import { bookingConfigurationKeys } from "@/modules/booking/domain/bookingKeys";
 import { wallClockDraftFromInstants } from "@/modules/booking/domain/bookingTime";
 import { Button } from "@/modules/common/ui/button";
 import { Skeleton } from "@/modules/common/ui/skeleton";
@@ -90,6 +91,7 @@ export default function BookingInlineEditForm() {
       }
       if (error instanceof ApiV2ProblemError && error.code === "errors.api.v2.booking.target.unavailable") {
         await queryClient.invalidateQueries({ queryKey: ["api-v2", "booking-configurations"] });
+        await queryClient.invalidateQueries({ queryKey: bookingConfigurationKeys.all });
       }
     },
   });
