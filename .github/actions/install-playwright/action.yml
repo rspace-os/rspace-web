@@ -40,7 +40,8 @@ runs:
 
         image="${ImageOS:-$(. /etc/os-release && echo "$ID$VERSION_ID")}"
         playwright="$(node -p "require('playwright-core/package.json').version")"
-        browsers="$(echo "$BROWSERS" | tr -s ' ' '-')"
+        # "+" joins browsers so that the chromium prefix can't match chromium+firefox+webkit.
+        browsers="$(echo "$BROWSERS" | tr -s ' ' '+')"
         # A new runner image falls back to the newest cache for the same browsers.
         echo "prefix=pw-apt-${image}-${browsers}-" >> "$GITHUB_OUTPUT"
         echo "key=pw-apt-${image}-${browsers}-${playwright}-${ImageVersion:-local}" >> "$GITHUB_OUTPUT"
@@ -71,8 +72,9 @@ runs:
           fi
           if [ "$attempt" -lt 3 ]; then
             echo "Playwright install failed or stalled (attempt ${attempt}/3); retrying..."
-            # apt runs under sudo in its own session, so the timeout may not reach it.
-            # Stop it so it releases the dpkg lock, then finish half-configured packages.
+            # If sudo gives apt its own terminal session (use_pty), the timeout misses it.
+            # Stop any leftover apt-get so it releases the dpkg lock, then finish
+            # half-configured packages.
             $sudo pkill -TERM -x apt-get || true
             sleep $((attempt * 10))
             $sudo dpkg --configure -a || true
