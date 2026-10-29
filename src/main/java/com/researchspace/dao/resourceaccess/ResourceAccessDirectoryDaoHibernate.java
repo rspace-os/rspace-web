@@ -139,7 +139,7 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
     if (!sysadmin) {
       sql.append("AND membership.group_id IN (:currentGroupIds) ");
     }
-    sql.append("FOR UPDATE");
+    sql.append("LOCK IN SHARE MODE");
     NativeQuery<Long> query = session.createNativeQuery(sql.toString(), Long.class);
     query.setParameterList("ids", ids);
     if (!sysadmin) {
@@ -160,7 +160,7 @@ public class ResourceAccessDirectoryDaoHibernate implements ResourceAccessDirect
     if (!sysadmin) {
       sql.append("AND candidate.id IN (:currentGroupIds) ");
     }
-    sql.append("FOR UPDATE");
+    sql.append("LOCK IN SHARE MODE");
     NativeQuery<Long> query = session.createNativeQuery(sql.toString(), Long.class);
     query.setParameterList("ids", ids);
     if (!sysadmin) {

@@ -74,6 +74,6 @@ class ResourceAccessDirectoryDaoHibernateTest {
     verify(query).setParameterList("ids", Set.of(-3L));
     ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
     verify(session).createNativeQuery(sql.capture(), eq(Long.class));
-    assertTrue(sql.getValue().endsWith("FOR UPDATE"));
+    assertTrue(sql.getValue().endsWith("LOCK IN SHARE MODE"));
   }
 }
