@@ -83,9 +83,8 @@ const HIDE_MORE_AT = [
  */
 export function ActionBar({ actions, className }: { actions: readonly ActionBarAction[]; className?: string }) {
   const { t } = useTranslation("common");
-  const capped = actions.slice(0, MAXIMUM_ACTIONS);
-  const cancel = capped.find((action) => action.style === "cancel");
-  const rest = capped.filter((action) => action !== cancel);
+  const cancel = actions.find((action) => action.style === "cancel");
+  const rest = actions.filter((action) => action !== cancel).slice(0, MAXIMUM_ACTIONS - (cancel ? 1 : 0));
   const ordered = cancel ? [cancel, ...rest] : rest;
   // Cancel plus the leading action stay put; only what comes after them can be overflowed.
   const pinned = cancel ? 2 : 1;
