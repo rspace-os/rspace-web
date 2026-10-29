@@ -554,6 +554,15 @@ resolved during design. This file is a glossary only — no implementation detai
   mandatory, which refuses it.
   _Avoid_: empty column, unused column
 
+- **Prevalidation** — the check a CSV import runs on every row of every file before it saves
+  anything: the parents a row names must exist and be editable, and the item's own values
+  must pass the rules of creating it through the API (a name, the length caps on name and
+  description, tag format, quantity, template fields). A row that fails is reported with its
+  row number and reason, the whole import is refused, and nothing is created, not even a new
+  template. A Subsample row that joins a Sample from the same import is not prevalidated: it
+  is checked when that Sample is created, and a failure there rolls the whole import back.
+  _Avoid_: validation error (that is one row's outcome, not the step), dry run
+
 ## Lab Groups and Project Groups
 
 - **Self-service Lab Group** — a Lab Group a PI creates for themselves from the My RSpace
