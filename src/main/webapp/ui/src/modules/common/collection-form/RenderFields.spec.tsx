@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { Form, useForm } from "@formisch/react";
 import { cleanup, render } from "@testing-library/react";
 import * as v from "valibot";

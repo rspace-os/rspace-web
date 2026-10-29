@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { Form, getInput, useForm } from "@formisch/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render } from "@testing-library/react";
