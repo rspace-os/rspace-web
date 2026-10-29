@@ -21,7 +21,6 @@ import jakarta.persistence.TableGenerator;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import jakarta.persistence.Transient;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -37,12 +36,10 @@ import lombok.Setter;
 @AuditTrailData(auditDomain = AuditDomain.REQUEST)
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class SampleRequest implements Serializable {
+public class SampleRequest {
 
   /** Length of the note column. Longer notes are rejected rather than truncated. */
   public static final int NOTE_COLUMN_LENGTH = 2000;
-
-  private static final long serialVersionUID = 1L;
 
   private Long id;
   private Sample sample;

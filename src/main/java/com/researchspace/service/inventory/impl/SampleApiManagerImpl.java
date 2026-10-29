@@ -117,7 +117,9 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       return none;
     }
     ISearchResults<Sample> dbSamples =
-        sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, query, user);
+        Boolean.TRUE.equals(requestable)
+            ? sampleDao.getRequestableSamples(pgCrit, ownedBy, query)
+            : sampleDao.getSamplesForUser(pgCrit, null, ownedBy, deletedOption, requestable, user);
     List<ApiSampleInfo> sampleInfos = new ArrayList<>();
     for (Sample sample : dbSamples.getResults()) {
       ApiSampleInfo apiSample = new ApiSampleInfo(sample);
