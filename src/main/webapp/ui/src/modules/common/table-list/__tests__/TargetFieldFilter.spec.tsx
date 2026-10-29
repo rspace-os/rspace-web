@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
 import { page, userEvent } from "@vitest/browser/context";
 import { afterEach, describe, expect, test } from "vitest";
