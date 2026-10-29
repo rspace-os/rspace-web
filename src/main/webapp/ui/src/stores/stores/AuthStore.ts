@@ -1,7 +1,7 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
-import { isPublicDocumentView } from "@/modules/common/utils/auth";
+import { isPublicDocumentView, mintUiToken } from "@/modules/common/utils/auth";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -63,7 +63,7 @@ export default class AuthStore {
       ? axios
           .get<{ data: string }>("/public/publicView/userform/ajax/inventoryOauthToken")
           .then((response) => response.data.data)
-      : axios.post<{ accessToken: string }>("/api/v2/oauth/tokens").then((response) => response.data.accessToken);
+      : mintUiToken();
     return tokenRequest
       .then(
         action((token) => {

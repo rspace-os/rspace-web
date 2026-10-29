@@ -1,6 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   fetchOauthToken,
+  isPublicDocumentView,
+  mintUiToken,
   saveStoredToken,
   secondsToExpiry,
   TOKEN_EXPIRY_BUFFER_SECONDS,
@@ -85,7 +87,7 @@ export function useOauthTokenQuery() {
     queryKey: queryKeys.oauthToken(),
     // Mint once per page load: the shared storage key may hold a token from another session
     // context (for example, from before an operate-as start or release).
-    queryFn: () => fetchOauthToken(fetchToken),
+    queryFn: () => (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken()),
     // Calculate stale time based on token expiry
     // We'll consider the token stale 5 minutes before it actually expires
     staleTime: (query) => {

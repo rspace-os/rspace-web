@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import axios from "@/common/axios";
 
 export type TokenParams = {
   token?: string;
@@ -12,6 +13,7 @@ export const TOKEN_EXPIRY_BUFFER_SECONDS = 300;
 export const isPublicDocumentView = () => document.getElementById("public_document_view") !== null;
 
 const JWT_TOKEN_PATTERN = /^.+\..+\..+$/;
+let uiToken: string | null = null;
 let pendingOauthTokenRequest: Promise<string> | null = null;
 
 function getSessionStorage(): Storage | null {
@@ -54,6 +56,27 @@ export function fetchOauthToken(fetchToken: () => Promise<string>): Promise<stri
     pendingOauthTokenRequest = null;
   });
   return pendingOauthTokenRequest;
+}
+
+/** Replaces the page token after a deliberate recovery mint. */
+export function replaceUiToken(token: string): void {
+  uiToken = token;
+}
+
+/** Shares a session-bound token for this page, including overlapping mint requests. */
+export function mintUiToken(): Promise<string> {
+  if (uiToken && !isExpiringSoon(uiToken)) return Promise.resolve(uiToken);
+  return fetchOauthToken(async () => {
+    const response = await axios.post<{ accessToken: string }>("/api/v2/oauth/tokens");
+    replaceUiToken(response.data.accessToken);
+    return response.data.accessToken;
+  });
+}
+
+/** Clears page-local state between tests. */
+export function resetUiTokenForTests(): void {
+  uiToken = null;
+  pendingOauthTokenRequest = null;
 }
 
 export function secondsToExpiry(token: string): number {
