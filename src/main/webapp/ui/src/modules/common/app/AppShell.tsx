@@ -64,7 +64,7 @@ export default function AppShell() {
         {},
       ),
   });
-  const appBarConfig: AppBarConfig | false = context.appBar ?? { currentPage: "rspace" };
+  const appBarConfig: AppBarConfig | false = context.appBar ?? { currentPage: "rspace", authenticated: false };
   const renderSidebar = context.sidebar;
 
   const appBarProps = appBarConfig !== false && {
