@@ -558,7 +558,7 @@ function GalleryFileInFolder() {
 
 const queryClient = new QueryClient();
 
-export function Gallery() {
+export function Gallery({ canUseDevtools = false }: { canUseDevtools?: boolean }) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <CssBaseline />
@@ -621,7 +621,7 @@ export function Gallery() {
                 </ErrorBoundary>
               </LandmarksProvider>
             </Analytics>
-            <FeatureFlagDevtoolsMount />
+            <FeatureFlagDevtoolsMount canUseDevtools={canUseDevtools} />
           </QueryClientProvider>
         </Alerts>
       </ThemeProvider>
@@ -640,7 +640,7 @@ window.addEventListener("load", () => {
       <React.StrictMode>
         <I18nRoot namespaces={["gallery", "common", "about", "inventory"]} fallback={<LoaderCircular />}>
           <BrowserRouter>
-            <Gallery />
+            <Gallery canUseDevtools={domContainer.dataset.canUseDevtools === "true"} />
           </BrowserRouter>
         </I18nRoot>
       </React.StrictMode>,
