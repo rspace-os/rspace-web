@@ -46,6 +46,22 @@ class ConfigV2ControllerTest {
   }
 
   @Test
+  void normalizesDeploymentHelpEmail() throws Exception {
+    when(properties.getDeploymentHelpEmail()).thenReturn("  support@example.com  ");
+    mockMvc
+        .perform(get("/api/v2/config"))
+        .andExpect(jsonPath("$.deploymentHelpEmail").value("support@example.com"));
+    when(properties.getDeploymentHelpEmail()).thenReturn(" \t ");
+    mockMvc
+        .perform(get("/api/v2/config"))
+        .andExpect(jsonPath("$.deploymentHelpEmail").doesNotExist());
+    when(properties.getDeploymentHelpEmail()).thenReturn(null);
+    mockMvc
+        .perform(get("/api/v2/config"))
+        .andExpect(jsonPath("$.deploymentHelpEmail").doesNotExist());
+  }
+
+  @Test
   void returnsEmptyHelpLinks() throws Exception {
     when(properties.getUiFooterUrls()).thenReturn(new LinkedHashMap<>());
 
