@@ -63,13 +63,21 @@ export function replaceUiToken(token: string): void {
   uiToken = token;
 }
 
-/** Shares a session-bound token for this page, including overlapping mint requests. */
-export function mintUiToken(): Promise<string> {
+async function postUiToken(): Promise<string> {
+  const response = await axios.post<{ accessToken: string }>("/api/v2/oauth/tokens");
+  return response.data.accessToken;
+}
+
+/**
+ * Shares a session-bound token for this page, including overlapping mint requests. `mint` lets a
+ * caller keep its own transport; every transport posts to the same session-bound token endpoint.
+ */
+export function mintUiToken(mint: () => Promise<string> = postUiToken): Promise<string> {
   if (uiToken && !isExpiringSoon(uiToken)) return Promise.resolve(uiToken);
   return fetchOauthToken(async () => {
-    const response = await axios.post<{ accessToken: string }>("/api/v2/oauth/tokens");
-    replaceUiToken(response.data.accessToken);
-    return response.data.accessToken;
+    const token = await mint();
+    replaceUiToken(token);
+    return token;
   });
 }
 
