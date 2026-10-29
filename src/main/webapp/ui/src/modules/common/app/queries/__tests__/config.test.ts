@@ -1,6 +1,5 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import { DEFAULT_APP_CONFIG, getAppConfig } from "@/modules/common/app/queries/config";
 
@@ -48,11 +47,9 @@ describe("getAppConfig", () => {
     ["an unsuccessful response", () => new HttpResponse(null, { status: 500 })],
     ["a malformed response", () => HttpResponse.json({ unexpected: true })],
     ["a network failure", () => HttpResponse.error()],
-  ])("fails soft for %s", async (_description, response) => {
-    const restoreConsole = silenceConsole(["warn"], ["Could not read app configuration"]);
+  ])("rejects %s", async (_description, response) => {
     server.use(http.get("/api/v2/config", response));
 
-    await expect(getAppConfig()).resolves.toEqual(DEFAULT_APP_CONFIG);
-    restoreConsole();
+    await expect(getAppConfig()).rejects.toThrow();
   });
 });
