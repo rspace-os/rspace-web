@@ -21,7 +21,14 @@ test("keeps a late cancel first and caps the remaining actions before overflow",
     "Fourth",
     "",
   ]);
-  await user.click(screen.getByRole("button", { name: "common:actions.moreActions" }));
-  expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual(["Second", "Third", "Fourth"]);
+  await user.tab();
+  await user.keyboard("{End}");
+  screen.getByRole("button", { name: "common:actions.moreActions" }).focus();
+  await user.keyboard("{ArrowDown}");
+  expect((await screen.findAllByRole("menuitem")).map((item) => item.textContent)).toEqual([
+    "Second",
+    "Third",
+    "Fourth",
+  ]);
   expect(screen.queryByRole("menuitem", { name: "Cancel" })).not.toBeInTheDocument();
 });
