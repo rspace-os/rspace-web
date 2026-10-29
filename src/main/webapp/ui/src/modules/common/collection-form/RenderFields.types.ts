@@ -4,7 +4,6 @@ import type { RelationshipOptionAvailability, RelationshipOptions } from "@/modu
 
 export type {
   RelationshipOption,
-  RelationshipOptionAvailability,
   RelationshipOptionAvailabilitySource,
   RelationshipOptions,
   ToOneRelationshipValue,
