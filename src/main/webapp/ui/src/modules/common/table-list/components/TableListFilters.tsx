@@ -19,7 +19,7 @@ import { PlusIcon, Trash2Icon, XIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FilterOperator, ResolvedCollectionConfig, SearchSelector } from "@/modules/common/collection/config";
-import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/config";
+import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/labels";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 import type { RuntimeFieldDefinition } from "../api-v2/runtimeFieldCatalog";

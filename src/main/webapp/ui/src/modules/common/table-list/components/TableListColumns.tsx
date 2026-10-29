@@ -25,7 +25,7 @@ import { GripVerticalIcon, XIcon } from "lucide-react";
 import { type CSSProperties, type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FieldName, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
-import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/config";
+import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/labels";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";

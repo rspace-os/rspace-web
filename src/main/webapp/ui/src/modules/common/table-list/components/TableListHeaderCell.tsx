@@ -2,7 +2,7 @@ import { FlexRender, type Header } from "@tanstack/react-table";
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, CircleHelpIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { fieldLabel } from "@/modules/common/collection/config";
+import { fieldLabel } from "@/modules/common/collection/labels";
 import { TableHead } from "@/modules/common/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
 import { selectionColumnId, type tableListFeatures } from "../utils/features";

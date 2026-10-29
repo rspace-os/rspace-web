@@ -5,9 +5,8 @@ import type {
   FieldName,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/config";
-import { isIdLikeField } from "@/modules/common/collection/config";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
-import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
+import { isIdLikeField, isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import i18n from "@/modules/common/i18n";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { formatNumber } from "@/modules/common/i18n/localeFormat";

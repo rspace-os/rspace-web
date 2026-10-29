@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { useState } from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
+import * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { useTableList } from "./hooks/state";
@@ -16,6 +17,15 @@ export type ResearchRecord = {
   enabled: boolean;
   modifiedAt: string;
 };
+
+export const researchRecordSchema = v.object({
+  id: v.string(),
+  title: v.string(),
+  owner: v.string(),
+  score: v.number(),
+  enabled: v.boolean(),
+  modifiedAt: v.string(),
+});
 
 export const storyConfig = resolveCollectionConfig<ResearchRecord>({
   slug: "research-records",
@@ -129,7 +139,7 @@ function ControlledLocalDemo({
 const meta = {
   title: "Components/Table List",
   component: ControlledLocalDemo,
-  excludeStories: ["storyConfig", "storyRecords"],
+  excludeStories: ["storyConfig", "storyRecords", "researchRecordSchema"],
   tags: ["autodocs"],
   parameters: { layout: "fullscreen" },
   decorators: [

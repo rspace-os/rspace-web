@@ -1,19 +1,12 @@
 import type { ParseKeys } from "i18next";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
-import i18n from "@/modules/common/i18n";
 import type Resources from "@/modules/common/i18n/resources";
 import type { RelationshipSource } from "@/modules/common/relationship-picker/sources";
-import type { FilterOperator } from "./filterOperators";
-import type { RelationshipFilterPicker } from "./relationshipFilterPicker";
-import type { runtimeFieldValueTypes } from "./runtimeFieldValueTypes";
+import type { FilterOperator, RelationshipFilterPicker, runtimeFieldValueTypes } from "./schema";
 
 export type CollectionTranslationKey =
   | { [N in keyof Resources]: `${N}:${ParseKeys<N>}` }[keyof Resources]
   | ParseKeys<"common">;
-
-export function isIdLikeField(name: string): boolean {
-  return /Ids?$/.test(name);
-}
 
 export type FieldName<TDocument> = Extract<keyof TDocument, string>;
 
@@ -27,7 +20,7 @@ export type SortRule<TDocument> = {
   direction: SortDirection;
 };
 
-export type { FilterOperator } from "./filterOperators";
+export type { FilterOperator } from "./schema";
 
 export type HeaderRendererContext<TDocument> = {
   config: ResolvedCollectionConfig<TDocument>;
@@ -94,31 +87,6 @@ export type SelectOption =
       value: string;
     };
 
-export function hierarchicalFieldLabel(viaLabel: string, ownLabel: string): string {
-  return viaLabel === ""
-    ? ownLabel
-    : i18n.t("common:tableList.fields.hierarchicalLabel", { owner: viaLabel, field: ownLabel });
-}
-
-export function fieldLabel(field: { labelKey: string; label?: string }, translate: (key: string) => string): string {
-  return field.label ?? translate(field.labelKey);
-}
-
-export function fieldOptionLabel(
-  field: { labelKey: string; label?: string; origin?: { sourceLabel?: string } },
-  translate: (key: string) => string,
-): string {
-  const label = fieldLabel(field, translate);
-  return field.origin?.sourceLabel
-    ? i18n.t("common:tableList.fields.labelWithSource", { label, source: field.origin.sourceLabel })
-    : label;
-}
-
-export function selectOptionText(option: SelectOption): string {
-  if (typeof option === "string") return option;
-  return "textValue" in option ? option.textValue : option.label;
-}
-
 export type SelectFieldFormConfig<TDocument> = FieldFormConfig<TDocument, "select" | "card"> & {
   isOptionDisabled?: (option: SelectOption, data: Partial<TDocument>) => boolean;
 };
@@ -135,7 +103,7 @@ export type FieldOrigin = {
   runtimeValueType?: RuntimeFieldValueType;
 };
 
-export type { RelationshipFilterPicker } from "./relationshipFilterPicker";
+export type { RelationshipFilterPicker } from "./schema";
 
 type BaseFieldConfig<
   TDocument,

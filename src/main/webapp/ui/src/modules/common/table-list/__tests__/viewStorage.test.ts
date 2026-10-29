@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { savedViewSelectors } from "../hooks/urlState";
-import { tableViewStorageKey } from "../state/tableViewStorage";
-import { parseTableViewState, serializeTableViewState } from "../utils/viewStorage";
+import { parseTableViewState, serializeTableViewState, tableViewStorageKey } from "../utils/viewStorage";
 import { config } from "./fixtures/tableList";
 
 describe("saved view field names", () => {

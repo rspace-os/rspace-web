@@ -1,14 +1,8 @@
 import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
-import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
+import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "../rsql";
-import {
-  loadStoredTableView,
-  saveStoredTableView,
-  storedTableViewSelectors,
-  tableViewStorageKey,
-} from "../state/tableViewStorage";
 import type { TableListFeatures, TableListQueryStringOptions } from "../types";
 import {
   columnSelectors,
@@ -18,6 +12,12 @@ import {
   serializeFilters,
   serializeSorting,
 } from "../utils/queryString";
+import {
+  loadStoredTableView,
+  saveStoredTableView,
+  storedTableViewSelectors,
+  tableViewStorageKey,
+} from "../utils/viewStorage";
 
 const emptySorting = [] as const;
 

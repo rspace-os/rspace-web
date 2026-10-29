@@ -7,9 +7,9 @@ import type {
   ResolvedCollectionConfig,
   RuntimeNamespaceSummary,
 } from "@/modules/common/collection/config";
-import { fieldLabel, hierarchicalFieldLabel } from "@/modules/common/collection/config";
-import { filterOperatorsByToken as semanticOperators } from "@/modules/common/collection/filterOperators";
+import { fieldLabel, hierarchicalFieldLabel } from "@/modules/common/collection/labels";
 import { isFilterOperatorCompatible, resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import { filterOperatorsByToken as semanticOperators } from "@/modules/common/collection/schema";
 import type {
   ApiV2CollectionMetadata,
   ApiV2FilterOperator,

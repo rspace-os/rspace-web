@@ -146,7 +146,7 @@ Store a zero-based `pageIndex`. The REST API v2 adapter converts it to a one-bas
 | 3. | [Shared table hook](../../src/main/webapp/ui/src/modules/common/table-list/hooks/state.ts) |
 | 4. | [RSQL query codec](../../src/main/webapp/ui/src/modules/common/table-list/rsql.ts) |
 | 5. | [Persisted view codec](../../src/main/webapp/ui/src/modules/common/table-list/utils/viewStorage.ts) |
-| 6. | [Browser view storage](../../src/main/webapp/ui/src/modules/common/table-list/state/tableViewStorage.ts) |
+| 6. | [Browser view storage](../../src/main/webapp/ui/src/modules/common/table-list/utils/viewStorage.ts) |
 | 7. | [REST API v2 metadata reader](../../src/main/webapp/ui/src/modules/common/table-list/api-v2/metadata.ts) |
 | 8. | [REST API v2 adapter](../../src/main/webapp/ui/src/modules/common/table-list/api-v2/adapter.ts) |
 | 9. | [REST API v2 fetcher](../../src/main/webapp/ui/src/modules/common/table-list/api-v2/fetcher.ts) |

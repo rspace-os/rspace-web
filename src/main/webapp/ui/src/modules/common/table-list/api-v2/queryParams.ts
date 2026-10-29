@@ -1,8 +1,10 @@
 import type { FieldName, RelationshipFilterPicker, ResolvedCollectionConfig } from "@/modules/common/collection/config";
-import { isRuntimeFieldInNamespace } from "@/modules/common/collection/runtimeFieldSelectors";
-import { relationshipSourceForPicker } from "@/modules/common/relationship-picker/relationshipSourceForPicker";
+import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
 import type { RelationshipSource } from "@/modules/common/relationship-picker/sources";
-import { relationshipSources as builtInRelationshipSources } from "@/modules/common/relationship-picker/sources";
+import {
+  relationshipSources as builtInRelationshipSources,
+  relationshipSourceForPicker,
+} from "@/modules/common/relationship-picker/sources";
 import type { CollectionQueryState, FilterExpression } from "../types";
 import { LocalizedTableListError } from "../utils/errors";
 import { serializeSorting } from "../utils/queryString";

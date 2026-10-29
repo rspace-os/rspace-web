@@ -1,7 +1,10 @@
 import * as v from "valibot";
-import { type FilterOperatorToken, filterOperatorTokens } from "@/modules/common/collection/filterOperators";
-import { relationshipFilterPickerSchema } from "@/modules/common/collection/relationshipFilterPicker";
-import { runtimeFieldValueTypes } from "@/modules/common/collection/runtimeFieldValueTypes";
+import {
+  type FilterOperatorToken,
+  filterOperatorTokens,
+  relationshipFilterPickerSchema,
+  runtimeFieldValueTypes,
+} from "@/modules/common/collection/schema";
 
 export const apiV2FilterOperators: readonly FilterOperatorToken[] = Object.values(filterOperatorTokens);
 

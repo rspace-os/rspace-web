@@ -1,15 +1,18 @@
 import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import type { FilterOperator, ResolvedFieldConfig } from "@/modules/common/collection/config";
-import { selectOptionText } from "@/modules/common/collection/config";
+import { selectOptionText } from "@/modules/common/collection/utils";
 import { RelationshipPicker } from "@/modules/common/relationship-picker/RelationshipPicker";
-import { relationshipSourceForPicker } from "@/modules/common/relationship-picker/relationshipSourceForPicker";
-import { type RelationshipSource, relationshipSources } from "@/modules/common/relationship-picker/sources";
+import {
+  type RelationshipSource,
+  relationshipSourceForPicker,
+  relationshipSources,
+} from "@/modules/common/relationship-picker/sources";
 import { Input } from "@/modules/common/ui/input";
 import { MultiSelect } from "@/modules/common/ui/multi-select";
 import { Skeleton } from "@/modules/common/ui/skeleton";
+import { type DraftValue, listValue, scalarValue } from "../utils/filterDrafts";
 import { FilterSelect } from "./FilterSelect";
-import { type FilterValue, listValue, scalarValue } from "./filters/filterValue";
 
 function identitySourceFor<TDocument>(
   field: ResolvedFieldConfig<TDocument>,
@@ -34,9 +37,9 @@ export function FilterValueInput<TDocument>({
   sources?: Readonly<Record<string, RelationshipSource>>;
   authScope?: string | number;
   operator: FilterOperator;
-  value: FilterValue;
+  value: DraftValue;
   number: number;
-  onChange: (value: FilterValue) => void;
+  onChange: (value: DraftValue) => void;
 }) {
   const { t } = useTranslation("common");
   const ariaLabel = t("tableList.filters.value", { number });

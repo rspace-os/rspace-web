@@ -2,7 +2,8 @@ import { type ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedFieldConfig } from "@/modules/common/collection/config";
-import { fieldLabel, isIdLikeField } from "@/modules/common/collection/config";
+import { fieldLabel } from "@/modules/common/collection/labels";
+import { isIdLikeField } from "@/modules/common/collection/utils";
 import type { TableListProps, TableListUiColumn } from "../types";
 import { displayValue, selectionColumnId, type tableListFeatures } from "../utils/features";
 
