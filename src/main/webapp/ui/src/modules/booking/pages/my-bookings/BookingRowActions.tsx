@@ -80,7 +80,6 @@ export function BookingRowActions({
       {row.canViewConfiguration && row.target ? (
         <TooltipIconLink label={itemCalendarLabel} icon={<CalendarClockIcon aria-hidden="true" />}>
           <Link
-            aria-label={itemCalendarLabel}
             className={iconButtonClassName}
             data-slot="button"
             to="/booking/bookable-items/$globalId/{-$tab}"
@@ -91,7 +90,6 @@ export function BookingRowActions({
       {row.privacy === "full" ? (
         <TooltipIconLink label={viewDetailsLabel} icon={<EyeIcon aria-hidden="true" />}>
           <Link
-            aria-label={viewDetailsLabel}
             className={iconButtonClassName}
             data-slot="button"
             to="/booking/calendar/bookings/$id"
@@ -102,7 +100,6 @@ export function BookingRowActions({
       {row.canEdit && row.target && row.timezone ? (
         <TooltipIconLink label={editLabel} icon={<PencilIcon aria-hidden="true" />}>
           <Link
-            aria-label={editLabel}
             className={iconButtonClassName}
             data-slot="button"
             to="/booking/calendar/bookings/$id/edit"
