@@ -15,7 +15,7 @@ outside RSpace, so there was no record of who asked, who agreed and what was han
 The feature lets an owner mark a sample requestable, lets anyone ask for it with a note,
 and gives the owner approve, reject and fulfil actions, with the requester able to cancel.
 Fulfilling usually means transferring ownership of the sample, or of a new sample made from
-it with an inventory operation (ADR 0011).
+it with an inventory operation (ADR 0011, inventory operation wizard).
 
 ## Decisions
 
@@ -39,8 +39,8 @@ Marking a sample `requestable` opts it in to being asked for by anyone, so reque
 not need read access to the sample. For the same reason the `requestable=true` sample
 search is instance-wide, and `requestable` survives the public and limited views of a
 sample. An explicit `ownedBy` still narrows that search, and trashed samples never appear in
-it, whatever `deletedItems` says, since they cannot be requested. Its name filter (`query`)
-applies to requestable searches only; other sample searches go through Lucene as before.
+it, whatever `deletedItems` says, since they cannot be requested. On `/samples`, `query`
+filters requestable searches by name and is ignored otherwise.
 
 The flag may be changed by whoever may both edit and transfer the sample
 (`InventoryPermissionUtils.canUserChangeRequestable`): its owner, or a PI or Lab Admin of
@@ -72,8 +72,8 @@ requestable search still lists such samples; hiding them would need a per-commun
 in the query, which is not worth it.
 
 Requestable flags set before the feature was switched off stay in the database; with the
-gates above they cannot be acted on. Request validation (a malformed body, query parameter
-or global id: 400 or 422) runs before the feature check, so a malformed call can tell that
+gates above they cannot be acted on. Body and query-parameter validation (400), and the
+global id on create (422), run before the feature check, so a malformed call can tell that
 the endpoint exists; we accept that, as nothing about any request is disclosed.
 
 ### D5 Who is asked is fixed when the request is raised

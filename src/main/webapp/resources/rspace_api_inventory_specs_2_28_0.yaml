@@ -5103,8 +5103,8 @@ components:
           type: string
           nullable: true
           description: >-
-            Set for a rejection, and for a fulfilment made by transferring the
-            sample to its requester; null otherwise.
+            The owner's reason for a rejection, or why a change of owner closed
+            the request automatically; null otherwise.
         transferredSample:
           allOf:
             - $ref: "#/components/schemas/SampleInfo"
