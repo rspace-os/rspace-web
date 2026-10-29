@@ -10,6 +10,7 @@ import type { RuntimeNamespaceSummary } from "@/modules/common/collection/config
 import { queryKeys } from "@/modules/common/hooks/auth";
 import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { CustomFieldPicker } from "@/modules/common/table-list/components/CustomFieldPicker";
+import { replaceUiToken } from "@/modules/common/utils/auth";
 
 const searchLabel = "Search custom fields";
 
@@ -129,7 +130,8 @@ describe("CustomFieldPicker catalog cache", () => {
     const optionA = await screen.findByRole("option");
     expect(within(optionA).getByText("Token A field")).toBeVisible();
 
-    server.use(http.post("/api/v2/oauth/tokens", () => HttpResponse.json({ accessToken: "rotated-session-token" })));
+    // A recovery mint replaces the page-wide token; the query then serves it to every consumer.
+    replaceUiToken("rotated-session-token");
     await act(async () => {
       await client.invalidateQueries({ queryKey: queryKeys.oauthToken(true) });
     });
