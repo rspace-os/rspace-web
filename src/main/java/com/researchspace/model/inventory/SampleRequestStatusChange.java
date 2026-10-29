@@ -103,7 +103,7 @@ public class SampleRequestStatusChange implements Serializable {
     return reason;
   }
 
-  /** Whether a transfer closed the request, rather than one of its parties. */
+  /** Whether a transfer closed the request as a side effect, not an action on the request. */
   public boolean isAutoClosed() {
     return autoClosed;
   }
