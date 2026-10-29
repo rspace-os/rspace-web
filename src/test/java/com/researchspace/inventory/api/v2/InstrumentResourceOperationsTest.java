@@ -61,7 +61,7 @@ class InstrumentResourceOperationsTest {
     assertEquals("IN2", result.resources().get(0).get("globalId"));
     assertTrue(operations.usesReadDocuments());
     verify(manager, never()).getReadableInstruments(any(), any());
-    verify(manager, never()).getParentLocationSummaries(any());
+    verify(manager, never()).getParentLocationSummaries(any(), any());
     verify(manager, never()).getReadableParentContainerIds(any(), any());
   }
 
@@ -77,13 +77,11 @@ class InstrumentResourceOperationsTest {
                     summary(3L, "three"),
                     summary(4L, "four")),
                 4));
-    when(manager.getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L)))
+    when(manager.getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L), actor))
         .thenReturn(
             Map.of(
                 1L, new InstrumentParentLocationSummary(10L, "Bench", ContainerType.WORKBENCH),
-                2L, new InstrumentParentLocationSummary(10L, "Bench", ContainerType.WORKBENCH),
-                3L, new InstrumentParentLocationSummary(20L, "Private", ContainerType.LIST)));
-    when(manager.getReadableParentContainerIds(Set.of(10L, 20L), actor)).thenReturn(Set.of(10L));
+                2L, new InstrumentParentLocationSummary(10L, "Bench", ContainerType.WORKBENCH)));
 
     List<Map<String, Object>> documents = operations.findReadDocuments(request, actor).resources();
 
@@ -95,8 +93,8 @@ class InstrumentResourceOperationsTest {
       assertNull(documents.get(index).get("parentContainerName"));
       assertNull(documents.get(index).get("parentContainerGlobalId"));
     }
-    verify(manager).getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L));
-    verify(manager).getReadableParentContainerIds(Set.of(10L, 20L), actor);
+    verify(manager).getParentLocationSummaries(Set.of(1L, 2L, 3L, 4L), actor);
+    verify(manager, never()).getReadableParentContainerIds(any(), any());
     verify(manager, never()).getReadableInstruments(any(), any());
   }
 

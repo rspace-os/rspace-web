@@ -1060,8 +1060,17 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   @Override
   public Map<Long, InstrumentParentLocationSummary> getParentLocationSummaries(
-      Set<Long> instrumentIds) {
-    return instrumentDao.getParentLocationSummaries(instrumentIds);
+      Set<Long> instrumentIds, User user) {
+    Map<Long, InstrumentParentLocationSummary> summaries =
+        instrumentDao.getParentLocationSummaries(instrumentIds);
+    Set<Long> parentIds =
+        summaries.values().stream()
+            .map(InstrumentParentLocationSummary::containerId)
+            .collect(java.util.stream.Collectors.toSet());
+    Set<Long> readable = getReadableParentContainerIds(parentIds, user);
+    return summaries.entrySet().stream()
+        .filter(entry -> readable.contains(entry.getValue().containerId()))
+        .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   @Override
