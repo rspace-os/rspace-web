@@ -24,11 +24,7 @@ import {
   metadataWhereSchema,
 } from "./schema";
 
-export type {
-  ApiV2FilterOperator,
-  ApiV2PrimitiveFieldType,
-  ApiV2RuntimeFieldNamespace,
-} from "./schema";
+export type { ApiV2FilterOperator, ApiV2RuntimeFieldNamespace } from "./schema";
 
 export type ApiV2FilterLimits = Omit<ApiV2ParsedFilterMetadata, "selectors"> & {
   maximumWhereLength: InferOutput<typeof metadataWhereSchema>["maxLength"];
@@ -217,7 +213,7 @@ export function apiV2CollectionMetadataFromOpenApi<TDocument>(
   };
 }
 
-export async function fetchApiV2CollectionMetadata<TDocument>(
+async function fetchApiV2CollectionMetadata<TDocument>(
   resourceName: string,
   options: { fetch?: typeof globalThis.fetch; signal?: AbortSignal } = {},
 ): Promise<ApiV2CollectionMetadata<TDocument>> {

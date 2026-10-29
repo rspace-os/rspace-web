@@ -68,8 +68,6 @@ const fieldTypeSchema = v.pipe(
   }),
 );
 
-export type ApiV2PrimitiveFieldType = Exclude<v.InferOutput<typeof fieldTypeSchema>, null>;
-
 const selectorName = v.pipe(v.string(), v.regex(/^[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z][A-Za-z0-9_-]*)?$/));
 const selectorSchema = v.pipe(
   v.object({

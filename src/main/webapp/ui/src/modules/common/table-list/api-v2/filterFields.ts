@@ -14,8 +14,6 @@ import appI18n from "@/modules/common/i18n";
 import type { ApiV2CollectionMetadata, ApiV2FilterOperator, ApiV2RuntimeFieldNamespace } from "./metadata";
 import type { RuntimeFieldCatalogForNamespace, RuntimeFieldDefinition } from "./runtimeFieldCatalog";
 
-export type { RuntimeFieldCatalogForNamespace } from "./runtimeFieldCatalog";
-
 export type ApiV2FilterFieldsDefinition<TDocument> = {
   config: CollectionConfig<TDocument>;
   metadata: ApiV2CollectionMetadata<TDocument>;
