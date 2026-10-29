@@ -24,17 +24,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVerticalIcon, XIcon } from "lucide-react";
 import { type CSSProperties, type ReactNode, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  FieldName,
-  ResolvedCollectionConfig,
-  ResolvedFieldConfig,
-} from "@/modules/common/collection/collectionConfig";
-import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/collectionConfig";
-import type { RuntimeFieldDefinition } from "@/modules/common/table-list/adapters/apiV2/runtimeFieldCatalog";
+import type { FieldName, ResolvedCollectionConfig, ResolvedFieldConfig } from "@/modules/common/collection/config";
+import { fieldLabel, fieldOptionLabel } from "@/modules/common/collection/config";
+import type { RuntimeFieldDefinition } from "@/modules/common/table-list/api-v2/runtimeFieldCatalog";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
-import { CustomFieldPicker, groupRuntimeFieldSources } from "./filters/CustomFieldPicker";
+import { CustomFieldPicker, groupRuntimeFieldSources } from "./CustomFieldPicker";
 
 type Section = "shown" | "hidden";
 type Layout<TDocument> = Record<Section, readonly FieldName<TDocument>[]>;

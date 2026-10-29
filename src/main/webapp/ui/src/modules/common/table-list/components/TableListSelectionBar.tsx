@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Button } from "@/modules/common/ui/button";
-import type { TableListSelection } from "../state/tableListState";
+import type { TableListSelection } from "../types";
 
 /** The floating bar of actions for the selected rows. */
 export function TableListSelectionBar<TDocument>({ selection }: { selection: TableListSelection<TDocument> }) {

@@ -1,4 +1,4 @@
-import type { RelationshipSource } from "./relationshipSources";
+import type { RelationshipSource } from "./sources";
 
 export function sourceList(source: RelationshipSource | undefined, sources: readonly RelationshipSource[] | undefined) {
   if (sources !== undefined) return sources;

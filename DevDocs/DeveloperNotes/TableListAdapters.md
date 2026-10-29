@@ -12,8 +12,8 @@ selection.
 ## Design summary
 
 Every remote table, REST API v2 or not, loads its rows through a
-[`CollectionFetcher`](../../src/main/webapp/ui/src/modules/common/table-list/state/tableListState.ts).
-[`useTableList`](../../src/main/webapp/ui/src/modules/common/table-list/state/useTableList.ts) keeps the
+[`CollectionFetcher`](../../src/main/webapp/ui/src/modules/common/table-list/types.ts).
+[`useTableList`](../../src/main/webapp/ui/src/modules/common/table-list/hooks/state.ts) keeps the
 table and query state and returns `tableProps` plus functions that change that state.
 
 The OpenAPI reader validates the current generated contract with Valibot. Selector and runtime
@@ -60,7 +60,7 @@ type and how the table shows it.
 
 ```tsx
 import type { CollectionConfig } from
-  "@/modules/common/collection/collectionConfig";
+  "@/modules/common/collection/config";
 
 export const experimentConfig = {
   slug: "experiments",
@@ -218,7 +218,7 @@ Get the REST API v2 token with the existing authentication hook and pass it to
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { TableList } from "@/modules/common/table-list/TableList";
 import { useApiV2TableList } from
-  "@/modules/common/table-list/adapters/apiV2/useApiV2TableList";
+  "@/modules/common/table-list/hooks/apiV2TableList";
 
 export function ExperimentTable() {
   const { data: token } = useOauthTokenQuery({ useRestApiV2: true });

@@ -1,7 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import { Button } from "@/modules/common/ui/button";
 import { cn } from "@/modules/common/utils/cn";
 

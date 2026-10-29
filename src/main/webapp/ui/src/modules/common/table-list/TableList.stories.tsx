@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from "@storybook/tanstack-react";
 import { NuqsAdapter } from "nuqs/adapters/react";
 import { useState } from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import type { FilterState, PageState, TableListVariant } from "./state/tableListState";
-import { useTableList } from "./state/useTableList";
+import { useTableList } from "./hooks/state";
 import { TableList } from "./TableList";
+import type { FilterState, PageState, TableListVariant } from "./types";
 
 export type ResearchRecord = {
   id: string;

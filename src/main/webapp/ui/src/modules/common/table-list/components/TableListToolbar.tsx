@@ -1,11 +1,11 @@
 import { ArrowDownUpIcon, Columns3Icon, ListFilterIcon, RotateCcwIcon, SearchIcon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ResolvedCollectionConfig } from "@/modules/common/collection/collectionConfig";
+import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import { Button } from "@/modules/common/ui/button";
 import { Input } from "@/modules/common/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/modules/common/ui/tooltip";
-import type { TableListFeatures, TableListFilterButtons } from "../state/tableListState";
+import type { TableListFeatures, TableListFilterButtons } from "../types";
 
 export type TableListControlPanel = "filters" | "sorting" | "columns";
 
