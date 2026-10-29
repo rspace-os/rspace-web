@@ -9,6 +9,7 @@ import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
+import { resetUiTokenForTests } from "@/modules/common/utils/auth";
 
 await i18n.loadNamespaces([
   "about",
@@ -83,6 +84,8 @@ afterEach(() => {
   cleanup();
   globalThis.localStorage?.clear?.();
   globalThis.sessionStorage?.clear?.();
+  // The page-wide UI token is module state; each test starts without one, like a fresh page.
+  resetUiTokenForTests();
   server.resetHandlers();
 });
 
