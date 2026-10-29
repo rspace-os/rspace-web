@@ -57,7 +57,7 @@ public class UserDeletionManagerImpl implements UserDeletionManager {
   @Override
   public FormsAndTemplatesUsage getFormsAndTemplatesUsage(Long userToDeleteId) {
     if (!permUtils.isPermitted("USER:DELETE")) {
-      throw new AuthorizationException("Only users who can delete users can check this");
+      throw new AuthorizationException("Not permitted to check usage before deleting a user");
     }
     User toDelete = userDao.get(userToDeleteId);
     return new FormsAndTemplatesUsage(

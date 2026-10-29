@@ -85,11 +85,12 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
       Map<String, User> users = getUsersInOrder(fileUsage.keySet());
       Map<String, DatabaseUsageByUserGroupByResult> recordCounts =
           recordDao.getTotalRecordsForUsers(users.values(), pgCrit);
-      users.forEach(
-          (username, user) ->
-              uui.add(
-                  setUserUsageInfoProperties(
-                      user, fileUsage.get(username), recordCounts.get(user.getUsername()))));
+      for (Map.Entry<String, User> entry : users.entrySet()) {
+        User user = entry.getValue();
+        uui.add(
+            setUserUsageInfoProperties(
+                user, fileUsage.get(entry.getKey()), recordCounts.get(user.getUsername())));
+      }
       return new SearchResultsImpl<>(
           uui, pgCrit.getPageNumber().intValue(), totalUsersWithFiles, pgCrit.getResultsPerPage());
     }
@@ -107,11 +108,12 @@ public class SysAdminManagerImpl extends AbstractSysadminMgr implements SysAdmin
     Map<String, User> users = getUsersInOrder(recordCount.keySet());
     Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
         fileDao.getTotalFileUsageForUsers(users.values(), pgCrit);
-    users.forEach(
-        (username, user) ->
-            uui.add(
-                setUserUsageInfoProperties(
-                    user, fileUsage.get(user.getUsername()), recordCount.get(username))));
+    for (Map.Entry<String, User> entry : users.entrySet()) {
+      User user = entry.getValue();
+      uui.add(
+          setUserUsageInfoProperties(
+              user, fileUsage.get(user.getUsername()), recordCount.get(entry.getKey())));
+    }
     return new SearchResultsImpl<>(
         uui, pgCrit.getPageNumber().intValue(), totalUsersWithRecords, pgCrit.getResultsPerPage());
   }

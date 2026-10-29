@@ -94,6 +94,18 @@ describe("Export all rows", () => {
     await waitFor(() => expect(createObjectURL).toHaveBeenCalled());
     if (typeof blob === "undefined") throw new Error("Impossible, because createObjectURL has been called");
     expect((await blob.text()).split("\n").length).toBe(17);
+  });
+
+  test("After exporting, the previous page should come back.", async () => {
+    const createObjectURL = vi.fn().mockReturnValue("");
+    window.URL.createObjectURL = createObjectURL;
+    mockRequests(() => HttpResponse.json(ALL_USERS));
+    const user = userEvent.setup();
+    renderUsersPage();
+
+    await clickExportAllRows(user);
+
+    await waitFor(() => expect(createObjectURL).toHaveBeenCalled());
     await waitFor(() => expect(screen.getAllByRole("checkbox", { name: "Select row" })).toHaveLength(10));
   });
 
