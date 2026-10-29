@@ -68,7 +68,6 @@ export function TableListSorting<TDocument>({
   onClose: () => void;
 }) {
   const { t } = useTranslation<Namespace>("common");
-  const translate = t;
   const sensors = useTableListDragSensors();
   const reorder = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
@@ -108,7 +107,7 @@ export function TableListSorting<TDocument>({
             >
               {sorting.map((rule, index) => {
                 const field = config.fields.find((candidate) => candidate.name === rule.field);
-                const label = field ? fieldLabel(field, translate) : rule.field;
+                const label = field ? fieldLabel(field, t) : rule.field;
                 return (
                   <SortableSortingRow
                     key={rule.field}
