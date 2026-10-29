@@ -51,15 +51,20 @@ runs:
 
     # A stalled mirror hangs apt rather than failing it, so time each attempt out.
     - name: Install Playwright browsers
+      id: install
       shell: bash
       env:
         BROWSERS: ${{ inputs.browsers }}
       run: |
         sudo=""
         [ "$(id -u)" -eq 0 ] || sudo="sudo"
+        installed=false
         for attempt in 1 2 3; do
           # shellcheck disable=SC2086 # BROWSERS is a space-separated list
-          timeout 300 pnpm exec playwright install --with-deps $BROWSERS && exit 0
+          if timeout 300 pnpm exec playwright install --with-deps $BROWSERS; then
+            installed=true
+            break
+          fi
           if [ "$attempt" -lt 3 ]; then
             echo "Playwright install failed or stalled (attempt ${attempt}/3); retrying..."
             # A timeout can interrupt dpkg; finish any half-configured packages first.
@@ -67,20 +72,20 @@ runs:
             sleep $((attempt * 10))
           fi
         done
-        exit 1
+        [ "$installed" = true ] || exit 1
 
-    - name: Check for downloaded packages
-      id: debs
-      if: github.ref == 'refs/heads/main' && steps.restore.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        if compgen -G "/var/cache/pw-apt/*.deb" >/dev/null; then
-          echo "found=true" >> "$GITHUB_OUTPUT"
-        fi
+        # apt writes the .deb files as root, and actions/cache reads them as the runner user.
+        $sudo chmod -f a+r /var/cache/pw-apt/*.deb || true
+        shopt -s nullglob
+        debs=(/var/cache/pw-apt/*.deb)
+        echo "deb-count=${#debs[@]}" >> "$GITHUB_OUTPUT"
 
     # Only main saves: pull requests can restore main's caches, but not each other's.
     - name: Save Playwright system packages
-      if: steps.debs.outputs.found == 'true'
+      if: >-
+        github.ref == 'refs/heads/main' &&
+        steps.restore.outputs.cache-hit != 'true' &&
+        steps.install.outputs.deb-count != '0'
       uses: actions/cache/save@v6.1.0
       with:
         path: /var/cache/pw-apt/*.deb
