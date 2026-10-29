@@ -83,7 +83,9 @@ class TestScheme implements ResourceRoleScheme {
 
   @Override
   public Set<ResourceGranteeKind> allowedGranteeKinds(String roleKey) {
-    return allowedGranteeKinds;
+    return roleKey.equals(OWNER_ROLE) || roleKey.equals(MANAGER_ROLE)
+        ? PEOPLE
+        : allowedGranteeKinds;
   }
 
   @Override

@@ -13,6 +13,21 @@ import org.junit.jupiter.api.Test;
 
 class ResourceRoleSchemeTest {
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"OWNER", "MANAGER"})
+  void rejectsAudienceOnAdministrativeRoles(String administrativeRole) {
+    ResourceRoleScheme scheme =
+        new TestScheme(roles(), validCapabilities(), Set.of("OWNER")) {
+          @Override
+          public Set<ResourceGranteeKind> allowedGranteeKinds(String role) {
+            return role.equals(administrativeRole)
+                ? Set.of(ResourceGranteeKind.USER, ResourceGranteeKind.AUDIENCE)
+                : TestScheme.PEOPLE;
+          }
+        };
+    assertThrows(IllegalArgumentException.class, scheme::validate);
+  }
+
   @Test
   void validatesGenericOwnerManagerContributorReaderScheme() {
     ResourceRoleScheme scheme = validScheme();

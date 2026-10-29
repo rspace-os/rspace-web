@@ -103,6 +103,11 @@ final class ResourceRoleSchemeValidator {
       Set<ResourceGranteeKind> kinds =
           Objects.requireNonNull(
               scheme.allowedGranteeKinds(role.key()), "allowed grantee kinds for " + role.key());
+      if ((role.key().equals(ResourceRoleScheme.OWNER_ROLE)
+              || role.key().equals(ResourceRoleScheme.MANAGER_ROLE))
+          && kinds.contains(ResourceGranteeKind.AUDIENCE)) {
+        throw new IllegalArgumentException(role.key() + " must not allow AUDIENCE grantees");
+      }
       if (kinds.isEmpty()) {
         throw new IllegalArgumentException(
             "Role " + role.key() + " must allow at least one grantee kind");
