@@ -27,7 +27,6 @@ import com.researchspace.service.inventory.impl.SampleRequestApiManagerImpl;
 import com.researchspace.testutils.RealTransactionSpringTestBase;
 import jakarta.ws.rs.NotFoundException;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -274,7 +273,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
   }
 
   @Test
-  public void transferUsesTheOwnerCommittedByAnEarlierTransfer() throws Exception {
+  public void secondTransferIsRefusedOnceTheFirstHasGivenTheSampleAway() throws Exception {
     User outsider = createAndSaveUser(getRandomAlphabeticString("cOut"));
     initUsers(outsider);
     // in a container, since moving a workbench subsample makes a stale transfer fail anyway
@@ -368,8 +367,7 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
         transfer.get(60, TimeUnit.SECONDS);
       } catch (ExecutionException e) {
         // with innodb_snapshot_isolation (MariaDB 11.6+) the transfer is refused instead
-        assertTrue(
-            hasSqlErrorCode(e, 1020, 1213), () -> "unexpected transfer failure: " + e.getCause());
+        assertTrue(hasSqlErrorCode(e, 1020), () -> "unexpected transfer failure: " + e.getCause());
         transferred = false;
       }
 
@@ -423,11 +421,9 @@ public class SampleRequestConcurrencyIT extends RealTransactionSpringTestBase {
         publisher);
   }
 
-  /** MariaDB's "record has changed since last read" (1020) or "deadlock found" (1213). */
-  private static boolean hasSqlErrorCode(Throwable thrown, int... codes) {
+  private static boolean hasSqlErrorCode(Throwable thrown, int code) {
     for (Throwable cause = thrown; cause != null; cause = cause.getCause()) {
-      if (cause instanceof SQLException sql
-          && Arrays.stream(codes).anyMatch(code -> code == sql.getErrorCode())) {
+      if (cause instanceof SQLException sql && sql.getErrorCode() == code) {
         return true;
       }
     }

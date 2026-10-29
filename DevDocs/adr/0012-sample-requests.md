@@ -116,8 +116,9 @@ request: the owner may already be preparing the material. CANCELLED is kept sepa
 from REJECTED because "withdrawn by the requester" and "refused by the owner" are
 different facts in the record.
 
-All transitions go through `updateStatus`, which checks the actor before legality, so a
-caller who may not act at all learns nothing about the request's state. The transfer's
+Every transition a party makes, through the status endpoint or fulfilByTransfer, goes
+through one check of the actor before legality, so a caller who may not act at all learns
+nothing about the request's state. The transfer's
 status changes (D9) check legality against the same table but not the actor, since a PI or
 admin of the owner's group may make the transfer. A user may hold several open requests for
 the same sample; there is no uniqueness rule.
@@ -162,23 +163,25 @@ outside RSpace.
 
 ### D10 Concurrency: the row lock first, a constraint behind it, 409 for the rest
 
-`updateStatus` and the transfer's status changes load the request with `PESSIMISTIC_WRITE`,
-so two concurrent transitions serialise and the second sees the first's result. The
-locking read must be the transaction's first read: MariaDB 11.6+ enables
-`innodb_snapshot_isolation` by default, and locking a row changed since an earlier read in
-the same transaction then fails with error 1020 instead of waiting. A unique constraint on
-(request, status) backs up the lock, since no status is reachable twice; it is not expected
-to fire, and if it did the client would get a 500 with nothing saved.
+Every status change, including fulfilByTransfer and a transfer's closing of requests,
+loads the request with `PESSIMISTIC_WRITE`, so two concurrent transitions serialise and
+the second sees the first's result. The locking read must be the transaction's first read:
+MariaDB 11.6+ enables `innodb_snapshot_isolation` by default, and locking a row changed
+since an earlier read in the same transaction then fails with error 1020 instead of
+waiting. A unique constraint on (request, status) backs up the lock, since no status is
+reachable twice; it is not expected to fire, and if it did the client would get a 500 with
+nothing saved.
 
 Raising a request takes a shared lock on the requested sample, as its first read. A
-transfer re-reads the sample with a write lock before it checks permission, so if a request
-is being raised at the same time the transfer waits for it to commit and then closes it
-(D9), instead of leaving it PENDING and addressed to the previous owner. With snapshot
-isolation the waiting transfer may be refused with 1020 instead. The same lock makes a
-transfer act on the committed owner: of two transfers of one sample, the second waits for
-the first, then sees the new owner and is refused, instead of overwriting the first on a
-permission it no longer has. Only raising a request takes the shared lock: the
-fulfilled-with sample of a status change is read without one.
+transfer checks permission, takes the in-memory edit lock, then re-reads the sample with a
+write lock and checks permission again, so if a request is being raised at the same time
+the transfer waits for it to commit and then closes it (D9), instead of leaving it PENDING
+and addressed to the previous owner. With snapshot isolation the waiting transfer may be
+refused with 1020 instead. The same lock makes a transfer act on the committed owner: of
+two transfers of one sample, the second waits for the first, then sees the new owner and
+is refused, instead of overwriting the first on a permission it no longer has. Only
+raising a request takes the shared lock: the fulfilled-with sample of a status change is
+read without one.
 
 Where 1020 still occurs, for example a transfer racing a fulfilment, the API returns
 409 `EDIT_CONFLICT` ("changed by someone else at the same time"), not 500. Deadlocks
@@ -186,8 +189,8 @@ Where 1020 still occurs, for example a transfer racing a fulfilment, the API ret
 with a transfer of it, because saving the history row checks its foreign key to the sample.
 Fulfilling by transfer locks the request before it changes the sample's owner, the
 opposite order to a plain transfer, so the two can deadlock on one sample, as can two
-fulfilments by transfer of different requests for one sample. Only the same user's calls
-can meet like this: another user's transfer is refused first by the in-memory edit lock.
+fulfilments by transfer of different requests for one sample. These two need the same user
+on both sides: another user's transfer is refused first by the in-memory edit lock.
 MariaDB rolls the loser back, so nothing is saved and the client can retry. Lock wait
 timeouts stay 500 for now. The mapping is in `ApiControllerAdvice`, so it applies to every
 API endpoint, not only sample requests: for example, one user creating samples in parallel
@@ -227,8 +230,9 @@ column already shows the requester.
 - Listings are newest first by default. `orderBy` accepts `creationDate asc|desc` only;
   requests have no name, type or modification date to sort by. A value that is invalid
   for every inventory listing also fails the inherited pattern, so its 400 lists both.
-- Requests against a trashed sample drop out of listings but stay readable and actionable
-  by id, since the sample can be restored.
+- Requests against a trashed sample drop out of listings but stay readable and can change
+  status by id, since the sample can be restored; fulfilling by transfer needs the sample
+  restored, or another sample.
 - Validation errors: malformed body 400, wrong global-id type or illegal transition 422,
   missing or unreadable sample 404.
 - Notifications to the owner and requester are not built yet.
