@@ -95,6 +95,10 @@ and authorization. Clients format the stored ISO-8601 dates themselves.
 
 Maintenance creation accepts `startDate`, `endDate`, optional `stopUserLoginDate`, and `message`.
 The manager validates the complete resulting window after a patch, including unchanged fields.
+A non-null login cutoff must be at or before the start, or at or before the validation time while
+the window has not ended. The latter permits the legacy "Stop user login" action during maintenance.
+A cutoff at or after the end is always invalid. An omitted cutoff defaults to ten minutes before
+the start; an explicit null uses the start as the effective login cutoff.
 
 The computed `canUserLoginNow` field is neither filterable nor sortable. It is evaluated at request
 time and must not be reused from a cached maintenance document.

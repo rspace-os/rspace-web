@@ -28,6 +28,9 @@ import com.researchspace.model.collection.ResourceRequest;
 import com.researchspace.model.collection.WriteOperation;
 import com.researchspace.service.CollectionMutationException;
 import com.researchspace.service.MessageSourceUtils;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -36,10 +39,14 @@ import java.util.Optional;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
 
 class MaintenanceManagerUnitTest {
+
+  private static final Instant NOW = Instant.parse("2026-10-29T12:00:00Z");
 
   private final MaintenanceDao dao = mock(MaintenanceDao.class);
   private final User user = mock(User.class);
@@ -47,13 +54,61 @@ class MaintenanceManagerUnitTest {
   private final MessageSourceUtils messages = mock(MessageSourceUtils.class);
   private final ObjectProvider<ResourceRegistry> resourceRegistry = mock(ObjectProvider.class);
   private final MaintenanceManager manager =
-      new MaintenanceManagerImpl(dao, events, messages, resourceRegistry);
+      new MaintenanceManagerImpl(
+          dao, events, messages, resourceRegistry, Clock.fixed(NOW, ZoneOffset.UTC));
 
   @BeforeEach
   void setUp() {
     when(user.hasRole(Role.SYSTEM_ROLE)).thenReturn(true);
     when(resourceRegistry.getObject())
         .thenReturn(new ResourceRegistry(List.of(ApiV2MaintenanceResource.DESCRIPTION)));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "3600, 7200, 3601, false",
+    "3600, 7200, 3600, true",
+    "3600, 7200, 3599, true",
+    "3600, 7200, , true",
+    "-3600, 3600, 0, true",
+    "-3600, 3600, -1, true",
+    "-3600, 3600, 1, false",
+    "-3600, 3600, 3600, false",
+    "-3600, 3600, 3601, false",
+    "-7200, -3600, -5400, false",
+    "-3600, 0, -1, false",
+    "-7200, -3600, -3600, false",
+    "-7200, -3600, -3599, false"
+  })
+  void validatesLoginCutoffBeforeSaving(
+      long startOffset, long endOffset, Long cutoffOffset, boolean valid) {
+    ScheduledMaintenance maintenance =
+        new ScheduledMaintenance(
+            Date.from(NOW.plusSeconds(startOffset)), Date.from(NOW.plusSeconds(endOffset)));
+    maintenance.setStopUserLoginDate(
+        cutoffOffset == null ? null : Date.from(NOW.plusSeconds(cutoffOffset)));
+
+    if (valid) {
+      when(dao.save(maintenance)).thenReturn(maintenance);
+      assertEquals(maintenance, manager.saveScheduledMaintenance(maintenance, user));
+      verify(events).publishEvent(any(MaintenanceChangedEvent.class));
+    } else {
+      assertThrows(
+          MaintenanceOperationException.class,
+          () -> manager.saveScheduledMaintenance(maintenance, user));
+      verify(dao, never()).save(any());
+      verify(events, never()).publishEvent(any());
+    }
+  }
+
+  @Test
+  void acceptsDefaultCutoffAfterChangingStart() {
+    ScheduledMaintenance maintenance = maintenance(2, 5);
+    maintenance.setStartDate(hoursFromNow(4));
+    when(dao.save(maintenance)).thenReturn(maintenance);
+
+    assertEquals(maintenance, manager.saveScheduledMaintenance(maintenance, user));
+    assertTrue(maintenance.getStopUserLoginDate().before(maintenance.getStartDate()));
   }
 
   @Test
