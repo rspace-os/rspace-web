@@ -33,11 +33,13 @@ public class ConfigV2Controller {
         properties.getUiFooterUrls().entrySet().stream()
             .map(entry -> new HelpLink(entry.getKey(), entry.getValue()))
             .toList();
+    String helpEmail = properties.getDeploymentHelpEmail();
+    helpEmail = helpEmail == null || helpEmail.isBlank() ? null : helpEmail.trim();
     return new ApiV2Config(
         properties.getWebappVersion(),
         new Branding("/public/banner"),
         helpLinks,
         properties.getDeploymentDescription(),
-        properties.getDeploymentHelpEmail());
+        helpEmail);
   }
 }
