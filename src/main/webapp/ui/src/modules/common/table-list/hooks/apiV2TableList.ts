@@ -7,7 +7,7 @@ import type {
   FieldName,
   ResolvedCollectionConfig,
 } from "@/modules/common/collection/config";
-import { apiV2ListOptions } from "@/modules/common/queries/apiV2QueryKeys";
+import { apiV2ListKey } from "@/modules/common/queries/apiV2QueryKeys";
 import { type ApiV2CollectionAdapter, type ApiV2DocumentSchema, createApiV2CollectionAdapter } from "../api-v2/adapter";
 import { type ApiV2CollectionFetchOptions, createApiV2CollectionFetcher, projectedState } from "../api-v2/fetcher";
 import type { ApiV2CollectionMetadata } from "../api-v2/metadata";
@@ -153,7 +153,7 @@ export function useApiV2TableList<
       type: "remote",
       dataScope,
       queryKey: (state) =>
-        apiV2ListOptions(
+        apiV2ListKey(
           resourceName,
           endpoint,
           authScope,
@@ -179,8 +179,7 @@ export function useApiV2TableList<
                 schemaFields: Object.keys(documentSchema.entries),
               }
             : ["pending-saved-view", saved.signature],
-          ({ signal }) => fetchCollection(state, { signal }),
-        ).queryKey,
+        ),
       fetch: fetchCollection as unknown as CollectionFetcher<Row>,
       ...query,
       enabled: ready,
