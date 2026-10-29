@@ -94,9 +94,10 @@ describe("Export all rows", () => {
     await waitFor(() => expect(createObjectURL).toHaveBeenCalled());
     if (typeof blob === "undefined") throw new Error("Impossible, because createObjectURL has been called");
     expect((await blob.text()).split("\n").length).toBe(17);
+    await waitFor(() => expect(screen.getAllByRole("checkbox", { name: "Select row" })).toHaveLength(10));
   });
 
-  test("While the full listing loads, the Export button should be disabled and show progress.", async () => {
+  test("While the full listing loads, the Export button should stay focusable but busy, and announce progress.", async () => {
     window.URL.createObjectURL = vi.fn().mockReturnValue("");
     let respond: () => void = () => {};
     const responded = new Promise<void>((resolve) => {
@@ -111,24 +112,31 @@ describe("Export all rows", () => {
 
     await clickExportAllRows(user);
 
-    const exportButton = await screen.findByRole("button", { name: /Export/ });
-    await waitFor(() => expect(exportButton).toBeDisabled());
-    expect(
-      within(exportButton).getByRole("progressbar", { name: "system:usersPage.export.allRowsInProgress" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("status")).toHaveTextContent("system:usersPage.export.allRowsInProgress");
+    const exportButton = screen.getByRole("button", { name: "Export" });
+    expect(exportButton).toHaveAttribute("aria-disabled", "true");
+    expect(exportButton).toBeEnabled();
+    expect(within(exportButton).getByRole("progressbar", { hidden: true })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "system:usersPage.export.allRows" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     respond();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Export" })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole("status")).toBeEmptyDOMElement());
+    expect(screen.getByRole("button", { name: "Export" })).not.toHaveAttribute("aria-disabled");
   });
 
   test("If the full listing fails to load, an error should be shown and the previous page restored.", async () => {
     const restoreConsole = silenceConsole(["error"], ["Request failed"]);
-    mockRequests(() => new HttpResponse(null, { status: 500 }));
+    mockRequests(() => HttpResponse.json({ exceptionMessage: "Database is busy" }, { status: 500 }));
     const user = userEvent.setup();
     renderUsersPage();
 
     await clickExportAllRows(user);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("system:usersPage.export.allRowsFailed");
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("system:usersPage.export.allRowsFailed");
+    expect(alert).toHaveTextContent("Database is busy");
     await waitFor(() => expect(screen.getAllByRole("checkbox", { name: "Select row" })).toHaveLength(10));
     expect(screen.getByRole("button", { name: "Export" })).toBeEnabled();
     restoreConsole();

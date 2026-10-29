@@ -86,6 +86,7 @@ import useUiPreference, { PREFERENCES, UiPreferences } from "../../../hooks/api/
 import { type User, type UserId, type UserListing, useUserListing } from "../../../hooks/api/useUserListing";
 import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { getErrorMessage } from "../../../util/error";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
 import type { Optional } from "../../../util/optional";
@@ -1273,7 +1274,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
       addAlert(
         mkAlert({
           title: t("usersPage.export.allRowsFailed"),
-          message: error instanceof Error ? error.message : String(error),
+          message: getErrorMessage(error, t("common:apiErrors.unknown")),
           variant: "error",
         }),
       );
@@ -1420,19 +1421,32 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         <ViewColumnIcon sx={{ fontSize: 18, mr: 1 }} />
         {t("usersPage.columns.button")}
       </ColumnsPanelTrigger>
+      {/* visually hidden, as in VisuallyHiddenHeading */}
+      <Box
+        role="status"
+        sx={{
+          position: "absolute",
+          height: "1px",
+          width: "1px",
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          clip: "rect(1px, 1px, 1px, 1px)",
+          clipPath: "inset(50%)",
+        }}
+      >
+        {exportingAll ? t("usersPage.export.allRowsInProgress") : ""}
+      </Box>
       <GridToolbarExportContainer
         slotProps={{
           button: {
-            disabled: exportingAll || FetchingData.getSuccessValue(userListing).isError,
-            ...(exportingAll
-              ? {
-                  startIcon: <CircularProgress size={16} aria-label={t("usersPage.export.allRowsInProgress")} />,
-                }
-              : {}),
+            // while exporting the listing is loading too; aria-disabled keeps focus when the menu closes
+            disabled: !exportingAll && FetchingData.getSuccessValue(userListing).isError,
+            ...(exportingAll ? { "aria-disabled": true, startIcon: <CircularProgress size={16} aria-hidden /> } : {}),
           },
         }}
       >
         <ExportMenuItem
+          disabled={exportingAll}
           onClick={() => {
             // not awaited, so the menu closes and the button shows progress instead
             void exportAllRows();
@@ -1441,6 +1455,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
           {t("usersPage.export.allRows")}
         </ExportMenuItem>
         <ExportMenuItem
+          disabled={exportingAll}
           onClick={() => {
             exportVisibleRows();
           }}

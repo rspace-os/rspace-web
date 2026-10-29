@@ -64,24 +64,56 @@ public class SysAdminManagerImplTest {
   }
 
   @Test
-  public void fileUsageOrderKeepsUsageOrderAndSkipsUnknownUsers() {
+  public void fileUsageSortKeepsOrderAndFiguresOfEachUser() {
     PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
     pgCrit.setOrderBy(UserSort.FILE_USAGE.key());
-    Map<String, DatabaseUsageByUserGroupByResult> usage = new LinkedHashMap<>();
-    usage.put("b", new DatabaseUsageByUserGroupByResult("b", 300));
-    usage.put("a", new DatabaseUsageByUserGroupByResult("a", 200));
-    usage.put("ghost", new DatabaseUsageByUserGroupByResult("ghost", 100));
+    Map<String, DatabaseUsageByUserGroupByResult> fileUsage =
+        usageOf(Map.entry("B", 300), Map.entry("a", 200), Map.entry("ghost", 100));
+    User a = TestFactory.createAnyUser("a");
+    User b = TestFactory.createAnyUser("b");
     when(fileDao.getCountOfUsersWithFilesInFileSystem()).thenReturn(3L);
-    when(fileDao.getTotalFileUsageForAllUsers(pgCrit)).thenReturn(usage);
-    when(userDao.getUsersByUsernames(usage.keySet()))
-        .thenReturn(List.of(TestFactory.createAnyUser("a"), TestFactory.createAnyUser("b")));
-    when(recordDao.getTotalRecordsForUsers(any(), any())).thenReturn(Map.of());
+    when(fileDao.getTotalFileUsageForAllUsers(pgCrit)).thenReturn(fileUsage);
+    when(userDao.getUsersByUsernames(fileUsage.keySet())).thenReturn(List.of(a, b));
+    when(recordDao.getTotalRecordsForUsers(any(), any()))
+        .thenReturn(usageOf(Map.entry("a", 2), Map.entry("b", 3)));
 
-    ISearchResults<UserUsageInfo> results = sysAdminManager.getUserUsageInfo(sysadmin, pgCrit);
+    List<UserUsageInfo> rows = sysAdminManager.getUserUsageInfo(sysadmin, pgCrit).getResults();
 
-    assertEquals(
-        List.of("b", "a"),
-        results.getResults().stream().map(i -> i.getUserInfo().getUsername()).toList());
+    assertEquals(List.of("b:300:3", "a:200:2"), rows.stream().map(this::describe).toList());
+  }
+
+  @Test
+  public void recordCountSortKeepsOrderAndFiguresOfEachUser() {
+    PaginationCriteria<User> pgCrit = PaginationCriteria.createDefaultForClass(User.class);
+    pgCrit.setOrderBy(UserSort.RECORD_COUNT.key());
+    Map<String, DatabaseUsageByUserGroupByResult> recordCount =
+        usageOf(Map.entry("a", 3), Map.entry("ghost", 2), Map.entry("B", 1));
+    User a = TestFactory.createAnyUser("a");
+    User b = TestFactory.createAnyUser("b");
+    when(recordDao.getCountOfUsersWithRecords()).thenReturn(3L);
+    when(recordDao.getTotalRecordsForUsers(pgCrit)).thenReturn(recordCount);
+    when(userDao.getUsersByUsernames(recordCount.keySet())).thenReturn(List.of(b, a));
+    when(fileDao.getTotalFileUsageForUsers(any(), any()))
+        .thenReturn(usageOf(Map.entry("a", 200), Map.entry("b", 300)));
+
+    List<UserUsageInfo> rows = sysAdminManager.getUserUsageInfo(sysadmin, pgCrit).getResults();
+
+    assertEquals(List.of("a:200:3", "b:300:1"), rows.stream().map(this::describe).toList());
+  }
+
+  @SafeVarargs
+  private Map<String, DatabaseUsageByUserGroupByResult> usageOf(
+      Map.Entry<String, Integer>... usages) {
+    Map<String, DatabaseUsageByUserGroupByResult> byUsername = new LinkedHashMap<>();
+    for (Map.Entry<String, Integer> usage : usages) {
+      byUsername.put(
+          usage.getKey(), new DatabaseUsageByUserGroupByResult(usage.getKey(), usage.getValue()));
+    }
+    return byUsername;
+  }
+
+  private String describe(UserUsageInfo row) {
+    return row.getUserInfo().getUsername() + ":" + row.getFileUsage() + ":" + row.getRecordCount();
   }
 
   @Test

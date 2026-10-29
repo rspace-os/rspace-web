@@ -202,14 +202,14 @@ export const GridToolbarExportContainer = ({
   slotProps,
 }: {
   children: React.ReactNode;
-  slotProps?: { button?: { disabled?: boolean; startIcon?: React.ReactNode } };
+  slotProps?: { button?: { disabled?: boolean; "aria-disabled"?: boolean; startIcon?: React.ReactNode } };
 }) => {
   // Stub renders the trigger and menu items inline without an open/close toggle
   // because the toolbar slot in real usage is re-created on each parent render,
   // which would unmount any local state in jsdom tests.
   return (
     <div>
-      <button type="button" disabled={slotProps?.button?.disabled}>
+      <button type="button" disabled={slotProps?.button?.disabled} aria-disabled={slotProps?.button?.["aria-disabled"]}>
         {slotProps?.button?.startIcon}
         {EXPORT_LABEL}
       </button>

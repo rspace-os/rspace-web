@@ -4,7 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { server } from "@/__tests__/mswServer";
 import materialTheme from "../../../../theme";
@@ -28,7 +28,7 @@ window.RS = { newFileStoresExportEnabled: false };
 
 const USER8H_ID = "-5";
 
-function mockRequests(formsAndTemplatesUsage: () => Response) {
+function mockRequests(formsAndTemplatesUsage: () => Response | Promise<Response>) {
   server.use(
     http.get("*/system/ajax/jsonList", () => HttpResponse.json(USER_LISTING)),
     http.get("/export/ajax/defaultPDFConfig", () => HttpResponse.json(PDF_CONFIG)),
@@ -69,6 +69,29 @@ describe("Delete user", () => {
     ).toBeEnabled();
     expect(dialog.getByText("system:usersPage.deleteDialog.formsAndTemplatesNotice")).toBeVisible();
     expect(dialog.getByText("system:usersPage.deleteDialog.formsNotice")).toBeVisible();
+  });
+
+  test("When only the user's templates are used by others, the dialog should not mention forms.", async () => {
+    mockRequests(() => HttpResponse.json({ formsUsedByOtherUsers: false, templatesUsedByOtherUsers: true }));
+
+    const dialog = await openDeleteDialogForUser8h();
+
+    expect(
+      await dialog.findByRole("button", { name: "system:usersPage.deleteDialog.transferAndDelete" }),
+    ).toBeEnabled();
+    expect(dialog.getByText("system:usersPage.deleteDialog.formsAndTemplatesNotice")).toBeVisible();
+    expect(dialog.queryByText("system:usersPage.deleteDialog.formsNotice")).not.toBeInTheDocument();
+  });
+
+  test("While the transfer check loads, deleting should not be possible.", async () => {
+    mockRequests(async () => {
+      await delay("infinite");
+      return HttpResponse.json({ formsUsedByOtherUsers: false, templatesUsedByOtherUsers: false });
+    });
+
+    const dialog = await openDeleteDialogForUser8h();
+
+    expect(dialog.getByRole("button", { name: /common:actions.delete/ })).toBeDisabled();
   });
 
   test("When nothing would be transferred, the dialog should offer a plain delete.", async () => {

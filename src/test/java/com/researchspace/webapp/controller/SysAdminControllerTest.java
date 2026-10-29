@@ -112,9 +112,9 @@ public class SysAdminControllerTest {
 
   @Test
   public void formsAndTemplatesUsageRequiresSysadmin() {
-    User pi = TestFactory.createAnyUserWithRole("pi", Constants.PI_ROLE);
+    User communityAdmin = TestFactory.createAnyUserWithRole("admin", Constants.ADMIN_ROLE);
     when(properties.getDeleteUser()).thenReturn(Boolean.TRUE.toString());
-    when(userManager.getAuthenticatedUserInSession()).thenReturn(pi);
+    when(userManager.getAuthenticatedUserInSession()).thenReturn(communityAdmin);
 
     assertThrows(AuthorizationException.class, () -> ctrller.getFormsAndTemplatesUsage(2L));
     Mockito.verifyNoInteractions(delMgr);

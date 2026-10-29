@@ -61,6 +61,7 @@ public interface UserDeletionManager {
    * transfers those to the sysadmin removing them.
    *
    * @param userToDeleteId ID of user who would be deleted
+   * @throws org.apache.shiro.authz.AuthorizationException if the subject lacks USER:DELETE
    */
   FormsAndTemplatesUsage getFormsAndTemplatesUsage(Long userToDeleteId);
 }
