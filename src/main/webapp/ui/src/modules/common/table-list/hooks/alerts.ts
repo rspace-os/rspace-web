@@ -18,7 +18,7 @@ function firstShown<TElement extends Element>(candidates: readonly TElement[]): 
 }
 
 /** The first visible control in a row's actions; the table and card presentations both render, one hidden by CSS. */
-export function rowActionsFocusTarget(root: Element, rowId: string): HTMLElement | undefined {
+function rowActionsFocusTarget(root: Element, rowId: string): HTMLElement | undefined {
   return firstShown(
     [...root.querySelectorAll(`[data-table-list-row-actions=${attributeValue(rowId)}]`)].flatMap((actions) => [
       ...actions.querySelectorAll<HTMLElement>(focusableSelector),

@@ -1,4 +1,5 @@
-import { normalizeRsqlList, normalizeRsqlScalar, rsqlOperatorToken, serializeRsqlExpression } from "../rsql";
+import { filterOperatorTokens } from "@/modules/common/collection/schema";
+import { normalizeRsqlList, normalizeRsqlScalar, type RsqlValue, serializeRsqlExpression } from "../rsql";
 import type { FilterExpression } from "../types";
 import type { ApiV2FilterLimits, ApiV2FilterOperator } from "./metadata";
 
@@ -8,7 +9,7 @@ type SelectorContract = Readonly<
 
 type Counts = { comparisons: number; likeComparisons: number; arguments: number };
 
-function validateWildcard(value: string | number | boolean, allowed: boolean, field: string): void {
+function validateWildcard(value: RsqlValue, allowed: boolean, field: string): void {
   if (!allowed && typeof value === "string" && value.includes("*")) {
     throw new Error(`Wildcards are not supported for field ${field}`);
   }
@@ -21,7 +22,7 @@ function validateComparison<TDocument>(
 ): void {
   const selector = selectors[node.field];
   if (!selector) throw new Error(`Field is not filterable: ${node.field}`);
-  const token: ApiV2FilterOperator = rsqlOperatorToken(node.operator);
+  const token: ApiV2FilterOperator = filterOperatorTokens[node.operator];
   if (!selector.operators.includes(token))
     throw new Error(`Operator ${token} is not supported for field ${node.field}`);
 

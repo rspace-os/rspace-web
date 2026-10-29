@@ -1,39 +1,6 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { savedViewSelectors } from "../hooks/urlState";
-import { parseTableViewState, serializeTableViewState, tableViewStorageKey } from "../utils/viewStorage";
+import { describe, expect, it } from "vitest";
+import { parseTableViewState, serializeTableViewState } from "../utils/viewStorage";
 import { config } from "./fixtures/tableList";
-
-describe("saved view field names", () => {
-  const key = tableViewStorageKey("records");
-
-  afterEach(() => {
-    window.localStorage.clear();
-    window.history.replaceState({}, "", "/");
-  });
-
-  it("reads the names a stored view refers to, so they can be hydrated by ID", () => {
-    window.localStorage.setItem(
-      key,
-      JSON.stringify({
-        v: 1,
-        search: null,
-        where: 'owner==Ada;customFields.SF104=="BSL-2"',
-        columns: JSON.stringify({ fields: ["title", "customFields.SF108"] }),
-        defaults: JSON.stringify({ fields: config.defaultColumns }),
-        sort: null,
-      }),
-    );
-
-    expect(savedViewSelectors("records", true)).toEqual(["owner", "customFields.SF104", "title", "customFields.SF108"]);
-  });
-
-  it("prefers the URL, because that is what the restore actually applies", () => {
-    window.localStorage.setItem(key, JSON.stringify({ v: 1, search: null, where: "owner==Stored", columns: null }));
-    window.history.replaceState({}, "", "/?records.where=customFields.SF9%3D%3DShared");
-
-    expect(savedViewSelectors("records", true)).toEqual(["customFields.SF9"]);
-  });
-});
 
 describe("table-list persisted view state", () => {
   it("round-trips non-default filters, columns, and sorting", () => {

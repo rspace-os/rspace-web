@@ -2,22 +2,10 @@ import { parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ResolvedCollectionConfig } from "@/modules/common/collection/config";
 import { isRuntimeFieldInNamespace } from "@/modules/common/collection/utils";
-import { parseRsqlExpression, rsqlSelectors, serializeRsqlExpression } from "../rsql";
+import { parseRsqlExpression, serializeRsqlExpression } from "../rsql";
 import type { TableListFeatures, TableListQueryStringOptions } from "../types";
-import {
-  columnSelectors,
-  parseColumns,
-  parseSorting,
-  serializeColumns,
-  serializeFilters,
-  serializeSorting,
-} from "../utils/queryString";
-import {
-  loadStoredTableView,
-  saveStoredTableView,
-  storedTableViewSelectors,
-  tableViewStorageKey,
-} from "../utils/viewStorage";
+import { parseColumns, parseSorting, serializeColumns, serializeFilters, serializeSorting } from "../utils/queryString";
+import { loadStoredTableView, saveStoredTableView, tableViewStorageKey } from "../utils/viewStorage";
 
 const emptySorting = [] as const;
 
@@ -46,20 +34,6 @@ export function parameterNames(slug: string, options: true | TableListQueryStrin
 
 export function tableIdFor(slug: string, options: boolean | TableListQueryStringOptions): string {
   return (typeof options === "object" ? options.tableId?.trim() : undefined) || slug;
-}
-
-export function savedViewSelectors(slug: string, options: true | TableListQueryStringOptions): readonly string[] {
-  if (typeof window === "undefined") return [];
-  const names = parameterNames(slug, options);
-  const parameters = new URLSearchParams(window.location.search);
-  const where = parameters.get(names.where);
-  const columns = parameters.get(names.columns);
-  const fromUrl = [
-    ...(where === null ? [] : rsqlSelectors(where)),
-    ...(columns === null ? [] : columnSelectors(columns)),
-  ];
-  if (Object.values(names).some((name) => parameters.has(name))) return fromUrl;
-  return storedTableViewSelectors(tableViewStorageKey(tableIdFor(slug, options)));
 }
 
 export function useTableListQueryString<TDocument>(

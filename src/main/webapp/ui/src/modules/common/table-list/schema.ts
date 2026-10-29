@@ -1,7 +1,5 @@
 import * as v from "valibot";
 
-export const stringScalar = v.string();
-
 export const booleanScalar = v.pipe(
   v.picklist(["true", "false"]),
   v.transform((value) => value === "true"),

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { v2ListEnvelope } from "@/__tests__/helpers/v2ListEnvelope";
 import { runtimeDocumentSchema as documentSchema } from "../../__tests__/fixtures/schema";
 import type { CollectionQueryState } from "../../types";
-import { createApiV2CollectionAdapter, staleRuntimeFields } from "../adapter";
+import { createApiV2CollectionAdapter } from "../adapter";
 import { apiV2CollectionRequestParams } from "../fetcher";
 import { createApiV2FilterFields, enrichApiV2FilterConfig } from "../filterFields";
 import type { ApiV2CollectionMetadata } from "../metadata";
@@ -342,14 +342,6 @@ describe("runtime custom fields", () => {
 
     expect(field?.capabilities.supportsWildcards).toBe(true);
     expect(apiV2CollectionRequestParams(built, withWildcard).get("where")).toBe("customFields.SF104==BSL*");
-  });
-
-  it("reports only the stale runtime names of a saved view", () => {
-    const built = adapter([definition()]);
-
-    expect(staleRuntimeFields(["name", "customFields.SF104", "customFields.SF999"], built)).toEqual([
-      "customFields.SF999",
-    ]);
   });
 
   it("rejects a runtime selector that shadows published collection metadata", () => {
