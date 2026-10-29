@@ -129,7 +129,7 @@ export const metadataRuntimeFieldsSchema = v.optional(
     v.array(runtimeNamespaceSchema),
     v.checkItems(
       (item, index, items) => items.findIndex((other) => other.namespace === item.namespace) === index,
-      (issue) => `Duplicate runtime field namespace ${(issue.input as { namespace: string }).namespace}`,
+      (issue) => `Duplicate runtime field namespace ${issue.input.namespace}`,
     ),
   ),
   () => [],
@@ -167,8 +167,7 @@ const rowBoundEntries = { minItems: v.optional(nonNegativeInteger), maxItems: v.
 export const metadataRowBoundsSchema = v.pipe(
   v.object(rowBoundEntries),
   v.forward(
-    v.partialCheck(
-      [["minItems"], ["maxItems"]],
+    v.check(
       ({ minItems, maxItems }) => minItems === undefined || maxItems === undefined || minItems <= maxItems,
       "Invalid row bounds",
     ),
@@ -221,7 +220,7 @@ const metadataChildListSchema = v.pipe(
   v.array(metadataChildSchema),
   v.checkItems(
     (item, index, items) => items.findIndex((other) => other.name === item.name) === index,
-    (issue) => `duplicate child field ${(issue.input as ApiV2MetadataChild).name}`,
+    (issue) => `duplicate child field ${issue.input.name}`,
   ),
 );
 export const metadataStructuredPropertySchema = v.object({
