@@ -42,20 +42,24 @@ function touch(target: EventTarget, point: Point): Touch {
   return init as Touch;
 }
 
+function fallbackTouchEvent(): typeof TouchEvent {
+  const fallback = class extends Event {} as unknown as typeof TouchEvent;
+  Object.defineProperty(window, "TouchEvent", { configurable: true, value: fallback });
+  return fallback;
+}
+
 function touchEvent(type: string, target: EventTarget, point: Point): TouchEvent {
   const contact = touch(target, point);
   const ending = type === "touchend" || type === "touchcancel";
   let TouchEventConstructor = window.TouchEvent;
   if (!TouchEventConstructor) {
-    TouchEventConstructor = class extends Event {} as unknown as typeof TouchEvent;
-    Object.defineProperty(window, "TouchEvent", { configurable: true, value: TouchEventConstructor });
+    TouchEventConstructor = fallbackTouchEvent();
   }
   let event: TouchEvent;
   try {
     event = new TouchEventConstructor(type, { bubbles: true, cancelable: true });
   } catch {
-    TouchEventConstructor = class extends Event {} as unknown as typeof TouchEvent;
-    Object.defineProperty(window, "TouchEvent", { configurable: true, value: TouchEventConstructor });
+    TouchEventConstructor = fallbackTouchEvent();
     event = new TouchEventConstructor(type, { bubbles: true, cancelable: true });
   }
   Object.defineProperties(event, {
@@ -276,8 +280,8 @@ export class TableListReorderingPage {
     await nextFrame();
   }
 
-  async moveMouseTo(target: Locator | Element, yOffset = 0): Promise<void> {
-    const element = target instanceof Element ? target : target.element();
+  async moveMouseTo(target: Locator, yOffset = 0): Promise<void> {
+    const element = target.element();
     const point = center(element);
     this.mousePosition = { x: point.x, y: point.y + yOffset };
     document.dispatchEvent(mouseEvent("mousemove", this.mousePosition));
@@ -346,9 +350,9 @@ export class TableListReorderingPage {
     element.dispatchEvent(touchEvent("touchstart", element, this.touchPosition));
   }
 
-  async moveTouchTo(target: Locator | Element, yOffset = 0): Promise<void> {
+  async moveTouchTo(target: Locator, yOffset = 0): Promise<void> {
     if (!this.touchTarget) throw new Error("No touch drag is active");
-    const element = target instanceof Element ? target : target.element();
+    const element = target.element();
     const point = center(element);
     this.touchPosition = { x: point.x, y: point.y + yOffset };
     this.touchTarget.dispatchEvent(touchEvent("touchmove", this.touchTarget, this.touchPosition));

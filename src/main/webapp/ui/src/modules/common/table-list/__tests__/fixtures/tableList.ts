@@ -1,15 +1,10 @@
+import type * as v from "valibot";
 import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
+import type { RuntimeFieldDefinition } from "../../api-v2/runtimeFieldCatalog";
 import type { FilterState, PageState } from "../../types";
+import type { testRecordSchema } from "./schema";
 
-export type TestRecord = {
-  id: string;
-  title: string;
-  owner: string;
-  score: number;
-  enabled: boolean;
-  modifiedAt: string;
-  capability?: boolean;
-};
+export type TestRecord = v.InferOutput<typeof testRecordSchema>;
 
 export const config = resolveCollectionConfig<TestRecord>({
   slug: "records",
@@ -47,3 +42,20 @@ export const records: readonly TestRecord[] = [
 
 export const emptyFilters: FilterState<TestRecord> = { search: "", expression: null };
 export const firstPage: PageState = { pageIndex: 0, pageSize: 2 };
+
+export function definition(overrides: Partial<RuntimeFieldDefinition> = {}): RuntimeFieldDefinition {
+  return {
+    id: "SF104",
+    selector: "customFields.SF104",
+    label: "Hazard class",
+    type: "text",
+    jsonType: "string",
+    operators: ["==", "!=", "=in=", "=out=", "=contains=", "=like=", "=exists="],
+    supportsWildcards: false,
+    columnSelectable: true,
+    sortable: false,
+    source: { id: "IT9", label: "Cell line template" },
+    options: [],
+    ...overrides,
+  };
+}

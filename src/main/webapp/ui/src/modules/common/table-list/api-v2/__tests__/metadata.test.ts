@@ -203,7 +203,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
     expect(() => apiV2CollectionMetadataFromOpenApi(document, "records")).toThrow("items.$ref");
   });
   it("reads a nullable field's type from its union with null", () => {
-    const withRelationship = structuredClone(openApi) as typeof openApi;
+    const withRelationship = structuredClone(openApi);
     const where = (withRelationship.paths["/api/v2/records"].get.parameters as Record<string, unknown>[]).find(
       (parameter) => parameter.name === "where",
     ) as Record<string, unknown>;
@@ -225,7 +225,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("reads picker metadata and the current relationship wire selectors", () => {
-    const withPicker = structuredClone(openApi) as typeof openApi;
+    const withPicker = structuredClone(openApi);
     const where = (withPicker.paths["/api/v2/records"].get.parameters as Record<string, unknown>[]).find(
       (parameter) => parameter.name === "where",
     ) as Record<string, unknown>;
@@ -254,7 +254,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("rejects malformed picker descriptors and unknown operators", () => {
-    const malformedPicker = structuredClone(openApi) as typeof openApi;
+    const malformedPicker = structuredClone(openApi);
     const malformedWhere = (malformedPicker.paths["/api/v2/records"].get.parameters as Record<string, unknown>[]).find(
       (parameter) => parameter.name === "where",
     ) as Record<string, unknown>;
@@ -267,7 +267,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
 
     expect(() => apiV2CollectionMetadataFromOpenApi<TestRecord>(malformedPicker, "records")).toThrow("target.picker");
 
-    const unknownOperator = structuredClone(openApi) as typeof openApi;
+    const unknownOperator = structuredClone(openApi);
     const unknownWhere = (unknownOperator.paths["/api/v2/records"].get.parameters as Record<string, unknown>[]).find(
       (parameter) => parameter.name === "where",
     ) as Record<string, unknown>;
@@ -281,7 +281,7 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("rejects metadata selectors beyond one relationship hop", () => {
-    const tooDeep = structuredClone(openApi) as typeof openApi;
+    const tooDeep = structuredClone(openApi);
     const where = (tooDeep.paths["/api/v2/records"].get.parameters as Record<string, unknown>[]).find(
       (parameter) => parameter.name === "where",
     ) as Record<string, unknown>;
@@ -325,14 +325,8 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("reads a runtime field namespace when the collection declares one", () => {
-    const withRuntimeFields = structuredClone(openApi) as typeof openApi;
-    const parameters = (
-      withRuntimeFields.paths["/api/v2/records"].get as {
-        parameters: Record<string, unknown>[];
-      }
-    ).parameters;
-    const where = parameters.find((parameter) => parameter.name === "where");
-    if (!where) throw new Error("fixture has no where parameter");
+    const withRuntimeFields = structuredClone(openApi);
+    const where = whereParameter(withRuntimeFields);
     where["x-rspace-runtime-fields"] = [
       {
         namespace: "customFields",
@@ -369,10 +363,8 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("reads a namespace reached through a relationship", () => {
-    const hopped = structuredClone(openApi) as typeof openApi;
-    const parameters = (hopped.paths["/api/v2/records"].get as { parameters: Record<string, unknown>[] }).parameters;
-    const where = parameters.find((parameter) => parameter.name === "where");
-    if (!where) throw new Error("fixture has no where parameter");
+    const hopped = structuredClone(openApi);
+    const where = whereParameter(hopped);
     where["x-rspace-runtime-fields"] = [
       {
         namespace: "target.customFields",
@@ -399,10 +391,8 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("accepts the booking instrument alias when it delegates to the instrument catalog", () => {
-    const delegated = structuredClone(openApi) as typeof openApi;
-    const parameters = (delegated.paths["/api/v2/records"].get as { parameters: Record<string, unknown>[] }).parameters;
-    const where = parameters.find((parameter) => parameter.name === "where");
-    if (!where) throw new Error("fixture has no where parameter");
+    const delegated = structuredClone(openApi);
+    const where = whereParameter(delegated);
     where["x-rspace-runtime-fields"] = [
       {
         namespace: "target.customFields",
@@ -426,11 +416,8 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("rejects runtime namespaces that do not match their delegated catalog", () => {
-    const mismatched = structuredClone(openApi) as typeof openApi;
-    const parameters = (mismatched.paths["/api/v2/records"].get as { parameters: Record<string, unknown>[] })
-      .parameters;
-    const where = parameters.find((parameter) => parameter.name === "where");
-    if (!where) throw new Error("fixture has no where parameter");
+    const mismatched = structuredClone(openApi);
+    const where = whereParameter(mismatched);
     where["x-rspace-runtime-fields"] = [
       {
         namespace: "target.extraFields",
@@ -454,24 +441,9 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("rejects duplicate runtime namespaces", () => {
-    const duplicate = structuredClone(openApi) as typeof openApi;
-    const parameters = (duplicate.paths["/api/v2/records"].get as { parameters: Record<string, unknown>[] }).parameters;
-    const where = parameters.find((parameter) => parameter.name === "where");
-    if (!where) throw new Error("fixture has no where parameter");
-    const namespace = {
-      namespace: "customFields",
-      catalog: "/api/v2/instruments/fields/customFields",
-      responseField: "customFields",
-      filterable: true,
-      columnSelectable: true,
-      sortable: false,
-      maximumProjections: 50,
-      catalogDefaultLimit: 50,
-      catalogMaximumLimit: 200,
-      catalogMaximumIds: 100,
-      via: "",
-      viaResource: "",
-    };
+    const duplicate = structuredClone(openApi);
+    const where = whereParameter(duplicate);
+    const namespace = runtimeNamespace();
     where["x-rspace-runtime-fields"] = [namespace, namespace];
 
     expect(() => apiV2CollectionMetadataFromOpenApi<TestRecord>(duplicate, "records")).toThrow(
@@ -480,10 +452,8 @@ describe("apiV2CollectionMetadataFromOpenApi", () => {
   });
 
   it("rejects a runtime field descriptor with no catalog", () => {
-    const invalid = structuredClone(openApi) as typeof openApi;
-    const parameters = (invalid.paths["/api/v2/records"].get as { parameters: Record<string, unknown>[] }).parameters;
-    const where = parameters.find((parameter) => parameter.name === "where");
-    if (!where) throw new Error("fixture has no where parameter");
+    const invalid = structuredClone(openApi);
+    const where = whereParameter(invalid);
     where["x-rspace-runtime-fields"] = [{ namespace: "customFields", responseField: "customFields" }];
 
     expect(() => apiV2CollectionMetadataFromOpenApi<TestRecord>(invalid, "records")).toThrow("0.catalog:");
