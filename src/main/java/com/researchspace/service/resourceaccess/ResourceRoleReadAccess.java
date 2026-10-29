@@ -57,7 +57,7 @@ public final class ResourceRoleReadAccess implements AccessFunction {
     }
     Set<Long> groupIds =
         subject.getGroups().stream()
-            .filter(group -> group.getId() != null && group.getEnabledMemberSize() > 0)
+            .filter(group -> group.getId() != null)
             .map(Group::getId)
             .collect(Collectors.toUnmodifiableSet());
     return AccessResult.allowedWhere(
