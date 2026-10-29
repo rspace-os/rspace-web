@@ -141,6 +141,34 @@ class FeatureFlagManagerImplTest {
   }
 
   @Test
+  void runAsSysadminCannotChangeBaselinesOrUseDevtoolsOnNonDevServer() {
+    featureFlagManager = createManager("false", "false", "prod");
+    Subject subject = ThreadContext.getSubject();
+    when(subject.isRunAs()).thenReturn(true);
+    initialiseRuntime(Map.of(FLAG, false), false);
+    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
+
+    assertFalse(featureFlagManager.canChangeFeatureFlagBaselines(sysadmin));
+    assertFalse(featureFlagManager.canUseDevtools(sysadmin));
+    assertThrows(
+        FeatureFlagPermissionException.class,
+        () -> featureFlagManager.updateFeatureFlag(FLAG, baseline(true), sysadmin, sysadmin));
+    verify(featureFlagDao, never()).upsertBaseline(any(), anyBoolean());
+    verify(events, never()).publishEvent(any(FeatureFlagResourceChangedEvent.class));
+  }
+
+  @Test
+  void failureToDetermineRunAsDeniesSysadminCapabilities() {
+    featureFlagManager = createManager("false", "false", "prod");
+    Subject subject = ThreadContext.getSubject();
+    when(subject.isRunAs()).thenThrow(new IllegalStateException("Run-as state unavailable"));
+    User sysadmin = TestFactory.createAnyUserWithRole("sysadmin", Constants.SYSADMIN_ROLE);
+
+    assertFalse(featureFlagManager.canChangeFeatureFlagBaselines(sysadmin));
+    assertFalse(featureFlagManager.canUseDevtools(sysadmin));
+  }
+
+  @Test
   void invalidDevModeIsRejectedAtConstruction() {
     assertThrows(IllegalStateException.class, () -> createManager("invalid", "false"));
     assertThrows(IllegalStateException.class, () -> createManager("invalid", "false", "prod"));
