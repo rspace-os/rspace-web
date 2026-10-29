@@ -87,7 +87,7 @@ export function useOauthTokenQuery() {
     queryKey: queryKeys.oauthToken(),
     // Mint once per page load: the shared storage key may hold a token from another session
     // context (for example, from before an operate-as start or release).
-    queryFn: () => (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken()),
+    queryFn: () => (isPublicDocumentView() ? fetchOauthToken(fetchToken) : mintUiToken(fetchToken)),
     // Calculate stale time based on token expiry
     // We'll consider the token stale 5 minutes before it actually expires
     staleTime: (query) => {
