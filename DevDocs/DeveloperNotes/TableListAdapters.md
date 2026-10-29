@@ -268,7 +268,7 @@ identity and change it when that identity changes. Tokens remain in fetchers and
 authorization scope. Request validation runs inside the query so an invalid filter leaves the table's
 error state and reset controls available.
 
-`apiV2ListOptions` builds row keys under `["rspace.api.v2.<resource>", "list", scope,
+`apiV2ListKey` builds row keys under `["rspace.api.v2.<resource>", "list", scope,
 endpoint, parameters]`, so invalidating a resource root also refreshes its table rows.
 The shared helpers own OpenAPI and runtime-field keys; consumers use their factories.
 
