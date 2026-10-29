@@ -14,13 +14,10 @@ import { formatNumber } from "@/modules/common/i18n/localeFormat";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2PageEnvelope } from "@/modules/common/queries/v2Pagination";
 import type { CollectionPage, CollectionQueryState } from "../types";
-import {
-  createApiV2FilterFields,
-  isRelationshipWireSelector,
-  type RuntimeFieldCatalogForNamespace,
-} from "./filterFields";
+import { createApiV2FilterFields, isRelationshipWireSelector } from "./filterFields";
 import type { ApiV2CollectionMetadata } from "./metadata";
 import { collectionQueryParams, selectedFields } from "./queryParams";
+import type { RuntimeFieldCatalogForNamespace } from "./runtimeFieldCatalog";
 import { type ApiV2DocumentSchema, createApiV2ResponseSchema, objectInput } from "./schema";
 
 export type { ApiV2DocumentSchema } from "./schema";
