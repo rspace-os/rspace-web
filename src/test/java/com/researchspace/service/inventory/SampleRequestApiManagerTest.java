@@ -241,11 +241,10 @@ public class SampleRequestApiManagerTest extends SpringTransactionalTest {
       assertEquals(SampleRequestStatus.REJECTED, latest.getStatus());
       assertEquals(
           messages.getMessage("inventory.sampleRequest.autoRejectedReason"), latest.getReason());
-      // stored as a key, so each reader sees the reason in their own locale
       List<SampleRequestStatusChange> stored =
           sampleRequestDao.get(other.getId()).getStatusChanges();
       SampleRequestStatusChange storedLatest = stored.get(stored.size() - 1);
-      assertEquals("inventory.sampleRequest.autoRejectedReason", storedLatest.getReasonKey());
+      assertTrue(storedLatest.isAutoClosed());
       assertNull(storedLatest.getReason());
     }
   }

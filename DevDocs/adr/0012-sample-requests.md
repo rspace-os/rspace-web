@@ -142,9 +142,9 @@ table's transitions (D7), in the same transaction as the transfer:
   user. The new owner did not agree to anything the previous owner was asked, so carrying
   the requests across would be wrong.
 
-Both reasons are stored as message keys, not text, and turned into text when the request
-is read, so each reader sees them in their own locale. The rejection does not name the
-new owner, so neither reason needs anything stored besides its key.
+Neither reason is stored as text: the change is marked `autoClosed` and the code picks the
+message from its status, so the wording can change without touching data. The rejection
+does not name the new owner.
 
 Fulfilling by transfer came late: the original idea was that a request asks for something
 to be done with the sample, with the target sample itself rarely changing hands. A
