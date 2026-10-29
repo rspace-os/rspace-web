@@ -1,6 +1,6 @@
 # AGENTS.md
 
-RSpace is a Java 17/Spring application with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
+RSpace is a Java/Spring application (built for Java 17, runs on 17 or 21) with a React/TypeScript frontend, MUI, Axios, pnpm, Liquibase, Hibernate, and MariaDB.
 
 Applies repository-wide; nested `AGENTS.md` files take precedence.
 
@@ -102,6 +102,7 @@ Use React functional components with TypeScript. Prefer React Query for new serv
 - Use JUnit's `assertThrows` directly, keeping setup outside its executable. For exceptions already captured by MockMvc, use `assertInstanceOf` on `getResolvedException()`.
 - Use JUnit assertions for equality, booleans, nullness, identity, type, and exceptions. AssertJ is appropriate for collection, map, string-content, `Optional`, numeric-comparison, and file assertions. Do not replace named JUnit assertions with AssertJ equivalents or replace `assertThrows` with `assertThatThrownBy`.
 - Do not add direct Hamcrest assertions. Hamcrest remains as compile support for Spring's matcher-typed MockMvc signatures. Use `MVCTestBase` helpers such as `viewNameContains`, `modelAttributeContains`, `modelAttributeDoesNotContain`, and `headerContains`.
+- Keep `MockitoExtension`'s strict stubs. An unused stub means the setup is wrong; delete it or move it into the test that uses it. Do not use Mockito `lenient()`, `@MockitoSettings(strictness = LENIENT)`, or `@Mock(strictness = LENIENT)`. When you remove a stub that let a path through, prove the short-circuit with `verifyNoInteractions` or `never()`; an unstubbed mock returns `false` and can hide a deleted guard.
 </important>
 
 <important if="changing user-visible behavior">

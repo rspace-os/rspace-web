@@ -12,6 +12,10 @@ overrides:
   # (epam/miew#708), so point it at the published miew.
   miew-react: 0.12.0
   miew-react>miew: 0.12.0
+  # @sa11y/vitest 8.x declares a hard vitest ^4 dependency, which installs a
+  # second vitest whose expect our tests never use. Share the root vitest
+  # until sa11y supports Vitest 5.
+  '@sa11y/vitest>vitest': 5.0.5
 
 # Each entry declares a dependency the package imports but doesn't declare.
 # Version-pinned keys stop matching silently after an upgrade; retarget them.

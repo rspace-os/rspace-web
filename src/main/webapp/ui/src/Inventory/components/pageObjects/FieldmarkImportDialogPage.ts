@@ -23,7 +23,7 @@ export class FieldmarkImportDialogPage {
   }
 
   get igsnIdCombobox(): Locator {
-    return page.getByRole("combobox", { name: "IGSN ID field" });
+    return page.getByRole("combobox", { name: "IGSN ID Field" });
   }
 
   igsnOption(name: string): Locator {

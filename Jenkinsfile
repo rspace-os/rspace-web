@@ -26,8 +26,11 @@ echo 'Building rspace-web'
  In Jenkins, it is called from 'rspace-web' project as a multi branch build
  For the main branch, it runs 'quick' JUnit tests
  When FULL_JAVA_TESTS is set, it runs full Java tests (i.e. with IT tests) instead.
- The script takes several parameters; there are other Jenkins jobs to run nightly test-suites using JDK 11 and also
+ The script takes several parameters; there are other Jenkins jobs to run nightly test-suites on other JDKs and also
  with 'nightly' tests which are more long running tests.
+ Java 17 and 21 are both supported. The defaults below stay on 17 until Java 21 is installed on the agents,
+ then flip MAVEN_TOOLCHAIN_JAVA_VERSION to 21. MAVEN_TOOLCHAIN_JAVA_VENDOR must match the <vendor> label of
+ the agent's toolchains.xml entry (openjdk today), whatever distribution is installed.
 */
 
 pipeline {
@@ -36,7 +39,7 @@ pipeline {
     options { disableConcurrentBuilds() }
 
     parameters {
-        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain')
+        string(name: 'MAVEN_TOOLCHAIN_JAVA_VERSION', defaultValue: '17', description: 'Java version Maven toolchain (17 or 21)')
         string(name: 'MAVEN_TOOLCHAIN_JAVA_VENDOR', defaultValue: 'openjdk', description: 'Java vendor Maven toolchain')
         string(name: 'NIGHTLY_BUILD', defaultValue: '', description: 'optional nightly build configuration')
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')

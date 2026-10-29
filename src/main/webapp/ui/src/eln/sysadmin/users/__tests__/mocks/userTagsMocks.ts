@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 const ALL_USER_TAGS_ENDPOINT = "/system/users/allUserTags";
 

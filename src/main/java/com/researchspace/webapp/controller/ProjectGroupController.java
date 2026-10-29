@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toList;
 
 import com.researchspace.core.util.SecureStringUtils;
 import com.researchspace.model.Group;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.AuditAction;
 import com.researchspace.model.audittrail.GenericEvent;
@@ -147,7 +148,8 @@ public class ProjectGroupController extends BaseController {
 
     User subject = userManager.getAuthenticatedUserInSession();
     Group targetGroup = groupManager.getGroup(groupId);
-    if (!(targetGroup.isProjectGroup() && targetGroup.getOwner().equals(subject))) {
+    if (!(targetGroup.isProjectGroup()
+        && subject.hasRoleInGroup(targetGroup, RoleInGroup.GROUP_OWNER))) {
       throw new AuthorizationException(
           "Unauthorized attempt to delete a project group by [" + subject.getFullName() + "]");
     }

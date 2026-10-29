@@ -1,11 +1,8 @@
-import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
+import { worker } from "@/__tests__/browserMocks";
 import { throwOnIcuFormatError } from "@/__tests__/helpers/createTestI18n";
 import i18n from "@/modules/common/i18n";
-import { galleryAppShellHandlers } from "./mocks/galleryMocks";
-import { oauthTokenHandler } from "./mocks/oauthTokenMocks";
-import { appShellHandlers } from "./mswAppShellHandlers";
 
 /*
  * Unlike the jsdom unit-test config (setup.ts), which deliberately runs in
@@ -35,75 +32,14 @@ await i18n.loadNamespaces([
 i18n.services.i18nFormat.options.parseErrorHandler = throwOnIcuFormatError;
 
 /*
- * Each test file has its own JavaScript handler state. The browser service
- * worker registration is shared at the origin. Tests add handlers with
- * worker.use(); resetHandlers() restores the defaults after each test.
+ * Every file must await start() to activate its client. Do not stop the worker
+ * in test teardown. Later files share the registration, and closing the browser
+ * context cleans it up.
  */
-export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler(), ...galleryAppShellHandlers());
-
-type AxiosLikeRejection = {
-  isAxiosError?: boolean;
-  response?: {
-    status?: number;
-  };
-  config?: {
-    url?: string;
-  };
-};
-
-function isAxios404(reason: unknown): reason is AxiosLikeRejection {
-  return (
-    typeof reason === "object" &&
-    reason !== null &&
-    (reason as AxiosLikeRejection).isAxiosError === true &&
-    (reason as AxiosLikeRejection).response?.status === 404
-  );
-}
-
-/**
- * Some components intentionally fire requests whose promises are not returned
- * to the test. If the component has already unmounted, those late 404s surface
- * as global unhandled rejections and fail Vitest even though the user-visible
- * behaviour under test has completed. Use this only for known fire-and-forget
- * URLs; all other unhandled rejections still fail the run.
- */
-export function suppressFireAndForget404(matchers: ReadonlyArray<RegExp | string>): () => void {
-  const listener = (event: PromiseRejectionEvent) => {
-    const reason = event.reason;
-    const url = isAxios404(reason) ? (reason.config?.url ?? "") : "";
-    const matches = matchers.some((matcher) =>
-      typeof matcher === "string" ? url.includes(matcher) : matcher.test(url),
-    );
-    if (matches) event.preventDefault();
-  };
-
-  window.addEventListener("unhandledrejection", listener);
-  return () => {
-    window.removeEventListener("unhandledrejection", listener);
-  };
-}
-
-/*
- * browserWorkerRegistration.ts clears Firefox's previous registration before
- * this module runs. Every file must still await start() to activate its client.
- * Do not stop the worker in test teardown; the incoming file owns registration
- * renewal and the browser context owns final cleanup.
- *
- * MSW shares its network source between setupWorker instances in one iframe.
- * Repeated starts can warn when this setup module is also imported by a spec.
- * Silence only that warning, not failures from the awaited start().
- */
-const REDUNDANT_MSW_CALL = /\[MSW\] Found a redundant "worker\.start\(\)" call/;
-const originalWarn = console.warn.bind(console);
-console.warn = (...args: ReadonlyArray<unknown>) => {
-  if (typeof args[0] === "string" && REDUNDANT_MSW_CALL.test(args[0])) return;
-  originalWarn(...args);
-};
-
 beforeAll(async () => {
   await worker.start({
     quiet: true,
-    onUnhandledRequest: "bypass",
+    onUnhandledFrame: "bypass",
     serviceWorker: { url: "/mockServiceWorker.js" },
   });
 });

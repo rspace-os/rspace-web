@@ -4,12 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.Group;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.dtos.CreateCloudGroup;
@@ -92,16 +93,41 @@ public class ProjectGroupControllerTest {
 
   @Test
   public void shouldDeleteOwnProjectGroupWhileProjectGroupsDenied() {
-    lenient()
-        .when(
-            systemPropertyPermissionManager.isPropertyAllowed(
-                owner, SystemPropertyName.ALLOW_PROJECT_GROUPS))
-        .thenReturn(false);
     when(groupManager.getGroup(1L)).thenReturn(newGroup);
     when(newGroup.isProjectGroup()).thenReturn(true);
-    when(newGroup.getOwner()).thenReturn(owner);
+    when(owner.hasRoleInGroup(newGroup, RoleInGroup.GROUP_OWNER)).thenReturn(true);
     assertEquals("redirect:/userform", controller.removeGroup(1L));
     verify(groupManager).removeGroup(1L, owner);
+    verifyNoInteractions(systemPropertyPermissionManager);
     verify(publisher).publishEvent(any(GenericEvent.class));
+  }
+
+  @Test
+  public void shouldDeleteProjectGroupWhenSubjectWasPromotedToGroupOwner() {
+    when(groupManager.getGroup(1L)).thenReturn(newGroup);
+    when(newGroup.isProjectGroup()).thenReturn(true);
+    when(owner.hasRoleInGroup(newGroup, RoleInGroup.GROUP_OWNER)).thenReturn(true);
+    assertEquals("redirect:/userform", controller.removeGroup(1L));
+    verify(groupManager).removeGroup(1L, owner);
+    verify(newGroup, never()).getOwner();
+  }
+
+  @Test
+  public void shouldRefuseDeletionForCreatorDemotedToUserRole() {
+    when(groupManager.getGroup(1L)).thenReturn(newGroup);
+    when(newGroup.isProjectGroup()).thenReturn(true);
+    when(owner.hasRoleInGroup(newGroup, RoleInGroup.GROUP_OWNER)).thenReturn(false);
+    assertThrows(AuthorizationException.class, () -> controller.removeGroup(1L));
+    verify(groupManager, never()).removeGroup(any(), any());
+    verify(newGroup, never()).getOwner();
+  }
+
+  @Test
+  public void shouldRefuseDeletionOfNonProjectGroupEvenForGroupOwner() {
+    when(groupManager.getGroup(1L)).thenReturn(newGroup);
+    when(newGroup.isProjectGroup()).thenReturn(false);
+    assertThrows(AuthorizationException.class, () -> controller.removeGroup(1L));
+    verify(owner, never()).hasRoleInGroup(any(), any());
+    verify(groupManager, never()).removeGroup(any(), any());
   }
 }

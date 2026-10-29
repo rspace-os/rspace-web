@@ -141,7 +141,7 @@ describe("StepperPanelHeader", () => {
 
     render(<DummyFormSection result={new DummyResult()} />);
     await replaceInputValue(user, "Set error", "an error");
-    expect(screen.getByLabelText("inventory:formSections.collapseSection")).not.toHaveTextContent("1");
+    expect(screen.getByLabelText("inventory:formSections.collapseSection")).not.toMatchTextContent("1");
     await user.click(screen.getByLabelText("inventory:formSections.collapseSection"));
     expect(screen.getByLabelText("inventory:formSections.expandSection")).toHaveTextContent("1");
   });
@@ -217,6 +217,6 @@ describe("StepperPanelHeader", () => {
     });
 
     await user.click(screen.getByLabelText("inventory:formSections.collapseSection"));
-    expect(screen.getByLabelText("inventory:formSections.expandSection")).not.toHaveTextContent("1");
+    expect(screen.getByLabelText("inventory:formSections.expandSection")).not.toMatchTextContent("1");
   });
 });

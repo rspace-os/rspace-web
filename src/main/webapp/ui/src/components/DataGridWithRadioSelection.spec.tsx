@@ -66,7 +66,7 @@ describe("DataGridWithRadioSelection", () => {
       // Sort by age ascending — John (35) is now the youngest so he moves to row 0,
       // but the data set is: Jane 28, John 35, Alice 31 — after asc sort by age the
       // order is Jane (28), Alice (31), John (35), so John is at index 2.
-      await grid.clickSort("age");
+      await grid.clickSort("Age");
 
       // Selection should follow the row: John is now at index 2
       await expect.element(grid.radioForRow(2)).toBeChecked();

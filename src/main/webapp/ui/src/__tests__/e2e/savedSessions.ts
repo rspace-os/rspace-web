@@ -1,11 +1,12 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { request } from "@playwright/test";
+import { type APIRequestContext, request } from "@playwright/test";
 import { storageStatePath } from "./authState";
 import { env } from "./env";
 import { type AppUser, SYSADMIN, USERS } from "./users";
 
-type Credentials = Pick<AppUser, "username" | "password">;
+export type Credentials = Pick<AppUser, "username" | "password">;
 type SavedLogin = { cookies: unknown[]; origins: unknown[] };
+type StorageState = Awaited<ReturnType<APIRequestContext["storageState"]>>;
 
 /**
  * Returns the path of a seeded account's saved login, logging in again first if it has expired.
@@ -16,9 +17,23 @@ type SavedLogin = { cookies: unknown[]; origins: unknown[] };
 export async function freshStorageState(account: Credentials): Promise<string> {
   const path = storageStatePath(account.username);
   if (await isLoggedIn(path)) return path;
+  const { cookies } = await loginOverHttp(account);
+  const origins = existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as SavedLogin).origins : [];
+  writeFileSync(path, JSON.stringify({ cookies, origins } satisfies SavedLogin));
+  return path;
+}
+
+/**
+ * A logged-in storage state for `account`: the saved file for a seeded account, or a login held in
+ * memory for anyone else, so throwaway test users leave no files behind.
+ */
+export async function storageStateFor(account: Credentials): Promise<string | StorageState> {
+  return savedLoginAccount(storageStatePath(account.username)) ? freshStorageState(account) : loginOverHttp(account);
+}
+
+async function loginOverHttp(account: Credentials): Promise<StorageState> {
   // Inside a test, Playwright fills any unset option from the project's context options, so without
-  // an explicit empty storageState this login would carry the running test's session cookie and
-  // save that user's session under this account.
+  // an explicit empty storageState this login would carry the running test's session cookie.
   const api = await request.newContext({
     baseURL: env.baseURL,
     ignoreHTTPSErrors: true,
@@ -29,15 +44,12 @@ export async function freshStorageState(account: Credentials): Promise<string> {
       form: { username: account.username, password: account.password },
     });
     if (new URL(response.url()).pathname !== "/workspace") {
-      throw new Error(`Logging '${account.username}' in again landed on ${response.url()}, not /workspace.`);
+      throw new Error(`Logging '${account.username}' in landed on ${response.url()}, not /workspace.`);
     }
-    const { cookies } = await api.storageState();
-    const origins = existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as SavedLogin).origins : [];
-    writeFileSync(path, JSON.stringify({ cookies, origins } satisfies SavedLogin));
+    return await api.storageState();
   } finally {
     await api.dispose();
   }
-  return path;
 }
 
 /** The seeded account whose saved login is stored at `path`, if any. */

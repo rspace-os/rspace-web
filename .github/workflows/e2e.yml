@@ -11,6 +11,10 @@ on:
         description: "Java vendor Maven toolchain"
         type: string
         default: "temurin"
+      java_version:
+        description: "Java version Maven toolchain"
+        type: string
+        default: "17"
 
 permissions:
   contents: read
@@ -31,7 +35,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        java-version: [17]
+        java-version: ["${{ inputs.java_version }}"]
     steps:
       - uses: actions/checkout@v7.0.0
         with:
@@ -75,7 +79,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java-version: [17]
+        java-version: ["${{ inputs.java_version }}"]
         project: [chromium, firefox, webkit, mobile]
         shard: [1, 2]
         cloud: [false]
@@ -83,19 +87,19 @@ jobs:
         # cloud: [false] above makes these cloud entries new jobs instead of merging them
         # into the standard chromium/firefox/webkit shard-1 jobs.
         include:
-          - java-version: 17
+          - java-version: ${{ inputs.java_version }}
             project: api
             shard: 1
             cloud: false
-          - java-version: 17
+          - java-version: ${{ inputs.java_version }}
             project: chromium
             shard: 1
             cloud: true
-          - java-version: 17
+          - java-version: ${{ inputs.java_version }}
             project: firefox
             shard: 1
             cloud: true
-          - java-version: 17
+          - java-version: ${{ inputs.java_version }}
             project: webkit
             shard: 1
             cloud: true

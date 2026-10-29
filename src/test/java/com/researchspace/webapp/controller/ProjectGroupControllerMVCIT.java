@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.Constants;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.model.Group;
+import com.researchspace.model.RoleInGroup;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.CreateCloudGroup;
 import com.researchspace.model.preference.HierarchicalPermission;
@@ -173,6 +174,52 @@ public class ProjectGroupControllerMVCIT extends MVCTestBase {
         .perform(post("/projectGroup/deleteGroup/" + groupId))
         .andExpect(status().is3xxRedirection());
     assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(groupId));
+  }
+
+  @Test
+  public void promotedGroupOwnerCanDeleteGroup() throws Exception {
+    Long groupId = createProjectGroup();
+    User promoted = addMemberWithUserRole(groupId);
+    grpMgr.setRoleForUser(groupId, promoted.getId(), RoleInGroup.GROUP_OWNER.name(), pi);
+
+    logoutAndLoginAs(promoted);
+    mockMvc
+        .perform(post("/projectGroup/deleteGroup/" + groupId))
+        .andExpect(status().is3xxRedirection());
+    assertThrows(ObjectRetrievalFailureException.class, () -> grpMgr.getGroup(groupId));
+  }
+
+  @Test
+  public void memberWithUserRoleCannotDeleteGroup() throws Exception {
+    Long groupId = createProjectGroup();
+    User member = addMemberWithUserRole(groupId);
+
+    logoutAndLoginAs(member);
+    MvcResult result = mockMvc.perform(post("/projectGroup/deleteGroup/" + groupId)).andReturn();
+    assertInstanceOf(AuthorizationException.class, result.getResolvedException());
+    assertNotNull(grpMgr.getGroup(groupId));
+
+    // teardown: the group holds the RaID every test in this class binds
+    logoutAndLoginAs(pi);
+    grpMgr.removeGroup(groupId, pi);
+  }
+
+  private Long createProjectGroup() throws Exception {
+    MvcResult created =
+        mockMvc
+            .perform(
+                post("/projectGroup/createProjectGroup")
+                    .content(JacksonUtil.toJson(projectGroupCreationObj))
+                    .contentType(MediaType.APPLICATION_JSON))
+            .andReturn();
+    return extractProjectGroupId(created);
+  }
+
+  private User addMemberWithUserRole(Long groupId) throws Exception {
+    User member = createAndSaveUser("member" + getRandomName(8));
+    initUser(member);
+    grpMgr.addUserToGroup(member.getUsername(), groupId, RoleInGroup.DEFAULT);
+    return member;
   }
 
   private void setProjectGroups(HierarchicalPermission value) {
