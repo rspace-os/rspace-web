@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
 import * as React from "react";
 import { afterEach, describe, expect, test } from "vitest";
