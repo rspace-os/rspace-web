@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { cleanup, render } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, expect, test } from "vitest";
