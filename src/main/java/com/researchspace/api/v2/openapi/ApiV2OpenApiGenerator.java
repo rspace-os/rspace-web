@@ -5,6 +5,7 @@ import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.objectMap;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ordered;
 import static com.researchspace.api.v2.openapi.ApiV2OpenApiMaps.ref;
 
+import com.researchspace.api.v2.ApiV2ErrorCodes;
 import com.researchspace.api.v2.resource.ApiV2ResourceCatalog;
 import com.researchspace.api.v2.resource.ApiV2ResourceRegistration;
 import com.researchspace.api.v2.resource.OpenApiOperationDocumentation;
@@ -32,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 
 public final class ApiV2OpenApiGenerator {
 
@@ -491,30 +493,52 @@ public final class ApiV2OpenApiGenerator {
   private static Map<String, Object> createStandardResponses() {
     return ordered(
         STANDARD_RESPONSE_NAMES.get("400"),
-        problemResponse("The request is invalid.", 400, "BAD_REQUEST"),
+        problemResponse(
+            "The request is invalid.", 400, ApiV2ErrorCodes.messageKeyFor(HttpStatus.BAD_REQUEST)),
         STANDARD_RESPONSE_NAMES.get("401"),
-        problemResponse("Authentication is required.", 401, "AUTHENTICATION_REQUIRED"),
+        problemResponse(
+            "Authentication is required.",
+            401,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.UNAUTHORIZED)),
         STANDARD_RESPONSE_NAMES.get("403"),
-        problemResponse("The caller is not authorized.", 403, "FORBIDDEN"),
+        problemResponse(
+            "The caller is not authorized.",
+            403,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.FORBIDDEN)),
         STANDARD_RESPONSE_NAMES.get("404"),
-        problemResponse("The resource was not found or is not visible.", 404, "NOT_FOUND"),
+        problemResponse(
+            "The resource was not found or is not visible.",
+            404,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.NOT_FOUND)),
         STANDARD_RESPONSE_NAMES.get("406"),
         problemResponse(
-            "No acceptable response representation is available.", 406, "NOT_ACCEPTABLE"),
+            "No acceptable response representation is available.",
+            406,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.NOT_ACCEPTABLE)),
         STANDARD_RESPONSE_NAMES.get("415"),
-        problemResponse("The request media type is unsupported.", 415, "UNSUPPORTED_MEDIA_TYPE"),
+        problemResponse(
+            "The request media type is unsupported.",
+            415,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.UNSUPPORTED_MEDIA_TYPE)),
         STANDARD_RESPONSE_NAMES.get("422"),
-        problemResponse("The bulk operation exceeds the configured limit.", 422, "BULK_LIMIT"),
+        problemResponse(
+            "The bulk operation exceeds the configured limit.", 422, "errors.api.v2.bulk.limit"),
         STANDARD_RESPONSE_NAMES.get("429"),
         ordered(
             "description",
             "The request was throttled.",
             "content",
-            problemContent("The request was throttled.", 429, "TOO_MANY_REQUESTS"),
+            problemContent(
+                "The request was throttled.",
+                429,
+                ApiV2ErrorCodes.messageKeyFor(HttpStatus.TOO_MANY_REQUESTS)),
             "headers",
             rateLimitHeaders()),
         STANDARD_RESPONSE_NAMES.get("500"),
-        problemResponse("An unexpected server error occurred.", 500, "INTERNAL_SERVER_ERROR"));
+        problemResponse(
+            "An unexpected server error occurred.",
+            500,
+            ApiV2ErrorCodes.messageKeyFor(HttpStatus.INTERNAL_SERVER_ERROR)));
   }
 
   static Map<String, Object> standardResponseReference(String status) {
