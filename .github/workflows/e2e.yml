@@ -300,6 +300,7 @@ jobs:
             > /tmp/jetty.log 2>&1 &
 
       # Mock-mode MinIO, SFTP, Samba and iRODS for specs/system/config/filestores.
+      # The cloud desktop suite has no filestore specs, so it skips them.
       - name: Start filestore servers
         if: inputs.mode == 'mock' && contains(fromJSON('["chromium", "firefox", "webkit"]'), matrix.suite.project)
         run: |

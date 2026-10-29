@@ -41,8 +41,9 @@ runs:
         image="${ImageOS:-$(. /etc/os-release && echo "$ID$VERSION_ID")}"
         playwright="$(node -p "require('playwright-core/package.json').version")"
         browsers="$(echo "$BROWSERS" | tr -s ' ' '-')"
-        echo "prefix=pw-apt-${image}-" >> "$GITHUB_OUTPUT"
-        echo "key=pw-apt-${image}-${ImageVersion:-local}-${browsers}-${playwright}" >> "$GITHUB_OUTPUT"
+        # A new runner image falls back to the newest cache for the same browsers.
+        echo "prefix=pw-apt-${image}-${browsers}-" >> "$GITHUB_OUTPUT"
+        echo "key=pw-apt-${image}-${browsers}-${playwright}-${ImageVersion:-local}" >> "$GITHUB_OUTPUT"
 
     - name: Restore Playwright system packages
       id: restore
@@ -64,15 +65,17 @@ runs:
         installed=false
         for attempt in 1 2 3; do
           # shellcheck disable=SC2086 # BROWSERS is a space-separated list
-          if timeout 300 pnpm exec playwright install --with-deps $BROWSERS; then
+          if timeout --kill-after=30 300 pnpm exec playwright install --with-deps $BROWSERS; then
             installed=true
             break
           fi
           if [ "$attempt" -lt 3 ]; then
             echo "Playwright install failed or stalled (attempt ${attempt}/3); retrying..."
-            # A timeout can interrupt dpkg; finish any half-configured packages first.
-            $sudo dpkg --configure -a || true
+            # apt runs under sudo in its own session, so the timeout may not reach it.
+            # Stop it so it releases the dpkg lock, then finish half-configured packages.
+            $sudo pkill -TERM -x apt-get || true
             sleep $((attempt * 10))
+            $sudo dpkg --configure -a || true
           fi
         done
         [ "$installed" = true ] || exit 1
