@@ -43,7 +43,6 @@ declare global {
 export type LivechatProperties = {
   livechatEnabled: boolean;
   livechatServerKey?: string;
-  currentUser: string;
 };
 
 type LighthouseAction = "hide" | "show" | "showButton" | "hideButton";
@@ -145,7 +144,6 @@ export function configureLighthouse({
 
   Intercom({
     app_id: livechatProperties.livechatServerKey ?? "",
-    user_id: livechatProperties.currentUser,
     hide_default_launcher: true,
   });
 }

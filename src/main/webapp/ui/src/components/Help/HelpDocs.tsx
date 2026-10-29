@@ -58,14 +58,13 @@ function HelpDocs() {
   useEffect(() => {
     void (async () => {
       const {
-        data: { livechatEnabled, livechatServerKey, currentUser },
+        data: { livechatEnabled, livechatServerKey },
       } = await api.current.get<{
         livechatEnabled: boolean;
         livechatServerKey?: string;
-        currentUser: string;
       }>("/livechatProperties");
       configureLighthouse({
-        livechatProperties: { livechatEnabled, livechatServerKey, currentUser },
+        livechatProperties: { livechatEnabled, livechatServerKey },
         onReady: () => setLighthouseIsLoaded(true),
       });
       loadScript(`${LIGHTHOUSE_SCRIPT_SRC}?t=${Date.now()}`);
