@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import * as v from "valibot";
 import { describe, expect, it } from "vitest";
 import { expectAccessible } from "@/__tests__/accessibility";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { RenderFields } from "../RenderFields";
 import type { FieldLayout } from "../RenderFields.types";
 
