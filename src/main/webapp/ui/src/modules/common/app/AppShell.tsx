@@ -4,7 +4,6 @@ import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { navigationProgressQueryFilters } from "@/modules/common/queries/navigationProgress";
-import { UserSessionBootstrap } from "@/modules/common/stores/userSessionStore";
 import {
   Sidebar,
   SidebarContent,
@@ -76,7 +75,6 @@ export default function AppShell() {
   const authenticatedAppBar = appBarProps !== false && (
     <React.Suspense fallback={<PublicAppBar {...appBarProps} />}>
       {/* inside the boundary so suspending queries use this fallback, not a blank page */}
-      <UserSessionBootstrap />
       <AuthenticatedAppBar {...appBarProps} />
       <RouteTransitionIndicator />
     </React.Suspense>

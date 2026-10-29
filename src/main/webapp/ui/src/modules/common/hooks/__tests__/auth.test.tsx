@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { tokenExpiringIn } from "@/__tests__/helpers/jwt";
 import { server } from "@/__tests__/mswServer";
 import { fetchToken, tokenRefreshInterval, useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { getStoredToken, saveStoredToken } from "@/modules/common/utils/auth";
+import { getStoredToken, resetUiTokenForTests, saveStoredToken } from "@/modules/common/utils/auth";
 
 function renderTokenConsumer(options: { useRestApiV2?: boolean; queryClient?: QueryClient } = {}) {
   const queryClient = options.queryClient ?? new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -27,6 +27,7 @@ function renderTokenConsumer(options: { useRestApiV2?: boolean; queryClient?: Qu
 }
 
 beforeEach(() => {
+  resetUiTokenForTests();
   sessionStorage.clear();
   document.getElementById("public_document_view")?.remove();
 });

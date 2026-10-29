@@ -2,18 +2,12 @@ import * as React from "react";
 import { useStore } from "zustand";
 import { devtools } from "zustand/middleware";
 import { createStore, type StoreApi } from "zustand/vanilla";
-import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 
 export type UserSession = {
   accountId: string;
-  token: string;
 };
 
-// The session directory is pure client state: which accounts hold credentials
-// and which one is active. Everything ABOUT an account (profile, capabilities)
-// is server state and belongs in React Query, keyed by account; never mirror
-// it in here. Single-session today; the shape is ready for account switching.
+// Client-side account selection only. Tokens and profiles belong to React Query.
 type UserSessionStore = {
   sessions: UserSession[];
   activeAccountId: string | null;
@@ -93,16 +87,4 @@ export function useActiveSession() {
   return useUserSessionStore(
     (state) => state.sessions.find((session) => session.accountId === state.activeAccountId) ?? null,
   );
-}
-
-export function UserSessionBootstrap() {
-  const { data: token } = useOauthTokenQuery({ useRestApiV2: true });
-  const { data: currentUser } = useCurrentUserQuery();
-  const upsertSession = useUserSessionStore((state) => state.upsertSession);
-
-  React.useEffect(() => {
-    upsertSession({ accountId: String(currentUser.id), token });
-  }, [currentUser.id, token, upsertSession]);
-
-  return null;
 }
