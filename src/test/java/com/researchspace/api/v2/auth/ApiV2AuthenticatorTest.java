@@ -130,6 +130,51 @@ class ApiV2AuthenticatorTest {
     assertThrows(ApiV2AuthenticationException.class, () -> authenticator.authenticate(request));
   }
 
+  @Test
+  void rejectsAUiTokenWhoseRowUserDiffers() {
+    rejectsMismatchedIdentity(42L, 41L, 41L, Optional.empty());
+  }
+
+  @Test
+  void rejectsAUiTokenWhoseSubjectIsNoLongerLive() {
+    rejectsMismatchedIdentity(41L, 42L, 42L, Optional.empty());
+  }
+
+  @Test
+  void rejectsAUiTokenWhoseActorIsNoLongerLive() {
+    rejectsMismatchedIdentity(41L, 41L, 43L, Optional.of(42L));
+  }
+
+  @Test
+  void rejectsADirectTokenDuringRunAs() {
+    rejectsMismatchedIdentity(41L, 41L, 42L, Optional.empty());
+  }
+
+  @Test
+  void rejectsARunAsTokenAfterRunAsStops() {
+    rejectsMismatchedIdentity(41L, 41L, 41L, Optional.of(42L));
+  }
+
+  private void rejectsMismatchedIdentity(
+      long rowUserId, long liveSubjectId, long liveActorId, Optional<Long> tokenActorId) {
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v2/users/me");
+    request.addHeader("Authorization", "Bearer ui-token");
+    String context = BrowserSessionAuthContext.currentOrCreate(request.getSession());
+    User rowUser = mock(User.class);
+    when(rowUser.getId()).thenReturn(rowUserId);
+    validUiToken("ui-token", rowUser);
+    User subject = mock(User.class);
+    when(subject.getId()).thenReturn(liveSubjectId);
+    User actor = mock(User.class);
+    when(actor.getId()).thenReturn(liveActorId);
+    when(oAuthTokenManager.getUiTokenContext("ui-token"))
+        .thenReturn(Optional.of(new UiTokenContext(41L, tokenActorId, context)));
+    when(browserSessionAuthenticator.authenticateIfPresent(request))
+        .thenReturn(Optional.of(new ApiV2Caller(subject, actor)));
+
+    assertThrows(ApiV2AuthenticationException.class, () -> authenticator.authenticate(request));
+  }
+
   private void validUiToken(String tokenValue, User user) {
     OAuthToken token = new OAuthToken(user, "browser", OAuthTokenType.UI_TOKEN);
     when(oAuthTokenManager.validateToken(tokenValue))
