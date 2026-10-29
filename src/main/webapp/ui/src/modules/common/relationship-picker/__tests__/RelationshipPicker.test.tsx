@@ -1,8 +1,4 @@
-import {
-  cacheScope,
-  optionBatchCacheKey,
-  optionCacheKey,
-} from "@/modules/common/relationship-picker/queries";
+import { cacheScope, optionBatchCacheKey, optionCacheKey } from "@/modules/common/relationship-picker/queries";
 import "@/__tests__/__mocks__/matchMedia";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
