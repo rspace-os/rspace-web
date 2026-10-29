@@ -81,7 +81,7 @@ describe("ProcessAction permission", () => {
     );
     const item = screen.getByRole("menuitem", { name: /operations\.action\.process/i });
     expect(item).toHaveAttribute("aria-disabled", "true");
-    expect(item).toHaveTextContent(/contextMenu\.edit\.noPermission/);
+    expect(item).toMatchTextContent(/contextMenu\.edit\.noPermission/);
     await userEvent.click(item).catch(() => undefined);
     expect(acquire).not.toHaveBeenCalled();
   });

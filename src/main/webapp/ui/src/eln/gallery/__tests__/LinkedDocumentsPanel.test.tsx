@@ -2,7 +2,7 @@ import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { describe, expect, it } from "vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import { server } from "@/__tests__/mswServer";

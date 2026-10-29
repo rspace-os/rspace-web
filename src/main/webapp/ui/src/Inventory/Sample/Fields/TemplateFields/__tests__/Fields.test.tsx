@@ -41,7 +41,7 @@ describe("Fields", () => {
           checkValidity: () => false,
         },
       });
-      expect(container).toHaveTextContent("Invalid value. Please enter a valid value.");
+      expect(container).toMatchTextContent("Invalid value. Please enter a valid value.");
     });
     test("Passed step='any' to input", () => {
       const INITIAL_VALUE = "2";

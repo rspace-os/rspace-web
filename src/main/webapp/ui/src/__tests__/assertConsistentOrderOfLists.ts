@@ -122,8 +122,8 @@ export function toHaveConsistentOrdering(
 }
 
 declare module "vitest" {
-  interface Assertion {
-    toHaveConsistentOrdering(): unknown;
+  interface Matchers<R extends void | Promise<void> = void | Promise<void>, T = unknown> {
+    toHaveConsistentOrdering(): R;
   }
 }
 

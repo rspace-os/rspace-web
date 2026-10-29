@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import addFilesFixture from "./fixtures/addFiles.json" with { type: "json" };
 import createDatasetFixture from "./fixtures/createDataset.json" with { type: "json" };
 import datasetFixture from "./fixtures/dataset.json" with { type: "json" };

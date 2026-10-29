@@ -14,8 +14,8 @@ function stubLocation() {
   const assign = vi.fn();
   const reload = vi.fn();
   vi.stubGlobal("location", {
-    href: "http://localhost/",
-    origin: "http://localhost",
+    href: window.location.href,
+    origin: window.location.origin,
     assign,
     reload,
   });
@@ -29,6 +29,12 @@ const jwtWithPayload = (payload: object) =>
     .join(".");
 const jwt = (refreshTokenHash: string, issuedAt: number) => jwtWithPayload({ refreshTokenHash, iat: issuedAt });
 const jwtWithoutRefreshTokenHash = (issuedAt: number) => jwtWithPayload({ iat: issuedAt });
+
+// jsdom preflights the foreign API request because of its non-simple headers.
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Authorization, X-Requested-With",
+};
 
 const clients = ["fetch", "default axios", "axios.create"] as const;
 type Client = (typeof clients)[number];
@@ -361,7 +367,8 @@ test.each([
   saveStoredToken(staleToken);
   let recoveryRequests = 0;
   server.use(
-    http.get(url, () => HttpResponse.json({}, { status: 401 })),
+    http.options(url, () => new HttpResponse(null, { status: 204, headers: CORS_HEADERS })),
+    http.get(url, () => HttpResponse.json({}, { status: 401, headers: CORS_HEADERS })),
     http.get("/api/v1/userDetails/whoami", () => {
       recoveryRequests++;
       return HttpResponse.json({}, { status: 401 });

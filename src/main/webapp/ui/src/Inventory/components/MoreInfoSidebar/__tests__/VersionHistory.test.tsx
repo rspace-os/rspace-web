@@ -248,7 +248,7 @@ describe("VersionHistory", () => {
 
     await screen.findByRole("table");
     const currentRow = screen.getAllByRole("row").find((row) => row.textContent?.includes("Version 2"));
-    expect(currentRow).toHaveTextContent("(current)");
+    expect(currentRow).toMatchTextContent("(current)");
   });
 
   test("a historical view marks its pinned version as viewing, not current", async () => {
@@ -269,7 +269,7 @@ describe("VersionHistory", () => {
 
     await screen.findByRole("table");
     const viewedRow = screen.getAllByRole("row").find((row) => row.textContent?.includes("Version 1"));
-    expect(viewedRow).toHaveTextContent("(viewing)");
+    expect(viewedRow).toMatchTextContent("(viewing)");
     expect(screen.getAllByRole("row").some((row) => row.textContent?.includes("(current)"))).toBe(false);
   });
 

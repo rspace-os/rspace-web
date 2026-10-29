@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import universidadDeLosAndes from "./fixtures/ror-02mhbdp94.json" with { type: "json" };
 
 // RSpace requests `{ror.api.url}/ror.org/{id}` (RoRClient strips "https://" from the ROR ID).

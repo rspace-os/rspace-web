@@ -1,4 +1,5 @@
-import { HttpResponse, http, type RequestHandler } from "msw";
+import type { RequestHandler } from "msw";
+import { HttpResponse, http } from "msw/http";
 
 /*
  * Shared MSW handlers for the gallery-render endpoints that fire when any
