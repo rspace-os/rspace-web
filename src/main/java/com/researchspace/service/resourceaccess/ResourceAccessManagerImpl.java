@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataAccessException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -173,7 +173,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     applyReplacement(locked.access(), before, after);
     Instant changedAt = clock.instant();
     locked.access().touch(actor, Date.from(changedAt));
-    gateway.flush();
+    withConcurrentLockMapping(
+        () -> {
+          gateway.flush();
+          return null;
+        });
     publishDeltas(
         locked.resource(), actor, locked.subject(), before, after, scheme, changedAt, null);
     return document(
@@ -233,7 +237,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     applyReplacement(locked.access(), before, after);
     Instant changedAt = clock.instant();
     locked.access().touch(actor, Date.from(changedAt));
-    gateway.flush();
+    withConcurrentLockMapping(
+        () -> {
+          gateway.flush();
+          return null;
+        });
     publishDeltas(
         locked.resource(),
         actor,
@@ -255,12 +263,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
       throw failure(ResourceAccessException.Reason.FORBIDDEN);
     }
     T protectedEntity =
-        resource
-            .lock(command.resourceId())
+        withConcurrentLockMapping(() -> resource.lock(command.resourceId()))
             .orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
     ResourceAccess access = resource.access(protectedEntity);
     ResourceAccessDao.AuthorizationFacts authorizationFacts =
-        currentAuthorizationRead(() -> gateway.lockAuthorizationFacts(access, subject));
+        withConcurrentLockMapping(() -> gateway.lockAuthorizationFacts(access, subject));
     User lockedSubject = authorizationFacts.subject();
     if (!authorizationFacts.enabled()) {
       throw failure(ResourceAccessException.Reason.FORBIDDEN);
@@ -279,7 +286,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     access.removeAssignment(direct);
     Instant changedAt = clock.instant();
     access.touch(actor, Date.from(changedAt));
-    gateway.flush();
+    withConcurrentLockMapping(
+        () -> {
+          gateway.flush();
+          return null;
+        });
     events.publishEvent(
         new ResourceAccessAuditDelta(
             protectedEntity,
@@ -358,10 +369,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   private <T, ID> Locked<T> lockAndAuthorize(
       ProtectedResourceAccess<T, ID> resource, ID id, User subject) {
     T protectedEntity =
-        resource.lock(id).orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
+        withConcurrentLockMapping(() -> resource.lock(id))
+            .orElseThrow(() -> failure(ResourceAccessException.Reason.NOT_FOUND));
     ResourceAccess access = resource.access(protectedEntity);
     ResourceAccessDao.AuthorizationFacts authorizationFacts =
-        currentAuthorizationRead(() -> gateway.lockAuthorizationFacts(access, subject));
+        withConcurrentLockMapping(() -> gateway.lockAuthorizationFacts(access, subject));
     User lockedSubject = authorizationFacts.subject();
     ResolvedResourceAccess resolved = resolveLocked(access, authorizationFacts);
     requireRead(resolved);
@@ -425,7 +437,7 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
             .filter(key -> !audienceKey.equals(key))
             .collect(Collectors.toCollection(LinkedHashSet::new));
     Map<String, ResourceGranteeDirectoryEntry> assignable =
-        currentAuthorizationRead(() -> directory.resolveAssignable(keys, authorizationFacts));
+        withConcurrentLockMapping(() -> directory.resolveAssignable(keys, authorizationFacts));
     if (!assignable.keySet().containsAll(keys)) {
       throw failure(ResourceAccessException.Reason.FORBIDDEN);
     }
@@ -449,32 +461,33 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
   }
 
   private ResourceRoleAssignment resolveAvailable(String granteeKey, String role) {
-    return currentAuthorizationRead(
+    return withConcurrentLockMapping(
         () ->
             ResourceGranteeKeys.audience(ResourceAudience.ALL_USERS).equals(granteeKey)
                 ? gateway.resolveAvailable(granteeKey, role, audienceNameSnapshot())
                 : gateway.resolveAvailable(granteeKey, role, null));
   }
 
-  private static <T> T currentAuthorizationRead(Supplier<T> read) {
+  private static <T> T withConcurrentLockMapping(Supplier<T> read) {
     try {
       return read.get();
-    } catch (DataAccessException exception) {
-      if (recordChangedSinceRead(exception)) {
-        log.warn(
-            "Concurrent principal facts changed during a resource-access authorization read",
-            exception);
+    } catch (RuntimeException exception) {
+      if (concurrentLockFailure(exception)) {
+        log.warn("Concurrent resource-access authorization or mutation failed", exception);
         throw failure(ResourceAccessException.Reason.STALE);
       }
       throw exception;
     }
   }
 
-  private static boolean recordChangedSinceRead(Throwable exception) {
+  private static boolean concurrentLockFailure(Throwable exception) {
     Throwable current = exception;
     while (current != null) {
-      if (current instanceof SQLException sqlException
-          && sqlException.getErrorCode() == RECORD_CHANGED_SINCE_READ) {
+      if (current instanceof PessimisticLockingFailureException
+          || (current instanceof SQLException sqlException
+              && (sqlException.getErrorCode() == RECORD_CHANGED_SINCE_READ
+                  || sqlException.getErrorCode() == 1213
+                  || sqlException.getErrorCode() == 1205))) {
         return true;
       }
       Throwable cause = current.getCause();
@@ -536,7 +549,11 @@ public class ResourceAccessManagerImpl implements ResourceAccessManager {
     // A changed role is a new row for the same grantee key. Hibernate orders inserts before
     // deletes within one flush, so without this the replacement insert hits
     // UK_ResourceRoleAssignment_access_grantee before the old row is gone.
-    gateway.flush();
+    withConcurrentLockMapping(
+        () -> {
+          gateway.flush();
+          return null;
+        });
     after.forEach(
         (key, assignment) -> {
           if (before.get(key) != assignment) {
