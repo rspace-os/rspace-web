@@ -60,7 +60,8 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
     List<Boolean> enabledRows =
         session
             .createNativeQuery(
-                "SELECT account_enabled FROM User WHERE id = :subjectId FOR UPDATE", Boolean.class)
+                "SELECT account_enabled FROM User WHERE id = :subjectId LOCK IN SHARE MODE",
+                Boolean.class)
             .setParameter("subjectId", subject.getId())
             .getResultList();
     if (enabledRows.isEmpty()) {
@@ -76,19 +77,20 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
                     + "where membership.user.id = :subjectId",
                 Long.class)
             .setParameter("subjectId", subject.getId())
-            .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+            .setLockMode(LockModeType.PESSIMISTIC_READ)
             .getResultList();
     if (!currentGroupIds.isEmpty()) {
       session
           .createQuery("select group from Group group where group.id in :ids", Group.class)
           .setParameter("ids", currentGroupIds)
-          .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+          .setLockMode(LockModeType.PESSIMISTIC_READ)
           .getResultList();
     }
     List<Long> currentRoleIds =
         session
             .createNativeQuery(
-                "SELECT role_id FROM user_role WHERE user_id = :subjectId FOR UPDATE", Long.class)
+                "SELECT role_id FROM user_role WHERE user_id = :subjectId LOCK IN SHARE MODE",
+                Long.class)
             .setParameter("subjectId", subject.getId())
             .getResultList();
     Set<String> globalRoleNames =
@@ -116,7 +118,8 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
       List<Boolean> enabledRows =
           session
               .createNativeQuery(
-                  "SELECT account_enabled FROM User WHERE id = :userId FOR UPDATE", Boolean.class)
+                  "SELECT account_enabled FROM User WHERE id = :userId LOCK IN SHARE MODE",
+                  Boolean.class)
               .setParameter("userId", userId)
               .getResultList();
       User user =
@@ -132,7 +135,7 @@ public class ResourceAccessDaoHibernate implements ResourceAccessDao {
                       + "JOIN UserGroup membership ON membership.group_id = accessGroup.id "
                       + "JOIN User enabledMember ON enabledMember.id = membership.user_id "
                       + "WHERE accessGroup.id = :groupId "
-                      + "AND enabledMember.account_enabled = true FOR UPDATE",
+                      + "AND enabledMember.account_enabled = true LOCK IN SHARE MODE",
                   Long.class)
               .setParameter("groupId", groupId)
               .getResultList();

@@ -34,6 +34,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 class ResourceAccessManagerAuthorizationIT extends RealTransactionSpringTestBase {
 
   private final ResourceAccessManager accessManager;
+  private final com.researchspace.dao.resourceaccess.ResourceAccessDao accessDao;
 
   private String subjectUsername;
   private String outgoingOwnerUsername;
@@ -45,8 +46,11 @@ class ResourceAccessManagerAuthorizationIT extends RealTransactionSpringTestBase
   private Long resourceAccessId;
 
   @Autowired
-  ResourceAccessManagerAuthorizationIT(ResourceAccessManager accessManager) {
+  ResourceAccessManagerAuthorizationIT(
+      ResourceAccessManager accessManager,
+      com.researchspace.dao.resourceaccess.ResourceAccessDao accessDao) {
     this.accessManager = accessManager;
+    this.accessDao = accessDao;
   }
 
   @BeforeEach
@@ -88,6 +92,74 @@ class ResourceAccessManagerAuthorizationIT extends RealTransactionSpringTestBase
     sessionFactory.getCurrentSession().flush();
     resourceAccessId = access.getId();
     commitTransaction();
+  }
+
+  @Test
+  void distinctResourcesCanGrantToEachOtherWithinTheSameGroup() throws Exception {
+    Long[] ids =
+        new TransactionTemplate(getTxMger())
+            .execute(
+                transaction -> {
+                  User first = userMgr.getUserByUsername(subjectUsername);
+                  User second = userMgr.getUserByUsername(groupCandidateUsername);
+                  ResourceAccess left =
+                      new ResourceAccess(ResourceAccessTestScheme.SCHEME_KEY, first, new Date());
+                  ResourceAccess right =
+                      new ResourceAccess(ResourceAccessTestScheme.SCHEME_KEY, second, new Date());
+                  left.addAssignment(
+                      ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, first));
+                  right.addAssignment(
+                      ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, second));
+                  sessionFactory.getCurrentSession().persist(left);
+                  // Keep the two assignment index ranges away from the same insert gap.
+                  ResourceAccess separator =
+                      new ResourceAccess(ResourceAccessTestScheme.SCHEME_KEY, first, new Date());
+                  separator.addAssignment(
+                      ResourceRoleAssignment.forUser(ResourceAccessTestScheme.OWNER, first));
+                  sessionFactory.getCurrentSession().persist(separator);
+                  sessionFactory.getCurrentSession().persist(right);
+                  sessionFactory.getCurrentSession().flush();
+                  return new Long[] {left.getId(), right.getId(), first.getId(), second.getId()};
+                });
+    var subjectsLocked = new java.util.concurrent.CountDownLatch(2);
+    var executor = java.util.concurrent.Executors.newFixedThreadPool(2);
+    try {
+      var left = executor.submit(() -> grantToPeer(ids[0], ids[2], ids[3], subjectsLocked));
+      var right = executor.submit(() -> grantToPeer(ids[1], ids[3], ids[2], subjectsLocked));
+      left.get(30, java.util.concurrent.TimeUnit.SECONDS);
+      right.get(30, java.util.concurrent.TimeUnit.SECONDS);
+    } finally {
+      executor.shutdownNow();
+      assertTrue(executor.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS));
+    }
+  }
+
+  private void grantToPeer(
+      Long accessId,
+      Long subjectId,
+      Long peerId,
+      java.util.concurrent.CountDownLatch subjectsLocked) {
+    new TransactionTemplate(getTxMger())
+        .executeWithoutResult(
+            transaction -> {
+              // Lock through production code, so the test follows changes to production lock modes.
+              var dao = accessDao;
+              dao.resolveAvailable("user:" + subjectId, ResourceAccessTestScheme.OWNER, null);
+              subjectsLocked.countDown();
+              try {
+                assertTrue(subjectsLocked.await(10, java.util.concurrent.TimeUnit.SECONDS));
+              } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(exception);
+              }
+              User subject = sessionFactory.getCurrentSession().find(User.class, subjectId);
+              ResourceAccess access =
+                  sessionFactory.getCurrentSession().find(ResourceAccess.class, accessId);
+              dao.lockAuthorizationFacts(access, subject);
+              access.addAssignment(
+                  dao.resolveAvailable("user:" + peerId, ResourceAccessTestScheme.EDITOR, null));
+              dao.flush();
+            });
   }
 
   @Test
