@@ -3,6 +3,8 @@ export interface ApiInventoryQuantity {
   unitId: number;
 }
 
+export type ApiInventoryResultType = "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "INSTRUMENT" | "INSTRUMENT_TEMPLATE";
+
 export interface ApiInventoryRecordInfo {
   id: number;
   globalId: string;

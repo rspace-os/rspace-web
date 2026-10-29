@@ -2,12 +2,14 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.webapp.controller.AuditTrailSearchResultCsvGenerator.ATTACHMENT_FILENAME_RSPACE_AUDIT_TRAIL_CSV;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import com.researchspace.Constants;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -120,6 +122,16 @@ public class AuditTrailControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andExpect(errorMsg())
             .andReturn();
+
+    // an autocomplete list far longer than the form can produce is rejected before parsing
+    MvcResult tooLong =
+        this.mockMvc
+            .perform(get("/audit/query").param("users", "u<Bob>,".repeat(1000)))
+            .andExpect(status().isOk())
+            .andReturn();
+    String message =
+        JsonPath.read(tooLong.getResponse().getContentAsString(), "$.errorMsg.errorMessages[0]");
+    assertEquals("User, group and community lists must be 4096 characters or fewer.", message);
   }
 
   private ResultMatcher errorMsg() {

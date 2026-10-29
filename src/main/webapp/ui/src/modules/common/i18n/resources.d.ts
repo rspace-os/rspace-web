@@ -845,10 +845,6 @@ export default interface Resources {
       "toastLabel": "{variant, select, success {success} warning {warning} error {error} notice {notice} other {alert}} alert",
       "warning": "Warning"
     },
-    "apiAuthentication": {
-      "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
-      "warningTitle": "Could not authenticate via API"
-    },
     "apiDocs": {
       "sources": {
         "eln": "RSpace ELN",
@@ -5039,6 +5035,9 @@ export default interface Resources {
         },
         "limit": "(maximum of 10,000 events per download)"
       },
+      "errors": {
+        "listTooLong": "User, group and community lists must be {max} characters or fewer."
+      },
       "filter": {
         "communityPrompt": "Enter a Community to audit",
         "dateRangePrompt": "Date range to audit",
@@ -5967,6 +5966,7 @@ export default interface Resources {
       "nameLowercase": "name",
       "password": "Password",
       "pdfName": "PDF name",
+      "recipients": "Recipients",
       "renameRecordAction": "rename this record",
       "repository": "Repository",
       "svg": "SVG",
@@ -6568,6 +6568,10 @@ export default interface Resources {
       "errors": {
         "createDocumentFailed": "Could not create document from archive document: {0}",
         "databaseInsertFailed": "Error attempting to insert content into database: {0}",
+        "extractionCompressionRatioExceeded": "The archive could not be imported because its contents expand to more than {0} times their compressed size.",
+        "extractionEntryCountExceeded": "The archive could not be imported because it contains more than {0} files and folders.",
+        "extractionExpandedSizeExceeded": "The archive could not be imported because its contents expand to more than {0} MB.",
+        "extractionInsufficientDiskSpace": "The archive could not be imported because extracting it would leave the server with less than {0} MB of free disk space.",
         "invalidDocumentFolder": "{0} folder does not contain a valid document.",
         "itemFailed": "Archive item {0} could not be imported: {1}",
         "missingDocumentXml": "Missing XML file for document: {0}",
@@ -7326,6 +7330,7 @@ export default interface Resources {
         "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
           "csvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
+          "databaseError": "The database refused the import and nothing was imported. Check the rows for values longer than their fields allow, then try again.",
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
           "importIdentifierAlreadyUsed": "Import identifier {0} was already used in row {1}",
           "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
@@ -9892,7 +9897,8 @@ export default interface Resources {
     },
     "form": {
       "choiceOptions": {
-        "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters."
+        "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters.",
+        "label": "Choice options"
       },
       "editor": {
         "addFieldButton": "Add Field",

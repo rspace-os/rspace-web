@@ -1,6 +1,10 @@
+import type { ApiInventorySharedWith, ApiInventorySharingMode } from "./inventoryContainer";
 import type { ApiInventoryQuantity, ApiInventoryRecordInfo } from "./inventoryRecordInfo";
 
 export interface ApiInventorySample extends ApiInventoryRecordInfo {
+  owner: { username: string };
+  sharingMode: ApiInventorySharingMode;
+  sharedWith: ApiInventorySharedWith[] | null;
   subSamples: ApiInventorySubSample[];
 }
 
@@ -27,6 +31,12 @@ export interface ApiInventorySampleCreateRequest {
   barcodes?: ApiInventoryBarcode[];
   /** Sets each new subsample's starting quantity, e.g. { numericValue: 10, unitId: 7 } for 10 g. */
   quantity?: ApiInventoryQuantity;
+}
+
+export interface ApiListOfMaterialsCreateRequest {
+  name: string;
+  elnFieldId: number;
+  materials: Array<{ invRec: { id: number; type: "CONTAINER" | "SAMPLE" | "SUBSAMPLE" } }>;
 }
 
 export interface ApiInventoryIdentifierCreateRequest {

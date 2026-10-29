@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { server } from "@/__tests__/mswServer";
 import { UiPreferences } from "@/hooks/api/useUiPreference";
@@ -389,7 +389,7 @@ describe("OperationWizard with the real preference hook", () => {
 
     await user.click(await screen.findByRole("button", { name: /operations\.derive\.label/i }));
     await user.click(screen.getByTestId("pick-mill"));
-    await waitFor(() => expect(document.querySelector('[aria-current="step"]')).toHaveTextContent(/step\.placement/));
+    await waitFor(() => expect(document.querySelector('[aria-current="step"]')).toMatchTextContent(/step\.placement/));
     expect(screen.getByTestId("placement-mode")).toHaveTextContent("container");
   });
 

@@ -265,6 +265,7 @@
     "nameLowercase": "name",
     "password": "Password",
     "pdfName": "PDF name",
+    "recipients": "Recipients",
     "repository": "Repository",
     "renameRecordAction": "rename this record",
     "svg": "SVG",

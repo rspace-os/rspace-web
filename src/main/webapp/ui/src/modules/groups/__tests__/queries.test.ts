@@ -1,4 +1,4 @@
-import { HttpResponse } from "msw";
+import { HttpResponse } from "msw/http";
 import { describe, expect, test } from "vitest";
 import { captureRequests } from "@/__tests__/mswRequestCapture";
 import type { RestApiError } from "@/modules/common/api/schema";

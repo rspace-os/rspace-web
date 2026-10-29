@@ -10,6 +10,7 @@ import com.researchspace.api.v1.model.ApiInventoryImportParseResult;
 import com.researchspace.api.v1.model.ApiInventoryImportResult;
 import com.researchspace.api.v1.model.ApiSampleTemplatePost;
 import com.researchspace.model.User;
+import com.researchspace.model.field.LocalizedIllegalStateException;
 import com.researchspace.service.inventory.InventoryImportManager;
 import com.researchspace.service.inventory.csvimport.exception.InventoryImportException;
 import com.researchspace.service.inventory.csvimport.exception.InventoryImportPrevalidationException;
@@ -173,8 +174,14 @@ public class InventoryImportApiController extends BaseApiInventoryController
         result.setStatusForAllResults(InventoryBulkOperationStatus.REVERTED_ON_ERROR);
       }
 
-    } catch (IOException | DataIntegrityViolationException e) {
+    } catch (IOException e) {
       throw new IllegalStateException(e);
+    } catch (DataIntegrityViolationException e) {
+      // raised at commit, after the manager returns; the user gets a sentence, the log the cause
+      LocalizedIllegalStateException refused =
+          new LocalizedIllegalStateException("errors.inventory.import.databaseError");
+      refused.initCause(e);
+      throw refused;
     }
 
     return result;

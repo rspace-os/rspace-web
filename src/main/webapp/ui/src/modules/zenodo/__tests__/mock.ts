@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw/http";
 import depositionFixture from "./fixtures/deposition.json" with { type: "json" };
 import fileFixture from "./fixtures/file.json" with { type: "json" };
 

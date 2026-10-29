@@ -298,7 +298,7 @@ describe("FieldmarkImportDialog", () => {
       const alert = await screen.findByText("Importing notebook");
       const alertContainer = alert.closest('[role="group"]') as HTMLElement;
       expect(alertContainer).toBeVisible();
-      expect(alertContainer).toHaveTextContent('Importing notebook "Test Notebook 1" from Fieldmark.');
+      expect(alertContainer).toMatchTextContent('Importing notebook "Test Notebook 1" from Fieldmark.');
 
       // Release the pending import so the test can clean up without dangling
       // promises.

@@ -50,11 +50,12 @@ instead use React Context and custom hooks for state management.
 
 ## Building the code
 
-To build the codebase you will need to have Node.js and pnpm installed. Maven
+To build the codebase you will need to have standalone pnpm installed; pnpm
+downloads the Node.js version pinned in the root `package.json`. Maven
 builds the production frontend bundle by default. This can be quite slow and is
 not necessary for frontend development, instead run the maven command with
-`-DreactDevMode=true` but in a separate terminal at the repo root run `corepack enable`,
-`pnpm install --frozen-lockfile`, and then `pnpm run serve` to start a process that watches
+`-DreactDevMode=true` but in a separate terminal at the repo root run
+`pnpm install --frozen-lockfile` and then `pnpm run serve` to start a process that watches
 for changes to the React code and recompiles it as necessary. This is much
 faster and provides a better development experience, with shorter feedback loops
 and source maps for easier debugging.

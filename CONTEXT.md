@@ -48,8 +48,9 @@ resolved during design. This file is a glossary only — no implementation detai
   instrument or template) that says who, besides the owner, may view and edit it.
   Subsamples have none of their own: they follow their sample.
   _Avoid_: sharing, sharing mode, sharing settings
-- **Owner's groups** — the default access permission: every member of a lab or
-  collaboration group the owner belongs to has full access.
+- **Owner's groups** — the default access permission: every member of a group
+  the owner belongs to, lab, collaboration or project, has full access. Leaving or
+  being removed from the group ends that access.
 - **Explicit access list** — the access permission that names the groups, any in
   the system, whose members have full access.
   _Avoid_: whitelist
@@ -552,3 +553,43 @@ resolved during design. This file is a glossary only — no implementation detai
   (a link field keeps the template's default link, if it has one), unless the field is
   mandatory, which refuses it.
   _Avoid_: empty column, unused column
+
+- **Prevalidation** — the check a CSV import runs on every row of every file before it saves
+  anything: the parents a row names must exist and be editable, and the item's own values
+  must pass the rules of creating it through the API (a name, the length caps on name and
+  description, tag format, quantity, template fields). A row that fails is reported with its
+  row number and reason, the whole import is refused, and nothing is created, not even a new
+  template. A Subsample row that joins a Sample from the same import is not prevalidated: it
+  is checked when that Sample is created, and a failure there rolls the whole import back.
+  _Avoid_: validation error (that is one row's outcome, not the step), dry run
+
+## Lab Groups and Project Groups
+
+- **Self-service Lab Group** — a Lab Group a PI creates for themselves from the My RSpace
+  menu, becoming its PI and owner, without a sysadmin or community admin creating it for
+  them. It can be created only where the "self-service lab groups" setting
+  (`self_service_labgroups`) is allowed for that PI. While the setting is denied, RSpace
+  refuses to show the creation page and to create such a group, however the request
+  arrives, and records the attempt in the security log. A PI may delete their own
+  self-service Lab Group at any time, even while the setting is denied; a Lab Group
+  created for them by an admin is never deleted this way.
+  _Avoid_: cloud group (that is the RSpace Community sign-up flow), PI group
+
+- **Project Group** — a group with no PI that any user can create for collaboration. It
+  has at least one Group Owner: its creator by default, or the owners a sysadmin names when
+  creating it for others. Owners invite members, make other members owners and may delete
+  the group; any member but the last owner may leave. The creator is an owner like any
+  other: changed to the User role, they can no longer delete the group. It can be created
+  only where the "allow project groups" setting
+  (`allow_project_groups`) is allowed for that user, with the same refusal rule as the
+  self-service Lab Group; deleting one is not affected by the setting.
+  _Avoid_: collaboration group (that is a group of Lab Groups), user group
+
+- **Allowed for a user (setting)** — the state of a sysadmin-controlled setting as it
+  applies to one user: allowed when the sysadmin allows it and none of the user's
+  communities denies it, or when the sysadmin leaves it denied by default and one of the
+  user's communities allows it. A user's communities are those of their Lab Groups plus
+  any they administer, so a user in no Lab Group follows the sysadmin value alone. A
+  sysadmin denial cannot be lifted by anyone. Hiding a menu entry never stands in for
+  this check.
+  _Avoid_: enabled (that is the user's own per-app toggle)

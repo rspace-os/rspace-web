@@ -14,7 +14,6 @@ The unzipped release should contain:
 
 * RSpace installation notes.
 * Server pre requisite installation notes.
-* An example server log file illustrating successful server startup logs.
 * The RSpace web application .war file
 * A configuration file, deployment.properties
 * A folder for 3rd party licenses
@@ -78,7 +77,7 @@ Update and install required packages.
 	sudo apt-get update
 	sudo apt-get upgrade
 
-Reboot and repeat if necessary. Now install Java 17 (the default for Ubuntu 22 is Java 11)
+Reboot and repeat if necessary. Now install Java 17 (the default for Ubuntu 22 is Java 11, which RSpace does not support)
 
 	 sudo apt install openjdk-17-jre-headless
 
