@@ -21,8 +21,8 @@ import {
   bookerBookingAccess,
   sampleBookingEvents,
 } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
-import type { CollectionConfig } from "@/modules/common/collection/collectionConfig";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import type { CollectionConfig } from "@/modules/common/collection/config";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { TableList, type TableListFilterButtons } from "@/modules/common/table-list/TableList";
 import { Badge } from "@/modules/common/ui/badge";

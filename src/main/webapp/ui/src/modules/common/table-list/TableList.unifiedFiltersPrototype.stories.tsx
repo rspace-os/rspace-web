@@ -4,15 +4,15 @@ import { NuqsAdapter } from "nuqs/adapters/react";
 import { useState } from "react";
 import { I18nextProvider } from "react-i18next";
 import { expect, userEvent, within } from "storybook/test";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import { queryKeys } from "@/modules/common/hooks/auth";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import commonMessages from "@/modules/common/i18n/locales/en-US/common.json";
-import { createApiV2FilterFields } from "./adapters/apiV2/apiV2FilterFields";
-import type { RuntimeFieldDefinition } from "./adapters/apiV2/runtimeFieldCatalog";
-import type { FilterState } from "./state/tableListState";
+import { createApiV2FilterFields } from "./api-v2/filterFields";
+import type { RuntimeFieldDefinition } from "./api-v2/runtimeFieldCatalog";
 import { TableList } from "./TableList";
+import type { FilterState } from "./types";
 
 // Storybook fixtures exercise the production filter panel and runtime catalog picker.
 type Booking = {

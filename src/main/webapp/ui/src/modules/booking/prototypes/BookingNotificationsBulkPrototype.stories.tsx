@@ -9,10 +9,10 @@ import type { SourcedAvailabilityInterval } from "@/modules/booking/domain/avail
 import { todayInTimeZone } from "@/modules/booking/domain/bookingDisplayPreferences";
 import { addCalendarDays, displayInterval } from "@/modules/booking/domain/bookingTime";
 import { bookableItemFixtures } from "@/modules/booking/pages/bookable-items/mocks/bookableItemsMocks";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
-import type { FilterState } from "@/modules/common/table-list/state/tableListState";
 import { TableList, type TableListFilterButtons } from "@/modules/common/table-list/TableList";
+import type { FilterState } from "@/modules/common/table-list/types";
 import { Badge } from "@/modules/common/ui/badge";
 import { Button } from "@/modules/common/ui/button";
 import { InventoryItem, InventoryLocationLink } from "@/modules/common/ui/inventory-item";

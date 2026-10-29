@@ -10,7 +10,7 @@ import {
   MicroscopeIcon,
 } from "lucide-react";
 import * as React from "react";
-import { resolveCollectionConfig } from "@/modules/common/collection/resolveCollectionConfig";
+import { resolveCollectionConfig } from "@/modules/common/collection/resolveConfig";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { TableList } from "@/modules/common/table-list/TableList";
 import { Badge } from "@/modules/common/ui/badge";
