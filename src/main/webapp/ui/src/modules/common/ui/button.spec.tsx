@@ -1,3 +1,4 @@
+import "@/modules/common/styles/index.css";
 import { composeStories } from "@storybook/tanstack-react";
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, expect, test } from "vitest";
