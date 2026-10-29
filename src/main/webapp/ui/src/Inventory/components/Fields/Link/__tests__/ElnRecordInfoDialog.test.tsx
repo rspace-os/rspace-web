@@ -209,7 +209,7 @@ describe("ElnRecordInfoDialog", () => {
     await renderDialogWithRealI18n({ globalId: "SD599", versionPin: 4 });
 
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Version 4 of SD599 is no longer available.");
+    expect(alert).toMatchTextContent("Version 4 of SD599 is no longer available.");
     const latestLink = within(alert).getByRole("link", { name: "View the latest version" });
     expect(latestLink).toHaveAttribute("href", "/globalId/SD599");
   });

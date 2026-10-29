@@ -1000,7 +1000,7 @@ describe("OperationWizard step flow", () => {
       await user.type(screen.getByTestId("proc"), "dna");
       await user.click(screen.getByTestId("fill-taken-1"));
       await user.click(screen.getByRole("button", { name: "Next" })); // details -> template
-      await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toHaveTextContent(expected));
+      await waitFor(() => expect(screen.getByTestId("tmpl-parent-error")).toMatchTextContent(expected));
       unmount();
     }
   });

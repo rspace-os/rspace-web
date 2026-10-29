@@ -49,8 +49,29 @@ function createStorageMock() {
 setup();
 
 expect.extend(jestDomMatchers);
-// Vitest 5's browser matchers split partial/RegExp text checks into toMatchTextContent.
-expect.extend({ toMatchTextContent: jestDomMatchers.toHaveTextContent });
+// Mirror Vitest 5 Browser Mode: toHaveTextContent is exact, toMatchTextContent is partial/RegExp.
+expect.extend({
+  toMatchTextContent: jestDomMatchers.toHaveTextContent,
+  toHaveTextContent(element: unknown, expected?: string | number, { normalizeWhitespace = true } = {}) {
+    if (!(element instanceof Node)) {
+      throw new TypeError(`toHaveTextContent expects a DOM node, received ${this.utils.printReceived(element)}`);
+    }
+    const raw = element.textContent ?? "";
+    const received = normalizeWhitespace ? raw.replace(/\s+/g, " ").trim() : raw.replaceAll("\u00A0", " ");
+    const pass = expected === undefined ? received !== "" : received === String(expected);
+    const hint = this.utils.matcherHint(`${this.isNot ? ".not" : ""}.toHaveTextContent`, "element", "");
+    const wanted = expected === undefined ? "" : String(expected);
+    return {
+      pass,
+      message: () =>
+        [
+          `${hint}\n`,
+          `Expected element ${this.isNot ? "not to" : "to"} have text content:\n  ${this.utils.EXPECTED_COLOR(wanted)}`,
+          `Received:\n  ${this.utils.RECEIVED_COLOR(received)}`,
+        ].join("\n"),
+    };
+  },
+});
 expect.extend({ toBeAccessible });
 
 // @ts-expect-error Mocking

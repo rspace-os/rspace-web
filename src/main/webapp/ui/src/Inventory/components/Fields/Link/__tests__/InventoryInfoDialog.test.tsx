@@ -191,7 +191,7 @@ describe("InventoryInfoDialog", () => {
     );
 
     await screen.findByTestId("sidebar-body");
-    expect(screen.getByRole("note")).toHaveTextContent("fields.link.infoDialog.versionNote");
+    expect(screen.getByRole("note")).toMatchTextContent("fields.link.infoDialog.versionNote");
   });
 
   it("shows no historic-version note when the link is not pinned", async () => {
@@ -298,7 +298,7 @@ describe("InventoryInfoDialog", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toMatchTextContent(/fields\.link\.infoDialog\.versionNotFound/);
-    expect(alert).not.toHaveTextContent("Request failed");
+    expect(alert).not.toMatchTextContent("Request failed");
   });
 
   it("names the pinned version and the target without its version suffix", async () => {

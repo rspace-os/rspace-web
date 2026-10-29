@@ -367,6 +367,6 @@ describe("TemplateStep failure and clearing paths", () => {
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     const alert = await screen.findByRole("alert");
     expect(alert).toMatchTextContent(/mandatoryFieldsError/);
-    expect(alert).not.toHaveTextContent("parent problem");
+    expect(alert).not.toMatchTextContent("parent problem");
   });
 });

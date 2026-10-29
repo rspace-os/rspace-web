@@ -102,7 +102,7 @@ describe("App Bar", () => {
     const accountMenu = await screen.findByRole("menu", {
       name: "common:appBar.accountMenu",
     });
-    expect(accountMenu).toHaveTextContent("user user");
+    expect(accountMenu).toMatchTextContent("user user");
     const logoutOption = await screen.findByRole("menuitem", {
       name: "common:appBar.logOut",
     });
