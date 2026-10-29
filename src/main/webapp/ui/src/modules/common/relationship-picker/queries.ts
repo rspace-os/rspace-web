@@ -1,4 +1,5 @@
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { chunk } from "es-toolkit";
 import type {
   RelationshipOption,
   RelationshipOptionAvailabilitySource,
@@ -117,9 +118,9 @@ export function canonicalValue(source: RelationshipSource, value: string): strin
 
 const MAX_RESOLVE_BATCH_SIZE = 100;
 
-function cacheEntryIsFresh(queryClient: ReturnType<typeof useQueryClient>, key: readonly unknown[]) {
-  const updatedAt = queryClient.getQueryState(key)?.dataUpdatedAt ?? 0;
-  return queryClient.getQueryData(key) !== undefined && Date.now() - updatedAt < 15_000;
+function cacheEntryIsFresh(queryClient: QueryClient, key: readonly unknown[]) {
+  const state = queryClient.getQueryState(key);
+  return state?.data !== undefined && Date.now() - state.dataUpdatedAt < 15_000;
 }
 
 function failedRestoreLabel(labels: RelationshipOptionContext, value: string) {
@@ -182,8 +183,7 @@ export function useSelectedRelationshipOptions({
       const batchSize = Number.isFinite(requestedSize)
         ? Math.min(MAX_RESOLVE_BATCH_SIZE, Math.max(1, Math.floor(requestedSize)))
         : MAX_RESOLVE_BATCH_SIZE;
-      for (let offset = 0; offset < uniqueValues.length; offset += batchSize) {
-        const batch = uniqueValues.slice(offset, offset + batchSize);
+      for (const batch of chunk(uniqueValues, batchSize)) {
         const queryKey = ["relationship-option-batch", candidate.id, ...scope, ...batch] as const;
         resolveQueries.push({
           owner: candidate,

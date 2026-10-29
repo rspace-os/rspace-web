@@ -11,8 +11,4 @@ export const numberScalar = v.pipe(
   v.finite(),
 );
 
-export const dateTimeScalar = v.pipe(
-  v.string(),
-  v.transform((value) => new Date(value)),
-  v.check((value) => !Number.isNaN(value.getTime())),
-);
+export const dateTimeScalar = v.pipe(v.string(), v.toDate());

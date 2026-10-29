@@ -1,3 +1,4 @@
+import { escapeRegExp } from "es-toolkit";
 import { cmp, eq, escapeValue, Operation } from "rsql-builder";
 import { is } from "valibot";
 import type { RelationshipFilterPicker } from "@/modules/common/collection/schema";
@@ -74,7 +75,7 @@ async function instrumentRequest(
 
 /** Returns a positive JavaScript-safe database ID from a resource global ID. */
 export function databaseIdFromGlobalId(value: string, prefix: string): number | null {
-  const escapedPrefix = prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapedPrefix = escapeRegExp(prefix);
   const match = new RegExp(`^${escapedPrefix}(\\d+)$`, "i").exec(value.trim());
   if (!match) return null;
   const id = Number(match[1]);
